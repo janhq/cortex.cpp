@@ -1,7 +1,7 @@
 # Nitro - Accelerated AI Inference Engine
 
 <p align="center">
-  <img alt="nitrologo" src="https://user-images.githubusercontent.com/69952136/266827788-b37d6f41-fc34-4677-aa1f-3e2ca6d3c91a.png">
+  <img alt="nitrologo" src="https://user-images.githubusercontent.com/69952136/266939567-4a7d24f0-9338-4ab5-9261-cb3c71effe35.png">
 </p>
 
 <p align="center">
