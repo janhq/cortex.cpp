@@ -18,7 +18,7 @@
   - <a href="https://docs.jan.ai/changelog/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Jan is currently in Development**: Expect breaking changes and bugs!
+> ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
 
 ## Demo
 
