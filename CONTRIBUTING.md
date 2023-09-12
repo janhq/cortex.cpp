@@ -38,10 +38,10 @@ Develop with fully functional neovim
 
 ### How to compile the source code ?
 
-As of now it is not possible to compile the code outside of the container we built above, but if you want change the code and re-compile it yourself, you can attach to the container that we built and run above and do the compilation steps in [this folder](inference_backend)
+As of now it is not possible to compile the code outside of the container we built above, but if you want change the code and re-compile it yourself, you can attach to the container that we built and run above and do the compilation steps in [this folder](core/inference_backend)
 
 ### How the backend is implemented
-Information about how some parts of the backend is implemented can be found at [Developer Documentation](docs/development)
+Information about how some parts of the backend is implemented can be found at [Developer Documentation](core/docs/development)
 
 ## Styleguides
 
