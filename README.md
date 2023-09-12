@@ -33,9 +33,7 @@
 - [ ] GGML inference support (llama.cpp, etc...)
 - [ ] Plugins support
 
-## Available Endpoints
-
-### Endpoints
+### Nitro Endpoints
 
 ```zsh
 - /inferences/llm_models OPENAI_COMPATIBLE (STREAMING)
