@@ -19,7 +19,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Specify the directories where the compiler can find included libraries
-include_directories(/workspace/workdir/include /workspace/install/include /workspace/workdir/inference_backend/include ${OPENCV_INCLUDE_DIRS})
+include_directories(/workspace/workdir/include /workspace/install/include /workspace/workdir/core/inference_backend/include ${OPENCV_INCLUDE_DIRS})
 link_directories(/workspace/install/lib)
 
 function(setup_target TARGET_SUFFIX CONTROLLER_PATHS)
