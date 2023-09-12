@@ -112,7 +112,7 @@ ation about how some parts of the backend is implemented can be found at [Develo
 ```
 
 ### Architecture
-![Current architecture](architecture.png)
+![Current architecture](docs/architecture.png)
 
 ### Contributing
 
