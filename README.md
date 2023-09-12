@@ -86,6 +86,7 @@ ation about how some parts of the backend is implemented can be found at [Develo
 ### Repo Structure
 
 ### Architecture
+![Current architecture](docs/architecture.png)
 
 ### Contributing
 
