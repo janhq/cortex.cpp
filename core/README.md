@@ -89,6 +89,13 @@ In order to get started developing, just 2 steps
 
 
 #### Step 1: build development docker image
+Fork the repo and cd into the core folder
+
+```zsh
+cd nitro/core
+```
+Then run the build development env script
+
 ```zsh
 ./dev_build.sh
 ```
