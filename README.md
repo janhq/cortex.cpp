@@ -86,7 +86,7 @@ Note: **/path/to/your/config.yaml** -> This is the config file that you need to 
 
 That's it! You should now have the inference backend up and running.
 
-ation about how some parts of the backend is implemented can be found at [Developer Documentation](core/docs/development)
+ation about how some parts of the backend is implemented can be found at [Developer Documentation](docs/development)
 
 ## About Nitro
 
@@ -112,7 +112,7 @@ ation about how some parts of the backend is implemented can be found at [Develo
 ```
 
 ### Architecture
-![Current architecture](docs/architecture.png)
+![Current architecture](architecture.png)
 
 ### Contributing
 
