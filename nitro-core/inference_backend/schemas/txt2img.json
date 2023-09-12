@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties": {
+    "prompt": {
+      "type": "string"
+    },
+    "neg_prompt": {
+      "type": "string"
+    },
+    "unet_model": {
+      "type": "string"
+    },
+    "seed": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "steps": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99
+    },
+    "width": {
+      "type": "integer",
+      "enum": [
+        512,
+        640,
+        768,
+        880,
+        960,
+        1024
+      ]
+    },
+    "height": {
+      "type": "integer",
+      "enum": [
+        512,
+        640,
+        768,
+        880,
+        960,
+        1024
+      ]
+    },
+    "compel": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "prompt",
+    "neg_prompt",
+    "steps"
+  ],
+  "additionalProperties": false
+}

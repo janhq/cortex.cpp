@@ -1,0 +1,5 @@
+custom_config:
+  s3_public_endpoint:  <your s3 endpoint> ( example :https://yours3endpoint.s3.us-west-2.amazonaws.com/ )
+  triton_endpoint: <your triton ip:port>
+  s3_bucket: <your s3 bucket name>
+  drogon_port: <port to deploy inference backend>

@@ -1,0 +1,71 @@
+name: Linter & Test
+
+on:
+  push:
+    branches:
+      - main
+      - '**'
+  pull_request:
+    branches:
+      - main
+
+env:
+  PROJECT_KEY: janhq_inference_backend_AYm7G4zUSUovpIEBeLDZ
+  BUILD_WRAPPER_OUT_DIR: /tmp/build_wrapper_output_directory
+  REGISTRY_NAME: janresearch.azurecr.io
+
+jobs:
+  test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      # - name: Login to ACR
+      #   uses: docker/login-action@v2
+      #   with:
+      #     registry: ${{ env.REGISTRY_NAME }}
+      #     username: ${{ secrets.ACR_USERNAME }}
+      #     password: ${{ secrets.ACR_PASSWORD }}
+
+      # - name: Run build-wrapper
+      #   run: |
+      #     docker build -t inference-backend:test -f Dockerfile_sonarqube .
+      #     docker run -n inferencebackend -d inference-backend:test /bin/bash
+      #     docker cp inferencebackend:/build_wrapper_output_directory ${{ env.BUILD_WRAPPER_OUT_DIR }}:${{ env.BUILD_WRAPPER_OUT_DIR }}
+      #     docker stop inferencebackend
+      #     echo -e "sonar.cfamily.build-wrapper-output = ${{ env.BUILD_WRAPPER_OUT_DIR }}" >> sonar-project.properties
+      #     docker rm inferencebackend
+      - name: Create sonar.properties file
+        run: |
+          echo "Branch Name ${GITHUB_REF#refs/heads/}"
+          echo -e "sonar.host.url = ${{ secrets.SONAR_HOST_URL }}" > sonar-project.properties
+          echo -e "sonar.projectKey = ${{ env.PROJECT_KEY }}" >> sonar-project.properties
+          echo -e "sonar.cxx.file.suffixes = .cxx,.cpp,.cc,.c,.hxx,.hpp,.hh,.h" >> sonar-project.properties
+          echo -e "sonar.verbose = true" >> sonar-project.properties
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            echo -e "sonar.branch.name = ${GITHUB_REF#refs/heads/}" >> sonar-project.properties
+          else
+            PR=$(IFS='/' read -r -a REF <<< "$GITHUB_REF" && echo ${REF[2]})
+            echo -e "sonar.pullrequest.key = $PR" >> sonar-project.properties
+            echo -e "sonar.pullrequest.branch = ${{ github.event.pull_request.head.ref }}" >> sonar-project.properties
+            echo -e "sonar.pullrequest.base = ${{ github.event.pull_request.base.ref }}" >> sonar-project.properties
+          fi
+          cat sonar-project.properties
+      - name: Download Sonar Scan cli
+        run: |
+          cd /tmp
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip && unzip sonar-scanner-cli-4.7.0.2747-linux.zip
+
+      - name: Run Sonar Scan
+        run: |
+          /tmp/sonar-scanner-4.7.0.2747-linux//bin/sonar-scanner -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+      # Check the Quality Gate status.
+      - name: SonarQube Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        # Force to fail step after specific time.
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }} #OPTIONAL

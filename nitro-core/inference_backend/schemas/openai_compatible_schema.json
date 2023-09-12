@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "messages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string"
+            },
+            "role": {
+              "type": "string",
+              "enum": ["assistant", "user"]
+            }
+          },
+          "required": ["content", "role"]
+        }
+      },
+      "stream": {
+        "type": "boolean"
+      },
+      "model": {
+        "type": "string",
+        "enum": ["gpt-3.5-turbo"]
+      },
+      "max_tokens": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 4096
+      }
+    },
+    "required": [
+      "messages",
+      "stream",
+      "model",
+      "max_tokens"
+    ]
+}

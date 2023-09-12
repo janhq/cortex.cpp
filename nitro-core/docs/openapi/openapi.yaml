@@ -1,0 +1,112 @@
+openapi: '3.0.0'
+info:
+  title: 'Streaming API Specification'
+  version: '1.0.0'
+
+paths:
+  /inferences/llm_models/chat_completion:
+    post:
+      summary: 'Post for streaming'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/chat_completion'
+      responses:
+        '200':
+          description: 'Successful Response (streaming)'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                description: 'Stream of data'
+  /inferences/txt2img:
+    post:
+      summary: An example endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/txt2img'
+      responses:
+        '200':
+          description: Successful operation
+
+components:
+  schemas:
+    chat_completion:
+      type: object
+      required:
+        - messages
+        - stream
+        - model
+        - max_tokens
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+        stream:
+          type: boolean
+        model:
+          type: string
+          enum: [gpt-3.5-turbo]
+        max_tokens:
+          type: integer
+          minimum: 1
+          maximum: 2048
+    Message:
+      type: object
+      required:
+        - content
+        - role
+      properties:
+        content:
+          type: string
+        role:
+          type: string
+          enum: [assistant, user]
+    txt2img:
+      type: object
+      properties:
+        prompt:
+          type: string
+        neg_prompt:
+          type: string
+        unet_model:
+          type: string
+        seed:
+          type: integer
+          minimum: 1
+        steps:
+          type: integer
+          minimum: 1
+          maximum: 99
+        width:
+          type: integer
+          enum:
+            - 512
+            - 640
+            - 768
+            - 880
+            - 960
+            - 1024
+        height:
+          type: integer
+          enum:
+            - 512
+            - 640
+            - 768
+            - 880
+            - 960
+            - 1024
+        compel:
+          type: boolean
+      required:
+        - prompt
+        - neg_prompt
+        - steps
+      additionalProperties: false

@@ -1,0 +1,38 @@
+{
+    "$schema": "http://json-schema.org/draft-04/schema#",
+    "type": "object",
+    "properties": {
+      "prompt": {
+        "type": "string"
+      },
+      "neg_prompt": {
+        "type": "string"
+      },
+      "control_net_model": {
+        "type": "string",
+        "enum": ["controlnet_canny", "controlnet_depth"]
+      },
+      "seed": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "steps": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 99
+      },
+      "control_scale": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 99
+      }
+    },
+    "required": [
+      "prompt",
+      "neg_prompt",
+      "seed",
+      "steps",
+      "control_net_model"
+    ]
+  }
+  
