@@ -20,9 +20,21 @@
 
 > ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
 
-## Demo
 
 ## Features
+
+### Supported features
+- Simple http webserver to do inference on triton (without triton client)
+- Upload inference result to s3 (txt2img)
+## Available Endpoints
+
+### Endpoints
+
+```zsh
+- /inferences/llm_models OPENAI_COMPATIBLE (STREAMING)
+- /inferences/txt2img POST - JSON
+- /inferences/img2img POST - MULTIPART
+```
 
 ## Documentation
 
