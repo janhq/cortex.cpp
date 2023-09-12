@@ -28,10 +28,10 @@
 - Upload inference result to s3 (txt2img)
 
 ### TODO:
-- [] Local file server
-- [] Cache
-- [] GGML inference support (llama.cpp, etc...)
-- [] Plugins support
+- [ ] Local file server
+- [ ] Cache
+- [ ] GGML inference support (llama.cpp, etc...)
+- [ ] Plugins support
 
 ## Available Endpoints
 
