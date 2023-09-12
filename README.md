@@ -84,6 +84,25 @@ ation about how some parts of the backend is implemented can be found at [Develo
 ## About Nitro
 
 ### Repo Structure
+```zsh
+.
+|-- core
+|   |-- inference_backend
+|   |   |-- controllers
+|   |   |   |-- img2img
+|   |   |   |-- llm_models
+|   |   |   `-- txt2img
+|   |   |-- include
+|   |   |-- schemas
+|   |   `-- test
+|   |-- models
+|   `-- scripts
+`-- docs
+    |-- development
+    `-- openapi
+
+
+```
 
 ### Architecture
 ![Current architecture](docs/architecture.png)
