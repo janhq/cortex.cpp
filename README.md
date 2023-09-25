@@ -3,7 +3,7 @@
 Step 1:
 Install dependencies static files
 ```zsh
-./install_deps
+./install_deps.sh
 ```
 This will create a build_deps folder, just ignore it
 
