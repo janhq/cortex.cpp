@@ -16,7 +16,7 @@ endif ()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_BINARY_DIR}/_install) # This is the critical line for installing another package
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/_install) # This is the critical line for installing another package
 
 include(FetchContent)
 
