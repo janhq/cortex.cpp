@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(redis CXX)
+project(nitro CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -16,18 +16,8 @@ endif ()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build/_install) # This is the critical line for installing another package
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install) # This is the critical line for installing another package
 
-include(FetchContent)
-
-FetchContent_Declare(
-  nitro_deps
-  GIT_REPOSITORY https://github.com/janhq/nitro_deps
-  GIT_TAG main
-  GIT_SHALLOW ON
-)
-set(THIRD_PARTY_INSTALL_PATH ${CMAKE_PREFIX_PATH})
-FetchContent_MakeAvailable(nitro_deps)
 add_executable(${PROJECT_NAME} main.cc)
 
 # ##############################################################################
@@ -54,9 +44,9 @@ else ()
 endif ()
 
 aux_source_directory(controllers CTL_SRC)
-aux_source_directory(filters FILTER_SRC)
-aux_source_directory(plugins PLUGIN_SRC)
-aux_source_directory(models MODEL_SRC)
+#aux_source_directory(filters FILTER_SRC)
+#aux_source_directory(plugins PLUGIN_SRC)
+#aux_source_directory(models MODEL_SRC)
 
 drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
                     ${CMAKE_CURRENT_BINARY_DIR})
@@ -65,15 +55,15 @@ drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
 #                     ${CMAKE_CURRENT_BINARY_DIR} TRUE)
 
 target_include_directories(${PROJECT_NAME}
-                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/models)
+                           PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+                       #${CMAKE_CURRENT_SOURCE_DIR}/models)
 target_sources(${PROJECT_NAME}
                PRIVATE
                ${SRC_DIR}
-               ${CTL_SRC}
-               ${FILTER_SRC}
-               ${PLUGIN_SRC}
-               ${MODEL_SRC})
+               ${CTL_SRC} )
+           #    ${FILTER_SRC}
+           #    ${PLUGIN_SRC}
+           #    ${MODEL_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views 
 # set_property(TARGET ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
