@@ -1,5 +1,6 @@
 #include "helloworld.h"
 #include "llama.h"
+#include <drogon/HttpResponse.h>
 
 
 void helloworld::asyncHandleHttpRequest(
@@ -12,10 +13,9 @@ void helloworld::asyncHandleHttpRequest(
 
     llama_reset_timings(llama.ctx);
 
-    parse_options_completion(json::parse(req.body), llama);
-
+    llama.prompt = "Hello there have a great day";
     if (!llama.loadGrammar()) {
-      res.status = 400;
+      LOG_ERROR<< "Serious error happen here kekeke";
       return;
     }
 
@@ -54,9 +54,11 @@ void helloworld::asyncHandleHttpRequest(
     }
 
     const json data = format_final_response(llama, llama.generated_text, probs);
-
+    
+    auto response = drogon::HttpResponse::newHttpResponse();
+    response->setBody(data.dump());
     llama_print_timings(llama.ctx);
-
-
-  callback(resp);
+  
+    
+  callback(response);
 }
