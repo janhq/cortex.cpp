@@ -3,6 +3,7 @@
 #include "common.h"
 #include "grammar-parser.h"
 #include "llama.h"
+#include <trantor/utils/Logger.h>
 
 #ifndef NDEBUG
 // crash the server in debug mode, otherwise send an http 500 error
@@ -97,8 +98,9 @@ static void server_log(const char *level, const char *function, int line,
 
   const std::string str =
       log.dump(-1, ' ', false, json::error_handler_t::replace);
-  printf("%.*s\n", (int)str.size(), str.data());
-  fflush(stdout);
+  LOG_INFO << str;
+  // printf("%.*s\n", (int)str.size(), str.data());
+  //  fflush(stdout);
 }
 
 // format incomplete utf-8 multibyte character for output
@@ -152,12 +154,10 @@ static bool server_verbose = false;
   } while (0)
 #endif
 
-#define LOG_ERROR(MSG, ...)                                                    \
+#define LOG_ERROR_LLAMA(MSG, ...)                                                    \
   server_log("ERROR", __func__, __LINE__, MSG, __VA_ARGS__)
 #define LOG_WARNING(MSG, ...)                                                  \
   server_log("WARNING", __func__, __LINE__, MSG, __VA_ARGS__)
-#define LOG_INFO(MSG, ...)                                                     \
-  server_log("INFO", __func__, __LINE__, MSG, __VA_ARGS__)
 
 struct llama_server_context {
   bool stream = false;
@@ -232,7 +232,7 @@ struct llama_server_context {
     params = params_;
     std::tie(model, ctx) = llama_init_from_gpt_params(params);
     if (model == nullptr) {
-      LOG_ERROR("unable to load model", {{"model", params_.model}});
+      LOG_ERROR_LLAMA("unable to load model", {{"model", params_.model}});
       return false;
     }
 
@@ -280,7 +280,7 @@ struct llama_server_context {
       parsed_grammar = grammar_parser::parse(params.grammar.c_str());
       // will be empty (default) if there are parse errors
       if (parsed_grammar.rules.empty()) {
-        LOG_ERROR("grammar parse error", {{"grammar", params.grammar}});
+        LOG_ERROR_LLAMA("grammar parse error", {{"grammar", params.grammar}});
         return false;
       }
       grammar_parser::print_grammar(stderr, parsed_grammar);
@@ -400,7 +400,7 @@ struct llama_server_context {
         n_eval = params.n_batch;
       }
       if (llama_eval(ctx, &embd[n_past], n_eval, n_past, params.n_threads)) {
-        LOG_ERROR("failed to eval",
+        LOG_ERROR_LLAMA("failed to eval",
                   {
                       {"n_eval", n_eval},
                       {"n_past", n_past},
