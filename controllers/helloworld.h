@@ -1216,4 +1216,8 @@ public:
   PATH_LIST_END
 private:
   llama_server_context llama;
+    size_t sent_count = 0;
+    size_t sent_token_probs_index = 0;
+
+
 };

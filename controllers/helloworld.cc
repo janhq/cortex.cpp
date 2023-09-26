@@ -24,9 +24,6 @@ void helloworld::asyncHandleHttpRequest(
 
   const auto chunked_content_provider =
       [&](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
-    size_t sent_count = 0;
-    size_t sent_token_probs_index = 0;
-
     while (llama.has_next_token) {
       const completion_token_output token_with_probs = llama.doCompletion();
       if (token_with_probs.tok == -1 || llama.multibyte_pending > 0) {
