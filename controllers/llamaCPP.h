@@ -26,15 +26,15 @@ using namespace drogon;
 #endif
 
 using json = nlohmann::json;
-//
-//struct server_params {
-//  std::string hostname = "127.0.0.1";
-//  std::string public_path = "examples/server/public";
-//  int32_t port = 8080;
-//  int32_t read_timeout = 600;
-//  int32_t write_timeout = 600;
-//};
-//
+
+struct server_params {
+  std::string hostname = "127.0.0.1";
+  std::string public_path = "examples/server/public";
+  int32_t port = 8080;
+  int32_t read_timeout = 600;
+  int32_t write_timeout = 600;
+};
+
 // completion token output with probabilities
 struct completion_token_output {
   struct token_prob {
@@ -1185,8 +1185,8 @@ class llamaCPP : public drogon::HttpSimpleController<llamaCPP> {
 public:
   llamaCPP() {
     gpt_params params;
-    params.model = "/Users/alandao/Documents/codes/nitro.cpp_temp/models/"
-                   "llama2_7b_chat_uncensored.Q4_0.gguf";
+    auto conf = drogon::app().getCustomConfig();
+    params.model = conf["llama_model_path"].asString();
 
     if (params.model_alias == "unknown") {
       params.model_alias = params.model;
@@ -1212,7 +1212,7 @@ public:
       std::function<void(const HttpResponsePtr &)> &&callback) override;
   PATH_LIST_BEGIN
   // list path definitions here;
-  PATH_ADD("/test", Get);
+  PATH_ADD("/llama/chat_completion", Post);
   PATH_LIST_END
 private:
   llama_server_context llama;

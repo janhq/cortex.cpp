@@ -38,6 +38,21 @@ std::string create_return_json(const std::string &id, const std::string &model,
 void llamaCPP::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
+  const auto &jsonBody = req->getJsonObject();
+  std::string formatted_output =
+      "Below is a conversation between an AI system named ASSISTANT and USER\n";
+  if (jsonBody) {
+    llama.params.n_predict = (*jsonBody)["max_tokens"].asInt();
+    llama.params.top_p = (*jsonBody)["top_p"].asFloat();
+    llama.params.temp = (*jsonBody)["temperature"].asFloat();
+
+    const Json::Value &messages = (*jsonBody)["messages"];
+    for (const auto &message : messages) {
+      std::string role = message["role"].asString();
+      std::string content = message["content"].asString();
+      formatted_output += role + ": " + content + "\n";
+    }
+  }
 
   auto lock = this->llama.lock();
 
@@ -45,9 +60,9 @@ void llamaCPP::asyncHandleHttpRequest(
 
   llama_reset_timings(llama.ctx);
 
-  this->llama.prompt = "### Human: Hello there\n### Assistant:";
+  this->llama.prompt = formatted_output;
   this->llama.params.antiprompt.clear();
-  this->llama.params.antiprompt.push_back("### Human:");
+  this->llama.params.antiprompt.push_back("user:");
 
   this->llama.loadPrompt();
   this->llama.beginCompletion();
@@ -142,7 +157,7 @@ void llamaCPP::asyncHandleHttpRequest(
           const std::string str =
               "data: " +
               create_return_json(nitro_utils::generate_random_string(20), "_",
-                                 "", false) +
+                                 "", true) +
               "\n\n" + "data: [DONE]" + "\n\n";
 
           LOG_VERBOSE("data stream", {{"to_send", str}});
