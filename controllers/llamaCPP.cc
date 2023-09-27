@@ -69,6 +69,10 @@ void llamaCPP::asyncHandleHttpRequest(
 
   const auto chunked_content_provider =
       [&](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+    if (!pBuffer) {
+      LOG_INFO << "Connection closed or buffer is null.";
+      return 0;
+    }
     // LOG_INFO << this->llama.has_next_token;
     while (this->llama.has_next_token) {
       try {
