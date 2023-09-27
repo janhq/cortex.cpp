@@ -949,81 +949,81 @@ static json format_generation_settings(llama_server_context &llama) {
   };
 }
 
-static json format_embedding_response(llama_server_context &llama) {
-  return json{
-      {"embedding", llama.getEmbedding()},
-  };
-}
-
-static json format_timings(llama_server_context &llama) {
-  const auto timings = llama_get_timings(llama.ctx);
-
-  assert(timings.n_eval == ptrdiff_t(llama.num_tokens_predicted));
-
-  return json{
-      {"prompt_n", timings.n_p_eval},
-      {"prompt_ms", timings.t_p_eval_ms},
-      {"prompt_per_token_ms", timings.t_p_eval_ms / timings.n_p_eval},
-      {"prompt_per_second", 1e3 / timings.t_p_eval_ms * timings.n_p_eval},
-
-      {"predicted_n", timings.n_eval},
-      {"predicted_ms", timings.t_eval_ms},
-      {"predicted_per_token_ms", timings.t_eval_ms / timings.n_eval},
-      {"predicted_per_second", 1e3 / timings.t_eval_ms * timings.n_eval},
-  };
-}
-
-static json
-format_final_response(llama_server_context &llama, const std::string &content,
-                      const std::vector<completion_token_output> &probs) {
-
-  json res = json{
-      {"content", content},
-      {"stop", true},
-      {"model", llama.params.model_alias},
-      {"tokens_predicted", llama.num_tokens_predicted},
-      {"tokens_evaluated", llama.num_prompt_tokens},
-      {"generation_settings", format_generation_settings(llama)},
-      {"prompt", llama.prompt},
-      {"truncated", llama.truncated},
-      {"stopped_eos", llama.stopped_eos},
-      {"stopped_word", llama.stopped_word},
-      {"stopped_limit", llama.stopped_limit},
-      {"stopping_word", llama.stopping_word},
-      {"tokens_cached", llama.n_past},
-      {"timings", format_timings(llama)},
-  };
-
-  if (llama.params.n_probs > 0) {
-    res["completion_probabilities"] = probs_vector_to_json(llama.ctx, probs);
-  }
-
-  return res;
-}
-
-static json
-format_partial_response(llama_server_context &llama, const std::string &content,
-                        const std::vector<completion_token_output> &probs) {
-  json res = json{
-      {"content", content},
-      {"stop", false},
-  };
-
-  if (llama.params.n_probs > 0) {
-    res["completion_probabilities"] = probs_vector_to_json(llama.ctx, probs);
-  }
-
-  return res;
-}
-
-static json format_tokenizer_response(const std::vector<llama_token> &tokens) {
-  return json{{"tokens", tokens}};
-}
-
-static json format_detokenized_response(std::string content) {
-  return json{{"content", content}};
-}
-
+//static json format_embedding_response(llama_server_context &llama) {
+//  return json{
+//      {"embedding", llama.getEmbedding()},
+//  };
+//}
+//
+//static json format_timings(llama_server_context &llama) {
+//  const auto timings = llama_get_timings(llama.ctx);
+//
+//  assert(timings.n_eval == ptrdiff_t(llama.num_tokens_predicted));
+//
+//  return json{
+//      {"prompt_n", timings.n_p_eval},
+//      {"prompt_ms", timings.t_p_eval_ms},
+//      {"prompt_per_token_ms", timings.t_p_eval_ms / timings.n_p_eval},
+//      {"prompt_per_second", 1e3 / timings.t_p_eval_ms * timings.n_p_eval},
+//
+//      {"predicted_n", timings.n_eval},
+//      {"predicted_ms", timings.t_eval_ms},
+//      {"predicted_per_token_ms", timings.t_eval_ms / timings.n_eval},
+//      {"predicted_per_second", 1e3 / timings.t_eval_ms * timings.n_eval},
+//  };
+//}
+//
+//static json
+//format_final_response(llama_server_context &llama, const std::string &content,
+//                      const std::vector<completion_token_output> &probs) {
+//
+//  json res = json{
+//      {"content", content},
+//      {"stop", true},
+//      {"model", llama.params.model_alias},
+//      {"tokens_predicted", llama.num_tokens_predicted},
+//      {"tokens_evaluated", llama.num_prompt_tokens},
+//      {"generation_settings", format_generation_settings(llama)},
+//      {"prompt", llama.prompt},
+//      {"truncated", llama.truncated},
+//      {"stopped_eos", llama.stopped_eos},
+//      {"stopped_word", llama.stopped_word},
+//      {"stopped_limit", llama.stopped_limit},
+//      {"stopping_word", llama.stopping_word},
+//      {"tokens_cached", llama.n_past},
+//      {"timings", format_timings(llama)},
+//  };
+//
+//  if (llama.params.n_probs > 0) {
+//    res["completion_probabilities"] = probs_vector_to_json(llama.ctx, probs);
+//  }
+//
+//  return res;
+//}
+//
+//static json
+//format_partial_response(llama_server_context &llama, const std::string &content,
+//                        const std::vector<completion_token_output> &probs) {
+//  json res = json{
+//      {"content", content},
+//      {"stop", false},
+//  };
+//
+//  if (llama.params.n_probs > 0) {
+//    res["completion_probabilities"] = probs_vector_to_json(llama.ctx, probs);
+//  }
+//
+//  return res;
+//}
+//
+//static json format_tokenizer_response(const std::vector<llama_token> &tokens) {
+//  return json{{"tokens", tokens}};
+//}
+//
+//static json format_detokenized_response(std::string content) {
+//  return json{{"content", content}};
+//}
+//
 template <typename T>
 static T json_value(const json &body, const std::string &key,
                     const T &default_value) {
@@ -1181,9 +1181,9 @@ static void append_to_generated_text_from_generated_token_probs(
   }
 }
 
-class helloworld : public drogon::HttpSimpleController<helloworld> {
+class llamaCPP : public drogon::HttpSimpleController<llamaCPP> {
 public:
-  helloworld() {
+  llamaCPP() {
     gpt_params params;
     params.model = "/Users/alandao/Documents/codes/nitro.cpp_temp/models/"
                    "llama2_7b_chat_uncensored.Q4_0.gguf";

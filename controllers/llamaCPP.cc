@@ -1,4 +1,4 @@
-#include "helloworld.h"
+#include "llamaCPP.h"
 #include "llama.h"
 #include "nitro_utils.h"
 #include <chrono>
@@ -35,7 +35,7 @@ std::string create_return_json(const std::string &id, const std::string &model,
   return Json::writeString(writer, root);
 }
 
-void helloworld::asyncHandleHttpRequest(
+void llamaCPP::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
