@@ -26,15 +26,15 @@ using namespace drogon;
 #endif
 
 using json = nlohmann::json;
-
-struct server_params {
-  std::string hostname = "127.0.0.1";
-  std::string public_path = "examples/server/public";
-  int32_t port = 8080;
-  int32_t read_timeout = 600;
-  int32_t write_timeout = 600;
-};
-
+//
+//struct server_params {
+//  std::string hostname = "127.0.0.1";
+//  std::string public_path = "examples/server/public";
+//  int32_t port = 8080;
+//  int32_t read_timeout = 600;
+//  int32_t write_timeout = 600;
+//};
+//
 // completion token output with probabilities
 struct completion_token_output {
   struct token_prob {
