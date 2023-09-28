@@ -139,7 +139,7 @@ void llamaCPP::asyncHandleHttpRequest(
           if (!to_send.empty() && llama.has_next_token) { //  NITRO : the patch here is important to make midway cutting possible
             // const json data = format_partial_response(this->llama, to_send,
             // probs_output);
-            LOG_INFO << llama.has_next_token;
+            // LOG_INFO << llama.has_next_token;
             const std::string str =
                 "data: " +
                 create_return_json(nitro_utils::generate_random_string(20), "_",
