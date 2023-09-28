@@ -1,5 +1,6 @@
 #pragma once
 
+#include "controllers/nitro_utils.h"
 #include "drogon/HttpTypes.h"
 #include <drogon/HttpSimpleController.h>
 #include <trantor/utils/logger.h>
@@ -1206,6 +1207,7 @@ public:
     if (!llama.loadModel(params)) {
       LOG_ERROR_LLAMA("Strange error","Error loading the model");
     }
+    nitro_utils::nitro_logo();
   }
   void asyncHandleHttpRequest(
       const HttpRequestPtr &req,

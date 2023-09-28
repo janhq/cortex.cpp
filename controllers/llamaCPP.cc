@@ -73,11 +73,11 @@ void llamaCPP::asyncHandleHttpRequest(
       LOG_INFO << "Connection closed or buffer is null. Reset context";
       lock.release();
 
-      // this->llama_print_timings(llama.ctx);
+      llama_print_timings(llama.ctx);
       this->llama.mutex.unlock();
       this->sent_count = 0;
       this->sent_token_probs_index = 0;
-      LOG_INFO << "Test end two time lol";
+      //LOG_INFO << "Test end two time lol";
       return 0;
     }
     // LOG_INFO << this->llama.has_next_token;
@@ -182,11 +182,11 @@ void llamaCPP::asyncHandleHttpRequest(
     }
     lock.release();
 
-    // this->llama_print_timings(llama.ctx);
+    llama_print_timings(llama.ctx);
     this->llama.mutex.unlock();
     this->sent_count = 0;
     this->sent_token_probs_index = 0;
-    LOG_INFO << "Test end two time lol";
+    //LOG_INFO << "Test end two time lol";
     return 0;
   };
 

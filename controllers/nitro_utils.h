@@ -2,6 +2,8 @@
 #include "cstdio"
 #include "random"
 #include "string"
+#include <iostream>
+#include <ostream>
 
 namespace nitro_utils {
 inline std::string generate_random_string(std::size_t length) {
@@ -18,6 +20,41 @@ inline std::string generate_random_string(std::size_t length) {
                   [&]() { return characters[distribution(generator)]; });
 
   return random_string;
+}
+
+inline void nitro_logo(){
+    std::string rainbowColors[] = {
+        "\033[93m",  // Yellow
+        "\033[94m",  // Blue
+    };
+
+    std::string resetColor = "\033[0m";
+    std::string asciiArt =
+        "      ___                                   ___           ___     \n"
+        "     /__/\        ___           ___        /  /\\         /  /\\    \n"
+        "     \\  \\:\\      /  /\\         /  /\\      /  /::\\       /  /::\\   \n"
+        "      \\  \\:\\    /  /:/        /  /:/     /  /:/\\:\\     /  /:/\\:\\  \n"
+        "  _____\\__\\:\\  /__/::\\       /  /:/     /  /:/  \\:\\   /  /:/  \\:\\ \n"
+        " /__/::::::::\\ \\__\\/\\:\\__   /  /::\\    /__/:/ /:/___ /__/:/ \\__\\:\\\n"
+        " \\  \\:\\~~\\~~\\/    \\  \\:\\/\\ /__/:/\\:\\   \\  \\:\\/:::::/ \\  \\:\\ /  /:/\n"
+        "  \\  \\:\\  ~~~      \\__\\::/ \\__\\/  \\:\\   \\  \\::/~~~~   \\  \\:\\  /:/ \n"
+        "   \\  \\:\\          /__/:/       \\  \\:\\   \\  \\:\\        \\  \\:\\/:/  \n"
+        "    \\  \\:\\         \\__\\/         \\__\\/    \\  \\:\\        \\  \\::/   \n"
+        "     \\__\\/                                 \\__\\/         \\__\\/    \n";
+
+    int colorIndex = 0;
+
+    for (char c : asciiArt) {
+        if (c == '\n') {
+            std::cout << resetColor << c;
+            colorIndex = 0;
+        } else {
+            std::cout << rainbowColors[colorIndex % 6] << c;
+            colorIndex++;
+        }
+    }
+
+    std::cout << resetColor; // Reset color at the endreturn;
 }
 
 } // namespace nitro_utils
