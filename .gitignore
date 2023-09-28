@@ -562,3 +562,4 @@ FodyWeavers.xsd
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,visualstudio,visualstudiocode,cmake,c,c++
 build
 build_deps
+.DS_Store
