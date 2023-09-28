@@ -143,7 +143,7 @@ void llamaCPP::asyncHandleHttpRequest(
             const std::string str =
                 "data: " +
                 create_return_json(nitro_utils::generate_random_string(20), "_",
-                                   to_send, false) +
+                                   to_send) +
                 "\n\n";
 
             LOG_VERBOSE("data stream", {{"to_send", str}});
@@ -168,7 +168,7 @@ void llamaCPP::asyncHandleHttpRequest(
           const std::string str =
               "data: " +
               create_return_json(nitro_utils::generate_random_string(20), "_",
-                                 "", true) +
+                                 "", "stop") +
               "\n\n" + "data: [DONE]" + "\n\n";
 
           LOG_VERBOSE("data stream", {{"to_send", str}});
