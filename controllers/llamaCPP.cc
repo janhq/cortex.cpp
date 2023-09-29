@@ -50,6 +50,7 @@ void llamaCPP::asyncHandleHttpRequest(
       std::string content = message["content"].asString();
       formatted_output += role + ": " + content + "\n";
     }
+    formatted_output += "assistant:";
   }
 
   auto lock = this->llama.lock();
@@ -61,7 +62,7 @@ void llamaCPP::asyncHandleHttpRequest(
   this->llama.prompt = formatted_output;
   this->llama.params.antiprompt.clear();
   this->llama.params.antiprompt.push_back("user:");
-
+  this->llama.params.antiprompt.push_back("### USER:");
   this->llama.loadPrompt();
   this->llama.beginCompletion();
 
