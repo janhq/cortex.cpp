@@ -1,7 +1,6 @@
 #pragma once
 
 #include "controllers/nitro_utils.h"
-#include "drogon/HttpTypes.h"
 #include <drogon/HttpSimpleController.h>
 #include <trantor/utils/logger.h>
 
@@ -10,7 +9,6 @@ using namespace drogon;
 #include "common.h"
 #include "grammar-parser.h"
 #include "llama.h"
-#include <trantor/utils/Logger.h>
 
 #ifndef NDEBUG
 // crash the server in debug mode, otherwise send an http 500 error
