@@ -2,7 +2,6 @@
 
 #include "controllers/nitro_utils.h"
 #include <drogon/HttpSimpleController.h>
-#include <trantor/utils/logger.h>
 
 using namespace drogon;
 #include "build-info.h"
