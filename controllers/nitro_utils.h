@@ -4,6 +4,7 @@
 #include "string"
 #include <iostream>
 #include <ostream>
+#include <algorithm>
 
 namespace nitro_utils {
 inline std::string generate_random_string(std::size_t length) {
