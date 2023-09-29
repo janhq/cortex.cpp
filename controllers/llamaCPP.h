@@ -1185,7 +1185,8 @@ public:
     gpt_params params;
     auto conf = drogon::app().getCustomConfig();
     params.model = conf["llama_model_path"].asString();
-
+    params.n_gpu_layers = conf["ngl"].asInt();
+    params.n_ctx = conf["ctx_len"].asInt();
     if (params.model_alias == "unknown") {
       params.model_alias = params.model;
     }
