@@ -26,98 +26,37 @@
 ### Supported features
 - Simple http webserver to do inference on triton (without triton client)
 - Upload inference result to s3 (txt2img)
+- GGML inference support (llama.cpp, etc...)
 
 ### TODO:
 - [ ] Local file server
 - [ ] Cache
-- [ ] GGML inference support (llama.cpp, etc...)
 - [ ] Plugins support
 
 ### Nitro Endpoints
 
 ```zsh
-- /inferences/llm_models OPENAI_COMPATIBLE (STREAMING)
-- /inferences/txt2img POST - JSON
-- /inferences/img2img POST - MULTIPART
+WIP
 ```
 
 ## Documentation
 
 ## Installation
 
-### Using Docker (Recommended)
-
-1. **Prerequisites**: Ensure you have a base Docker image with Triton Client installed.
-    - Currently, only compatible with `nvcr.io/nvidia/tritonserver:23.06-py3-sdk`.
-
-2. **Build Docker Image**: 
-    ```zsh
-    cd core
-    docker build . -t nitro
-    ```
-
-3. **Configuration**: 
-    - Download and modify the example config file from [here](core/example.config.yaml).
-    - Make sure to rename it by removing "example." from the filename.
-
-    ```yaml
-    custom_config:
-      s3_public_endpoint:  <your s3 endpoint>
-      triton_endpoint: <your triton ip:port>
-      s3_bucket: <your s3 bucket name>
-      drogon_port: <backend deployment port>
-    ```
-
-4. **Run Docker Container**: 
-    - Replace the placeholders with your specific configurations.
-  
-    ```zsh
-    docker run \
-      -v /path/to/your/config.yaml:/workspace/workdir/core/inference_backend/config.yaml \
-      -p 3000:3000 \
-      -e AWS_ACCESS_KEY_ID=<your_access_key> \
-      -e AWS_SECRET_ACCESS_KEY=<your_secret_key> \
-      -e AWS_DEFAULT_REGION=<your_region> \
-      nitro
-    ```
-
-Note: **/path/to/your/config.yaml** -> This is the config file that you need to make in step 3, you can place it anywhere as long as mount it properly like above.
-
-That's it! You should now have the inference backend up and running.
-
-ation about how some parts of the backend is implemented can be found at [Developer Documentation](docs/development)
+WIP
 
 ## About Nitro
 
 ### Repo Structure
-```zsh
-.
-|-- core
-|   |-- inference_backend
-|   |   |-- controllers
-|   |   |   |-- img2img
-|   |   |   |-- llm_models
-|   |   |   `-- txt2img
-|   |   |-- include
-|   |   |-- schemas
-|   |   `-- test
-|   |-- models
-|   `-- scripts
-`-- docs
-    |-- development
-    `-- openapi
 
-
-```
+WIP
 
 ### Architecture
 ![Current architecture](docs/architecture.png)
 
 ### Contributing
 
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) file for guidelines on how to contribute to this project.
-
-Please note that Jan intends to build a sustainable business that can provide high quality jobs to its contributors. If you are excited about our mission and vision, please contact us to explore opportunities. 
+WIP
 
 ### Contact
 
