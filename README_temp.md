@@ -12,17 +12,28 @@ This will create a build_deps folder, just ignore it
 
 ### Step 2:
 
-Build the app from source
+Generate build file
+- On MacOS with Apple silicon:
 
-```zsh
-mkdir build && cd build
-cmake ..
+    ```zsh
+    mkdir build && cd build
+    cmake ..
+    ```
 
-# MacOS
-make -j $(sysctl -n hw.physicalcpu)
-# Linux
-make -j $(%NUMBER_OF_PROCESSORS%)
-```
+- On MacOS with Intel processors:
+    ```zsh
+    mkdir build && cd build
+    cmake -DLLAMA_METAL=OFF .. 
+    ```
+
+Build the app
+- On MacOS and Linux
+    ```
+    # MacOS
+    make -j $(sysctl -n hw.physicalcpu)
+    # Linux
+    make -j $(%NUMBER_OF_PROCESSORS%)
+    ```
 
 ### Step 3:
 
