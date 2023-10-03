@@ -53,8 +53,6 @@ void llamaCPP::asyncHandleHttpRequest(
     formatted_output += "assistant:";
   }
 
-  auto lock = this->llama.lock();
-
   this->llama.rewind();
 
   llama_reset_timings(llama.ctx);
@@ -67,7 +65,8 @@ void llamaCPP::asyncHandleHttpRequest(
   this->llama.beginCompletion();
 
   const auto chunked_content_provider =
-      [&](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+      [this](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+    auto lock = this->llama.lock();
     if (!pBuffer) {
       LOG_INFO << "Connection closed or buffer is null. Reset context";
       lock.release();
@@ -76,7 +75,7 @@ void llamaCPP::asyncHandleHttpRequest(
       this->llama.mutex.unlock();
       this->sent_count = 0;
       this->sent_token_probs_index = 0;
-      //LOG_INFO << "Test end two time lol";
+      // LOG_INFO << "Test end two time lol";
       return 0;
     }
     // LOG_INFO << this->llama.has_next_token;
@@ -135,7 +134,9 @@ void llamaCPP::asyncHandleHttpRequest(
             }
             sent_token_probs_index = probs_stop_pos;
           }
-          if (!to_send.empty() && llama.has_next_token) { //  NITRO : the patch here is important to make midway cutting possible
+          if (!to_send.empty() &&
+              llama.has_next_token) { //  NITRO : the patch here is important to
+                                      //  make midway cutting possible
             // const json data = format_partial_response(this->llama, to_send,
             // probs_output);
             // LOG_INFO << llama.has_next_token;
@@ -185,7 +186,7 @@ void llamaCPP::asyncHandleHttpRequest(
     this->llama.mutex.unlock();
     this->sent_count = 0;
     this->sent_token_probs_index = 0;
-    //LOG_INFO << "Test end two time lol";
+    // LOG_INFO << "Test end two time lol";
     return 0;
   };
 
