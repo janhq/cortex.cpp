@@ -7,6 +7,7 @@
 #include "llama.h"
 #include "build-info.h"
 #include "grammar-parser.h"
+#include <regex>
 
 #ifndef NDEBUG
 // crash the server in debug mode, otherwise send an http 500 error
@@ -1385,6 +1386,10 @@ public:
     params.model = conf["llama_model_path"].asString();
     params.n_gpu_layers = conf["ngl"].asInt();
     params.n_ctx = conf["ctx_len"].asInt();
+    #ifdef GGML_USE_CUBLAS
+    LOG_INFO << "Setting up GGML CUBLAS PARAMS";
+    params.mul_mat_q = false;
+    #endif // GGML_USE_CUBLAS
     if (params.model_alias == "unknown") {
       params.model_alias = params.model;
     }
