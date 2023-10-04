@@ -4,6 +4,8 @@
 #include <chrono>
 #include <cstring>
 #include <thread>
+#include <regex>
+
 std::string create_return_json(const std::string &id, const std::string &model,
                                const std::string &content,
                                Json::Value finish_reason = Json::Value()) {
