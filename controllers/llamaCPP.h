@@ -7,6 +7,7 @@
 #include "llama.h"
 #include "build-info.h"
 #include "grammar-parser.h"
+#include <regex>
 
 #ifndef NDEBUG
 // crash the server in debug mode, otherwise send an http 500 error
