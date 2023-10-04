@@ -50,7 +50,7 @@ inline void nitro_logo(){
             std::cout << resetColor << c;
             colorIndex = 0;
         } else {
-            std::cout << rainbowColors[colorIndex % 6] << c;
+            std::cout << rainbowColors[colorIndex % 2] << c;
             colorIndex++;
         }
     }
