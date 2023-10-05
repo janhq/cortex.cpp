@@ -225,6 +225,6 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip
+          file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip.zip
           tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
