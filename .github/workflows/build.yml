@@ -1,0 +1,229 @@
+name: CI
+
+on:
+  workflow_dispatch: # allows manual triggering
+    inputs:
+      create_release:
+        description: 'Create new release'
+        required: true
+        type: boolean
+  push:
+    branches:
+      - master
+    paths: ['.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths: ['**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  ubuntu-amd64-build:
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Dependencies
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential gcc-8
+
+      - name: Build
+        id: make_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake ..
+          CC=gcc-8 make -j $(nproc)
+          ls -la
+
+      - name: Extract branch name
+        shell: bash
+        id: extract_branch
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      - name: Extract commit short SHA
+        id: extract_commit_id
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro && mkdir -p nitro/config
+          cp config.json nitro/config/
+          cp build/nitro nitro/
+          zip -r nitro.zip nitro
+
+      - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: nitro.zip
+          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64.zip
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  ubuntu-amd64-cuda-build:
+    runs-on: linux-gpu
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      # - name: Dependencies
+      #   id: depends
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install build-essential gcc-8 uuid-dev
+
+      - name: Build
+        id: make_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake -DLLAMA_CUBLAS=ON ..
+          CC=gcc-8 make -j $(nproc)
+          ls -la   
+
+      - name: Extract branch name
+        shell: bash
+        id: extract_branch
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
+
+      - name: Extract commit short SHA
+        id: extract_commit_id
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro && mkdir -p nitro/config
+          cp config.json nitro/config/
+          cp build/nitro nitro/
+          zip -r nitro.zip nitro
+
+      - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: nitro.zip
+          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64-cuda.zip
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  macOS-M-build:
+    runs-on: mac-silicon
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Dependencies
+        id: depends
+        continue-on-error: true
+        run: |
+          brew update
+          brew install cmake gcc@8
+
+      - name: Build
+        id: cmake_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake .. 
+          CC=gcc-8 make -j $(nproc)
+          ls -la
+
+      - name: Extract branch name
+        shell: bash
+        id: extract_branch
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
+  
+      - name: Extract commit short SHA
+        id: extract_commit_id
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+  
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro && mkdir -p nitro/config
+          cp config.json nitro/config/
+          cp llama.cpp/ggml-metal.h nitro/
+          cp build/nitro nitro/
+          zip -r nitro.zip nitro
+
+      - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: nitro.zip
+          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-arm64.zip
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  macOS-Intel-build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Dependencies
+        id: depends
+        continue-on-error: true
+        run: |
+          brew update
+
+      - name: Build
+        id: cmake_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake -DLLAMA_METAL=OFF .. 
+          CC=gcc-8 make -j $(nproc)
+          ls -la
+
+      - name: Extract branch name
+        shell: bash
+        id: extract_branch
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
+    
+      - name: Extract commit short SHA
+        id: extract_commit_id
+        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+    
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro && mkdir -p nitro/config
+          cp config.json nitro/config/
+          cp build/nitro nitro/
+          zip -r nitro.zip nitro
+
+      - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: nitro.zip
+          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip.zip
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
