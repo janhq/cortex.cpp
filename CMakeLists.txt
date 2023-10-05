@@ -33,6 +33,16 @@ if(LLAMA_CUBLAS)
   endif()
 endif()
 
+if (LLAMA_CUBLAS)
+    cmake_minimum_required(VERSION 3.17)
+
+    find_package(CUDAToolkit)
+    if (CUDAToolkit_FOUND)
+        message(STATUS "cuBLAS found")
+          add_compile_definitions(GGML_USE_CUBLAS)
+    endif()
+endif()
+
 add_subdirectory(llama.cpp)
 add_executable(${PROJECT_NAME} main.cc)
 
