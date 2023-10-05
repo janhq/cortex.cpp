@@ -1410,7 +1410,7 @@ public:
 
     // load the model
     if (!llama.loadModel(params)) {
-      LOG_ERROR_LLAMA("Strange error","Error loading the model will exit the program");
+      LOG_ERROR << "Error loading the model will exit the program";
       std::terminate();  
     }
     nitro_utils::nitro_logo();

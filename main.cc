@@ -3,8 +3,8 @@
 #include <drogon/drogon.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
-#include <mach-o/dyld.h>
 #include <libgen.h> // for dirname()
+#include <mach-o/dyld.h>
 #elif defined(__linux__)
 #include <libgen.h> // for dirname()
 #include <unistd.h> // for readlink()
