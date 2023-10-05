@@ -65,7 +65,7 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/drogonframework/drogon
     GIT_TAG v1.8.6
     CMAKE_ARGS
-    	-DCMAKE_BUILD_TYPE=Release
+    	-DCMAKE_BUILD_TYPE=release
 		-DOPENSSL_USE_STATIC_LIBS=TRUE
 		-DZLIB_USE_STATIC_LIBS=${ZLIB_USE_STATIC_LIBS}
 		-DBUILD_ORM=OFF
