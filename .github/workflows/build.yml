@@ -69,7 +69,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          overwrite: true
 
   ubuntu-amd64-cuda-build:
     runs-on: linux-gpu
@@ -121,7 +122,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64-cuda.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          overwrite: true
 
   macOS-M-build:
     runs-on: mac-silicon
@@ -175,7 +177,8 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-arm64.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          overwrite: true
 
   macOS-Intel-build:
     runs-on: macos-latest
@@ -227,4 +230,5 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          overwrite: true
