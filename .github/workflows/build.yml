@@ -10,7 +10,6 @@ on:
   push:
     branches:
       - master
-      - 35-add-github-action-for-nitro-build
     paths: ['.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
   pull_request:
     types: [opened, synchronize, reopened]
@@ -63,14 +62,13 @@ jobs:
           zip -r nitro.zip nitro
 
       - name: Upload binaries to release
-        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64.zip
-          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
-          overwrite: true
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
 
   ubuntu-amd64-cuda-build:
     runs-on: linux-gpu
@@ -116,14 +114,13 @@ jobs:
           zip -r nitro.zip nitro
 
       - name: Upload binaries to release
-        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64-cuda.zip
-          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
-          overwrite: true
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
 
   macOS-M-build:
     runs-on: mac-silicon
@@ -171,14 +168,13 @@ jobs:
           zip -r nitro.zip nitro
 
       - name: Upload binaries to release
-        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-arm64.zip
-          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
-          overwrite: true
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
 
   macOS-Intel-build:
     runs-on: macos-latest
@@ -224,11 +220,10 @@ jobs:
           zip -r nitro.zip nitro
 
       - name: Upload binaries to release
-        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           file: nitro.zip
           asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip.zip
-          body: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
-          overwrite: true
+          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
