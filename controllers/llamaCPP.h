@@ -1,3 +1,5 @@
+#define NOMINMAX
+
 #pragma once
 
 #include "controllers/nitro_utils.h"
