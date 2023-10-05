@@ -59,6 +59,5 @@ Build the app
     # add zlib dynamic lib
     copy ..\..\build_deps\_install\bin\zlib.dll .
     nitro.exe
-    ```
 
 To see if the build was successful, visit `localhost:8080/test`
