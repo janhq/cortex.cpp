@@ -1,7 +1,9 @@
 #pragma once
 
 #include "controllers/nitro_utils.h"
+#include <drogon/HttpAppFramework.h>
 #include <drogon/HttpSimpleController.h>
+#include <exception>
 #include <trantor/utils/Logger.h>
 #include "common.h"
 #include "llama.h"
@@ -1406,7 +1408,8 @@ public:
 
     // load the model
     if (!llama.loadModel(params)) {
-      LOG_ERROR_LLAMA("Strange error","Error loading the model");
+      LOG_ERROR_LLAMA("Strange error","Error loading the model will exit the program");
+      std::terminate();  
     }
     nitro_utils::nitro_logo();
   }
