@@ -26,6 +26,13 @@ Generate build file
     cmake -DLLAMA_METAL=OFF .. 
     ```
 
+- On Linux with CUDA:
+    ```zsh
+    mkdir build && cd build
+    cmake -DLLAMA_CUBLAS=ON .. 
+    ```
+
+
 Build the app
 - On MacOS and Linux
     ```
