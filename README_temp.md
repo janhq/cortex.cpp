@@ -3,24 +3,28 @@
 ### Step 1:
 
 Install dependencies static files
-
-```zsh
-./install_deps.sh
-```
-
+- On MacOS with Apple silicon
+    ```zsh
+    ./install_deps.sh
+    ```
+- On Windows
+    ```
+    cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+    cmake --build ./build_deps/nitro_deps --config Release
+    ```
 This will create a build_deps folder, just ignore it
 
 ### Step 2:
 
 Generate build file
-- On MacOS with Apple silicon:
+- On MacOS, Linux, and Windows
 
     ```zsh
     mkdir build && cd build
     cmake ..
     ```
 
-- On MacOS with Intel processors:
+- On MacOS with Intel processors
     ```zsh
     mkdir build && cd build
     cmake -DLLAMA_METAL=OFF .. 
@@ -42,8 +46,17 @@ Build the app
     make -j $(%NUMBER_OF_PROCESSORS%)
     ```
 
-### Step 3:
+- On Windows
+    ```
+    cmake --build . --config Release
+    ```
 
-Run ./nitro to start the process.
+### Step 3:
+- On MacOS and Linux run ./nitro to start the process.
+- On Windows:
+    ```
+    cd Release
+    ./nitro
+    ```
 
 To see if the build was successful, visit `localhost:8080/test`
