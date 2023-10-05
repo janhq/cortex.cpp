@@ -18,13 +18,12 @@ on:
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  GGML_NLOOP: 3
-  GGML_N_THREADS: 1
 
 jobs:
-  ubuntu-focal-make:
+  ubuntu-amd64-build:
     runs-on: ubuntu-20.04
-
+    permissions:
+      contents: write
     steps:
       - name: Clone
         id: checkout
@@ -47,9 +46,62 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la
 
-  macOS-latest-cmake:
-    runs-on: macos-latest
+  ubuntu-amd64-cuda-build:
+    runs-on: linux-gpu
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
+      - name: Dependencies
+        id: depends
+        run: |
+          sudo apt-get update
+          sudo apt-get install build-essential gcc-8
+
+      - name: Build
+        id: make_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake -DLLAMA_CUBLAS=ON ..
+          CC=gcc-8 make -j $(nproc)
+          ls -la          
+
+  macOS-M-build:
+    runs-on: mac-silicon
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Dependencies
+        id: depends
+        continue-on-error: true
+        run: |
+          brew update
+
+      - name: Build
+        id: cmake_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake .. 
+          CC=gcc-8 make -j $(nproc)
+          ls -la
+
+  macOS-Intel-build:
+    runs-on: macos-latest
+    permissions:
+      contents: write
     steps:
       - name: Clone
         id: checkout
