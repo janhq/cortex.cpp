@@ -1,11 +1,15 @@
 
 #include <climits> // for PATH_MAX
 #include <drogon/drogon.h>
-#include <libgen.h> // for dirname()
-#include <unistd.h> // for readlink()
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
+#include <libgen.h> // for dirname()
+#elif defined(__linux__)
+#include <libgen.h> // for dirname()
+#include <unistd.h> // for readlink()
+#else
+#error "Unsupported platform!"
 #endif
 
 int main() {
