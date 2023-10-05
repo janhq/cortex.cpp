@@ -65,11 +65,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential gcc-8
+      # - name: Dependencies
+      #   id: depends
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install build-essential gcc-8
 
       - name: Build
         id: make_build
