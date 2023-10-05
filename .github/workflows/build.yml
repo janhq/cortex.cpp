@@ -46,13 +46,39 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la
 
+      - name: Determine tag name
+        id: tag
+        shell: bash
+        run: |
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          SHORT_HASH="$(git rev-parse --short=7 HEAD)"
+          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
+            echo "name=b${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
+            echo "name=${SAFE_NAME}-b${BUILD_NUMBER}-${SHORT_HASH}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-linux-amd64
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-linux-amd64/config
+          cp config.json build/nitro-${{ steps.tag.outputs.name }}-linux-amd64/config
+          cp build/nitro build/nitro-${{ steps.tag.outputs.name }}-linux-amd64
+          cd build
+          zip -r nitro-${{ steps.tag.outputs.name }}-linux-amd64.zip nitro-${{ steps.tag.outputs.name }}-linux-amd64
+          ls -la
+          cd ..
+
       - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/nitro
-          asset_name: nitro-linux-amd64
-          tag: ${{ github.ref }}
+          file: build/nitro-${{ steps.tag.outputs.name }}-linux-amd64.zip
+          asset_name: nitro-${{ steps.tag.outputs.name }}-linux-amd64.zip
+          tag: ${{ steps.tag.outputs.name }}
 
   ubuntu-amd64-cuda-build:
     runs-on: linux-gpu
@@ -69,7 +95,7 @@ jobs:
       #   id: depends
       #   run: |
       #     sudo apt-get update
-      #     sudo apt-get install build-essential gcc-8
+      #     sudo apt-get install build-essential gcc-8 uuid-dev
 
       - name: Build
         id: make_build
@@ -80,13 +106,39 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la   
 
+      - name: Determine tag name
+        id: tag
+        shell: bash
+        run: |
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          SHORT_HASH="$(git rev-parse --short=7 HEAD)"
+          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
+            echo "name=b${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
+            echo "name=${SAFE_NAME}-b${BUILD_NUMBER}-${SHORT_HASH}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda/config
+          cp config.json build/nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda/config
+          cp build/nitro build/nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda
+          cd build
+          zip -r nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda.zip nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda
+          ls -la
+          cd ..
+
       - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/nitro
-          asset_name: nitro-linux-amd64-cuda
-          tag: ${{ github.ref }}
+          file: build/nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda.zip
+          asset_name: nitro-${{ steps.tag.outputs.name }}-linux-amd64-cuda.zip
+          tag: ${{ steps.tag.outputs.name }}
 
   macOS-M-build:
     runs-on: mac-silicon
@@ -115,13 +167,40 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la
 
+      - name: Determine tag name
+        id: tag
+        shell: bash
+        run: |
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          SHORT_HASH="$(git rev-parse --short=7 HEAD)"
+          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
+            echo "name=b${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
+            echo "name=${SAFE_NAME}-b${BUILD_NUMBER}-${SHORT_HASH}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-mac-arm64
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-mac-arm64/config
+          cp config.json build/nitro-${{ steps.tag.outputs.name }}-mac-arm64/config
+          cp llama.cpp/ggml-metal.h build/nitro-${{ steps.tag.outputs.name }}-mac-arm64
+          cp build/nitro build/nitro-${{ steps.tag.outputs.name }}-mac-arm64
+          cd build
+          zip -r nitro-${{ steps.tag.outputs.name }}-mac-arm64.zip nitro-${{ steps.tag.outputs.name }}-mac-arm64
+          ls -la
+          cd ..
+
       - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/nitro
-          asset_name: nitro-mac-arm64-metal
-          tag: ${{ github.ref }}
+          file: build/nitro-${{ steps.tag.outputs.name }}-mac-arm64.zip
+          asset_name: nitro-${{ steps.tag.outputs.name }}-mac-arm64.zip
+          tag: ${{ steps.tag.outputs.name }}
 
   macOS-Intel-build:
     runs-on: macos-latest
@@ -149,10 +228,37 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la
 
+      - name: Determine tag name
+        id: tag
+        shell: bash
+        run: |
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          SHORT_HASH="$(git rev-parse --short=7 HEAD)"
+          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
+            echo "name=b${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
+            echo "name=${SAFE_NAME}-b${BUILD_NUMBER}-${SHORT_HASH}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-mac-amd64
+          mkdir -p build/nitro-${{ steps.tag.outputs.name }}-mac-amd64/config
+          cp config.json build/nitro-${{ steps.tag.outputs.name }}-mac-amd64/config
+          cp llama.cpp/ggml-metal.h build/nitro-${{ steps.tag.outputs.name }}-mac-amd64
+          cp build/nitro build/nitro-${{ steps.tag.outputs.name }}-mac-amd64
+          cd build
+          zip -r nitro-${{ steps.tag.outputs.name }}-mac-amd64.zip nitro-${{ steps.tag.outputs.name }}-mac-amd64
+          ls -la
+          cd ..
+
       - name: Upload binaries to release
+        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: build/nitro
-          asset_name: nitro-mac-amd64
-          tag: ${{ github.ref }}
+          file: build/nitro-${{ steps.tag.outputs.name }}-mac-amd64.zip
+          asset_name: nitro-${{ steps.tag.outputs.name }}-mac-amd64.zip.zip
+          tag: ${{ steps.tag.outputs.name }}
