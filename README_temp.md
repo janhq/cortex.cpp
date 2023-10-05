@@ -56,6 +56,8 @@ Build the app
 - On Windows:
     ```
     cd Release
+    # add zlib dynamic lib
+    copy ..\..\build_deps\_install\bin\zlib.dll .
     ./nitro
     ```
 
