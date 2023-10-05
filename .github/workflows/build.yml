@@ -39,6 +39,7 @@ jobs:
       - name: Build
         id: make_build
         run: |
+          ./install_deps.sh
           mkdir build && cd build
           cmake ..
           CC=gcc-8 make -j $(nproc)
@@ -61,6 +62,7 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
+          ./install_deps.sh
           mkdir build && cd build
           cmake -DLLAMA_METAL=OFF .. 
           CC=gcc-8 make -j $(nproc)
