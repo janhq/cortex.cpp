@@ -46,6 +46,14 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la
 
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/nitro
+          asset_name: nitro-linux-amd64
+          tag: ${{ github.ref }}
+
   ubuntu-amd64-cuda-build:
     runs-on: linux-gpu
     permissions:
@@ -70,7 +78,15 @@ jobs:
           mkdir build && cd build
           cmake -DLLAMA_CUBLAS=ON ..
           CC=gcc-8 make -j $(nproc)
-          ls -la          
+          ls -la   
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/nitro
+          asset_name: nitro-linux-amd64-cuda
+          tag: ${{ github.ref }}
 
   macOS-M-build:
     runs-on: mac-silicon
@@ -98,6 +114,14 @@ jobs:
           CC=gcc-8 make -j $(nproc)
           ls -la
 
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/nitro
+          asset_name: nitro-mac-arm64-metal
+          tag: ${{ github.ref }}
+
   macOS-Intel-build:
     runs-on: macos-latest
     permissions:
@@ -123,3 +147,11 @@ jobs:
           cmake -DLLAMA_METAL=OFF .. 
           CC=gcc-8 make -j $(nproc)
           ls -la
+
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: build/nitro
+          asset_name: nitro-mac-amd64
+          tag: ${{ github.ref }}
