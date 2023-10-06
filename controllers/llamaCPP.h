@@ -1,3 +1,7 @@
+#if defined(_WIN32)
+#define NOMINMAX
+#endif
+
 #pragma once
 
 #include "controllers/nitro_utils.h"
