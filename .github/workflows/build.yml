@@ -268,6 +268,7 @@ jobs:
 
       - name: Build
         id: cmake_build
+        shell: cmd
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
@@ -284,11 +285,12 @@ jobs:
           cp $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt ./build/Release/OpenBLAS-${env:OPENBLAS_VERSION}.txt
 
       - name: Extract branch name
-        shell: bash
+        shell: cmd
         id: extract_branch
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
     
       - name: Extract commit short SHA
+        shell: cmd
         id: extract_commit_id
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
@@ -338,6 +340,7 @@ jobs:
 
       - name: Build
         id: cmake_build
+        shell: cmd
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
@@ -347,11 +350,12 @@ jobs:
           cmake --build . --config Release -j ${env:NUMBER_OF_PROCESSORS}
 
       - name: Extract branch name
-        shell: bash
+        shell: cmd
         id: extract_branch
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
     
       - name: Extract commit short SHA
+        shell: cmd
         id: extract_commit_id
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
   
