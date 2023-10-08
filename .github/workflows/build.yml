@@ -275,7 +275,7 @@ jobs:
           mkdir build
           cd build
           cmake .. ${{ matrix.defines }}
-          cmake --build . --config Release -j $(nproc)
+          cmake --build . --config Release -j 4
 
       - name: Add libopenblas.dll
         id: add_libopenblas_dll
@@ -347,7 +347,7 @@ jobs:
           mkdir build
           cd build
           cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON
-          cmake --build . --config Release -j $(nproc)
+          cmake --build . --config Release -j 4
 
       - name: Extract branch name
         shell: cmd
