@@ -293,6 +293,7 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir build
           cd build
@@ -367,6 +368,7 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir build
           cd build
