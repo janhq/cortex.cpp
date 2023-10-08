@@ -254,7 +254,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          submodules: recursive
 
       - name: Download OpenCL SDK
         id: get_opencl
@@ -343,7 +343,7 @@ jobs:
             nitro-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-x64.zip
 
   windows-latest-cmake-cublas:
-    runs-on: windows-gpu
+    runs-on: windows-nvidia
 
     strategy:
       matrix:
@@ -355,7 +355,7 @@ jobs:
         id: checkout
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0
+          submodules: recursive
 
       - uses: Jimver/cuda-toolkit@v0.2.11
         id: cuda-toolkit
