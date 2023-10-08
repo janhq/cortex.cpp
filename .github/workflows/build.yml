@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - master
+      - 57-add-github-ci-cd-for-windows
     paths: ['.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
   pull_request:
     types: [opened, synchronize, reopened]
@@ -19,211 +20,397 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  ubuntu-amd64-build:
-    runs-on: ubuntu-20.04
-    permissions:
-      contents: write
+  # ubuntu-amd64-build:
+  #   runs-on: ubuntu-20.04
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+
+  #     - name: Dependencies
+  #       id: depends
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install build-essential gcc-8
+
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake ..
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la
+
+  #     - name: Extract branch name
+  #       shell: bash
+  #       id: extract_branch
+  #       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+  #     - name: Extract commit short SHA
+  #       id: extract_commit_id
+  #       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
+
+  #     - name: Upload binaries to release
+  #       if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: nitro.zip
+  #         asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64.zip
+  #         tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  # ubuntu-amd64-cuda-build:
+  #   runs-on: linux-gpu
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+
+  #     # - name: Dependencies
+  #     #   id: depends
+  #     #   run: |
+  #     #     sudo apt-get update
+  #     #     sudo apt-get install build-essential gcc-8 uuid-dev
+
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DLLAMA_CUBLAS=ON ..
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la   
+
+  #     - name: Extract branch name
+  #       shell: bash
+  #       id: extract_branch
+  #       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
+
+  #     - name: Extract commit short SHA
+  #       id: extract_commit_id
+  #       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
+
+  #     - name: Upload binaries to release
+  #       if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: nitro.zip
+  #         asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64-cuda.zip
+  #         tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  # macOS-M-build:
+  #   runs-on: mac-silicon
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+
+  #     - name: Dependencies
+  #       id: depends
+  #       continue-on-error: true
+  #       run: |
+  #         brew update
+  #         brew install cmake gcc@8
+
+  #     - name: Build
+  #       id: cmake_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake .. 
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la
+
+  #     - name: Extract branch name
+  #       shell: bash
+  #       id: extract_branch
+  #       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
+  
+  #     - name: Extract commit short SHA
+  #       id: extract_commit_id
+  #       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+  
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp llama.cpp/ggml-metal.h nitro/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
+
+  #     - name: Upload binaries to release
+  #       if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: nitro.zip
+  #         asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-arm64.zip
+  #         tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  # macOS-Intel-build:
+  #   runs-on: macos-latest
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
+
+  #     - name: Dependencies
+  #       id: depends
+  #       continue-on-error: true
+  #       run: |
+  #         brew update
+
+  #     - name: Build
+  #       id: cmake_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DLLAMA_METAL=OFF .. 
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la
+
+  #     - name: Extract branch name
+  #       shell: bash
+  #       id: extract_branch
+  #       run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
+    
+  #     - name: Extract commit short SHA
+  #       id: extract_commit_id
+  #       run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+    
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
+
+  #     - name: Upload binaries to release
+  #       if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+  #       uses: svenstaro/upload-release-action@v2
+  #       with:
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }}
+  #         file: nitro.zip
+  #         asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip.zip
+  #         tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+
+  windows-latest-cmake:
+    runs-on: windows-latest
+
+    env:
+      OPENBLAS_VERSION: 0.3.23
+      OPENCL_VERSION: 2023.04.17
+      CLBLAST_VERSION: 1.6.0
+
+    strategy:
+      matrix:
+        include:
+          - build: 'avx2'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=ON'
+          - build: 'avx512'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX512=ON -DBUILD_SHARED_LIBS=ON'
+          - build: 'clblast'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CLBLAST=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+          - build: 'openblas'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+
     steps:
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          fetch-depth: 0
 
-      - name: Dependencies
-        id: depends
+      - name: Download OpenCL SDK
+        id: get_opencl
+        if: ${{ matrix.build == 'clblast' }}
         run: |
-          sudo apt-get update
-          sudo apt-get install build-essential gcc-8
+          curl.exe -o $env:RUNNER_TEMP/opencl.zip -L "https://github.com/KhronosGroup/OpenCL-SDK/releases/download/v${env:OPENCL_VERSION}/OpenCL-SDK-v${env:OPENCL_VERSION}-Win-x64.zip"
+          mkdir $env:RUNNER_TEMP/opencl
+          tar.exe -xvf $env:RUNNER_TEMP/opencl.zip --strip-components=1 -C $env:RUNNER_TEMP/opencl
 
-      - name: Build
-        id: make_build
+      - name: Download CLBlast
+        id: get_clblast
+        if: ${{ matrix.build == 'clblast' }}
         run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake ..
-          CC=gcc-8 make -j $(nproc)
-          ls -la
+          curl.exe -o $env:RUNNER_TEMP/clblast.7z -L "https://github.com/CNugteren/CLBlast/releases/download/${env:CLBLAST_VERSION}/CLBlast-${env:CLBLAST_VERSION}-windows-x64.7z"
+          curl.exe -o $env:RUNNER_TEMP/CLBlast.LICENSE.txt -L "https://github.com/CNugteren/CLBlast/raw/${env:CLBLAST_VERSION}/LICENSE"
+          7z x "-o${env:RUNNER_TEMP}" $env:RUNNER_TEMP/clblast.7z
+          rename-item $env:RUNNER_TEMP/CLBlast-${env:CLBLAST_VERSION}-windows-x64 clblast
+          foreach ($f in (gci -Recurse -Path "$env:RUNNER_TEMP/clblast" -Filter '*.cmake')) {
+            $txt = Get-Content -Path $f -Raw
+            $txt.Replace('C:/vcpkg/packages/opencl_x64-windows/', "$($env:RUNNER_TEMP.Replace('\','/'))/opencl/") | Set-Content -Path $f -Encoding UTF8
+          }
 
-      - name: Extract branch name
-        shell: bash
-        id: extract_branch
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
-      - name: Extract commit short SHA
-        id: extract_commit_id
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-
-      - name: Package
-        shell: bash
+      - name: Download OpenBLAS
+        id: get_openblas
+        if: ${{ matrix.build == 'openblas' }}
         run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
-
-      - name: Upload binaries to release
-        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nitro.zip
-          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
-
-  ubuntu-amd64-cuda-build:
-    runs-on: linux-gpu
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      # - name: Dependencies
-      #   id: depends
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install build-essential gcc-8 uuid-dev
-
-      - name: Build
-        id: make_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DLLAMA_CUBLAS=ON ..
-          CC=gcc-8 make -j $(nproc)
-          ls -la   
-
-      - name: Extract branch name
-        shell: bash
-        id: extract_branch
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
-
-      - name: Extract commit short SHA
-        id: extract_commit_id
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
-
-      - name: Upload binaries to release
-        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nitro.zip
-          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-linux-amd64-cuda.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
-
-  macOS-M-build:
-    runs-on: mac-silicon
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
-          brew install cmake gcc@8
+          curl.exe -o $env:RUNNER_TEMP/openblas.zip -L "https://github.com/xianyi/OpenBLAS/releases/download/v${env:OPENBLAS_VERSION}/OpenBLAS-${env:OPENBLAS_VERSION}-x64.zip"
+          curl.exe -o $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt -L "https://github.com/xianyi/OpenBLAS/raw/v${env:OPENBLAS_VERSION}/LICENSE"
+          mkdir $env:RUNNER_TEMP/openblas
+          tar.exe -xvf $env:RUNNER_TEMP/openblas.zip -C $env:RUNNER_TEMP/openblas
+          $vcdir = $(vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
+          $msvc = $(join-path $vcdir $('VC\Tools\MSVC\'+$(gc -raw $(join-path $vcdir 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt')).Trim()))
+          $lib =  $(join-path $msvc 'bin\Hostx64\x64\lib.exe')
+          & $lib /machine:x64 "/def:${env:RUNNER_TEMP}/openblas/lib/libopenblas.def" "/out:${env:RUNNER_TEMP}/openblas/lib/openblas.lib" /name:openblas.dll
 
       - name: Build
         id: cmake_build
         run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake .. 
-          CC=gcc-8 make -j $(nproc)
-          ls -la
+          cmake --build ./build_deps/nitro_deps --config Release
+          mkdir build
+          cd build
+          cmake .. ${{ matrix.defines }}
+          cmake --build . --config Release -j ${env:NUMBER_OF_PROCESSORS}
 
-      - name: Extract branch name
-        shell: bash
-        id: extract_branch
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
-  
-      - name: Extract commit short SHA
-        id: extract_commit_id
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-  
-      - name: Package
+      - name: Add clblast.dll
+        id: add_clblast_dll
+        if: ${{ matrix.build == 'clblast' }}
+        run: |
+          cp $env:RUNNER_TEMP/clblast/lib/clblast.dll ./build/bin/Release
+          cp $env:RUNNER_TEMP/CLBlast.LICENSE.txt ./build/bin/Release/CLBlast-${env:CLBLAST_VERSION}.txt
+
+      - name: Add libopenblas.dll
+        id: add_libopenblas_dll
+        if: ${{ matrix.build == 'openblas' }}
+        run: |
+          cp $env:RUNNER_TEMP/openblas/bin/libopenblas.dll ./build/bin/Release/openblas.dll
+          cp $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt ./build/bin/Release/OpenBLAS-${env:OPENBLAS_VERSION}.txt
+
+      - name: Determine tag name
+        id: tag
         shell: bash
         run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp llama.cpp/ggml-metal.h nitro/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          SHORT_HASH="$(git rev-parse --short=7 HEAD)"
+          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
+            echo "name=b${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
+            echo "name=${SAFE_NAME}-b${BUILD_NUMBER}-${SHORT_HASH}" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Upload binaries to release
-        if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
-        uses: svenstaro/upload-release-action@v2
+      - name: Pack artifacts
+        id: pack_artifacts
+        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        run: |
+          Copy-Item LICENSE .\build\bin\Release\llama.cpp.txt
+          robocopy build_deps\_install\bin\zlib.dll $dst
+          robocopy build\bin\Release\llama.dll $dst
+          7z a nitro-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-x64.zip .\build\bin\Release\*
+
+      - name: Upload artifacts
+        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: actions/upload-artifact@v3
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nitro.zip
-          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-arm64.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          path: |
+            nitro-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-x64.zip
 
-  macOS-Intel-build:
-    runs-on: macos-latest
-    permissions:
-      contents: write
+  windows-latest-cmake-cublas:
+    runs-on: windows-gpu
+
+    strategy:
+      matrix:
+        cuda: ['12.2.0', '11.7.1']
+        build: ['cublas']
+
     steps:
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
         with:
-          submodules: recursive
+          fetch-depth: 0
 
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
+      - uses: Jimver/cuda-toolkit@v0.2.11
+        id: cuda-toolkit
+        with:
+          cuda: ${{ matrix.cuda }}
+          method: 'network'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
 
       - name: Build
         id: cmake_build
         run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DLLAMA_METAL=OFF .. 
-          CC=gcc-8 make -j $(nproc)
-          ls -la
+          cmake --build ./build_deps/nitro_deps --config Release
+          mkdir build
+          cd build
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON
+          cmake --build . --config Release -j ${env:NUMBER_OF_PROCESSORS}
 
-      - name: Extract branch name
-        shell: bash
-        id: extract_branch
-        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
-    
-      - name: Extract commit short SHA
-        id: extract_commit_id
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
-    
-      - name: Package
+      - name: Determine tag name
+        id: tag
         shell: bash
         run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
+          BUILD_NUMBER="$(git rev-list --count HEAD)"
+          SHORT_HASH="$(git rev-parse --short=7 HEAD)"
+          if [[ "${{ env.BRANCH_NAME }}" == "master" ]]; then
+            echo "name=b${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          else
+            SAFE_NAME=$(echo "${{ env.BRANCH_NAME }}" | tr '/' '-')
+            echo "name=${SAFE_NAME}-b${BUILD_NUMBER}-${SHORT_HASH}" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Upload binaries to release
+      - name: Pack artifacts
+        id: pack_artifacts
         if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
-        uses: svenstaro/upload-release-action@v2
+        run: |
+          7z a nitro-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip .\build\bin\Release\*
+
+      - name: Upload artifacts
+        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: actions/upload-artifact@v3
         with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nitro.zip
-          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-mac-amd64.zip.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+          path: |
+            nitro-${{ steps.tag.outputs.name }}-bin-win-${{ matrix.build }}-cu${{ matrix.cuda }}-x64.zip
+
+      - name: Copy and pack Cuda runtime
+        run: |
+          echo "Cuda install location: ${{steps.cuda-toolkit.outputs.CUDA_PATH}}"
+          $dst='.\build\bin\cudart\'
+          robocopy "${{steps.cuda-toolkit.outputs.CUDA_PATH}}\bin" $dst cudart64_*.dll cublas64_*.dll cublasLt64_*.dll
+          robocopy build_deps\_install\bin\zlib.dll $dst
+          robocopy build\bin\Release\llama.dll $dst
+          7z a cudart-nitro-bin-win-cu${{ matrix.cuda }}-x64.zip $dst\*
+
+      - name: Upload Cuda runtime
+        # if: ${{ ( github.event_name == 'push' && github.ref == 'refs/heads/master' ) || github.event.inputs.create_release == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          path: |
+            cudart-nitro-bin-win-cu${{ matrix.cuda }}-x64.zip
