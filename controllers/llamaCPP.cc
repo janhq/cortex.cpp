@@ -6,6 +6,8 @@
 #include <thread>
 #include <regex>
 
+using namespace inferences;
+
 std::string create_return_json(const std::string &id, const std::string &model,
                                const std::string &content,
                                Json::Value finish_reason = Json::Value()) {
@@ -35,7 +37,7 @@ std::string create_return_json(const std::string &id, const std::string &model,
   return Json::writeString(writer, root);
 }
 
-void llamaCPP::asyncHandleHttpRequest(
+void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   const auto &jsonBody = req->getJsonObject();
