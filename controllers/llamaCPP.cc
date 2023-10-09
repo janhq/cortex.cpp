@@ -3,8 +3,9 @@
 #include "nitro_utils.h"
 #include <chrono>
 #include <cstring>
-#include <thread>
+#include <drogon/HttpResponse.h>
 #include <regex>
+#include <thread>
 
 using namespace inferences;
 
@@ -196,5 +197,31 @@ void llamaCPP::chatCompletion(
 
   auto resp = drogon::HttpResponse::newStreamResponse(chunked_content_provider,
                                                       "chat_completions.txt");
+  callback(resp);
+}
+
+void llamaCPP::embedding(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+  auto lock = llama.lock();
+
+  const auto &jsonBody = req->getJsonObject();
+
+  llama.rewind();
+  llama_reset_timings(llama.ctx);
+  if (jsonBody->isMember("content") != 0) {
+    llama.prompt = (*jsonBody)["content"].asString();
+  } else {
+    llama.prompt = "";
+  }
+  llama.params.n_predict = 0;
+  llama.loadPrompt();
+  llama.beginCompletion();
+  llama.doCompletion();
+
+  const json data = format_embedding_response(llama);
+  auto resp = drogon::HttpResponse::newHttpResponse();
+  resp->setBody(data.dump());
+  resp->setContentTypeString("application/json");
   callback(resp);
 }

@@ -1308,7 +1308,7 @@ static void append_to_generated_text_from_generated_token_probs(
 using namespace drogon;
 
 namespace inferences {
- class llamaCPP : public drogon::HttpController<llamaCPP> {
+class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
     gpt_params params;
@@ -1316,6 +1316,7 @@ public:
     params.model = conf["llama_model_path"].asString();
     params.n_gpu_layers = conf["ngl"].asInt();
     params.n_ctx = conf["ctx_len"].asInt();
+    params.embedding = conf["embedding"].asBool();
 #ifdef GGML_USE_CUBLAS
     LOG_INFO << "Setting up GGML CUBLAS PARAMS";
     params.mul_mat_q = false;
@@ -1345,15 +1346,17 @@ public:
   METHOD_LIST_BEGIN
   // list path definitions here;
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion");
+  METHOD_ADD(llamaCPP::embedding,"embedding");
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
+  void embedding(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback);
 
 private:
   llama_server_context llama;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
-};   
-}
-;
+};
+}; // namespace inferences
