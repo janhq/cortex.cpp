@@ -1,4 +1,4 @@
-
+#include "controllers/nitro_utils.h"
 #include <climits> // for PATH_MAX
 #include <drogon/drogon.h>
 
@@ -43,16 +43,15 @@ int main() {
   char path[MAX_PATH];
   char dir[MAX_PATH];
   // char dir[MAX_PATH];
-  if(GetModuleFileNameA(NULL, path, sizeof(path))) {
-      char* lastBackslash = strrchr(path, '\\');
-      if (lastBackslash == nullptr) {
-        return 1;
-      }
-      lastBackslash[0] = '\0';
-      strcpy(dir, path);
-      configPath = std::string(dir) + "/config/config.json";
-  }
-  else {
+  if (GetModuleFileNameA(NULL, path, sizeof(path))) {
+    char *lastBackslash = strrchr(path, '\\');
+    if (lastBackslash == nullptr) {
+      return 1;
+    }
+    lastBackslash[0] = '\0';
+    strcpy(dir, path);
+    configPath = std::string(dir) + "/config/config.json";
+  } else {
     LOG_ERROR << "Failed to get binary location!";
     return 1;
   }
@@ -66,6 +65,8 @@ int main() {
   auto app_conf = drogon::app().getCustomConfig();
 
   LOG_INFO << app_conf["llama_model_file"].asString();
+  nitro_utils::nitro_logo();
+  LOG_INFO << "Server started, please load your model";
   // drogon::app().addListener("0.0.0.0", 8080);
   drogon::app().run();
 

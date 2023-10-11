@@ -1,3 +1,4 @@
+#include <drogon/HttpTypes.h>
 #if defined(_WIN32)
 #define NOMINMAX
 #endif
@@ -1311,51 +1312,55 @@ namespace inferences {
 class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
-    gpt_params params;
-    auto conf = drogon::app().getCustomConfig();
-    params.model = conf["llama_model_path"].asString();
-    params.n_gpu_layers = conf["ngl"].asInt();
-    params.n_ctx = conf["ctx_len"].asInt();
-    params.embedding = conf["embedding"].asBool();
-#ifdef GGML_USE_CUBLAS
-    LOG_INFO << "Setting up GGML CUBLAS PARAMS";
-    params.mul_mat_q = false;
-#endif // GGML_USE_CUBLAS
-    if (params.model_alias == "unknown") {
-      params.model_alias = params.model;
-    }
-
-    llama_backend_init(params.numa);
-
-    LOG_INFO_LLAMA("build info",
-                   {{"build", BUILD_NUMBER}, {"commit", BUILD_COMMIT}});
-    LOG_INFO_LLAMA("system info",
-                   {
-                       {"n_threads", params.n_threads},
-                       {"total_threads", std::thread::hardware_concurrency()},
-                       {"system_info", llama_print_system_info()},
-                   });
-
-    // load the model
-    if (!llama.loadModel(params)) {
-      LOG_ERROR << "Error loading the model will exit the program";
-      std::terminate();
-    }
-    nitro_utils::nitro_logo();
+//    gpt_params params;
+//    auto conf = drogon::app().getCustomConfig();
+//    params.model = conf["llama_model_path"].asString();
+//    params.n_gpu_layers = conf["ngl"].asInt();
+//    params.n_ctx = conf["ctx_len"].asInt();
+//    params.embedding = conf["embedding"].asBool();
+//#ifdef GGML_USE_CUBLAS
+//    LOG_INFO << "Setting up GGML CUBLAS PARAMS";
+//    params.mul_mat_q = false;
+//#endif // GGML_USE_CUBLAS
+//    if (params.model_alias == "unknown") {
+//      params.model_alias = params.model;
+//    }
+//
+//    llama_backend_init(params.numa);
+//
+//    LOG_INFO_LLAMA("build info",
+//                   {{"build", BUILD_NUMBER}, {"commit", BUILD_COMMIT}});
+//    LOG_INFO_LLAMA("system info",
+//                   {
+//                       {"n_threads", params.n_threads},
+//                       {"total_threads", std::thread::hardware_concurrency()},
+//                       {"system_info", llama_print_system_info()},
+//                   });
+//
+//    // load the model
+//    if (!llama.loadModel(params)) {
+//      LOG_ERROR << "Error loading the model will exit the program";
+//      std::terminate();
+//    }
   }
   METHOD_LIST_BEGIN
   // list path definitions here;
-  METHOD_ADD(llamaCPP::chatCompletion, "chat_completion");
-  METHOD_ADD(llamaCPP::embedding,"embedding");
+  METHOD_ADD(llamaCPP::chatCompletion, "chat_completion",Post);
+  METHOD_ADD(llamaCPP::embedding,"embedding",Post);
+  METHOD_ADD(llamaCPP::loadModel,"loadmodel",Post);
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
+  void loadModel(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback);
+
 
 private:
   llama_server_context llama;
+  bool model_loaded = false;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
 };

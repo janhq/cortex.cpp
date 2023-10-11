@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cstring>
 #include <drogon/HttpResponse.h>
+#include <drogon/HttpTypes.h>
 #include <regex>
 #include <thread>
 
@@ -41,6 +42,15 @@ std::string create_return_json(const std::string &id, const std::string &model,
 void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
+  if (!model_loaded) {
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model is not loaded yet";
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k500InternalServerError);
+    callback(resp);
+    return;
+  }
+
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output =
       "Below is a conversation between an AI system named ASSISTANT and USER\n";
@@ -203,6 +213,15 @@ void llamaCPP::chatCompletion(
 void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
+  if (!model_loaded) {
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model is not loaded yet";
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k500InternalServerError);
+    callback(resp);
+    return;
+  }
+
   auto lock = llama.lock();
 
   const auto &jsonBody = req->getJsonObject();
@@ -223,5 +242,53 @@ void llamaCPP::embedding(
   auto resp = drogon::HttpResponse::newHttpResponse();
   resp->setBody(data.dump());
   resp->setContentTypeString("application/json");
+  callback(resp);
+}
+
+void llamaCPP::loadModel(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+
+  const auto &jsonBody = req->getJsonObject();
+
+  gpt_params params;
+  if (jsonBody) {
+    params.model = (*jsonBody)["llama_model_path"].asString();
+    params.n_gpu_layers = (*jsonBody)["ngl"].asInt();
+    params.n_ctx = (*jsonBody)["ctx_len"].asInt();
+    params.embedding = (*jsonBody)["embedding"].asBool();
+  }
+#ifdef GGML_USE_CUBLAS
+  LOG_INFO << "Setting up GGML CUBLAS PARAMS";
+  params.mul_mat_q = false;
+#endif // GGML_USE_CUBLAS
+  if (params.model_alias == "unknown") {
+    params.model_alias = params.model;
+  }
+
+  llama_backend_init(params.numa);
+
+  LOG_INFO_LLAMA("build info",
+                 {{"build", BUILD_NUMBER}, {"commit", BUILD_COMMIT}});
+  LOG_INFO_LLAMA("system info",
+                 {
+                     {"n_threads", params.n_threads},
+                     {"total_threads", std::thread::hardware_concurrency()},
+                     {"system_info", llama_print_system_info()},
+                 });
+
+  // load the model
+  if (!llama.loadModel(params)) {
+    LOG_ERROR << "Error loading the model will exit the program";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model loaded failed";
+    auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k500InternalServerError);
+    callback(resp);
+  }
+  Json::Value jsonResp;
+  jsonResp["message"] = "Model loaded successfully";
+  model_loaded = true;
+  auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
   callback(resp);
 }
