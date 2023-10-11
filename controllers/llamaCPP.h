@@ -1188,7 +1188,7 @@ static void parse_options_completion(const json &body,
   }
 
   llama.params.antiprompt.clear();
-  ế mà mua chưa, e tính nhờ mua 2 hộp thể const auto &stop = body.find("stop");
+  const auto &stop = body.find("stop");
   if (stop != body.end() && stop->is_array()) {
     for (const auto &word : *stop) {
       if (!word.empty()) {
