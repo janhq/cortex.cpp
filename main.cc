@@ -14,60 +14,24 @@
 #error "Unsupported platform!"
 #endif
 
-int main() {
-  std::string configPath;
+int main(int argc, char *argv[]) {
 
-#if defined(__APPLE__) && defined(__MACH__)
-  char path[PATH_MAX];
-  uint32_t size = sizeof(path);
-  if (_NSGetExecutablePath(path, &size) == 0) {
-    path[size] = '\0'; // Null-terminate the string
-    char *dir = dirname(path);
-    configPath = std::string(dir) + "/config/config.json";
-  } else {
-    LOG_ERROR << "Failed to get binary location!";
-    return 1;
-  }
-#elif defined(__linux__)
-  char path[PATH_MAX];
-  ssize_t len = readlink("/proc/self/exe", path, sizeof(path) - 1);
-  if (len != -1) {
-    path[len] = '\0';
-    char *dir = dirname(path);
-    configPath = std::string(dir) + "/config/config.json";
-  } else {
-    LOG_ERROR << "Failed to get binary location!";
-    return 1;
-  }
-#elif defined(_WIN32)
-  char path[MAX_PATH];
-  char dir[MAX_PATH];
-  // char dir[MAX_PATH];
-  if (GetModuleFileNameA(NULL, path, sizeof(path))) {
-    char *lastBackslash = strrchr(path, '\\');
-    if (lastBackslash == nullptr) {
-      return 1;
-    }
-    lastBackslash[0] = '\0';
-    strcpy(dir, path);
-    configPath = std::string(dir) + "/config/config.json";
-  } else {
-    LOG_ERROR << "Failed to get binary location!";
-    return 1;
-  }
-#else
-  LOG_ERROR << "Unsupported platform!";
-  return 1;
-#endif
+  std::string host = "127.0.0.1";
+  int port = 3928;
 
-  // Set HTTP listener address and port
-  drogon::app().loadConfigFile(configPath);
-  auto app_conf = drogon::app().getCustomConfig();
+  // Check for host argument
+  if (argc > 1) {
+    host = argv[1];
+  }
 
-  LOG_INFO << app_conf["llama_model_file"].asString();
+  // Check for port argument
+  if (argc > 2) {
+    port = std::atoi(argv[2]); // Convert string argument to int
+  }
+
   nitro_utils::nitro_logo();
   LOG_INFO << "Server started, please load your model";
-  // drogon::app().addListener("0.0.0.0", 8080);
+  drogon::app().addListener(host, port);
   drogon::app().run();
 
   return 0;
