@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
   nitro_utils::nitro_logo();
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
-  LOG_INFO << "please load your model";
+  LOG_INFO << "Please load your model";
   drogon::app().addListener(host, port);
   drogon::app().run();
 
