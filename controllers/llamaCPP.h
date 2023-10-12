@@ -1347,7 +1347,7 @@ public:
   }
   METHOD_LIST_BEGIN
   // list path definitions here;
-  METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
+  METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post, Options);
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
   METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
   // PATH_ADD("/llama/chat_completion", Post);

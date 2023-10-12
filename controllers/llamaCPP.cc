@@ -51,6 +51,12 @@ void llamaCPP::chatCompletion(
     return;
   }
 
+  if(req->getMethod() == Options){
+    auto resp=HttpResponse::newHttpResponse();
+    callback(resp);
+    return;
+  } 
+
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output =
       "Below is a conversation between an AI system named ASSISTANT and USER\n";
@@ -207,6 +213,7 @@ void llamaCPP::chatCompletion(
 
   auto resp = drogon::HttpResponse::newStreamResponse(chunked_content_provider,
                                                       "chat_completions.txt");
+  resp->addHeader("Access-Control-Allow-Origin", "*");
   callback(resp);
 }
 
@@ -220,7 +227,7 @@ void llamaCPP::embedding(
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
     return;
-  }
+  }  
 
   auto lock = llama.lock();
 
