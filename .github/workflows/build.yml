@@ -224,9 +224,139 @@ jobs:
           asset_path: ./nitro.zip
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.zip
           asset_content_type: application/zip
+
+  windows-amd64-build:
+    runs-on: windows-latest
+    needs: create-draft-release
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    permissions:
+      contents: write
+
+    env:
+      OPENBLAS_VERSION: 0.3.23
+      OPENCL_VERSION: 2023.04.17
+      CLBLAST_VERSION: 1.6.0
+
+    strategy:
+      matrix:
+        include:
+          - build: 'normal'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+
+    steps:
+      - name: Clone
+  
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  
+
+      - name: actions-setup-cmake
+        uses: jwlawson/actions-setup-cmake@v1.14.1
+
+      - name: Build
+        id: cmake_build
+        shell: cmd
+        run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          cmake --build ./build_deps/nitro_deps --config Release
+          mkdir build
+          cd build
+          cmake ..
+          cmake --build . --config Release -j 4
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        run: |
+          $dst='.\build\Release'
+          robocopy build_deps\_install\bin\zlib.dll $dst
+          robocopy build\bin\Release\llama.dll $dst
+          mkdir -p .\build\Release\config
+          robocopy config.json .\build\Release\config
+          7z a nitro.zip .\build\Release\*
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.zip
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}.zip
+          asset_content_type: application/zip
+
+  windows-amd64-cuda-build:
+    runs-on: windows-nvidia
+    needs: create-draft-release
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        cuda: ['12.2.0']
+        build: ['cublas']
+
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: Build
+        id: cmake_build
+        shell: cmd
+        run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          cmake --build ./build_deps/nitro_deps --config Release
+          mkdir build
+          cd build
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON
+          cmake --build . --config Release -j 4
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        shell: cmd
+        run: |
+          set PATH=%PATH%;C:\Program Files\7-Zip\
+          echo %PATH%
+          $dst='.\build\Release'
+          robocopy build_deps\_install\bin\zlib.dll $dst
+          robocopy build\bin\Release\llama.dll $dst
+          mkdir -p .\build\Release\config
+          robocopy config.json .\build\Release\config
+          7z a nitro.zip .\build\Release\*
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.zip
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}-cu${{ matrix.cuda }}.zip
+          asset_content_type: application/zip        
           
   update_release_draft:
-    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build]
+    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
     permissions:
       # write permission is required to create a github release
       contents: write
