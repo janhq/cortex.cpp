@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 57-add-github-ci-cd-for-windows
     tags: ['v*.*.*']
     paths: ['.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
   pull_request:
@@ -14,236 +15,238 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
-  create-draft-release:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-    permissions:
-      contents: write
-    steps:
-      - name: Extract tag name without v prefix
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV && echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
-        env:
-          GITHUB_REF: ${{ github.ref }}
-      - name: Create Draft Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: "${{ env.VERSION }} 🌈"
-          draft: true
-          prerelease: false
+  # create-draft-release:
+  #   runs-on: ubuntu-latest
+  #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #   outputs:
+  #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #     version: ${{ steps.get_version.outputs.version }}
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Extract tag name without v prefix
+  #       id: get_version
+  #       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV && echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
+  #       env:
+  #         GITHUB_REF: ${{ github.ref }}
+  #     - name: Create Draft Release
+  #       id: create_release
+  #       uses: actions/create-release@v1
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         tag_name: ${{ github.ref_name }}
+  #         release_name: "${{ env.VERSION }} 🌈"
+  #         draft: true
+  #         prerelease: false
 
-  ubuntu-amd64-build:
-    runs-on: ubuntu-20.04
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
-    permissions:
-      contents: write
+  # ubuntu-amd64-build:
+  #   runs-on: ubuntu-20.04
+  #   needs: create-draft-release
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+  #   permissions:
+  #     contents: write
 
-    env:
-      OPENBLAS_VERSION: 0.3.23
-      OPENCL_VERSION: 2023.04.17
-      CLBLAST_VERSION: 1.6.0
+  #   env:
+  #     OPENBLAS_VERSION: 0.3.23
+  #     OPENCL_VERSION: 2023.04.17
+  #     CLBLAST_VERSION: 1.6.0
 
-    strategy:
-      matrix:
-        include:
-          - build: 'openblas'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - build: 'openblas'
+  #           defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
-    steps:
-      - name: Clone
+  #   steps:
+  #     - name: Clone
   
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Download OpenBLAS
-        id: get_openblas
-        if: ${{ matrix.build == 'openblas' }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential gcc-8
+  #     - name: Download OpenBLAS
+  #       id: get_openblas
+  #       if: ${{ matrix.build == 'openblas' }}
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt-get install build-essential gcc-8
 
-      - name: Build
-        id: make_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake ..
-          CC=gcc-8 make -j $(nproc)
-          ls -la
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake ..
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.zip
-          asset_content_type: application/zip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.zip
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.zip
+  #         asset_content_type: application/zip
 
-  ubuntu-amd64-cuda-build:
-    runs-on: linux-gpu
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  # ubuntu-amd64-cuda-build:
+  #   runs-on: linux-gpu
+  #   needs: create-draft-release
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      # - name: Dependencies
-      #   id: depends
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install build-essential gcc-8 uuid-dev
+  #     # - name: Dependencies
+  #     #   id: depends
+  #     #   run: |
+  #     #     sudo apt-get update
+  #     #     sudo apt-get install build-essential gcc-8 uuid-dev
 
-      - name: Build
-        id: make_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DLLAMA_CUBLAS=ON ..
-          CC=gcc-8 make -j $(nproc)
-          ls -la    
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DLLAMA_CUBLAS=ON ..
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la    
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda.zip
-          asset_content_type: application/zip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.zip
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda.zip
+  #         asset_content_type: application/zip
 
-  macOS-M-build:
-    runs-on: mac-silicon
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  # macOS-M-build:
+  #   runs-on: mac-silicon
+  #   needs: create-draft-release
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
-          brew install cmake gcc@8
+  #     - name: Dependencies
+  #       id: depends
+  #       continue-on-error: true
+  #       run: |
+  #         brew update
+  #         brew install cmake gcc@8
 
-      - name: Build
-        id: cmake_build
-        shell: cmd
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake .. 
-          CC=gcc-8 make -j $(nproc)
-          ls -la 
+  #     - name: Build
+  #       id: cmake_build
+  #       shell: bash
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake .. 
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la 
   
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro && mkdir -p nitro/config
-          cp config.json nitro/config/
-          cp llama.cpp/ggml-metal.h nitro/
-          cp build/nitro nitro/
-          zip -r nitro.zip nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro && mkdir -p nitro/config
+  #         cp config.json nitro/config/
+  #         cp llama.cpp/ggml-metal.h nitro/
+  #         cp build/nitro nitro/
+  #         zip -r nitro.zip nitro
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.zip
-          asset_content_type: application/zip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.zip
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.zip
+  #         asset_content_type: application/zip
 
-  macOS-Intel-build:
-    runs-on: macos-latest
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  # macOS-Intel-build:
+  #   runs-on: macos-latest
+  #   needs: create-draft-release
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
+  #     - name: Dependencies
+  #       id: depends
+  #       continue-on-error: true
+  #       run: |
+  #         brew update
 
-      - name: Build
-        id: cmake_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DLLAMA_METAL=OFF .. 
-          CC=gcc-8 make -j $(nproc)
-          ls -la 
+  #     - name: Build
+  #       id: cmake_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DLLAMA_METAL=OFF .. 
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la 
     
-      - name: Package
-        shell: bash
-        run: |
-          $dst='.\build\Release'
-          robocopy build_deps\_install\bin\zlib.dll $dst
-          robocopy build\bin\Release\llama.dll $dst
-          mkdir -p .\build\Release\config
-          robocopy config.json .\build\Release\config
-          7z a nitro.zip .\build\Release\*
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         $dst='.\build\Release'
+  #         robocopy build_deps\_install\bin\zlib.dll $dst
+  #         robocopy build\bin\Release\llama.dll $dst
+  #         mkdir -p .\build\Release\config
+  #         robocopy config.json .\build\Release\config
+  #         7z a nitro.zip .\build\Release\*
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.zip
-          asset_content_type: application/zip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.zip
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.zip
+  #         asset_content_type: application/zip
 
   windows-amd64-build:
     runs-on: windows-latest
+    # needs: create-draft-release
+    # if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
     permissions:
       contents: write
 
@@ -265,6 +268,18 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  
+
+      - name: actions-setup-cmake
+        uses: jwlawson/actions-setup-cmake@v1.14.1
 
       - name: Download OpenBLAS
         id: get_openblas
@@ -281,7 +296,7 @@ jobs:
 
       - name: Build
         id: cmake_build
-        shell: cmd
+        shell: bash
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
@@ -298,12 +313,12 @@ jobs:
           cp $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt ./build/Release/OpenBLAS-${env:OPENBLAS_VERSION}.txt
 
       - name: Extract branch name
-        shell: cmd
+        shell: bash
         id: extract_branch
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
     
       - name: Extract commit short SHA
-        shell: cmd
+        shell: bash
         id: extract_commit_id
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
 
@@ -317,16 +332,16 @@ jobs:
           robocopy config.json .\build\Release\config
           7z a nitro.zip .\build\Release\*
 
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nitro.zip
-          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-win-amd64-${{ matrix.build }}.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
+      # - name: Upload binaries to release
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: nitro.zip
+      #     asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-win-amd64-${{ matrix.build }}.zip
+      #     tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}
 
   windows-amd64-cuda-build:
-    runs-on: windows-nvidia
+    runs-on: [self-hosted, Windows, windows-nvidia, windows-desktop]
     permissions:
       contents: write
 
@@ -342,16 +357,27 @@ jobs:
         with:
           submodules: recursive
 
-      # - uses: Jimver/cuda-toolkit@v0.2.11
-      #   id: cuda-toolkit
-      #   with:
-      #     cuda: ${{ matrix.cuda }}
-      #     method: 'network'
-      #     sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      # - name: actions-setup-cmake
+      #   uses: jwlawson/actions-setup-cmake@v1.14.1
+
+      - uses: Jimver/cuda-toolkit@v0.2.11
+        id: cuda-toolkit
+        with:
+          cuda: ${{ matrix.cuda }}
+          method: 'network'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
 
       - name: Build
         id: cmake_build
-        shell: cmd
+        shell: bash
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
@@ -361,12 +387,12 @@ jobs:
           cmake --build . --config Release -j 4
 
       - name: Extract branch name
-        shell: cmd
+        shell: bash
         id: extract_branch
         run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"   
     
       - name: Extract commit short SHA
-        shell: cmd
+        shell: bash
         id: extract_commit_id
         run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
   
@@ -382,34 +408,34 @@ jobs:
           robocopy config.json .\build\Release\config
           7z a nitro.zip .\build\Release\*
 
-      - name: Upload binaries to release
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: nitro.zip
-          asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-win-amd64-${{ matrix.build }}-cu${{ matrix.cuda }}.zip
-          tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}          
+      # - name: Upload binaries to release
+      #   uses: svenstaro/upload-release-action@v2
+      #   with:
+      #     repo_token: ${{ secrets.GITHUB_TOKEN }}
+      #     file: nitro.zip
+      #     asset_name: nitro-${{ steps.extract_commit_id.outputs.sha_short }}-win-amd64-${{ matrix.build }}-cu${{ matrix.cuda }}.zip
+      #     tag: ${{ steps.extract_branch.outputs.branch }}-${{ steps.extract_commit_id.outputs.sha_short }}          
           
-  update_release_draft:
-    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
-    permissions:
-      # write permission is required to create a github release
-      contents: write
-      # write permission is required for autolabeler
-      # otherwise, read permission is required at least
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      # (Optional) GitHub Enterprise requires GHE_HOST variable set
-      #- name: Set GHE_HOST
-      #  run: |
-      #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
+  # update_release_draft:
+  #   needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
+  #   permissions:
+  #     # write permission is required to create a github release
+  #     contents: write
+  #     # write permission is required for autolabeler
+  #     # otherwise, read permission is required at least
+  #     pull-requests: write
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     # (Optional) GitHub Enterprise requires GHE_HOST variable set
+  #     #- name: Set GHE_HOST
+  #     #  run: |
+  #     #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
 
-      # Drafts your next Release notes as Pull Requests are merged into "master"
-      - uses: release-drafter/release-drafter@v5
-        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
-        # with:
-        #   config-name: my-config.yml
-        #   disable-autolabeler: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     # Drafts your next Release notes as Pull Requests are merged into "master"
+  #     - uses: release-drafter/release-drafter@v5
+  #       # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
+  #       # with:
+  #       #   config-name: my-config.yml
+  #       #   disable-autolabeler: true
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
