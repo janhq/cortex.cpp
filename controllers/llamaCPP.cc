@@ -45,7 +45,7 @@ void llamaCPP::chatCompletion(
   if (!model_loaded) {
     Json::Value jsonResp;
     jsonResp["message"] = "Model is not loaded yet";
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
     return;
@@ -205,8 +205,8 @@ void llamaCPP::chatCompletion(
     return 0;
   };
 
-  auto resp = drogon::HttpResponse::newStreamResponse(chunked_content_provider,
-                                                      "chat_completions.txt");
+  auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
+                                               "chat_completions.txt");
   callback(resp);
 }
 
@@ -216,7 +216,7 @@ void llamaCPP::embedding(
   if (!model_loaded) {
     Json::Value jsonResp;
     jsonResp["message"] = "Model is not loaded yet";
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
     return;
@@ -282,13 +282,13 @@ void llamaCPP::loadModel(
     LOG_ERROR << "Error loading the model will exit the program";
     Json::Value jsonResp;
     jsonResp["message"] = "Model loaded failed";
-    auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
   }
   Json::Value jsonResp;
   jsonResp["message"] = "Model loaded successfully";
   model_loaded = true;
-  auto resp = drogon::HttpResponse::newHttpJsonResponse(jsonResp);
+  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(resp);
 }
