@@ -258,7 +258,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: 'openblas'
+          - build: 'normal'
             defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
     steps:
@@ -281,19 +281,6 @@ jobs:
       - name: actions-setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.14.1
 
-      - name: Download OpenBLAS
-        id: get_openblas
-        if: ${{ matrix.build == 'openblas' }}
-        run: |
-          curl.exe -o $env:RUNNER_TEMP/openblas.zip -L "https://github.com/xianyi/OpenBLAS/releases/download/v${env:OPENBLAS_VERSION}/OpenBLAS-${env:OPENBLAS_VERSION}-x64.zip"
-          curl.exe -o $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt -L "https://github.com/xianyi/OpenBLAS/raw/v${env:OPENBLAS_VERSION}/LICENSE"
-          mkdir $env:RUNNER_TEMP/openblas
-          tar.exe -xvf $env:RUNNER_TEMP/openblas.zip -C $env:RUNNER_TEMP/openblas
-          $vcdir = $(vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
-          $msvc = $(join-path $vcdir $('VC\Tools\MSVC\'+$(gc -raw $(join-path $vcdir 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt')).Trim()))
-          $lib =  $(join-path $msvc 'bin\Hostx64\x64\lib.exe')
-          & $lib /machine:x64 "/def:${env:RUNNER_TEMP}/openblas/lib/libopenblas.def" "/out:${env:RUNNER_TEMP}/openblas/lib/openblas.lib" /name:openblas.dll
-
       - name: Build
         id: cmake_build
         shell: bash
@@ -302,15 +289,8 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir build
           cd build
-          cmake .. ${{ matrix.defines }}
+          cmake ..
           cmake --build . --config Release -j 4
-
-      - name: Add libopenblas.dll
-        id: add_libopenblas_dll
-        if: ${{ matrix.build == 'openblas' }}
-        run: |
-          cp $env:RUNNER_TEMP/openblas/bin/libopenblas.dll ./build/Release/openblas.dll
-          cp $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt ./build/Release/OpenBLAS-${env:OPENBLAS_VERSION}.txt
 
       - name: Extract branch name
         shell: bash
