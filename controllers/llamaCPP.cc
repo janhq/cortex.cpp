@@ -1,6 +1,6 @@
 #include "llamaCPP.h"
 #include "llama.h"
-#include "nitro_utils.h"
+#include "utils/nitro_utils.h"
 #include <chrono>
 #include <cstring>
 #include <drogon/HttpResponse.h>

@@ -7,7 +7,7 @@
 
 #include "build-info.h"
 #include "common.h"
-#include "controllers/nitro_utils.h"
+#include "utils/nitro_utils.h"
 #include "grammar-parser.h"
 #include "llama.h"
 #include <drogon/HttpAppFramework.h>

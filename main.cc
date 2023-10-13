@@ -1,4 +1,4 @@
-#include "controllers/nitro_utils.h"
+#include "utils/nitro_utils.h"
 #include <climits> // for PATH_MAX
 #include <drogon/drogon.h>
 
