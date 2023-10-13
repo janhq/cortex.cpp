@@ -32,6 +32,12 @@ if(LLAMA_CUBLAS)
     add_compile_definitions(GGML_USE_CUBLAS)
   endif()
 endif()
+
+if(DEBUG)
+  message(STATUS "NITRO DEBUG IS ON")
+  add_compile_definitions(ALLOW_ALL_CORS)
+endif()
+
 add_subdirectory(llama.cpp)
 add_executable(${PROJECT_NAME} main.cc)
 
