@@ -56,8 +56,8 @@ void llamaCPP::chatCompletion(
       "Below is a conversation between an AI system named ASSISTANT and USER\n";
   if (jsonBody) {
     llama.params.n_predict = (*jsonBody)["max_tokens"].asInt();
-    llama.params.top_p = (*jsonBody)["top_p"].asFloat();
-    llama.params.temp = (*jsonBody)["temperature"].asFloat();
+    llama.params.sampling_params.top_p = (*jsonBody)["top_p"].asFloat();
+    llama.params.sampling_params.temp = (*jsonBody)["temperature"].asFloat();
 
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
@@ -133,7 +133,7 @@ void llamaCPP::chatCompletion(
 
           std::vector<completion_token_output> probs_output = {};
 
-          if (this->llama.params.n_probs > 0) {
+          if (this->llama.params.sampling_params.n_probs > 0) {
             const std::vector<llama_token> to_send_toks =
                 llama_tokenize(llama.ctx, to_send, false);
             size_t probs_pos =
