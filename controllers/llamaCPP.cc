@@ -58,6 +58,10 @@ void llamaCPP::chatCompletion(
     llama.params.n_predict = (*jsonBody)["max_tokens"].asInt();
     llama.params.sampling_params.top_p = (*jsonBody)["top_p"].asFloat();
     llama.params.sampling_params.temp = (*jsonBody)["temperature"].asFloat();
+    llama.params.sampling_params.frequency_penalty =
+        (*jsonBody)["frequency_penalty"].asFloat();
+    llama.params.sampling_params.presence_penalty =
+        (*jsonBody)["presence_penalty"].asFloat();
 
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
@@ -74,6 +78,9 @@ void llamaCPP::chatCompletion(
 
   this->llama.prompt = formatted_output;
   this->llama.params.antiprompt.clear();
+  for (const auto &stop_word : (*jsonBody)["stop"]) {
+    llama.params.antiprompt.push_back(stop_word.asString());
+  }
   this->llama.params.antiprompt.push_back("user:");
   this->llama.params.antiprompt.push_back("### USER:");
   this->llama.loadPrompt();
