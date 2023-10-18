@@ -525,12 +525,12 @@ struct llama_server_context {
       if (llama_decode(ctx,
                        llama_batch_get_one(&embd[n_past], n_eval, n_past, 0))) {
         LOG_ERROR_LLAMA("failed to eval",
-                  {
-                      {"n_eval", n_eval},
-                      {"n_past", n_past},
-                      {"embd",
-                       tokens_to_str(ctx, embd.cbegin() + n_past, embd.cend())},
-                  });
+                        {
+                            {"n_eval", n_eval},
+                            {"n_past", n_past},
+                            {"embd", tokens_to_str(ctx, embd.cbegin() + n_past,
+                                                   embd.cend())},
+                        });
         has_next_token = false;
         return result;
       }
@@ -677,9 +677,9 @@ struct llama_server_context {
     static const int n_embd = llama_n_embd(model);
     if (!params.embedding) {
       LOG_WARNING_LLAMA("embedding disabled",
-                  {
-                      {"params.embedding", params.embedding},
-                  });
+                        {
+                            {"params.embedding", params.embedding},
+                        });
       return std::vector<float>(n_embd, 0.0f);
     }
     const float *data = llama_get_embeddings(ctx);
@@ -891,17 +891,19 @@ static void server_params_parse(int argc, char **argv, server_params &sparams,
         }
       }
 #else
-      LOG_WARNING_LLAMA("llama.cpp was compiled without cuBLAS. It is not possible "
-                  "to set a tensor split.\n",
-                  {});
+      LOG_WARNING_LLAMA(
+          "llama.cpp was compiled without cuBLAS. It is not possible "
+          "to set a tensor split.\n",
+          {});
 #endif // GGML_USE_CUBLAS
     } else if (arg == "--no-mul-mat-q" || arg == "-nommq") {
 #ifdef GGML_USE_CUBLAS
       params.mul_mat_q = false;
 #else
-      LOG_WARNING_LLAMA("warning: llama.cpp was compiled without cuBLAS. Disabling "
-                  "mul_mat_q kernels has no effect.\n",
-                  {});
+      LOG_WARNING_LLAMA(
+          "warning: llama.cpp was compiled without cuBLAS. Disabling "
+          "mul_mat_q kernels has no effect.\n",
+          {});
 #endif // GGML_USE_CUBLAS
     } else if (arg == "--main-gpu" || arg == "-mg") {
       if (++i >= argc) {
@@ -911,9 +913,10 @@ static void server_params_parse(int argc, char **argv, server_params &sparams,
 #ifdef GGML_USE_CUBLAS
       params.main_gpu = std::stoi(argv[i]);
 #else
-      LOG_WARNING_LLAMA("llama.cpp was compiled without cuBLAS. It is not possible "
-                  "to set a main GPU.",
-                  {});
+      LOG_WARNING_LLAMA(
+          "llama.cpp was compiled without cuBLAS. It is not possible "
+          "to set a main GPU.",
+          {});
 #endif
     } else if (arg == "--lora") {
       if (++i >= argc) {
@@ -1260,7 +1263,8 @@ class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
     // Some default values for now below
-    log_disable(); //Disable the log to file feature, reduce bloat for target system ()
+    log_disable(); // Disable the log to file feature, reduce bloat for target
+                   // system ()
   }
   METHOD_LIST_BEGIN
   // list path definitions here;
@@ -1275,6 +1279,7 @@ public:
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void loadModel(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
+  void warmupModel();
 
 private:
   llama_server_context llama;

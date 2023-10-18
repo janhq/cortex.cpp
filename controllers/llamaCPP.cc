@@ -7,6 +7,7 @@
 #include <drogon/HttpTypes.h>
 #include <regex>
 #include <thread>
+#include <trantor/utils/Logger.h>
 
 using namespace inferences;
 
@@ -37,6 +38,49 @@ std::string create_return_json(const std::string &id, const std::string &model,
   writer["indentation"] = ""; // This sets the indentation to an empty string,
                               // producing compact output.
   return Json::writeString(writer, root);
+}
+
+void llamaCPP::warmupModel() {
+  auto lock = llama.lock();
+  llama.rewind();
+  llama_reset_timings(llama.ctx);
+
+  llama.prompt = "hello";
+  llama.params.n_predict = 1;
+  llama.loadPrompt();
+  llama.beginCompletion();
+  size_t stop_pos = std::string::npos;
+
+  while (llama.has_next_token) {
+    const completion_token_output token_with_probs = llama.doCompletion();
+    const std::string token_text =
+        token_with_probs.tok == -1
+            ? ""
+            : llama_token_to_piece(llama.ctx, token_with_probs.tok);
+
+    stop_pos = llama.findStoppingStrings(llama.generated_text,
+                                         token_text.size(), STOP_FULL);
+  }
+
+  if (stop_pos == std::string::npos) {
+    stop_pos = llama.findStoppingStrings(llama.generated_text, 0, STOP_PARTIAL);
+  }
+  if (stop_pos != std::string::npos) {
+    llama.generated_text.erase(llama.generated_text.begin() + stop_pos,
+                               llama.generated_text.end());
+  }
+  auto probs = llama.generated_token_probs;
+  if (llama.params.sampling_params.n_probs > 0 && llama.stopped_word) {
+    const std::vector<llama_token> stop_word_toks =
+        llama_tokenize(llama.ctx, llama.stopping_word, false);
+    probs = std::vector<completion_token_output>(
+        llama.generated_token_probs.begin(),
+        llama.generated_token_probs.end() - stop_word_toks.size());
+  }
+
+  LOG_INFO << llama.generated_text;
+  LOG_INFO << "Finish the warmup";
+  return;
 }
 
 void llamaCPP::chatCompletion(
@@ -297,5 +341,6 @@ void llamaCPP::loadModel(
   jsonResp["message"] = "Model loaded successfully";
   model_loaded = true;
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  warmupModel();
   callback(resp);
 }
