@@ -23,6 +23,23 @@
 
 ## Documentation
 
+## About Nitro
+
+Nitro is a light-weight integration layer (and soon to be inference engine) for cutting edge inference engine, make deployment of AI models easier than ever before!
+
+The binary of nitro after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
+
+### Repo Structure
+
+```
+.
+├── controllers
+├── docs 
+├── llama.cpp -> Upstream llama C++
+├── nitro_deps -> Dependencies of the Nitro project as a sub-project
+└── utils
+```
+
 ## Quickstart
 
 **Step 1: Download Nitro**
@@ -76,18 +93,8 @@ curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
 
 Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
-## About Nitro
-
-### Repo Structure
-
-```
-.
-├── controllers
-├── docs 
-├── llama.cpp -> Upstream llama C++
-├── nitro_deps -> Dependencies of the Nitro project as a sub-project
-└── utils
-```
+## Compile from source
+To compile nitro please visit [Compile from source](docs/manual_install.md)
 
 ### Architecture
 Nitro is an integration layer with the most cutting-edge inference engine. Its structure can be simplified as follows:
