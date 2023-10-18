@@ -25,16 +25,12 @@ Sure, I've reformatted your Markdown text into a code block and fixed some gramm
 ## Features
 
 ### Supported features
-- Simple HTTP webserver for inference on Triton (without Triton client)
-- Upload inference results to S3 (txt2img)
 - GGML inference support (llama.cpp, etc...)
 
 ### TODO:
 - [ ] Local file server
 - [ ] Cache
 - [ ] Plugin support
-
-
 
 ## Documentation
 
