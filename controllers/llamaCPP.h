@@ -1,3 +1,4 @@
+#include "log.h"
 #include <drogon/HttpTypes.h>
 #if defined(_WIN32)
 #define NOMINMAX
@@ -1258,38 +1259,8 @@ namespace inferences {
 class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
-    //    gpt_params params;
-    //    auto conf = drogon::app().getCustomConfig();
-    //    params.model = conf["llama_model_path"].asString();
-    //    params.n_gpu_layers = conf["ngl"].asInt();
-    //    params.n_ctx = conf["ctx_len"].asInt();
-    //    params.embedding = conf["embedding"].asBool();
-    // #ifdef GGML_USE_CUBLAS
-    //    LOG_INFO_LLAMA << "Setting up GGML CUBLAS PARAMS";
-    //    params.mul_mat_q = false;
-    // #endif // GGML_USE_CUBLAS
-    //    if (params.model_alias == "unknown") {
-    //      params.model_alias = params.model;
-    //    }
-    //
-    //    llama_backend_init(params.numa);
-    //
-    //    LOG_INFO_LLAMA_LLAMA("build info",
-    //                   {{"build", BUILD_NUMBER}, {"commit", BUILD_COMMIT}});
-    //    LOG_INFO_LLAMA_LLAMA("system info",
-    //                   {
-    //                       {"n_threads", params.n_threads},
-    //                       {"total_threads",
-    //                       std::thread::hardware_concurrency()},
-    //                       {"system_info", llama_print_system_info()},
-    //                   });
-    //
-    //    // load the model
-    //    if (!llama.loadModel(params)) {
-    //      LOG_ERROR_LLAMA << "Error loading the model will exit the program";
-    //      std::terminate();
-    //    }
-    //    deprecate this if find no usecase
+    // Some default values for now below
+    log_disable(); //Disable the log to file feature, reduce bloat for target system ()
   }
   METHOD_LIST_BEGIN
   // list path definitions here;
