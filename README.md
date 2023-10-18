@@ -5,61 +5,105 @@
 </p>
 
 <p align="center">
-  <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/janhq/nitro"/>
-  <img alt="Github Last Commit" src="https://img.shields.io/github/last-commit/janhq/nitro"/>
-  <img alt="Github Contributors" src="https://img.shields.io/github/contributors/janhq/nitro"/>
-  <img alt="GitHub closed issues" src="https://img.shields.io/github/issues-closed/janhq/nitro"/>
-  <img alt="Discord" src="https://img.shields.io/discord/1107178041848909847?label=discord"/>
-</p>
-
-<p align="center">
   <a href="https://docs.jan.ai/">Getting Started</a> - <a href="https://docs.jan.ai">Docs</a> 
   - <a href="https://docs.jan.ai/changelog/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
 > ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
 
-
 ## Features
 
 ### Supported features
-- Simple http webserver to do inference on triton (without triton client)
-- Upload inference result to s3 (txt2img)
 - GGML inference support (llama.cpp, etc...)
 
 ### TODO:
 - [ ] Local file server
 - [ ] Cache
-- [ ] Plugins support
-
-### Nitro Endpoints
-
-```zsh
-WIP
-```
+- [ ] Plugin support
 
 ## Documentation
 
-## Installation
-
-WIP
-
 ## About Nitro
+
+Nitro is a light-weight integration layer (and soon to be inference engine) for cutting edge inference engine, make deployment of AI models easier than ever before!
+
+The binary of nitro after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
 
 ### Repo Structure
 
-WIP
+```
+.
+├── controllers
+├── docs 
+├── llama.cpp -> Upstream llama C++
+├── nitro_deps -> Dependencies of the Nitro project as a sub-project
+└── utils
+```
+
+## Quickstart
+
+**Step 1: Download Nitro**
+
+To use Nitro, download the released binaries from the release page below:
+
+[![Download Nitro](https://img.shields.io/badge/Download-Nitro-blue.svg)](https://github.com/janhq/nitro/releases)
+
+After downloading the release, double-click on the Nitro binary.
+
+**Step 2: Download a Model**
+
+Download a llama model to try running the llama C++ integration. You can find a "GGUF" model on The Bloke's page below:
+
+[![Download Model](https://img.shields.io/badge/Download-Model-green.svg)](https://huggingface.co/TheBloke)
+
+**Step 3: Run Nitro**
+
+Double-click on Nitro to run it. After downloading your model, make sure it's saved to a specific path. Then, make an API call to load your model into Nitro.
+
+```zsh
+curl -X POST 'http://localhost:3928/inferences/llamacpp/loadmodel' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "llama_model_path": "/path/to/your_model.gguf",
+    "ctx_len": 2048,
+    "ngl": 100,
+    "embedding": true
+  }'
+```
+
+`ctx_len` and `ngl` are typical llama C++ parameters, and `embedding` determines whether to enable the embedding endpoint or not.
+
+**Step 4: Perform Inference on Nitro for the First Time**
+
+```zsh
+curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
+     --header 'Content-Type: application/json' \
+     --header 'Accept: text/event-stream' \
+     --header 'Access-Control-Allow-Origin: *' \
+     --data '{
+        "messages": [
+            {"content": "Hello there 👋", "role": "assistant"},
+            {"content": "Can you write a long story", "role": "user"}
+        ],
+        "stream": true,
+        "model": "gpt-3.5-turbo",
+        "max_tokens": 2000
+     }'
+```
+
+Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
+
+## Compile from source
+To compile nitro please visit [Compile from source](docs/manual_install.md)
 
 ### Architecture
+Nitro is an integration layer with the most cutting-edge inference engine. Its structure can be simplified as follows:
+
 ![Current architecture](docs/architecture.png)
-
-### Contributing
-
-WIP
 
 ### Contact
 
-- For support: please file a Github ticket
-- For questions: join our Discord [here](https://discord.gg/FTk2MvZwJH)
-- For long form inquiries: please email hello@jan.ai
+- For support, please file a GitHub ticket.
+- For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
+- For long-form inquiries, please email hello@jan.ai.
+
