@@ -78,8 +78,8 @@ void llamaCPP::warmupModel() {
         llama.generated_token_probs.end() - stop_word_toks.size());
   }
 
-  LOG_INFO << llama.generated_text;
-  LOG_INFO << "Finish the warmup";
+  LOG_INFO << "Warm-up generated text:" << llama.generated_text;
+  LOG_INFO << "Warm-up finish";
   return;
 }
 
