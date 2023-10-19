@@ -11,6 +11,7 @@
 #include <drogon/HttpController.h>
 #include <drogon/HttpSimpleController.h>
 #include <trantor/utils/Logger.h>
+#include <regex>
 
 // External
 
