@@ -272,10 +272,10 @@ jobs:
 
       - name: Pack artifacts
         id: pack_artifacts
+        shell: cmd
         run: |
-          $dst='.\build\Release'
-          robocopy build_deps\_install\bin\zlib.dll $dst
-          robocopy build\bin\Release\llama.dll $dst
+          robocopy build_deps\_install\bin .\build\Release zlib.dll
+          robocopy build\bin\Release .\build\Release llama.dll
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -332,9 +332,8 @@ jobs:
         run: |
           set PATH=%PATH%;C:\Program Files\7-Zip\
           echo %PATH%
-          $dst='.\build\Release'
-          robocopy build_deps\_install\bin\zlib.dll $dst
-          robocopy build\bin\Release\llama.dll $dst
+          robocopy build_deps\_install\bin .\build\Release zlib.dll
+          robocopy build\bin\Release .\build\Release llama.dll
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
