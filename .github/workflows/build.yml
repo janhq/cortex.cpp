@@ -276,6 +276,8 @@ jobs:
         run: |
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
+          robocopy ext_libs .\build\Release libcrypto-3-x64.dll
+          robocopy ext_libs .\build\Release libssl-3-x64.dll
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -334,6 +336,8 @@ jobs:
           echo %PATH%
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
+          robocopy ext_libs .\build\Release libcrypto-3-x64.dll
+          robocopy ext_libs .\build\Release libssl-3-x64.dll
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
