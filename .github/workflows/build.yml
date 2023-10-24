@@ -40,7 +40,7 @@ jobs:
           prerelease: false
 
   ubuntu-amd64-build:
-    runs-on: ubuntu-20.04
+    runs-on: linux-gpu
     needs: create-draft-release
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
     permissions:
@@ -52,11 +52,11 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        run: |
-          sudo apt-get update
-          sudo apt-get install build-essential gcc-8
+      # - name: Dependencies
+      #   id: depends
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt-get install build-essential gcc-8
 
       - name: Build
         id: make_build
