@@ -287,7 +287,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}.zip
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64.zip
           asset_content_type: application/zip
 
   windows-amd64-cuda-build:
@@ -347,7 +347,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}-cu${{ matrix.cuda }}.zip
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-cuda.zip
           asset_content_type: application/zip        
           
   update_release_draft:
