@@ -5,13 +5,14 @@ on:
     branches:
       - main
     tags: ['v*.*.*']
-    paths: ['.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
+    paths: ['.github/scripts/**','.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
   pull_request:
     types: [opened, synchronize, reopened]
-    paths: ['**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
+    paths: ['.github/scripts/**','.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  MODEL_URL: https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
 
 jobs:
   create-draft-release:
@@ -72,6 +73,12 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
+
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          cd ..
+
           zip -r nitro.zip nitro
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -117,6 +124,12 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
+
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          cd ..
+
           zip -r nitro.zip nitro
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -164,6 +177,12 @@ jobs:
           mkdir -p nitro
           cp llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
+
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          cd ..
+
           zip -r nitro.zip nitro
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -209,6 +228,12 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
+
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          cd ..
+
           zip -r nitro.zip nitro
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -278,6 +303,11 @@ jobs:
           robocopy build\bin\Release .\build\Release llama.dll
           robocopy ext_libs .\build\Release libcrypto-3-x64.dll
           robocopy ext_libs .\build\Release libssl-3-x64.dll
+
+          cd .\build\Release
+          ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
+          cd ..\..
+
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -287,7 +317,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}.zip
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64.zip
           asset_content_type: application/zip
 
   windows-amd64-cuda-build:
@@ -338,6 +368,11 @@ jobs:
           robocopy build\bin\Release .\build\Release llama.dll
           robocopy ext_libs .\build\Release libcrypto-3-x64.dll
           robocopy ext_libs .\build\Release libssl-3-x64.dll
+
+          cd .\build\Release
+          ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
+          cd ..\..
+
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -347,7 +382,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}-cu${{ matrix.cuda }}.zip
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-cuda.zip
           asset_content_type: application/zip        
           
   update_release_draft:
