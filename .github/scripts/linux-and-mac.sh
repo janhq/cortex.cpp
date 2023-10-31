@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## Example run command
+# ./linux-and-mac.sh './jan/plugins/@janhq/inference-plugin/dist/nitro/nitro_mac_arm64' https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
+
 # Check for required arguments
 if [[ $# -ne 2 ]]; then
     echo "Usage: $0 <path_to_binary> <url_to_download>"
@@ -12,7 +15,7 @@ BINARY_PATH=$1
 DOWNLOAD_URL=$2
 
 # Start the binary file
-$BINARY_PATH > /tmp/nitro.log 2>&1 &
+"$BINARY_PATH" > /tmp/nitro.log 2>&1 &
 
 # Get the process id of the binary file
 pid=$!
@@ -82,6 +85,15 @@ if [[ "$error_occurred" -eq 1 ]]; then
     kill $pid
     exit 1
 fi
+
+echo "----------------------"
+echo "Log load model:"
+cat /tmp/response1.log
+
+echo "----------------------"
+echo "Log run test:"
+cat /tmp/response2.log
+
 
 echo "Nitro test run successfully!"
 
