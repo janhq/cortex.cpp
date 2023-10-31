@@ -261,12 +261,10 @@ struct llama_server_context {
   }
 
   void unloadModel() {
-    if (ctx != nullptr) {
-      llama_free(ctx);
-    }
-    if (model != nullptr) {
-      llama_free_model(model);
-    }
+    llama_free(ctx);
+    llama_free_model(model);
+    ctx = nullptr;
+    model = nullptr;
   }
 
   std::vector<llama_token> tokenize(const json &json_prompt,
