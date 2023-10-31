@@ -5,10 +5,10 @@ on:
     branches:
       - main
     tags: ['v*.*.*']
-    paths: ['.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
+    paths: ['.github/scripts/**','.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
   pull_request:
     types: [opened, synchronize, reopened]
-    paths: ['**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
+    paths: ['.github/scripts/**','.github/workflows/**', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu']
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
@@ -76,7 +76,7 @@ jobs:
 
           # run e2e testing
           cd nitro
-          ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
           cd ..
 
           zip -r nitro.zip nitro
@@ -127,7 +127,7 @@ jobs:
 
           # run e2e testing
           cd nitro
-          ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
           cd ..
 
           zip -r nitro.zip nitro
@@ -180,7 +180,7 @@ jobs:
 
           # run e2e testing
           cd nitro
-          ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
           cd ..
 
           zip -r nitro.zip nitro
@@ -231,7 +231,7 @@ jobs:
 
           # run e2e testing
           cd nitro
-          ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
           cd ..
 
           zip -r nitro.zip nitro

@@ -89,6 +89,15 @@ if "%error_occurred%"=="1" (
     exit /b 1
 )
 
+
+echo ----------------------
+echo Log load model:
+type %TEMP%\response1.log
+
+echo ----------------------
+echo "Log run test:"
+type %TEMP%\response2.log
+
 echo Nitro test run successfully!
 
 rem Kill the server process
