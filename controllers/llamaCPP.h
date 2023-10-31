@@ -260,6 +260,15 @@ struct llama_server_context {
     return true;
   }
 
+  void unloadModel() {
+    if (ctx != nullptr) {
+      llama_free(ctx);
+    }
+    if (model != nullptr) {
+      llama_free_model(model);
+    }
+  }
+
   std::vector<llama_token> tokenize(const json &json_prompt,
                                     bool add_bos) const {
     // If `add_bos` is true, we only add BOS, when json_prompt is a string,
@@ -1272,6 +1281,7 @@ public:
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
   METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
+  METHOD_ADD(llamaCPP::loadModel, "unloadmodel", Delete);
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
@@ -1281,6 +1291,9 @@ public:
   void loadModel(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void warmupModel();
+
+  void unloadModel(const HttpRequestPtr &req,
+                 std::function<void(const HttpResponsePtr &)> &&callback);
 
 private:
   llama_server_context llama;

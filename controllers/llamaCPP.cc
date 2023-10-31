@@ -344,3 +344,16 @@ void llamaCPP::loadModel(
   warmupModel();
   callback(resp);
 }
+
+void inferences::llamaCPP::unloadModel(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback)
+{
+  Json::Value jsonResp;
+  if (model_loaded) {
+    llama.unloadModel();
+    model_loaded = false;
+    jsonResp["message"] = "Model unloaded successfully";
+  }
+  jsonResp["message"] = "No model loaded";
+  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  callback(resp);
+}
