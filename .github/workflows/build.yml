@@ -303,12 +303,9 @@ jobs:
           robocopy build\bin\Release .\build\Release llama.dll
           robocopy ext_libs .\build\Release libcrypto-3-x64.dll
           robocopy ext_libs .\build\Release libssl-3-x64.dll
-
+          7z a nitro.zip .\build\Release\*
           cd .\build\Release
           ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
-          cd ..\..
-
-          7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -368,12 +365,9 @@ jobs:
           robocopy build\bin\Release .\build\Release llama.dll
           robocopy ext_libs .\build\Release libcrypto-3-x64.dll
           robocopy ext_libs .\build\Release libssl-3-x64.dll
-
+          7z a nitro.zip .\build\Release\*
           cd .\build\Release
           ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
-          cd ..\..
-
-          7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
