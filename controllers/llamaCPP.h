@@ -1279,7 +1279,7 @@ public:
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
   METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
-  METHOD_ADD(llamaCPP::loadModel, "unloadmodel", Delete);
+  METHOD_ADD(llamaCPP::unloadModel, "unloadmodel", Delete);
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
