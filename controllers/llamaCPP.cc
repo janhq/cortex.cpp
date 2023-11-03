@@ -5,11 +5,28 @@
 #include <cstring>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
+#include <mach/task.h>
 #include <regex>
 #include <thread>
 #include <trantor/utils/Logger.h>
 
 using namespace inferences;
+using json = nlohmann::json;
+
+// To store state of each inference request
+struct State {
+  bool isStopped = false;
+  int task_id;
+  llamaCPP *instance;
+
+  State(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
+};
+
+std::shared_ptr<State> createState(int task_id, llamaCPP *instance) {
+  return std::make_shared<State>(task_id, instance);
+}
+
+// --------------------------------------------
 
 std::string create_return_json(const std::string &id, const std::string &model,
                                const std::string &content,
@@ -41,71 +58,40 @@ std::string create_return_json(const std::string &id, const std::string &model,
 }
 
 void llamaCPP::warmupModel() {
-  auto lock = llama.lock();
-  llama.rewind();
-  llama_reset_timings(llama.ctx);
-
-  llama.prompt = "hello";
-  llama.params.n_predict = 1;
-  llama.loadPrompt();
-  llama.beginCompletion();
-  size_t stop_pos = std::string::npos;
-
-  while (llama.has_next_token) {
-    const completion_token_output token_with_probs = llama.doCompletion();
-    const std::string token_text =
-        token_with_probs.tok == -1
-            ? ""
-            : llama_token_to_piece(llama.ctx, token_with_probs.tok);
-
-    stop_pos = llama.findStoppingStrings(llama.generated_text,
-                                         token_text.size(), STOP_FULL);
-  }
-
-  if (stop_pos == std::string::npos) {
-    stop_pos = llama.findStoppingStrings(llama.generated_text, 0, STOP_PARTIAL);
-  }
-  if (stop_pos != std::string::npos) {
-    llama.generated_text.erase(llama.generated_text.begin() + stop_pos,
-                               llama.generated_text.end());
-  }
-  auto probs = llama.generated_token_probs;
-  if (llama.params.sampling_params.n_probs > 0 && llama.stopped_word) {
-    const std::vector<llama_token> stop_word_toks =
-        llama_tokenize(llama.ctx, llama.stopping_word, false);
-    probs = std::vector<completion_token_output>(
-        llama.generated_token_probs.begin(),
-        llama.generated_token_probs.end() - stop_word_toks.size());
-  }
-
-  LOG_INFO << "Warm-up generated text:" << llama.generated_text;
-  LOG_INFO << "Warm-up finish";
-  return;
+//  json pseudo;
+//
+//  pseudo["prompt"] = "Hello";
+//  pseudo["n_predict"] = 10;
+//  const int task_id = llama.request_completion(pseudo, false);
+//  std::string completion_text;
+//  task_result result = llama.next_result(task_id);
+//  if (!result.error && result.stop) {
+//    LOG_INFO << result.result_json.dump(-1, ' ', false,
+//                                        json::error_handler_t::replace);
+//  }
+//  return;
 }
 
 void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-  if (!model_loaded) {
-    Json::Value jsonResp;
-    jsonResp["message"] = "Model is not loaded yet";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k500InternalServerError);
-    callback(resp);
-    return;
-  }
 
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output =
       "Below is a conversation between an AI system named ASSISTANT and USER\n";
+
+  json data;
+  json stopWords;
+  // To set default value
+  data["stream"] = true;
+  data["n_predict"] = 30;
+
   if (jsonBody) {
-    llama.params.n_predict = (*jsonBody)["max_tokens"].asInt();
-    llama.params.sampling_params.top_p = (*jsonBody)["top_p"].asFloat();
-    llama.params.sampling_params.temp = (*jsonBody)["temperature"].asFloat();
-    llama.params.sampling_params.frequency_penalty =
-        (*jsonBody)["frequency_penalty"].asFloat();
-    llama.params.sampling_params.presence_penalty =
-        (*jsonBody)["presence_penalty"].asFloat();
+    data["n_predict"] = (*jsonBody)["max_tokens"].asInt();
+    data["top_p"] = (*jsonBody)["top_p"].asFloat();
+    data["temperature"] = (*jsonBody)["temperature"].asFloat();
+    data["frequency_penalty"] = (*jsonBody)["frequency_penalty"].asFloat();
+    data["presence_penalty"] = (*jsonBody)["presence_penalty"].asFloat();
 
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
@@ -114,186 +100,93 @@ void llamaCPP::chatCompletion(
       formatted_output += role + ": " + content + "\n";
     }
     formatted_output += "assistant:";
+
+    data["prompt"] = formatted_output;
+    for (const auto &stop_word : (*jsonBody)["stop"]) {
+      stopWords.push_back(stop_word.asString());
+    }
+    // specify default stop words
+    stopWords.push_back("user:");
+    stopWords.push_back("### USER:");
+    data["stop"] = stopWords;
   }
 
-  this->llama.rewind();
+  const int task_id = llama.request_completion(data, false);
+  LOG_INFO << "Resolved request for task_id:" << task_id;
 
-  llama_reset_timings(llama.ctx);
+  auto state = createState(task_id, this);
 
-  this->llama.prompt = formatted_output;
-  this->llama.params.antiprompt.clear();
-  for (const auto &stop_word : (*jsonBody)["stop"]) {
-    llama.params.antiprompt.push_back(stop_word.asString());
-  }
-  this->llama.params.antiprompt.push_back("user:");
-  this->llama.params.antiprompt.push_back("### USER:");
-  this->llama.loadPrompt();
-  this->llama.beginCompletion();
-
-  const auto chunked_content_provider =
-      [this](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
-    auto lock = this->llama.lock();
+  auto chunked_content_provider =
+      [state](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
     if (!pBuffer) {
       LOG_INFO << "Connection closed or buffer is null. Reset context";
-      lock.release();
-
-      llama_print_timings(llama.ctx);
-      this->llama.mutex.unlock();
-      this->sent_count = 0;
-      this->sent_token_probs_index = 0;
-      // LOG_INFO << "Test end two time lol";
+      state->instance->llama.request_cancel(state->task_id);
       return 0;
     }
-    // LOG_INFO << this->llama.has_next_token;
-    while (this->llama.has_next_token) {
-      try {
-        // LOG_INFO << this->llama.has_next_token;
-        const completion_token_output token_with_probs =
-            this->llama.doCompletion();
-        if (token_with_probs.tok == -1 || this->llama.multibyte_pending > 0) {
-          return 0;
-        }
-        const std::string token_text =
-            llama_token_to_piece(llama.ctx, token_with_probs.tok);
-
-        size_t pos = std::min(sent_count, this->llama.generated_text.size());
-
-        const std::string str_test = this->llama.generated_text.substr(pos);
-        bool is_stop_full = false;
-        size_t stop_pos = this->llama.findStoppingStrings(
-            str_test, token_text.size(), STOP_FULL);
-        if (stop_pos != std::string::npos) {
-          is_stop_full = true;
-          this->llama.generated_text.erase(llama.generated_text.begin() + pos +
-                                               stop_pos,
-                                           this->llama.generated_text.end());
-          pos = std::min(sent_count, this->llama.generated_text.size());
-        } else {
-          is_stop_full = false;
-          stop_pos = this->llama.findStoppingStrings(
-              str_test, token_text.size(), STOP_PARTIAL);
-        }
-
-        if (stop_pos == std::string::npos ||
-            // Send rest of the text if we are at the end of the generation
-            (!this->llama.has_next_token && !is_stop_full && stop_pos > 0)) {
-          const std::string to_send =
-              this->llama.generated_text.substr(pos, std::string::npos);
-
-          sent_count += to_send.size();
-
-          std::vector<completion_token_output> probs_output = {};
-
-          if (this->llama.params.sampling_params.n_probs > 0) {
-            const std::vector<llama_token> to_send_toks =
-                llama_tokenize(llama.ctx, to_send, false);
-            size_t probs_pos =
-                std::min(sent_token_probs_index,
-                         this->llama.generated_token_probs.size());
-            size_t probs_stop_pos =
-                std::min(sent_token_probs_index + to_send_toks.size(),
-                         this->llama.generated_token_probs.size());
-            if (probs_pos < probs_stop_pos) {
-              probs_output = std::vector<completion_token_output>(
-                  this->llama.generated_token_probs.begin() + probs_pos,
-                  this->llama.generated_token_probs.begin() + probs_stop_pos);
-            }
-            sent_token_probs_index = probs_stop_pos;
-          }
-          if (!to_send.empty() &&
-              llama.has_next_token) { //  NITRO : the patch here is important to
-                                      //  make midway cutting possible
-            // const json data = format_partial_response(this->llama, to_send,
-            // probs_output);
-            // LOG_INFO << llama.has_next_token;
-            const std::string str =
-                "data: " +
-                create_return_json(nitro_utils::generate_random_string(20), "_",
-                                   to_send) +
-                "\n\n";
-
-            LOG_VERBOSE("data stream", {{"to_send", str}});
-            std::size_t nRead = std::min(str.size(), nBuffSize);
-            memcpy(pBuffer, str.data(), nRead);
-            return nRead;
-          }
-        }
-
-        //       std::this_thread::sleep_for(std::chrono::seconds(2));
-        // LOG_INFO << this->llama.has_next_token;
-        if (!this->llama.has_next_token) {
-          // Generation is done, send extra information.
-          //        const json data = format_final_response(
-          //            this->llama, "",
-          //            std::vector<completion_token_output>(
-          //                this->llama.generated_token_probs.begin(),
-          //                this->llama.generated_token_probs.begin() +
-          //                sent_token_probs_index));
-          //
-
-          const std::string str =
-              "data: " +
-              create_return_json(nitro_utils::generate_random_string(20), "_",
-                                 "", "stop") +
-              "\n\n" + "data: [DONE]" + "\n\n";
-
-          LOG_VERBOSE("data stream", {{"to_send", str}});
-          std::size_t nRead = std::min(str.size(), nBuffSize);
-          memcpy(pBuffer, str.data(), nRead);
-          return nRead;
-        }
-      } catch (...) {
-        LOG_ERROR << "error inside while loop";
-      }
+    if (state->isStopped) {
+      return 0;
     }
-    lock.release();
 
-    llama_print_timings(llama.ctx);
-    this->llama.mutex.unlock();
-    this->sent_count = 0;
-    this->sent_token_probs_index = 0;
-    // LOG_INFO << "Test end two time lol";
+    task_result result = state->instance->llama.next_result(state->task_id);
+    if (!result.error) {
+      const std::string to_send = result.result_json["content"];
+      const std::string str =
+          "data: " +
+          create_return_json(nitro_utils::generate_random_string(20), "_",
+                             to_send) +
+          "\n\n";
+
+      std::size_t nRead = std::min(str.size(), nBuffSize);
+      memcpy(pBuffer, str.data(), nRead);
+
+      if (result.stop) {
+        const std::string str =
+            "data: " +
+            create_return_json(nitro_utils::generate_random_string(20), "_", "",
+                               "stop") +
+            "\n\n" + "data: [DONE]" + "\n\n";
+
+        LOG_VERBOSE("data stream", {{"to_send", str}});
+        std::size_t nRead = std::min(str.size(), nBuffSize);
+        memcpy(pBuffer, str.data(), nRead);
+        LOG_INFO << "reached result stop";
+        state->isStopped = true;
+        state->instance->llama.request_cancel(state->task_id);
+        return nRead;
+      }
+      return nRead;
+    } else {
+      return 0;
+    }
     return 0;
   };
-
   auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
                                                "chat_completions.txt");
   callback(resp);
+
+  return;
 }
 
 void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-  if (!model_loaded) {
-    Json::Value jsonResp;
-    jsonResp["message"] = "Model is not loaded yet";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k500InternalServerError);
-    callback(resp);
-    return;
-  }
-
-  auto lock = llama.lock();
-
   const auto &jsonBody = req->getJsonObject();
 
-  llama.rewind();
-  llama_reset_timings(llama.ctx);
+  json prompt;
   if (jsonBody->isMember("content") != 0) {
-    llama.prompt = (*jsonBody)["content"].asString();
+    prompt = (*jsonBody)["content"].asString();
   } else {
-    llama.prompt = "";
+    prompt = "";
   }
-  llama.params.n_predict = 0;
-  llama.loadPrompt();
-  llama.beginCompletion();
-  llama.doCompletion();
-
-  const json data = format_embedding_response(llama);
-  auto resp = drogon::HttpResponse::newHttpResponse();
-  resp->setBody(data.dump());
+  const int task_id =
+      llama.request_completion({{"prompt", prompt}, {"n_predict", 0}}, false);
+  task_result result = llama.next_result(task_id);
+  std::string embeddingResp = result.result_json.dump();
+  auto resp = nitro_utils::nitroHttpResponse();
+  resp->setBody(embeddingResp);
   resp->setContentTypeString("application/json");
   callback(resp);
+  return;
 }
 
 void llamaCPP::loadModel(
@@ -303,11 +196,26 @@ void llamaCPP::loadModel(
   const auto &jsonBody = req->getJsonObject();
 
   gpt_params params;
+
+  params.cont_batching = false;
+  // By default will setting based on number of handlers
+  int drogon_thread = drogon::app().getThreadNum();
+  LOG_INFO << "Drogon thread is:" << drogon_thread;
   if (jsonBody) {
     params.model = (*jsonBody)["llama_model_path"].asString();
     params.n_gpu_layers = (*jsonBody)["ngl"].asInt();
     params.n_ctx = (*jsonBody)["ctx_len"].asInt();
     params.embedding = (*jsonBody)["embedding"].asBool();
+    // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
+    if ((*jsonBody).isMember("n_parallel")) {
+      params.n_parallel = (*jsonBody)["n_parallel"].asInt();
+    } else {
+      params.n_parallel = drogon_thread;
+    }
+
+    params.cont_batching = (*jsonBody)["cont_batching"].asBool();
+    // params.n_threads = (*jsonBody)["n_threads"].asInt();
+    // params.n_threads_batch = params.n_threads;
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
@@ -329,7 +237,7 @@ void llamaCPP::loadModel(
                  });
 
   // load the model
-  if (!llama.loadModel(params)) {
+  if (!llama.load_model(params)) {
     LOG_ERROR << "Error loading the model will exit the program";
     Json::Value jsonResp;
     jsonResp["message"] = "Model loaded failed";
@@ -337,10 +245,22 @@ void llamaCPP::loadModel(
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
   }
+  llama.initialize();
+
   Json::Value jsonResp;
   jsonResp["message"] = "Model loaded successfully";
   model_loaded = true;
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  warmupModel();
+  //warmupModel();
+
+  LOG_INFO << "Started background task here!";
+  backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
   callback(resp);
+}
+
+void llamaCPP::backgroundTask() {
+  while (model_loaded) {
+    model_loaded = llama.update_slots();
+  }
+  return;
 }

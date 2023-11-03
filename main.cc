@@ -1,5 +1,6 @@
 #include "utils/nitro_utils.h"
 #include <climits> // for PATH_MAX
+#include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -15,24 +16,32 @@
 #endif
 
 int main(int argc, char *argv[]) {
-
+  int thread_num = std::thread::hardware_concurrency();
   std::string host = "127.0.0.1";
   int port = 3928;
 
-  // Check for host argument
+  // Number of nitro threads
   if (argc > 1) {
-    host = argv[1];
+    thread_num = std::atoi(argv[1]);
+  }
+
+  // Check for host argument
+  if (argc > 2) {
+    host = argv[2];
   }
 
   // Check for port argument
-  if (argc > 2) {
-    port = std::atoi(argv[2]); // Convert string argument to int
+  if (argc > 3) {
+    port = std::atoi(argv[3]); // Convert string argument to int
   }
 
   nitro_utils::nitro_logo();
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
   drogon::app().addListener(host, port);
+  drogon::app().setThreadNum(thread_num);
+  LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
+
   drogon::app().run();
 
   return 0;
