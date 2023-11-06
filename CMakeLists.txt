@@ -41,7 +41,7 @@ if(DEBUG)
   add_compile_definitions(ALLOW_ALL_CORS)
 endif()
 
-add_subdirectory(llama.cpp)
+add_subdirectory(test.cpp)
 add_executable(${PROJECT_NAME} main.cc)
 
 # ##############################################################################
