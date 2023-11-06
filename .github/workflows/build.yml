@@ -276,8 +276,6 @@ jobs:
         run: |
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
-          robocopy ext_libs .\build\Release libcrypto-3-x64.dll
-          robocopy ext_libs .\build\Release libssl-3-x64.dll
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -325,7 +323,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON
           cmake --build . --config Release -j 4
 
       - name: Pack artifacts
@@ -336,8 +334,6 @@ jobs:
           echo %PATH%
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
-          robocopy ext_libs .\build\Release libcrypto-3-x64.dll
-          robocopy ext_libs .\build\Release libssl-3-x64.dll
           7z a nitro.zip .\build\Release\*
 
       - uses: actions/upload-release-asset@v1.0.1
