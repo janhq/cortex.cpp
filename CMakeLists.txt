@@ -16,6 +16,9 @@ else()
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
+# llama cpp server need llava example to work, this is for llama cpp server
+set(LLAMA_BUILD_EXAMPLES ON)
+
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
@@ -48,7 +51,7 @@ add_executable(${PROJECT_NAME} main.cc)
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llama
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llama clip
                                               ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
