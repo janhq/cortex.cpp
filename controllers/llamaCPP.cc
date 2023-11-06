@@ -5,7 +5,6 @@
 #include <cstring>
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
-#include <mach/task.h>
 #include <regex>
 #include <thread>
 #include <trantor/utils/Logger.h>
