@@ -1,5 +1,5 @@
 set(TARGET clip)
-add_library(${TARGET} clip.cpp clip.h)
+add_library(${TARGET} STATIC clip.cpp clip.h)
 install(TARGETS ${TARGET} LIBRARY)
 target_link_libraries(${TARGET} PRIVATE common ggml ${CMAKE_THREAD_LIBS_INIT})
 target_compile_features(${TARGET} PRIVATE cxx_std_11)
