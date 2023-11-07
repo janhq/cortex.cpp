@@ -57,18 +57,18 @@ std::string create_return_json(const std::string &id, const std::string &model,
 }
 
 void llamaCPP::warmupModel() {
-//  json pseudo;
-//
-//  pseudo["prompt"] = "Hello";
-//  pseudo["n_predict"] = 10;
-//  const int task_id = llama.request_completion(pseudo, false);
-//  std::string completion_text;
-//  task_result result = llama.next_result(task_id);
-//  if (!result.error && result.stop) {
-//    LOG_INFO << result.result_json.dump(-1, ' ', false,
-//                                        json::error_handler_t::replace);
-//  }
-//  return;
+  //  json pseudo;
+  //
+  //  pseudo["prompt"] = "Hello";
+  //  pseudo["n_predict"] = 10;
+  //  const int task_id = llama.request_completion(pseudo, false);
+  //  std::string completion_text;
+  //  task_result result = llama.next_result(task_id);
+  //  if (!result.error && result.stop) {
+  //    LOG_INFO << result.result_json.dump(-1, ' ', false,
+  //                                        json::error_handler_t::replace);
+  //  }
+  //  return;
 }
 
 void llamaCPP::chatCompletion(
@@ -110,7 +110,7 @@ void llamaCPP::chatCompletion(
     data["stop"] = stopWords;
   }
 
-  const int task_id = llama.request_completion(data, false,false);
+  const int task_id = llama.request_completion(data, false, false);
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
   auto state = createState(task_id, this);
@@ -177,8 +177,8 @@ void llamaCPP::embedding(
   } else {
     prompt = "";
   }
-  const int task_id =
-      llama.request_completion({{"prompt", prompt}, {"n_predict", 0}}, false, true);
+  const int task_id = llama.request_completion(
+      {{"prompt", prompt}, {"n_predict", 0}}, false, true);
   task_result result = llama.next_result(task_id);
   std::string embeddingResp = result.result_json.dump();
   auto resp = nitro_utils::nitroHttpResponse();
@@ -250,7 +250,7 @@ void llamaCPP::loadModel(
   jsonResp["message"] = "Model loaded successfully";
   model_loaded = true;
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  //warmupModel();
+  // warmupModel();
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
