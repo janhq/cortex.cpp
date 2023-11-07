@@ -51,7 +51,7 @@ add_executable(${PROJECT_NAME} main.cc)
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llama clip
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llama llava
                                               ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
