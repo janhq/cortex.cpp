@@ -107,7 +107,7 @@ void llamaCPP::chatCompletion(
       }
 
       std::string content = message["content"].asString();
-      formatted_output += role + ": " + content + "\n";
+      formatted_output += role + content + "\n";
     }
     formatted_output += "assistant:";
 
@@ -116,8 +116,7 @@ void llamaCPP::chatCompletion(
       stopWords.push_back(stop_word.asString());
     }
     // specify default stop words
-    stopWords.push_back("user:");
-    stopWords.push_back("### USER:");
+    stopWords.push_back(user_prompt);
     data["stop"] = stopWords;
   }
 
@@ -224,6 +223,12 @@ void llamaCPP::loadModel(
     }
 
     params.cont_batching = (*jsonBody)["cont_batching"].asBool();
+    
+    // Set up prompt
+    user_prompt = (*jsonBody)["user_prompt"].asString();
+    ai_prompt = (*jsonBody)["ai_prompt"].asString();
+    system_prompt = (*jsonBody)["system_prompt"].asString();
+
     // params.n_threads = (*jsonBody)["n_threads"].asInt();
     // params.n_threads_batch = params.n_threads;
   }
