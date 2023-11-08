@@ -2142,5 +2142,8 @@ private:
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
   std::thread backgroundThread;
+  std::string user_prompt = "USER: ";
+  std::string ai_prompt = "ASSISTANT: ";
+  std::string system_prompt = "ASSISTANT's RULE: ";
 };
 }; // namespace inferences
