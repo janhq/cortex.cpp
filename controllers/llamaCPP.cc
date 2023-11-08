@@ -94,7 +94,18 @@ void llamaCPP::chatCompletion(
 
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
-      std::string role = message["role"].asString();
+      std::string input_role = message["role"].asString();
+      std::string role;
+      if (input_role == "user") {
+        role = user_prompt;
+      } else if (input_role == "assistant") {
+        role = ai_prompt;
+      } else if (input_role == "system") {
+        role = system_prompt;
+      } else {
+        role = input_role;
+      }
+
       std::string content = message["content"].asString();
       formatted_output += role + ": " + content + "\n";
     }
