@@ -106,8 +106,6 @@ void llamaCPP::chatCompletion(
       } else {
         role = input_role;
       }
-
-      LOG_INFO << "VALUE OF ROLE BEING USED:" << role;
       std::string content = message["content"].asString();
       formatted_output += role + content + "\n";
     }
