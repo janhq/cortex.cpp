@@ -2145,5 +2145,6 @@ private:
   std::string user_prompt;
   std::string ai_prompt;
   std::string system_prompt;
+  std::string pre_prompt;
 };
 }; // namespace inferences

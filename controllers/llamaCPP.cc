@@ -76,22 +76,20 @@ void llamaCPP::chatCompletion(
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
   const auto &jsonBody = req->getJsonObject();
-  std::string formatted_output =
-      "Below is a conversation between an AI system named " + ai_prompt +
-      " and " + user_prompt + "\n";
+  std::string formatted_output = pre_prompt;
 
   json data;
   json stopWords;
   // To set default value
   data["stream"] = true;
-  data["n_predict"] = 30;
 
   if (jsonBody) {
-    data["n_predict"] = (*jsonBody)["max_tokens"].asInt();
-    data["top_p"] = (*jsonBody)["top_p"].asFloat();
-    data["temperature"] = (*jsonBody)["temperature"].asFloat();
-    data["frequency_penalty"] = (*jsonBody)["frequency_penalty"].asFloat();
-    data["presence_penalty"] = (*jsonBody)["presence_penalty"].asFloat();
+    data["n_predict"] = (*jsonBody).get("max_tokens", 500).asInt();
+    data["top_p"] = (*jsonBody).get("top_p", 0.95).asFloat();
+    data["temperature"] = (*jsonBody).get("temperature", 0.8).asFloat();
+    data["frequency_penalty"] =
+        (*jsonBody).get("frequency_penalty", 0).asFloat();
+    data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
 
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
@@ -109,7 +107,7 @@ void llamaCPP::chatCompletion(
       std::string content = message["content"].asString();
       formatted_output += role + content + "\n";
     }
-    formatted_output += "assistant:";
+    formatted_output += ai_prompt;
 
     data["prompt"] = formatted_output;
     for (const auto &stop_word : (*jsonBody)["stop"]) {
@@ -225,6 +223,13 @@ void llamaCPP::loadModel(
     this->ai_prompt = (*jsonBody).get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
         (*jsonBody).get("system_prompt", "ASSISTANT's RULE: ").asString();
+    this->pre_prompt =
+        (*jsonBody)
+            .get("pre_prompt",
+                 "A chat between a curious user and an artificial intelligence "
+                 "assistant. The assistant follows the given rules no matter "
+                 "what.\\n")
+            .asString();
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
