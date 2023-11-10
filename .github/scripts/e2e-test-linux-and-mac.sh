@@ -57,7 +57,7 @@ response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location 'http://l
         ],
         "stream": true,
         "model": "gpt-3.5-turbo",
-        "max_tokens": 2048,
+        "max_tokens": 100,
         "stop": ["hello"],
         "frequency_penalty": 0,
         "presence_penalty": 0,
