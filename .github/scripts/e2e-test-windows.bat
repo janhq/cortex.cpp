@@ -48,7 +48,7 @@ if not exist "%MODEL_PATH%" (
 rem Define JSON strings for curl data
 call set "MODEL_PATH_STRING=%%MODEL_PATH:\=\\%%"
 set "curl_data1={\"llama_model_path\":\"%MODEL_PATH_STRING%\"}"
-set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":2048,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.7}"
+set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":100,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.7}"
 
 rem Print the values of curl_data1 and curl_data2 for debugging
 echo curl_data1=%curl_data1%
