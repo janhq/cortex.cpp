@@ -70,7 +70,8 @@ curl -X POST 'http://localhost:3928/inferences/llamacpp/loadmodel' \
     "embedding": true,
     "n_parallel": 4,
     "pre_prompt": "A chat between a curious user and an artificial intelligence",
-    "user_prompt": "what is AI?"
+    "user_prompt": "USER: ",
+    "ai_prompt": "ASSISTANT: "
   }'
 ```
 
