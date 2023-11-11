@@ -115,7 +115,8 @@ curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
 ```
 
 ## Interface
-You should back to `interface`
+You should go back to `interface`
+The `app.py` assumes that you have downloaded the Zephyr 7B Q5 (GGUF). If you download another model, please config the model path in `app.py`.
 
 ```zsh
 # cd interface
