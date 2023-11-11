@@ -24,7 +24,7 @@ def bot(history):
     url = "http://localhost:3928/inferences/llamacpp/loadmodel"
 
     headers = {
-        'Content-Type: application/json'
+        'Content-Type': 'application/json'
     }
 
     dat = {
