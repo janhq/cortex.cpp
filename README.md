@@ -56,6 +56,12 @@ Download a llama model to try running the llama C++ integration. You can find a 
 
 [![Download Model](https://img.shields.io/badge/Download-Model-green.svg)](https://huggingface.co/TheBloke)
 
+For downloading Zephyr 7B GGUF, you can follow this example code:
+```zsh
+cd interface/models
+wget https://huggingface.co/TheBloke/zephyr-7B-beta-GGUF/resolve/main/zephyr-7b-beta.Q5_K_M.gguf?download=true
+```
+
 **Step 3: Run Nitro**
 
 Double-click on Nitro to run it. After downloading your model, make sure it's saved to a specific path. Then, make an API call to load your model into Nitro.
@@ -106,6 +112,14 @@ curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
         "model": "gpt-3.5-turbo",
         "max_tokens": 2000
      }'
+```
+
+## Interface
+You should back to `interface`
+
+```zsh
+# cd interface
+gradio app.py
 ```
 
 Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
