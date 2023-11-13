@@ -13,7 +13,7 @@
 
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
-  guidesSidebar: [
+  blogSidebar: [
     "guides/overview",
     // {
     //   type: "category",
@@ -30,7 +30,20 @@ const sidebars = {
     "guides/troubleshooting",
   ],
 
-  docsSidebar: ["docs/overview"],
+  docsSidebar: [
+    "nitro/overview",
+    {
+      type: 'category',
+      label: 'Getting Started',
+      items: [
+        "nitro/key-concepts",
+        "nitro/architecture",
+        "nitro/installation",
+        "nitro/using-nitro",
+      ],
+    },
+    "guides/troubleshooting",
+  ],
 
   apiSidebar: [
     "api/overview",
@@ -47,6 +60,13 @@ const sidebars = {
       ],
     },
   ],
+
+  communitySidebar: [
+    "community/support",
+    "community/contribuiting",
+    "community/coc",
+    "community/changelog"
+  ]
 };
 
 module.exports = sidebars;

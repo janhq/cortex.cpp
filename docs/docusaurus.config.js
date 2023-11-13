@@ -7,7 +7,7 @@ const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "Nitro",
-  tagline: "Run your own AI",
+  tagline: "Fast inference engine",
   favicon: "img/favicon.ico",
 
   // Set the production url of your site here
@@ -19,7 +19,7 @@ const config = {
   // GitHub pages deployment config.
   // If you aren't using GitHub pages, you don't need these.
   organizationName: "janhq", // Usually your GitHub org/user name.
-  projectName: "jan", // Usually your repo name.
+  projectName: "nitro", // Usually your repo name.
 
   onBrokenLinks: "warn",
   onBrokenMarkdownLinks: "warn",
@@ -123,12 +123,6 @@ const config = {
           // Navbar left
           {
             type: "docSidebar",
-            sidebarId: "guidesSidebar",
-            position: "left",
-            label: "User Guide",
-          },
-          {
-            type: "docSidebar",
             sidebarId: "docsSidebar",
             position: "left",
             label: "Documentation",
@@ -139,7 +133,19 @@ const config = {
             position: "left",
             label: "API Reference",
           },
+          {
+            type: "docSidebar",
+            sidebarId: "communitySidebar",
+            position: "left",
+            label: "Community",
+          },
           // Navbar right
+          {
+            type: "docSidebar",
+            sidebarId: "blogSidebar",
+            position: "right",
+            label: "Blog",
+          },
         ],
       },
       prism: {
