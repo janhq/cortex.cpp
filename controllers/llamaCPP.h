@@ -2125,6 +2125,7 @@ public:
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
   METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
   METHOD_ADD(llamaCPP::unloadModel, "unloadmodel", Get);
+  METHOD_ADD(llamaCPP::modelStatus, "modelstatus", Get);
 
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
@@ -2136,6 +2137,10 @@ public:
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void unloadModel(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
+
+  void modelStatus(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback);
+
   void warmupModel();
 
   void backgroundTask();
