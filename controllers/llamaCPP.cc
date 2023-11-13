@@ -196,6 +196,25 @@ void llamaCPP::embedding(
   return;
 }
 
+void llamaCPP::unloadModel(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+  Json::Value jsonResp;
+  jsonResp["message"] = "No model loaded";
+  if (model_loaded) {
+    stopBackgroundTask();
+
+    llama_free(llama.ctx);
+    llama_free_model(llama.model);
+    llama.ctx = nullptr;
+    llama.model = nullptr;
+    jsonResp["message"] = "Model unloaded successfully";
+  }
+  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  callback(resp);
+  return;
+}
+
 void llamaCPP::loadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
@@ -274,7 +293,20 @@ void llamaCPP::loadModel(
 
 void llamaCPP::backgroundTask() {
   while (model_loaded) {
-    model_loaded = llama.update_slots();
+    // model_loaded =
+    llama.update_slots();
+    LOG_INFO << "Background state refresh!";
   }
+  LOG_INFO << "Background task stopped!";
   return;
+}
+
+void llamaCPP::stopBackgroundTask() {
+  if (model_loaded) {
+    model_loaded = false;
+    LOG_INFO << "changed to false";
+    if (backgroundThread.joinable()) {
+      backgroundThread.join();
+    }
+  }
 }

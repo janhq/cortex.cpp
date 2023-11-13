@@ -2124,6 +2124,8 @@ public:
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
   METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
+  METHOD_ADD(llamaCPP::unloadModel, "unloadmodel", Get);
+
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
@@ -2132,13 +2134,17 @@ public:
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void loadModel(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
+  void unloadModel(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback);
   void warmupModel();
 
   void backgroundTask();
 
+  void stopBackgroundTask();
+
 private:
   llama_server_context llama;
-  bool model_loaded = false;
+  std::atomic<bool> model_loaded = false;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
   std::thread backgroundThread;
