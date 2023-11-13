@@ -14,3 +14,4 @@ Join our [Github](https://github.com/janhq/nitro) for understanding codebase.
 
 ## News
 For the latest news about Nitro, follow [Nitro Discord](https://discord.gg/FTk2MvZwJH) and the [official Nitro blog](https://nitro.jan.ai) on this website.
+
