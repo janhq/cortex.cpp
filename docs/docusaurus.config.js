@@ -1,6 +1,8 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
+require("dotenv").config();
+
 const lightCodeTheme = require("prism-react-renderer/themes/github");
 const darkCodeTheme = require("prism-react-renderer/themes/dracula");
 
@@ -46,6 +48,14 @@ const config = {
         },
       };
     },
+    [
+      "posthog-docusaurus",
+      {
+        apiKey: process.env.POSTHOG_PROJECT_API_KEY,
+        appUrl: process.env.POSTHOG_APP_URL, // optional
+        enableInDevelopment: false, // optional
+      },
+    ],
   ],
 
   // Only for react live
