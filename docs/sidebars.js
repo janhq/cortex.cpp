@@ -25,8 +25,15 @@ const sidebars = {
       items: [
         "nitro/key-concepts",
         "nitro/architecture",
-        "nitro/installation",
         "nitro/using-nitro",
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Guides',
+      items: [
+        "nitro/installation",
+        "nitro/run",
       ],
     },
     "guides/troubleshooting",
@@ -55,5 +62,6 @@ const sidebars = {
     "community/changelog"
   ]
 };
+
 
 module.exports = sidebars;
