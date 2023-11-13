@@ -61,7 +61,7 @@ const config = {
         docs: {
           routeBasePath: "/",
           sidebarPath: require.resolve("./sidebars.js"),
-          editUrl: "https://github.com/janhq/jan/tree/main/docs",
+          editUrl: "https://github.com/janhq/nitro/tree/main/docs",
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
         },
@@ -108,7 +108,7 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
-      image: "img/jan-social-card.png",
+      image: "img/nitro-social-card.png",
       // Only for react live
       liveCodeBlock: {
         playgroundPosition: "bottom",
@@ -116,7 +116,7 @@ const config = {
       navbar: {
         title: "Nitro",
         logo: {
-          alt: "Jan Logo",
+          alt: "Nitro Logo",
           src: "img/logo.svg",
         },
         items: [

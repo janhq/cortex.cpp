@@ -35,7 +35,7 @@ const menus = [
       },
       {
         menu: "Changelog",
-        path: "https://github.com/janhq/jan/releases",
+        path: "https://github.com/janhq/nitro/releases",
         external: true,
       },
     ],
@@ -45,7 +45,7 @@ const menus = [
     child: [
       {
         menu: "Github",
-        path: "https://github.com/janhq/jan",
+        path: "https://github.com/janhq/nitro",
         external: true,
       },
       {
@@ -84,10 +84,9 @@ export default function Footer() {
       <div className="container">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-2 lg:grid-cols-5">
           <div className="col-span-2 lg:col-span-1">
-            <h6 className="mb-3">Jan</h6>
+            <h6 className="mb-3">Nitro</h6>
             <p className="dark:text-gray-400 text-gray-600">
-              Run Large Language Models locally on Windows, Mac and Linux.
-              Available on Desktop and Cloud-Native.
+              Fast, Lightweight and Embeddable inference engine
             </p>
           </div>
           {menus.map((menu, i) => {

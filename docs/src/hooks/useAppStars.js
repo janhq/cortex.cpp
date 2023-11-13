@@ -12,7 +12,7 @@ export const useAppStars = () => {
     const updateStargazers = async () => {
       try {
         const { data } = await axios.get(
-          "https://api.github.com/repos/janhq/jan"
+          "https://api.github.com/repos/janhq/nitro"
         );
         setStargazers({
           count: data.stargazers_count,

@@ -17,7 +17,7 @@ const socials = [
   },
   {
     icon: <AiOutlineGithub className="text-lg text-white" />,
-    href: "https://github.com/janhq/jan",
+    href: "https://github.com/janhq/nitro",
   },
 ];
 
@@ -30,7 +30,7 @@ export default function AnnoncementBanner() {
       <div className="container flex h-full items-center justify-between py-0.5">
         <div className="flex h-6 items-center shadow-sm">
           <a
-            href="https://github.com/janhq/jan"
+            href="https://github.com/janhq/nitro"
             target="_blank"
             className="flex h-full items-center gap-x-1 rounded-l-sm bg-indigo-50 px-1 py-0.5"
           >
@@ -40,7 +40,7 @@ export default function AnnoncementBanner() {
             </span>
           </a>
           <a
-            href="https://github.com/janhq/jan/stargazers"
+            href="https://github.com/janhq/nitro/stargazers"
             target="_blank"
             className="flex h-full items-center rounded-r-sm border-l border-gray-100 bg-white px-1 py-0.5 font-medium"
           >
@@ -50,7 +50,7 @@ export default function AnnoncementBanner() {
           </a>
         </div>
         <a
-          href="https://github.com/janhq/jan/releases"
+          href="https://github.com/janhq/nitro/releases"
           target="_blank"
           className="hidden items-center gap-x-2 lg:flex"
         >

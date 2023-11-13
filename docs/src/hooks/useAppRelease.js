@@ -13,7 +13,7 @@ export const useAppRelease = () => {
     const updateStargazers = async () => {
       try {
         const { data } = await axios.get(
-          "https://api.github.com/repos/janhq/jan/releases/latest"
+          "https://api.github.com/repos/janhq/nitro/releases/latest"
         );
         setRelease({
           tagVersion: data.tag_name,

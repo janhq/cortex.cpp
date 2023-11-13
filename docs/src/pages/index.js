@@ -76,7 +76,7 @@ export default function Home() {
                     Nitro
                   </h1>
                   <p className="text-xl leading-relaxed lg:text-2xl lg:leading-relaxed text-gray-500 dark:text-gray-400">
-                    todo
+                  Make deployment of AI models easier than ever before
                   </p>
 
                   <div className="my-6 flex flex-col-reverse md:flex-row items-center justify-center gap-4 relative z-20">
@@ -85,7 +85,7 @@ export default function Home() {
                       className="cursor-pointer relative hidden md:inline-flex items-center px-4 py-2.5  text-base font-semibold rounded-lg border border-gray-400 dark:border-gray-700 text-gray-600 dark:text-white"
                       onClick={() =>
                         window.open(
-                          "https://github.com/janhq/jan",
+                          "https://github.com/janhq/nitro",
                           "_blank",
                           "noreferrer"
                         )
