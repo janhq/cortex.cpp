@@ -295,7 +295,6 @@ void llamaCPP::backgroundTask() {
   while (model_loaded) {
     // model_loaded =
     llama.update_slots();
-    LOG_INFO << "Background state refresh!";
   }
   LOG_INFO << "Background task stopped!";
   return;
