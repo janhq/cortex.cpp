@@ -6,6 +6,7 @@
 #include <drogon/HttpResponse.h>
 #include <drogon/HttpTypes.h>
 #include <regex>
+#include <string>
 #include <thread>
 #include <trantor/utils/Logger.h>
 
@@ -210,6 +211,17 @@ void llamaCPP::unloadModel(
     llama.model = nullptr;
     jsonResp["message"] = "Model unloaded successfully";
   }
+  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  callback(resp);
+  return;
+}
+void llamaCPP::modelStatus(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+  Json::Value jsonResp;
+  jsonResp["model_loaded"] = this->model_loaded.load();
+  jsonResp["model_data"] = llama.get_model_props().dump();
+
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(resp);
   return;
