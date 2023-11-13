@@ -1,6 +1,7 @@
 ---
 title: Overview
-slug: /guides
 ---
 
-About Nitro
+:::info Comming Soon
+Updating...
+:::
