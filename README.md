@@ -60,6 +60,14 @@ Download a llama model to try running the llama C++ integration. You can find a 
 
 Double-click on Nitro to run it. After downloading your model, make sure it's saved to a specific path. Then, make an API call to load your model into Nitro.
 
+***OPTIONAL: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
+```zsh
+./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port])
+```
+- thread_num : the number of thread that nitro webserver needs to have
+- host : host value normally 127.0.0.1 or 0.0.0.0
+- port : the port that nitro got deployed onto
+
 ```zsh
 curl -X POST 'http://localhost:3928/inferences/llamacpp/loadmodel' \
   -H 'Content-Type: application/json' \
