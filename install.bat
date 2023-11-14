@@ -53,10 +53,10 @@ powershell -Command "Expand-Archive -Path '%TEMP%\nitro.zip' -DestinationPath '%
 :: Add nitro to the PATH
 setx PATH "%APPDATA%\nitro;%PATH%"
 
-:: Create uninstall.bat
-echo @echo off > "%APPDATA%\nitro\uninstall.bat"
-echo setx PATH "%PATH:;%APPDATA%\nitro=;%"" >> "%APPDATA%\nitro\uninstall.bat"
-echo rmdir /S /Q "%APPDATA%\nitro" >> "%APPDATA%\nitro\uninstall.bat"
+:: Create uninstallnitro.bat
+echo @echo off > "%APPDATA%\nitro\uninstallnitro.bat"
+echo setx PATH "%PATH:;%APPDATA%\nitro=;%"" >> "%APPDATA%\nitro\uninstallnitro.bat"
+echo rmdir /S /Q "%APPDATA%\nitro" >> "%APPDATA%\nitro\uninstallnitro.bat"
 
 :: Clean up
 del %TEMP%\nitro.zip
