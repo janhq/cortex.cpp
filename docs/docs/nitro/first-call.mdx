@@ -1,10 +1,14 @@
----
-title: First Inference Request
----
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
+
+# First Inference Request
+
+To make your first inference request using Nitro.
 
 Double-click on Nitro to run it. After downloading your model, make sure it's saved to a specific path. Then, make an API call to load your model into Nitro.
 
+## Local Large Language Model
 ```zsh
 curl -X POST 'http://localhost:3928/inferences/llamacpp/loadmodel' \
   -H 'Content-Type: application/json' \
@@ -35,20 +39,35 @@ Configure your system by setting the following parameters in your `jsonBody`. Th
 | `system_prompt`    | String  | The prompt to use for system rules.                          |
 | `pre_prompt`    | String  | The prompt to use for internal configuration.                          |
 
-## Step 4: Nitro Inference
+## OpenAI Compatible
 
-```zsh
-curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
-     --header 'Content-Type: application/json' \
-     --header 'Accept: text/event-stream' \
-     --header 'Access-Control-Allow-Origin: *' \
-     --data '{
-        "messages": [
-            {"content": "Hello there 👋", "role": "assistant"},
-            {"content": "Can you write a long story", "role": "user"}
-        ],
-        "stream": true,
-        "model": "gpt-3.5-turbo",
-        "max_tokens": 2000
-     }'
-```
+<Tabs>
+  <TabItem value="usingNitro" label="Using Nitro">
+    <p>To set up using Nitro, open the terminal and run:</p>
+    <pre><code className="language-zsh">{`curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
+   --header 'Content-Type: application/json' \
+   --header 'Accept: text/event-stream' \
+   --header 'Access-Control-Allow-Origin: *' \
+   --data '{
+      "messages": [
+          {"content": "Hello there 👋", "role": "assistant"},
+          {"content": "Can you write a long story", "role": "user"}
+      ],
+      "stream": true,
+      "model": "gpt-3.5-turbo",
+      "max_tokens": 2000
+   }'`}</code></pre>
+  </TabItem>
+
+  <TabItem value="usingOpenAIAPI" label="Using OpenAI API">
+    <p>For setting up using the OpenAI API, open the terminal and execute:</p>
+    <pre><code className="language-zsh">{`curl https://api.openai.com/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -d '{
+     "model": "gpt-3.5-turbo",
+     "messages": [{"role": "user", "content": "Say this is a test!"}],
+     "temperature": 0.7
+   }'`}</code></pre>
+  </TabItem>
+</Tabs>
