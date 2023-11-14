@@ -13,49 +13,47 @@
 
 /** @type {import('@docusaurus/plugin-content-docs').SidebarsConfig} */
 const sidebars = {
-  blogSidebar: [
-    "guides/overview"
-  ],
-
   docsSidebar: [
-    "overview/overview",
     {
-      type: 'category',
-      label: 'System Design',
+      type: "category",
+      label: "Introduction",
+      collapsible: false,
+      collapsed: false,
       items: [
-        "system/architecture",
-        "system/key-concepts",
+        { type: "doc", id: "docs/about", label: "About Nitro" },
+        { type: "doc", id: "docs/quickstart", label: "Quickstart" },
+        { type: "doc", id: "docs/install", label: "Installation" },
       ],
     },
     {
-      type: 'category',
-      label: 'Features',
-      link: { type: "doc", id: "features/feat"},
+      type: "category",
+      label: "Features",
+      link: { type: "doc", id: "features/feat" },
+      collapsible: false,
+      collapsed: false,
       items: [
         "features/load-unload",
         "features/gpu",
         "features/batch",
         "features/embed",
-        "features/prompt"
+        "features/prompt",
       ],
     },
     {
-      type: 'category',
-      label: 'Getting Started',
-      link: { type: "doc", id: "nitro/using-nitro"},
-      items: [
-        "nitro/installation",
-        "nitro/first-call"
-      ],
+      type: "category",
+      label: "Guides",
+      collapsible: false,
+      collapsed: false,
+      items: ["examples/llm"],
     },
     {
-      type: 'category',
-      label: 'Example Usage',
-      items: [
-        "examples/llm",
-      ],
+      type: "category",
+      label: "Specification",
+      collapsible: false,
+      collapsed: false,
+      items: [{ type: "doc", id: "docs/architecture", label: "Architecture" }],
     },
-    "guides/troubleshooting",
+    // "guides/troubleshooting",
   ],
 
   apiSidebar: [
@@ -76,11 +74,10 @@ const sidebars = {
 
   communitySidebar: [
     "community/support",
-    "community/contribuiting",
+    "community/contributing",
     "community/coc",
-    "community/changelog"
-  ]
+    "community/changelog",
+  ],
 };
-
 
 module.exports = sidebars;

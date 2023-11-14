@@ -143,19 +143,12 @@ const config = {
             position: "left",
             label: "API Reference",
           },
-          {
-            type: "docSidebar",
-            sidebarId: "communitySidebar",
-            position: "left",
-            label: "Community",
-          },
-          // Navbar right
-          {
-            type: "docSidebar",
-            sidebarId: "blogSidebar",
-            position: "right",
-            label: "Blog",
-          },
+          // {
+          //   type: "docSidebar",
+          //   sidebarId: "communitySidebar",
+          //   position: "left",
+          //   label: "Community",
+          // },
         ],
       },
       prism: {
