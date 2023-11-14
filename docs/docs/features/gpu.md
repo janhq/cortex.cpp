@@ -18,3 +18,7 @@ curl -X POST 'http://localhost:3928/inferences/llamacpp/loadmodel' \
 You can adjust the `ngl` parameter based on your requirements and GPU capabilities.
 
 ## CPU inference vs GPU inference benchmark
+
+:::info
+Updating
+:::
