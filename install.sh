@@ -6,6 +6,35 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+# Check and suggest installing jq and unzip if not present
+check_install_jq_unzip() {
+    if ! command -v jq &> /dev/null; then
+        echo "jq could not be found, installing..."
+        if [[ "$OS" == "Linux" ]]; then
+            echo "run command below to install jq"
+            echo "sudo apt-get install jq"
+            exit 1
+        elif [[ "$OS" == "Darwin" ]]; then
+            echo "run command below to install jq"
+            echo "brew install jq"
+            exit 1
+        fi
+    fi
+
+    if ! command -v unzip &> /dev/null; then
+        echo "unzip could not be found, installing..."
+        if [[ "$OS" == "Linux" ]]; then
+            echo "run command below to install unzip"
+            echo "sudo apt-get install unzip"
+            exit 1
+        elif [[ "$OS" == "Darwin" ]]; then
+            echo "run command below to install unzip"
+            echo "brew install unzip"
+            exit 1
+        fi
+    fi
+}
+
 # Function to download and install nitro
 install_nitro() {
     rm -rf /tmp/nitro
@@ -43,6 +72,8 @@ OS=$(uname -s)
 ARCH=$(uname -m)
 VERSION="latest"
 GPU=""
+
+check_install_jq_unzip
 
 # Parse arguments
 for arg in "$@"
