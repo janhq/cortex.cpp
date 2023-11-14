@@ -219,8 +219,13 @@ void llamaCPP::modelStatus(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
-  jsonResp["model_loaded"] = this->model_loaded.load();
-  jsonResp["model_data"] = llama.get_model_props().dump();
+  bool is_model_loaded = this->model_loaded;
+  if (is_model_loaded) {
+    jsonResp["model_loaded"] = is_model_loaded;
+    jsonResp["model_data"] = llama.get_model_props().dump();
+  } else {
+    jsonResp["model_loaded"] = is_model_loaded;
+  }
 
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(resp);
