@@ -8,28 +8,32 @@ fi
 
 # Check and suggest installing jq and unzip if not present
 check_install_jq_unzip() {
+    RED='\033[0;31m'
+    GREEN='\033[0;32m'
+    NC='\033[0m' # No Color
+
     if ! command -v jq &> /dev/null; then
-        echo "jq could not be found, installing..."
+        echo -e "${RED}jq could not be found ...${NC}"
         if [[ "$OS" == "Linux" ]]; then
-            echo "run command below to install jq"
-            echo "sudo apt-get install jq"
+            echo -e "${GREEN}Please run the command below to install jq then rerun this script${NC}"
+            echo "$ sudo apt-get install jq"
             exit 1
         elif [[ "$OS" == "Darwin" ]]; then
-            echo "run command below to install jq"
-            echo "brew install jq"
+            echo -e "${GREEN}Please run the command below to install jq then rerun this script${NC}"
+            echo "$ brew install jq"
             exit 1
         fi
     fi
 
     if ! command -v unzip &> /dev/null; then
-        echo "unzip could not be found, installing..."
+        echo -e "${RED}unzip could not be found ...${NC}"
         if [[ "$OS" == "Linux" ]]; then
-            echo "run command below to install unzip"
-            echo "sudo apt-get install unzip"
+            echo -e "${GREEN}Please run the command below to install unzip then rerun this script${NC}"
+            echo "$ sudo apt-get install unzip"
             exit 1
         elif [[ "$OS" == "Darwin" ]]; then
-            echo "run command below to install unzip"
-            echo "brew install unzip"
+            echo -e "${GREEN}Please run the command below to install unzip then rerun this script${NC}"
+            echo "$ brew install unzip"
             exit 1
         fi
     fi
