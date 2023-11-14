@@ -18,22 +18,41 @@ const sidebars = {
   ],
 
   docsSidebar: [
-    "nitro/overview",
+    "overview/overview",
     {
       type: 'category',
-      label: 'Getting Started',
+      label: 'System Design',
       items: [
-        "nitro/key-concepts",
-        "nitro/architecture",
-        "nitro/using-nitro",
+        "system/architecture",
+        "system/key-concepts",
       ],
     },
     {
       type: 'category',
-      label: 'Guides',
+      label: 'Features',
+      link: { type: "doc", id: "features/feat"},
+      items: [
+        "features/load-unload",
+        "features/gpu",
+        "features/batch",
+        "features/embed",
+        "features/prompt"
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Getting Started',
+      link: { type: "doc", id: "nitro/using-nitro"},
       items: [
         "nitro/installation",
-        "nitro/run",
+        "nitro/first-call"
+      ],
+    },
+    {
+      type: 'category',
+      label: 'Example Usage',
+      items: [
+        "examples/llm",
       ],
     },
     "guides/troubleshooting",

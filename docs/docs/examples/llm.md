@@ -1,5 +1,5 @@
 ---
-title: Build simple Nitro chatbot
+title: Simple chatbot with Nitro
 ---
 
 This guide provides instructions to create a chatbot powered by Nitro using the GGUF model.
