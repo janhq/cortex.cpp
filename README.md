@@ -1,7 +1,7 @@
-# Nitro - Accelerated AI Inference Engine
+# Nitro - Embeddable AI
 
 <p align="center">
-  <img alt="nitrologo" src="https://user-images.githubusercontent.com/69952136/266939567-4a7d24f0-9338-4ab5-9261-cb3c71effe35.png">
+  <img alt="nitrologo" src="https://github.com/janhq/nitro/assets/89722390/9a593738-209b-49a9-9e6f-96506dde7006.png">
 </p>
 
 <p align="center">
