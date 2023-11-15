@@ -5,10 +5,10 @@ on:
     branches:
       - main
     tags: ['v*.*.*']
-    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '!docs/**', '!.gitignore']
+    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', '!docs/**', '!.gitignore']
   pull_request:
     types: [opened, synchronize, reopened]
-    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '!docs/**', '!.gitignore']
+    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', '!docs/**', '!.gitignore']
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
