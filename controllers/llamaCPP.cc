@@ -96,18 +96,19 @@ std::string create_return_json(const std::string &id, const std::string &model,
 }
 
 void llamaCPP::warmupModel() {
-  //  json pseudo;
-  //
-  //  pseudo["prompt"] = "Hello";
-  //  pseudo["n_predict"] = 10;
-  //  const int task_id = llama.request_completion(pseudo, false);
-  //  std::string completion_text;
-  //  task_result result = llama.next_result(task_id);
-  //  if (!result.error && result.stop) {
-  //    LOG_INFO << result.result_json.dump(-1, ' ', false,
-  //                                        json::error_handler_t::replace);
-  //  }
-  //  return;
+  json pseudo;
+
+  pseudo["prompt"] = "Hello";
+  pseudo["n_predict"] = 10;
+  pseudo["stream"] = false;
+  const int task_id = llama.request_completion(pseudo, false, false);
+  std::string completion_text;
+  task_result result = llama.next_result(task_id);
+  if (!result.error && result.stop) {
+    LOG_INFO << result.result_json.dump(-1, ' ', false,
+                                        json::error_handler_t::replace);
+  }
+  return;
 }
 
 void llamaCPP::chatCompletion(
@@ -365,10 +366,11 @@ void llamaCPP::loadModel(
   jsonResp["message"] = "Model loaded successfully";
   model_loaded = true;
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  // warmupModel();
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
+  warmupModel();
+
   callback(resp);
 }
 
