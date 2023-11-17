@@ -15,7 +15,7 @@ BINARY_PATH=$1
 DOWNLOAD_URL=$2
 
 # Start the binary file
-"$BINARY_PATH 1 127.0.0.1 5000" > /tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 5000 > /tmp/nitro.log 2>&1 &
 
 # Get the process id of the binary file
 pid=$!
