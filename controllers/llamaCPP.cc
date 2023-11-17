@@ -27,11 +27,6 @@ std::shared_ptr<State> createState(int task_id, llamaCPP *instance) {
 
 // --------------------------------------------
 
-#include <ctime>
-#include <json/json.h>
-#include <string>
-#include <vector>
-
 std::string create_embedding_payload(const std::vector<float> &embedding,
                                      int prompt_tokens) {
   Json::Value root;
