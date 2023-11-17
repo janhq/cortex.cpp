@@ -21,9 +21,9 @@ del %TEMP%\response2.log 2>nul
 del %TEMP%\nitro.log 2>nul
 
 rem Start the binary file
-start /B "" "%BINARY_PATH%" > %TEMP%\nitro.log 2>&1
+start /B "" "%BINARY_PATH%" 1 "127.0.0.1" 5000 > %TEMP%\nitro.log 2>&1
 
-ping -n 6 127.0.0.1 > nul
+ping -n 6 127.0.0.1 5000 > nul
 
 rem Capture the PID of the started process with "nitro" in its name
 for /f "tokens=2" %%a in ('tasklist /fi "imagename eq %BINARY_NAME%" /fo list ^| findstr /B "PID:"') do (
@@ -48,16 +48,16 @@ if not exist "%MODEL_PATH%" (
 rem Define JSON strings for curl data
 call set "MODEL_PATH_STRING=%%MODEL_PATH:\=\\%%"
 set "curl_data1={\"llama_model_path\":\"%MODEL_PATH_STRING%\"}"
-set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":100,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.7}"
+set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":50,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.1}"
 
 rem Print the values of curl_data1 and curl_data2 for debugging
 echo curl_data1=%curl_data1%
 echo curl_data2=%curl_data2%
 
 rem Run the curl commands and capture the status code
-curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://localhost:3928/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
+curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:5000/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
 
-curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://localhost:3928/inferences/llamacpp/chat_completion" ^
+curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:5000/inferences/llamacpp/chat_completion" ^
 --header "Content-Type: application/json" ^
 --header "Accept: text/event-stream" ^
 --header "Access-Control-Allow-Origin: *" ^

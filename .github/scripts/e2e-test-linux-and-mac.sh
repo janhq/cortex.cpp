@@ -15,7 +15,7 @@ BINARY_PATH=$1
 DOWNLOAD_URL=$2
 
 # Start the binary file
-"$BINARY_PATH" > /tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 5000 > /tmp/nitro.log 2>&1 &
 
 # Get the process id of the binary file
 pid=$!
@@ -37,16 +37,16 @@ if [[ ! -f "/tmp/testmodel" ]]; then
 fi
 
 # Run the curl commands
-response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location 'http://localhost:3928/inferences/llamacpp/loadModel' \
+response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location 'http://127.0.0.1:5000/inferences/llamacpp/loadModel' \
 --header 'Content-Type: application/json' \
 --data '{
     "llama_model_path": "/tmp/testmodel",
-    "ctx_len": 2048,
+    "ctx_len": 50,
     "ngl": 32,
     "embedding": false
 }' 2>&1)
 
-response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
+response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location 'http://127.0.0.1:5000/inferences/llamacpp/chat_completion' \
 --header 'Content-Type: application/json' \
 --header 'Accept: text/event-stream' \
 --header 'Access-Control-Allow-Origin: *' \
@@ -57,11 +57,11 @@ response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location 'http://l
         ],
         "stream": true,
         "model": "gpt-3.5-turbo",
-        "max_tokens": 100,
+        "max_tokens": 50,
         "stop": ["hello"],
         "frequency_penalty": 0,
         "presence_penalty": 0,
-        "temperature": 0.7
+        "temperature": 0.1
      }' 2>&1
 )
 
