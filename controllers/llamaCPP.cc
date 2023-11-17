@@ -355,7 +355,7 @@ void llamaCPP::loadModel(
   if (!llama.load_model(params)) {
     LOG_ERROR << "Error loading the model will exit the program";
     Json::Value jsonResp;
-    jsonResp["message"] = "Model loaded failed";
+    jsonResp["message"] = "Failed to load model";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
@@ -363,7 +363,7 @@ void llamaCPP::loadModel(
   llama.initialize();
 
   Json::Value jsonResp;
-  jsonResp["message"] = "Model loaded successfully";
+  jsonResp["message"] = "Failed to load model";
   model_loaded = true;
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
 
