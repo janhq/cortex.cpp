@@ -21,9 +21,9 @@ del %TEMP%\response2.log 2>nul
 del %TEMP%\nitro.log 2>nul
 
 rem Start the binary file
-start /B "" "%BINARY_PATH%" 1 127.0.0.1 5000 > %TEMP%\nitro.log 2>&1
+start /B "" "%BINARY_PATH%" 1 "127.0.0.1" 5000 > %TEMP%\nitro.log 2>&1
 
-ping -n 6 127.0.0.1 > nul
+ping -n 6 127.0.0.1 5000 > nul
 
 rem Capture the PID of the started process with "nitro" in its name
 for /f "tokens=2" %%a in ('tasklist /fi "imagename eq %BINARY_NAME%" /fo list ^| findstr /B "PID:"') do (
