@@ -1,0 +1,24 @@
+// * Classname from Docusaurus template
+// * We just overide the styling with applied class from tailwind
+
+[class*="docSidebarContainer_"] {
+  margin-top: 0 !important;
+}
+
+[class*="sidebar_"] {
+  padding-top: 0 !important;
+}
+
+[class*="sidebarViewport_"] {
+  top: 64px !important;
+  height: unset !important;
+}
+
+[class*="docItemCol_"] {
+  @apply px-8;
+}
+
+// * Including custom sidebar table of content
+.table-of-contents {
+  @apply text-base py-0;
+}

@@ -1,0 +1,27 @@
+// * Classname from Docusaurus template
+// * We just overide the styling with applied class from tailwind
+
+.navbar {
+  @apply my-4 bg-transparent py-0 shadow-none;
+
+  &__inner {
+    @apply container border border-gray-800 rounded-full dark:bg-[#09090B]/20 backdrop-blur-md flex items-center h-14 px-8;
+  }
+
+  &__logo {
+    @apply flex items-center;
+    > img {
+      @apply w-6 h-6;
+    }
+  }
+
+  &__brand {
+    &:hover {
+      color: white;
+    }
+  }
+
+  &__title {
+    font-size: 18px;
+  }
+}

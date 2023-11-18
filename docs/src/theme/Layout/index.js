@@ -27,16 +27,13 @@ export default function Layout(props) {
   return (
     <LayoutProvider>
       <PageMetadata title={title} description={description} />
-
       <SkipToContent />
-
-      <AnnouncementBar />
-
+      {/* <AnnouncementBar /> */}
       <Navbar />
-
       <div
         id={SkipToContentFallbackId}
         className={clsx(
+          "container px-0",
           ThemeClassNames.wrapper.main,
           styles.mainWrapper,
           wrapperClassName
@@ -47,7 +44,7 @@ export default function Layout(props) {
         </ErrorBoundary>
       </div>
 
-      {!noFooter && <Footer />}
+      {/* {!noFooter && <Footer />} */}
     </LayoutProvider>
   );
 }

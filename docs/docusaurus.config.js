@@ -3,8 +3,7 @@
 
 require("dotenv").config();
 
-const lightCodeTheme = require("prism-react-renderer/themes/github");
-const darkCodeTheme = require("prism-react-renderer/themes/dracula");
+const codeTheme = require("prism-react-renderer/themes/duotoneDark");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -129,7 +128,7 @@ const config = {
         title: "Nitro",
         logo: {
           alt: "Nitro Logo",
-          src: "img/logo.svg",
+          src: "img/logos/nitro.svg",
         },
         items: [
           // Navbar left
@@ -161,8 +160,8 @@ const config = {
         ],
       },
       prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
+        theme: codeTheme,
+
         additionalLanguages: ["python"],
       },
       colorMode: {

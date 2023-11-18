@@ -7,12 +7,10 @@ module.exports = {
     container: {
       center: true,
       padding: "16px",
-      screens: {
-        "2xl": "1400px",
-      },
     },
     fontFamily: {
       sans: [
+        "Inter",
         "-apple-system",
         "BlinkMacSystemFont",
         "Segoe UI",
@@ -25,5 +23,5 @@ module.exports = {
     },
     extend: {},
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 };
