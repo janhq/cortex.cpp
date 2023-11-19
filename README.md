@@ -1,12 +1,11 @@
-# Nitro - Accelerated AI Inference Engine
-
+# Nitro - Embeddable AI
 <p align="center">
-  <img alt="nitrologo" src="https://user-images.githubusercontent.com/69952136/266939567-4a7d24f0-9338-4ab5-9261-cb3c71effe35.png">
+  <img alt="nitrologo" src="https://github.com/janhq/nitro/assets/89722390/7b5867cc-ea4d-4917-97fd-197f3f55c355.png">
+  
 </p>
-
 <p align="center">
-  <a href="https://jan.ai/nitro">Getting Started</a> - <a href="https://jan.ai/nitro">Docs</a> 
-  - <a href="https://docs.jan.ai/changelog/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+  <a href="https://nitro.jan.ai/nitro/overview">Getting Started</a> - <a href="https://nitro.jan.ai/api/overview">API Reference</a> 
+  - <a href="https://docs.jan.ai/changelog/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://nitro.jan.ai/community/support">Community</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
 > ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
@@ -28,6 +27,8 @@
 Nitro is a light-weight integration layer (and soon to be inference engine) for cutting edge inference engine, make deployment of AI models easier than ever before!
 
 The binary of nitro after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
+
+> Read more about Nitro at https://nitro.jan.ai/
 
 ### Repo Structure
 
