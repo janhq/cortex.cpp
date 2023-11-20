@@ -28,8 +28,8 @@ export default function GetNitro() {
   };
 
   return (
-    <div className="relative w-full lg:w-1/2 mx-auto mt-10 flex flex-col [&>pre]:!mt-0 [&>pre]:rounded-t-none [&>pre]:border [&>pre]:border-t-0 [&>pre]:border-gray-700">
-      <div className="bg-[#09090B]/20 backdrop-blur-md rounded-t-md overflow-hidden border border-b-0 border-gray-700">
+    <div className="relative w-full lg:w-1/2 mx-auto mt-10 flex flex-col [&>pre]:!mt-0 [&>pre]:rounded-t-none [&>pre]:border [&>pre]:border-t-0 [&>pre]:border-gray-800">
+      <div className="bg-[#09090B]/20 backdrop-blur-md rounded-t-md overflow-hidden border border-b-0 border-gray-800">
         <ul className="flex">
           {options.map((option, i) => {
             return (

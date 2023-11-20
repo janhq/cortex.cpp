@@ -3,6 +3,7 @@
 
 [class*="docSidebarContainer_"] {
   margin-top: 0 !important;
+  border-color: #1f2937 !important;
 }
 
 [class*="sidebar_"] {
@@ -10,7 +11,7 @@
 }
 
 [class*="sidebarViewport_"] {
-  top: 64px !important;
+  top: 80px !important;
   height: unset !important;
 }
 
@@ -20,5 +21,13 @@
 
 // * Including custom sidebar table of content
 .table-of-contents {
-  @apply text-base py-0;
+  @apply text-base py-0 border-gray-800;
+}
+
+.menu__caret:before {
+  background: var(--ifm-menu-link-sublist-icon) 50% / 1.5rem 1.5rem;
+}
+
+[class*="codeBlockContainer_"] {
+  margin: 4px;
 }
