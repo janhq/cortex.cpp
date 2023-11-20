@@ -43,10 +43,6 @@ const menus = [
     name: "Company",
     child: [
       {
-        menu: "Blog",
-        path: "/guides",
-      },
-      {
         menu: "Careers",
         path: "https://janai.bamboohr.com/careers",
         external: true,

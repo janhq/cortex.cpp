@@ -6,7 +6,7 @@ title: Architecture
 This document is being updated. Please stay tuned.
 :::
 
-![Nitro Architecture](img/architecture.drawio.png)
+![Nitro Architecture](/img/architecture.png)
 
 ### Components
 

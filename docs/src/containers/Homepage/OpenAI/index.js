@@ -48,11 +48,7 @@ export default function OpenAI() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="relative [&>pre]:min-h-[350px]">
           <div className="mb-4">
-            <img
-              src="/img/logos/open-ai.svg"
-              alt="Element Lines"
-              className=""
-            />
+            <img src="/img/logos/open-ai.svg" alt="Element Lines" />
           </div>
           <div className="bg-[#27272A]/50 py-2 px-4 rounded-md">
             <div className="flex gap-x-2">

@@ -12,7 +12,7 @@ export default function Statistic() {
   return (
     <div className="container">
       <div className="grid grid-cols-12 text-center">
-        <div className="col-span-full lg:col-span-10 lg:col-start-2 pt-4">
+        <div className="col-span-full lg:col-span-12 pt-4">
           <div className="bg-[#27272A] inline-flex rounded-lg overflow-hidden mb-4 border border-gray-800 justify-center">
             <ul className="flex">
               {tabs.map((option) => {
@@ -39,25 +39,19 @@ export default function Statistic() {
           </div>
           {lightweightTabActive ? (
             <div className="grid lg:grid-cols-3 mt-8 gap-4 lg:gap-8">
-              <div
-                className="border border-gray-800 p-4 lg:p-6 rounded-lg"
-                style={{
-                  background:
-                    "radial-gradient(320px 320px at 10% 100%, #172554, transparent)",
-                }}
-              >
+              <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium text-xl text-yellow-400">Nitro</h6>
                 <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
                   3mb
                 </h6>
               </div>
-              <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg">
+              <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium text-xl text-red-600">Ollama</h6>
                 <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
                   332mb
                 </h6>
               </div>
-              <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg">
+              <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium text-xl text-blue-600">Local AI</h6>
                 <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
                   193mb
@@ -66,20 +60,14 @@ export default function Statistic() {
             </div>
           ) : (
             <div className="grid lg:grid-cols-3 mt-8 gap-4 lg:gap-8">
-              <div
-                className="border border-gray-800 p-4 lg:p-6 rounded-lg"
-                style={{
-                  background:
-                    "radial-gradient(320px 320px at 10% 100%, #172554, transparent)",
-                }}
-              >
+              <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium text-xl text-yellow-400">Nitro</h6>
                 <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
                   24
                 </h6>
                 <span className="text-gray-400">token/s</span>
               </div>
-              <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg">
+              <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium text-xl text-red-600">
                   Llama.cpp (base)
                 </h6>
@@ -88,7 +76,7 @@ export default function Statistic() {
                 </h6>
                 <span className="text-gray-400">token/s</span>
               </div>
-              <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg">
+              <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium text-xl text-blue-600">
                   Text-inference
                 </h6>
