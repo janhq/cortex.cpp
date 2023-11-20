@@ -1,7 +1,12 @@
 ---
-title: Key Concepts
+title: Architecture
 ---
 
+![Nitro Architecture](img/architecture.drawio.png)
+
+### Details element example
+
+## Key Concepts
 ## Inference Server
 
 An inference server is a type of server designed to process requests for running large language models and to return predictions. This server acts as the backbone for AI-powered applications, providing real-time execution of models to analyze data and make decisions.
@@ -25,3 +30,9 @@ Drogon is an HTTP application framework based on C++14/17, designed for its spee
 - **Asynchronous Operations**: The framework supports non-blocking operations, permitting the server to continue processing other tasks while awaiting responses from databases or external services.
   
 - **Scalability**: Drogon's architecture is built to scale, capable of managing numerous connections at once, suitable for applications with high traffic loads.
+
+
+
+We should only have 1 document
+- [ ] Refactor system/architecture
+- [ ] Refactor system/key-concepts
