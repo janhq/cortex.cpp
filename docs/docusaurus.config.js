@@ -51,8 +51,8 @@ const config = {
     [
       "posthog-docusaurus",
       {
-        apiKey: process.env.POSTHOG_PROJECT_API_KEY,
-        appUrl: process.env.POSTHOG_APP_URL, // optional
+        apiKey: process.env.POSTHOG_PROJECT_API_KEY || "XXX",
+        appUrl: process.env.POSTHOG_APP_URL || "XXX", // optional
         enableInDevelopment: false, // optional
       },
     ],
@@ -101,7 +101,8 @@ const config = {
       {
         specs: [
           {
-            spec: "openapi/OpenAPISpec.json", // can be local file, url, or parsed json object
+            spec: "openapi/NitroAPI.yaml", // can be local file, url, or parsed json object
+            // spec: "openapi/OpenAIAPI.yaml",
             route: "/api/",
           },
         ],
@@ -143,19 +144,19 @@ const config = {
             position: "left",
             label: "API Reference",
           },
-          {
-            type: "docSidebar",
-            sidebarId: "communitySidebar",
-            position: "left",
-            label: "Community",
-          },
+          // {
+          //   type: "docSidebar",
+          //   sidebarId: "communitySidebar",
+          //   position: "left",
+          //   label: "Community",
+          // },
           // Navbar right
-          {
-            type: "docSidebar",
-            sidebarId: "blogSidebar",
-            position: "right",
-            label: "Blog",
-          },
+          // {
+          //   type: "docSidebar",
+          //   sidebarId: "blogSidebar",
+          //   position: "right",
+          //   label: "Blog",
+          // },
         ],
       },
       prism: {
