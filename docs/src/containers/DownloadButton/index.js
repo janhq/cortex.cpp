@@ -111,7 +111,7 @@ export default function DownloadButton() {
         className="cursor-pointer w-64 relative inline-flex items-center rounded-l-md border-0 px-3.5 py-2.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-500 hover:text-white"
         href={defaultSystem.href}
       >
-        <img src={defaultSystem.logo} alt="Logo" className="h-5 mr-3 -mt-1" />
+        <img src={defaultSystem.logo} alt="Logo" className="h-4 mr-3" />
         {defaultSystem.name}
       </a>
       <Menu as="div" className="relative -ml-px block">

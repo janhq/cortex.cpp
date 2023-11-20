@@ -65,7 +65,7 @@ export default function Footer() {
         <div className="grid grid-cols-2 gap-8 md:grid-cols-2 lg:grid-cols-6">
           <div className="lg:col-span-3 col-span-2">
             <h6 className="mb-3">Nitro</h6>
-            <div className="w-1/2">
+            <div className="w-full lg:w-1/2">
               <p className="dark:text-gray-400 text-gray-600">
                 A fast, lightweight (3mb) inference server to supercharge apps
                 with local AI.

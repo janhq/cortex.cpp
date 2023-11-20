@@ -27,13 +27,17 @@ export default function Layout(props) {
   return (
     <LayoutProvider>
       <PageMetadata title={title} description={description} />
+
       <SkipToContent />
+
       <AnnouncementBar />
+
       <Navbar />
+
       <div
         id={SkipToContentFallbackId}
         className={clsx(
-          "container px-0",
+          "px-0",
           ThemeClassNames.wrapper.main,
           styles.mainWrapper,
           wrapperClassName

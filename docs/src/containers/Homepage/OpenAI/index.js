@@ -3,7 +3,11 @@ import React from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import theme from "react-syntax-highlighter/dist/esm/styles/prism/duotone-dark";
 
+import { useClipboard } from "@site/src/hooks/useClipboard";
+
 export default function OpenAI() {
+  const clipboard = useClipboard();
+
   const codeStringOpenAI = `curl http://localhost:3928/inferences/llamacpp/chat_completion
   -H "Content-Type: application/json"
   -d '{
@@ -50,15 +54,31 @@ export default function OpenAI() {
           <div className="mb-4">
             <img src="/img/logos/open-ai.svg" alt="Element Lines" />
           </div>
-          <div className="bg-[#27272A]/50 py-2 px-4 rounded-md">
-            <div className="flex gap-x-2">
+          <div className="bg-[#27272A]/50 py-2 px-4 rounded-md relative">
+            <div className="flex gap-x-2 items-center">
               <p className="text-yellow-400">POST</p>
-              <p>https://api.openai.com/v1/chat/completions</p>
+              <p className="text-sm">
+                https://api.openai.com/v1/chat/completions
+              </p>
+            </div>
+            <div
+              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+              onClick={() =>
+                clipboard.copy("https://api.openai.com/v1/chat/completions")
+              }
+            >
+              {clipboard.copied ? "Copied" : "Copy"}
             </div>
           </div>
           <SyntaxHighlighter language="bash" style={theme}>
             {codeStringOpenAI}
           </SyntaxHighlighter>
+          <div
+            className="absolute top-24 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+            onClick={() => clipboard.copy(codeStringOpenAI)}
+          >
+            {clipboard.copied ? "Copied" : "Copy"}
+          </div>
         </div>
 
         <div className="relative [&>pre]:min-h-[350px]">
@@ -70,15 +90,33 @@ export default function OpenAI() {
             />
             <span className="text-lg font-bold">Nitro</span>
           </div>
-          <div className="bg-[#27272A]/50 py-2 px-4 rounded-md">
-            <div className="flex gap-x-2">
+          <div className="bg-[#27272A]/50 py-2 px-4 rounded-md relative">
+            <div className="flex gap-x-2 items-center">
               <p className="text-yellow-400">POST</p>
-              <p>https://localhost:1337/llama.cpp/v1/chat/completions</p>
+              <p className="text-sm">
+                https://localhost:1337/llama.cpp/v1/chat/completions
+              </p>
+            </div>
+            <div
+              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+              onClick={() =>
+                clipboard.copy(
+                  "https://localhost:1337/llama.cpp/v1/chat/completions"
+                )
+              }
+            >
+              {clipboard.copied ? "Copied" : "Copy"}
             </div>
           </div>
           <SyntaxHighlighter language="bash" style={theme}>
             {codeStringNitro}
           </SyntaxHighlighter>
+          <div
+            className="absolute top-24 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+            onClick={() => clipboard.copy(codeStringNitro)}
+          >
+            {clipboard.copied ? "Copied" : "Copy"}
+          </div>
         </div>
       </div>
     </div>

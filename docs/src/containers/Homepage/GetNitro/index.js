@@ -5,12 +5,15 @@ import theme from "react-syntax-highlighter/dist/esm/styles/prism/duotone-dark";
 
 import { twMerge } from "tailwind-merge";
 
+import { useClipboard } from "@site/src/hooks/useClipboard";
+
 export default function GetNitro() {
   const codeStringShell = `curl -fsSL https://nitro.jan.ai/install -o get-nitro.sh`;
   const codeStringNpm = `npm install nitro`;
   const codeStringPython = `pip install nitro`;
 
   const [packageInstall, setPackageInstall] = useState("Shell script");
+  const clipboard = useClipboard();
 
   const options = ["Shell script", "NPM", "Python"];
 
@@ -51,8 +54,11 @@ export default function GetNitro() {
         {renderSyntax(packageInstall)}
       </SyntaxHighlighter>
 
-      <div className="absolute bottom-5 right-4 text-xs px-2 py-1 bg-black rounded-md">
-        Copy
+      <div
+        className="absolute bottom-5 right-4 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+        onClick={() => clipboard.copy(renderSyntax(packageInstall))}
+      >
+        {clipboard.copied ? "Copied" : "Copy"}
       </div>
     </div>
   );

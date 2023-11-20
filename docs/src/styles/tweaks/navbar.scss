@@ -2,7 +2,7 @@
 // * We just overide the styling with applied class from tailwind
 
 .navbar {
-  @apply my-4 bg-transparent py-0 shadow-none top-4 container;
+  @apply my-4 bg-transparent py-0 shadow-none top-4;
   &:before {
     width: 100%;
     height: 16px;
@@ -14,7 +14,7 @@
   }
 
   &__inner {
-    @apply container border border-gray-800 rounded-lg dark:bg-[#09090B]/20 backdrop-blur-md flex items-center h-14 px-8 relative;
+    @apply border border-gray-800 rounded-lg dark:bg-[#09090B]/20 backdrop-blur-md flex items-center h-14 px-8 relative;
   }
 
   &__logo {

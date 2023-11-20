@@ -15,9 +15,10 @@ export default function Statistic() {
         <div className="col-span-full lg:col-span-12 pt-4">
           <div className="bg-[#27272A] inline-flex rounded-lg overflow-hidden mb-4 border border-gray-800 justify-center">
             <ul className="flex">
-              {tabs.map((option) => {
+              {tabs.map((option, i) => {
                 return (
                   <li
+                    key={i}
                     className={twMerge(
                       "capitalize px-4 py-2 cursor-pointer",
                       activeTab === option && "bg-blue-600"

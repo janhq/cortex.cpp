@@ -1,9 +1,11 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
+import path from "path";
+
 require("dotenv").config();
 
-const codeTheme = require("prism-react-renderer/themes/duotoneDark");
+import { themes as prismThemes } from "prism-react-renderer";
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -70,7 +72,7 @@ const config = {
         // Will be passed to @docusaurus/plugin-content-docs (false to disable)
         docs: {
           routeBasePath: "/",
-          sidebarPath: require.resolve("./sidebars.js"),
+          sidebarPath: "./sidebars.js",
           editUrl: "https://github.com/janhq/nitro/tree/main/docs",
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
@@ -89,7 +91,7 @@ const config = {
         },
         // Will be passed to @docusaurus/theme-classic.
         theme: {
-          customCss: require.resolve("./src/styles/main.scss"),
+          customCss: "./src/styles/main.scss",
         },
         // Will be passed to @docusaurus/plugin-content-pages (false to disable)
         // pages: {},
@@ -99,6 +101,7 @@ const config = {
     [
       "redocusaurus",
       {
+        config: path.join(__dirname, "redocly.yaml"),
         specs: [
           {
             spec: "openapi/NitroAPI.yaml", // can be local file, url, or parsed json object
@@ -160,12 +163,13 @@ const config = {
         ],
       },
       prism: {
-        theme: codeTheme,
+        theme: prismThemes.duotoneDark,
+        darkTheme: prismThemes.duotoneDark,
         additionalLanguages: ["python"],
       },
       colorMode: {
         defaultMode: "dark",
-        disableSwitch: true,
+        disableSwitch: false,
         respectPrefersColorScheme: false,
       },
     }),

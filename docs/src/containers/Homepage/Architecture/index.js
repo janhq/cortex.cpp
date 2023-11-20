@@ -25,6 +25,9 @@ export default function Architecture() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                 <p>Authentication</p>
+                <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm">
+                  Coming Soon
+                </p>
               </div>
               <div className="bg-[#27272A]/20 border border-gray-800 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                 <p>Batching</p>
@@ -49,6 +52,9 @@ export default function Architecture() {
                   </div>
                   <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                     <p>TensorRT-LLM</p>
+                    <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm">
+                      Coming Soon
+                    </p>
                   </div>
                 </div>
               </div>
@@ -56,12 +62,18 @@ export default function Architecture() {
                 <h6 className="mb-4">Speech</h6>
                 <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                   <p>Whisper.cpp</p>
+                  <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm">
+                    Coming Soon
+                  </p>
                 </div>
               </div>
               <div className="border border-gray-800 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                 <h6 className="mb-4">Vision</h6>
                 <div className="bg-[#27272A]/50 border border-gray-800 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                   <p>StableDiffusion</p>
+                  <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm">
+                    Coming Soon
+                  </p>
                 </div>
               </div>
             </div>
