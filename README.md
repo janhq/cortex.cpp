@@ -1,11 +1,10 @@
 # Nitro - Embeddable AI
 <p align="center">
   <img alt="nitrologo" src="https://github.com/janhq/nitro/assets/89722390/7b5867cc-ea4d-4917-97fd-197f3f55c355.png">
-  
 </p>
 <p align="center">
-  <a href="https://nitro.jan.ai/nitro/overview">Getting Started</a> - <a href="https://nitro.jan.ai/api/overview">API Reference</a> 
-  - <a href="https://docs.jan.ai/changelog/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://nitro.jan.ai/community/support">Community</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+  <a href="https://nitro.jan.ai/docs">Documentation</a> - <a href="https://nitro.jan.ai/api">API Reference</a> 
+  - <a href="https://github.com/janhq/nitro/releases/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
 > ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
