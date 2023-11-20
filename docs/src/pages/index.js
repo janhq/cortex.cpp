@@ -47,7 +47,7 @@ export default function Home() {
                 &nbsp;inference server to supercharge apps with local AI.
               </p>
 
-              <div className="mt-6">
+              <div className="mt-10">
                 <Dropdown />
               </div>
             </div>
@@ -56,7 +56,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-4">
             <OpenAI />
           </div>
 

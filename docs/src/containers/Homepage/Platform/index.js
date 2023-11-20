@@ -10,7 +10,7 @@ export default function Platform() {
           className="border border-gray-800 p-4 lg:p-6 rounded-lg"
           style={{
             background:
-              "radial-gradient(500px 500px at 50% 100%, #172554, transparent)",
+              "radial-gradient(500px 500px at 50% 100%, #1D1B48, transparent)",
           }}
         >
           <h2>Cross-Platform</h2>
@@ -31,7 +31,7 @@ export default function Platform() {
             className="relative border border-gray-800 p-4 lg:p-6 rounded-lg h-full "
             style={{
               background:
-                "radial-gradient(300px 300px at 50% 100%, #172554, transparent)",
+                "radial-gradient(300px 300px at 50% 100%, #1D1B48, transparent)",
             }}
           >
             <h5>GPUs</h5>
@@ -47,7 +47,7 @@ export default function Platform() {
             className="border border-gray-800 p-4 lg:p-6 rounded-lg h-full"
             style={{
               background:
-                "radial-gradient(300px 300px at 50% 100%, #172554, transparent)",
+                "radial-gradient(300px 300px at 50% 100%, #1D1B48, transparent)",
             }}
           >
             <h5>CPUs</h5>
