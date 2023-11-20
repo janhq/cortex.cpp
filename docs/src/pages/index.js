@@ -1,66 +1,61 @@
 import React from "react";
-import Dropdown from "@site/src/components/Elements/dropdown";
+
 import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
-import useBaseUrl from "@docusaurus/useBaseUrl";
 import Layout from "@theme/Layout";
-import AnnoncementBanner from "@site/src/components/Announcement";
-import {
-  CloudArrowUpIcon,
-  CursorArrowRaysIcon,
-  ShieldCheckIcon,
-  CpuChipIcon,
-  ClipboardDocumentIcon,
-  CubeTransparentIcon,
-  ComputerDesktopIcon,
-  FolderPlusIcon,
-} from "@heroicons/react/24/outline";
 
 import ThemedImage from "@theme/ThemedImage";
 
-// const features = [
-//   {
-//     name: "Personal AI that runs on your computer",
-//     desc: "Jan runs directly on your local machine, offering privacy, convenience and customizability.",
-//     icon: ComputerDesktopIcon,
-//   },
-//   {
-//     name: "Private and offline, your data never leaves your machine",
-//     desc: "Your conversations and data are with an AI that runs on your computer, where only you have access.",
-//     icon: ShieldCheckIcon,
-//   },
-//   {
-//     name: "No subscription fees, the AI runs on your computer",
-//     desc: "Say goodbye to monthly subscriptions or usage-based APIs. Jan runs 100% free on your own hardware.",
-//     icon: CubeTransparentIcon,
-//   },
-//   {
-//     name: "Extendable via App and Plugin framework",
-//     desc: "Jan has a versatile app and plugin framework, allowing you to customize it to your needs.",
-//     icon: FolderPlusIcon,
-//   },
-// ];
+import GetNitro from "@site/src/containers/Homepage/GetNitro";
+import Statistic from "@site/src/containers/Homepage/Statistic";
+import OpenAI from "@site/src/containers/Homepage/OpenAI";
+import Platform from "@site/src/containers/Homepage/Platform";
 
 export default function Home() {
   const { siteConfig } = useDocusaurusContext();
   return (
-    <>
-      {/* <AnnoncementBanner /> */}
-      <Layout title={`${siteConfig.tagline}`} description="About Nitro.">
-        <main className="relative">
-          <div className="container py-10">
-            <div className="text-center">
-              <h1 className="bg-gradient-to-b dark:from-white from-black to-gray-500 dark:to-gray-400 bg-clip-text text-6xl lg:text-8xl font-bold leading-tight text-transparent dark:text-transparent lg:leading-tight">
-                Embeddable AI
-              </h1>
-              <p className="text-2xl">
-                A fast, lightweight (3mb) inference server to supercharge apps
-                with local AI
-              </p>
-            </div>
+    <Layout title={`${siteConfig.tagline}`} description="About Nitro.">
+      <img
+        src="/img/elements/ellipse.png"
+        alt="Element Hero Ellipse"
+        className="absolute top-0 w-full left-0 opacity-30"
+      />
+      <img
+        src="/img/elements/lines.svg"
+        alt="Element Lines"
+        className="absolute w-full top-0 left-0 object-cover h-[460px] opacity-50 lg:opacity-80"
+      />
+      <main className="relative z-30">
+        <div className="container py-10">
+          <div className="text-center">
+            <h1 className="bg-gradient-to-b dark:from-white from-black to-gray-500 dark:to-gray-400 bg-clip-text text-6xl lg:text-8xl font-medium leading-tight text-transparent dark:text-transparent lg:leading-tight">
+              Embeddable AI
+            </h1>
+            <p className="text-2xl mt-1">
+              A fast, lightweight&nbsp;
+              <span className="py-0.5 px-2 bg-indigo-600 rounded-full text-base font-bold">
+                3mb
+              </span>
+              &nbsp;inference server to supercharge apps with local AI.
+            </p>
           </div>
-        </main>
-      </Layout>
-    </>
+          <div className="mt-10">
+            <GetNitro />
+          </div>
+        </div>
+
+        <div className="mt-2">
+          <Statistic />
+        </div>
+
+        <div className="mt-20">
+          <OpenAI />
+        </div>
+
+        <div className="my-20">
+          <Platform />
+        </div>
+      </main>
+    </Layout>
   );
 }

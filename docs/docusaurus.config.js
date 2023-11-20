@@ -161,7 +161,6 @@ const config = {
       },
       prism: {
         theme: codeTheme,
-
         additionalLanguages: ["python"],
       },
       colorMode: {
