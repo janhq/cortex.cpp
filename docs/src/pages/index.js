@@ -4,9 +4,7 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
 import Layout from "@theme/Layout";
 
-import ThemedImage from "@theme/ThemedImage";
-
-import Dropdown from "@site/src/components/Elements/dropdown";
+import DownloadButton from "@site/src/containers/DownloadButton";
 
 import GetNitro from "@site/src/containers/Homepage/GetNitro";
 import Statistic from "@site/src/containers/Homepage/Statistic";
@@ -48,7 +46,7 @@ export default function Home() {
               </p>
 
               <div className="mt-10">
-                <Dropdown />
+                <DownloadButton />
               </div>
             </div>
             <div className="mt-10">
