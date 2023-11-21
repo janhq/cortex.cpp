@@ -49,7 +49,7 @@ const sidebars = {
       label: "Guides",
       collapsible: false,
       collapsed: false,
-      items: ["examples/llm"],
+      items: ["examples/chatbox"],
     },
     // {
     //   type: "category",
@@ -61,7 +61,7 @@ const sidebars = {
   ],
 
   apiSidebar: [
-    "api"
+    "api-reference"
   ],
 
   // communitySidebar: [

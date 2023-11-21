@@ -26,7 +26,7 @@ Next, we need to download a model. For this example, we'll use the [Llama2 7B ch
 - Create a `/model` and navigate into it:
 ```bash
 mkdir model && cd model
-wget https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
+wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
 ```
 
 ## Step 3: Run Nitro server
@@ -43,14 +43,28 @@ To check if the Nitro server is running:
 curl http://localhost:3928/healthz
 ```
 
-## Step 4: Making an Inference
+## Step 4: Load model
+
+To load the model to Nitro server, you need to run:
+
+```bash title="Load model"
+curl http://localhost:3928/inferences/llamacpp/loadmodel \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "llama_model_path": "/model/llama-2-7b-model.gguf",
+    "ctx_len": 512,
+    "ngl": 100,
+  }'
+```
+
+## Step 5: Making an Inference
 
 Finally, let's make an actual inference call using Nitro.
 
 - In your terminal, execute:
 
 ```bash title="Nitro Inference"
-curl http://localhost:3928/inferences/llamacpp/chat_completion \
+curl http://localhost:3928/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [

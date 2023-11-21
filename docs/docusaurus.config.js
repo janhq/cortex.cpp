@@ -103,7 +103,7 @@ const config = {
           {
             spec: "openapi/NitroAPI.yaml", // can be local file, url, or parsed json object
             // spec: "openapi/OpenAIAPI.yaml",
-            route: "/api/",
+            route: "/api-reference/",
           },
         ],
         theme: {

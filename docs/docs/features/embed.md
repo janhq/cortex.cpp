@@ -17,7 +17,7 @@ Here’s an example showing how to get the embedding result from the model:
 <div style={{ width: '50%', float: 'left', clear: 'left' }}>
 
 ```bash title="Nitro" {1}
-curl http://localhost:3928/inferences/llamacpp/embedding \
+curl http://localhost:3928/v1/embeddings \
     -H 'Content-Type: application/json' \
     -d '{
         "input": "Hello",
