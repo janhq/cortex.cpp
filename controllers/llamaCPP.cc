@@ -157,6 +157,10 @@ void llamaCPP::chatCompletion(
   // To set default value
 
   if (jsonBody) {
+    // Default values to enable auto caching
+    data["cache_prompt"] = true;
+    data["n_keep"] = -1;
+
     data["stream"] = (*jsonBody).get("stream", false).asBool();
     data["n_predict"] = (*jsonBody).get("max_tokens", 500).asInt();
     data["top_p"] = (*jsonBody).get("top_p", 0.95).asFloat();
@@ -164,7 +168,6 @@ void llamaCPP::chatCompletion(
     data["frequency_penalty"] =
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
-    data["cache_prompt"] = true;
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
       std::string input_role = message["role"].asString();
