@@ -39,7 +39,7 @@ export default function Home() {
               </h1>
               <p className="text-2xl mt-1">
                 A fast, lightweight&nbsp;
-                <span className="py-0.5 px-2 bg-indigo-600 rounded-full text-base font-bold dark:text-black text-white">
+                <span className="py-0.5 px-2 bg-indigo-600 rounded-full text-base font-bold  text-white">
                   3mb
                 </span>
                 &nbsp;inference server to supercharge apps with local AI.
