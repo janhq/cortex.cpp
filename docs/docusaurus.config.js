@@ -1,8 +1,6 @@
 // @ts-check
 // Note: type annotations allow type checking and IDEs autocompletion
 
-import path from "path";
-
 require("dotenv").config();
 
 const codeTheme = require("prism-react-renderer").themes.dracula;
@@ -34,7 +32,7 @@ const config = {
     defaultLocale: "en",
     locales: ["en"],
   },
-  
+
   markdown: {
     mermaid: true,
   },
@@ -101,7 +99,6 @@ const config = {
     [
       "redocusaurus",
       {
-        config: path.join(__dirname, "redocly.yaml"),
         specs: [
           {
             spec: "openapi/NitroAPI.yaml", // can be local file, url, or parsed json object
@@ -173,8 +170,8 @@ const config = {
         respectPrefersColorScheme: false,
       },
     }),
-    // Only for react live
-    themes: ["@docusaurus/theme-live-codeblock", "@docusaurus/theme-mermaid"],
+  // Only for react live
+  themes: ["@docusaurus/theme-live-codeblock", "@docusaurus/theme-mermaid"],
 };
 
 module.exports = config;
