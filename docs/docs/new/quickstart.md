@@ -6,13 +6,13 @@ title: Quickstart
 ### For Linux and MacOS
 Open your terminal and enter the following command. This will download and install Nitro on your system.
   ```bash
-  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh -o /tmp/install.sh && chmod +x /tmp/install.sh && sudo bash /tmp/install.sh --gpu && rm /tmp/install.sh
+  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -
   ```
 
 ### For Windows
 Open PowerShell and execute the following command. This will perform the same actions as for Linux and MacOS but is tailored for Windows.
   ```bash
-  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat --gpu; Remove-Item -Path 'install.bat' }"
+  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"
   ```
 
 > **NOTE:**Installing Nitro will add new files and configurations to your system to enable it to run.

@@ -33,6 +33,7 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
     "ctx_len": 128,
     "ngl": 100,
     "pre_prompt": "You are a Pirate. Using drunk language with a lot of Arr...",
+    "system_prompt": "ASSISTANT'S RULE: ",
     "user_prompt": "USER:",
     "ai_prompt": "ASSISTANT: "
   }'
