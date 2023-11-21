@@ -1,6 +1,6 @@
 @layer base {
   html[data-theme="light"] {
-    --custom-radial-blur: "#EFF2FE";
+    --custom-radial-blur: #e1e7fd;
     --ifm-background-color: #fafafa;
     --ifm-color-primary: #2563eb; /* New Primary Blue */
     --ifm-color-primary-dark: #204fcf; /* Darker Blue */
@@ -15,7 +15,7 @@
   }
 
   html[data-theme="dark"] {
-    --custom-radial-blur: "#1D1B48";
+    --custom-radial-blur: #1d1b48;
     --ifm-background-color: #18181b;
     --ifm-color-primary: #ffffff; /* New Primary Blue */
     --ifm-color-primary-dark: #204fcf; /* Darker Blue */
@@ -46,6 +46,34 @@
     &:hover {
       color: inherit;
       text-decoration: none;
+    }
+  }
+}
+
+@layer components {
+  .radial-blur-lg {
+    background: radial-gradient(
+      500px 500px at 50% 100%,
+      var(--custom-radial-blur),
+      transparent
+    );
+  }
+  .radial-blur-sm {
+    background: radial-gradient(
+      300px 300px at 20% 100%,
+      var(--custom-radial-blur),
+      transparent
+    );
+  }
+  .arrow-architecture {
+    position: relative;
+    &::before {
+      position: absolute;
+      content: "";
+      height: 34px;
+      width: 1px;
+      top: -34px;
+      @apply bg-gray-300 dark:bg-gray-800;
     }
   }
 }

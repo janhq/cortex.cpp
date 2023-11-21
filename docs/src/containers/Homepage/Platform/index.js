@@ -1,18 +1,10 @@
 import React from "react";
 
 export default function Platform() {
-  const options = ["platforms", "CPUs", "GPUs"];
-
   return (
     <div className="container">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center text-center">
-        <div
-          className="dark:bg-[#27272A]/20 bg-[#E4E4E7]/20 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg0"
-          // style={{
-          //   background:
-          //     "radial-gradient(500px 500px at 50% 100%, var(--custom-radial-blur), transparent)",
-          // }}
-        >
+        <div className="radial-blur-lg border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg">
           <h2>Cross-Platform</h2>
           <p className="mt-2">
             Nitro runs on cross-platform on CPU and GPU architectures
@@ -27,13 +19,7 @@ export default function Platform() {
         </div>
 
         <div className="flex flex-col h-full gap-y-8">
-          <div
-            className="dark:bg-[#27272A]/20 bg-[#E4E4E7]/20 relative border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg h-full "
-            // style={{
-            //   background:
-            //     "radial-gradient(300px 300px at 20% 100%, var(--custom-radial-blur), transparent)",
-            // }}
-          >
+          <div className="radial-blur-sm relative border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg h-full ">
             <h5>GPUs</h5>
             <div className="relative">
               <img
@@ -43,13 +29,7 @@ export default function Platform() {
               />
             </div>
           </div>
-          <div
-            className="dark:bg-[#27272A]/20 bg-[#E4E4E7]/20 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg h-full"
-            // style={{
-            //   background:
-            //     "radial-gradient(300px 300px at 100% 70%, var(--custom-radial-blur), transparent)",
-            // }}
-          >
+          <div className="radial-blur-sm border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg h-full">
             <h5>CPUs</h5>
             <div className="relative">
               <img

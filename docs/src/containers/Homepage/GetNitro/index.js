@@ -8,12 +8,17 @@ import { twMerge } from "tailwind-merge";
 import { useClipboard } from "@site/src/hooks/useClipboard";
 
 export default function GetNitro() {
-  const codeStringShell = `curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -`;
+  const userAgent = navigator.userAgent;
+
+  const codeStringShell = userAgent.includes("Windows")
+    ? `powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"`
+    : `curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -`;
+
   const codeStringNpm = `#(Coming Soon)\nnpm install @janhq/nitro`;
   const codeStringPython = `#(Coming Soon)\npip install @janhq/nitro`;
 
   const [packageInstall, setPackageInstall] = useState("Shell script");
-  const clipboard = useClipboard();
+  const clipboard = useClipboard({ timeout: 500 });
 
   const options = ["Shell script", "NPM", "Python"];
 

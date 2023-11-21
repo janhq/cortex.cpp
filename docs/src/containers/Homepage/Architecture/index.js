@@ -18,9 +18,10 @@ export default function Architecture() {
         />
         <div className="col-span-full lg:col-span-10 lg:col-start-2 relative z-10">
           <div className="dark:bg-[#27272A]/20 bg-[#D4D4D8]/50 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
-            <p>OpenAI-compatible API</p>
+            <h6>OpenAI-compatible API</h6>
           </div>
-          <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg mt-8">
+
+          <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg mt-8 arrow-architecture">
             <h5 className="mb-6">Nitro</h5>
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               <div className="dark:bg-[#27272A]/20 bg-[#D4D4D8]/50 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
@@ -41,7 +42,7 @@ export default function Architecture() {
             </div>
           </div>
 
-          <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg mt-8">
+          <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg mt-8 arrow-architecture">
             <h5 className="mb-6">Model Engines</h5>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
