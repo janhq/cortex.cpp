@@ -19,9 +19,6 @@
 
   &__logo {
     @apply flex items-center;
-    > img {
-      @apply w-6 h-6;
-    }
   }
 
   &__brand {
