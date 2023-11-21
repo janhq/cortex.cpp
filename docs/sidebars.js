@@ -61,7 +61,7 @@ const sidebars = {
   ],
 
   apiSidebar: [
-    "api"
+    "api-reference"
   ],
 
   // communitySidebar: [
