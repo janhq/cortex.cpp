@@ -49,7 +49,7 @@ export default function DownloadButton() {
   };
 
   const changeDefaultSystem = (systems) => {
-    const userAgent = navigator.userAgent;
+    const userAgent = typeof window !== "undefined" && navigator.userAgent;
     if (userAgent.includes("Windows")) {
       // windows user
       setDefaultSystem(systems[1]);
