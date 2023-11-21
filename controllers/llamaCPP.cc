@@ -339,7 +339,6 @@ void llamaCPP::loadModel(
 
   gpt_params params;
 
-  params.cont_batching = false;
   // By default will setting based on number of handlers
   int drogon_thread = drogon::app().getThreadNum();
   LOG_INFO << "Drogon thread is:" << drogon_thread;
@@ -351,8 +350,11 @@ void llamaCPP::loadModel(
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
 
     params.n_parallel = (*jsonBody).get("n_parallel", drogon_thread).asInt();
-
-    params.cont_batching = (*jsonBody)["cont_batching"].asBool();
+    params.n_threads =
+        (*jsonBody)
+            .get("cpu_threads", std::thread::hardware_concurrency())
+            .asInt();
+    params.cont_batching = (*jsonBody).get("cont_batching", false).asBool();
 
     this->user_prompt = (*jsonBody).get("user_prompt", "USER: ").asString();
     this->ai_prompt = (*jsonBody).get("ai_prompt", "ASSISTANT: ").asString();
