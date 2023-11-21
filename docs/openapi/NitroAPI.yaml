@@ -134,7 +134,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/StatusResponse"
 
-  /inferences/llamacpp/embedding:
+  /v1/embeddings:
     post:
       operationId: createEmbedding
       tags:
@@ -162,7 +162,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/CreateEmbeddingResponse"
 
-  /inferences/llamacpp/chat_completion:
+  /v1/chat/completions:
     post:
       operationId: createChatCompletion
       tags:
