@@ -10,7 +10,7 @@ const menus = [
       },
       {
         menu: "API Reference",
-        path: "/api",
+        path: "/api-reference",
       },
       {
         menu: "Changelog",
