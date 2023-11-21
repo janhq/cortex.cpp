@@ -45,7 +45,7 @@ curl http://localhost:3928/healthz
 
 ## Step 4: Load model
 
-To load the model to Nitro server, you need to
+To load the model to Nitro server, you need to run:
 
 ```bash title="Load model"
 curl http://localhost:3928/inferences/llamacpp/loadmodel \
