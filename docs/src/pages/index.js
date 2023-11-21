@@ -24,7 +24,7 @@ export default function Home() {
         <img
           src="/img/elements/ellipse.png"
           alt="Element Hero Ellipse"
-          className="absolute top-0 w-full left-0 opacity-30"
+          className="absolute top-0 w-full left-0 opacity-30 dark:visible invisible"
         />
         <img
           src="/img/elements/lines.svg"
@@ -34,12 +34,12 @@ export default function Home() {
         <main className="relative z-30">
           <div className="container py-10">
             <div className="text-center">
-              <h1 className="bg-gradient-to-b dark:from-white from-black to-gray-500 dark:to-gray-400 bg-clip-text text-6xl lg:text-8xl font-medium leading-tight text-transparent dark:text-transparent lg:leading-tight">
+              <h1 className="bg-gradient-to-b dark:from-white from-black to-gray-700 dark:to-gray-400 bg-clip-text text-6xl lg:text-8xl font-semibold leading-tight text-transparent dark:text-transparent lg:leading-tight">
                 Embeddable AI
               </h1>
               <p className="text-2xl mt-1">
                 A fast, lightweight&nbsp;
-                <span className="py-0.5 px-2 bg-indigo-600 rounded-full text-base font-bold">
+                <span className="py-0.5 px-2 bg-indigo-600 rounded-full text-base font-bold dark:text-black text-white">
                   3mb
                 </span>
                 &nbsp;inference server to supercharge apps with local AI.

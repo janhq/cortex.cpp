@@ -55,7 +55,7 @@ const getCurrentYear = new Date().getFullYear();
 
 export default function Footer() {
   return (
-    <footer className="flex-shrink-0 bg-[#09090B]/10 relative overflow-hidden py-10">
+    <footer className="flex-shrink-0 dark:bg-[#09090B]/10 bg-[#D4D4D8]/10 relative overflow-hidden py-10">
       <img
         src="/img/elements/lines.svg"
         alt="Element Lines"

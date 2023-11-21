@@ -3,7 +3,7 @@
 
 [class*="docSidebarContainer_"] {
   margin-top: 0 !important;
-  border-color: #1f2937 !important;
+  @apply dark:border-gray-800 border-gray-300;
 }
 
 [class*="sidebar_"] {
@@ -21,7 +21,7 @@
 
 // * Including custom sidebar table of content
 .table-of-contents {
-  @apply text-base py-0 border-gray-800;
+  @apply text-base py-0 dark:border-gray-800 border-gray-300;
 }
 
 .menu__caret:before {
@@ -30,4 +30,8 @@
 
 [class*="codeBlockContainer_"] {
   margin: 4px;
+}
+
+[class*="codeBlockTitle_"] {
+  border-bottom: 1px solid #52525a !important;
 }

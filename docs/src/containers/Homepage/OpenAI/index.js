@@ -54,15 +54,17 @@ export default function OpenAI() {
           <div className="mb-4">
             <img src="/img/logos/open-ai.svg" alt="Element Lines" />
           </div>
-          <div className="bg-[#27272A]/50 py-2 px-4 rounded-md relative">
+          <div className="dark:bg-[#27272A]/50 bg-[#F4F4F5] border border-gray-300 dark:border-none py-2 px-4 rounded-md relative">
             <div className="flex gap-x-2 items-center">
-              <p className="text-yellow-400">POST</p>
+              <p className="dark:text-yellow-400 text-yellow-600 font-medium">
+                POST
+              </p>
               <p className="text-sm">
                 https://api.openai.com/v1/chat/completions
               </p>
             </div>
             <div
-              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer text-white"
               onClick={() =>
                 clipboard.copy("https://api.openai.com/v1/chat/completions")
               }
@@ -74,7 +76,7 @@ export default function OpenAI() {
             {codeStringOpenAI}
           </SyntaxHighlighter>
           <div
-            className="absolute top-24 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+            className="absolute top-24 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer text-white"
             onClick={() => clipboard.copy(codeStringOpenAI)}
           >
             {clipboard.copied ? "Copied" : "Copy"}
@@ -90,15 +92,17 @@ export default function OpenAI() {
             />
             <span className="text-lg font-bold">Nitro</span>
           </div>
-          <div className="bg-[#27272A]/50 py-2 px-4 rounded-md relative">
+          <div className="dark:bg-[#27272A]/50 bg-[#F4F4F5] border border-gray-300 dark:border-none py-2 px-4 rounded-md relative">
             <div className="flex gap-x-2 items-center">
-              <p className="text-yellow-400">POST</p>
+              <p className="dark:text-yellow-400 text-yellow-600 font-medium">
+                POST
+              </p>
               <p className="text-sm">
                 https://localhost:1337/llama.cpp/v1/chat/completions
               </p>
             </div>
             <div
-              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+              className="absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer text-white"
               onClick={() =>
                 clipboard.copy(
                   "https://localhost:1337/llama.cpp/v1/chat/completions"
@@ -112,7 +116,7 @@ export default function OpenAI() {
             {codeStringNitro}
           </SyntaxHighlighter>
           <div
-            className="absolute top-24 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer"
+            className="absolute top-24 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer text-white"
             onClick={() => clipboard.copy(codeStringNitro)}
           >
             {clipboard.copied ? "Copied" : "Copy"}

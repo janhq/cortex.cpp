@@ -1,6 +1,7 @@
 @layer base {
   html[data-theme="light"] {
-    --ifm-background-color: white;
+    --custom-radial-blur: "#EFF2FE";
+    --ifm-background-color: #fafafa;
     --ifm-color-primary: #2563eb; /* New Primary Blue */
     --ifm-color-primary-dark: #204fcf; /* Darker Blue */
     --ifm-color-primary-darker: #1b45b7; /* Even Darker Blue */
@@ -14,6 +15,7 @@
   }
 
   html[data-theme="dark"] {
+    --custom-radial-blur: "#1D1B48";
     --ifm-background-color: #18181b;
     --ifm-color-primary: #ffffff; /* New Primary Blue */
     --ifm-color-primary-dark: #204fcf; /* Darker Blue */
