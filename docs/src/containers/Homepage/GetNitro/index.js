@@ -10,9 +10,10 @@ import { useClipboard } from "@site/src/hooks/useClipboard";
 export default function GetNitro() {
   const userAgent = typeof window !== "undefined" && navigator.userAgent;
 
-  const codeStringShell = userAgent?.includes("Windows")
-    ? `powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"`
-    : `curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -`;
+  const codeStringShell =
+    typeof window !== "undefined" && userAgent?.includes("Windows")
+      ? `powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"`
+      : `curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -`;
 
   const codeStringNpm = `#(Coming Soon)\nnpm install @janhq/nitro`;
   const codeStringPython = `#(Coming Soon)\npip install @janhq/nitro`;

@@ -3,7 +3,7 @@
 
 require("dotenv").config();
 
-const codeTheme = require("prism-react-renderer").themes.dracula;
+const codeTheme = require("prism-react-renderer/themes/dracula");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {

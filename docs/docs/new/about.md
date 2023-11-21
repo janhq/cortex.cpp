@@ -107,7 +107,7 @@ curl https://api.openai.com/v1/chat/completions \
 
 Nitro welcomes contributions in various forms, not just coding. Here are some ways you can get involved:
 
-- **Understand Nitro**: Start with the [Getting Started](nitro/overview) guide. Found an issue or have a suggestion? [Open an issue](https://github.com/janhq/nitro/issues) to let us know.
+- **Understand Nitro**: Start with the [Getting Started](/new/quickstart) guide. Found an issue or have a suggestion? [Open an issue](https://github.com/janhq/nitro/issues) to let us know.
 
 - **Feature Development**: Engage with community feature requests. Bring ideas to life by opening a [pull request](https://github.com/janhq/nitro/pulls) for features that interest you.
 

@@ -6,7 +6,7 @@ const menus = [
     child: [
       {
         menu: "Documentation",
-        path: "/nitro/overview",
+        path: "/docs",
       },
       {
         menu: "API Reference",
