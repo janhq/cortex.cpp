@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import theme from "react-syntax-highlighter/dist/esm/styles/prism/duotone-dark";
+import theme from "react-syntax-highlighter/dist/esm/styles/prism/darcula";
 
 import { twMerge } from "tailwind-merge";
 

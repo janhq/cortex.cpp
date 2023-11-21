@@ -1,7 +1,7 @@
 import React from "react";
 
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import theme from "react-syntax-highlighter/dist/esm/styles/prism/duotone-dark";
+import theme from "react-syntax-highlighter/dist/esm/styles/prism/dracula";
 
 import { useClipboard } from "@site/src/hooks/useClipboard";
 
@@ -50,7 +50,7 @@ export default function OpenAI() {
         </p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="relative [&>pre]:min-h-[350px]">
+        <div className="relative [&>pre]:min-h-[400px]">
           <div className="mb-4">
             <img src="/img/logos/open-ai.svg" alt="Element Lines" />
           </div>
@@ -81,7 +81,7 @@ export default function OpenAI() {
           </div>
         </div>
 
-        <div className="relative [&>pre]:min-h-[350px]">
+        <div className="relative [&>pre]:min-h-[400px]">
           <div className="mb-2 flex items-center space-x-1">
             <img
               src="/img/logos/nitro.svg"

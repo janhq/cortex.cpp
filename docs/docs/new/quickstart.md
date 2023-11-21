@@ -1,19 +1,24 @@
 ---
 title: Quickstart
 ---
+
 ## Step 1: Install Nitro
 
 ### For Linux and MacOS
+
 Open your terminal and enter the following command. This will download and install Nitro on your system.
-  ```bash
-  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh -o /tmp/install.sh && chmod +x /tmp/install.sh && sudo bash /tmp/install.sh --gpu && rm /tmp/install.sh
-  ```
+
+```bash
+curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh -o /tmp/install.sh && chmod +x /tmp/install.sh && sudo bash /tmp/install.sh --gpu && rm /tmp/install.sh
+```
 
 ### For Windows
+
 Open PowerShell and execute the following command. This will perform the same actions as for Linux and MacOS but is tailored for Windows.
-  ```bash
-  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat --gpu; Remove-Item -Path 'install.bat' }"
-  ```
+
+```bash
+powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat --gpu; Remove-Item -Path 'install.bat' }"
+```
 
 > **NOTE:**Installing Nitro will add new files and configurations to your system to enable it to run.
 
@@ -24,6 +29,7 @@ For a manual installation process, see: [Install from Source](install.md)
 Next, we need to download a model. For this example, we'll use the [Llama2 7B chat model](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main).
 
 - Create a `/model` and navigate into it:
+
 ```bash
 mkdir model && cd model
 wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true

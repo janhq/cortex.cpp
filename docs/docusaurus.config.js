@@ -5,7 +5,7 @@ import path from "path";
 
 require("dotenv").config();
 
-import { themes as prismThemes } from "prism-react-renderer";
+const codeTheme = require("prism-react-renderer").themes.dracula;
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -163,9 +163,9 @@ const config = {
         ],
       },
       prism: {
-        theme: prismThemes.duotoneDark,
-        darkTheme: prismThemes.duotoneDark,
-        additionalLanguages: ["python"],
+        theme: codeTheme,
+        darkTheme: codeTheme,
+        additionalLanguages: ["python", "powershell", "bash"],
       },
       colorMode: {
         defaultMode: "dark",
