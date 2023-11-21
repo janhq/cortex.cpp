@@ -22,7 +22,7 @@ Nitro enables developers to configure dialogs and implement advanced prompt engi
 
 To illustrate, let's create a "Pirate assistant":
 
-> NOTE: "ai_prompt" and "user_prompt" are prefixes indicating the role. Configure them based on your model.
+> NOTE: "ai_prompt", "user_prompt" and "system_prompt" are prefixes indicating the role. Configure them based on your model.
 
 ### Prompt Configuration
 
