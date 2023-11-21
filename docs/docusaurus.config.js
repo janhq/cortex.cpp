@@ -3,8 +3,7 @@
 
 require("dotenv").config();
 
-const lightCodeTheme = require("prism-react-renderer/themes/github");
-const darkCodeTheme = require("prism-react-renderer/themes/dracula");
+const codeTheme = require("prism-react-renderer/themes/dracula");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -33,7 +32,7 @@ const config = {
     defaultLocale: "en",
     locales: ["en"],
   },
-  
+
   markdown: {
     mermaid: true,
   },
@@ -71,7 +70,7 @@ const config = {
         // Will be passed to @docusaurus/plugin-content-docs (false to disable)
         docs: {
           routeBasePath: "/",
-          sidebarPath: require.resolve("./sidebars.js"),
+          sidebarPath: "./sidebars.js",
           editUrl: "https://github.com/janhq/nitro/tree/main/docs",
           showLastUpdateAuthor: true,
           showLastUpdateTime: true,
@@ -90,7 +89,7 @@ const config = {
         },
         // Will be passed to @docusaurus/theme-classic.
         theme: {
-          customCss: require.resolve("./src/styles/main.scss"),
+          customCss: "./src/styles/main.scss",
         },
         // Will be passed to @docusaurus/plugin-content-pages (false to disable)
         // pages: {},
@@ -129,7 +128,7 @@ const config = {
         title: "Nitro",
         logo: {
           alt: "Nitro Logo",
-          src: "img/logo.svg",
+          src: "img/logos/nitro.svg",
         },
         items: [
           // Navbar left
@@ -161,9 +160,9 @@ const config = {
         ],
       },
       prism: {
-        theme: lightCodeTheme,
-        darkTheme: darkCodeTheme,
-        additionalLanguages: ["python"],
+        theme: codeTheme,
+        darkTheme: codeTheme,
+        additionalLanguages: ["python", "powershell", "bash"],
       },
       colorMode: {
         defaultMode: "dark",
@@ -171,8 +170,8 @@ const config = {
         respectPrefersColorScheme: false,
       },
     }),
-    // Only for react live
-    themes: ["@docusaurus/theme-live-codeblock", "@docusaurus/theme-mermaid"],
+  // Only for react live
+  themes: ["@docusaurus/theme-live-codeblock", "@docusaurus/theme-mermaid"],
 };
 
 module.exports = config;

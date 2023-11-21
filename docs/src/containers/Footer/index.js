@@ -2,36 +2,15 @@ import React from "react";
 
 const menus = [
   {
-    name: "Resources",
-    child: [
-      {
-        menu: "Home",
-        path: "/",
-      },
-      {
-        menu: "Platform",
-        path: "/platform",
-      },
-      {
-        menu: "Solutions",
-        path: "/solutions",
-      },
-    ],
-  },
-  {
     name: "For Developers",
     child: [
       {
-        menu: "Documentation (WIP)",
+        menu: "Documentation",
         path: "/docs",
       },
       {
-        menu: "Hardware (WIP)",
-        path: "/hardware",
-      },
-      {
-        menu: "API (WIP)",
-        path: "/api",
+        menu: "API Reference",
+        path: "/api-reference",
       },
       {
         menu: "Changelog",
@@ -64,10 +43,6 @@ const menus = [
     name: "Company",
     child: [
       {
-        menu: "About",
-        path: "/about",
-      },
-      {
         menu: "Careers",
         path: "https://janai.bamboohr.com/careers",
         external: true,
@@ -80,14 +55,22 @@ const getCurrentYear = new Date().getFullYear();
 
 export default function Footer() {
   return (
-    <footer className="flex-shrink-0 border-t dark:border-gray-800 border-gray-200 py-10">
-      <div className="container">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-2 lg:grid-cols-5">
-          <div className="col-span-2 lg:col-span-1">
+    <footer className="flex-shrink-0 dark:bg-[#09090B]/10 bg-[#D4D4D8]/10 relative overflow-hidden py-10">
+      <img
+        src="/img/elements/lines.svg"
+        alt="Element Lines"
+        className="absolute w-full top-0 left-0 object-cover h-[460px] opacity-50 lg:opacity-80"
+      />
+      <div className="container ">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-2 lg:grid-cols-6">
+          <div className="lg:col-span-3 col-span-2">
             <h6 className="mb-3">Nitro</h6>
-            <p className="dark:text-gray-400 text-gray-600">
-              Fast, Lightweight and Embeddable inference engine
-            </p>
+            <div className="w-full lg:w-1/2">
+              <p className="dark:text-gray-400 text-gray-600">
+                A fast, lightweight (3mb) inference server to supercharge apps
+                with local AI.
+              </p>
+            </div>
           </div>
           {menus.map((menu, i) => {
             return (

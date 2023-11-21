@@ -6,24 +6,19 @@ import axios from "axios";
 
 const systemsTemplate = [
   {
-    name: "Download for Mac (M1/M2)",
+    name: "Download for Mac",
     logo: require("@site/static/img/apple-logo-white.png").default,
-    fileFormat: "{appname}-mac-arm64-{tag}.dmg",
-  },
-  {
-    name: "Download for Mac (Intel)",
-    logo: require("@site/static/img/apple-logo-white.png").default,
-    fileFormat: "{appname}-mac-x64-{tag}.dmg",
+    fileFormat: "{appname}-mac-arm64.zip",
   },
   {
     name: "Download for Windows",
     logo: require("@site/static/img/windows-logo-white.png").default,
-    fileFormat: "{appname}-win-x64-{tag}.exe",
+    fileFormat: "{appname}-win-amd64.zip",
   },
   {
     name: "Download for Linux",
     logo: require("@site/static/img/linux-logo-white.png").default,
-    fileFormat: "{appname}-linux-amd64-{tag}.deb",
+    fileFormat: "{appname}-linux-amd64.zip",
   },
 ];
 
@@ -31,7 +26,7 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
 
-export default function Dropdown() {
+export default function DownloadButton() {
   const [systems, setSystems] = useState(systemsTemplate);
   const [defaultSystem, setDefaultSystem] = useState(systems[0]);
 
@@ -54,25 +49,23 @@ export default function Dropdown() {
   };
 
   const changeDefaultSystem = (systems) => {
-    const userAgent = navigator.userAgent;
+    const userAgent = typeof window !== "undefined" && navigator.userAgent;
     if (userAgent.includes("Windows")) {
       // windows user
-      setDefaultSystem(systems[2]);
+      setDefaultSystem(systems[1]);
     } else if (userAgent.includes("Linux")) {
       // linux user
-      setDefaultSystem(systems[3]);
-    } else if (userAgent.includes("Mac OS") && userAgent.includes("Intel")) {
-      // mac intel user
-      setDefaultSystem(systems[1]);
+      setDefaultSystem(systems[2]);
+    } else if (userAgent.includes("Mac OS")) {
+      setDefaultSystem(systems[0]);
     } else {
-      // mac user and also default
       setDefaultSystem(systems[0]);
     }
   };
   useEffect(() => {
     const updateDownloadLinks = async () => {
       try {
-        const releaseInfo = await getLatestReleaseInfo("janhq", "jan");
+        const releaseInfo = await getLatestReleaseInfo("janhq", "nitro");
 
         // Extract appname from the first asset name
         const firstAssetName = releaseInfo.assets[0].name;
@@ -98,7 +91,7 @@ export default function Dropdown() {
             .replace("{tag}", tag);
           return {
             ...system,
-            href: `https://github.com/janhq/jan/releases/download/${releaseInfo.tag_name}/${downloadUrl}`,
+            href: `https://github.com/janhq/nitro/releases/download/${releaseInfo.tag_name}/${downloadUrl}`,
           };
         });
 
@@ -115,10 +108,10 @@ export default function Dropdown() {
   return (
     <div className="inline-flex align-items-stretch">
       <a
-        className="cursor-pointer relative inline-flex items-center rounded-l-md border-0 px-3.5 py-2.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-500 hover:text-white"
+        className="cursor-pointer w-64 relative inline-flex items-center rounded-l-md border-0 px-3.5 py-2.5 text-base font-semibold text-white bg-blue-600 hover:bg-blue-500 hover:text-white"
         href={defaultSystem.href}
       >
-        <img src={defaultSystem.logo} alt="Logo" className="h-5 mr-3 -mt-1" />
+        <img src={defaultSystem.logo} alt="Logo" className="h-4 mr-3" />
         {defaultSystem.name}
       </a>
       <Menu as="div" className="relative -ml-px block">

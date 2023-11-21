@@ -1,6 +1,7 @@
 @layer base {
   html[data-theme="light"] {
-    --ifm-background-color: white;
+    --custom-radial-blur: #e1e7fd;
+    --ifm-background-color: #fafafa;
     --ifm-color-primary: #2563eb; /* New Primary Blue */
     --ifm-color-primary-dark: #204fcf; /* Darker Blue */
     --ifm-color-primary-darker: #1b45b7; /* Even Darker Blue */
@@ -12,8 +13,10 @@
     --ifm-navbar-link-hover-color: inherit;
     --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
   }
+
   html[data-theme="dark"] {
-    --ifm-background-color: black;
+    --custom-radial-blur: #1d1b48;
+    --ifm-background-color: #18181b;
     --ifm-color-primary: #ffffff; /* New Primary Blue */
     --ifm-color-primary-dark: #204fcf; /* Darker Blue */
     --ifm-color-primary-darker: #1b45b7; /* Even Darker Blue */
@@ -23,12 +26,18 @@
     --ifm-color-primary-lightest: #3a8bff; /* Lightest Blue */
     --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
   }
-  body {
+
+  pre,
+  code {
     @apply text-sm;
-    @apply antialiased;
-    @apply bg-white dark:bg-black;
-    @apply text-gray-700 dark:text-gray-400;
   }
+
+  body {
+    @apply text-base;
+    @apply antialiased;
+    @apply bg-[#FAFAFA] dark:bg-[#18181B];
+  }
+
   img {
     pointer-events: none;
   }
@@ -37,6 +46,34 @@
     &:hover {
       color: inherit;
       text-decoration: none;
+    }
+  }
+}
+
+@layer components {
+  .radial-blur-lg {
+    background: radial-gradient(
+      500px 500px at 50% 100%,
+      var(--custom-radial-blur),
+      transparent
+    );
+  }
+  .radial-blur-sm {
+    background: radial-gradient(
+      300px 300px at 20% 100%,
+      var(--custom-radial-blur),
+      transparent
+    );
+  }
+  .arrow-architecture {
+    position: relative;
+    &::before {
+      position: absolute;
+      content: "";
+      height: 34px;
+      width: 1px;
+      top: -34px;
+      @apply bg-gray-300 dark:bg-gray-800;
     }
   }
 }

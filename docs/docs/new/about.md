@@ -39,8 +39,9 @@ curl http://localhost:3928/v1/chat/completions \
       },
     ]
   }'
-  
+
 ```
+
 </div>
 
 <div style={{ width: '50%', float: 'right', clear: 'right' }}>
@@ -63,6 +64,7 @@ curl https://api.openai.com/v1/chat/completions \
     ]
   }'
 ```
+
 </div>
 
 - **Extends OpenAI's API with helpful model methods:**
@@ -80,7 +82,7 @@ curl https://api.openai.com/v1/chat/completions \
 ### Multi-modal Capabilities
 
 - **Coming Soon**: Expansion to multi-modal functionalities - enabling Nitro to process and generate images, and audio.
-- **Features to Expect**: 
+- **Features to Expect**:
   - Large Language-and-Vision Assistant.
   - Speech recognition and transcription.
 
@@ -90,22 +92,27 @@ curl https://api.openai.com/v1/chat/completions \
 - **Detailed Specifications**: For an in-depth understanding of Nitro's internal workings, components, and design philosophy, refer to our [Architecture Specifications](architecture.md).
 
 ## Support
+
 ### GitHub Issue Tracking
+
 - **Report Problems**: Encounter an issue with Nitro? File a [GitHub issue](https://github.com/janhq/nitro). Please include detailed error logs and steps to reproduce the problem.
 
 ### Discord Community
+
 - **Join the Conversation**: Discuss Nitro development and seek peer support in our [#nitro-dev](https://discord.gg/FTk2MvZwJH) channel on Discord.
 
 ## Contributing
 
 ### How to Contribute
+
 Nitro welcomes contributions in various forms, not just coding. Here are some ways you can get involved:
 
-- **Understand Nitro**: Start with the [Getting Started](nitro/overview) guide. Found an issue or have a suggestion? [Open an issue](https://github.com/janhq/nitro/issues) to let us know.
+- **Understand Nitro**: Start with the [Getting Started](/new/quickstart) guide. Found an issue or have a suggestion? [Open an issue](https://github.com/janhq/nitro/issues) to let us know.
 
 - **Feature Development**: Engage with community feature requests. Bring ideas to life by opening a [pull request](https://github.com/janhq/nitro/pulls) for features that interest you.
 
 ### Links
+
 - [Nitro GitHub Repository](https://github.com/janhq/nitro)
 
 ## Acknowledgements

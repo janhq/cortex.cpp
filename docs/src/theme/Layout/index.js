@@ -10,7 +10,7 @@ import { useKeyboardNavigation } from "@docusaurus/theme-common/internal";
 import SkipToContent from "@theme/SkipToContent";
 import AnnouncementBar from "@theme/AnnouncementBar";
 import Navbar from "@theme/Navbar";
-import Footer from "@site/src/components/Footer";
+import Footer from "@site/src/containers/Footer";
 import LayoutProvider from "@theme/Layout/Provider";
 import ErrorPageContent from "@theme/ErrorPageContent";
 import styles from "./styles.module.scss";
@@ -37,6 +37,7 @@ export default function Layout(props) {
       <div
         id={SkipToContentFallbackId}
         className={clsx(
+          "px-0",
           ThemeClassNames.wrapper.main,
           styles.mainWrapper,
           wrapperClassName
