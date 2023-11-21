@@ -41,7 +41,7 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
 ### Testing the Assistant
 
 ```bash title="Pirate Assistant"
-curl http://localhost:3928/inferences/llamacpp/chat_completion \
+curl http://localhost:3928/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [

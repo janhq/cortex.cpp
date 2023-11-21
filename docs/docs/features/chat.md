@@ -11,7 +11,7 @@ To send a single query to your chosen LLM, follow these steps:
 <div style={{ width: '50%', float: 'left', clear: 'left' }}>
 
 ```bash title="Nitro"
-curl http://localhost:3928/inferences/llamacpp/chat_completion \
+curl http://localhost:3928/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "",
@@ -53,7 +53,7 @@ For ongoing conversations or multiple queries, the dialog request feature is ide
 <div style={{ width: '50%', float: 'left', clear: 'left' }}>
 
 ```bash title="Nitro"
-curl http://localhost:3928/inferences/llamacpp/chat_completion \
+curl http://localhost:3928/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "messages": [

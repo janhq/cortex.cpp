@@ -49,7 +49,7 @@ const sidebars = {
       label: "Guides",
       collapsible: false,
       collapsed: false,
-      items: ["examples/llm"],
+      items: ["examples/chatbox"],
     },
     // {
     //   type: "category",

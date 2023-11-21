@@ -141,7 +141,7 @@ Simple testcase with nitro, after starting the server, you can run the following
       "embedding": false
   }'
   # Send a prompt request to nitro
-  curl -s --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
+  curl -s --location 'http://localhost:3928/v1/chat/completions' \
   --header 'Content-Type: application/json' \
   --data '{
           "messages": [
@@ -172,7 +172,7 @@ Simple testcase with nitro, after starting the server, you can run the following
 
   # Send a prompt request to nitro
   set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":100,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.7}"
-  curl.exe -s -w "%%{http_code}" --location "http://localhost:3928/inferences/llamacpp/chat_completion" ^
+  curl.exe -s -w "%%{http_code}" --location "http://localhost:3928/v1/chat/completions" ^
   --header "Content-Type: application/json" ^
   --data "%curl_data2%"
   ```
