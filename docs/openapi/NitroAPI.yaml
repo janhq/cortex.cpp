@@ -565,6 +565,8 @@ components:
         top_p:
           type: number
           default: 0.95
+          min: 0
+          max: 1
           description: Set probability threshold for more relevant outputs
 
     ChatCompletionResponse:
