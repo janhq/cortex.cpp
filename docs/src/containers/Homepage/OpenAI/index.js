@@ -14,7 +14,7 @@ export default function OpenAI() {
   const codeStringNitro = `curl http://localhost:3928/inferences/llamacpp/chat_completion
   -H "Content-Type: application/json"
   -d '{
-    "model": "gpt-3.5-turbo",
+    "model": "/path/to/your/model.gguf",
     "messages": [
       {
         "role": "system",
