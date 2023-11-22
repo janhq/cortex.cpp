@@ -67,6 +67,8 @@ curl https://api.openai.com/v1/chat/completions \
 
 </div>
 
+> [Why is there a `gpt-3.5-turbo` model on Nitro?](docs#faq)
+
 - **Extends OpenAI's API with helpful model methods:**
   - [Unload model](features/load-unload#unload-model)
   - [Checking model status](features/load-unload/#status)
@@ -119,7 +121,3 @@ Nitro welcomes contributions in various forms, not just coding. Here are some wa
 
 - [drogon](https://github.com/drogonframework/drogon): The fast C++ web framework
 - [llama.cpp](https://github.com/ggerganov/llama.cpp): Inference of LLaMA model in pure C/C++
-
-## FAQ
-:::info COMING SOON
-:::
