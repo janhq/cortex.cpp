@@ -1,6 +1,6 @@
 # Nitro - Embeddable AI
 <p align="center">
-  <img alt="nitrologo" src="https://github.com/janhq/nitro/assets/89722390/22870ab7-e08a-45bd-b3c3-3be4f11a8824.png">
+  <img alt="nitrologo" src="https://github.com/janhq/nitro/assets/89722390/6779401c-8a01-4e46-8d3f-5c750b59b047.png">
 </p>
 
 <p align="center">
