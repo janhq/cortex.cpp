@@ -58,6 +58,7 @@ const sidebars = {
     //   collapsed: false,
     //   items: [{ type: "doc", id: "new/architecture", label: "Architecture" }],
     // },
+    "new/faq"
   ],
 
   apiSidebar: [
