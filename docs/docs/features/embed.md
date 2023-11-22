@@ -89,4 +89,4 @@ The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https
 
 </div>
 
-The embedding feature in Nitro demonstrates a high level of compatibility with OpenAI, simplifying the transition between using OpenAI and local AI models. For more detailed information and advanced use cases, refer to the comprehensive [API Reference](https://nitro.jan.ai/api-reference)).
+The embedding feature in Nitro demonstrates a high level of compatibility with OpenAI, simplifying the transition between using OpenAI and local AI models. For more detailed information and advanced use cases, refer to the comprehensive [API Reference](https://nitro.jan.ai/api-reference).

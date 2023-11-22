@@ -167,7 +167,7 @@ paths:
       operationId: createChatCompletion
       tags:
         - Chat Completion
-      summary: Create an chat with the model.
+      summary: Create a chat with the model.
       requestBody:
         content:
           application/json:
@@ -544,11 +544,11 @@ components:
         stream:
           type: boolean
           default: true
-          description: Enables continuous output generation, allowing for streaming of model responses.
+          description: Enables continuous output generation, allowing for streaming of model responses
         model:
           type: string
           example: "gpt-3.5-turbo"
-          description: Specifies the model being used for inference or processing tasks.
+          description: Specifies the model being used for inference or processing tasks
         max_tokens:
           type: number
           default: 2048
@@ -556,11 +556,11 @@ components:
         stop:
           type: arrays
           example: ["hello"]
-          description: Defines specific tokens or phrases at which the model will stop generating further output.
+          description: Defines specific tokens or phrases at which the model will stop generating further output
         frequency_penalty:
           type: number
           default: 0
-          description: Adjusts the likelihood of the model repeating words or phrases in its output.
+          description: Adjusts the likelihood of the model repeating words or phrases in its output
         presence_penalty:
           type: number
           default: 0
@@ -571,6 +571,12 @@ components:
           min: 0
           max: 1
           description: Controls the randomness of the model's output
+        top_p:
+          type: number
+          default: 0.95
+          min: 0
+          max: 1
+          description: Set probability threshold for more relevant outputs
 
     ChatCompletionResponse:
       type: object

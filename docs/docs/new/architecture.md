@@ -4,8 +4,6 @@ title: Architecture
 
 ![Nitro Architecture](img/architecture.drawio.png)
 
-### Details element example
-
 ## Key Concepts
 
 ## Inference Server

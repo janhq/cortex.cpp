@@ -22,7 +22,7 @@ Nitro enables developers to configure dialogs and implement advanced prompt engi
 
 To illustrate, let's create a "Pirate assistant":
 
-> NOTE: "ai_prompt" and "user_prompt" are prefixes indicating the role. Configure them based on your model.
+> NOTE: "ai_prompt", "user_prompt" and "system_prompt" are prefixes indicating the role. Configure them based on your model.
 
 ### Prompt Configuration
 
@@ -33,6 +33,7 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
     "ctx_len": 128,
     "ngl": 100,
     "pre_prompt": "You are a Pirate. Using drunk language with a lot of Arr...",
+    "system_prompt": "ASSISTANT'S RULE: ",
     "user_prompt": "USER:",
     "ai_prompt": "ASSISTANT: "
   }'
