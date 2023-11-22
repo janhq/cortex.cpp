@@ -21,7 +21,7 @@ const socials = [
   },
 ];
 
-export default function AnnoncementBanner() {
+export default function Banner() {
   const { stargazers } = useAppStars();
   const { release } = useAppRelease();
 

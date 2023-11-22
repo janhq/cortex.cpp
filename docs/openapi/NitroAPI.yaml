@@ -40,7 +40,7 @@ paths:
   # under the appropriate group
   /healthz:
     get:
-      operationId: HeathCheck
+      operationId: heathCheck
       tags:
         - Health Check
       summary: Check the status of Nitro Server.
@@ -171,7 +171,7 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:          
+            schema:
               $ref: "#/components/schemas/ChatCompletionRequest"
       x-codeSamples:
         - lang: "curl"
@@ -255,7 +255,7 @@ components:
           default: "ASSISTANT:"
           nullable: true
           description: The prefix for assistant prompt.
-        
+
       required:
         - llama_model_path
 
@@ -493,7 +493,14 @@ components:
                 description: Array representing the embedding vector
                 items:
                   type: arrays
-                  example: [0.067819312214851379,0.17273959517478943,-0.31053683161735535, ... ,0.36176943778991699]
+                  example:
+                    [
+                      0.067819312214851379,
+                      0.17273959517478943,
+                      -0.31053683161735535,
+                      ...,
+                      0.36176943778991699,
+                    ]
               index:
                 type: integer
                 description: Index of the embedding in the array
@@ -523,38 +530,40 @@ components:
               description: Total number of tokens involved in the operation
               example: 533
 
-
-
     ChatCompletionRequest:
       type: object
       properties:
         messages:
           type: arrays
           description: Contains input data or prompts for the model to process
-          example: [{"content": "Hello there :wave:","role": "assistant"},{"content": "Can you write a long story","role": "user"}]
+          example:
+            [
+              { "content": "Hello there :wave:", "role": "assistant" },
+              { "content": "Can you write a long story", "role": "user" },
+            ]
         stream:
           type: boolean
-          default: true 
+          default: true
           description: Enables continuous output generation, allowing for streaming of model responses.
         model:
           type: string
-          example: "gpt-3.5-turbo" 
+          example: "gpt-3.5-turbo"
           description: Specifies the model being used for inference or processing tasks.
         max_tokens:
           type: number
-          default: 2048 
+          default: 2048
           description: The maximum number of tokens the model will generate in a single response
         stop:
           type: arrays
-          example: ['hello'] 
+          example: ["hello"]
           description: Defines specific tokens or phrases at which the model will stop generating further output.
         frequency_penalty:
           type: number
-          default: 0 
+          default: 0
           description: Adjusts the likelihood of the model repeating words or phrases in its output.
         presence_penalty:
           type: number
-          default: 0 
+          default: 0
           description: Influences the generation of new and varied concepts in the model's output
         temperature:
           type: number
@@ -637,6 +646,5 @@ components:
               type: integer
               example: 533
               description: Total number of tokens used
-
 ###################################
 #################################

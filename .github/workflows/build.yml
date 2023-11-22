@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-    tags: ['v*.*.*']
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', '!docs/**', '!.gitignore']
   pull_request:
     types: [opened, synchronize, reopened]

@@ -23,17 +23,17 @@ const sidebars = {
       label: "Introduction",
       collapsible: false,
       collapsed: false,
-      items: [        
-      { type: "doc", id: "new/about", label: "About Nitro" },
-      { type: "doc", id: "new/quickstart", label: "Quickstart" },
-      { type: "doc", id: "new/install", label: "Installation" },
-      "new/build-source"
-    ],
+      items: [
+        { type: "doc", id: "new/about", label: "About Nitro" },
+        { type: "doc", id: "new/quickstart", label: "Quickstart" },
+        { type: "doc", id: "new/install", label: "Installation" },
+        "new/build-source",
+      ],
     },
     {
-      type: 'category',
-      label: 'Features',
-      link: { type: "doc", id: "features/feat"},
+      type: "category",
+      label: "Features",
+      link: { type: "doc", id: "features/feat" },
       items: [
         "features/chat",
         "features/embed",
@@ -71,6 +71,5 @@ const sidebars = {
   //   "community/changelog"
   // ]
 };
-
 
 module.exports = sidebars;

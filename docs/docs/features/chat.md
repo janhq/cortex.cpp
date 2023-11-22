@@ -24,6 +24,7 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 
 ```
+
 </div>
 
 <div style={{ width: '50%', float: 'right', clear: 'right' }}>
@@ -42,6 +43,7 @@ curl https://api.openai.com/v1/chat/completions \
     ]
   }'
 ```
+
 </div>
 
 This command sends a request to your local LLM, querying about the winner of the 2020 World Series.
@@ -77,6 +79,7 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 
 ```
+
 </div>
 
 <div style={{ width: '50%', float: 'right', clear: 'right' }}>
@@ -106,6 +109,7 @@ curl https://api.openai.com/v1/chat/completions \
     ]
   }'
 ```
+
 </div>
 
 ### Chat Completion Response
@@ -138,6 +142,7 @@ Below are examples of responses from both the Nitro server and OpenAI:
   }
 }
 ```
+
 </div>
 
 <div style={{ width: '50%', float: 'right', clear: 'right' }}>
@@ -166,7 +171,7 @@ Below are examples of responses from both the Nitro server and OpenAI:
   }
 }
 ```
+
 </div>
 
-
-The chat completion feature in Nitro showcases compatibility with OpenAI, making the transition between using OpenAI and local AI models more straightforward. For further details and advanced usage, please refer to the [API reference](https://nitro.jan.ai/api).
+The chat completion feature in Nitro showcases compatibility with OpenAI, making the transition between using OpenAI and local AI models more straightforward. For further details and advanced usage, please refer to the [API reference](https://nitro.jan.ai/api-reference).

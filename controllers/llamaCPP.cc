@@ -157,6 +157,10 @@ void llamaCPP::chatCompletion(
   // To set default value
 
   if (jsonBody) {
+    // Default values to enable auto caching
+    data["cache_prompt"] = true;
+    data["n_keep"] = -1;
+
     data["stream"] = (*jsonBody).get("stream", false).asBool();
     data["n_predict"] = (*jsonBody).get("max_tokens", 500).asInt();
     data["top_p"] = (*jsonBody).get("top_p", 0.95).asFloat();
@@ -164,7 +168,6 @@ void llamaCPP::chatCompletion(
     data["frequency_penalty"] =
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
-
     const Json::Value &messages = (*jsonBody)["messages"];
     for (const auto &message : messages) {
       std::string input_role = message["role"].asString();
@@ -339,7 +342,6 @@ void llamaCPP::loadModel(
 
   gpt_params params;
 
-  params.cont_batching = false;
   // By default will setting based on number of handlers
   int drogon_thread = drogon::app().getThreadNum();
   LOG_INFO << "Drogon thread is:" << drogon_thread;
@@ -351,8 +353,11 @@ void llamaCPP::loadModel(
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
 
     params.n_parallel = (*jsonBody).get("n_parallel", drogon_thread).asInt();
-
-    params.cont_batching = (*jsonBody)["cont_batching"].asBool();
+    params.n_threads =
+        (*jsonBody)
+            .get("cpu_threads", std::thread::hardware_concurrency())
+            .asInt();
+    params.cont_batching = (*jsonBody).get("cont_batching", false).asBool();
 
     this->user_prompt = (*jsonBody).get("user_prompt", "USER: ").asString();
     this->ai_prompt = (*jsonBody).get("ai_prompt", "ASSISTANT: ").asString();
