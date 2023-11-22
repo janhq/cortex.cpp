@@ -40,6 +40,12 @@ $ GIT_USER=<Your GitHub username> yarn deploy
 
 If you are using GitHub pages for hosting, this command is a convenient way to build the website and push to the `gh-pages` branch.
 
+### Preview URL, Pre-release and Publishing Documentation
+
+When a PR is created, the preview URL will be automatically commented on the PR. For staging or pre-release documentation, use the following domains [https://pre-release-nitro.jan.ai/](https://pre-release-nitro.jan.ai/)
+
+To officially publish documentation, create a tag in the format `vx.y.z-docs` (e.g., `v0.1.1-docs`) on the `main` branch. The documentation will then be published to [https://nitro.jan.ai/](https://nitro.jan.ai/)
+
 ### Additional Plugins
 - @docusaurus/theme-live-codeblock
 - [Redocusaurus](https://redocusaurus.vercel.app/): manually upload swagger files at `/openapi/OpenAPISpec.json`
