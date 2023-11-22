@@ -11,7 +11,7 @@ import ThemedImage from "@theme/ThemedImage";
 export default function OpenAI() {
   const clipboard = useClipboard({ timeout: 200 });
 
-  const codeStringOpenAI = `curl http://localhost:3928/inferences/llamacpp/chat_completion
+  const codeStringNitro = `curl http://localhost:3928/inferences/llamacpp/chat_completion
   -H "Content-Type: application/json"
   -d '{
     "model": "gpt-3.5-turbo",
@@ -27,7 +27,7 @@ export default function OpenAI() {
     ]
   }'`;
 
-  const codeStringNitro = `curl https://api.openai.com/v1/chat/completions
+  const codeStringOpenAI = `curl https://api.openai.com/v1/chat/completions
   -H "Content-Type: application/json"
   -H "Authorization: Bearer $OPENAI_API_KEY"
   -d '{
