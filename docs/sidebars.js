@@ -49,7 +49,11 @@ const sidebars = {
       label: "Guides",
       collapsible: false,
       collapsed: false,
-      items: ["examples/chatbox"],
+      items: [
+        "examples/chatbox",
+        "examples/openai-node",
+        "examples/openai-python",
+      ],
     },
     // {
     //   type: "category",
