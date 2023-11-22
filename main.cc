@@ -16,7 +16,7 @@
 #endif
 
 int main(int argc, char *argv[]) {
-  int thread_num = std::thread::hardware_concurrency();
+  int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
 
