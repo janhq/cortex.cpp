@@ -561,7 +561,11 @@ components:
           default: 0.7
           min: 0
           max: 1
-          description: Controls the randomness of the model's output
+          description: Controls the randomness of the model's output.
+        top_p:
+          type: number
+          default: 0.95
+          description: Set probability threshold for more relevant outputs
 
     ChatCompletionResponse:
       type: object
