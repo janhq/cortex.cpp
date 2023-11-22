@@ -1,6 +1,6 @@
 ---
 title: FAQs
-slugs: /faq
+slug: /faq
 ---
 
 ### 1. Is Nitro the same as Llama.cpp with an API server?

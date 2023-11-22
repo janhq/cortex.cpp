@@ -1,5 +1,6 @@
 ---
 title: Architecture
+slug: /achitecture
 ---
 
 ![Nitro Architecture](img/architecture.drawio.png)

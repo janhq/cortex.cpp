@@ -1,5 +1,6 @@
 ---
 title: Model Life Cycle
+slug: /model-cycle
 ---
 
 ## Load model
