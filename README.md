@@ -123,11 +123,6 @@ Nitro server is compatible with the OpenAI format, so you can expect the same ou
 ## Compile from source
 To compile nitro please visit [Compile from source](docs/manual_install.md)
 
-### Architecture
-Nitro is an integration layer with the most cutting-edge inference engine. Its structure can be simplified as follows:
-
-![Current architecture](docs/architecture.png)
-
 ### Contact
 
 - For support, please file a GitHub ticket.
