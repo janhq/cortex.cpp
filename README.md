@@ -11,14 +11,11 @@
 > ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
 
 ## Features
-
-### Supported features
-- GGML inference support (llama.cpp, etc...)
-
-### TODO:
-- [ ] Local file server
-- [ ] Cache
-- [ ] Plugin support
+- Fast Inference: Built on top of the cutting-edge inference library llama.cpp, modified to be production ready.
+- Lightweight: Only 3MB, ideal for resource-sensitive environments.
+- Easily Embeddable: Simple integration into existing applications, offering flexibility.
+- Quick Setup: Approximately 10-second initialization for swift deployment.
+- Enhanced Web Framework: Incorporates drogon cpp to boost web service efficiency.
 
 ## Documentation
 
