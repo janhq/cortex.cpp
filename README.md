@@ -17,11 +17,9 @@
 - Quick Setup: Approximately 10-second initialization for swift deployment.
 - Enhanced Web Framework: Incorporates drogon cpp to boost web service efficiency.
 
-## Documentation
-
 ## About Nitro
 
-Nitro is a light-weight integration layer (and soon to be inference engine) for cutting edge inference engine, make deployment of AI models easier than ever before!
+Nitro is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.
 
 The binary of nitro after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
 
@@ -40,37 +38,57 @@ The binary of nitro after zipped is only ~3mb in size with none to minimal depen
 
 ## Quickstart
 
-**Step 1: Download Nitro**
+**Step 1: Install Nitro**
 
-To use Nitro, download the released binaries from the release page below:
+- For Linux and MacOS
 
-[![Download Nitro](https://img.shields.io/badge/Download-Nitro-blue.svg)](https://github.com/janhq/nitro/releases)
+  ```bash
+  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -
+  ```
 
-After downloading the release, double-click on the Nitro binary.
+- For Windows
 
-**Step 2: Download a Model**
+  ```bash
+  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"
+  ```
 
-Download a llama model to try running the llama C++ integration. You can find a "GGUF" model on The Bloke's page below:
+**Step 2: Downloading a Model**
 
-[![Download Model](https://img.shields.io/badge/Download-Model-green.svg)](https://huggingface.co/TheBloke)
+```bash
+mkdir model && cd model
+wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
+```
 
-**Step 3: Run Nitro**
+**Step 3: Run Nitro server**
 
-Double-click on Nitro to run it. After downloading your model, make sure it's saved to a specific path. Then, make an API call to load your model into Nitro.
+```bash title="Run Nitro server"
+nitro
+```
 
+**Step 4: Load model** 
 
-```zsh
-curl -X POST 'http://localhost:3928/inferences/llamacpp/loadmodel' \
+```bash title="Load model"
+curl http://localhost:3928/inferences/llamacpp/loadmodel \
   -H 'Content-Type: application/json' \
   -d '{
-    "llama_model_path": "/path/to/your_model.gguf",
-    "ctx_len": 2048,
+    "llama_model_path": "/model/llama-2-7b-model.gguf",
+    "ctx_len": 512,
     "ngl": 100,
-    "embedding": true,
-    "n_parallel": 4,
-    "pre_prompt": "A chat between a curious user and an artificial intelligence",
-    "user_prompt": "USER: ",
-    "ai_prompt": "ASSISTANT: "
+  }'
+```
+
+**Step 5: Making an Inference**
+
+```bash title="Nitro Inference"
+curl http://localhost:3928/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Who won the world series in 2020?"
+      },
+    ]
   }'
 ```
 
@@ -89,7 +107,6 @@ Table of parameters
 | `system_prompt`    | String  | The prompt to use for system rules.                          |
 | `pre_prompt`    | String  | The prompt to use for internal configuration.                          |
 
-
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
 ./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port])
@@ -98,32 +115,13 @@ Table of parameters
 - host : host value normally 127.0.0.1 or 0.0.0.0
 - port : the port that nitro got deployed onto
 
-**Step 4: Perform Inference on Nitro for the First Time**
-
-```zsh
-curl --location 'http://localhost:3928/inferences/llamacpp/chat_completion' \
-     --header 'Content-Type: application/json' \
-     --header 'Accept: text/event-stream' \
-     --header 'Access-Control-Allow-Origin: *' \
-     --data '{
-        "messages": [
-            {"content": "Hello there 👋", "role": "assistant"},
-            {"content": "Can you write a long story", "role": "user"}
-        ],
-        "stream": true,
-        "model": "gpt-3.5-turbo",
-        "max_tokens": 2000
-     }'
-```
-
 Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
 ## Compile from source
-To compile nitro please visit [Compile from source](docs/manual_install.md)
+To compile nitro please visit [Compile from source](docs/new/build-source.md)
 
 ### Contact
 
 - For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email hello@jan.ai.
-

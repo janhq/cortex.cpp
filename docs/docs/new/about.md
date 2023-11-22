@@ -1,6 +1,6 @@
 ---
 title: About Nitro
-slug: /docs
+slug: /about
 ---
 
 Nitro is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.
@@ -119,7 +119,3 @@ Nitro welcomes contributions in various forms, not just coding. Here are some wa
 
 - [drogon](https://github.com/drogonframework/drogon): The fast C++ web framework
 - [llama.cpp](https://github.com/ggerganov/llama.cpp): Inference of LLaMA model in pure C/C++
-
-## FAQ
-:::info COMING SOON
-:::
