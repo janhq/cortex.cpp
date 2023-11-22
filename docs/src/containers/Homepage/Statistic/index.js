@@ -13,7 +13,8 @@ export default function Statistic() {
     <div className="container">
       <div className="grid grid-cols-12 text-center">
         <div className="col-span-full lg:col-span-12 pt-4">
-          <div className="dark:bg-[#27272A] bg-[#F4F4F5] inline-flex rounded-lg overflow-hidden mb-4 border dark:border-gray-800 border-gray-300 justify-center">
+          {/* Temporary disabled */}
+          {/* <div className="dark:bg-[#27272A] bg-[#F4F4F5] inline-flex rounded-lg overflow-hidden mb-4 border dark:border-gray-800 border-gray-300 justify-center">
             <ul className="flex">
               {tabs.map((option, i) => {
                 return (
@@ -30,7 +31,9 @@ export default function Statistic() {
                 );
               })}
             </ul>
-          </div>
+          </div> */}
+
+          <h2>Lightweight</h2>
           <div className="w-full lg:w-1/2 mx-auto">
             <p className="mt-2">
               {lightweightTabActive
@@ -49,17 +52,17 @@ export default function Statistic() {
                 </h6>
               </div>
               <div className="dark:bg-[#27272A]/20 bg-[#E4E4E7]/20 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg">
-                <h6 className="font-medium lg:text-xl text-red-600">Ollama</h6>
-                <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
-                  332mb
-                </h6>
-              </div>
-              <div className="dark:bg-[#27272A]/20 bg-[#E4E4E7]/20 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg">
                 <h6 className="font-medium lg:text-xl text-blue-600">
                   Local AI
                 </h6>
                 <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
                   193mb
+                </h6>
+              </div>
+              <div className="dark:bg-[#27272A]/20 bg-[#E4E4E7]/20 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg">
+                <h6 className="font-medium lg:text-xl text-red-600">Ollama</h6>
+                <h6 className="mt-2 font-medium text-2xl sm:text-3xl lg:text-5xl">
+                  332mb
                 </h6>
               </div>
             </div>
