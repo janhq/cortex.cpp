@@ -54,7 +54,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 md:mt-20 xl:mt-4">
             <OpenAI />
           </div>
 
