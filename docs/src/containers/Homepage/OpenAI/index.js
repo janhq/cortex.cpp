@@ -11,7 +11,7 @@ import ThemedImage from "@theme/ThemedImage";
 export default function OpenAI() {
   const clipboard = useClipboard({ timeout: 200 });
 
-  const codeStringNitro = `curl http://localhost:3928/inferences/llamacpp/chat_completion
+  const codeStringNitro = `curl http://localhost:3928/v1/chat/completions
   -H "Content-Type: application/json"
   -d '{
     "model": "/path/to/your/model.gguf",
@@ -68,14 +68,14 @@ export default function OpenAI() {
                 POST
               </p>
               <p className="text-sm">
-                https://localhost:1337/llama.cpp/v1/chat/completions
+                http://localhost:3928/v1/chat/completions
               </p>
             </div>
             <div
               className="group-hover:block hidden absolute bottom-2 right-2 text-xs px-2 py-1 rounded-md bg-gray-700 cursor-pointer text-white"
               onClick={() =>
                 clipboard.copy(
-                  "https://localhost:1337/llama.cpp/v1/chat/completions"
+                  "http://localhost:3928/v1/chat/completions"
                 )
               }
             >
