@@ -16,14 +16,14 @@ To download and install Chatbox, follow the instructions available at this [link
 
 ## Using Nitro as a Backend
 
-1. Start Nitro server
+**1. Start Nitro server**
 
 Open your command line tool and enter:
 ```
 nitro
 ```
 
-2. Download Model
+**2. Download Model**
 
 Use these commands to download and save the [Llama2 7B chat model](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main):
 
@@ -34,7 +34,7 @@ wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GG
 
 > For more GGUF model, please look at [The Bloke](https://huggingface.co/TheBloke).
 
-3. Run the Model
+**3. Run the Model**
 
 To load the model, use the following command:
 
@@ -48,11 +48,16 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
   }'
 ```
 
-4. Config chatbox
+**4. Config chatbox**
+
 Adjust the `settings` in Chatbox to connect with Nitro. Change your settings to match the configuration shown in the image below:
 
 ![Settings](img/chatbox.PNG)
 
-5. Chat with the Model
+**5. Chat with the Model**
 
 Once the setup is complete, you can start chatting with the model using Chatbox. All functions of Chatbox are now enabled with Nitro as the backend.
+
+## Futher Usage
+
+For convenient usage, you can utilize  [Jan](https://jan.ai/), as it is integrated with Nitro.
