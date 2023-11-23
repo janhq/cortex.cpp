@@ -49,9 +49,19 @@ export default function Architecture() {
                 <h6 className="mb-4">LLMs</h6>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                   <div className="dark:bg-[#27272A]/50 bg-[#D4D4D8]/50 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
+                    <img
+                      src="/img/logos/llamacpp.svg"
+                      alt="Logo llamacpp"
+                      className="mb-4 mx-auto w-[70px]"
+                    />
                     <p>Llama.cpp</p>
                   </div>
                   <div className="dark:bg-[#27272A]/50 bg-[#D4D4D8]/50 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
+                    <img
+                      src="/img/logos/nvdia.svg"
+                      alt="Logo nvdia"
+                      className="mb-4 mx-auto w-[70px]"
+                    />
                     <p>TensorRT-LLM</p>
                     <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm text-white">
                       Coming Soon
@@ -62,6 +72,11 @@ export default function Architecture() {
               <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                 <h6 className="mb-4">Speech</h6>
                 <div className="dark:bg-[#27272A]/50 bg-[#D4D4D8]/50 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
+                  <img
+                    src="/img/logos/whispercpp.svg"
+                    alt="Logo whispercpp"
+                    className="mb-4 mx-auto w-[70px]"
+                  />
                   <p>Whisper.cpp</p>
                   <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm text-white">
                     Coming Soon
@@ -71,6 +86,11 @@ export default function Architecture() {
               <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
                 <h6 className="mb-4">Vision</h6>
                 <div className="dark:bg-[#27272A]/50 bg-[#D4D4D8]/50 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">
+                  <img
+                    src="/img/logos/stable-diffusion.svg"
+                    alt="Logo stable-diffusion"
+                    className="mb-4 mx-auto w-[70px]"
+                  />
                   <p>StableDiffusion</p>
                   <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm text-white">
                     Coming Soon

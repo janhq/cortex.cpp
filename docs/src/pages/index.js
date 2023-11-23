@@ -4,7 +4,7 @@ import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 
 import Layout from "@theme/Layout";
 
-import DownloadButton from "@site/src/containers/DownloadButton";
+import GithubButtob from "@site/src/containers/GithubButton";
 
 import GetNitro from "@site/src/containers/Homepage/GetNitro";
 import Statistic from "@site/src/containers/Homepage/Statistic";
@@ -46,7 +46,7 @@ export default function Home() {
               </p>
 
               <div className="mt-10">
-                <DownloadButton />
+                <GithubButtob />
               </div>
             </div>
             <div className="mt-10">
@@ -54,7 +54,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 md:mt-20 2xl:mt-4">
             <OpenAI />
           </div>
 

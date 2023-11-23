@@ -7,17 +7,17 @@ import axios from "axios";
 const systemsTemplate = [
   {
     name: "Download for Mac",
-    logo: require("@site/static/img/apple-logo-white.png").default,
+    logo: require("@site/static/img/logos/apple-logo-white.png").default,
     fileFormat: "{appname}-mac-arm64.zip",
   },
   {
     name: "Download for Windows",
-    logo: require("@site/static/img/windows-logo-white.png").default,
+    logo: require("@site/static/img/logos/windows-logo-white.png").default,
     fileFormat: "{appname}-win-amd64.zip",
   },
   {
     name: "Download for Linux",
-    logo: require("@site/static/img/linux-logo-white.png").default,
+    logo: require("@site/static/img/logos/linux-logo-white.png").default,
     fileFormat: "{appname}-linux-amd64.zip",
   },
 ];
