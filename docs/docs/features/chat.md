@@ -122,7 +122,7 @@ Below are examples of responses from both the Nitro server and OpenAI:
 {
   "choices": [
     {
-      "finish_reason": null,
+      "finish_reason": "stop",
       "index": 0,
       "message": {
         "content": "Hello, how may I assist you this evening?",
@@ -151,7 +151,7 @@ Below are examples of responses from both the Nitro server and OpenAI:
 {
   "choices": [
     {
-      "finish_reason": "stop"
+      "finish_reason": "stop",
       "index": 0,
       "message": {
         "role": "assistant",
