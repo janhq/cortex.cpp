@@ -61,6 +61,7 @@ const sidebars = {
       items: [
         "examples/jan",
         "examples/chatbox",
+        "examples/palchat",
         "examples/openai-node",
         "examples/openai-python",
       ],
