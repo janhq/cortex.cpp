@@ -72,13 +72,13 @@ Time to build Nitro!
 - **On Linux:**
 
   ```bash
-  make -j $(%NUMBER_OF_PROCESSORS%)
+  make -j $(nproc)
   ```
 
 - **On Windows:**
 
   ```bash
-  cmake --build . --config Release
+  make -j $(%NUMBER_OF_PROCESSORS%)
   ```
 
 ## Start process

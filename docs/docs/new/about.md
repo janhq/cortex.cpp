@@ -1,6 +1,6 @@
 ---
 title: About Nitro
-slug: /about
+slug: /docs
 ---
 
 Nitro is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.

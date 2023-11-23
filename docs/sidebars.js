@@ -33,10 +33,19 @@ const sidebars = {
     {
       type: "category",
       label: "Features",
+      collapsible: false,
+      collapsed: false,
       link: { type: "doc", id: "features/feat" },
       items: [
         "features/chat",
         "features/embed",
+      ],
+    },
+    {
+      type: "category",
+      label: "Advanced Features",
+      link: { type: "doc", id: "features/feat" },
+      items: [
         "features/multi-thread",
         "features/cont-batch",
         "features/load-unload",
@@ -46,10 +55,11 @@ const sidebars = {
     },
     {
       type: "category",
-      label: "Guides",
+      label: "Integrations",
       collapsible: false,
       collapsed: false,
       items: [
+        "examples/jan",
         "examples/chatbox",
         "examples/openai-node",
         "examples/openai-python",
@@ -62,7 +72,16 @@ const sidebars = {
     //   collapsed: false,
     //   items: [{ type: "doc", id: "new/architecture", label: "Architecture" }],
     // },
-    "new/faq"
+    {
+      type: "category",
+      label: "Demos",
+      collapsible: true,
+      collapsed: true,
+      items: [
+        "demos/chatbox-vid",
+      ],
+    },
+    "new/faq",
   ],
 
   apiSidebar: [

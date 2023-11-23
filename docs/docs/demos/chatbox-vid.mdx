@@ -1,0 +1,24 @@
+---
+title: Run local chatbox under 1 minute on MacOS with Nitro
+---
+
+<iframe width="675" height="380" src="https://www.youtube.com/embed/apfI13ijvjc" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+## Links
+
+- [Download Nitro](https://github.com/janhq/nitro/releases)
+- [Download Chatbox](https://github.com/Bin-Huang/chatbox)
+
+## Commands
+
+```bash title="Load model"
+curl http://localhost:3928/inferences/llamacpp/loadmodel \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "llama_model_path": "model/llama-2-7b-chat.Q5_K_M.gguf",
+    "ctx_len": 512,
+    "ngl": 100,
+  }'
+```
+
+For more information, please refer to the [Nitro with Chatbox](examples/chatbox.md) documentation.
