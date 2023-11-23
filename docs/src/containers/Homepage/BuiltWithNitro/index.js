@@ -10,7 +10,7 @@ export default function BuiltWithNitro() {
           as an npm, pip package, or binary.
         </p>
         <a
-          href="/docs"
+          href="/build-source"
           className="px-4 py-2 border border-gray-800 rounded-md inline-block mt-6"
         >
           Developer Docs
