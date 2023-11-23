@@ -59,6 +59,7 @@ const sidebars = {
       collapsible: false,
       collapsed: false,
       items: [
+        "examples/jan",
         "examples/chatbox",
         "examples/openai-node",
         "examples/openai-python",

@@ -60,4 +60,4 @@ Once the setup is complete, you can start chatting with the model using Chatbox.
 
 ## Futher Usage
 
-For convenient usage, you can utilize  [Jan](https://jan.ai/), as it is integrated with Nitro.
+For convenient usage, you can utilize [Jan](https://jan.ai/), as it is integrated with Nitro.
