@@ -20,7 +20,7 @@ export default function Home() {
   return (
     <Fragment>
       <Banner />
-      <Layout title={`${siteConfig.tagline}`} description="About Nitro.">
+      <Layout title={`${siteConfig.tagline}`} description="Nitro is a high-efficiency C++ inference engine for edge computing, powering Jan. It is lightweight and embeddable, ideal for product integration.">
         <img
           src="/img/elements/ellipse.png"
           alt="Element Hero Ellipse"
