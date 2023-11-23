@@ -71,7 +71,6 @@ const sidebars = {
     //   collapsed: false,
     //   items: [{ type: "doc", id: "new/architecture", label: "Architecture" }],
     // },
-    "new/faq",
     {
       type: "category",
       label: "Demos",
@@ -81,6 +80,7 @@ const sidebars = {
         "demos/chatbox-vid",
       ],
     },
+    "new/faq",
   ],
 
   apiSidebar: [
