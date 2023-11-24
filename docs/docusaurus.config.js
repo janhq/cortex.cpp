@@ -59,15 +59,6 @@ const config = {
         enableInDevelopment: false, // optional
       },
     ],
-    [
-      '@docusaurus/plugin-sitemap',
-      {
-        changefreq: 'weekly',
-        priority: 0.5,
-        ignorePatterns: ['/tags/**'],
-        filename: 'sitemap.xml',
-      },
-    ]
   ],
 
   // The classic preset will relay each option entry to the respective sub plugin/theme.
