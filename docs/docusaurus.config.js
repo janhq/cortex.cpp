@@ -58,6 +58,13 @@ const config = {
         appUrl: process.env.POSTHOG_APP_URL || "XXX", // optional
         enableInDevelopment: false, // optional
       },
+      '@docusaurus/plugin-sitemap',
+      {
+        changefreq: 'weekly',
+        priority: 0.5,
+        ignorePatterns: ['/tags/**'],
+        filename: 'sitemap.xml',
+      },
     ],
   ],
 
