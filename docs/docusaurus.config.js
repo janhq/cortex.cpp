@@ -58,6 +58,8 @@ const config = {
         appUrl: process.env.POSTHOG_APP_URL || "XXX", // optional
         enableInDevelopment: false, // optional
       },
+    ],
+    [
       '@docusaurus/plugin-sitemap',
       {
         changefreq: 'weekly',
@@ -65,7 +67,7 @@ const config = {
         ignorePatterns: ['/tags/**'],
         filename: 'sitemap.xml',
       },
-    ],
+    ]
   ],
 
   // The classic preset will relay each option entry to the respective sub plugin/theme.
