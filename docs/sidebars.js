@@ -60,7 +60,7 @@ const sidebars = {
       collapsed: false,
       items: [
         "examples/jan",
-        "examples/chatbox",
+        // "examples/chatbox",
         "examples/palchat",
         "examples/openai-node",
         "examples/openai-python",
@@ -73,15 +73,15 @@ const sidebars = {
     //   collapsed: false,
     //   items: [{ type: "doc", id: "new/architecture", label: "Architecture" }],
     // },
-    {
-      type: "category",
-      label: "Demos",
-      collapsible: true,
-      collapsed: true,
-      items: [
-        "demos/chatbox-vid",
-      ],
-    },
+    // {
+    //   type: "category",
+    //   label: "Demos",
+    //   collapsible: true,
+    //   collapsed: true,
+    //   items: [
+    //     "demos/chatbox-vid",
+    //   ],
+    // },
     "new/faq",
   ],
 
