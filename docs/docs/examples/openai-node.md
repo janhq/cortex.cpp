@@ -85,53 +85,59 @@ chatCompletion()
 
 ```typescript
 import OpenAI from 'openai';
-// The name of your Azure OpenAI Resource.
-// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource
+
 const resource = '<your resource name>';
-
-// Corresponds to your Model deployment within your OpenAI resource, e.g. my-gpt35-16k-deployment
-// Navigate to the Azure OpenAI Studio to deploy a model.
 const model = '<your model>';
-
-// https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
 const apiVersion = '2023-06-01-preview';
-
 const apiKey = process.env['AZURE_OPENAI_API_KEY'];
+
 if (!apiKey) {
-  throw new Error('The AZURE_OPENAI_API_KEY environment variable is missing or empty.');
+  throw new Error('The AZURE_OPENAI_API_KEY variable is missing.');
 }
+
+const baseURL = `https://${resource}.openai.azure.com/openai/` +
+                `deployments/${model}`;
 
 const openai = new OpenAI({
   apiKey,
-  baseURL: `https://${resource}.openai.azure.com/openai/deployments/${model}`,
+  baseURL,
   defaultQuery: { 'api-version': apiVersion },
   defaultHeaders: { 'api-key': apiKey },
 });
 
 async function chatCompletion() {
-  const stream = await openai.beta.chat.completions.stream({
-    model: 'gpt-3.5-turbo',
-    messages: [{ role: 'user', content: 'Say this is a test' }],
-    stream: true,
-  });
+  try {
+    const stream = await openai.beta.chat.completions.stream({
+      model: 'gpt-3.5-turbo',
+      messages: [{ role: 'user', content: 'Say this is a test' }],
+      stream: true,
+    });
 
-  stream.on('content', (delta, snapshot) => {
-    process.stdout.write(delta);
-  });
+    stream.on('content', (delta, snapshot) => {
+      process.stdout.write(delta);
+    });
 
-  for await (const chunk of stream) {
-    process.stdout.write(chunk.choices[0]?.delta?.content || '');
+    for await (const chunk of stream) {
+      process.stdout.write(chunk.choices[0]?.delta?.content || '');
+    }
+
+    const chatCompletion = await stream.finalChatCompletion();
+    console.log(chatCompletion); // Log the final completion
+  } catch (error) {
+    console.error('Error in chat completion:', error);
   }
-
-  const chatCompletion = await stream.finalChatCompletion();
-  console.log(chatCompletion); // {id: "…", choices: […], …}
 }
-chatCompletion()
+
+chatCompletion();
 ```
 
 </td>
 </tr>
 </table>
+
+> Resource:
+> - [Azure Create a resource](https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource)
+> - [Azure-OAI Rest API versoning](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning)
 
 ## Embedding
 <table>
@@ -146,16 +152,24 @@ chatCompletion()
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
-  apiKey: '', // defaults to process.env["OPENAI_API_KEY"]
-  baseURL: "http://localhost:3928/v1/" // https://api.openai.com/v1
+  apiKey: '', // Defaults to process.env["OPENAI_API_KEY"]
+  baseURL: 'http://localhost:3928/v1/'
+  // 'https://api.openai.com/v1'
 });
 
 async function embedding() {
-  const embedding = await openai.embeddings.create({input: 'Hello How are you?', model: 'text-embedding-ada-002'});
-  console.log(embedding); // {object: "list", data: […], …}
+  try {
+    const response = await openai.embeddings.create({
+      input: 'Hello How are you?',
+      model: 'text-embedding-ada-002'
+    });
+    console.log(response); // Log the response
+  } catch (error) {
+    console.error('Error in fetching embedding:', error);
+  }
 }
 
-chatCompletion();
+embedding();
 ```
 </td>
 </tr>
@@ -171,11 +185,14 @@ const openai = new OpenAI({
 });
 
 async function embedding() {
-  const embedding = await openai.embeddings.create({input: 'Hello How are you?', model: 'text-embedding-ada-002'});
+  const embedding = await openai.embeddings.create({
+    input: 'Hello How are you?',
+    model: 'text-embedding-ada-002'
+  });
   console.log(embedding); // {object: "list", data: […], …}
 }
 
-chatCompletion();
+embedding();
 ```
 
 </td>
@@ -186,35 +203,36 @@ chatCompletion();
 
 ```typescript
 import OpenAI from 'openai';
-// The name of your Azure OpenAI Resource.
-// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource
+
 const resource = '<your resource name>';
-
-// Corresponds to your Model deployment within your OpenAI resource, e.g. my-gpt35-16k-deployment
-// Navigate to the Azure OpenAI Studio to deploy a model.
 const model = '<your model>';
-
-// https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#rest-api-versioning
 const apiVersion = '2023-06-01-preview';
-
 const apiKey = process.env['AZURE_OPENAI_API_KEY'];
+
 if (!apiKey) {
-  throw new Error('The AZURE_OPENAI_API_KEY environment variable is missing or empty.');
+  throw new Error('The AZURE_OPENAI_API_KEY variable is missing.');
 }
+
+// Splitting the baseURL into concatenated parts for readability
+const baseURL = `https://${resource}.openai.azure.com/openai/` +
+                `deployments/${model}`;
 
 const openai = new OpenAI({
   apiKey,
-  baseURL: `https://${resource}.openai.azure.com/openai/deployments/${model}`,
+  baseURL,
   defaultQuery: { 'api-version': apiVersion },
   defaultHeaders: { 'api-key': apiKey },
 });
 
 async function embedding() {
-  const embedding = await openai.embeddings.create({input: 'Hello How are you?', model: 'text-embedding-ada-002'});
+  const embedding = await openai.embeddings.create({
+    input: 'Hello How are you?',
+    model: 'text-embedding-ada-002'
+  });
   console.log(embedding); // {object: "list", data: […], …}
 }
 
-chatCompletion();
+embedding();
 ```
 
 </td>
