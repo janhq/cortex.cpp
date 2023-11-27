@@ -16,7 +16,7 @@ Pal is a mobile app available on the App Store. It offers a customizable chat pl
 **1. Start Nitro server**
 
 Open your terminal:
-```
+```bash title="Run Nitro"
 nitro
 ```
 
@@ -24,7 +24,7 @@ nitro
 
 Use these commands to download and save the [Llama2 7B chat model](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main):
 
-```bash
+```bash title="Get a model"
 mkdir model && cd model
 wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
 ```
@@ -35,7 +35,7 @@ wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GG
 
 To load the model, use the following command:
 
-```
+```bash title="Load model to the server"
 curl http://localhost:3928/inferences/llamacpp/loadmodel \
   -H 'Content-Type: application/json' \
   -d '{
