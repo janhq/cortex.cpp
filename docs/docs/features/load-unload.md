@@ -1,5 +1,6 @@
 ---
-title: Load and Unload models 
+title: Load and Unload models
+description: Nitro loads and unloads local AI models (local LLMs).
 ---
 
 ## Load model

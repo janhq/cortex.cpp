@@ -1,5 +1,6 @@
 ---
 title: Nitro with openai-node
+description: Nitro intergration guide for Node.js.
 ---
 
 You can migrate from OAI API or Azure OpenAI to Nitro using your existing NodeJS code quickly

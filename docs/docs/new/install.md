@@ -1,6 +1,7 @@
 ---
 title: Installation
 slug: /install
+description: How to install Nitro
 ---
 
 # Nitro Installation Guide

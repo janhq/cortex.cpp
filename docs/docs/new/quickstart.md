@@ -1,6 +1,7 @@
 ---
 title: Quickstart
 slug: /quickstart
+description: How to use Nitro
 ---
 
 ## Step 1: Install Nitro

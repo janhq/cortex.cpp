@@ -1,5 +1,6 @@
 ---
 title: Embedding
+description: Inference engine for embedding, the same as OpenAI's
 ---
 
 ## What are embeddings?

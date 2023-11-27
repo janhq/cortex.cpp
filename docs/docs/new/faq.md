@@ -1,6 +1,7 @@
 ---
 title: FAQs
 slug: /faq
+description: Frequently Asked Questions about Nitro
 ---
 
 <details>

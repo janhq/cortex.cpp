@@ -1,5 +1,6 @@
 ---
 title: Continuous Batching
+description: Nitro's continuous batching combines multiple requests, enhancing throughput.
 ---
 
 ## What is continous batching?

@@ -1,5 +1,6 @@
 ---
-title: Warming Up Model 
+title: Warming Up Model
+description: Nitro warms up the model to optimize delays.
 ---
 
 ## What is Model Warming Up?
