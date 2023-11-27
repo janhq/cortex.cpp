@@ -5,7 +5,7 @@ description: Nitro intergration guide for Python.
 
 
 You can migrate from OAI API or Azure OpenAI to Nitro using your existing Python code quickly
-> The ONLY thing you need to do is to override `baseURL` in `openai` init with `Nitro` URL
+> The **ONLY** thing you need to do is to override `baseURL` in `openai` init with `Nitro` URL
 - Python OpenAI SDK: https://pypi.org/project/openai/
 
 ## Chat Completion
@@ -178,13 +178,18 @@ print(embeddings)
 </table>
 
 ## Audio
-Coming soon
 
+:::info Coming soon
+:::
 ## How to reproduce
-1. Step 1: Dependencies installation
-```
+**Step 1:** Dependencies installation.
+
+```bash title="Install OpenAI"
 pip install openai
 ```
-3. Step 2: Fill `index.py` file with code
-4. Step 3: Run the code with `python index.py`
-5. Step 5: Enjoy!
+
+**Step 2:** Fill `index.py` file with code.
+
+**Step 3:** Run the code with `python index.py`.
+
+**Step 4:** Enjoy!
