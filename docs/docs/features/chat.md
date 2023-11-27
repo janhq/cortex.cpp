@@ -8,7 +8,7 @@ The Chat Completion feature in Nitro provides a flexible way to interact with an
 
 To send a single query to your chosen LLM, follow these steps:
 
-<div style={{ width: '50%', float: 'left', clear: 'left' }}>
+<div class="code-snippet-left">
 
 ```bash title="Nitro"
 curl http://localhost:3928/v1/chat/completions \
@@ -27,7 +27,7 @@ curl http://localhost:3928/v1/chat/completions \
 
 </div>
 
-<div style={{ width: '50%', float: 'right', clear: 'right' }}>
+<div class="code-snippet-right">
 
 ```bash title="OpenAI"
 curl https://api.openai.com/v1/chat/completions \
@@ -52,7 +52,7 @@ This command sends a request to your local LLM, querying about the winner of the
 
 For ongoing conversations or multiple queries, the dialog request feature is ideal. Here’s how to structure a multi-turn conversation:
 
-<div style={{ width: '50%', float: 'left', clear: 'left' }}>
+<div class="code-snippet-left">
 
 ```bash title="Nitro"
 curl http://localhost:3928/v1/chat/completions \
@@ -82,7 +82,7 @@ curl http://localhost:3928/v1/chat/completions \
 
 </div>
 
-<div style={{ width: '50%', float: 'right', clear: 'right' }}>
+<div class="code-snippet-right">
 
 ```bash title="OpenAI"
 curl https://api.openai.com/v1/chat/completions \
@@ -116,7 +116,7 @@ curl https://api.openai.com/v1/chat/completions \
 
 Below are examples of responses from both the Nitro server and OpenAI:
 
-<div style={{ width: '50%', float: 'left', clear: 'left' }}>
+<div class="code-snippet-left">
 
 ```js title="Nitro"
 {
@@ -145,7 +145,7 @@ Below are examples of responses from both the Nitro server and OpenAI:
 
 </div>
 
-<div style={{ width: '50%', float: 'right', clear: 'right' }}>
+<div class="code-snippet-right">
 
 ```js title="OpenAI"
 {

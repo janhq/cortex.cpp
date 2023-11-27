@@ -14,7 +14,7 @@ To utilize the embedding feature, include the JSON parameter `"embedding": true`
 
 Here’s an example showing how to get the embedding result from the model:
 
-<div style={{ width: '50%', float: 'left', clear: 'left' }}>
+<div class="code-snippet-left">
 
 ```bash title="Nitro" {1}
 curl http://localhost:3928/v1/embeddings \
@@ -28,7 +28,7 @@ curl http://localhost:3928/v1/embeddings \
 ```
 
 </div>
-<div style={{ width: '50%', float: 'right', clear: 'right' }}>
+<div class="code-snippet-right">
 
 ```bash title="OpenAI request" {1}
 curl https://api.openai.com/v1/embeddings \
@@ -47,7 +47,7 @@ curl https://api.openai.com/v1/embeddings \
 
 The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main) loaded to Nitro server.
 
-<div style={{ width: '50%', float: 'left', clear: 'left' }}>
+<div class="code-snippet-left">
 
 ```js title="Nitro"
 {
@@ -68,7 +68,7 @@ The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https
 
 </div>
 
-<div style={{ width: '50%', float: 'right', clear: 'right' }}>
+<div class="code-snippet-right">
 
 ```js title="OpenAI"
 {
