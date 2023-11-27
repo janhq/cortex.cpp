@@ -77,3 +77,11 @@
     }
   }
 }
+
+.code-snippet-left {
+  @apply w-full lg:w-1/2 float-left;
+}
+
+.code-snippet-right {
+  @apply w-full lg:w-1/2 float-right;
+}
