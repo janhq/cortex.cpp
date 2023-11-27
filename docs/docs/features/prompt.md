@@ -1,6 +1,6 @@
 ---
 title: Prompt Role Support
-description: 
+description: Setting up Nitro prompts to build an AI assistant.
 ---
 
 System, user, and assistant prompt is crucial for effectively utilizing the Large Language Model. These prompts work together to create a coherent and functional conversational flow.
