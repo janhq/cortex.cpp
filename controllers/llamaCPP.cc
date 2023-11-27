@@ -149,6 +149,15 @@ void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
+  if (!model_loaded) {
+    Json::Value jsonResp;
+    jsonResp["message"] =
+        "Model has not been loaded, please load model into nitro";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k409Conflict);
+    callback(resp);
+  }
+
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output = pre_prompt;
 
@@ -337,6 +346,16 @@ void llamaCPP::modelStatus(
 void llamaCPP::loadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
+
+  if (model_loaded) {
+    LOG_INFO << "model loaded";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model already loaded";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k409Conflict);
+    callback(resp);
+    return;
+  }
 
   const auto &jsonBody = req->getJsonObject();
 
