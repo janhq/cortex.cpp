@@ -13,12 +13,12 @@ Learn more on [GitHub](https://github.com/janhq/nitro).
 - **Fast Inference:** Built on top of the cutting-edge inference library `llama.cpp`, modified to be production ready.
 - **Lightweight:** Only 3MB, ideal for resource-sensitive environments.
 - **Easily Embeddable:** Simple integration into existing applications, offering flexibility.
-- **Quick Setup:** Approximately 10-second initialization for swift deployment.
+- **Quick Setup:** Approximately 10-second initialization.
 - **Enhanced Web Framework:** Incorporates `drogon cpp` to boost web service efficiency.
 
 ### OpenAI-compatible API
 
-One of the significant advantages of using Nitro is its compatibility with OpenAI's API structure. The command format for making inference calls with Nitro is very similar to that used with OpenAI's API. This similarity ensures a transition for users who are already familiar with OpenAI's system.
+Nitro's compatibility with OpenAI's API structure is a notable advantage. Its command format for inference calls closely mirrors that of OpenAI, facilitating an easy transition for users.
 
 For instance, compare the Nitro inference call:
 
