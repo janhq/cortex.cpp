@@ -47,7 +47,7 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
 
 **4. Configure Pal Chat**
 
-In the `OpenAI API Key`` field, just type any random text (e.g. key-xxxxxx).
+In the `OpenAI API Key` field, just type any random text (e.g. key-xxxxxx).
 
 Adjust the `provide custom host` setting under `advanced settings` in Pal Chat with your LAN IPv4 address (a series of numbers like 192.xxx.x.xxx).
 
