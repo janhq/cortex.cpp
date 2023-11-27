@@ -4,7 +4,7 @@ description: Nitro intergration guide for Node.js.
 ---
 
 You can migrate from OAI API or Azure OpenAI to Nitro using your existing NodeJS code quickly
-> The ONLY thing you need to do is to override `baseURL` in `openai` init with `Nitro` URL
+> The **ONLY** thing you need to do is to override `baseURL` in `openai` init with `Nitro` URL
 - NodeJS OpenAI SDK: https://www.npmjs.com/package/openai
 
 ## Chat Completion
