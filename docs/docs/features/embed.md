@@ -3,8 +3,6 @@ title: Embedding
 description: Inference engine for embedding, the same as OpenAI's
 ---
 
-## What are embeddings?
-
 Embeddings are lists of numbers (floats). To find how similar two embeddings are, we measure the [distance](https://en.wikipedia.org/wiki/Cosine_similarity) between them. Shorter distances mean they're more similar; longer distances mean less similarity.
 
 ## Activating Embedding Feature
@@ -44,7 +42,7 @@ curl https://api.openai.com/v1/embeddings \
 
 </div>
 
-## Embedding Reponse
+### Embedding Reponse
 
 The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main) loaded to Nitro server.
 
