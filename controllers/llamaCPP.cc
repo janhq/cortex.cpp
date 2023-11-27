@@ -8,7 +8,6 @@
 #include <regex>
 #include <string>
 #include <thread>
-#include <trantor/utils/Logger.h>
 
 using namespace inferences;
 using json = nlohmann::json;
