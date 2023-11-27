@@ -23,7 +23,10 @@ import asyncio
 from openai import AsyncOpenAI
 
 # gets API Key from environment variable OPENAI_API_KEY
-client = AsyncOpenAI(base_url="http://localhost:3928/v1/", api_key="sk-xxx")
+client = AsyncOpenAI(
+    base_url="http://localhost:3928/v1/",
+    api_key="sk-xxx"
+)
 
 
 async def main() -> None:
@@ -75,22 +78,16 @@ asyncio.run(main())
 ```python
 from openai import AzureOpenAI
 
-openai.api_key = '...' # Default is environment variable AZURE_OPENAI_API_KEY
+openai.api_key = '...' # Default is AZURE_OPENAI_API_KEY
 
 stream = AzureOpenAI(
     api_version=api_version,
-    # https://learn.microsoft.com/en-us/azure/cognitive-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource
     azure_endpoint="https://example-endpoint.openai.azure.com",
 )
 
 completion = client.chat.completions.create(
     model="deployment-name",  # e.g. gpt-35-instant
-    messages=[
-        {
-            "role": "user",
-            "content": "How do I output all files in a directory using Python?",
-        },
-    ],
+    messages=[{"role": "user", "content": "Say this is a test"}],
     stream=True,
 )
 for part in stream:
@@ -116,11 +113,15 @@ import asyncio
 from openai import AsyncOpenAI
 
 # gets API Key from environment variable OPENAI_API_KEY
-client = AsyncOpenAI(base_url="http://localhost:3928/v1/", api_key="sk-xxx")
+client = AsyncOpenAI(base_url="http://localhost:3928/v1/",
+                     api_key="sk-xxx")
 
 
 async def main() -> None:
-    embedding = await client.embeddings.create(input='Hello How are you?', model='text-embedding-ada-002')
+    embedding = await client.embeddings.create(
+        input='Hello How are you?', 
+        model='text-embedding-ada-002'
+    )
     print(embedding)
 
 asyncio.run(main())
@@ -141,7 +142,10 @@ client = AsyncOpenAI(api_key="sk-xxx")
 
 
 async def main() -> None:
-    embedding = await client.embeddings.create(input='Hello How are you?', model='text-embedding-ada-002')
+    embedding = await client.embeddings.create(
+        input='Hello How are you?',          
+        model='text-embedding-ada-002'
+    )
     print(embedding)
 
 asyncio.run(main())
