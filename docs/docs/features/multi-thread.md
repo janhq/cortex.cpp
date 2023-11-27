@@ -1,5 +1,6 @@
 ---
 title: Multithreading 
+description: Nitro utilizes multithreading to optimize hardware usage.
 ---
 
 ## What is Multithreading?

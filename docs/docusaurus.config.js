@@ -124,6 +124,43 @@ const config = {
       liveCodeBlock: {
         playgroundPosition: "bottom",
       },
+      metadata: [
+        { name: 'description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.'},
+        { name: 'keywords', content: 'Nitro, OpenAI compatible, fast inference, local AI, llm, small AI, free, open source, production ready' },
+        { property: 'og:title', content: 'Embeddable AI | Nitro' },
+        { property: 'og:description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.' },
+        { property: 'twitter:card', content: 'summary_large_image' },
+        { property: 'twitter:site', content: '@janhq_' }, 
+        { property: 'twitter:title', content: 'Embeddable AI | Nitro' },
+        { property: 'twitter:description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.' },
+      ],
+      headTags: [
+        // Declare a <link> preconnect tag
+        {
+          tagName: 'link',
+          attributes: {
+            rel: 'preconnect',
+            href: 'https://nitro.jan.ai/',
+          },
+        },
+        // Declare some json-ld structured data
+        {
+          tagName: 'script',
+          attributes: {
+            type: 'application/ld+json',
+          },
+          innerHTML: JSON.stringify({
+            '@context': 'https://schema.org/',
+            '@type': 'LLMInference',
+            name: 'Nitro',
+            description: "Nitro is a high-efficiency Large Language Model inference engine for edge computing.",
+            keywords: "Nitro, OpenAI compatible, fast inference, local AI, llm, small AI, free, open source, production ready",
+            applicationCategory: "BusinessApplication",
+            operatingSystem: "Multiple",
+            url: 'https://nitro.jan.ai/',
+          }),
+        },
+      ],
       navbar: {
         title: "Nitro",
         logo: {

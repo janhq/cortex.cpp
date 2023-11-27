@@ -1,6 +1,7 @@
 ---
 title: About Nitro
 slug: /docs
+description: Efficient LLM inference engine for edge computing
 ---
 
 Nitro is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.
@@ -21,7 +22,7 @@ One of the significant advantages of using Nitro is its compatibility with OpenA
 
 For instance, compare the Nitro inference call:
 
-<div style={{ width: '50%', float: 'left', clear: 'left' }}>
+<div class="code-snippet-left">
 
 ```bash title="Nitro chat completion"
 curl http://localhost:3928/v1/chat/completions \
@@ -44,7 +45,7 @@ curl http://localhost:3928/v1/chat/completions \
 
 </div>
 
-<div style={{ width: '50%', float: 'right', clear: 'right' }}>
+<div class="code-snippet-right">
 
 ```bash title="OpenAI API chat completion"
 curl https://api.openai.com/v1/chat/completions \

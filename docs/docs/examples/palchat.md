@@ -1,5 +1,6 @@
 ---
 title: Nitro with Pal Chat
+description: Nitro intergration guide for mobile device usage.
 ---
 
 This guide demonstrates how to use Nitro with Pal Chat, enabling local AI chat capabilities on mobile devices.
