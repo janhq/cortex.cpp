@@ -44,11 +44,13 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
   }'
 ```
 
-**4. Config Pal Chat**
+**4. Configure Pal Chat**
 
-Adjust the `provide custom host` setting under `advanced settings` in Pal Chat to connect with Nitro. Enter your LAN IPv4 address (It should be something like 192.xxx.x.xxx).
+In the `OpenAI API Key`` field, just type any random text (e.g. key-xxxxxx).
 
-> For instruction read: [How to find your IP](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)
+Adjust the `provide custom host` setting under `advanced settings` in Pal Chat with your LAN IPv4 address (a series of numbers like 192.xxx.x.xxx).
+
+> For instruction: [How to find your IP](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)
 
 ![PalChat](img/pal.png)
 
