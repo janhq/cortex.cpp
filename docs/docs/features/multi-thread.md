@@ -5,7 +5,7 @@ description: Nitro utilizes multithreading to optimize hardware usage.
 
 Multithreading in programming allows concurrent task execution, improving efficiency and responsiveness. It's key for optimizing hardware and application performance.
 
-Effective multithreading offers:
+**Effective multithreading offers:**
 
 - Faster Performance.
 - Responsive IO.
@@ -20,7 +20,7 @@ For more information on threading, visit [Drogon's Documentation](https://github
 
 To increase the number of threads used by Nitro, use the following command syntax:
 
-```js
+```bash title="Nitro deploy server format"
 nitro [thread_num] [host] [port]
 ```
 
@@ -29,7 +29,7 @@ nitro [thread_num] [host] [port]
 - **port:** The port number where Nitro is to be deployed.
 
 To launch Nitro with 4 threads, enter this command in the terminal:
-```js
+```bash title="Example"
 nitro 4 127.0.0.1 5000
 ```
 
