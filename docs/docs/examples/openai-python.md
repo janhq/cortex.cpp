@@ -181,6 +181,7 @@ print(embeddings)
 
 :::info Coming soon
 :::
+
 ## How to reproduce
 **Step 1:** Dependencies installation.
 
@@ -191,5 +192,3 @@ pip install openai
 **Step 2:** Fill `index.py` file with code.
 
 **Step 3:** Run the code with `python index.py`.
-
-**Step 4:** Enjoy!
