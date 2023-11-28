@@ -441,10 +441,6 @@ components:
               default: true
               nullable: true
               description: Determines if output generation is in a streaming manner.
-            cache_prompt:
-              type: boolean
-              default: true
-              description: Optimize performance in repeated or similar requests.
             temp:
               type: number
               default: 0.7
@@ -585,10 +581,6 @@ components:
           min: 0
           max: 1
           description: Set probability threshold for more relevant outputs
-        cache_prompt:
-          type: boolean
-          default: true
-          description: Optimize performance in repeated or similar requests.
     ChatCompletionResponse:
       type: object
       description: Description of the response structure
