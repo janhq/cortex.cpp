@@ -1,9 +1,10 @@
 ---
 title: Nitro with openai-node
+description: Nitro intergration guide for Node.js.
 ---
 
 You can migrate from OAI API or Azure OpenAI to Nitro using your existing NodeJS code quickly
-> The ONLY thing you need to do is to override `baseURL` in `openai` init with `Nitro` URL
+> The **ONLY** thing you need to do is to override `baseURL` in `openai` init with `Nitro` URL
 - NodeJS OpenAI SDK: https://www.npmjs.com/package/openai
 
 ## Chat Completion
@@ -240,17 +241,23 @@ embedding();
 </table>
 
 ## Audio
-Coming soon
+
+:::info Coming soon
+:::
 
 ## How to reproduce
-1. Step 1: Dependencies installation
-```
+
+**Step 1:** Dependencies installation
+
+```bash
 npm install --save openai typescript
 # or
 yarn add openai
 ```
-2. Step 2: Fill `tsconfig.json`
-```json
+
+**Step 2:** Fill `tsconfig.json`
+
+```js
 {
   "compilerOptions": {
     "moduleResolution": "node",
@@ -263,7 +270,9 @@ yarn add openai
   "lib": ["es2015"]
 }
 ```
-3. Step 3: Fill `index.ts` file with code
-3. Step 4: Build with `npx tsc`
-4. Step 5: Run the code with `node dist/index.js`
-5. Step 6: Enjoy!
+
+**Step 3:** Fill `index.ts` file with code.
+
+**Step 4:** Build with `npx tsc`.
+
+**Step 5:** Run the code with `node dist/index.js`.

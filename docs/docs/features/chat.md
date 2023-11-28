@@ -1,10 +1,11 @@
 ---
 title: Chat Completion
+description: Inference engine for chat completion, the same as OpenAI's
 ---
 
 The Chat Completion feature in Nitro provides a flexible way to interact with any local Large Language Model (LLM).
 
-## Single Request Example
+### Single Request Example
 
 To send a single query to your chosen LLM, follow these steps:
 

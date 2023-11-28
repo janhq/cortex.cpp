@@ -235,6 +235,11 @@ components:
           example: 4
           nullable: true
           description: The number of parallel operations. Only set when enable continuous batching.
+        cpu_threads:
+          type: integer
+          example: 4
+          nullable: true
+          description: The number of threads for CPU-based inference.
         pre_prompt:
           type: string
           default: A chat between a curious user and an artificial intelligence assistant. The assistant follows the given rules no matter what.
@@ -255,7 +260,6 @@ components:
           default: "ASSISTANT:"
           nullable: true
           description: The prefix for assistant prompt.
-
       required:
         - llama_model_path
 

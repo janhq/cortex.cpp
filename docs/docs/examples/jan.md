@@ -1,5 +1,6 @@
 ---
 title: Nitro with Jan
+description: Nitro integrates with Jan to enable a ChatGPT-like functional app, optimized for local AI.
 ---
 
 You can effortlessly utilize Nitro through [Jan](https://jan.ai/), as it is fully integrated with all its functions. With Jan, using Nitro becomes straightforward without the need for any coding.

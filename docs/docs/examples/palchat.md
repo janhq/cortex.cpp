@@ -1,5 +1,6 @@
 ---
 title: Nitro with Pal Chat
+description: Nitro intergration guide for mobile device usage.
 ---
 
 This guide demonstrates how to use Nitro with Pal Chat, enabling local AI chat capabilities on mobile devices.
@@ -15,7 +16,7 @@ Pal is a mobile app available on the App Store. It offers a customizable chat pl
 **1. Start Nitro server**
 
 Open your terminal:
-```
+```bash title="Run Nitro"
 nitro
 ```
 
@@ -23,7 +24,7 @@ nitro
 
 Use these commands to download and save the [Llama2 7B chat model](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main):
 
-```bash
+```bash title="Get a model"
 mkdir model && cd model
 wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
 ```
@@ -34,7 +35,7 @@ wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GG
 
 To load the model, use the following command:
 
-```
+```bash title="Load model to the server"
 curl http://localhost:3928/inferences/llamacpp/loadmodel \
   -H 'Content-Type: application/json' \
   -d '{
@@ -44,11 +45,13 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
   }'
 ```
 
-**4. Config Pal Chat**
+**4. Configure Pal Chat**
 
-Adjust the `provide custom host` setting under `advanced settings` in Pal Chat to connect with Nitro. Enter your LAN IPv4 address (It should be something like 192.xxx.x.xxx).
+In the `OpenAI API Key` field, just type any random text (e.g. key-xxxxxx).
 
-> For instruction read: [How to find your IP](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)
+Adjust the `provide custom host` setting under `advanced settings` in Pal Chat with your LAN IPv4 address (a series of numbers like 192.xxx.x.xxx).
+
+> For instruction: [How to find your IP](https://support.microsoft.com/en-us/windows/find-your-ip-address-in-windows-f21a9bbc-c582-55cd-35e0-73431160a1b9)
 
 ![PalChat](img/pal.png)
 

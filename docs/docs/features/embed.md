@@ -1,10 +1,9 @@
 ---
 title: Embedding
+description: Inference engine for embedding, the same as OpenAI's
 ---
 
-## What are embeddings?
-
-Embeddings are lists of numbers (floats). To find how similar two embeddings are, we measure the [distance](https://en.wikipedia.org/wiki/Cosine_similarity) between them. Shorter distances mean they're more similar; longer distances mean less similarity.
+Embeddings are lists of numbers (floats). To find how similar two embeddings are, we measure the [distance](https://en.wikipedia.org/wiki/Cosine_similarity) between them.
 
 ## Activating Embedding Feature
 
@@ -43,7 +42,7 @@ curl https://api.openai.com/v1/embeddings \
 
 </div>
 
-## Embedding Reponse
+### Embedding Reponse
 
 The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/tree/main) loaded to Nitro server.
 
@@ -51,18 +50,14 @@ The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https
 
 ```js title="Nitro"
 {
-  "data": [
-    {
-      "embedding": [
-        -0.9874749,
-        0.2965493,
-        ...
-        -0.253227
-      ],
-      "index": 0,
-      "object": "embedding"
-    }
-  ]
+    "embedding": [
+      -0.9874749,
+      0.2965493,
+      ...
+      -0.253227
+    ],
+    "index": 0,
+    "object": "embedding"
 }
 ```
 
@@ -75,18 +70,14 @@ The example response used the output from model [llama2 Chat 7B Q5 (GGUF)](https
   "embedding": [
     0.0023064255,
     -0.009327292,
-    .... (1536 floats total for ada-002)
+    ....
     -0.0028842222,
   ],
   "index": 0,
   "object": "embedding"
 }
-
-
-
-
 ```
 
 </div>
 
-The embedding feature in Nitro demonstrates a high level of compatibility with OpenAI, simplifying the transition between using OpenAI and local AI models. For more detailed information and advanced use cases, refer to the comprehensive [API Reference](https://nitro.jan.ai/api-reference).
+The embedding feature in Nitro demonstrates a high level of compatibility with OpenAI. For more detailed information and advanced use cases, refer to the comprehensive [API Reference](https://nitro.jan.ai/api-reference).
