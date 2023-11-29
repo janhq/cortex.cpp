@@ -8,6 +8,10 @@ description: How to use Nitro
 
 Download and install Nitro on your system.
 
+### From the release page
+
+> [Nitro Release Page](https://github.com/janhq/nitro/releases)
+
 ### For Linux and MacOS
 
   ```bash
