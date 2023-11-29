@@ -6,11 +6,11 @@ WORKDIR /app
 
 # Install curl, unzip, and numactl, download the file, unzip it, then remove unnecessary packages
 RUN apt-get update && \
-    apt-get install -y curl unzip numactl && \
-    curl -L "https://github.com/janhq/nitro/releases/download/v0.1.14/nitro-0.1.14-linux-amd64.zip" -o nitro.zip && \
-    unzip nitro.zip && \
-    rm nitro.zip && \
-    apt-get remove --purge -y curl unzip && \
+    apt-get install -y curl tar gzip numactl && \
+    curl -L "https://github.com/janhq/nitro/releases/download/v0.1.17/nitro-0.1.17-linux-amd64.tar.gz" -o nitro.tar.gz && \
+    tar -xzvf nitro.tar.gz && \
+    rm nitro.tar.gz && \
+    apt-get remove --purge -y curl tar gzip && \
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*

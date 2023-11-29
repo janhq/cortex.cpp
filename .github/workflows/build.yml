@@ -73,21 +73,10 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          zip -r nitro.zip nitro
           tar -czvf nitro.tar.gz nitro
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.zip
-          asset_content_type: application/zip
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -132,21 +121,10 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          zip -r nitro.zip nitro
           tar -czvf nitro.tar.gz nitro
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda.zip
-          asset_content_type: application/zip
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -193,21 +171,10 @@ jobs:
           mkdir -p nitro
           cp llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
-          zip -r nitro.zip nitro
           tar -czvf nitro.tar.gz nitro
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.zip
-          asset_content_type: application/zip
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -252,21 +219,11 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          zip -r nitro.zip nitro
           tar -czvf nitro.tar.gz nitro
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.zip
-          asset_content_type: application/zip
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
@@ -332,22 +289,10 @@ jobs:
         run: |
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
-          7z a nitro.zip .\build\Release\*
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
           cd .\build\Release
           ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64.zip
-          asset_content_type: application/zip
-  
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -404,21 +349,11 @@ jobs:
           set PATH=%PATH%;C:\Program Files\7-Zip\
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
-          7z a nitro.zip .\build\Release\*
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
           cd .\build\Release
           ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.zip
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-cuda.zip
-          asset_content_type: application/zip        
+       
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:

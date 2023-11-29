@@ -6,8 +6,8 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
-# Check and suggest installing jq and unzip if not present
-check_install_jq_unzip() {
+# Check and suggest installing jq and tar if not present
+check_install_jq_tar() {
     RED='\033[0;31m'
     GREEN='\033[0;32m'
     NC='\033[0m' # No Color
@@ -25,15 +25,15 @@ check_install_jq_unzip() {
         fi
     fi
 
-    if ! command -v unzip &> /dev/null; then
-        echo -e "${RED}unzip could not be found ...${NC}"
+    if ! command -v tar &> /dev/null; then
+        echo -e "${RED}tar could not be found ...${NC}"
         if [[ "$OS" == "Linux" ]]; then
-            echo -e "${GREEN}Please run the command below to install unzip then rerun this script${NC}"
-            echo "$ sudo apt-get install unzip"
+            echo -e "${GREEN}Please run the command below to install tar then rerun this script${NC}"
+            echo "$ sudo apt install tar gzip"
             exit 1
         elif [[ "$OS" == "Darwin" ]]; then
-            echo -e "${GREEN}Please run the command below to install unzip then rerun this script${NC}"
-            echo "$ brew install unzip"
+            echo -e "${GREEN}Please run the command below to install tar then rerun this script${NC}"
+            echo "$ brew install gnu-tar"
             exit 1
         fi
     fi
@@ -42,10 +42,10 @@ check_install_jq_unzip() {
 # Function to download and install nitro
 install_nitro() {
     rm -rf /tmp/nitro
-    rm /tmp/nitro.zip
+    rm /tmp/nitro.tar.gz
     echo "Downloading Nitro version $VERSION... from $1"
-    curl -sL "$1" -o /tmp/nitro.zip
-    unzip /tmp/nitro.zip -d /tmp
+    curl -sL "$1" -o /tmp/nitro.tar.gz
+    tar -xzvf /tmp/nitro.tar.gz -C /tmp
     ls /tmp/nitro
 
     # Copying files to /usr/local/bin
@@ -77,7 +77,7 @@ ARCH=$(uname -m)
 VERSION="latest"
 GPU=""
 
-check_install_jq_unzip
+check_install_jq_tar
 
 # Parse arguments
 for arg in "$@"
@@ -116,11 +116,11 @@ fi
 # Construct download URL based on OS, ARCH, GPU and VERSION
 case $OS in
     Linux)
-        FILE_NAME="nitro-${VERSION}-linux-amd64${GPU}.zip"
+        FILE_NAME="nitro-${VERSION}-linux-amd64${GPU}.tar.gz"
         ;;
     Darwin)
         ARCH_FORMAT=$( [[ "$ARCH" == "arm64" ]] && echo "mac-arm64" || echo "mac-amd64")
-        FILE_NAME="nitro-${VERSION}-${ARCH_FORMAT}.zip"
+        FILE_NAME="nitro-${VERSION}-${ARCH_FORMAT}.tar.gz"
         ;;
     *)
         echo "Unsupported OS."
