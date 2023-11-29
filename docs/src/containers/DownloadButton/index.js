@@ -8,17 +8,17 @@ const systemsTemplate = [
   {
     name: "Download for Mac",
     logo: require("@site/static/img/logos/apple-logo-white.png").default,
-    fileFormat: "{appname}-mac-arm64.zip",
+    fileFormat: "{appname}-mac-arm64.tar.gz",
   },
   {
     name: "Download for Windows",
     logo: require("@site/static/img/logos/windows-logo-white.png").default,
-    fileFormat: "{appname}-win-amd64.zip",
+    fileFormat: "{appname}-win-amd64.tar.gz",
   },
   {
     name: "Download for Linux",
     logo: require("@site/static/img/logos/linux-logo-white.png").default,
-    fileFormat: "{appname}-linux-amd64.zip",
+    fileFormat: "{appname}-linux-amd64.tar.gz",
   },
 ];
 

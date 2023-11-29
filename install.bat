@@ -42,13 +42,13 @@ if "%GPU%"=="true" (
     :: If --gpu option is provided, append -cuda to the URL
     set "URL=%URL%-cuda"
 )
-set "URL=%URL%.zip"
+set "URL=%URL%.tar.gz"
 
 :: Download and extract nitro
 echo Downloading Nitro from: %URL%
-powershell -Command "Invoke-WebRequest -OutFile '%TEMP%\nitro.zip' '%URL%'"
+powershell -Command "Invoke-WebRequest -OutFile '%TEMP%\nitro.tar.gz' '%URL%'"
 echo Extracting Nitro...
-powershell -Command "Expand-Archive -Path '%TEMP%\nitro.zip' -DestinationPath '%APPDATA%\nitro'"
+powershell -Command "Expand-Archive -Path '%TEMP%\nitro.tar.gz' -DestinationPath '%APPDATA%\nitro'"
 
 :: Add nitro to the PATH
 setx PATH "%APPDATA%\nitro;%PATH%"
@@ -59,6 +59,6 @@ echo setx PATH "%PATH:;%APPDATA%\nitro=;%"" >> "%APPDATA%\nitro\uninstallnitro.b
 echo rmdir /S /Q "%APPDATA%\nitro" >> "%APPDATA%\nitro\uninstallnitro.bat"
 
 :: Clean up
-del %TEMP%\nitro.zip
+del %TEMP%\nitro.tar.gz
 
 endlocal
