@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.27)  # Required for FetchContent
+cmake_minimum_required(VERSION 3.22)  # Required for FetchContent
 
 project(MyProject)
 
