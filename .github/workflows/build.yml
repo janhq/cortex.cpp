@@ -58,8 +58,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: 'intel-mkl'
-            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx'
           - build: 'openblas'
             defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
       
@@ -100,6 +98,82 @@ jobs:
           mkdir -p $RUNNER_TEMP/openblas
           unzip $RUNNER_TEMP/openblas.zip -d $RUNNER_TEMP/openblas
                   
+      - name: Build
+        id: make_build
+        run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          make -C ./build_deps/nitro_deps -j $(nproc)
+          rm -rf ./build_deps/nitro_deps
+
+          mkdir build && cd build
+          cmake ${{ matrix.defines }} .. 
+          CC=gcc-8 make -j $(nproc)
+          ls -la
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp build/nitro nitro/
+          tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-linux-amd64
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.build }}.tar.gz
+          asset_content_type: application/gzip
+
+  ubuntu-amd64-intel-build:
+    runs-on: linux-gpu
+    needs: create-draft-release
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    permissions:
+      contents: write
+
+    env:
+      OPENCL_VERSION: 2023.04.17
+      CLBLAST_VERSION: 1.6.0
+      SDE_VERSION: 9.21.1-2023-04-24
+
+    strategy:
+      matrix:
+        include:
+          - build: 'intel-mkl'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx'
+
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Download OpenCL SDK
+        id: get_opencl
+        if: ${{ matrix.build == 'clblast' }}
+        run: |
+          curl -o $RUNNER_TEMP/opencl.zip -L "https://github.com/KhronosGroup/OpenCL-SDK/releases/download/v${OPENCL_VERSION}/OpenCL-SDK-v${OPENCL_VERSION}-Win-x64.zip"
+          mkdir -p $RUNNER_TEMP/opencl
+          unzip $RUNNER_TEMP/opencl.zip -d $RUNNER_TEMP/opencl
+
       - name: Build
         id: make_build
         run: |
