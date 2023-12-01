@@ -20,10 +20,15 @@ del %TEMP%\response1.log 2>nul
 del %TEMP%\response2.log 2>nul
 del %TEMP%\nitro.log 2>nul
 
-rem Start the binary file
-start /B "" "%BINARY_PATH%" 1 "127.0.0.1" 5000 > %TEMP%\nitro.log 2>&1
+set /a min=9999
+set /a max=11000
+set /a range=max-min+1
+set /a PORT=%min% + %RANDOM% %% %range%
 
-ping -n 6 127.0.0.1 5000 > nul
+rem Start the binary file
+start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT% > %TEMP%\nitro.log 2>&1
+
+ping -n 6 127.0.0.1 %PORT% > nul
 
 rem Capture the PID of the started process with "nitro" in its name
 for /f "tokens=2" %%a in ('tasklist /fi "imagename eq %BINARY_NAME%" /fo list ^| findstr /B "PID:"') do (
@@ -55,9 +60,9 @@ echo curl_data1=%curl_data1%
 echo curl_data2=%curl_data2%
 
 rem Run the curl commands and capture the status code
-curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:5000/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
+curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
 
-curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:5000/inferences/llamacpp/chat_completion" ^
+curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
 --header "Content-Type: application/json" ^
 --header "Accept: text/event-stream" ^
 --header "Access-Control-Allow-Origin: *" ^
