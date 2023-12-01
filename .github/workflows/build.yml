@@ -281,7 +281,7 @@ jobs:
           mkdir -p build
           cd build
           cmake ..
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%" --parallel
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -340,7 +340,7 @@ jobs:
           mkdir -p build
           cd build
           cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%" --parallel
 
       - name: Pack artifacts
         id: pack_artifacts
