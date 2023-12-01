@@ -191,7 +191,7 @@ void llamaCPP::chatCompletion(
         role = input_role;
       }
       std::string content = message["content"].asString();
-      formatted_output += role + content + "\n";
+      formatted_output += role + content;
     }
     formatted_output += ai_prompt;
 
@@ -205,12 +205,11 @@ void llamaCPP::chatCompletion(
   }
 
   bool is_streamed = data["stream"];
-
+  // Enable full message debugging
   #ifdef DEBUG
   LOG_INFO << "Current completion text";
   LOG_INFO << formatted_output ;
   #endif
-  
   const int task_id = llama.request_completion(data, false, false);
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
