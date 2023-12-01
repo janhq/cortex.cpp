@@ -41,11 +41,34 @@ jobs:
           prerelease: false
 
   ubuntu-amd64-build:
-    runs-on: linux-gpu
+    runs-on: ubuntu-latest
     needs: create-draft-release
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
     permissions:
       contents: write
+
+    env:
+      OPENBLAS_VERSION: 0.3.23
+      OPENCL_VERSION: 2023.04.17
+      CLBLAST_VERSION: 1.6.0
+      SDE_VERSION: 9.21.1-2023-04-24
+
+    strategy:
+      matrix:
+        include:
+          - build: 'noavx'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX=OFF -DLLAMA_AVX2=OFF -DLLAMA_FMA=OFF'
+          - build: 'avx2'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON'
+          - build: 'avx'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX2=OFF'
+          - build: 'avx512'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX512=ON'
+          - build: 'clblast'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+          - build: 'openblas'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+
     steps:
       - name: Clone
         id: checkout
@@ -61,8 +84,8 @@ jobs:
           rm -rf ./build_deps/nitro_deps
 
           mkdir build && cd build
-          cmake -DDEBUG=ON ..
-          CC=gcc-8 make --build . --config Release -j $(nproc)
+          cmake .. -DDEBUG=ON ${{ matrix.defines }}
+          CC=gcc-8 make . -j $(nproc)
           ls -la
 
       - name: Package
@@ -82,7 +105,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.build }}.tar.gz
           asset_content_type: application/gzip
 
   ubuntu-amd64-cuda-build:
@@ -91,12 +114,25 @@ jobs:
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
     permissions:
       contents: write
+
+    strategy:
+      matrix:
+        cuda: ['12.2.0', '11.7.1']
+        build: ['cublas']
+
     steps:
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
+
+      - uses: Jimver/cuda-toolkit@v0.2.11
+        id: cuda-toolkit
+        with:
+          cuda: ${{ matrix.cuda }}
+          method: 'network'
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust"]'
 
       - name: Build
         id: make_build
@@ -107,7 +143,7 @@ jobs:
 
           mkdir build && cd build
           cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON ..
-          CC=gcc-8 make --build . --config Release -j $(nproc)
+          CC=gcc-8 make . -j $(nproc)
           ls -la
 
       - name: Package
@@ -127,7 +163,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.build }}-cu${{ matrix.cuda }}.tar.gz
           asset_content_type: application/gzip
 
   macOS-M-build:
@@ -156,7 +192,7 @@ jobs:
           ./install_deps.sh
           mkdir build && cd build
           cmake .. 
-          CC=gcc-8 make --build . --config Release -j $(sysctl -n hw.ncp)
+          CC=gcc-8 make . -j $(sysctl -n hw.ncp)
           ls -la 
   
       - name: Package
@@ -205,7 +241,7 @@ jobs:
           ./install_deps.sh
           mkdir build && cd build
           cmake -DLLAMA_METAL=OFF .. 
-          CC=gcc-8 make --build . --config Release -j $(sysctl -n hw.ncp)
+          CC=gcc-8 make . -j $(sysctl -n hw.ncp)
           ls -la 
     
       - name: Package
@@ -245,17 +281,17 @@ jobs:
       matrix:
         include:
           - build: 'noavx'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX=OFF -DLLAMA_AVX2=OFF -DLLAMA_FMA=OFF -DBUILD_SHARED_LIBS=ON'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX=OFF -DLLAMA_AVX2=OFF -DLLAMA_FMA=OFF'
           - build: 'avx2'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=ON'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON'
           - build: 'avx'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX2=OFF -DBUILD_SHARED_LIBS=ON'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX2=OFF'
           - build: 'avx512'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX512=ON -DBUILD_SHARED_LIBS=ON'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX512=ON'
           - build: 'clblast'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CLBLAST=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
           - build: 'openblas'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
     steps:
       - name: Clone
@@ -314,10 +350,11 @@ jobs:
         shell: cmd
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
-          cmake --build ./build_deps/nitro_deps --config Release
+          cmake ./build_deps/nitro_deps --config Release
+
           mkdir -p build && cd build/
           cmake .. ${{ matrix.defines }}
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+          cmake . -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -365,7 +402,6 @@ jobs:
           cuda: ${{ matrix.cuda }}
           method: 'network'
           sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
-  
 
       - name: Setup VSWhere.exe
         uses: warrenbuckley/Setup-VSWhere@v1
@@ -383,8 +419,8 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON
+          cmake . -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
