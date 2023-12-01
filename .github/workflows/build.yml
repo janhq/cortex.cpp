@@ -41,7 +41,7 @@ jobs:
           prerelease: false
 
   ubuntu-amd64-build:
-    runs-on: linux-gpu
+    runs-on: ubuntu-latest
     needs: create-draft-release
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
     permissions:
