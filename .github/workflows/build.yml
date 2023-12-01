@@ -50,6 +50,16 @@ jobs:
     permissions:
       contents: write
 
+    strategy:
+      matrix:
+        include:
+          - build: 'avx512'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_AVX512=ON'
+          # - build: 'clblast'
+          #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+          - build: 'openblas'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+      
     steps:
       - name: Clone
         id: checkout
@@ -65,7 +75,7 @@ jobs:
           rm -rf ./build_deps/nitro_deps
 
           mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF .. 
+          cmake ${{ matrix.defines }} .. 
           CC=gcc-8 make -j $(nproc)
           ls -la
 
@@ -97,7 +107,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.build }}.tar.gz
           asset_content_type: application/gzip
 
   ubuntu-amd64-cuda-build:
@@ -124,7 +134,7 @@ jobs:
         with:
           cuda: ${{ matrix.cuda }}
           method: 'network'
-          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust"]'
+          sub-packages: '["nvcc", "cudart", "thrust"]'
 
       - name: Build
         id: make_build
@@ -376,9 +386,8 @@ jobs:
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake ./build_deps/nitro_deps --config Release
-
-          mkdir -p build && cd build/
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+          mkdir -p build
+          cd build
           cmake ${{ matrix.defines }} ..
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
@@ -423,7 +432,7 @@ jobs:
 
     strategy:
       matrix:
-        cuda: ['12.2.0', '11.7.1']
+        cuda: ['12.2.0']
         build: ['cublas']
 
     steps:
@@ -433,12 +442,12 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: Jimver/cuda-toolkit@v0.2.11
-        id: cuda-toolkit
-        with:
-          cuda: ${{ matrix.cuda }}
-          method: 'network'
-          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
+      # - uses: Jimver/cuda-toolkit@v0.2.11
+      #   id: cuda-toolkit
+      #   with:
+      #     cuda: ${{ matrix.cuda }}
+      #     method: 'network'
+      #     sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
 
       - name: Setup VSWhere.exe
         uses: warrenbuckley/Setup-VSWhere@v1
