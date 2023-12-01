@@ -100,7 +100,7 @@ Table of parameters
 | `ngl`              | Integer | The number of GPU layers to use.                             |
 | `ctx_len`          | Integer | The context length for the model operations.                 |
 | `embedding`        | Boolean | Whether to use embedding in the model.                       |
-| `n_parallel`       | Integer | The number of parallel operations. Uses Drogon thread count if not set. |
+| `n_parallel`       | Integer | The number of parallel operations. |
 | `cont_batching`    | Boolean | Whether to use continuous batching.                          |
 | `user_prompt`      | String  | The prompt to use for the user.                              |
 | `ai_prompt`        | String  | The prompt to use for the AI assistant.                      |
