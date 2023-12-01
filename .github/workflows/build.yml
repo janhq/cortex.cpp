@@ -1,6 +1,8 @@
 name: CI
 
 on:
+  schedule:
+    - cron: '0 16 * * *' # At 4 PM UTC, which is 11 AM UTC+7
   push:
     branches:
       - main
@@ -9,6 +11,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', '!docs/**', '!.gitignore']
+  workflow_dispatch:
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
@@ -88,6 +91,17 @@ jobs:
           mkdir -p nitro
           cp build/nitro nitro/
           tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-linux-amd64
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: bash
+        run: |
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
@@ -146,6 +160,17 @@ jobs:
           mkdir -p nitro
           cp build/nitro nitro/
           tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-linux-amd64-cuda
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: bash
+        run: |
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
@@ -178,7 +203,7 @@ jobs:
         continue-on-error: true
         run: |
           brew update
-          brew install cmake gcc@8
+          brew install cmake
 
       - name: Build
         id: cmake_build
@@ -196,6 +221,17 @@ jobs:
           cp llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
           tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-mac-arm64
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: bash
+        run: |
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
@@ -244,6 +280,17 @@ jobs:
           mkdir -p nitro
           cp build/nitro nitro/
           tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-mac-amd64
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: bash
+        run: |
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
@@ -352,6 +399,17 @@ jobs:
           robocopy build\bin\Release .\build\Release llama.dll
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-win-amd64
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: cmd
+        run: |
           cd .\build\Release
           ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
 
@@ -419,6 +477,17 @@ jobs:
           robocopy build\bin\Release .\build\Release llama.dll
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-win-amd64
+          path: ./nitro
+
+      - name: run e2e testing
+        shell: cmd
+        run: |
           cd .\build\Release
           ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
        
@@ -433,6 +502,7 @@ jobs:
           asset_content_type: application/gzip     
           
   update_release_draft:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
     permissions:
       contents: write
@@ -442,3 +512,15 @@ jobs:
       - uses: release-drafter/release-drafter@v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  noti-discord:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Discord
+        uses: Ilshidur/action-discord@master
+        with:
+          args: "Nightly build artifact: https://github.com/janhq/nitro/actions/runs/{{ GITHUB_RUN_ID }}"
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
