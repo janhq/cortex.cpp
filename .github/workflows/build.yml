@@ -50,22 +50,6 @@ jobs:
     permissions:
       contents: write
 
-    env:
-      OPENBLAS_VERSION: 0.3.23
-      OPENCL_VERSION: 2023.04.17
-      CLBLAST_VERSION: 1.6.0
-      SDE_VERSION: 9.21.1-2023-04-24
-
-    strategy:
-      matrix:
-        include:
-          - build: 'avx512'
-            defines: '-DDEBUG=ON -DLLAMA_AVX512=ON'
-          # - build: 'clblast'
-          #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
-          - build: 'openblas'
-            defines: '-DDEBUG=ON -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
-
     steps:
       - name: Clone
         id: checkout
@@ -81,7 +65,7 @@ jobs:
           rm -rf ./build_deps/nitro_deps
 
           mkdir build && cd build
-          cmake ${{ matrix.defines }} .. 
+          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF .. 
           CC=gcc-8 make -j $(nproc)
           ls -la
 
@@ -113,7 +97,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.build }}.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.tar.gz
           asset_content_type: application/gzip
 
   ubuntu-amd64-cuda-build:
@@ -125,7 +109,7 @@ jobs:
 
     strategy:
       matrix:
-        cuda: ['12.2.0', '11.7.1']
+        cuda: ['12.2.0']
         build: ['cublas']
 
     steps:
@@ -150,7 +134,7 @@ jobs:
           rm -rf ./build_deps/nitro_deps
 
           mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON ..
+          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUBLAS=ON ..
           CC=gcc-8 make -j $(nproc)
           ls -la
 
@@ -208,10 +192,13 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
-          ./install_deps.sh
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          make -C ./build_deps/nitro_deps -j $(sysctl -n hw.ncp)
+          rm -rf ./build_deps/nitro_deps
+        
           mkdir build && cd build
-          cmake .. 
-          CC=gcc-8 make . -j $(sysctl -n hw.ncp)
+          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF .. 
+          CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la 
   
       - name: Package
@@ -268,10 +255,13 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
-          ./install_deps.sh
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          make -C ./build_deps/nitro_deps -j $(sysctl -n hw.ncp)
+          rm -rf ./build_deps/nitro_deps
           mkdir build && cd build
-          cmake -DLLAMA_METAL=OFF .. 
-          CC=gcc-8 make . -j $(sysctl -n hw.ncp)
+
+          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_METAL=OFF  .. 
+          CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la 
     
       - name: Package
@@ -322,11 +312,11 @@ jobs:
       matrix:
         include:
           - build: 'avx512'
-            defines: '-DDEBUG=ON  -DLLAMA_AVX512=ON'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_AVX512=ON'
           # - build: 'clblast'
           #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
           - build: 'openblas'
-            defines: '-DDEBUG=ON  -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
     steps:
       - name: Clone
@@ -388,8 +378,9 @@ jobs:
           cmake ./build_deps/nitro_deps --config Release
 
           mkdir -p build && cd build/
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
           cmake ${{ matrix.defines }} ..
-          cmake -j "%NUMBER_OF_PROCESSORS%"
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -465,8 +456,8 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_CUBLAS=ON
-          cmake -j "%NUMBER_OF_PROCESSORS%"
+          cmake .. -DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUBLAS=ON
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
