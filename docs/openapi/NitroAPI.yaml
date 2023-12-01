@@ -563,11 +563,15 @@ components:
           description: Defines specific tokens or phrases at which the model will stop generating further output
         frequency_penalty:
           type: number
+          min: 0
+          max: 2
           default: 0
           description: Adjusts the likelihood of the model repeating words or phrases in its output
         presence_penalty:
           type: number
           default: 0
+          min: 0
+          max: 2
           description: Influences the generation of new and varied concepts in the model's output
         temperature:
           type: number
