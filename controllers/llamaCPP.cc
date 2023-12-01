@@ -160,10 +160,7 @@ void llamaCPP::chatCompletion(
 
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output = pre_prompt;
-  #ifdef DEBUG
-  LOG_INFO << "Current completion text";
-  LOG_INFO << formatted_output ;
-  #endif
+
   json data;
   json stopWords;
   // To set default value
@@ -209,6 +206,11 @@ void llamaCPP::chatCompletion(
 
   bool is_streamed = data["stream"];
 
+  #ifdef DEBUG
+  LOG_INFO << "Current completion text";
+  LOG_INFO << formatted_output ;
+  #endif
+  
   const int task_id = llama.request_completion(data, false, false);
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
