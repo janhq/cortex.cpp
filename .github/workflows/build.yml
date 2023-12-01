@@ -56,18 +56,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: 'noavx'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX=OFF -DLLAMA_AVX2=OFF -DLLAMA_FMA=OFF'
-          - build: 'avx2'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON'
-          - build: 'avx'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX2=OFF'
           - build: 'avx512'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX512=ON'
-          - build: 'clblast'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+            defines: '-DDEBUG=ON -DLLAMA_AVX512=ON'
+          # - build: 'clblast'
+          #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
           - build: 'openblas'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+            defines: '-DDEBUG=ON -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
     steps:
       - name: Clone
@@ -84,7 +78,7 @@ jobs:
           rm -rf ./build_deps/nitro_deps
 
           mkdir build && cd build
-          cmake .. -DDEBUG=ON ${{ matrix.defines }}
+          cmake ${{ matrix.defines }} .. 
           CC=gcc-8 make -j $(nproc)
           ls -la
 
@@ -280,18 +274,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: 'noavx'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX=OFF -DLLAMA_AVX2=OFF -DLLAMA_FMA=OFF'
-          - build: 'avx2'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON'
-          - build: 'avx'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX2=OFF'
           - build: 'avx512'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_AVX512=ON'
-          - build: 'clblast'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+            defines: '-DDEBUG=ON  -DLLAMA_AVX512=ON'
+          # - build: 'clblast'
+          #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
           - build: 'openblas'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
+            defines: '-DDEBUG=ON  -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
     steps:
       - name: Clone
@@ -353,7 +341,7 @@ jobs:
           cmake ./build_deps/nitro_deps --config Release
 
           mkdir -p build && cd build/
-          cmake .. ${{ matrix.defines }}
+          cmake ${{ matrix.defines }} ..
           cmake -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -419,7 +407,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON
+          cmake .. -DLLAMA_CUBLAS=ON
           cmake -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
