@@ -67,6 +67,37 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Download OpenCL SDK
+        id: get_opencl
+        if: ${{ matrix.build == 'clblast' }}
+        run: |
+          curl -o $RUNNER_TEMP/opencl.zip -L "https://github.com/KhronosGroup/OpenCL-SDK/releases/download/v${OPENCL_VERSION}/OpenCL-SDK-v${OPENCL_VERSION}-Win-x64.zip"
+          mkdir -p $RUNNER_TEMP/opencl
+          unzip $RUNNER_TEMP/opencl.zip -d $RUNNER_TEMP/opencl
+
+      - name: Download CLBlast
+        id: get_clblast
+        if: ${{ matrix.build == 'clblast' }}
+        run: |
+          sudo apt-get install p7zip-full
+          curl -o $RUNNER_TEMP/clblast.7z -L "https://github.com/CNugteren/CLBlast/releases/download/${CLBLAST_VERSION}/CLBlast-${CLBLAST_VERSION}-windows-x64.7z"
+          curl -o $RUNNER_TEMP/CLBlast.LICENSE.txt -L "https://github.com/CNugteren/CLBlast/raw/${CLBLAST_VERSION}/LICENSE"
+          7z x "-o$RUNNER_TEMP" $RUNNER_TEMP/clblast.7z
+          mv $RUNNER_TEMP/CLBlast-${CLBLAST_VERSION}-windows-x64 $RUNNER_TEMP/clblast
+          # Adjust the loop for Linux
+          for f in $(find $RUNNER_TEMP/clblast -name '*.cmake'); do
+            sed -i 's|C:/vcpkg/packages/opencl_x64-windows/|'"$RUNNER_TEMP"'/opencl/|g' "$f"
+          done
+
+      - name: Download OpenBLAS
+        id: get_openblas
+        if: ${{ matrix.build == 'openblas' }}
+        run: |
+          curl -o $RUNNER_TEMP/openblas.zip -L "https://github.com/xianyi/OpenBLAS/releases/download/v${OPENBLAS_VERSION}/OpenBLAS-${OPENBLAS_VERSION}-x64.zip"
+          curl -o $RUNNER_TEMP/OpenBLAS.LICENSE.txt -L "https://github.com/xianyi/OpenBLAS/raw/v${OPENBLAS_VERSION}/LICENSE"
+          mkdir -p $RUNNER_TEMP/openblas
+          unzip $RUNNER_TEMP/openblas.zip -d $RUNNER_TEMP/openblas
+                  
       - name: Build
         id: make_build
         run: |
@@ -111,7 +142,7 @@ jobs:
           asset_content_type: application/gzip
 
   ubuntu-amd64-cuda-build:
-    runs-on: ubuntu-latest
+    runs-on: linux-gpu
     needs: create-draft-release
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
     permissions:
