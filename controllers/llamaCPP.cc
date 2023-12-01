@@ -200,16 +200,16 @@ void llamaCPP::chatCompletion(
       stopWords.push_back(stop_word.asString());
     }
     // specify default stop words
-    stopWords.push_back(user_prompt);
+    stopWords.push_back(nitro_utils::rtrim(user_prompt));
     data["stop"] = stopWords;
   }
 
   bool is_streamed = data["stream"];
-  // Enable full message debugging
-  #ifdef DEBUG
+// Enable full message debugging
+#ifdef DEBUG
   LOG_INFO << "Current completion text";
-  LOG_INFO << formatted_output ;
-  #endif
+  LOG_INFO << formatted_output;
+#endif
   const int task_id = llama.request_completion(data, false, false);
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
