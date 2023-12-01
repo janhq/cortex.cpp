@@ -148,11 +148,6 @@ jobs:
     permissions:
       contents: write
 
-    env:
-      OPENCL_VERSION: 2023.04.17
-      CLBLAST_VERSION: 1.6.0
-      SDE_VERSION: 9.21.1-2023-04-24
-
     strategy:
       matrix:
         include:
@@ -525,6 +520,81 @@ jobs:
           asset_path: ./nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}.tar.gz
           asset_content_type: application/gzip
+
+  windows-amd64-intel-build:
+    runs-on: windows-latest
+    needs: create-draft-release
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    permissions:
+      contents: write
+
+    strategy:
+      matrix:
+        include:
+          - build: 'intel-mkl'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx'
+
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: actions-setup-cmake
+        uses: jwlawson/actions-setup-cmake@v1.14.1
+
+      - name: Build
+        id: cmake_build
+        shell: cmd 
+        run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          cmake ./build_deps/nitro_deps --config Release
+          mkdir -p build
+          cd build
+          cmake ${{ matrix.defines }} ..
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        shell: cmd
+        run: |
+          robocopy build_deps\_install\bin .\build\Release zlib.dll
+          robocopy build\bin\Release .\build\Release llama.dll
+          7z a -ttar temp.tar .\build\Release\*
+          7z a -tgzip nitro.tar.gz temp.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-win-amd64
+          path: ./nitro
+
+      - name: Run e2e testing
+        shell: cmd
+        run: |
+          cd .\build\Release
+          ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.build }}.tar.gz
+          asset_content_type: application/gzip
+        
 
   windows-amd64-cuda-build:
     runs-on: windows-latest
