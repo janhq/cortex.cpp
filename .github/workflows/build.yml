@@ -85,7 +85,7 @@ jobs:
 
           mkdir build && cd build
           cmake .. -DDEBUG=ON ${{ matrix.defines }}
-          CC=gcc-8 make . -j $(nproc)
+          CC=gcc-8 make -j $(nproc)
           ls -la
 
       - name: Package
@@ -143,7 +143,7 @@ jobs:
 
           mkdir build && cd build
           cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON ..
-          CC=gcc-8 make . -j $(nproc)
+          CC=gcc-8 make -j $(nproc)
           ls -la
 
       - name: Package
@@ -354,7 +354,7 @@ jobs:
 
           mkdir -p build && cd build/
           cmake .. ${{ matrix.defines }}
-          cmake . -j "%NUMBER_OF_PROCESSORS%"
+          cmake -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
@@ -420,7 +420,7 @@ jobs:
           mkdir -p build
           cd build
           cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON
-          cmake . -j "%NUMBER_OF_PROCESSORS%"
+          cmake -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
