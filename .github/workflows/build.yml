@@ -50,13 +50,17 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      OPENBLAS_VERSION: 0.3.23
+      OPENCL_VERSION: 2023.04.17
+      CLBLAST_VERSION: 1.6.0
+      SDE_VERSION: 9.21.1-2023-04-24
+
     strategy:
       matrix:
         include:
-          - build: 'avx512'
-            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_AVX512=ON'
-          # - build: 'clblast'
-          #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+          - build: 'intel-mkl'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx'
           - build: 'openblas'
             defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
       
@@ -352,10 +356,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: 'avx512'
-            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_AVX512=ON'
-          # - build: 'clblast'
-          #   defines: '-DLLAMA_CLBLAST=ON -DCMAKE_PREFIX_PATH="$env:RUNNER_TEMP/clblast"'
+          - build: 'intel-mkl'
+            defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx'
           - build: 'openblas'
             defines: '-DDEBUG=ON -DLLAMA_NATIVE=OFF -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
 
