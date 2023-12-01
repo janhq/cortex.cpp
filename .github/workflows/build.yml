@@ -164,12 +164,12 @@ jobs:
         with:
           submodules: recursive
 
-      - uses: Jimver/cuda-toolkit@v0.2.11
-        id: cuda-toolkit
-        with:
-          cuda: ${{ matrix.cuda }}
-          method: 'network'
-          sub-packages: '["nvcc", "cudart", "thrust"]'
+      # - uses: Jimver/cuda-toolkit@v0.2.11
+      #   id: cuda-toolkit
+      #   with:
+      #     cuda: ${{ matrix.cuda }}
+      #     method: 'network'
+      #     sub-packages: '["nvcc", "cudart", "thrust"]'
 
       - name: Build
         id: make_build
