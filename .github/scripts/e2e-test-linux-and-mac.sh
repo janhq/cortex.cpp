@@ -14,8 +14,14 @@ rm /tmp/response1.log /tmp/response2.log /tmp/nitro.log
 BINARY_PATH=$1
 DOWNLOAD_URL=$2
 
+# Random port to ensure it's not used
+min=10000
+max=11000
+range=$((max - min + 1))
+PORT=$((RANDOM % range + min))
+
 # Start the binary file
-"$BINARY_PATH" 1 127.0.0.1 5000 > /tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 $PORT > /tmp/nitro.log 2>&1 &
 
 # Get the process id of the binary file
 pid=$!
@@ -29,15 +35,13 @@ fi
 # Wait for a few seconds to let the server start
 sleep 5
 
-
-
 # Check if /tmp/testmodel exists, if not, download it
 if [[ ! -f "/tmp/testmodel" ]]; then
     wget $DOWNLOAD_URL -O /tmp/testmodel
 fi
 
 # Run the curl commands
-response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location 'http://127.0.0.1:5000/inferences/llamacpp/loadModel' \
+response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
 --header 'Content-Type: application/json' \
 --data '{
     "llama_model_path": "/tmp/testmodel",
@@ -46,7 +50,7 @@ response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location 'http://1
     "embedding": false
 }' 2>&1)
 
-response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location 'http://127.0.0.1:5000/inferences/llamacpp/chat_completion' \
+response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/chat_completion" \
 --header 'Content-Type: application/json' \
 --header 'Accept: text/event-stream' \
 --header 'Access-Control-Allow-Origin: *' \
