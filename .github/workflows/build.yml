@@ -51,7 +51,6 @@ jobs:
       contents: write
 
     env:
-      OPENBLAS_VERSION: 0.3.25
       OPENCL_VERSION: 2023.04.17
       CLBLAST_VERSION: 1.6.0
       SDE_VERSION: 9.21.1-2023-04-24
@@ -97,7 +96,7 @@ jobs:
         id: get_openblas
         if: ${{ matrix.build == 'openblas' }}
         run: |
-          curl -o $RUNNER_TEMP/openblas.zip -L "https://github.com/OpenMathLib/OpenBLAS/releases/download/v${OPENBLAS_VERSION}/OpenBLAS-${OPENBLAS_VERSION}-x64-64.zip"
+          curl -o $RUNNER_TEMP/openblas.zip -L "https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.25/OpenBLAS-0.3.25-x64-64.zip"
           mkdir -p $RUNNER_TEMP/openblas
           unzip $RUNNER_TEMP/openblas.zip -d $RUNNER_TEMP/openblas
                   
@@ -347,7 +346,6 @@ jobs:
       contents: write
 
     env:
-      OPENBLAS_VERSION: 0.3.25
       OPENCL_VERSION: 2023.04.17
       CLBLAST_VERSION: 1.6.0
       SDE_VERSION: 9.21.1-2023-04-24
@@ -392,7 +390,7 @@ jobs:
         id: get_openblas
         if: ${{ matrix.build == 'openblas' }}
         run: |
-          curl.exe -o $env:RUNNER_TEMP/openblas.zip -L "https://github.com/OpenMathLib/OpenBLAS/releases/download/v${OPENBLAS_VERSION}/OpenBLAS-${OPENBLAS_VERSION}-x64-64.zip"
+          curl.exe -o $env:RUNNER_TEMP/openblas.zip -L "https://github.com/OpenMathLib/OpenBLAS/releases/download/v0.3.25/OpenBLAS-0.3.25-x64-64.zip"
           mkdir $env:RUNNER_TEMP/openblas
           tar.exe -xvf $env:RUNNER_TEMP/openblas.zip -C $env:RUNNER_TEMP/openblas
           $vcdir = $(vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
@@ -413,7 +411,7 @@ jobs:
 
       - name: Build
         id: cmake_build
-        shell: cmd
+        shell: cmd 
         run: |
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake ./build_deps/nitro_deps --config Release
