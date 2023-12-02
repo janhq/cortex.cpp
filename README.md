@@ -107,6 +107,7 @@ Table of parameters
 | `system_prompt`    | String  | The prompt to use for system rules.                          |
 | `pre_prompt`    | String  | The prompt to use for internal configuration.                          |
 | `cpu_threads`   | Integer | The number of threads to use for inferencing (CPU MODE ONLY) |
+| `n_batch`       | Integer | The batch size for prompt eval step |
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
