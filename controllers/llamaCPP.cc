@@ -170,6 +170,9 @@ void llamaCPP::chatCompletion(
     data["cache_prompt"] = true;
     data["n_keep"] = -1;
 
+    // Passing load value
+    data["repeat_last_n"] = this->repeat_last_n;
+
     data["stream"] = (*jsonBody).get("stream", false).asBool();
     data["n_predict"] = (*jsonBody).get("max_tokens", 500).asInt();
     data["top_p"] = (*jsonBody).get("top_p", 0.95).asFloat();
@@ -376,7 +379,7 @@ void llamaCPP::loadModel(
     params.n_ctx = (*jsonBody).get("ctx_len", 2048).asInt();
     params.embedding = (*jsonBody).get("embedding", true).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
-    params.n_batch = (*jsonBody).get("n_batch",512).asInt();
+    params.n_batch = (*jsonBody).get("n_batch", 512).asInt();
     params.n_parallel = (*jsonBody).get("n_parallel", drogon_thread).asInt();
     params.n_threads =
         (*jsonBody)
@@ -388,7 +391,8 @@ void llamaCPP::loadModel(
     this->ai_prompt = (*jsonBody).get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
         (*jsonBody).get("system_prompt", "ASSISTANT's RULE: ").asString();
-    this->pre_prompt = (*jsonBody).get("pre_prompt","").asString();
+    this->pre_prompt = (*jsonBody).get("pre_prompt", "").asString();
+    this->repeat_last_n = (*jsonBody).get("repeat_last_n", 32).asInt();
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";

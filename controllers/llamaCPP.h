@@ -2161,5 +2161,6 @@ private:
   std::string ai_prompt;
   std::string system_prompt;
   std::string pre_prompt;
+  int repeat_last_n;
 };
 }; // namespace inferences
