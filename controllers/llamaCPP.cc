@@ -198,10 +198,10 @@ void llamaCPP::chatCompletion(
     data["prompt"] = formatted_output;
     for (const auto &stop_word : (*jsonBody)["stop"]) {
       stopWords.push_back(stop_word.asString());
-      // Ensure success case for chatML
-      stopWords.push_back("<|im_end|>");
     }
     // specify default stop words
+    // Ensure success case for chatML
+    stopWords.push_back("<|im_end|>");
     stopWords.push_back(nitro_utils::rtrim(user_prompt));
     data["stop"] = stopWords;
   }
