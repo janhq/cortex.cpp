@@ -2,7 +2,7 @@ name: CI
 
 on:
   schedule:
-    - cron: '0 16 * * *' # At 4 PM UTC, which is 11 AM UTC+7
+    - cron: '0 20 * * *' # At 8 PM UTC, which is 3 AM UTC+7
   push:
     branches:
       - main
@@ -414,7 +414,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
-          name: nitro-win-amd64
+          name: nitro-win-amd64-cuda
           path: ./build/Release
 
       - name: run e2e testing
