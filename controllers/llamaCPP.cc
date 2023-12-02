@@ -376,7 +376,7 @@ void llamaCPP::loadModel(
     params.n_ctx = (*jsonBody).get("ctx_len", 2048).asInt();
     params.embedding = (*jsonBody).get("embedding", true).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
-
+    params.n_batch = (*jsonBody).get("n_batch",512).asInt();
     params.n_parallel = (*jsonBody).get("n_parallel", drogon_thread).asInt();
     params.n_threads =
         (*jsonBody)
