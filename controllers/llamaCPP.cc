@@ -388,14 +388,7 @@ void llamaCPP::loadModel(
     this->ai_prompt = (*jsonBody).get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
         (*jsonBody).get("system_prompt", "ASSISTANT's RULE: ").asString();
-    this->pre_prompt =
-        (*jsonBody)
-            .get("pre_prompt",
-                 "A chat between a curious user and an artificial "
-                 "intelligence "
-                 "assistant. The assistant follows the given rules no matter "
-                 "what.\\n")
-            .asString();
+    this->pre_prompt = (*jsonBody).get("pre_prompt","").asString();
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
