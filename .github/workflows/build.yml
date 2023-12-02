@@ -344,7 +344,7 @@ jobs:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-win-amd64
-          path: ./nitro
+          path: ./build/Release
 
       - name: Run e2e testing
         shell: cmd
@@ -415,7 +415,7 @@ jobs:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-win-amd64
-          path: ./nitro
+          path: ./build/Release
 
       - name: run e2e testing
         shell: cmd
@@ -446,8 +446,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   noti-discord:
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
+    needs: [create-draft-release, ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
     runs-on: ubuntu-latest
     steps:
       - name: Notify Discord
