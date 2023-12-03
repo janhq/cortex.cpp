@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Nitro API
   description: Please see https://nitro.jan.ai/ for documentation.
-version: "0.1.8"
+version: "0.1.19"
 contact:
   name: Nitro Discord
   url: https://github.com/janhq/nitro
@@ -231,8 +231,8 @@ components:
           description: Whether to use continuous batching.
         n_parallel:
           type: integer
-          default: Automatically set to Dragon threads
-          example: 4
+          default: 1
+          example: 1
           nullable: true
           description: The number of parallel operations. Only set when enable continuous batching.
         cpu_threads:
@@ -563,11 +563,15 @@ components:
           description: Defines specific tokens or phrases at which the model will stop generating further output
         frequency_penalty:
           type: number
+          min: 0
+          max: 2
           default: 0
           description: Adjusts the likelihood of the model repeating words or phrases in its output
         presence_penalty:
           type: number
           default: 0
+          min: 0
+          max: 2
           description: Influences the generation of new and varied concepts in the model's output
         temperature:
           type: number
