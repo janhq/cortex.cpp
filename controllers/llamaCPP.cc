@@ -186,15 +186,22 @@ void llamaCPP::chatCompletion(
       std::string role;
       if (input_role == "user") {
         role = user_prompt;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
       } else if (input_role == "assistant") {
         role = ai_prompt;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
       } else if (input_role == "system") {
         role = system_prompt;
+        std::string content = message["content"].asString();
+        formatted_output = role + content + formatted_output;
+
       } else {
         role = input_role;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
       }
-      std::string content = message["content"].asString();
-      formatted_output += role + content;
     }
     formatted_output += ai_prompt;
 
