@@ -336,6 +336,8 @@ jobs:
         run: |
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
+          dotnet tool install --global AzureSignTool
+          azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
 
@@ -400,13 +402,22 @@ jobs:
           cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
-      - name: Pack artifacts
-        id: pack_artifacts
+      - name: Copy dependencies
         shell: cmd
         run: |
           set PATH=%PATH%;C:\Program Files\7-Zip\
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
+
+      - name: Windows Code Sign with AzureSignTool
+        run: |
+          dotnet tool install --global AzureSignTool
+          cd ./build/Release
+          azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v "nitro.exe"
+
+      - name: Pack artifacts
+        shell: cmd
+        run: |
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
 
