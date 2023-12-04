@@ -336,6 +336,8 @@ jobs:
         run: |
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
+          dotnet tool install --global AzureSignTool
+          azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
 
@@ -389,6 +391,10 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '6.0.x'
+
       - name: Build
         id: cmake_build
         shell: cmd
@@ -407,6 +413,8 @@ jobs:
           set PATH=%PATH%;C:\Program Files\7-Zip\
           robocopy build_deps\_install\bin .\build\Release zlib.dll
           robocopy build\bin\Release .\build\Release llama.dll
+          dotnet tool install --global AzureSignTool
+          %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
 
