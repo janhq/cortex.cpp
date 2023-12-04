@@ -122,6 +122,22 @@ Nitro server is compatible with the OpenAI format, so you can expect the same ou
 ## Compile from source
 To compile nitro please visit [Compile from source](docs/new/build-source.md)
 
+## Nightly Build
+
+Nightly build is a process where the software is built automatically every night. This helps in detecting and fixing bugs early in the development cycle. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
+
+You can join our Discord server [here](https://discord.gg/FTk2MvZwJH) and go to channel [github-nitro](https://discordapp.com/channels/1107178041848909847/1151022176019939328) to monitor the build process.
+
+The nightly build is triggered at 2:00 AM UTC every day.
+
+The nightly build can be downloaded from the url notified in the Discord channel. Please access the url from the browser and download the build artifacts from there.
+
+## Manual Build
+
+Manual build is a process where the software is built manually by the developers. This is usually done when a new feature is implemented or a bug is fixed. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
+
+It is similar to the nightly build process, except that it is triggered manually by the developers.
+
 ### Contact
 
 - For support, please file a GitHub ticket.
