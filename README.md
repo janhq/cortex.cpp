@@ -143,3 +143,7 @@ It is similar to the nightly build process, except that it is triggered manually
 - For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email hello@jan.ai.
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=janhq/nitro&type=Date)](https://star-history.com/#janhq/nitro&Date)
