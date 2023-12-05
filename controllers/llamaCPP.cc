@@ -359,21 +359,7 @@ void llamaCPP::modelStatus(
   return;
 }
 
-void llamaCPP::loadModel(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-
-  if (model_loaded) {
-    LOG_INFO << "model loaded";
-    Json::Value jsonResp;
-    jsonResp["message"] = "Model already loaded";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k409Conflict);
-    callback(resp);
-    return;
-  }
-
-  const auto &jsonBody = req->getJsonObject();
+bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
 
   gpt_params params;
 
@@ -381,25 +367,24 @@ void llamaCPP::loadModel(
   int drogon_thread = drogon::app().getThreadNum();
   LOG_INFO << "Drogon thread is:" << drogon_thread;
   if (jsonBody) {
-    params.model = (*jsonBody)["llama_model_path"].asString();
-    params.n_gpu_layers = (*jsonBody).get("ngl", 100).asInt();
-    params.n_ctx = (*jsonBody).get("ctx_len", 2048).asInt();
-    params.embedding = (*jsonBody).get("embedding", true).asBool();
+    params.model = jsonBody["llama_model_path"].asString();
+    params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
+    params.n_ctx = jsonBody.get("ctx_len", 2048).asInt();
+    params.embedding = jsonBody.get("embedding", true).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
-    params.n_batch = (*jsonBody).get("n_batch", 512).asInt();
-    params.n_parallel = (*jsonBody).get("n_parallel", drogon_thread).asInt();
+    params.n_batch = jsonBody.get("n_batch", 512).asInt();
+    params.n_parallel = jsonBody.get("n_parallel", drogon_thread).asInt();
     params.n_threads =
-        (*jsonBody)
-            .get("cpu_threads", std::thread::hardware_concurrency())
+        jsonBody.get("cpu_threads", std::thread::hardware_concurrency())
             .asInt();
-    params.cont_batching = (*jsonBody).get("cont_batching", false).asBool();
+    params.cont_batching = jsonBody.get("cont_batching", false).asBool();
 
-    this->user_prompt = (*jsonBody).get("user_prompt", "USER: ").asString();
-    this->ai_prompt = (*jsonBody).get("ai_prompt", "ASSISTANT: ").asString();
+    this->user_prompt = jsonBody.get("user_prompt", "USER: ").asString();
+    this->ai_prompt = jsonBody.get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
-        (*jsonBody).get("system_prompt", "ASSISTANT's RULE: ").asString();
-    this->pre_prompt = (*jsonBody).get("pre_prompt", "").asString();
-    this->repeat_last_n = (*jsonBody).get("repeat_last_n", 32).asInt();
+        jsonBody.get("system_prompt", "ASSISTANT's RULE: ").asString();
+    this->pre_prompt = jsonBody.get("pre_prompt", "").asString();
+    this->repeat_last_n = jsonBody.get("repeat_last_n", 32).asInt();
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
@@ -422,25 +407,46 @@ void llamaCPP::loadModel(
 
   // load the model
   if (!llama.load_model(params)) {
-    LOG_ERROR << "Error loading the model will exit the program";
+    LOG_ERROR << "Error loading the model";
+    return false; // Indicate failure
+  }
+  llama.initialize();
+  model_loaded = true;
+  LOG_INFO << "Started background task here!";
+  backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
+  warmupModel();
+  return true;
+}
+
+void llamaCPP::loadModel(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+
+  if (model_loaded) {
+    LOG_INFO << "model loaded";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model already loaded";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k409Conflict);
+    callback(resp);
+    return;
+  }
+
+  const auto &jsonBody = req->getJsonObject();
+  if (!loadModelImpl(*jsonBody)) {
+    // Error occurred during model loading
     Json::Value jsonResp;
     jsonResp["message"] = "Failed to load model";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
+  } else {
+    // Model loaded successfully
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model loaded successfully";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    callback(resp);
   }
-  llama.initialize();
-
-  Json::Value jsonResp;
-  jsonResp["message"] = "Model loaded successfully";
-  model_loaded = true;
-  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-
-  LOG_INFO << "Started background task here!";
-  backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
-  warmupModel();
-
-  callback(resp);
 }
 
 void llamaCPP::backgroundTask() {
