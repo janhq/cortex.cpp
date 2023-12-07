@@ -1,6 +1,7 @@
 ---
 title: Continuous Batching
 description: Nitro's continuous batching combines multiple requests, enhancing throughput.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 Continuous batching boosts throughput and minimizes latency in large language model (LLM) inference. This technique groups multiple inference requests, significantly improving GPU utilization.

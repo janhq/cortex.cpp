@@ -1,6 +1,7 @@
 ---
 title: Load and Unload models
 description: Nitro loads and unloads local AI models (local LLMs).
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 ## Load model

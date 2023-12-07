@@ -1,6 +1,7 @@
 ---
 title: Nitro Features 
 description: What Nitro supports
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 Nitro enhances the `llama.cpp` research base, optimizing it for production environments with advanced features:

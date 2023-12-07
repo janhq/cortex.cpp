@@ -1,6 +1,7 @@
 ---
 title: Prompt Role Support
 description: Setting up Nitro prompts to build an AI assistant.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 System, user, and assistant prompt is crucial for effectively utilizing the Large Language Model. These prompts work together to create a coherent and functional conversational flow.

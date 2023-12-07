@@ -2,6 +2,7 @@
 title: Build From Source
 slug: /build-source
 description: Install Nitro manually
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 This guide provides step-by-step instructions for building Nitro from source on Linux, macOS, and Windows systems.

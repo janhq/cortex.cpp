@@ -1,6 +1,7 @@
 ---
 title: Nitro with Pal Chat
 description: Nitro intergration guide for mobile device usage.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 This guide demonstrates how to use Nitro with Pal Chat, enabling local AI chat capabilities on mobile devices.
