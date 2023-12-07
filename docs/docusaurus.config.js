@@ -37,6 +37,8 @@ const config = {
     mermaid: true,
   },
 
+  noIndex: false,
+
   // Plugins we added
   plugins: [
     "docusaurus-plugin-sass",
@@ -127,6 +129,7 @@ const config = {
       metadata: [
         { name: 'description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.'},
         { name: 'keywords', content: 'Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama' },
+        { name: 'robots', content: 'index, follow' },
         { property: 'og:title', content: 'Fast inference engine | Nitro' },
         { property: 'og:description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.' },
         { property: 'og:type', content: 'website'},
