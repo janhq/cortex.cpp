@@ -129,6 +129,7 @@ const config = {
         { name: 'keywords', content: 'Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama' },
         { property: 'og:title', content: 'Fast inference engine | Nitro' },
         { property: 'og:description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.' },
+        { property: 'og:type', content: 'website'},
         { property: 'twitter:card', content: 'summary_large_image' },
         { property: 'twitter:site', content: '@janhq_' }, 
         { property: 'twitter:title', content: 'Fast inference engine | Nitro' },
