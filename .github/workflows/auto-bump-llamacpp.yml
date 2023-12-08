@@ -36,5 +36,5 @@ jobs:
                 -o merge_request.target=main \
                 -o merge_request.title="Version bump for llama.cpp" \
                 -o merge_request.assign="vuonghoainam" \
-                origin main:"bump_llamacpp" || true
+                origin ${{ github.ref }}:"bump_llamacpp" || true
     
