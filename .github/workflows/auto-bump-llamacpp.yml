@@ -1,12 +1,8 @@
 name: Auto Bump llama.cpp
 on:
-  push:
-    branches:
-      - feat/auto_bump_llamacpp    
   schedule:
     - cron: '0 2 * * *'
   workflow_dispatch:
-
 
 jobs:
   auto-bump:
@@ -20,7 +16,10 @@ jobs:
       - name: Check changes llama.cpp master HEAD and push update if any
         id: git-status
         run: |
-            git submodule foreach git pull origin master --allow-unrelated-histories
+            cd llama.cpp/
+            git fetch origin
+            git checkout master
+            git reset --hard origin/master
 
             git config --global user.name 'Nitro Bot'
             git config --global user.email 'nitro-bot@jan.ai'
