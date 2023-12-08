@@ -1,0 +1,37 @@
+name: Auto Bump llama.cpp
+on:
+  push:
+    branches:
+      - feat/auto_bump_llamacpp    
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+
+jobs:
+  auto-bump:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Check changes llama.cpp master HEAD and push update if any
+        id: git-status
+        run: |
+            git submodule foreach git pull origin master --allow-unrelated-histories
+
+            git config --global user.name 'Nitro Bot'
+            git config --global user.email 'nitro-bot@jan.ai'
+
+            git add .
+            git commit -am "Update llama.cpp"
+
+            git push -o merge_request.create \
+                -o merge_request.remove_source_branch \
+                -o merge_request.target=main \
+                -o merge_request.title="Version bump for llama.cpp" \
+                -o merge_request.assign="vuonghoainam" \
+                origin main:"bump_llamacpp" || true
+    
