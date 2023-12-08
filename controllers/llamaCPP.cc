@@ -454,7 +454,9 @@ void llamaCPP::backgroundTask() {
     // model_loaded =
     llama.update_slots();
   }
-  LOG_INFO << "Background task stopped!";
+  LOG_INFO << "Background task stopped! ";
+  llama.kv_cache_clear();
+  LOG_INFO << "KV cache cleared!";
   return;
 }
 
