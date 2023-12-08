@@ -25,16 +25,18 @@ jobs:
             git reset --hard origin/master
             cd ../
 
-            git config --global user.name 'Nitro Bot'
-            git config --global user.email 'nitro-bot@jan.ai'
-
-            git add .
-            git commit -am "Update llama.cpp"
-
-            git push -o merge_request.create \
-                -o merge_request.remove_source_branch \
-                -o merge_request.target=main \
-                -o merge_request.title="Version bump for llama.cpp" \
-                -o merge_request.assign="vuonghoainam" \
-                origin ${{ github.ref }}:"bump_llamacpp" || true
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update llama.cpp
+          title: Auto bump llama.cpp version
+          body: Auto bump llama.cpp version
+          branch: bump_llamacpp
+          branch-suffix: timestamp
+          labels: "type: chore"
+          reviewers: tikikun
+          assignees: vuonghoainam
+          delete-branch: true
+          add-paths	: "llama.cpp"
     
