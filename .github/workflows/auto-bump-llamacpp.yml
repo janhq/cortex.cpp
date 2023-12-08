@@ -23,6 +23,7 @@ jobs:
             git fetch origin
             git checkout master
             git reset --hard origin/master
+            cd ../
 
             git config --global user.name 'Nitro Bot'
             git config --global user.email 'nitro-bot@jan.ai'
