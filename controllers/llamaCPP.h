@@ -1868,11 +1868,16 @@ public:
 
   // Openai compatible path
   ADD_METHOD_TO(llamaCPP::chatCompletion, "/v1/chat/completions", Post);
+  ADD_METHOD_TO(llamaCPP::chatCompletionPrelight, "/v1/chat/completions",
+                Options);
+
   ADD_METHOD_TO(llamaCPP::embedding, "/v1/embeddings", Post);
 
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback);
+  void chatCompletionPrelight(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
