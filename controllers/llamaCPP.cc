@@ -145,6 +145,17 @@ void llamaCPP::warmupModel() {
   return;
 }
 
+void llamaCPP::chatCompletionPrelight(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+  auto resp = drogon::HttpResponse::newHttpResponse();
+  resp->setStatusCode(drogon::HttpStatusCode::k200OK);
+  resp->addHeader("Access-Control-Allow-Origin", "*");
+  resp->addHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  resp->addHeader("Access-Control-Allow-Headers", "*");
+  callback(resp);
+}
+
 void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
@@ -454,7 +465,9 @@ void llamaCPP::backgroundTask() {
     // model_loaded =
     llama.update_slots();
   }
-  LOG_INFO << "Background task stopped!";
+  LOG_INFO << "Background task stopped! ";
+  llama.kv_cache_clear();
+  LOG_INFO << "KV cache cleared!";
   return;
 }
 
