@@ -288,17 +288,6 @@ jobs:
     permissions:
       contents: write
 
-    env:
-      OPENBLAS_VERSION: 0.3.23
-      OPENCL_VERSION: 2023.04.17
-      CLBLAST_VERSION: 1.6.0
-
-    strategy:
-      matrix:
-        include:
-          - build: 'openblas'
-            defines: '-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS -DBLAS_INCLUDE_DIRS="$env:RUNNER_TEMP/openblas/include" -DBLAS_LIBRARIES="$env:RUNNER_TEMP/openblas/lib/openblas.lib"'
-
     steps:
       - name: Clone
   
@@ -315,19 +304,6 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
   
-      - name: Download OpenBLAS
-        id: get_openblas
-        if: ${{ matrix.build == 'openblas' }}
-        run: |
-          curl.exe -o $env:RUNNER_TEMP/openblas.zip -L "https://github.com/xianyi/OpenBLAS/releases/download/v${env:OPENBLAS_VERSION}/OpenBLAS-${env:OPENBLAS_VERSION}-x64.zip"
-          curl.exe -o $env:RUNNER_TEMP/OpenBLAS.LICENSE.txt -L "https://github.com/xianyi/OpenBLAS/raw/v${env:OPENBLAS_VERSION}/LICENSE"
-          mkdir $env:RUNNER_TEMP/openblas
-          tar.exe -xvf $env:RUNNER_TEMP/openblas.zip -C $env:RUNNER_TEMP/openblas
-          $vcdir = $(vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath)
-          $msvc = $(join-path $vcdir $('VC\Tools\MSVC\'+$(gc -raw $(join-path $vcdir 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt')).Trim()))
-          $lib =  $(join-path $msvc 'bin\Hostx64\x64\lib.exe')
-          & $lib /machine:x64 "/def:${env:RUNNER_TEMP}/openblas/lib/libopenblas.def" "/out:${env:RUNNER_TEMP}/openblas/lib/openblas.lib" /name:openblas.dll
-
       - name: actions-setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.14.1
 
@@ -339,15 +315,15 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. ${{ matrix.defines }}
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
         id: pack_artifacts
         shell: cmd
         run: |
-          robocopy build_deps\_install\bin .\build\Release zlib.dll
-          robocopy build\bin\Release .\build\Release llama.dll
+          robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
+          robocopy build\bin\Release\ .\build\Release\ llama.dll
           dotnet tool install --global AzureSignTool
           azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
@@ -418,8 +394,8 @@ jobs:
         shell: cmd
         run: |
           set PATH=%PATH%;C:\Program Files\7-Zip\
-          robocopy build_deps\_install\bin .\build\Release zlib.dll
-          robocopy build\bin\Release .\build\Release llama.dll
+          robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
+          robocopy build\bin\Release\ .\build\Release\ llama.dll
           dotnet tool install --global AzureSignTool
           %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
