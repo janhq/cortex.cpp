@@ -178,7 +178,7 @@ void llamaCPP::chatCompletion(
 
   if (jsonBody) {
     // Default values to enable auto caching
-    data["cache_prompt"] = true;
+    data["cache_prompt"] = caching_enabled;
     data["n_keep"] = -1;
 
     // Passing load value
@@ -390,6 +390,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
             .asInt();
     params.cont_batching = jsonBody.get("cont_batching", false).asBool();
 
+    this->caching_enabled = jsonBody.get("caching_enabled", false).asBool();
     this->user_prompt = jsonBody.get("user_prompt", "USER: ").asString();
     this->ai_prompt = jsonBody.get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
