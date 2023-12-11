@@ -76,3 +76,4 @@ In case you got error while loading models. Please check for the correct model p
 | `ai_prompt`        | String  | The prompt to use for the AI assistant.                      |
 | `system_prompt`    | String  | The prompt for system rules.                          |
 | `pre_prompt`    | String  | The prompt to use for internal configuration.                          |
+|`clean_cache_threshold`|	Integer|	Number of chats that will trigger clean cache action.|
