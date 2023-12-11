@@ -1909,6 +1909,7 @@ private:
   std::string pre_prompt;
   int repeat_last_n;
   bool caching_enabled;
-  std::atomic<int> no_of_chats = 0; 
+  std::atomic<int> no_of_chats = 0;
+  int clean_cache_threshold;
 };
 }; // namespace inferences
