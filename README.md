@@ -109,6 +109,7 @@ Table of parameters
 | `cpu_threads`   | Integer | The number of threads to use for inferencing (CPU MODE ONLY) |
 | `n_batch`       | Integer | The batch size for prompt eval step |
 | `caching_enabled` | Boolean | To enable prompt caching or not   |
+| `clean_cache_threshold` | Integer | Number of chats that will trigger clean cache action|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
