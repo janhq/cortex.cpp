@@ -1908,5 +1908,6 @@ private:
   std::string system_prompt;
   std::string pre_prompt;
   int repeat_last_n;
+  bool caching_enabled;
 };
 }; // namespace inferences
