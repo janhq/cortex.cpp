@@ -36,4 +36,5 @@ jobs:
           assignees: vuonghoainam
           delete-branch: true
           add-paths	: "llama.cpp"
+          base: main
     
