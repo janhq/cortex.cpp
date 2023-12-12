@@ -260,6 +260,11 @@ components:
           default: "ASSISTANT:"
           nullable: true
           description: The prefix for assistant prompt.
+        clean_cache_threshold:
+          type: integer
+          default: 5
+          nullable: true
+          description: Number of chats that will trigger clean cache action.
       required:
         - llama_model_path
 
