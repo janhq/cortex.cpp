@@ -124,6 +124,66 @@ Nitro server is compatible with the OpenAI format, so you can expect the same ou
 ## Compile from source
 To compile nitro please visit [Compile from source](docs/new/build-source.md)
 
+## Download
+
+<table>
+  <tr>
+    <td style="text-align:center"><b>Version Type</b></td>
+    <td colspan="2" style="text-align:center"><b>Windows</b></td>
+    <td colspan="2" style="text-align:center"><b>MacOS</b></td>
+    <td colspan="2" style="text-align:center"><b>Linux</b></td>
+  </tr>
+  <tr>
+    <td style="text-align:center"><b>Stable (Recommended)</b></td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-win-amd64.tar.gz'>
+        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>CPU</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-win-amd64-cuda.tar.gz'>
+        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>CUDA</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-mac-amd64.tar.gz'>
+        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>Intel</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-mac-arm64.tar.gz'>
+        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>M1/M2</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-linux-amd64.tar.gz'>
+        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>CPU</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-linux-amd64-cuda.tar.gz'>
+        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>CUDA</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align: center">
+    <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
+    <td style="text-align:center" colspan="6">
+      <a href='https://github.com/janhq/nitro/actions/runs/7172729642'>
+        <b>Github action artifactory</b>
+      </a>
+    </td>
+  </tr>
+</table>
+
+Download the latest version of Nitro at https://nitro.jan.ai/ or visit the **[GitHub Releases](https://github.com/janhq/nitro/releases)** to download any previous release.
+
 ## Nightly Build
 
 Nightly build is a process where the software is built automatically every night. This helps in detecting and fixing bugs early in the development cycle. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
