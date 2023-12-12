@@ -133,7 +133,7 @@ void llamaCPP::warmupModel() {
   json pseudo;
 
   pseudo["prompt"] = "Hello";
-  pseudo["n_predict"] = 10;
+  pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
   const int task_id = llama.request_completion(pseudo, false, false);
   std::string completion_text;
