@@ -137,13 +137,13 @@ To compile nitro please visit [Compile from source](docs/new/build-source.md)
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
       <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-win-amd64.tar.gz'>
-        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-win-amd64-cuda.tar.gz'>
-        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
@@ -161,13 +161,13 @@ To compile nitro please visit [Compile from source](docs/new/build-source.md)
     </td>
     <td style="text-align:center">
       <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-linux-amd64.tar.gz'>
-        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://github.com/janhq/nitro/releases/download/v0.1.25/nitro-0.1.25-linux-amd64-cuda.tar.gz'>
-        <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
+        <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
