@@ -7,10 +7,10 @@ on:
     branches:
       - main
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
-    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', '!docs/**', '!.gitignore', "!README.md"]
+    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', "llama.cpp", '!docs/**', '!.gitignore', "!README.md"]
   pull_request:
     types: [opened, synchronize, reopened]
-    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', '!docs/**', '!.gitignore', "!README.md"]
+    paths: ['.github/scripts/**','.github/workflows/build.yml', '**/CMakeLists.txt', '**/Makefile', '**/*.h', '**/*.hpp', '**/*.c', '**/*.cpp', '**/*.cu', '**/*.cc', '**/*.cxx', "llama.cpp", '!docs/**', '!.gitignore', "!README.md"]
   workflow_dispatch:
 
 env:

@@ -27,8 +27,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: Update llama.cpp
-          title: Auto bump llama.cpp version
-          body: Auto bump llama.cpp version
+          title: "chore: Auto bump llama.cpp version"
           branch: bump-llamacpp
           branch-suffix: timestamp
           labels: "type: chore"
