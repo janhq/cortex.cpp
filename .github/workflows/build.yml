@@ -386,6 +386,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
+          %ONEAPI_PATH%/setvars.bat
           cmake .. -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx-cc -DCMAKE_CXX_COMPILER=icpx -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_TOOLCHAIN_FILE=%PKG_CONFIG_PATH% -DBLAS_INCLUDE_DIRS=%BLAS_INCLUDE_DIRS%
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
