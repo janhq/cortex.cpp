@@ -351,6 +351,78 @@ jobs:
           asset_path: ./nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64.tar.gz
           asset_content_type: application/gzip
+  
+  windows-oneAPI-build:
+    runs-on: windows-latest
+    needs: create-draft-release
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Clone
+  
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  
+      - name: actions-setup-cmake
+        uses: jwlawson/actions-setup-cmake@v1.14.1
+
+      - name: Build
+        id: cmake_build
+        shell: cmd
+        run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          cmake --build ./build_deps/nitro_deps --config Release
+          mkdir -p build
+          cd build
+          cmake .. -DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=Intel10_64lp -DCMAKE_C_COMPILER=icx-cc -DCMAKE_CXX_COMPILER=icpx -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_TOOLCHAIN_FILE=%PKG_CONFIG_PATH% -DBLAS_INCLUDE_DIRS=%BLAS_INCLUDE_DIRS%
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        shell: cmd
+        run: |
+          robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
+          robocopy build\bin\Release\ .\build\Release\ llama.dll
+          robocopy %ONEAPI_PATH%\mkl\latest\bin\ .\build\Release\ mkl_intel_thread.2.dll
+          dotnet tool install --global AzureSignTool
+          azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
+          7z a -ttar temp.tar .\build\Release\*
+          7z a -tgzip nitro.tar.gz temp.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-win-oneapi
+          path: ./build/Release
+
+      - name: Run e2e testing
+        shell: cmd
+        run: |
+          cd .\build\Release
+          ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-oneapi.tar.gz
+          asset_content_type: application/gzip
 
   windows-amd64-cuda-build:
     runs-on: windows-nvidia
