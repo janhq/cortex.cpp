@@ -9,8 +9,8 @@
 #include <regex>
 // Include platform-specific headers
 #ifdef _WIN32
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #else
 #include <dirent.h>
 #endif
