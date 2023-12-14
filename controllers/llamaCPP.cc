@@ -8,6 +8,7 @@
 #include <regex>
 #include <string>
 #include <thread>
+#include <trantor/utils/Logger.h>
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -174,6 +175,7 @@ void llamaCPP::chatCompletion(
 
   json data;
   json stopWords;
+  int no_images = 0;
   // To set default value
 
   if (jsonBody) {
@@ -200,29 +202,78 @@ void llamaCPP::chatCompletion(
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
-    for (const auto &message : messages) {
-      std::string input_role = message["role"].asString();
-      std::string role;
-      if (input_role == "user") {
-        role = user_prompt;
-        std::string content = message["content"].asString();
-        formatted_output += role + content;
-      } else if (input_role == "assistant") {
-        role = ai_prompt;
-        std::string content = message["content"].asString();
-        formatted_output += role + content;
-      } else if (input_role == "system") {
-        role = system_prompt;
-        std::string content = message["content"].asString();
-        formatted_output = role + content + formatted_output;
 
-      } else {
-        role = input_role;
-        std::string content = message["content"].asString();
-        formatted_output += role + content;
+    if (!multi_modal) {
+
+      for (const auto &message : messages) {
+        std::string input_role = message["role"].asString();
+        std::string role;
+        if (input_role == "user") {
+          role = user_prompt;
+          std::string content = message["content"].asString();
+          formatted_output += role + content;
+        } else if (input_role == "assistant") {
+          role = ai_prompt;
+          std::string content = message["content"].asString();
+          formatted_output += role + content;
+        } else if (input_role == "system") {
+          role = system_prompt;
+          std::string content = message["content"].asString();
+          formatted_output = role + content + formatted_output;
+
+        } else {
+          role = input_role;
+          std::string content = message["content"].asString();
+          formatted_output += role + content;
+        }
       }
+      formatted_output += ai_prompt;
+    } else {
+
+      data["image_data"] = json::array();
+      for (const auto &message : messages) {
+        std::string input_role = message["role"].asString();
+        std::string role;
+        if (input_role == "user") {
+          formatted_output += role;
+          for (auto content_piece : message["content"]) {
+            role = user_prompt;
+
+            auto content_piece_type = content_piece["type"].asString();
+            if (content_piece_type == "text") {
+              auto text = content_piece["text"].asString();
+              formatted_output += text;
+            } else if (content_piece_type == "image_url") {
+              auto image_url = content_piece["image_url"]["url"].asString();
+              auto base64_image_data = nitro_utils::extractBase64(image_url);
+              formatted_output += "[img-" + std::to_string(no_images) + "]";
+
+              json content_piece_image_data;
+              content_piece_image_data["data"] = base64_image_data;
+              content_piece_image_data["id"] = no_images;
+              data["image_data"].push_back(content_piece_image_data);
+              no_images++;
+            }
+          }
+
+        } else if (input_role == "assistant") {
+          role = ai_prompt;
+          std::string content = message["content"].asString();
+          formatted_output += role + content;
+        } else if (input_role == "system") {
+          role = system_prompt;
+          std::string content = message["content"].asString();
+          formatted_output = role + content + formatted_output;
+
+        } else {
+          role = input_role;
+          std::string content = message["content"].asString();
+          formatted_output += role + content;
+        }
+      }
+      formatted_output += ai_prompt;
+      LOG_INFO << formatted_output;
     }
-    formatted_output += ai_prompt;
 
     data["prompt"] = formatted_output;
     for (const auto &stop_word : (*jsonBody)["stop"]) {
@@ -386,6 +437,11 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
   int drogon_thread = drogon::app().getThreadNum() - 1;
   LOG_INFO << "Drogon thread is:" << drogon_thread;
   if (jsonBody) {
+    if (!jsonBody["mmproj"].isNull()) {
+      LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
+      params.mmproj = jsonBody["mmproj"].asString();
+      multi_modal = true;
+    }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
     params.n_ctx = jsonBody.get("ctx_len", 2048).asInt();

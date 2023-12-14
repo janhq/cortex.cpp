@@ -732,6 +732,7 @@ struct llama_server_context {
       if (images_data != data.end() && images_data->is_array()) {
         for (const auto &img : *images_data) {
           std::string data_b64 = img["data"].get<std::string>();
+          LOG_INFO << data_b64;
           slot_image img_sl;
           img_sl.id =
               img.count("id") != 0 ? img["id"].get<int>() : slot->images.size();
@@ -1834,7 +1835,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
     // Some default values for now below
-    log_disable(); // Disable the log to file feature, reduce bloat for
+    // log_disable(); // Disable the log to file feature, reduce bloat for
     // target
     // system ()
     std::vector<std::string> llama_models =
@@ -1877,8 +1878,9 @@ public:
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
-  void chatCompletionPrelight(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback);
+  void chatCompletionPrelight(
+      const HttpRequestPtr &req,
+      std::function<void(const HttpResponsePtr &)> &&callback);
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void loadModel(const HttpRequestPtr &req,
@@ -1911,5 +1913,6 @@ private:
   bool caching_enabled;
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
+  bool multi_modal = false;
 };
 }; // namespace inferences
