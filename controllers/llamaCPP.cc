@@ -246,6 +246,7 @@ void llamaCPP::chatCompletion(
             } else if (content_piece_type == "image_url") {
               auto image_url = content_piece["image_url"]["url"].asString();
               auto base64_image_data = nitro_utils::extractBase64(image_url);
+              LOG_INFO << base64_image_data;
               formatted_output += "[img-" + std::to_string(no_images) + "]";
 
               json content_piece_image_data;
@@ -406,6 +407,7 @@ void llamaCPP::unloadModel(
     llama_free_model(llama.model);
     llama.ctx = nullptr;
     llama.model = nullptr;
+    multi_modal = false;
     jsonResp["message"] = "Model unloaded successfully";
   }
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
