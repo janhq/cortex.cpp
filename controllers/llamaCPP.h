@@ -732,7 +732,6 @@ struct llama_server_context {
       if (images_data != data.end() && images_data->is_array()) {
         for (const auto &img : *images_data) {
           std::string data_b64 = img["data"].get<std::string>();
-          LOG_INFO << data_b64;
           slot_image img_sl;
           img_sl.id =
               img.count("id") != 0 ? img["id"].get<int>() : slot->images.size();
@@ -1913,6 +1912,5 @@ private:
   bool caching_enabled;
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
-  bool multi_modal = false;
 };
 }; // namespace inferences

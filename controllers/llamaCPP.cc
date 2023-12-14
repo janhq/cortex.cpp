@@ -203,7 +203,7 @@ void llamaCPP::chatCompletion(
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
 
-    if (!multi_modal) {
+    if (!llama.multimodal) {
 
       for (const auto &message : messages) {
         std::string input_role = message["role"].asString();
@@ -407,7 +407,6 @@ void llamaCPP::unloadModel(
     llama_free_model(llama.model);
     llama.ctx = nullptr;
     llama.model = nullptr;
-    multi_modal = false;
     jsonResp["message"] = "Model unloaded successfully";
   }
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
@@ -442,7 +441,6 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["mmproj"].isNull()) {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
-      multi_modal = true;
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
