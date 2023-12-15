@@ -67,7 +67,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DDEBUG=ON ..
+          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF ..
           CC=gcc-8 make -j $(nproc)
           ls -la
 
@@ -126,7 +126,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON ..
+          cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF ..
           CC=gcc-8 make -j $(nproc)
           ls -la    
 
