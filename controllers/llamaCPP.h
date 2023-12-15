@@ -1834,7 +1834,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
     // Some default values for now below
-    log_disable(); // Disable the log to file feature, reduce bloat for
+    // log_disable(); // Disable the log to file feature, reduce bloat for
     // target
     // system ()
     std::vector<std::string> llama_models =
@@ -1877,8 +1877,9 @@ public:
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
-  void chatCompletionPrelight(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback);
+  void chatCompletionPrelight(
+      const HttpRequestPtr &req,
+      std::function<void(const HttpResponsePtr &)> &&callback);
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void loadModel(const HttpRequestPtr &req,

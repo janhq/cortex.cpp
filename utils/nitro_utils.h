@@ -6,6 +6,7 @@
 #include <drogon/HttpResponse.h>
 #include <iostream>
 #include <ostream>
+#include <regex>
 // Include platform-specific headers
 #ifdef _WIN32
 #include <winsock2.h>
@@ -17,6 +18,19 @@
 namespace nitro_utils {
 
 inline std::string models_folder = "./models";
+
+inline std::string extractBase64(const std::string &input) {
+  std::regex pattern("base64,(.*)");
+  std::smatch match;
+
+  if (std::regex_search(input, match, pattern)) {
+    std::string base64_data = match[1];
+    base64_data = base64_data.substr(0, base64_data.length() - 1);
+    return base64_data;
+  }
+
+  return "";
+}
 
 inline std::vector<std::string> listFilesInDir(const std::string &path) {
   std::vector<std::string> files;
