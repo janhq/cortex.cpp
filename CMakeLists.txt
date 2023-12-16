@@ -42,6 +42,7 @@ if(DEBUG)
 endif()
 
 add_subdirectory(llama.cpp)
+add_subdirectory(whisper.cpp)
 add_executable(${PROJECT_NAME} main.cc)
 
 # ##############################################################################
