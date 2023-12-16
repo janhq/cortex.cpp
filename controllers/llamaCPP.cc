@@ -451,23 +451,52 @@ void llamaCPP::transcription(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
-  MultiPartParser fileUpload;
-  if (fileUpload.parse(req) != 0 || fileUpload.getFiles().size() != 1)
+  MultiPartParser partParser;
+  Json::Value jsonResp;
+
+  if (partParser.parse(req) != 0 || partParser.getFiles().size() != 1)
   {
     auto resp = HttpResponse::newHttpResponse();
-    resp->setBody("Must only be one file");
+    resp->setBody("Must have exactly one file");
     resp->setStatusCode(k403Forbidden);
     callback(resp);
     return;
   }
-  auto &file = fileUpload.getFiles()[0];
-  auto md5 = file.getMd5();
-  auto resp = HttpResponse::newHttpResponse();
-  resp->setBody(
-      "The server has calculated the file's MD5 hash to be " + md5);
+  auto &file = partParser.getFiles()[0];
+  const auto &formFields = partParser.getParameters();
+  std::string model = formFields.at("model");
   file.save();
-  LOG_INFO << "The uploaded file has been saved to the ./uploads "
-              "directory";
+
+  jsonResp["text"] = "handling text";
+
+  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  callback(resp);
+  return;
+}
+
+void llamaCPP::translation(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback)
+{
+  MultiPartParser partParser;
+  Json::Value jsonResp;
+
+  if (partParser.parse(req) != 0 || partParser.getFiles().size() != 1)
+  {
+    auto resp = HttpResponse::newHttpResponse();
+    resp->setBody("Must have exactly one file");
+    resp->setStatusCode(k403Forbidden);
+    callback(resp);
+    return;
+  }
+  auto &file = partParser.getFiles()[0];
+  const auto &formFields = partParser.getParameters();
+  std::string model = formFields.at("model");
+  file.save();
+
+  jsonResp["text"] = "handling text";
+
+  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(resp);
   return;
 }
