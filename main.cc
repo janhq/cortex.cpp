@@ -38,8 +38,9 @@ int main(int argc, char *argv[]) {
   nitro_utils::nitro_logo();
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(host, port);
-  drogon::app().setThreadNum(thread_num + 1);
+  drogon::app().addListener(host, port)
+              .setThreadNum(thread_num + 1)
+              .setUploadPath("./uploads");
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
   drogon::app().run();
