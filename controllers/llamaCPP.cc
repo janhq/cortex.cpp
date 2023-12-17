@@ -14,16 +14,22 @@ using namespace inferences;
 using json = nlohmann::json;
 
 // To store state of each inference request
-struct State {
-  bool isStopped = false;
-  int task_id;
-  llamaCPP *instance;
+struct ModelInstance {
+    llamaCPP *instance;
+    std::vector<State> states;
+    int task_id;
 
-  State(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
+    ModelInstance(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
+
+    void addState(int task_id) {
+        states.emplace_back(task_id, instance);
+    }
 };
 
-std::shared_ptr<State> createState(int task_id, llamaCPP *instance) {
-  return std::make_shared<State>(task_id, instance);
+std::map<std::string, ModelInstance> modelMap; // Map of model name to instance
+
+std::shared_ptr<ModelInstance> createState(int task_id, llamaCPP *instance) {
+  return std::make_shared<ModelInstance>(task_id, instance);
 }
 
 // --------------------------------------------
@@ -413,6 +419,16 @@ void llamaCPP::unloadModel(
   callback(resp);
   return;
 }
+
+void llamaCPP::listModels(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback) {
+    Json::Value jsonResp;
+    for (const auto &modelPair : modelMap) {
+        jsonResp["models"].append(modelPair.first);
+    }
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    callback(resp);
+}
+
 void llamaCPP::modelStatus(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
@@ -431,6 +447,7 @@ void llamaCPP::modelStatus(
 }
 
 bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
+  std::string modelIdentifier = jsonBody["model_id"].asString();
 
   gpt_params params;
 
@@ -489,6 +506,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     return false; // Indicate failure
   }
   llama.initialize();
+  modelMap[modelIdentifier] = &llama;
   model_loaded = true;
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
