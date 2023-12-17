@@ -1,4 +1,6 @@
 #include "llamaCPP.h"
+#include "ggml.h"
+#include "whisper.h"
 #include "llama.h"
 #include "utils/nitro_utils.h"
 #include <chrono>
@@ -546,6 +548,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
 {
 
   gpt_params params;
+  whisper_full_params whisper_params;
 
   // By default will setting based on number of handlers
   int drogon_thread = drogon::app().getThreadNum() - 1;
@@ -556,6 +559,11 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
     {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
+    }
+    if (!jsonBody["whisper"].isNull())
+    {
+      LOG_INFO << "WHISPER FILE detected, whisper enabled!";
+      whisper_params.whisper = jsonBody["whisper"].asString();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
