@@ -1,6 +1,7 @@
 ---
 title: Chat Completion
 description: Inference engine for chat completion, the same as OpenAI's
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 The Chat Completion feature in Nitro provides a flexible way to interact with any local Large Language Model (LLM).

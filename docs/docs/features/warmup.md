@@ -1,6 +1,7 @@
 ---
 title: Warming Up Model
 description: Nitro warms up the model to optimize delays.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 Model warming up involves pre-running requests through an AI model to fine-tune its components for production. This step minimizes delays during initial inferences, ensuring readiness for immediate use.

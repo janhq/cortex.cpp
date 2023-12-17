@@ -2,6 +2,7 @@
 title: FAQs
 slug: /faq
 description: Frequently Asked Questions about Nitro
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 <details>

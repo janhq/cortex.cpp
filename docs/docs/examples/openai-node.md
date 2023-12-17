@@ -1,6 +1,7 @@
 ---
 title: Nitro with openai-node
 description: Nitro intergration guide for Node.js.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 You can migrate from OAI API or Azure OpenAI to Nitro using your existing NodeJS code quickly

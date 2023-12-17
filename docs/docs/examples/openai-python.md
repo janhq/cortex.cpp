@@ -1,6 +1,7 @@
 ---
 title: Nitro with openai-python
 description: Nitro intergration guide for Python.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 

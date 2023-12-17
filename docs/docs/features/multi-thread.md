@@ -1,6 +1,7 @@
 ---
 title: Multithreading 
 description: Nitro utilizes multithreading to optimize hardware usage.
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 Multithreading in programming allows concurrent task execution, improving efficiency and responsiveness. It's key for optimizing hardware and application performance.
