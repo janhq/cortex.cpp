@@ -1,6 +1,5 @@
 #include "llamaCPP.h"
 #include "ggml.h"
-#include "whisper.h"
 #include "llama.h"
 #include "utils/nitro_utils.h"
 #include <chrono>
@@ -449,60 +448,6 @@ void llamaCPP::embedding(
   return;
 }
 
-void llamaCPP::transcription(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
-  MultiPartParser partParser;
-  Json::Value jsonResp;
-
-  if (partParser.parse(req) != 0 || partParser.getFiles().size() != 1)
-  {
-    auto resp = HttpResponse::newHttpResponse();
-    resp->setBody("Must have exactly one file");
-    resp->setStatusCode(k403Forbidden);
-    callback(resp);
-    return;
-  }
-  auto &file = partParser.getFiles()[0];
-  const auto &formFields = partParser.getParameters();
-  std::string model = formFields.at("model");
-  file.save();
-
-  jsonResp["text"] = "handling text";
-
-  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  callback(resp);
-  return;
-}
-
-void llamaCPP::translation(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
-  MultiPartParser partParser;
-  Json::Value jsonResp;
-
-  if (partParser.parse(req) != 0 || partParser.getFiles().size() != 1)
-  {
-    auto resp = HttpResponse::newHttpResponse();
-    resp->setBody("Must have exactly one file");
-    resp->setStatusCode(k403Forbidden);
-    callback(resp);
-    return;
-  }
-  auto &file = partParser.getFiles()[0];
-  const auto &formFields = partParser.getParameters();
-  std::string model = formFields.at("model");
-  file.save();
-
-  jsonResp["text"] = "handling text";
-
-  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  callback(resp);
-  return;
-}
-
 void llamaCPP::unloadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
@@ -548,7 +493,6 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
 {
 
   gpt_params params;
-  whisper_full_params whisper_params;
 
   // By default will setting based on number of handlers
   int drogon_thread = drogon::app().getThreadNum() - 1;
@@ -559,11 +503,6 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
     {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
-    }
-    if (!jsonBody["whisper"].isNull())
-    {
-      LOG_INFO << "WHISPER FILE detected, whisper enabled!";
-      whisper_params.whisper = jsonBody["whisper"].asString();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();

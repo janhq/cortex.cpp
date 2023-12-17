@@ -2145,9 +2145,6 @@ namespace inferences
     ADD_METHOD_TO(llamaCPP::chatCompletionPrelight, "/v1/chat/completions",
                   Options);
 
-    ADD_METHOD_TO(llamaCPP::transcription, "/v1/audio/transcriptions", Post);
-    ADD_METHOD_TO(llamaCPP::translation, "/v1/audio/translations", Post);
-
     ADD_METHOD_TO(llamaCPP::embedding, "/v1/embeddings", Post);
 
     // PATH_ADD("/llama/chat_completion", Post);
@@ -2160,12 +2157,6 @@ namespace inferences
 
     void embedding(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
-
-    void transcription(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback);
-                  
-    void translation(const HttpRequestPtr &req,
-                       std::function<void(const HttpResponsePtr &)> &&callback);
 
     void loadModel(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
