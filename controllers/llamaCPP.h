@@ -1862,9 +1862,11 @@ public:
   // list path definitions here;
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
-  METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
-  METHOD_ADD(llamaCPP::unloadModel, "unloadmodel", Get);
-  METHOD_ADD(llamaCPP::modelStatus, "modelstatus", Get);
+  
+  METHOD_ADD(llamaCPP::listModel, "/v1/models", Get);
+  METHOD_ADD(llamaCPP::loadModel, "/v2/models", Post);
+  METHOD_ADD(llamaCPP::unloadModel, "/v2/models/{model_id}", Delete);
+  METHOD_ADD(llamaCPP::modelStatus, "/v1/models/{model_id}", Get);
 
   // Openai compatible path
   ADD_METHOD_TO(llamaCPP::chatCompletion, "/v1/chat/completions", Post);
@@ -1877,18 +1879,25 @@ public:
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
+
   void chatCompletionPrelight(
       const HttpRequestPtr &req,
       std::function<void(const HttpResponsePtr &)> &&callback);
+
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
+
   void loadModel(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
+
   void unloadModel(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
 
   void modelStatus(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
+
+  void listModel(const HttpRequestPtr &req,
+                   std::function<void(const HttpResponsePtr &)> &&callback);                  
 
   bool loadModelImpl(const Json::Value &jsonBody);
 
