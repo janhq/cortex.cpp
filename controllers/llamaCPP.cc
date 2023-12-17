@@ -1,5 +1,4 @@
 #include "llamaCPP.h"
-#include "ggml.h"
 #include "llama.h"
 #include "utils/nitro_utils.h"
 #include <chrono>
