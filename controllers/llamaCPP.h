@@ -1858,6 +1858,7 @@ public:
     }
   }
 
+  ~llamaCPP() { stopBackgroundTask(); }
   METHOD_LIST_BEGIN
   // list path definitions here;
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
