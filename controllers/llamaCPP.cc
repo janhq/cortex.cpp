@@ -435,7 +435,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
   gpt_params params;
 
   // By default will setting based on number of handlers
-  int drogon_thread = drogon::app().getThreadNum() - 1;
+  int drogon_thread = drogon::app().getThreadNum() - 5;
   LOG_INFO << "Drogon thread is:" << drogon_thread;
   if (jsonBody) {
     if (!jsonBody["mmproj"].isNull()) {
