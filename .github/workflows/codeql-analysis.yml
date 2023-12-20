@@ -20,6 +20,7 @@ on:
       [
         ".github/scripts/**",
         ".github/workflows/build.yml",
+        ".github/workflows/codeql-analysis.yml",
         "**/CMakeLists.txt",
         "**/Makefile",
         "**/*.h",
@@ -40,6 +41,7 @@ on:
       [
         ".github/scripts/**",
         ".github/workflows/build.yml",
+        ".github/workflows/codeql-analysis.yml",
         "**/CMakeLists.txt",
         "**/Makefile",
         "**/*.h",
