@@ -13,7 +13,6 @@
 using namespace inferences;
 using json = nlohmann::json;
 
-// To store state of each inference request
 struct State {
   bool isStopped = false;
   int task_id;
