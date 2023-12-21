@@ -1,9 +1,7 @@
 #include "utils/nitro_utils.h"
-#include <algorithm> // Include the algorithm header
 #include <climits>   // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
-#include <thread>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
