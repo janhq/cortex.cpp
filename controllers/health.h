@@ -5,11 +5,12 @@
 
 using namespace drogon;
 
-class health : public drogon::HttpSimpleController<health>
-{
-  public:
-    void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;
-    PATH_LIST_BEGIN
-    PATH_ADD("/healthz", Get);
-    PATH_LIST_END
+class health : public drogon::HttpSimpleController<health> {
+public:
+  void asyncHandleHttpRequest(
+      const HttpRequestPtr &req,
+      std::function<void(const HttpResponsePtr &)> &&callback) override;
+  PATH_LIST_BEGIN
+  PATH_ADD("/healthz", Get);
+  PATH_LIST_END
 };
