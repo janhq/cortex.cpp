@@ -36,11 +36,12 @@ int main(int argc, char *argv[]) {
   }
 
   int logical_cores = std::thread::hardware_concurrency();
+  int drogon_thread_num = std::max(thread_num, logical_cores);
   nitro_utils::nitro_logo();
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
   drogon::app().addListener(host, port);
-  drogon::app().setThreadNum(std::max(thread_num, logical_cores));
+  drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
   drogon::app().run();
