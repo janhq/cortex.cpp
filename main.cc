@@ -1,7 +1,9 @@
 #include "utils/nitro_utils.h"
-#include <climits> // for PATH_MAX
+#include <algorithm> // Include the algorithm header
+#include <climits>   // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <thread>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
@@ -35,11 +37,12 @@ int main(int argc, char *argv[]) {
     port = std::atoi(argv[3]); // Convert string argument to int
   }
 
+  int logical_cores = std::thread::hardware_concurrency();
   nitro_utils::nitro_logo();
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
   drogon::app().addListener(host, port);
-  drogon::app().setThreadNum(thread_num + 5);
+  drogon::app().setThreadNum(std::max(thread_num, logical_cores));
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
   drogon::app().run();
