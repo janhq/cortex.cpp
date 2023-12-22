@@ -434,8 +434,6 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
   gpt_params params;
 
   // By default will setting based on number of handlers
-  int drogon_thread = drogon::app().getThreadNum() - 5;
-  LOG_INFO << "Drogon thread is:" << drogon_thread;
   if (jsonBody) {
     if (!jsonBody["mmproj"].isNull()) {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
@@ -447,7 +445,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     params.embedding = jsonBody.get("embedding", true).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody.get("n_batch", 512).asInt();
-    params.n_parallel = jsonBody.get("n_parallel", drogon_thread).asInt();
+    params.n_parallel = jsonBody.get("n_parallel", 1).asInt();
     params.n_threads =
         jsonBody.get("cpu_threads", std::thread::hardware_concurrency())
             .asInt();
