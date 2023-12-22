@@ -2,6 +2,7 @@
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <iostream>
 #include <algorithm>
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -12,6 +13,7 @@
 #include <unistd.h> // for readlink()
 #elif defined(_WIN32)
 #include <windows.h>
+#undef max
 #else
 #error "Unsupported platform!"
 #endif
