@@ -2,6 +2,7 @@
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <algorithm>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
