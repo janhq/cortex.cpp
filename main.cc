@@ -1,9 +1,9 @@
 #include "utils/nitro_utils.h"
+#include <algorithm>
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <iostream>
-#include <algorithm>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
@@ -41,6 +41,11 @@ int main(int argc, char *argv[]) {
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
   nitro_utils::nitro_logo();
+#ifdef NITRO_VERSION
+  LOG_INFO << "Nitro version: " << NITRO_VERSION;
+#else
+  LOG_INFO << "Nitro version: undefined";
+#endif
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
   drogon::app().addListener(host, port);
