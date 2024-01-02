@@ -8,12 +8,7 @@
 
 #include "log.h"
 #include "utils/nitro_utils.h"
-#include <drogon/HttpAppFramework.h>
 #include <drogon/HttpController.h>
-#include <drogon/HttpSimpleController.h>
-#include <drogon/HttpTypes.h>
-#include <fstream>
-#include <trantor/utils/Logger.h>
 
 // External
 #include "common.h"
