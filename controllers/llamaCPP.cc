@@ -1,3 +1,4 @@
+#include "../../llama.cpp/examples/llava/clip.h"
 #include "llamaCPP.h"
 #include "llama.h"
 #include "utils/nitro_utils.h"
