@@ -43,10 +43,52 @@ jobs:
           draft: true
           prerelease: false
 
+  # Get the latest version of the release
+  set-nitro-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version_update.outputs.new_version }}
+    steps:
+      - name: Get latest release
+        id: version_update
+        run: |
+          if [[ ${{ github.event_name }} == push && ${{ github.ref }} == refs/tags/* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/}"
+            NEW_VERSION="${VERSION#v}"
+            echo "::set-output name=new_version::$NEW_VERSION"
+          else
+            # Function to get the latest release tag
+            get_latest_tag() {
+              local retries=0
+              local max_retries=3
+              local tag
+              while [ $retries -lt $max_retries ]; do
+                tag=$(curl -s https://api.github.com/repos/janhq/nitro/releases/latest | jq -r .tag_name)
+                if [ -n "$tag" ] && [ "$tag" != "null" ]; then
+                  echo $tag
+                  return
+                else
+                  let retries++
+                  sleep 2
+                fi
+              done
+              echo "Failed to fetch latest tag after $max_retries attempts."
+              exit 1
+            }
+            # Get the latest release tag from GitHub API
+            LATEST_TAG=$(get_latest_tag)
+            
+            # Remove the 'v' and append the build number to the version
+            NEW_VERSION="${LATEST_TAG#v}-${GITHUB_RUN_NUMBER}"
+            echo "New version: $NEW_VERSION"
+            echo "::set-output name=new_version::$NEW_VERSION"
+          fi
+          echo "Version: $NEW_VERSION"
+
   ubuntu-amd64-build:
     runs-on: ubuntu-latest
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
     steps:
@@ -67,7 +109,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF ..
+          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           CC=gcc-8 make -j $(nproc)
           ls -la
 
@@ -104,8 +146,8 @@ jobs:
 
   ubuntu-amd64-cuda-build:
     runs-on: linux-gpu
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
     steps:
@@ -126,7 +168,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF ..
+          cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           CC=gcc-8 make -j $(nproc)
           ls -la    
 
@@ -163,8 +205,8 @@ jobs:
 
   macOS-M-build:
     runs-on: mac-silicon
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
     steps:
@@ -186,7 +228,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake .. 
+          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la 
   
@@ -224,8 +266,8 @@ jobs:
 
   macOS-Intel-build:
     runs-on: macos-latest
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
     steps:
@@ -246,7 +288,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DLLAMA_METAL=OFF .. 
+          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_METAL=OFF .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la 
     
@@ -283,8 +325,8 @@ jobs:
 
   windows-amd64-build:
     runs-on: windows-latest
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
 
@@ -315,7 +357,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -354,8 +396,8 @@ jobs:
 
   windows-amd64-cuda-build:
     runs-on: windows-nvidia
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
 
@@ -386,7 +428,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -426,8 +468,8 @@ jobs:
           
   windows-amd64-cuda-package:
     runs-on: windows-latest
-    needs: create-draft-release
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped')
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
     
