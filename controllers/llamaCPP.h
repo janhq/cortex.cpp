@@ -45,6 +45,26 @@
 
 using json = nlohmann::json;
 
+struct clip_image_u8 {
+    int nx;
+    int ny;
+
+    std::vector<uint8_t> buf;
+};
+
+// RGB float32 image (NHWC)
+// Memory layout: RGBRGBRGB...
+struct clip_image_f32 {
+    int nx;
+    int ny;
+
+    std::vector<float> buf;
+};
+
+//
+// clip layers
+//
+
 struct server_params {
   std::string hostname = "127.0.0.1";
   std::string public_path = "examples/server/public";
