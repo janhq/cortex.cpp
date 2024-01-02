@@ -563,3 +563,5 @@ FodyWeavers.xsd
 build
 build_deps
 .DS_Store
+
+.vscode

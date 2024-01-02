@@ -3,6 +3,8 @@ project(nitro CXX)
 
 include(CheckIncludeFileCXX)
 
+option(BUILD_TESTS "Build the tests" ON)
+
 check_include_file_cxx(any HAS_ANY)
 check_include_file_cxx(string_view HAS_STRING_VIEW)
 check_include_file_cxx(coroutine HAS_COROUTINE)
@@ -24,7 +26,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
-)# This is the critical line for installing another package
+) # This is the critical line for installing another package
 
 if(LLAMA_CUBLAS)
   cmake_minimum_required(VERSION 3.17)
@@ -89,3 +91,9 @@ target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+
+if (BUILD_TESTS)
+  message("Building test")
+  enable_testing()
+  add_subdirectory(tests)
+endif()
