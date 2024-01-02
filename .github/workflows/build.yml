@@ -52,9 +52,9 @@ jobs:
       - name: Get latest release
         id: version_update
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/tags/"* ]]; then
+          if [[ ${{ github.event_name }} == push && ${{ github.ref }} == refs/tags/* ]]; then
             echo "VERSION=${GITHUB_REF#refs/tags/}"
-            NEW_VERSION="${LATEST_TAG#v}""
+            NEW_VERSION="${VERSION#v}"
             echo "::set-output name=new_version::$NEW_VERSION"
           else
             # Function to get the latest release tag
