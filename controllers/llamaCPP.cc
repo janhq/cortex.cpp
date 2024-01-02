@@ -1,14 +1,6 @@
 #include "llamaCPP.h"
 #include "llama.h"
 #include "utils/nitro_utils.h"
-#include <chrono>
-#include <cstring>
-#include <drogon/HttpResponse.h>
-#include <drogon/HttpTypes.h>
-#include <regex>
-#include <string>
-#include <thread>
-#include <trantor/utils/Logger.h>
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -135,7 +127,7 @@ void llamaCPP::warmupModel() {
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
-  const int task_id = llama.request_completion(pseudo, false, false);
+  const int task_id = llama.request_completion(pseudo, false, false, -1);
   std::string completion_text;
   task_result result = llama.next_result(task_id);
   if (!result.error && result.stop) {
@@ -292,7 +284,7 @@ void llamaCPP::chatCompletion(
   LOG_INFO << "Current completion text";
   LOG_INFO << formatted_output;
 #endif
-  const int task_id = llama.request_completion(data, false, false);
+  const int task_id = llama.request_completion(data, false, false, -1);
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
   if (is_streamed) {
@@ -383,7 +375,7 @@ void llamaCPP::embedding(
     prompt = "";
   }
   const int task_id = llama.request_completion(
-      {{"prompt", prompt}, {"n_predict", 0}}, false, true);
+      {{"prompt", prompt}, {"n_predict", 0}}, false, true, -1);
   task_result result = llama.next_result(task_id);
   std::vector<float> embedding_result = result.result_json["embedding"];
   auto resp = nitro_utils::nitroHttpResponse();
