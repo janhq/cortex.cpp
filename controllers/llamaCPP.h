@@ -9,6 +9,7 @@
 #include "log.h"
 #include "utils/nitro_utils.h"
 #include <drogon/HttpController.h>
+#include <fstream>
 
 // External
 #include "common.h"
