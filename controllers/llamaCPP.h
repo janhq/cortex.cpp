@@ -18,8 +18,8 @@
 
 // External
 #include "common.h"
-#include "grammar-parser.h"
 #include "llama.h"
+#include "grammar-parser.h"
 
 #include "../../llama.cpp/examples/llava/clip.h"
 
