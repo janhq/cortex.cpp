@@ -17,11 +17,11 @@
 #include <trantor/utils/Logger.h>
 
 // External
-#include "../../llama.cpp/examples/llava/clip.h"
 #include "common.h"
 #include "grammar-parser.h"
-
 #include "llama.h"
+
+#include "../../llama.cpp/examples/llava/clip.h"
 
 #include "stb_image.h"
 
