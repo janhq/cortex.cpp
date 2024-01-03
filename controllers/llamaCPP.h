@@ -1537,8 +1537,9 @@ struct llama_server_context {
                 "cache\n");
         kv_cache_clear();
       }
-      std::unique_lock<std::mutex> lock(mutex_tasks);
-      condition_tasks.wait(lock, [&] { return !queue_tasks.empty(); });
+      // TODO: Need to implement queueing using CV for better performance
+      // std::unique_lock<std::mutex> lock(mutex_tasks);
+      // condition_tasks.wait(lock, [&] { return !queue_tasks.empty(); });
     }
 
     for (llama_client_slot &slot : slots) {
