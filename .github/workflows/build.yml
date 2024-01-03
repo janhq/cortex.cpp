@@ -86,55 +86,55 @@ jobs:
           fi
           echo "Version: $NEW_VERSION"
 
-  ubuntu-amd64-build:
-    runs-on: ubuntu-20.04
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  # ubuntu-amd64-build:
+  #   runs-on: ubuntu-20.04
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      # - name: Dependencies
-      #   id: depends
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install build-essential gcc-8
+  #     # - name: Dependencies
+  #     #   id: depends
+  #     #   run: |
+  #     #     sudo apt-get update
+  #     #     sudo apt-get install build-essential gcc-8
 
-      - name: Build
-        id: make_build
-        run: |
-          ldd --version
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
-          CC=gcc-8 make -j $(nproc)
-          ls -la
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ldd --version
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DDEBUG=ON -DLLAMA_NATIVE=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro
-          cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro
+  #         cp build/nitro nitro/
+  #         tar -czvf nitro.tar.gz nitro
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-linux-amd64
-          path: ./nitro
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-linux-amd64
+  #         path: ./nitro
 
-      - name: Run e2e testing
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+  #     - name: Run e2e testing
+  #       shell: bash
+  #       run: |
+  #         # run e2e testing
+  #         cd nitro
+  #         chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
 
       # - uses: actions/upload-release-asset@v1.0.1
       #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -146,56 +146,56 @@ jobs:
       #     asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.tar.gz
       #     asset_content_type: application/gzip
 
-  ubuntu-amd64-cuda-build:
-    runs-on: ubuntu-20.04
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        cuda: ['12.0.1', '11.4.4']
+  # ubuntu-amd64-cuda-build:
+  #   runs-on: ubuntu-20.04
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
+  #   strategy:
+  #     matrix:
+  #       cuda: ['12.0.1', '11.4.4']
 
-    steps:
-      - uses: Jimver/cuda-toolkit@v0.2.11
-        id: cuda-toolkit
-        with:
-          cuda: ${{ matrix.cuda }}
-          method: 'network'
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  #   steps:
+  #     - uses: Jimver/cuda-toolkit@v0.2.11
+  #       id: cuda-toolkit
+  #       with:
+  #         cuda: ${{ matrix.cuda }}
+  #         method: 'network'
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      # - name: Dependencies
-      #   id: depends
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt-get install build-essential gcc-8 uuid-dev
+  #     # - name: Dependencies
+  #     #   id: depends
+  #     #   run: |
+  #     #     sudo apt-get update
+  #     #     sudo apt-get install build-essential gcc-8 uuid-dev
 
-      - name: Build
-        id: make_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
-          CC=gcc-8 make -j $(nproc)
-          ls -la    
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DDEBUG=ON -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+  #         CC=gcc-8 make -j $(nproc)
+  #         ls -la    
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro
-          cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro
+  #         cp build/nitro nitro/
+  #         tar -czvf nitro.tar.gz nitro
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-linux-amd64-cuda-${{ matrix.cuda }}
-          path: ./nitro
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-linux-amd64-cuda-${{ matrix.cuda }}
+  #         path: ./nitro
 
       # - name: Run e2e testing
       #   shell: bash
@@ -335,7 +335,7 @@ jobs:
   #         asset_content_type: application/gzip
 
   # windows-amd64-build:
-  #   runs-on: windows-latest
+  #   runs-on: windows-container
   #   needs: [create-draft-release, set-nitro-version]
   #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
   #   permissions:
@@ -406,7 +406,7 @@ jobs:
   #         asset_content_type: application/gzip
 
   windows-amd64-cuda-build:
-    runs-on: windows-latest
+    runs-on: windows-container
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
@@ -414,16 +414,26 @@ jobs:
 
     strategy:
       matrix:
-        cuda: ['12.0.1', '11.4.4']
+        cuda: ['12.0']
         build: ['cublas']
 
     steps:
-      - uses: Jimver/cuda-toolkit@v0.2.11
-        id: cuda-toolkit
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
         with:
-          cuda: ${{ matrix.cuda }}
-          method: 'network'
-          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  
+      - name: actions-setup-cmake
+        uses: jwlawson/actions-setup-cmake@v1.14.1
+      # - uses: Jimver/cuda-toolkit@v0.2.11
+      #   id: cuda-toolkit
+      #   with:
+      #     cuda: ${{ matrix.cuda }}
+      #     method: 'network'
+      #     sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
