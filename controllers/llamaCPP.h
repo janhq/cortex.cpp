@@ -14,8 +14,7 @@
 // External
 #include "common.h"
 #include "llama.h"
-
-#include "../../llama.cpp/examples/llava/clip.h"
+#include "clip.h"
 
 #include "stb_image.h"
 
