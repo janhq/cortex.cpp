@@ -1537,6 +1537,7 @@ struct llama_server_context {
                 "cache\n");
         kv_cache_clear();
       }
+      std::this_thread::sleep_for(std::chrono::milliseconds(5));
       // TODO: Need to implement queueing using CV for better performance
       // std::unique_lock<std::mutex> lock(mutex_tasks);
       // condition_tasks.wait(lock, [&] { return !queue_tasks.empty(); });
