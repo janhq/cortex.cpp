@@ -1,2 +1,2 @@
-.\actions-runner\config.cmd --unattended --replace --url https://github.com/${env:RUNNER_REPO} --token $env:RUNNER_TOKEN --runnergroup $env:RUNNER_GROUP --labels $env:RUNNER_LABEL --name $env:RUNNER_NAME --work $env:RUNNER_WORKDIR;
+.\actions-runner\config.cmd --unattended --replace --url https://github.com/${env:RUNNER_REPO} --pat $env:RUNNER_PAT --runnergroup $env:RUNNER_GROUP --labels $env:RUNNER_LABELS --name $env:RUNNER_NAME --work $env:RUNNER_WORKDIR;
 .\actions-runner\run.cmd;
