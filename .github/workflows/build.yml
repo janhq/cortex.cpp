@@ -188,7 +188,7 @@ jobs:
       #     chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
 
       - uses: actions/upload-release-asset@v1.0.1
-        # if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -454,7 +454,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-win-amd64-cuda-${{ matrix.cuda }}
           path: ./build/Release
