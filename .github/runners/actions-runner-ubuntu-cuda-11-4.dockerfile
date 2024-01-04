@@ -95,6 +95,9 @@ ADD start.sh start.sh
 
 RUN chmod +x start.sh
 
+# Add /usr/local/cuda-11.4/compat to LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda-11.4/compat${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+
 USER runner
 
 ENTRYPOINT ["./start.sh"]
