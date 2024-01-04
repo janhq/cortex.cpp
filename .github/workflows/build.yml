@@ -477,7 +477,7 @@ jobs:
           
   update_release_draft:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build, windows-amd64-cuda-package]
+    needs: [ubuntu-amd64-build, ubuntu-amd64-cuda-build, macOS-M-build, macOS-Intel-build, windows-amd64-build, windows-amd64-cuda-build]
     permissions:
       contents: write
       pull-requests: write
