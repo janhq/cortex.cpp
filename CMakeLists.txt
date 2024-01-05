@@ -62,7 +62,7 @@ find_package(Drogon CONFIG REQUIRED)
 find_package(Boost COMPONENTS filesystem REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llama llava
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
                                               ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
 
 # ##############################################################################
