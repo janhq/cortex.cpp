@@ -129,18 +129,19 @@ std::string create_return_json(const std::string &id, const std::string &model,
   return Json::writeString(writer, root);
 }
 
-void llamaCPP::warmupModel() {
+void llamaCPP::warmupModel(std::string model_id) {
   json pseudo;
 
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
+  llama_server_context &llama = llama_models[model_id];
   const int task_id = llama.request_completion(pseudo, false, false);
   std::string completion_text;
+  LOG_INFO << "Warming up model " + model_id;
   task_result result = llama.next_result(task_id);
   if (!result.error && result.stop) {
-    LOG_INFO << result.result_json.dump(-1, ' ', false,
-                                        json::error_handler_t::replace);
+    LOG_INFO << model_id + ":" + result.result_json.dump(-1, ' ', false, json::error_handler_t::replace);
   }
   return;
 }
@@ -160,38 +161,58 @@ void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (!model_loaded) {
+  const auto &jsonBody = req->getJsonObject();
+  // TODO: Don't repeat this
+  // If no model_id found in jsonBody, reuturn a 400 error
+  if (!jsonBody->isMember("model_id")) {
     Json::Value jsonResp;
-    jsonResp["message"] =
-        "Model has not been loaded, please load model into nitro";
+    jsonResp["message"] = "No model_id found in request body";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  std::string model_id = (*jsonBody)["model_id"].asString();
+
+  // TODO: All existence check for model_id in an unordered_map must be like this
+  if (model_loaded.find(model_id) == model_loaded.end()) {
+    Json::Value jsonResp;
+    std::string message = "Model " + model_id + " has not been loaded, please load that model into nitro";
+    jsonResp["message"] = message;
+    LOG_INFO << message;
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k409Conflict);
     callback(resp);
+    return;
   }
 
-  const auto &jsonBody = req->getJsonObject();
-  std::string formatted_output = pre_prompt;
+  std::string formatted_output = pre_prompt[model_id];
 
   json data;
   json stopWords;
   int no_images = 0;
   // To set default value
 
+  llama_server_context &llama = llama_models[model_id];
+  std::string &user_prompt = this->user_prompt[model_id];
+  std::string &ai_prompt = this->ai_prompt[model_id];
+  std::string &system_prompt = this->system_prompt[model_id];
+
   if (jsonBody) {
     // Increase number of chats received and clean the prompt
-    no_of_chats++;
-    if (no_of_chats % clean_cache_threshold == 0) {
+    no_of_chats[model_id]++;
+    if (no_of_chats[model_id] % clean_cache_threshold[model_id] == 0) {
       LOG_INFO << "Clean cache threshold reached!";
       llama.kv_cache_clear();
       LOG_INFO << "Cache cleaned";
     }
 
     // Default values to enable auto caching
-    data["cache_prompt"] = caching_enabled;
+    data["cache_prompt"] = caching_enabled[model_id];
     data["n_keep"] = -1;
 
     // Passing load value
-    data["repeat_last_n"] = this->repeat_last_n;
+    data["repeat_last_n"] = this->repeat_last_n[model_id];
 
     data["stream"] = (*jsonBody).get("stream", false).asBool();
     data["n_predict"] = (*jsonBody).get("max_tokens", 500).asInt();
@@ -293,23 +314,22 @@ void llamaCPP::chatCompletion(
   LOG_INFO << formatted_output;
 #endif
   const int task_id = llama.request_completion(data, false, false);
-  LOG_INFO << "Resolved request for task_id:" << task_id;
 
   if (is_streamed) {
     auto state = createState(task_id, this);
 
     auto chunked_content_provider =
-        [state](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+        [state, &model_id](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
-        state->instance->llama.request_cancel(state->task_id);
+        state->instance->llama_models[model_id].request_cancel(state->task_id);
         return 0;
       }
       if (state->isStopped) {
         return 0;
       }
 
-      task_result result = state->instance->llama.next_result(state->task_id);
+      task_result result = state->instance->llama_models[model_id].next_result(state->task_id);
       if (!result.error) {
         const std::string to_send = result.result_json["content"];
         const std::string str =
@@ -333,7 +353,7 @@ void llamaCPP::chatCompletion(
           memcpy(pBuffer, str.data(), nRead);
           LOG_INFO << "reached result stop";
           state->isStopped = true;
-          state->instance->llama.request_cancel(state->task_id);
+          state->instance->llama_models[model_id].request_cancel(state->task_id);
           return nRead;
         }
         return nRead;
@@ -371,10 +391,23 @@ void llamaCPP::chatCompletion(
     }
   }
 }
+
 void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   const auto &jsonBody = req->getJsonObject();
+
+  // TODO: Don't repeat this
+  // If no model_id found in jsonBody, reuturn a 400 error
+  if (!jsonBody->isMember("model_id")) {
+    Json::Value jsonResp;
+    jsonResp["message"] = "No model_id found in request body";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  std::string model_id = (*jsonBody)["model_id"].asString();
 
   json prompt;
   if (jsonBody->isMember("input") != 0) {
@@ -382,6 +415,8 @@ void llamaCPP::embedding(
   } else {
     prompt = "";
   }
+
+  llama_server_context &llama = llama_models[model_id];
   const int task_id = llama.request_completion(
       {{"prompt", prompt}, {"n_predict", 0}}, false, true);
   task_result result = llama.next_result(task_id);
@@ -397,31 +432,60 @@ void llamaCPP::embedding(
 void llamaCPP::unloadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
+  // TODO: Don't repeat this
+  // If no model_id found in jsonBody, reuturn a 400 error
+  const auto &jsonBody = req->getJsonObject();
+  if (!jsonBody->isMember("model_id")) {
+    Json::Value jsonResp;
+    jsonResp["message"] = "No model_id found in request body";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  std::string model_id = (*jsonBody)["model_id"].asString();
   Json::Value jsonResp;
-  jsonResp["message"] = "No model loaded";
-  if (model_loaded) {
-    stopBackgroundTask();
-
-    llama_free(llama.ctx);
-    llama_free_model(llama.model);
-    llama.ctx = nullptr;
-    llama.model = nullptr;
-    jsonResp["message"] = "Model unloaded successfully";
+  if (!model_loaded[model_id]) {
+    LOG_INFO << "Model " << model_id << " not loaded";
+    jsonResp["message"] = "Model " + model_id + " not loaded";
+  } else {
+    jsonResp["message"] = "Model " + model_id + " unloaded successfully";
+    stopBackgroundTask(model_id);
+    model_loaded.erase(model_id);
+    llama_free(llama_models[model_id].ctx);
+    llama_free_model(llama_models[model_id].model);
+    llama_models[model_id].ctx = nullptr;
+    llama_models[model_id].model = nullptr;
+    llama_models.erase(model_id);
   }
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(resp);
   return;
 }
+
 void llamaCPP::modelStatus(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
-  bool is_model_loaded = this->model_loaded;
-  if (is_model_loaded) {
-    jsonResp["model_loaded"] = is_model_loaded;
-    jsonResp["model_data"] = llama.get_model_props().dump();
+
+  // TODO: Don't repeat this
+  // If no model_id found in jsonBody, reuturn a 400 error
+  const auto &jsonBody = req->getJsonObject();
+  if (!jsonBody->isMember("model_id")) {
+    Json::Value jsonResp;
+    jsonResp["message"] = "No model_id found in request body";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  std::string model_id = (*jsonBody)["model_id"].asString();
+  if (!model_loaded[model_id]) {
+    LOG_INFO << "Model " << model_id << " not loaded";
+    jsonResp["model_loaded"] = true;
+    jsonResp["model_data"] = llama_models[model_id].get_model_props().dump();
   } else {
-    jsonResp["model_loaded"] = is_model_loaded;
+    jsonResp["model_loaded"] =  false;
   }
 
   auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
@@ -429,14 +493,14 @@ void llamaCPP::modelStatus(
   return;
 }
 
-bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
+bool llamaCPP::loadModelImpl(const Json::Value &jsonBody, std::string model_id) {
 
   gpt_params params;
 
   // By default will setting based on number of handlers
   if (jsonBody) {
     if (!jsonBody["mmproj"].isNull()) {
-      LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
+      LOG_INFO << "MMPROJ FILE detected, multi-modality model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
     }
     params.model = jsonBody["llama_model_path"].asString();
@@ -451,22 +515,22 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
             .asInt();
     params.cont_batching = jsonBody.get("cont_batching", false).asBool();
 
-    this->clean_cache_threshold =
+    this->clean_cache_threshold[model_id] =
         jsonBody.get("clean_cache_threshold", 5).asInt();
-    this->caching_enabled = jsonBody.get("caching_enabled", false).asBool();
-    this->user_prompt = jsonBody.get("user_prompt", "USER: ").asString();
-    this->ai_prompt = jsonBody.get("ai_prompt", "ASSISTANT: ").asString();
-    this->system_prompt =
+    this->caching_enabled[model_id] = jsonBody.get("caching_enabled", false).asBool();
+    this->user_prompt[model_id] = jsonBody.get("user_prompt", "USER: ").asString();
+    this->ai_prompt[model_id] = jsonBody.get("ai_prompt", "ASSISTANT: ").asString();
+    this->system_prompt[model_id] =
         jsonBody.get("system_prompt", "ASSISTANT's RULE: ").asString();
-    this->pre_prompt = jsonBody.get("pre_prompt", "").asString();
-    this->repeat_last_n = jsonBody.get("repeat_last_n", 32).asInt();
+    this->pre_prompt[model_id] = jsonBody.get("pre_prompt", "").asString();
+    this->repeat_last_n[model_id] = jsonBody.get("repeat_last_n", 32).asInt();
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
   params.mul_mat_q = false;
 #endif // GGML_USE_CUBLAS
   if (params.model_alias == "unknown") {
-    params.model_alias = params.model;
+    params.model_alias = model_id;
   }
 
   llama_backend_init(params.numa);
@@ -480,16 +544,18 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
                      {"system_info", llama_print_system_info()},
                  });
 
+  llama_server_context &llama = llama_models[model_id];
   // load the model
   if (!llama.load_model(params)) {
-    LOG_ERROR << "Error loading the model";
+    LOG_ERROR << "Error loading the " + model_id + " model";
     return false; // Indicate failure
   }
   llama.initialize();
-  model_loaded = true;
+
+  model_loaded[model_id] = true;
   LOG_INFO << "Started background task here!";
-  backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
-  warmupModel();
+  backgroundThread[model_id] = std::thread(&llamaCPP::backgroundTask, this, model_id);
+  warmupModel(model_id);
   return true;
 }
 
@@ -497,50 +563,62 @@ void llamaCPP::loadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (model_loaded) {
-    LOG_INFO << "model loaded";
+  const auto &jsonBody = req->getJsonObject();
+  // If no model_id found in jsonBody, reuturn a 400 error
+  if (!jsonBody->isMember("model_id")) {
     Json::Value jsonResp;
-    jsonResp["message"] = "Model already loaded";
+    jsonResp["message"] = "No model_id found in request body";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  std::string model_id = (*jsonBody)["model_id"].asString();
+
+  if (model_loaded[model_id]) {
+    LOG_INFO << "Model " << model_id << " already loaded";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model " + model_id + " already loaded";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k409Conflict);
     callback(resp);
     return;
   }
 
-  const auto &jsonBody = req->getJsonObject();
-  if (!loadModelImpl(*jsonBody)) {
+  if (!loadModelImpl(*jsonBody, model_id)) {
     // Error occurred during model loading
     Json::Value jsonResp;
-    jsonResp["message"] = "Failed to load model";
+    jsonResp["message"] = "Failed to load " + model_id + " model";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
   } else {
     // Model loaded successfully
     Json::Value jsonResp;
-    jsonResp["message"] = "Model loaded successfully";
+    jsonResp["message"] = "Model " + model_id + " loaded successfully";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     callback(resp);
   }
 }
 
-void llamaCPP::backgroundTask() {
-  while (model_loaded) {
+void llamaCPP::backgroundTask(std::string model_id) {
+  while (model_loaded[model_id]) {
     // model_loaded =
-    llama.update_slots();
+    // LOG_INFO << "Background task for " + model_id + " running ...";
+    llama_models[model_id].update_slots();
   }
-  LOG_INFO << "Background task stopped! ";
-  llama.kv_cache_clear();
-  LOG_INFO << "KV cache cleared!";
+  LOG_INFO << "Background task for " + model_id + " stopped!";
+  llama_models[model_id].kv_cache_clear();
+  LOG_INFO << "KV cache for " + model_id + " cleared!";
   return;
 }
 
-void llamaCPP::stopBackgroundTask() {
-  if (model_loaded) {
-    model_loaded = false;
-    LOG_INFO << "changed to false";
-    if (backgroundThread.joinable()) {
-      backgroundThread.join();
+void llamaCPP::stopBackgroundTask(std::string model_id) {
+  if (model_loaded[model_id]) {
+    model_loaded.erase(model_id);
+    LOG_INFO << "Changed load status of " + model_id + " to false";
+    if (backgroundThread[model_id].joinable()) {
+      backgroundThread[model_id].join();
     }
   }
 }

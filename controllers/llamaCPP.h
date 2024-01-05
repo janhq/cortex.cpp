@@ -38,6 +38,7 @@
 #include <cstddef>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #ifndef SERVER_VERBOSE
 #define SERVER_VERBOSE 1
@@ -1037,7 +1038,8 @@ struct llama_server_context {
                             std::isinf(eos_bias->second);
     return json{
         {"n_ctx", slot.n_ctx},
-        {"model", params.model_alias},
+        {"model_id", params.model_alias},
+        {"model", params.model},
         {"seed", slot.params.seed},
         {"temp", slot.sparams.temp},
         {"top_k", slot.sparams.top_k},
@@ -1182,7 +1184,7 @@ struct llama_server_context {
 
   task_result next_result(int task_id) {
     while (true) {
-      std::this_thread::sleep_for(std::chrono::microseconds(5));
+      std::this_thread::sleep_for(std::chrono::microseconds(50));
       std::lock_guard<std::mutex> lock(mutex_results);
 
       if (queue_results.empty()) {
@@ -1849,16 +1851,22 @@ public:
             << "Please type the index of the model you want to load here >>  ";
         std::cin >> model_index;
         Json::Value jsonBody;
-        jsonBody["llama_model_path"] = nitro_utils::models_folder + "/" +
-                                       llama_models[std::stoi(model_index)];
-        loadModelImpl(jsonBody);
+        std::string model_id = llama_models[std::stoi(model_index)];
+        jsonBody["llama_model_path"] = nitro_utils::models_folder + "/" + model_id;
+        jsonBody["model_id"] = model_id;
+        loadModelImpl(jsonBody, model_id);
       }
     } else {
       LOG_INFO << "Not found models folder, start server as usual";
     }
   }
 
-  ~llamaCPP() { stopBackgroundTask(); }
+  ~llamaCPP() {
+    for (auto &model : llama_models) {
+      std::string model_id = model.first;
+      stopBackgroundTask(model_id);
+    }
+  }
   METHOD_LIST_BEGIN
   // list path definitions here;
   METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
@@ -1869,8 +1877,7 @@ public:
 
   // Openai compatible path
   ADD_METHOD_TO(llamaCPP::chatCompletion, "/v1/chat/completions", Post);
-  ADD_METHOD_TO(llamaCPP::chatCompletionPrelight, "/v1/chat/completions",
-                Options);
+  ADD_METHOD_TO(llamaCPP::chatCompletionPrelight, "/v1/chat/completions", Options);
 
   ADD_METHOD_TO(llamaCPP::embedding, "/v1/embeddings", Post);
 
@@ -1883,6 +1890,7 @@ public:
       std::function<void(const HttpResponsePtr &)> &&callback);
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
+
   void loadModel(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void unloadModel(const HttpRequestPtr &req,
@@ -1891,27 +1899,25 @@ public:
   void modelStatus(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
 
-  bool loadModelImpl(const Json::Value &jsonBody);
+  bool loadModelImpl(const Json::Value &jsonBody, std::string model_id);
 
-  void warmupModel();
+  void warmupModel(std::string model_id);
 
-  void backgroundTask();
+  void backgroundTask(std::string model_id);
 
-  void stopBackgroundTask();
+  void stopBackgroundTask(std::string model_id);
 
 private:
-  llama_server_context llama;
-  std::atomic<bool> model_loaded = false;
-  size_t sent_count = 0;
-  size_t sent_token_probs_index = 0;
-  std::thread backgroundThread;
-  std::string user_prompt;
-  std::string ai_prompt;
-  std::string system_prompt;
-  std::string pre_prompt;
-  int repeat_last_n;
-  bool caching_enabled;
-  std::atomic<int> no_of_chats = 0;
-  int clean_cache_threshold;
+  std::unordered_map<std::string, llama_server_context> llama_models;
+  std::unordered_map<std::string, std::atomic<bool>> model_loaded;
+  std::unordered_map<std::string, std::thread> backgroundThread;
+  std::unordered_map<std::string, std::string> user_prompt;
+  std::unordered_map<std::string, std::string> ai_prompt;
+  std::unordered_map<std::string, std::string> system_prompt;
+  std::unordered_map<std::string, std::string> pre_prompt;
+  std::unordered_map<std::string, int> repeat_last_n;
+  std::unordered_map<std::string, bool> caching_enabled;
+  std::unordered_map<std::string, std::atomic<int>> no_of_chats;
+  std::unordered_map<std::string, int> clean_cache_threshold;
 };
 }; // namespace inferences
