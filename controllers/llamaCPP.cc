@@ -127,6 +127,7 @@ void llamaCPP::warmupModel(std::string model_id) {
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
+  llama_server_context &llama = llama_models[model_id];
   const int task_id = llama.request_completion(pseudo, false, false, -1);
   std::string completion_text;
   LOG_INFO << "Warming up model " + model_id;
