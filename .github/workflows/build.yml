@@ -87,7 +87,7 @@ jobs:
           echo "Version: $NEW_VERSION"
 
   ubuntu-amd64-build:
-    runs-on: ubuntu-18-04-cuda-11-4
+    runs-on: ubuntu-18-04
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
