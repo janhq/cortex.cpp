@@ -57,13 +57,8 @@ add_executable(${PROJECT_NAME} main.cc)
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
-
-# Add boost
-find_package(Boost COMPONENTS filesystem REQUIRED)
-target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
-
 target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
-                                              ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES})
+                                              ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
 

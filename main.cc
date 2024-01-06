@@ -17,41 +17,7 @@
 #error "Unsupported platform!"
 #endif
 
-#include <signal.h>     // ::signal, ::raise
-#include <boost/stacktrace.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/stacktrace.hpp>
-
-void my_signal_handler(int signum) {
-    ::signal(signum, SIG_DFL);
-    boost::stacktrace::safe_dump_to("./backtrace.dump");
-    ::raise(SIGABRT);
-}
-
-void my_terminate_handler() {
-    try {
-        std::cerr << boost::stacktrace::stacktrace();
-    } catch (...) {}
-    std::abort();
-}
-
 int main(int argc, char *argv[]) {
-  std::set_terminate(&my_terminate_handler);
-  ::signal(SIGSEGV, &my_signal_handler);
-  ::signal(SIGABRT, &my_signal_handler);
-
-  if (boost::filesystem::exists("./backtrace.dump")) {
-    // there is a backtrace
-    std::ifstream ifs("./backtrace.dump");
-
-    boost::stacktrace::stacktrace st = boost::stacktrace::stacktrace::from_dump(ifs);
-    std::cout << "Previous run crashed:\n" << st << std::endl;
-
-    // cleaning up
-    ifs.close();
-    boost::filesystem::remove("./backtrace.dump");
-  }
-
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
