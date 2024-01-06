@@ -312,7 +312,7 @@ void llamaCPP::chatCompletion(
     auto state = createState(task_id, this);
 
     auto chunked_content_provider =
-        [state, &model_id](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+        [state, model_id](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
         state->instance->llama_models[model_id].request_cancel(state->task_id);
