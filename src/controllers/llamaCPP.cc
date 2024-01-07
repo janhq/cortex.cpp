@@ -1,4 +1,4 @@
-#include "llamaCPP.h"
+#include "nitro/controllers/llamaCPP.h"
 #include "llama.h"
 #include "utils/nitro_utils.h"
 

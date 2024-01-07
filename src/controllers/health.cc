@@ -1,5 +1,5 @@
-#include "health.h"
-#include "utils/nitro_utils.h"
+#include "nitro/controllers/health.h"
+#include "nitro/utils/nitro_utils.h"
 
 void health::asyncHandleHttpRequest(
     const HttpRequestPtr &req,

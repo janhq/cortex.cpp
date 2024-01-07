@@ -25,8 +25,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
-) # This is the critical line for installing another package
+ # This is the critical line for installing another package
 
 if(LLAMA_CUBLAS)
   cmake_minimum_required(VERSION 3.17)
@@ -49,8 +48,21 @@ endif()
 
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
-add_subdirectory(llama.cpp)
-add_executable(${PROJECT_NAME} main.cc)
+
+
+
+
+
+
+# set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
+# )
+# add_executable(${PROJECT_NAME} main.cc)
+
+
+# third party import path
+# include_directories(build_deps/_install/include)
+# # third party objects
+# link_directories(build_deps/lib)
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
@@ -59,8 +71,10 @@ add_executable(${PROJECT_NAME} main.cc)
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
-                                              ${CMAKE_THREAD_LIBS_INIT})
+# target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
+#                                               ${CMAKE_THREAD_LIBS_INIT})
+
+# add_subdirectory(nitro_deps)
 
 # ##############################################################################
 
@@ -75,7 +89,7 @@ else()
   message(STATUS "use c++20")
 endif()
 
-aux_source_directory(controllers CTL_SRC)
+# aux_source_directory(controllers CTL_SRC)
 # aux_source_directory(filters FILTER_SRC) aux_source_directory(plugins
 # PLUGIN_SRC) aux_source_directory(models MODEL_SRC)
 
@@ -84,16 +98,25 @@ aux_source_directory(controllers CTL_SRC)
 # namespaces. drogon_create_views(${PROJECT_NAME}
 # ${CMAKE_CURRENT_SOURCE_DIR}/views ${CMAKE_CURRENT_BINARY_DIR} TRUE)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # ${CMAKE_CURRENT_SOURCE_DIR}/models)
-target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC})
+# target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC})
+
 # ${FILTER_SRC} ${PLUGIN_SRC} ${MODEL_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+add_subdirectory(nitro_deps/llama-cmake)
 
-if (BUILD_TESTS)
-  message("Building test")
-  enable_testing()
-  add_subdirectory(tests)
-endif()
+
+
+# target_include_directories(llama PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp")
+add_subdirectory(src)
+
+
+
+# if (BUILD_TESTS)
+#   message("Building test")
+#   enable_testing()
+#   add_subdirectory(tests)
+# endif()

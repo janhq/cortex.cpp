@@ -88,7 +88,24 @@ ExternalProject_Add(
 	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
-
+ExternalProject_Add(
+    drogon
+    GIT_REPOSITORY https://github.com/drogonframework/drogon
+    GIT_TAG v1.8.6
+    CMAKE_ARGS
+	-DCMAKE_BUILD_TYPE=release
+	-DOPENSSL_USE_STATIC_LIBS=TRUE
+	-DZLIB_USE_STATIC_LIBS=${ZLIB_USE_STATIC_LIBS}
+	-DBUILD_ORM=OFF
+	-DBUILD_YAML_CONFIG=OFF
+	-DBUILD_EXAMPLES=OFF
+	-DBUILD_CTL=OFF
+	-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+	-DBUILD_BROTLI=ON
+	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
+	# -DCMAKE_FIND_ROOT_PATH=${THIRD_PARTY_INSTALL_PATH} # To set the dir (that will be used to force the look for .a)
+	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+)
 
 # Fix trantor cmakelists to link c-ares on Windows
 if(WIN32)
@@ -108,5 +125,6 @@ if(ZLIB_USE_STATIC_LIBS)
     add_dependencies(drogon zlib)
 endif()
 # target_link_libraries(<your-target> ...)
+
 
 

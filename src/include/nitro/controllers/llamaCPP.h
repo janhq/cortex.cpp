@@ -6,15 +6,15 @@
 
 #pragma once
 
-#include "log.h"
-#include "utils/nitro_utils.h"
+#include "llamalib/util.h"
+#include "nitro/utils/nitro_utils.h"
 #include <drogon/HttpController.h>
 #include <fstream>
 
 // External
-#include "clip.h"
-#include "common.h"
-#include "llama.h"
+// #include "llama/examples/llava/clip.h"
+// #include "llama/common/common.h"
+// #include "llamalib/common/llama.h"
 
 #include "stb_image.h"
 
