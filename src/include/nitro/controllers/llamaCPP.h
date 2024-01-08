@@ -6,20 +6,20 @@
 
 #pragma once
 
-#include "llamalib/log.h"
-#include "llamalib/common.h"
-#include "llamalib/clip.h"
-#include "llama.h"
-#include "ggml.h"
+
 #include "nitro/utils/nitro_utils.h"
 #include "nitro/utils/json.hpp"
-#include <drogon/HttpController.h>
 #include <fstream>
 
 // External
-// #include "llama/examples/llava/clip.h"
-// #include "llama/common/common.h"
-// #include "llamalib/common/llama.h"
+#include <drogon/HttpController.h>
+#include "llama_interface/log.h"
+#include "llama_interface/common.h"
+#include "llama_interface/clip.h"
+#include "llama.h"
+#include "ggml.h"
+
+
 
 
 #ifndef NDEBUG

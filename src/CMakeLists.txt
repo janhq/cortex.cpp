@@ -20,7 +20,7 @@ set(NITRO_LINK_LIBS
   Drogon::Drogon 
   common 
   llava
-  llamalib
+  llama_interface
   ${NITRO_SYSTEM_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
   )

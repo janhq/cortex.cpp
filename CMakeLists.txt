@@ -106,7 +106,7 @@ endif()
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
-add_subdirectory(nitro_deps/llama-cmake)
+add_subdirectory(nitro_deps/llama_interface)
 
 
 
