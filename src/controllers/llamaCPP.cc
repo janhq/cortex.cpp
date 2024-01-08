@@ -341,7 +341,6 @@ void llamaCPP::chatCompletion(
   } else {
     Json::Value respData;
     auto resp = nitro_utils::nitroHttpResponse();
-    respData["testing"] = "thunghiem value moi";
     if (!json_value(data, "stream", false)) {
       std::string completion_text;
       task_result result = llama.next_result(task_id);
