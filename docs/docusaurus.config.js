@@ -90,6 +90,9 @@ const config = {
         theme: {
           customCss: "./src/styles/main.scss",
         },
+        googleTagManager: {
+          containerId: process.env.GTM_ID || "XXX",
+        },
         // Will be passed to @docusaurus/plugin-content-pages (false to disable)
         // pages: {},
       }),
@@ -124,51 +127,68 @@ const config = {
         playgroundPosition: "bottom",
       },
       metadata: [
-        
-        { name: 'description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.'},
-        { name: 'keywords', content: 'Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama' },
+        {
+          name: "description",
+          content:
+            "Nitro is a high-efficiency Large Language Model inference engine for edge computing.",
+        },
+        {
+          name: "keywords",
+          content:
+            "Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama",
+        },
 
         // Canonical URL
-        { name: 'canonical', content: 'https://nitro.jan.ai/' },
-        
+        { name: "canonical", content: "https://nitro.jan.ai/" },
+
         // Robots tags
         { name: "robots", content: "index, follow" },
-        
+
         // Open Graph tags
-        { property: 'og:title', content: 'Fast inference engine | Nitro' },
-        { property: 'og:description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.' },
-        { property: 'og:type', content: 'website'},
+        { property: "og:title", content: "Fast inference engine | Nitro" },
+        {
+          property: "og:description",
+          content:
+            "Nitro is a high-efficiency Large Language Model inference engine for edge computing.",
+        },
+        { property: "og:type", content: "website" },
 
         // Twitter card tags
-        { property: 'twitter:card', content: 'summary_large_image' },
-        { property: 'twitter:site', content: '@janhq_' }, 
-        { property: 'twitter:title', content: 'Fast inference engine | Nitro' },
-        { property: 'twitter:description', content: 'Nitro is a high-efficiency Large Language Model inference engine for edge computing.' },
+        { property: "twitter:card", content: "summary_large_image" },
+        { property: "twitter:site", content: "@janhq_" },
+        { property: "twitter:title", content: "Fast inference engine | Nitro" },
+        {
+          property: "twitter:description",
+          content:
+            "Nitro is a high-efficiency Large Language Model inference engine for edge computing.",
+        },
       ],
       headTags: [
         // Declare a <link> preconnect tag
         {
-          tagName: 'link',
+          tagName: "link",
           attributes: {
-            rel: 'preconnect',
-            href: 'https://nitro.jan.ai/',
+            rel: "preconnect",
+            href: "https://nitro.jan.ai/",
           },
         },
         // Declare some json-ld structured data
         {
-          tagName: 'script',
+          tagName: "script",
           attributes: {
-            type: 'application/ld+json',
+            type: "application/ld+json",
           },
           innerHTML: JSON.stringify({
-            '@context': 'https://schema.org/',
-            '@type': 'LLMInference',
-            name: 'Nitro',
-            description: "Nitro is a high-efficiency Large Language Model inference engine for edge computing.",
-            keywords: "Nitro, OpenAI compatible, fast inference, local AI, llm, small AI, free, open source, production ready",
+            "@context": "https://schema.org/",
+            "@type": "LLMInference",
+            name: "Nitro",
+            description:
+              "Nitro is a high-efficiency Large Language Model inference engine for edge computing.",
+            keywords:
+              "Nitro, OpenAI compatible, fast inference, local AI, llm, small AI, free, open source, production ready",
             applicationCategory: "BusinessApplication",
             operatingSystem: "Multiple",
-            url: 'https://nitro.jan.ai/',
+            url: "https://nitro.jan.ai/",
           }),
         },
       ],
