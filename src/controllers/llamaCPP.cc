@@ -1,6 +1,6 @@
 #include "nitro/controllers/llamaCPP.h"
-#include "llama.h"
-#include "utils/nitro_utils.h"
+#include "llamalib/util.h"
+#include "nitro/utils/nitro_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;

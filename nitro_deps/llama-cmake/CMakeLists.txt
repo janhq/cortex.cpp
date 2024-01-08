@@ -13,7 +13,7 @@ add_library(llamalib ${SRCS})
 
 # target_include_directories(_rdkafka SYSTEM PUBLIC include)
 target_include_directories(llamalib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include") # for "librdkafka/rdkafka.h"
-target_include_directories(llamalib SYSTEM PRIVATE ${LLAMA_SOURCE_DIR})                 # Because weird logic with "include_next" is used.
+target_include_directories(llamalib PUBLIC ${LLAMA_SOURCE_DIR})                 # Because weird logic with "include_next" is used.
 # target_link_libraries(_rdkafka
 #   PRIVATE
 #     ch_contrib::lz4

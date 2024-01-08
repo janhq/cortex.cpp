@@ -8,6 +8,7 @@
 
 #include "llamalib/util.h"
 #include "nitro/utils/nitro_utils.h"
+#include "nitro/utils/json.hpp"
 #include <drogon/HttpController.h>
 #include <fstream>
 
@@ -16,14 +17,12 @@
 // #include "llama/common/common.h"
 // #include "llamalib/common/llama.h"
 
-#include "stb_image.h"
 
 #ifndef NDEBUG
 // crash the server in debug mode, otherwise send an http 500 error
 #define CPPHTTPLIB_NO_EXCEPTIONS 1
 #endif
 
-#include "utils/json.hpp"
 
 // auto generated files (update with ./deps.sh)
 

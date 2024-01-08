@@ -3,25 +3,23 @@
 
 
 
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/_install
-) # This is the critical line for installing another package
+# set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/_install
+# ) # This is the critical line for installing another package
 
-message(${CMAKE_PREFIX_PATH})
 function(add_library_unity NAME MODE)
   set(SRCS ${ARGN})
   add_library(${NAME} OBJECT ${SRCS})
 endfunction()
 
 
-include_directories(include)
 
 add_subdirectory(utils)
 add_subdirectory(controllers)
 set(NITRO_SYSTEM_LIBS ${CMAKE_DL_LIBS})
 set(NITRO_LINK_LIBS
   Drogon::Drogon 
-  common 
-  llava
+  # common 
+  # llava
   llamalib
   ${NITRO_SYSTEM_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
@@ -33,6 +31,8 @@ message(${ALL_OBJECT_FILES})
 target_link_libraries(nitrolib ${NITRO_LINK_LIBS})
 
 # third party import path
+
+target_include_directories(nitrolib PUBLIC include)
 target_include_directories(nitrolib PUBLIC ../build_deps/_install/include)
 # third party objects
 target_link_directories(nitrolib PRIVATE ../build_deps/lib)
