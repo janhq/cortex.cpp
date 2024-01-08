@@ -10,17 +10,19 @@ set(LLAMA_SOURCE_DIR "${CMAKE_SOURCE_DIR}/llama.cpp")
 
 set(SRCS
   "${LLAMA_SOURCE_DIR}/llama.cpp"
+  "${LLAMA_SOURCE_DIR}/ggml.c"
 )
+message("yooooo" ${SRCS})
 
-add_library(llamalib ${SRCS})
+add_library(llamalib INTERFACE)
 
 
 # nitro only imports these headers
-target_include_directories(llamalib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_include_directories(llamalib INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 # have to make it PUBLIC
 # meaning nitro header lists will include ambiguous paths like "common/log.h,common/common.h..."
 # which smells
-target_include_directories(llamalib PUBLIC ${LLAMA_SOURCE_DIR})
+target_include_directories(llamalib INTERFACE ${LLAMA_SOURCE_DIR})
 
 

@@ -9,6 +9,8 @@
 #include "llamalib/log.h"
 #include "llamalib/common.h"
 #include "llamalib/clip.h"
+#include "llama.h"
+#include "ggml.h"
 #include "nitro/utils/nitro_utils.h"
 #include "nitro/utils/json.hpp"
 #include <drogon/HttpController.h>

@@ -111,12 +111,13 @@ add_subdirectory(nitro_deps/llama-cmake)
 
 
 # target_include_directories(llama PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp")
+add_subdirectory(llama.cpp)
 add_subdirectory(src)
 
 
 
-# if (BUILD_TESTS)
-#   message("Building test")
-#   enable_testing()
-#   add_subdirectory(tests)
-# endif()
+if (BUILD_TESTS)
+  message("Building test")
+  enable_testing()
+  add_subdirectory(tests)
+endif()

@@ -1,4 +1,9 @@
 # WIP
+- 3rd parties are installed using install_deps.sh, this script will fetch dependencies, including the object files/header files into
+the path build_deps/_install
+- for llama.cpp, we are using submodule instead, there is a proxy package llama-cmake (the reason for this is to provide better header namespace,
+because header files of llama are ambiguous (e.g common/log.h,common/common.h) and we import alot of llama codes)
+
 
 # Apple 
 - ZLib in apple command line tool is a .tbd that is reusable in other system (no need static) 

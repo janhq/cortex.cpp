@@ -18,8 +18,8 @@ add_subdirectory(controllers)
 set(NITRO_SYSTEM_LIBS ${CMAKE_DL_LIBS})
 set(NITRO_LINK_LIBS
   Drogon::Drogon 
-  # common 
-  # llava
+  common 
+  llava
   llamalib
   ${NITRO_SYSTEM_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
