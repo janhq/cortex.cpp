@@ -6,7 +6,9 @@
 
 #pragma once
 
-#include "llamalib/util.h"
+#include "llamalib/log.h"
+#include "llamalib/common.h"
+#include "llamalib/clip.h"
 #include "nitro/utils/nitro_utils.h"
 #include "nitro/utils/json.hpp"
 #include <drogon/HttpController.h>

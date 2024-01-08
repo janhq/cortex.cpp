@@ -26,7 +26,7 @@ set(NITRO_LINK_LIBS
   )
 
 # compile as lib
-add_library(nitrolib SHARED ${ALL_OBJECT_FILES})
+add_library(nitrolib ${ALL_OBJECT_FILES})
 message(${ALL_OBJECT_FILES})
 target_link_libraries(nitrolib ${NITRO_LINK_LIBS})
 
@@ -58,22 +58,3 @@ else()
   message(STATUS "use c++20")
 endif()
 
-# aux_source_directory(filters FILTER_SRC) aux_source_directory(plugins
-# PLUGIN_SRC) aux_source_directory(models MODEL_SRC)
-
-# drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
-# ${CMAKE_CURRENT_BINARY_DIR}) use the following line to create views with
-# namespaces. drogon_create_views(${PROJECT_NAME}
-# ${CMAKE_CURRENT_SOURCE_DIR}/views ${CMAKE_CURRENT_BINARY_DIR} TRUE)
-
-
-# ${FILTER_SRC} ${PLUGIN_SRC} ${MODEL_SRC})
-# ##############################################################################
-# uncomment the following line for dynamically loading views set_property(TARGET
-# ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
-
-
-get_target_property(dirs nitrolib INCLUDE_DIRECTORIES)
-foreach(dir ${dirs})
-  message(STATUS "dir='${dir}'")
-endforeach()
