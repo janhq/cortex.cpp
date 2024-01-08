@@ -2486,7 +2486,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
     // Some default values for now below
-    // log_disable(); // Disable the log to file feature, reduce bloat for
+    log_enable(); // Disable the log to file feature, reduce bloat for
     // target
     // system ()
     std::vector<std::string> llama_models =
