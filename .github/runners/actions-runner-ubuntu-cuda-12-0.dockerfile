@@ -1,7 +1,7 @@
 # Use NVIDIA CUDA 12.0.0 development image with Ubuntu 18.04 as the base
 FROM nvidia/cuda:12.0.0-devel-ubuntu18.04
 
-ARG RUNNER_VERSION=2.298.2
+ARG RUNNER_VERSION=2.311.0
 # Docker and Docker Compose arguments
 
 # Use 1001 and 121 for compatibility with GitHub-hosted runners

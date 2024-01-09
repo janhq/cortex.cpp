@@ -121,7 +121,7 @@ jobs:
           echo "Version: $NEW_VERSION"
 
   ubuntu-amd64-build:
-    runs-on: ubuntu-18-04-cuda-11-4
+    runs-on: ubuntu-18-04-cuda-11-7
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
@@ -182,7 +182,7 @@ jobs:
       contents: write
     strategy:
       matrix:
-        cuda: ["12-0", "11-4"]
+        cuda: ["12-0", "11-7"]
 
     steps:
       - name: Clone
@@ -352,7 +352,7 @@ jobs:
           asset_content_type: application/gzip
 
   windows-amd64-build:
-    runs-on: windows-cuda-11-4
+    runs-on: windows-cuda-11-7
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
@@ -431,7 +431,7 @@ jobs:
 
     strategy:
       matrix:
-        cuda: ["12-0", "11-4"]
+        cuda: ["12-0", "11-7"]
 
     steps:
       - name: Setup VSWhere.exe
