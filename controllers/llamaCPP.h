@@ -5,6 +5,7 @@
 #endif
 
 #pragma once
+#define LOG_TARGET stdout
 
 #include "log.h"
 #include "utils/nitro_utils.h"
@@ -2486,7 +2487,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP() {
     // Some default values for now below
-    log_enable(); // Disable the log to file feature, reduce bloat for
+    log_disable(); // Disable the log to file feature, reduce bloat for
     // target
     // system ()
     std::vector<std::string> llama_models =

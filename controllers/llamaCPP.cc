@@ -452,10 +452,11 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     this->pre_prompt = jsonBody.get("pre_prompt", "").asString();
     this->repeat_last_n = jsonBody.get("repeat_last_n", 32).asInt();
 
-    // Set folder for llama log
-    std::string llama_log_folder =
-        jsonBody.get("llama_log_folder", "log/").asString();
-    log_set_target(llama_log_folder + "llama.log");
+    if (!jsonBody["llama_log_folder"].isNull()) {
+      log_enable();
+      std::string llama_log_folder = jsonBody["llama_log_folder"].asString();
+      log_set_target(llama_log_folder + "llama.log");
+    }    // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
