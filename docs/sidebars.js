@@ -51,6 +51,7 @@ const sidebars = {
         "features/load-unload",
         "features/warmup",
         "features/prompt",
+        "features/log"
       ],
     },
     {
