@@ -64,7 +64,8 @@ const sidebars = {
         "examples/palchat",
         "examples/openai-node",
         "examples/openai-python",
-        "examples/colab"
+        "examples/colab",
+        "examples/chatboxgpt"
       ],
     },
     // {
