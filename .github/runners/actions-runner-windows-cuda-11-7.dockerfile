@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/windows/server:ltsc2022
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';$ProgressPreference='silentlyContinue';"]
 
-ARG RUNNER_VERSION=2.298.2
+ARG RUNNER_VERSION=2.311.0
 
 RUN Invoke-WebRequest \
       -Uri 'https://aka.ms/install-powershell.ps1' \
@@ -39,11 +39,11 @@ RUN choco install visualstudio2019buildtools -y --package-parameters '"--add Mic
 
 RUN choco install gzip -y;
 
-# Install cuda toolkit 11.4.4
-RUN choco install cuda --version=11.4.2.47141 -y
+# Install cuda toolkit 11.7.4
+RUN choco install cuda --version=11.7.1.51694 -y
 
 # Copy integrated tools to MSBuild
-RUN Copy-Item -Path 'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.4\extras\visual_studio_integration\MSBuildExtensions\*' -Destination 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Microsoft\VC\v160\BuildCustomizations'
+RUN Copy-Item -Path 'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\extras\visual_studio_integration\MSBuildExtensions\*' -Destination 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Microsoft\VC\v160\BuildCustomizations'
 
 
 ADD runner.ps1 C:/runner.ps1

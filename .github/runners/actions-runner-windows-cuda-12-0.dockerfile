@@ -2,7 +2,7 @@ FROM mcr.microsoft.com/windows/server:ltsc2022
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop';$ProgressPreference='silentlyContinue';"]
 
-ARG RUNNER_VERSION=2.298.2
+ARG RUNNER_VERSION=2.311.0
 
 RUN Invoke-WebRequest \
       -Uri 'https://aka.ms/install-powershell.ps1' \
