@@ -40,7 +40,7 @@ RUN choco install visualstudio2019buildtools -y --package-parameters '"--add Mic
 RUN choco install gzip -y;
 
 # Install cuda toolkit 11.7.4
-RUN choco install cuda --version=11.7.2.47141 -y
+RUN choco install cuda --version=11.7.1.51694 -y
 
 # Copy integrated tools to MSBuild
 RUN Copy-Item -Path 'C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.7\extras\visual_studio_integration\MSBuildExtensions\*' -Destination 'C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Microsoft\VC\v160\BuildCustomizations'
