@@ -352,7 +352,7 @@ jobs:
           asset_content_type: application/gzip
 
   windows-amd64-build:
-    runs-on: windows-cuda-11-7
+    runs-on: windows-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
