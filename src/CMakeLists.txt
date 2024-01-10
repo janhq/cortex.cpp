@@ -1,20 +1,21 @@
+# NOTE: file(GLOB) will not detect if we add new file to project
+# in that case we have to run cmake manually again
+function(find_object_files output_var)
+    # Initialize an empty list to store the results
+    set(result)
 
+    # Loop through each directory provided as an argument
+    foreach(dir IN LISTS ARGN)
+        # Search for .cpp files in the current directory
+        file(GLOB files "${dir}/*.cc")
 
+        # Append found files to the result list
+        list(APPEND result ${files})
+    endforeach()
 
-
-
-# set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/_install
-# ) # This is the critical line for installing another package
-
-function(add_library_unity NAME MODE)
-  set(SRCS ${ARGN})
-  add_library(${NAME} OBJECT ${SRCS})
+    # Set the output variable with the found files in the parent scope
+    set(${output_var} ${result} PARENT_SCOPE)
 endfunction()
-
-
-
-add_subdirectory(utils)
-add_subdirectory(controllers)
 set(NITRO_SYSTEM_LIBS ${CMAKE_DL_LIBS})
 set(NITRO_LINK_LIBS
   Drogon::Drogon 
@@ -25,17 +26,20 @@ set(NITRO_LINK_LIBS
   ${CMAKE_THREAD_LIBS_INIT}
   )
 
-# compile as lib
+# compile as library
+# main/test will link to this library
+
+find_object_files(ALL_OBJECT_FILES controllers utils)
 add_library(nitrolib ${ALL_OBJECT_FILES})
-message(${ALL_OBJECT_FILES})
 target_link_libraries(nitrolib ${NITRO_LINK_LIBS})
 
-# third party import path
 
+# Nitro lib interface, TODO: a lot of implementations are defined in header files for some reason
 target_include_directories(nitrolib PUBLIC include)
 target_include_directories(nitrolib PUBLIC ../build_deps/_install/include)
+
 # third party objects
-target_link_directories(nitrolib PRIVATE ../build_deps/lib)
+target_link_directories(nitrolib PUBLIC ../build_deps/lib)
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method

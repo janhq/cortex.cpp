@@ -53,10 +53,10 @@ add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
 
 
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
+) # This is the critical line for installing another package
 
-# set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
-# )
-# add_executable(${PROJECT_NAME} main.cc)
+
 
 
 # third party import path
@@ -113,6 +113,12 @@ add_subdirectory(nitro_deps/llama_interface)
 # target_include_directories(llama PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp")
 add_subdirectory(llama.cpp)
 add_subdirectory(src)
+
+
+add_executable(${PROJECT_NAME} main.cc)
+target_link_libraries(${PROJECT_NAME} PRIVATE nitrolib)
+# target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
+#                                               ${CMAKE_THREAD_LIBS_INIT})
 
 
 
