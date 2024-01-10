@@ -1,5 +1,8 @@
 #include "nitro/controllers/llamaCPP.h"
 #include "nitro/utils/nitro_utils.h"
+#include "llama_interface/log.h"
+#include "llama.h"
+
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -440,7 +443,6 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
         jsonBody.get("cpu_threads", std::thread::hardware_concurrency())
             .asInt();
     params.cont_batching = jsonBody.get("cont_batching", false).asBool();
-
     this->clean_cache_threshold =
         jsonBody.get("clean_cache_threshold", 5).asInt();
     this->caching_enabled = jsonBody.get("caching_enabled", false).asBool();
@@ -450,6 +452,12 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
         jsonBody.get("system_prompt", "ASSISTANT's RULE: ").asString();
     this->pre_prompt = jsonBody.get("pre_prompt", "").asString();
     this->repeat_last_n = jsonBody.get("repeat_last_n", 32).asInt();
+
+    if (!jsonBody["llama_log_folder"].isNull()) {
+      log_enable();
+      std::string llama_log_folder = jsonBody["llama_log_folder"].asString();
+      log_set_target(llama_log_folder + "llama.log");
+    }    // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
