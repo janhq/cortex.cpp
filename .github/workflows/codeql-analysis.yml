@@ -100,6 +100,12 @@ jobs:
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 
+      - name: Excludes folders and files
+        run: |
+          rm -rf llama.cpp/examples/
+          rm -rf docs/
+          rm -rf examples/interface
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
         with:
