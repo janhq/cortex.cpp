@@ -122,7 +122,7 @@ Table of parameters
 Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
 ## Compile from source
-To compile nitro please visit [Compile from source](docs/new/build-source.md)
+To compile nitro please visit [Compile from source](docs/docs/new/build-source.md)
 
 ## Download
 
