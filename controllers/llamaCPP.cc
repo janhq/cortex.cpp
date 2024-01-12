@@ -456,7 +456,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
       log_enable();
       std::string llama_log_folder = jsonBody["llama_log_folder"].asString();
       log_set_target(llama_log_folder + "llama.log");
-    }    // Set folder for llama log
+    } // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
@@ -483,7 +483,10 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     return false; // Indicate failure
   }
   llama.initialize();
+
   model_loaded = true;
+  llama.model_loaded_external = true;
+
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
   warmupModel();
@@ -535,6 +538,8 @@ void llamaCPP::backgroundTask() {
 void llamaCPP::stopBackgroundTask() {
   if (model_loaded) {
     model_loaded = false;
+    llama.condition_tasks.notify_one();
+    llama.model_loaded_external = false;
     LOG_INFO << "changed to false";
     if (backgroundThread.joinable()) {
       backgroundThread.join();
