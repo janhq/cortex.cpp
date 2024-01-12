@@ -2560,7 +2560,7 @@ public:
 
 private:
   llama_server_context llama;
-  std::atomic<bool> model_loaded = false;
+  //std::atomic<bool> model_loaded = false;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
   std::thread backgroundThread;

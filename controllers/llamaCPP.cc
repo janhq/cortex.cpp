@@ -153,7 +153,7 @@ void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (!model_loaded) {
+  if (!llama.model_loaded_external) {
     Json::Value jsonResp;
     jsonResp["message"] =
         "Model has not been loaded, please load model into nitro";
@@ -391,7 +391,7 @@ void llamaCPP::unloadModel(
     std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
   jsonResp["message"] = "No model loaded";
-  if (model_loaded) {
+  if (llama.model_loaded_external) {
     stopBackgroundTask();
 
     llama_free(llama.ctx);
@@ -408,7 +408,7 @@ void llamaCPP::modelStatus(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
-  bool is_model_loaded = this->model_loaded;
+  bool is_model_loaded = llama.model_loaded_external;
   if (is_model_loaded) {
     jsonResp["model_loaded"] = is_model_loaded;
     jsonResp["model_data"] = llama.get_model_props().dump();
@@ -484,7 +484,6 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
   }
   llama.initialize();
 
-  model_loaded = true;
   llama.model_loaded_external = true;
 
   LOG_INFO << "Started background task here!";
@@ -497,7 +496,7 @@ void llamaCPP::loadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (model_loaded) {
+  if (llama.model_loaded_external) {
     LOG_INFO << "model loaded";
     Json::Value jsonResp;
     jsonResp["message"] = "Model already loaded";
@@ -525,7 +524,7 @@ void llamaCPP::loadModel(
 }
 
 void llamaCPP::backgroundTask() {
-  while (model_loaded) {
+  while (llama.model_loaded_external) {
     // model_loaded =
     llama.update_slots();
   }
@@ -536,10 +535,9 @@ void llamaCPP::backgroundTask() {
 }
 
 void llamaCPP::stopBackgroundTask() {
-  if (model_loaded) {
-    model_loaded = false;
-    llama.condition_tasks.notify_one();
+  if (llama.model_loaded_external) {
     llama.model_loaded_external = false;
+    llama.condition_tasks.notify_one();
     LOG_INFO << "changed to false";
     if (backgroundThread.joinable()) {
       backgroundThread.join();
