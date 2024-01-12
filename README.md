@@ -175,7 +175,7 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   <tr style="text-align: center">
     <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
     <td style="text-align:center" colspan="6">
-      <a href='https://github.com/janhq/nitro/actions/runs/7493910286'>
+      <a href='https://github.com/janhq/nitro/actions/runs/7506876217'>
         <b>Github action artifactory</b>
       </a>
     </td>
