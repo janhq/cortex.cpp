@@ -1546,7 +1546,7 @@ struct llama_server_context {
       std::unique_lock<std::mutex> lock(mutex_tasks);
       condition_tasks.wait(lock, [&] {
         return (!queue_tasks.empty() && model_loaded_external) ||
-               (!model_loaded_external);
+               (queue_tasks.empty() && !model_loaded_external);
       });
     }
 
