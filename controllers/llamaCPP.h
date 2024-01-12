@@ -503,6 +503,9 @@ struct llama_server_context {
   int32_t id_gen;
   int32_t n_ctx; // total context for all clients / slots
 
+  // Internal
+  std::atomic<bool> model_loaded_external = false;
+
   // system prompt
   bool system_need_update = false;
 
@@ -1538,10 +1541,13 @@ struct llama_server_context {
                 "cache\n");
         kv_cache_clear();
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));
-      // TODO: Need to implement queueing using CV for better performance
-      // std::unique_lock<std::mutex> lock(mutex_tasks);
-      // condition_tasks.wait(lock, [&] { return !queue_tasks.empty(); });
+      // std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      //  TODO: Need to implement queueing using CV for better performance
+      std::unique_lock<std::mutex> lock(mutex_tasks);
+      condition_tasks.wait(lock, [&] {
+        return (!queue_tasks.empty() && model_loaded_external) ||
+               (!model_loaded_external);
+      });
     }
 
     for (llama_client_slot &slot : slots) {
@@ -2554,7 +2560,7 @@ public:
 
 private:
   llama_server_context llama;
-  std::atomic<bool> model_loaded = false;
+  //std::atomic<bool> model_loaded = false;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
   std::thread backgroundThread;
