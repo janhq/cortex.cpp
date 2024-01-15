@@ -39,6 +39,7 @@ const sidebars = {
       items: [
         "features/chat",
         "features/embed",
+        "features/vision"
       ],
     },
     {
