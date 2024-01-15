@@ -27,7 +27,7 @@ Use these commands to download and save the [Llama2 7B chat model](https://huggi
 
 ```bash title="Get a model"
 mkdir model && cd model
-wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
+wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf
 ```
 
 > For more GGUF model, please look at [The Bloke](https://huggingface.co/TheBloke).
