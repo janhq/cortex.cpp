@@ -1,5 +1,5 @@
 ---
-title: Autogen with Nitro
+title: Nitro with Autogen
 description: Nitro intergration guide for using Autogen.
 keywords: [Nitro, autogen, autogen studio, autogen 2.0, litellm, ollama, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
@@ -18,14 +18,14 @@ AutoGen Studio upgrades AutoGen with a user-friendly drag-and-drop interface. It
 
 Just run:
 
-```
+```bash
 pip install autogenstudio
 ```
 
 ### Launch AutoGen Studio
 Use this command:
 
-```
+```bash
 autogenstudio ui --port 8000
 ```
 
