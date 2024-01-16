@@ -199,7 +199,8 @@ void llamaCPP::chatCompletion(
     if (!file) {
         LOG_ERROR << "Grammar file not found";
     } else {
-      std::stringstream grammarBuf << file.rdbuf();
+      std::stringstream grammarBuf;
+      grammarBuf << file.rdbuf();
       data["grammar"] = grammarBuf.str();
     }
     if (!llama.multimodal) {
