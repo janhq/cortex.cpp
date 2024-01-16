@@ -197,7 +197,7 @@ void llamaCPP::chatCompletion(
     std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
     std::ifstream file(grammar_file);
     if (!file) {
-        LOG_ERROR << "Grammar file not found";
+      LOG_ERROR << "Grammar file not found";
     } else {
       std::stringstream grammarBuf;
       grammarBuf << file.rdbuf();
@@ -438,6 +438,14 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["mmproj"].isNull()) {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
+    }
+    if (!jsonBody["grp_attn_n"].isNull()) {
+
+      params.grp_attn_n = jsonBody["grp_attn_n"].asInt();
+    }
+    if (!jsonBody["grp_attn_w"].isNull()) {
+
+      params.grp_attn_w = jsonBody["grp_attn_w"].asInt();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
