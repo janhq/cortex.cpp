@@ -194,7 +194,15 @@ void llamaCPP::chatCompletion(
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
-
+    std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
+    std::ifstream file(grammar_file);
+    if (!file) {
+        LOG_ERROR << "Grammar file not found";
+    } else {
+      std::stringstream grammarBuf;
+      grammarBuf << file.rdbuf();
+      data["grammar"] = grammarBuf.str();
+    }
     if (!llama.multimodal) {
 
       for (const auto &message : messages) {

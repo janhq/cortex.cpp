@@ -92,6 +92,21 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 ```
 
+***OPTIONAL***: You can constrain the sampling using GBNF grammars by providing path to a grammar file
+```bash title="Nitro Inference With Grammar"
+curl http://localhost:3928/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Who won the world series in 2020?"
+      },
+    ],
+    "grammar_file": "/path/to/grammarfile"
+  }'
+```
+
 Table of parameters
 
 | Parameter        | Type    | Description                                                  |
