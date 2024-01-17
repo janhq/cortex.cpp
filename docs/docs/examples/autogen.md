@@ -86,4 +86,12 @@ Make sure the `Receiver` uses the agent you just set up.
 
 ![Configure Receiver in AutoGen](img/autogen_receiver.png)
 
+## Set a dummy OpenAI API Key
+
+Set a dummy enviroment variable for OpenAI
+
+```bash
+export OPENAI_API_KEY=sk-***
+```
+
 You're all set! Test your agent in the `Playground`.
