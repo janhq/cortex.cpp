@@ -125,6 +125,8 @@ Table of parameters
 | `n_batch`       | Integer | The batch size for prompt eval step |
 | `caching_enabled` | Boolean | To enable prompt caching or not   |
 | `clean_cache_threshold` | Integer | Number of chats that will trigger clean cache action|
+|`grp_attn_n`|Integer|Group attention factor in self-extend|
+|`grp_attn_w`|Integer|Group attention width in self-extend|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
