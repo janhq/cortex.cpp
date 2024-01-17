@@ -95,3 +95,5 @@ export OPENAI_API_KEY=sk-***
 ```
 
 You're all set! Test your agent in the `Playground`.
+
+![Example local LLM with Autogen](img/autogen_stealth.png)
