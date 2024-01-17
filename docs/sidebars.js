@@ -67,7 +67,8 @@ const sidebars = {
         "examples/openai-node",
         "examples/openai-python",
         "examples/colab",
-        "examples/chatboxgpt"
+        "examples/chatboxgpt",
+        "examples/autogen"
       ],
     },
     // {
