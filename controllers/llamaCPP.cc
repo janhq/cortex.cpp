@@ -303,7 +303,7 @@ void llamaCPP::chatCompletion(
         break;
       } else {
         std::this_thread::sleep_for(
-            std::chrono::milliseconds(100)); // Sleep for 500 milliseconds
+            std::chrono::milliseconds(500)); // Sleep for 500 milliseconds
       }
     }
   } else {
