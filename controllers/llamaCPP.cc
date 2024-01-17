@@ -2,6 +2,7 @@
 #include "llama.h"
 #include "log.h"
 #include "utils/nitro_utils.h"
+#include <thread>
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -293,20 +294,38 @@ void llamaCPP::chatCompletion(
   LOG_INFO << "Current completion text";
   LOG_INFO << formatted_output;
 #endif
-  const int task_id = llama.request_completion(data, false, false, -1);
+  int task_id;
+
+  if (llama.params.n_parallel == 1) {
+    while (true) {
+      if (!single_queue_is_busy) {
+        task_id = llama.request_completion(data, false, false, -1);
+        single_queue_is_busy = true;
+        break;
+      } else {
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(100)); // Sleep for 500 milliseconds
+      }
+    }
+  } else {
+    task_id = llama.request_completion(data, false, false, -1);
+  }
+
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
   if (is_streamed) {
     auto state = createState(task_id, this);
 
     auto chunked_content_provider =
-        [state](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+        [this, state](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
         state->instance->llama.request_cancel(state->task_id);
+        single_queue_is_busy = false;
         return 0;
       }
       if (state->isStopped) {
+        single_queue_is_busy = false;
         return 0;
       }
 
@@ -339,8 +358,10 @@ void llamaCPP::chatCompletion(
         }
         return nRead;
       } else {
+        single_queue_is_busy = false;
         return 0;
       }
+      single_queue_is_busy = false;
       return 0;
     };
     auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,

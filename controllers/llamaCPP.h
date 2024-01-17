@@ -2560,7 +2560,7 @@ public:
 
 private:
   llama_server_context llama;
-  //std::atomic<bool> model_loaded = false;
+  // std::atomic<bool> model_loaded = false;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
   std::thread backgroundThread;
@@ -2572,5 +2572,7 @@ private:
   bool caching_enabled;
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
+  std::atomic<bool> single_queue_is_busy; // This value only used under the
+                                          // condition n_parallel is 1
 };
 }; // namespace inferences
