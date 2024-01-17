@@ -1,0 +1,23 @@
+.vscode
+.env
+
+# Jan inference
+error.log
+.yarn
+node_modules
+*.tgz
+yarn.lock
+dist
+build
+.DS_Store
+package-lock.json
+
+*.log
+
+# Nitro binary files
+bin/*/nitro
+bin/*/*.metal
+bin/*/*.exe
+bin/*/*.dll
+bin/*/*.exp
+bin/*/*.lib
