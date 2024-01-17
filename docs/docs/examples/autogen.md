@@ -70,7 +70,7 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
 
 In AutoGen Studio, go to the `Agent`` tab and set up a new agent.
 
-**Key setting:** In `Model` section, use `Base URL`: http://localhost:3928/v1/.
+**Key setting:** In `Model` section, use `Base URL`: http://localhost:3928/v1.
 
 ![Local LLM with AutoGen](img/autogen_localllm.png)
 
@@ -87,6 +87,3 @@ Make sure the `Receiver` uses the agent you just set up.
 ![Configure Receiver in AutoGen](img/autogen_receiver.png)
 
 You're all set! Test your agent in the `Playground`.
-
-
-
