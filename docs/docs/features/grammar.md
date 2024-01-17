@@ -18,7 +18,7 @@ To get a clearer picture, check out [this guide](https://github.com/ggerganov/ll
 
 To make your Nitro model follow specific speaking or writing rules, use this command:
 
-```bash title="Nitro Inference With Grammar" {9}
+```bash title="Nitro Inference With Grammar" {10}
 curl http://localhost:3928/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
