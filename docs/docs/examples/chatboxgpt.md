@@ -1,5 +1,5 @@
 ---
-title: Nitro on browser
+title: Nitro with ChatGPTBox
 description: Nitro intergration guide for using on Web browser.
 keywords: [Nitro, Google Chrome, browser, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---

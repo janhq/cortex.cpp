@@ -52,7 +52,9 @@ const sidebars = {
         "features/load-unload",
         "features/warmup",
         "features/prompt",
-        "features/log"
+        "features/log",
+        "features/self-extend",
+        "features/grammar",
       ],
     },
     {

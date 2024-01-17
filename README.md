@@ -125,14 +125,17 @@ Table of parameters
 | `n_batch`       | Integer | The batch size for prompt eval step |
 | `caching_enabled` | Boolean | To enable prompt caching or not   |
 | `clean_cache_threshold` | Integer | Number of chats that will trigger clean cache action|
+|`grp_attn_n`|Integer|Group attention factor in self-extend|
+|`grp_attn_w`|Integer|Group attention width in self-extend|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
-./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port])
+./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port] [uploads_folder_path])
 ```
 - thread_num : the number of thread that nitro webserver needs to have
 - host : host value normally 127.0.0.1 or 0.0.0.0
 - port : the port that nitro got deployed onto
+- uploads_folder_path: custom path for file uploads in Drogon.
 
 Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
