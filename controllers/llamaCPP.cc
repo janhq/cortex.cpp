@@ -193,6 +193,8 @@ void llamaCPP::chatCompletion(
     data["frequency_penalty"] =
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
+    std::string tools = (*jsonBody).get("tools", "").asString();
+    LOG_INFO << tools;
     const Json::Value &messages = (*jsonBody)["messages"];
     std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
     std::ifstream file(grammar_file);
@@ -204,7 +206,7 @@ void llamaCPP::chatCompletion(
       data["grammar"] = grammarBuf.str();
     }
     if (!llama.multimodal) {
-
+      bool systemPromptProcessed = false;
       for (const auto &message : messages) {
         std::string input_role = message["role"].asString();
         std::string role;
@@ -217,10 +219,17 @@ void llamaCPP::chatCompletion(
           std::string content = message["content"].asString();
           formatted_output += role + content;
         } else if (input_role == "system") {
-          role = system_prompt;
-          std::string content = message["content"].asString();
-          formatted_output = role + content + formatted_output;
-
+          if (systemPromptProcessed) {
+            LOG_ERROR << "System prompt already processed";
+          } else {
+            role = system_prompt;
+            std::string content = message["content"].asString();
+            if (tools != "") {
+              content += "\n" + tools;
+            }
+            formatted_output = role + content + formatted_output;
+            systemPromptProcessed = true;
+          }
         } else {
           role = input_role;
           std::string content = message["content"].asString();
