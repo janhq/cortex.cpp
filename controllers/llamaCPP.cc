@@ -6,16 +6,17 @@
 using namespace inferences;
 using json = nlohmann::json;
 
-struct State {
+struct inferenceState {
   bool isStopped = false;
   int task_id;
   llamaCPP *instance;
 
-  State(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
+  inferenceState(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
 };
 
-std::shared_ptr<State> createState(int task_id, llamaCPP *instance) {
-  return std::make_shared<State>(task_id, instance);
+std::shared_ptr<inferenceState> create_inference_state(int task_id,
+                                                       llamaCPP *instance) {
+  return std::make_shared<inferenceState>(task_id, instance);
 }
 
 // --------------------------------------------
@@ -295,36 +296,21 @@ void llamaCPP::chatCompletion(
 #endif
   int task_id;
 
-  if (llama.params.n_parallel == 1) {
-    while (true) {
-      if (!single_queue_is_busy) {
-        task_id = llama.request_completion(data, false, false, -1);
-        single_queue_is_busy = true;
-        break;
-      } else {
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(500)); // Sleep for 500 milliseconds
-      }
-    }
-  } else {
     task_id = llama.request_completion(data, false, false, -1);
-  }
 
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
   if (is_streamed) {
-    auto state = createState(task_id, this);
+    auto state = create_inference_state(task_id, this);
 
     auto chunked_content_provider =
         [this, state](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
         state->instance->llama.request_cancel(state->task_id);
-        single_queue_is_busy = false;
         return 0;
       }
       if (state->isStopped) {
-        single_queue_is_busy = false;
         return 0;
       }
 
@@ -357,10 +343,8 @@ void llamaCPP::chatCompletion(
         }
         return nRead;
       } else {
-        single_queue_is_busy = false;
         return 0;
       }
-      single_queue_is_busy = false;
       return 0;
     };
     auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
