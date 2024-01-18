@@ -3,14 +3,17 @@
 #include "random"
 #include "string"
 #include <algorithm>
+#include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
+#include <fstream>
 #include <iostream>
 #include <ostream>
 #include <regex>
+#include <vector>
 // Include platform-specific headers
 #ifdef _WIN32
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #else
 #include <dirent.h>
 #endif
@@ -30,6 +33,135 @@ inline std::string extractBase64(const std::string &input) {
   }
 
   return "";
+}
+
+// Helper function to encode data to Base64
+inline std::string base64Encode(const std::vector<unsigned char> &data) {
+  static const char encodingTable[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  std::string encodedData;
+  int i = 0;
+  int j = 0;
+  unsigned char array3[3];
+  unsigned char array4[4];
+
+  for (unsigned char c : data) {
+    array3[i++] = c;
+    if (i == 3) {
+      array4[0] = (array3[0] & 0xfc) >> 2;
+      array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
+      array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
+      array4[3] = array3[2] & 0x3f;
+
+      for (i = 0; i < 4; i++)
+        encodedData += encodingTable[array4[i]];
+      i = 0;
+    }
+  }
+
+  if (i) {
+    for (j = i; j < 3; j++)
+      array3[j] = '\0';
+
+    array4[0] = (array3[0] & 0xfc) >> 2;
+    array4[1] = ((array3[0] & 0x03) << 4) + ((array3[1] & 0xf0) >> 4);
+    array4[2] = ((array3[1] & 0x0f) << 2) + ((array3[2] & 0xc0) >> 6);
+
+    for (j = 0; j < i + 1; j++)
+      encodedData += encodingTable[array4[j]];
+
+    while (i++ < 3)
+      encodedData += '=';
+  }
+
+  return encodedData;
+}
+
+// Function to load an image and convert it to Base64
+inline std::string imageToBase64(const std::string &imagePath) {
+  std::ifstream imageFile(imagePath, std::ios::binary);
+  if (!imageFile.is_open()) {
+    throw std::runtime_error("Could not open the image file.");
+  }
+
+  std::vector<unsigned char> buffer(std::istreambuf_iterator<char>(imageFile),
+                                    {});
+  return base64Encode(buffer);
+}
+
+// Helper function to generate a unique filename
+inline std::string generateUniqueFilename(const std::string &prefix,
+                                          const std::string &extension) {
+  // Get current time as a timestamp
+  auto now = std::chrono::system_clock::now();
+  auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
+  auto epoch = now_ms.time_since_epoch();
+  auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
+
+  // Generate a random number
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(1000, 9999);
+
+  std::stringstream ss;
+  ss << prefix << value.count() << "_" << dis(gen) << extension;
+  return ss.str();
+}
+
+// Function to download an image
+inline void downloadImage(const std::string &url, const std::string &savePath,
+                          std::function<void(bool)> callback) {
+  auto client = drogon::HttpClient::newHttpClient(url);
+  client->sendRequest(
+      drogon::HttpRequest::newHttpRequest(),
+      [savePath, callback](drogon::ReqResult result,
+                           const drogon::HttpResponsePtr &response) {
+        if (result == drogon::ReqResult::Ok) {
+          // Save the image to the specified path
+          std::ofstream outFile(savePath, std::ios::binary);
+          outFile.write(response->body().data(), response->body().size());
+          outFile.close();
+
+          // Invoke the callback with true to indicate success
+          callback(true);
+        } else {
+          std::cerr << "Failed to download the image: " << result << std::endl;
+          // Invoke the callback with false to indicate failure
+          callback(false);
+        }
+      });
+}
+
+inline void
+processRemoteImage(const std::string &url,
+                   std::function<void(const std::string &)> callback) {
+  std::string localPath =
+      generateUniqueFilename("temp_", ".jpg"); // Generate a unique filename
+
+  downloadImage(url, localPath, [localPath, callback](bool success) {
+    if (success) {
+      try {
+        std::string base64Image = imageToBase64(localPath);
+        std::remove(localPath.c_str()); // Delete the local file
+        callback(base64Image); // Invoke the callback with the Base64 string
+      } catch (const std::exception &e) {
+        std::cerr << "Error during processing: " << e.what() << std::endl;
+      }
+    } else {
+      std::cerr << "Failed to download the image." << std::endl;
+    }
+  });
+}
+
+inline void
+processLocalImage(const std::string &localPath,
+                  std::function<void(const std::string &)> callback) {
+  try {
+    std::string base64Image = imageToBase64(localPath);
+    callback(base64Image); // Invoke the callback with the Base64 string
+  } catch (const std::exception &e) {
+    std::cerr << "Error during processing: " << e.what() << std::endl;
+  }
 }
 
 inline std::vector<std::string> listFilesInDir(const std::string &path) {
