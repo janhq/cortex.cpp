@@ -239,17 +239,38 @@ void llamaCPP::chatCompletion(
           for (auto content_piece : message["content"]) {
             role = user_prompt;
 
+            json content_piece_image_data;
+
             auto content_piece_type = content_piece["type"].asString();
             if (content_piece_type == "text") {
               auto text = content_piece["text"].asString();
               formatted_output += text;
             } else if (content_piece_type == "image_url") {
               auto image_url = content_piece["image_url"]["url"].asString();
-              auto base64_image_data = nitro_utils::extractBase64(image_url);
-              LOG_INFO << base64_image_data;
-              formatted_output += "[img-" + std::to_string(no_images) + "]";
+              std::string
+                  base64_image_data; // Declare the variable 'base64_image_data'
+              if (image_url.find("http") != std::string::npos) {
+                // If image url is a remote link, extract and use convert to
+                // base64
+                nitro_utils::processRemoteImage(
+                    image_url, [](const std::string &base64Image) {
+                      auto base64_image_data = base64Image;
+                      LOG_INFO << base64_image_data;
+                    });
+              } else if (image_url.find("data:image") != std::string::npos) {
+                // If image url is already in base64, use it directly
+                auto base64_image_data = nitro_utils::extractBase64(image_url);
+                LOG_INFO << base64_image_data;
+              } else {
+                // If image url is a local file, convert to base64
+                nitro_utils::processLocalImage(
+                    image_url, [](const std::string &base64Image) {
+                      auto base64_image_data = base64Image;
+                      LOG_INFO << base64_image_data;
+                    });
+              }
 
-              json content_piece_image_data;
+              formatted_output += "[img-" + std::to_string(no_images) + "]";
               content_piece_image_data["data"] = base64_image_data;
               content_piece_image_data["id"] = no_images;
               data["image_data"].push_back(content_piece_image_data);
