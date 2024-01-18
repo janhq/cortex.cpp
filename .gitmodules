@@ -1,4 +1,4 @@
 [submodule "llama.cpp"]
-	path = llama.cpp
-	url = https://github.com/ggerganov/llama.cpp
-	branch = master
+path = llama.cpp
+url = https://github.com/0cc4m/koboldcpp
+branch = vulkan

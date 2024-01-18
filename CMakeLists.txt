@@ -24,6 +24,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
+
+# Set build for Vulkan enabled
+set(LLAMA_VULKAN ON)
+
 )# This is the critical line for installing another package
 
 if(LLAMA_CUBLAS)
