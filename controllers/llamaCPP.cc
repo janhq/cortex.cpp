@@ -2,9 +2,6 @@
 #include "llama.h"
 #include "log.h"
 #include "utils/nitro_utils.h"
-#include <chrono>
-#include <thread>
-#include <trantor/utils/Logger.h>
 
 using namespace inferences;
 using json = nlohmann::json;
