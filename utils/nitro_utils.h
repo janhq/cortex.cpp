@@ -108,51 +108,6 @@ inline std::string generateUniqueFilename(const std::string &prefix,
   return ss.str();
 }
 
-// Function to download an image
-inline void downloadImage(const std::string &url, const std::string &savePath,
-                          std::function<void(bool)> callback) {
-  auto client = drogon::HttpClient::newHttpClient(url);
-  client->sendRequest(
-      drogon::HttpRequest::newHttpRequest(),
-      [savePath, callback](drogon::ReqResult result,
-                           const drogon::HttpResponsePtr &response) {
-        if (result == drogon::ReqResult::Ok) {
-          // Save the image to the specified path
-          std::ofstream outFile(savePath, std::ios::binary);
-          outFile.write(response->body().data(), response->body().size());
-          outFile.close();
-
-          // Invoke the callback with true to indicate success
-          callback(true);
-        } else {
-          std::cerr << "Failed to download the image: " << result << std::endl;
-          // Invoke the callback with false to indicate failure
-          callback(false);
-        }
-      });
-}
-
-inline void
-processRemoteImage(const std::string &url,
-                   std::function<void(const std::string &)> callback) {
-  std::string localPath =
-      generateUniqueFilename("temp_", ".jpg"); // Generate a unique filename
-
-  downloadImage(url, localPath, [localPath, callback](bool success) {
-    if (success) {
-      try {
-        std::string base64Image = imageToBase64(localPath);
-        std::remove(localPath.c_str()); // Delete the local file
-        callback(base64Image); // Invoke the callback with the Base64 string
-      } catch (const std::exception &e) {
-        std::cerr << "Error during processing: " << e.what() << std::endl;
-      }
-    } else {
-      std::cerr << "Failed to download the image." << std::endl;
-    }
-  });
-}
-
 inline void
 processLocalImage(const std::string &localPath,
                   std::function<void(const std::string &)> callback) {

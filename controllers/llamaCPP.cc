@@ -240,6 +240,7 @@ void llamaCPP::chatCompletion(
             role = user_prompt;
 
             json content_piece_image_data;
+            content_piece_image_data["data"] = "";
 
             auto content_piece_type = content_piece["type"].asString();
             if (content_piece_type == "text") {
@@ -247,31 +248,24 @@ void llamaCPP::chatCompletion(
               formatted_output += text;
             } else if (content_piece_type == "image_url") {
               auto image_url = content_piece["image_url"]["url"].asString();
-              std::string
-                  base64_image_data; // Declare the variable 'base64_image_data'
+              std::string base64_image_data;
               if (image_url.find("http") != std::string::npos) {
-                // If image url is a remote link, extract and use convert to
-                // base64
-                nitro_utils::processRemoteImage(
-                    image_url, [](const std::string &base64Image) {
-                      auto base64_image_data = base64Image;
-                      LOG_INFO << base64_image_data;
-                    });
+                LOG_INFO << "Remote image detected but not supported yet";
               } else if (image_url.find("data:image") != std::string::npos) {
-                // If image url is already in base64, use it directly
-                auto base64_image_data = nitro_utils::extractBase64(image_url);
+                LOG_INFO << "Base64 image detected";
+                base64_image_data = nitro_utils::extractBase64(image_url);
                 LOG_INFO << base64_image_data;
               } else {
-                // If image url is a local file, convert to base64
+                LOG_INFO << "Local image detected";
                 nitro_utils::processLocalImage(
-                    image_url, [](const std::string &base64Image) {
-                      auto base64_image_data = base64Image;
-                      LOG_INFO << base64_image_data;
+                    image_url, [&](const std::string &base64Image) {
+                      base64_image_data = base64Image;
                     });
+                LOG_INFO << base64_image_data;
               }
+              content_piece_image_data["data"] = base64_image_data;
 
               formatted_output += "[img-" + std::to_string(no_images) + "]";
-              content_piece_image_data["data"] = base64_image_data;
               content_piece_image_data["id"] = no_images;
               data["image_data"].push_back(content_piece_image_data);
               no_images++;
