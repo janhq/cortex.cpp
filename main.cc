@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
+  std::string uploads_folder_path;
 
   // Number of nitro threads
   if (argc > 1) {
@@ -37,6 +38,11 @@ int main(int argc, char *argv[]) {
     port = std::atoi(argv[3]); // Convert string argument to int
   }
 
+  // Uploads folder path
+  if (argc > 4) {
+    uploads_folder_path = argv[4];
+  }
+
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
   nitro_utils::nitro_logo();
@@ -49,6 +55,10 @@ int main(int argc, char *argv[]) {
   LOG_INFO << "Please load your model";
   drogon::app().addListener(host, port);
   drogon::app().setThreadNum(drogon_thread_num);
+  if (!uploads_folder_path.empty()) {
+    LOG_INFO << "Drogon uploads folder is at: " << uploads_folder_path;
+    drogon::app().setUploadPath(uploads_folder_path);
+  }
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
   drogon::app().run();

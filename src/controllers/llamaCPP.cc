@@ -7,16 +7,17 @@
 using namespace inferences;
 using json = nlohmann::json;
 
-struct State {
-  bool isStopped = false;
+struct inferenceState {
+  bool is_stopped = false;
+  bool is_streaming = false;
   int task_id;
   llamaCPP *instance;
 
-  State(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
+  inferenceState(llamaCPP *inst) : instance(inst) {}
 };
 
-std::shared_ptr<State> createState(int task_id, llamaCPP *instance) {
-  return std::make_shared<State>(task_id, instance);
+std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
+  return std::make_shared<inferenceState>(instance);
 }
 
 // --------------------------------------------
@@ -154,7 +155,7 @@ void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (!model_loaded) {
+  if (!llama.model_loaded_external) {
     Json::Value jsonResp;
     jsonResp["message"] =
         "Model has not been loaded, please load model into nitro";
@@ -195,7 +196,15 @@ void llamaCPP::chatCompletion(
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
-
+    std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
+    std::ifstream file(grammar_file);
+    if (!file) {
+      LOG_ERROR << "Grammar file not found";
+    } else {
+      std::stringstream grammarBuf;
+      grammarBuf << file.rdbuf();
+      data["grammar"] = grammarBuf.str();
+    }
     if (!llama.multimodal) {
 
       for (const auto &message : messages) {
@@ -286,25 +295,37 @@ void llamaCPP::chatCompletion(
   LOG_INFO << "Current completion text";
   LOG_INFO << formatted_output;
 #endif
-  const int task_id = llama.request_completion(data, false, false, -1);
+  int task_id;
+
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
   if (is_streamed) {
-    auto state = createState(task_id, this);
-
+    auto state = create_inference_state(this);
+    state->task_id = task_id;
     auto chunked_content_provider =
-        [state](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+        [state, data](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+      if (!state->is_streaming) {
+        state->task_id =
+            state->instance->llama.request_completion(data, false, false, -1);
+        state->instance->single_queue_is_busy = true;
+      }
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
         state->instance->llama.request_cancel(state->task_id);
+        state->is_streaming = false;
+        state->instance->single_queue_is_busy = false;
         return 0;
       }
-      if (state->isStopped) {
+      if (state->is_stopped) {
+        state->is_streaming = false;
+        state->instance->single_queue_is_busy = false;
         return 0;
       }
 
       task_result result = state->instance->llama.next_result(state->task_id);
       if (!result.error) {
+        // Update streaming state to being streamed
+        state->is_streaming = true;
         const std::string to_send = result.result_json["content"];
         const std::string str =
             "data: " +
@@ -326,14 +347,30 @@ void llamaCPP::chatCompletion(
           std::size_t nRead = std::min(str.size(), nBuffSize);
           memcpy(pBuffer, str.data(), nRead);
           LOG_INFO << "reached result stop";
-          state->isStopped = true;
+          state->is_stopped = true;
           state->instance->llama.request_cancel(state->task_id);
+          state->is_streaming = false;
+          state->instance->single_queue_is_busy = false;
+
           return nRead;
         }
         return nRead;
       } else {
-        return 0;
+        if (state->instance->llama.params.n_parallel == 1) {
+          while (state->instance->single_queue_is_busy) {
+            LOG_INFO << "Waiting for task to be released status:"
+                     << state->instance->single_queue_is_busy;
+            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Waiting in 500 miliseconds step
+          }
+        }
+        std::string str = "\n\n";
+        std::size_t nRead = str.size();
+        memcpy(pBuffer, str.data(), nRead);
+        LOG_INFO << "Failing retrying now";
+        return nRead;
       }
+      state->is_streaming = false;
+      state->instance->single_queue_is_busy = false;
       return 0;
     };
     auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
@@ -392,7 +429,7 @@ void llamaCPP::unloadModel(
     std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
   jsonResp["message"] = "No model loaded";
-  if (model_loaded) {
+  if (llama.model_loaded_external) {
     stopBackgroundTask();
 
     llama_free(llama.ctx);
@@ -409,7 +446,7 @@ void llamaCPP::modelStatus(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
-  bool is_model_loaded = this->model_loaded;
+  bool is_model_loaded = llama.model_loaded_external;
   if (is_model_loaded) {
     jsonResp["model_loaded"] = is_model_loaded;
     jsonResp["model_data"] = llama.get_model_props().dump();
@@ -431,6 +468,14 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["mmproj"].isNull()) {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
+    }
+    if (!jsonBody["grp_attn_n"].isNull()) {
+
+      params.grp_attn_n = jsonBody["grp_attn_n"].asInt();
+    }
+    if (!jsonBody["grp_attn_w"].isNull()) {
+
+      params.grp_attn_w = jsonBody["grp_attn_w"].asInt();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
@@ -457,7 +502,7 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
       log_enable();
       std::string llama_log_folder = jsonBody["llama_log_folder"].asString();
       log_set_target(llama_log_folder + "llama.log");
-    }    // Set folder for llama log
+    } // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
@@ -484,7 +529,9 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     return false; // Indicate failure
   }
   llama.initialize();
-  model_loaded = true;
+
+  llama.model_loaded_external = true;
+
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
   warmupModel();
@@ -495,7 +542,7 @@ void llamaCPP::loadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (model_loaded) {
+  if (llama.model_loaded_external) {
     LOG_INFO << "model loaded";
     Json::Value jsonResp;
     jsonResp["message"] = "Model already loaded";
@@ -523,7 +570,7 @@ void llamaCPP::loadModel(
 }
 
 void llamaCPP::backgroundTask() {
-  while (model_loaded) {
+  while (llama.model_loaded_external) {
     // model_loaded =
     llama.update_slots();
   }
@@ -534,8 +581,9 @@ void llamaCPP::backgroundTask() {
 }
 
 void llamaCPP::stopBackgroundTask() {
-  if (model_loaded) {
-    model_loaded = false;
+  if (llama.model_loaded_external) {
+    llama.model_loaded_external = false;
+    llama.condition_tasks.notify_one();
     LOG_INFO << "changed to false";
     if (backgroundThread.joinable()) {
       backgroundThread.join();

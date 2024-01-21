@@ -39,6 +39,7 @@ const sidebars = {
       items: [
         "features/chat",
         "features/embed",
+        "features/vision"
       ],
     },
     {
@@ -51,6 +52,9 @@ const sidebars = {
         "features/load-unload",
         "features/warmup",
         "features/prompt",
+        "features/log",
+        "features/self-extend",
+        "features/grammar",
       ],
     },
     {
@@ -64,7 +68,9 @@ const sidebars = {
         "examples/palchat",
         "examples/openai-node",
         "examples/openai-python",
-        "examples/colab"
+        "examples/colab",
+        "examples/chatboxgpt",
+        "examples/autogen"
       ],
     },
     // {
