@@ -23,11 +23,11 @@ const NVIDIA_INFO_FILE = path.join(
 );
 
 // The subprocess instance for Nitro
-let subprocess = undefined;
-let currentModelFile: string = undefined;
+let subprocess: any | undefined = undefined;
+let currentModelFile: string = '';
 let currentSettings = undefined;
 
-let nitroProcessInfo = undefined;
+let nitroProcessInfo: any | undefined = undefined;
 
 /**
  * Default GPU settings
@@ -241,7 +241,7 @@ async function killSubprocess(): Promise<void> {
       subprocess?.kill();
       subprocess = undefined;
     })
-    .catch(() => {})
+    .catch(() => { })
     .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
     .then(() => log(`[NITRO]::Debug: Nitro process is terminated`));
 }

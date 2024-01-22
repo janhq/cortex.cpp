@@ -3,21 +3,11 @@
 # Default target, build all
 .PHONY: all
 
-all: publish
-
-# Build jan/core
-build-core:
-	git submodule update --init
-ifeq ($(OS),Windows_NT)
-	type NUL > jan/yarn.lock
-else
-	touch jan/yarn.lock
-endif
-	cd jan && yarn install
-	cd jan/core && yarn build
+all: clean publish
 
 # Installs yarn dependencies
-install: build-core
+#install: build-core
+install:
 ifeq ($(OS),Windows_NT)
 	yarn config set network-timeout 300000
 endif
@@ -37,10 +27,10 @@ publish: build download-nitro
 
 clean:
 ifeq ($(OS),Windows_NT)
-	del /S *.tgz
+	del /F /S *.tgz .yarn yarn.lock
 	powershell -Command "Get-ChildItem -Path . -Include node_modules, dist -Recurse -Directory | Remove-Item -Recurse -Force"
 else
-	rm -f *.tgz
+	rm -rf *.tgz .yarn yarn.lock
 	find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
 	find . -name "dist" -type d -exec rm -rf '{}' +
 endif
