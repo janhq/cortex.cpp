@@ -22,15 +22,17 @@ download-nitro: install
 	yarn run downloadnitro
 
 # Builds and publishes the extension
-publish: build download-nitro
+publish: build
 	yarn run publish
 
 clean:
 ifeq ($(OS),Windows_NT)
 	del /F /S *.tgz .yarn yarn.lock package-lock.json
 	powershell -Command "Get-ChildItem -Path . -Include node_modules, dist -Recurse -Directory | Remove-Item -Recurse -Force"
+	powershell -Command "Get-ChildItem -Path .\bin -Recurse -Directory | Remove-Item -Recurse -Force"
 else
 	rm -rf *.tgz .yarn yarn.lock package-lock.json
 	find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
 	find . -name "dist" -type d -exec rm -rf '{}' +
+	find ./bin -type d -mindepth 1 -maxdepth 1 -exec rm -rf '{}' +
 endif
