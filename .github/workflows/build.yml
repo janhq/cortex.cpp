@@ -155,7 +155,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-linux-amd64-${{ matrix.cpu }}
           path: ./nitro
@@ -213,7 +213,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-linux-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}
           path: ./nitro
@@ -274,7 +274,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-mac-arm64
           path: ./nitro
@@ -333,7 +333,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-mac-amd64
           path: ./nitro
@@ -407,7 +407,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-win-amd64-${{ matrix.cpu }}
           path: ./build/Release
@@ -495,7 +495,7 @@ jobs:
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
           name: nitro-win-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}
           path: ./build/Release
