@@ -126,9 +126,9 @@ jobs:
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
       contents: write
-    strategy:
-      matrix:
-        cpu: ["AVX", "AVX2"]
+    # strategy:
+    #   matrix:
+    #     cpu: ["AVX", "AVX2"]
     steps:
       - name: Clone
         id: checkout
@@ -142,7 +142,7 @@ jobs:
           ldd --version
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DLLAMA_NATIVE=OFF -DLLAMA_${{ matrix.cpu }}=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          cmake -DLLAMA_NATIVE=OFF -DLLAMA_AVX=ON -DLLAMA_AVX2=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           make -j $(nproc)
           ls -la
 
@@ -157,7 +157,7 @@ jobs:
         uses: actions/upload-artifact@v2
         # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         with:
-          name: nitro-linux-amd64-${{ matrix.cpu }}
+          name: nitro-linux-amd64
           path: ./nitro
 
       - name: Run e2e testing
@@ -177,435 +177,435 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.cpu }}.tar.gz
           asset_content_type: application/gzip
 
-  ubuntu-amd64-cuda-build:
-    runs-on: ubuntu-18-04-cuda-${{ matrix.cuda }}
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        cuda: ["12-0", "11-7"]
-        cpu: ["AVX", "AVX2"]
+  # ubuntu-amd64-cuda-build:
+  #   runs-on: ubuntu-18-04-cuda-${{ matrix.cuda }}
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
+  #   strategy:
+  #     matrix:
+  #       cuda: ["12-0", "11-7"]
+  #       cpu: ["AVX", "AVX2"]
 
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Build
-        id: make_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF -DLLAMA_${{ matrix.cpu }}=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
-          make -j $(nproc)
-          ls -la
+  #     - name: Build
+  #       id: make_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF -DLLAMA_${{ matrix.cpu }}=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+  #         make -j $(nproc)
+  #         ls -la
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro
-          cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro
+  #         cp build/nitro nitro/
+  #         tar -czvf nitro.tar.gz nitro
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-linux-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}
-          path: ./nitro
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-linux-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}
+  #         path: ./nitro
 
-      # - name: Run e2e testing
-      #   shell: bash
-      #   run: |
-      #     # run e2e testing
-      #     cd nitro
-      #     chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+  #     # - name: Run e2e testing
+  #     #   shell: bash
+  #     #   run: |
+  #     #     # run e2e testing
+  #     #     cd nitro
+  #     #     chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}.tar.gz
-          asset_content_type: application/gzip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.tar.gz
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}.tar.gz
+  #         asset_content_type: application/gzip
 
-  macOS-M-build:
-    runs-on: mac-silicon
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  # macOS-M-build:
+  #   runs-on: mac-silicon
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
-          brew install cmake
+  #     - name: Dependencies
+  #       id: depends
+  #       continue-on-error: true
+  #       run: |
+  #         brew update
+  #         brew install cmake
 
-      - name: Build
-        id: cmake_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
-          CC=gcc-8 make -j $(sysctl -n hw.ncp)
-          ls -la
+  #     - name: Build
+  #       id: cmake_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
+  #         CC=gcc-8 make -j $(sysctl -n hw.ncp)
+  #         ls -la
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro
-          cp llama.cpp/ggml-metal.metal nitro/
-          cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro
+  #         cp llama.cpp/ggml-metal.metal nitro/
+  #         cp build/nitro nitro/
+  #         tar -czvf nitro.tar.gz nitro
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-mac-arm64
-          path: ./nitro
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-mac-arm64
+  #         path: ./nitro
 
-      - name: Run e2e testing
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+  #     - name: Run e2e testing
+  #       shell: bash
+  #       run: |
+  #         # run e2e testing
+  #         cd nitro
+  #         chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.tar.gz
-          asset_content_type: application/gzip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.tar.gz
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.tar.gz
+  #         asset_content_type: application/gzip
 
-  macOS-Intel-build:
-    runs-on: macos-latest
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  # macOS-Intel-build:
+  #   runs-on: macos-latest
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
+  #   steps:
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
+  #     - name: Dependencies
+  #       id: depends
+  #       continue-on-error: true
+  #       run: |
+  #         brew update
 
-      - name: Build
-        id: cmake_build
-        run: |
-          ./install_deps.sh
-          mkdir build && cd build
-          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_METAL=OFF .. 
-          CC=gcc-8 make -j $(sysctl -n hw.ncp)
-          ls -la
+  #     - name: Build
+  #       id: cmake_build
+  #       run: |
+  #         ./install_deps.sh
+  #         mkdir build && cd build
+  #         cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_METAL=OFF .. 
+  #         CC=gcc-8 make -j $(sysctl -n hw.ncp)
+  #         ls -la
 
-      - name: Package
-        shell: bash
-        run: |
-          mkdir -p nitro
-          cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
+  #     - name: Package
+  #       shell: bash
+  #       run: |
+  #         mkdir -p nitro
+  #         cp build/nitro nitro/
+  #         tar -czvf nitro.tar.gz nitro
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-mac-amd64
-          path: ./nitro
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-mac-amd64
+  #         path: ./nitro
 
-      - name: Run e2e testing
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
+  #     - name: Run e2e testing
+  #       shell: bash
+  #       run: |
+  #         # run e2e testing
+  #         cd nitro
+  #         chmod +x ../.github/scripts/e2e-test-linux-and-mac.sh && ../.github/scripts/e2e-test-linux-and-mac.sh ./nitro ${{ env.MODEL_URL }}
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.tar.gz
-          asset_content_type: application/gzip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.tar.gz
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.tar.gz
+  #         asset_content_type: application/gzip
 
-  windows-amd64-build:
-    runs-on: windows-latest
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
-    strategy:
-      matrix:
-        cpu: ["AVX", "AVX2"]
-    steps:
-      - name: Clone
+  # windows-amd64-build:
+  #   runs-on: windows-latest
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
+  #   strategy:
+  #     matrix:
+  #       cpu: ["AVX", "AVX2"]
+  #   steps:
+  #     - name: Clone
 
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Setup VSWhere.exe
-        uses: warrenbuckley/Setup-VSWhere@v1
-        with:
-          version: latest
-          silent: true
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  #     - name: Setup VSWhere.exe
+  #       uses: warrenbuckley/Setup-VSWhere@v1
+  #       with:
+  #         version: latest
+  #         silent: true
+  #       env:
+  #         ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
-      - name: actions-setup-cmake
-        uses: jwlawson/actions-setup-cmake@v1.14.1
+  #     - name: actions-setup-cmake
+  #       uses: jwlawson/actions-setup-cmake@v1.14.1
 
-      - name: Build
-        id: cmake_build
-        shell: cmd
-        run: |
-          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
-          cmake --build ./build_deps/nitro_deps --config Release
-          mkdir -p build
-          cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_${{ matrix.cpu }}=ON
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+  #     - name: Build
+  #       id: cmake_build
+  #       shell: cmd
+  #       run: |
+  #         cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+  #         cmake --build ./build_deps/nitro_deps --config Release
+  #         mkdir -p build
+  #         cd build
+  #         cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_${{ matrix.cpu }}=ON
+  #         cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
-      - name: Pack artifacts
-        id: pack_artifacts
-        shell: cmd
-        run: |
-          robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
-          robocopy build\bin\Release\ .\build\Release\ llama.dll
-          dotnet tool install --global AzureSignTool
-          azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
-          7z a -ttar temp.tar .\build\Release\*
-          7z a -tgzip nitro.tar.gz temp.tar
+  #     - name: Pack artifacts
+  #       id: pack_artifacts
+  #       shell: cmd
+  #       run: |
+  #         robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
+  #         robocopy build\bin\Release\ .\build\Release\ llama.dll
+  #         dotnet tool install --global AzureSignTool
+  #         azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
+  #         7z a -ttar temp.tar .\build\Release\*
+  #         7z a -tgzip nitro.tar.gz temp.tar
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-win-amd64-${{ matrix.cpu }}
-          path: ./build/Release
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-win-amd64-${{ matrix.cpu }}
+  #         path: ./build/Release
 
-      # - name: Run e2e testing
-      #   shell: cmd
-      #   run: |
-      #     cd .\build\Release
-      #     ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
+  #     # - name: Run e2e testing
+  #     #   shell: cmd
+  #     #   run: |
+  #     #     cd .\build\Release
+  #     #     ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.cpu }}.tar.gz
-          asset_content_type: application/gzip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.tar.gz
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.cpu }}.tar.gz
+  #         asset_content_type: application/gzip
 
-  windows-amd64-cuda-build:
-    runs-on: windows-cuda-${{ matrix.cuda }}
-    needs: [create-draft-release, set-nitro-version]
-    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    permissions:
-      contents: write
+  # windows-amd64-cuda-build:
+  #   runs-on: windows-cuda-${{ matrix.cuda }}
+  #   needs: [create-draft-release, set-nitro-version]
+  #   if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+  #   permissions:
+  #     contents: write
 
-    strategy:
-      matrix:
-        cuda: ["12-0", "11-7"]
-        cpu: ["AVX", "AVX2"]
+  #   strategy:
+  #     matrix:
+  #       cuda: ["12-0", "11-7"]
+  #       cpu: ["AVX", "AVX2"]
 
-    steps:
-      - name: Setup VSWhere.exe
-        uses: warrenbuckley/Setup-VSWhere@v1
-        with:
-          version: latest
-          silent: true
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  #   steps:
+  #     - name: Setup VSWhere.exe
+  #       uses: warrenbuckley/Setup-VSWhere@v1
+  #       with:
+  #         version: latest
+  #         silent: true
+  #       env:
+  #         ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
-      - name: actions-setup-cmake
-        uses: jwlawson/actions-setup-cmake@v1.14.1
+  #     - name: actions-setup-cmake
+  #       uses: jwlawson/actions-setup-cmake@v1.14.1
 
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  #     - name: Clone
+  #       id: checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         submodules: recursive
 
-      - name: Setup VSWhere.exe
-        uses: warrenbuckley/Setup-VSWhere@v1
-        with:
-          version: latest
-          silent: true
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  #     - name: Setup VSWhere.exe
+  #       uses: warrenbuckley/Setup-VSWhere@v1
+  #       with:
+  #         version: latest
+  #         silent: true
+  #       env:
+  #         ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
-      - uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: "6.0.x"
+  #     - uses: actions/setup-dotnet@v3
+  #       with:
+  #         dotnet-version: "6.0.x"
 
-      - name: Build
-        id: cmake_build
-        shell: cmd
-        run: |
-          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
-          cmake --build ./build_deps/nitro_deps --config Release
-          mkdir -p build
-          cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_${{ matrix.cpu }}=ON
-          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+  #     - name: Build
+  #       id: cmake_build
+  #       shell: cmd
+  #       run: |
+  #         cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+  #         cmake --build ./build_deps/nitro_deps --config Release
+  #         mkdir -p build
+  #         cd build
+  #         cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_${{ matrix.cpu }}=ON
+  #         cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
-      - name: Pack artifacts
-        id: pack_artifacts
-        shell: cmd
-        run: |
-          set PATH=%PATH%;C:\Program Files\7-Zip\
-          robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
-          robocopy build\bin\Release\ .\build\Release\ llama.dll
-          dotnet tool install --global AzureSignTool
-          %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
-          7z a -ttar temp.tar .\build\Release\*
-          7z a -tgzip nitro.tar.gz temp.tar
+  #     - name: Pack artifacts
+  #       id: pack_artifacts
+  #       shell: cmd
+  #       run: |
+  #         set PATH=%PATH%;C:\Program Files\7-Zip\
+  #         robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
+  #         robocopy build\bin\Release\ .\build\Release\ llama.dll
+  #         dotnet tool install --global AzureSignTool
+  #         %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
+  #         7z a -ttar temp.tar .\build\Release\*
+  #         7z a -tgzip nitro.tar.gz temp.tar
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        with:
-          name: nitro-win-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}
-          path: ./build/Release
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v2
+  #       # if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+  #       with:
+  #         name: nitro-win-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}
+  #         path: ./build/Release
 
-      # - name: run e2e testing
-      #   shell: cmd
-      #   run: |
-      #     cd .\build\Release
-      #     ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
+  #     # - name: run e2e testing
+  #     #   shell: cmd
+  #     #   run: |
+  #     #     cd .\build\Release
+  #     #     ..\..\.github\scripts\e2e-test-windows.bat .\nitro.exe ${{ env.MODEL_URL }}
 
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}.tar.gz
-          asset_content_type: application/gzip
+  #     - uses: actions/upload-release-asset@v1.0.1
+  #       if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       with:
+  #         upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+  #         asset_path: ./nitro.tar.gz
+  #         asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-${{ matrix.cpu }}-cuda-${{ matrix.cuda }}.tar.gz
+  #         asset_content_type: application/gzip
 
-  update_release_draft:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs:
-      [
-        ubuntu-amd64-build,
-        ubuntu-amd64-cuda-build,
-        macOS-M-build,
-        macOS-Intel-build,
-        windows-amd64-build,
-        windows-amd64-cuda-build,
-      ]
-    permissions:
-      contents: write
-      pull-requests: write
-    runs-on: ubuntu-latest
-    steps:
-      - uses: release-drafter/release-drafter@v5
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # update_release_draft:
+  #   if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+  #   needs:
+  #     [
+  #       ubuntu-amd64-build,
+  #       ubuntu-amd64-cuda-build,
+  #       macOS-M-build,
+  #       macOS-Intel-build,
+  #       windows-amd64-build,
+  #       windows-amd64-cuda-build,
+  #     ]
+  #   permissions:
+  #     contents: write
+  #     pull-requests: write
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: release-drafter/release-drafter@v5
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  noti-discord-nightly:
-    if: always() && github.event_name == 'schedule' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
-    needs:
-      [
-        create-draft-release,
-        ubuntu-amd64-build,
-        ubuntu-amd64-cuda-build,
-        macOS-M-build,
-        macOS-Intel-build,
-        windows-amd64-build,
-        windows-amd64-cuda-build,
-      ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: "0"
-          token: ${{ secrets.PAT_SERVICE_ACCOUNT }}
-      - name: Notify Discord
-        uses: Ilshidur/action-discord@master
-        with:
-          args: "Nightly build artifact: https://github.com/janhq/nitro/actions/runs/{{ GITHUB_RUN_ID }}"
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-      - name: Update README.md with artifact URL
-        run: |
-          sed -i "s|<a href='https://github.com/janhq/nitro/actions/runs/.*'>|<a href='https://github.com/janhq/nitro/actions/runs/${GITHUB_RUN_ID}'>|" README.md
-          git config --global user.email "service@jan.ai"
-          git config --global user.name "Service Account"
-          git add README.md
-          git commit -m "${GITHUB_REPOSITORY}: Update README.md with nightly build artifact URL"
-          git -c http.extraheader="AUTHORIZATION: bearer ${{ secrets.PAT_SERVICE_ACCOUNT }}" push origin HEAD:main
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
+  # noti-discord-nightly:
+  #   if: always() && github.event_name == 'schedule' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
+  #   needs:
+  #     [
+  #       create-draft-release,
+  #       ubuntu-amd64-build,
+  #       ubuntu-amd64-cuda-build,
+  #       macOS-M-build,
+  #       macOS-Intel-build,
+  #       windows-amd64-build,
+  #       windows-amd64-cuda-build,
+  #     ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: "0"
+  #         token: ${{ secrets.PAT_SERVICE_ACCOUNT }}
+  #     - name: Notify Discord
+  #       uses: Ilshidur/action-discord@master
+  #       with:
+  #         args: "Nightly build artifact: https://github.com/janhq/nitro/actions/runs/{{ GITHUB_RUN_ID }}"
+  #       env:
+  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  #     - name: Update README.md with artifact URL
+  #       run: |
+  #         sed -i "s|<a href='https://github.com/janhq/nitro/actions/runs/.*'>|<a href='https://github.com/janhq/nitro/actions/runs/${GITHUB_RUN_ID}'>|" README.md
+  #         git config --global user.email "service@jan.ai"
+  #         git config --global user.name "Service Account"
+  #         git add README.md
+  #         git commit -m "${GITHUB_REPOSITORY}: Update README.md with nightly build artifact URL"
+  #         git -c http.extraheader="AUTHORIZATION: bearer ${{ secrets.PAT_SERVICE_ACCOUNT }}" push origin HEAD:main
+  #       env:
+  #         GITHUB_RUN_ID: ${{ github.run_id }}
 
-  noti-discord-manual:
-    if: always() && github.event_name == 'workflow_dispatch' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
-    needs:
-      [
-        create-draft-release,
-        ubuntu-amd64-build,
-        ubuntu-amd64-cuda-build,
-        macOS-M-build,
-        macOS-Intel-build,
-        windows-amd64-build,
-        windows-amd64-cuda-build,
-      ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: "0"
-          token: ${{ secrets.PAT_SERVICE_ACCOUNT }}
-      - name: Notify Discord
-        uses: Ilshidur/action-discord@master
-        with:
-          args: "Manual build artifact: https://github.com/janhq/nitro/actions/runs/{{ GITHUB_RUN_ID }}"
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-      # Update README.md with artifact URL if manual build from main branch
-      - name: Update README.md with artifact URL
-        if: github.ref == 'refs/heads/main'
-        run: |
-          sed -i "s|<a href='https://github.com/janhq/nitro/actions/runs/.*'>|<a href='https://github.com/janhq/nitro/actions/runs/${GITHUB_RUN_ID}'>|" README.md
-          git config --global user.email "service@jan.ai"
-          git config --global user.name "Service Account"
-          git add README.md
-          git commit -m "${GITHUB_REPOSITORY}: Update README.md with nightly build artifact URL"
-          git -c http.extraheader="AUTHORIZATION: bearer ${{ secrets.PAT_SERVICE_ACCOUNT }}" push origin HEAD:main
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
+  # noti-discord-manual:
+  #   if: always() && github.event_name == 'workflow_dispatch' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
+  #   needs:
+  #     [
+  #       create-draft-release,
+  #       ubuntu-amd64-build,
+  #       ubuntu-amd64-cuda-build,
+  #       macOS-M-build,
+  #       macOS-Intel-build,
+  #       windows-amd64-build,
+  #       windows-amd64-cuda-build,
+  #     ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         fetch-depth: "0"
+  #         token: ${{ secrets.PAT_SERVICE_ACCOUNT }}
+  #     - name: Notify Discord
+  #       uses: Ilshidur/action-discord@master
+  #       with:
+  #         args: "Manual build artifact: https://github.com/janhq/nitro/actions/runs/{{ GITHUB_RUN_ID }}"
+  #       env:
+  #         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+  #     # Update README.md with artifact URL if manual build from main branch
+  #     - name: Update README.md with artifact URL
+  #       if: github.ref == 'refs/heads/main'
+  #       run: |
+  #         sed -i "s|<a href='https://github.com/janhq/nitro/actions/runs/.*'>|<a href='https://github.com/janhq/nitro/actions/runs/${GITHUB_RUN_ID}'>|" README.md
+  #         git config --global user.email "service@jan.ai"
+  #         git config --global user.name "Service Account"
+  #         git add README.md
+  #         git commit -m "${GITHUB_REPOSITORY}: Update README.md with nightly build artifact URL"
+  #         git -c http.extraheader="AUTHORIZATION: bearer ${{ secrets.PAT_SERVICE_ACCOUNT }}" push origin HEAD:main
+  #       env:
+  #         GITHUB_RUN_ID: ${{ github.run_id }}
