@@ -70,7 +70,7 @@ set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
 # target_link_libraries(${PROJECT_NAME} PRIVATE nitro_deps)
 #
 # and comment out the following lines
-find_package(Drogon CONFIG REQUIRED)
+# find_package(Drogon CONFIG REQUIRED)
 # target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
 #                                               ${CMAKE_THREAD_LIBS_INIT})
 

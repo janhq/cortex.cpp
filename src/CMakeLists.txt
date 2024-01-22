@@ -16,6 +16,9 @@ function(find_object_files output_var)
     # Set the output variable with the found files in the parent scope
     set(${output_var} ${result} PARENT_SCOPE)
 endfunction()
+
+
+find_package(Drogon CONFIG REQUIRED)
 set(NITRO_SYSTEM_LIBS ${CMAKE_DL_LIBS})
 set(NITRO_LINK_LIBS
   Drogon::Drogon 
