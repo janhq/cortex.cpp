@@ -1,8 +1,12 @@
-#include "utils/nitro_utils.h"
+#include "nitro/utils/nitro_utils.h"
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <iostream>
+// TODO: move route registration somewhere else
+#include "nitro/controllers/health.h"
+#include "nitro/controllers/llamaCPP.h"
+#include "nitro/controllers/processManager.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
