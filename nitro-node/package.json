@@ -9,12 +9,12 @@
   "scripts": {
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "downloadnitro": "node download-nitro.js",
-    "publish:darwin": "../.github/scripts/auto-sign.sh && cpx \"bin/**\" \"dist/bin\" && npm pack",
-    "publish:win32": "cpx \"bin/**\" \"dist/bin\" && npm pack",
-    "publish:linux": "cpx \"bin/**\" \"dist/bin\" &&  npm pack",
-    "publish": "run-script-os",
-    "postinstall": "yarn run downloadnitro",
-    "prepack": "yarn run downloadnitro"
+    "build:publish:darwin": "../.github/scripts/auto-sign.sh && npm pack",
+    "build:publish:win32": "npm pack",
+    "build:publish:linux": "npm pack",
+    "build:publish": "run-script-os",
+    "postinstall": "node postinstall.js",
+    "prepack": "cpx \"bin/**\" \"dist/bin\""
   },
   "exports": {
     ".": "./dist/index.js",
@@ -26,8 +26,6 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@types/node": "^20.11.4",
     "@types/tcp-port-used": "^1.0.4",
-    "cpx": "^1.5.0",
-    "download-cli": "^1.1.1",
     "rimraf": "^3.0.2",
     "rollup": "^2.38.5",
     "rollup-plugin-define": "^1.0.1",
@@ -37,6 +35,8 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "cpx": "^1.5.0",
+    "download": "^8.0.0",
     "@janhq/core": "^0.1.11",
     "@rollup/plugin-replace": "^5.0.5",
     "@types/os-utils": "^0.0.4",
@@ -52,6 +52,7 @@
   },
   "files": [
     "download-nitro.js",
+    "postinstall.js",
     "dist/*",
     "package.json",
     "README.md"
