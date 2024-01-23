@@ -59,25 +59,6 @@ set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
 
 
 
-# third party import path
-# include_directories(build_deps/_install/include)
-# # third party objects
-# link_directories(build_deps/lib)
-
-# ##############################################################################
-# If you include the drogon source code locally in your project, use this method
-# to add drogon add_subdirectory(nitro_deps)
-# target_link_libraries(${PROJECT_NAME} PRIVATE nitro_deps)
-#
-# and comment out the following lines
-# find_package(Drogon CONFIG REQUIRED)
-# target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
-#                                               ${CMAKE_THREAD_LIBS_INIT})
-
-# add_subdirectory(nitro_deps)
-
-# ##############################################################################
-
 if(CMAKE_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and std::string_view
   message(STATUS "use c++14")
@@ -106,20 +87,18 @@ endif()
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
-add_subdirectory(nitro_deps/llama_interface)
-
-
-
-# target_include_directories(llama PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/llama.cpp")
-add_subdirectory(llama.cpp)
-add_subdirectory(src)
-
 
 add_executable(${PROJECT_NAME} main.cc)
-target_link_libraries(${PROJECT_NAME} PRIVATE nitrolib)
-# target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
-#                                               ${CMAKE_THREAD_LIBS_INIT})
 
+# interface package for llama (better namespace/dependency declaration) 
+add_subdirectory(nitro_deps/llama_interface)
+add_subdirectory(llama.cpp)
+
+
+# init nitrolib
+# all 3rd party dependencies are declared nitrolib instead
+add_subdirectory(src)
+target_link_libraries(${PROJECT_NAME} PRIVATE nitrolib)
 
 
 if (BUILD_TESTS)

@@ -44,16 +44,6 @@ target_include_directories(nitrolib PUBLIC ../build_deps/_install/include)
 # third party objects
 target_link_directories(nitrolib PUBLIC ../build_deps/lib)
 
-# ##############################################################################
-# If you include the drogon source code locally in your project, use this method
-# to add drogon add_subdirectory(nitro_deps)
-# target_link_libraries(${PROJECT_NAME} PRIVATE nitro_deps)
-#
-# and comment out the following lines
-
-
-# ##############################################################################
-
 if(CMAKE_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and std::string_view
   message(STATUS "use c++14")
