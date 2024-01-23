@@ -408,10 +408,22 @@ void llamaCPP::embedding(
 
   json prompt;
   if (jsonBody->isMember("input") != 0) {
-    prompt = (*jsonBody)["input"].asString();
+    if ((*jsonBody)["input"].isString()) {
+      prompt = (*jsonBody)["input"].asString();
+    } else if ((*jsonBody)["input"].isArray()) {
+      const auto &inputArray = (*jsonBody)["input"];
+      std::vector<std::string> inputStrings;
+      for (const auto &input : inputArray) {
+        if (input.isString()) {
+          inputStrings.push_back(input.asString());
+        }
+      }
+      prompt = inputStrings;
+    }
   } else {
     prompt = "";
   }
+
   const int task_id = llama.request_completion(
       {{"prompt", prompt}, {"n_predict", 0}}, false, true, -1);
   task_result result = llama.next_result(task_id);
