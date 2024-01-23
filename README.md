@@ -154,37 +154,37 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.12/nitro-0.2.12-win-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-win-amd64.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.12/nitro-0.2.12-win-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-win-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.12/nitro-0.2.12-mac-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.12/nitro-0.2.12-mac-arm64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.12/nitro-0.2.12-linux-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-linux-amd64.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.12/nitro-0.2.12-linux-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-linux-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
