@@ -48,7 +48,7 @@ set "URL=%URL%.tar.gz"
 echo Downloading Nitro from: %URL%
 powershell -Command "Invoke-WebRequest -OutFile '%TEMP%\nitro.tar.gz' '%URL%'"
 echo Extracting Nitro...
-powershell -Command "Expand-Archive -Path '%TEMP%\nitro.tar.gz' -DestinationPath '%APPDATA%\nitro'"
+powershell -Command "mkdir "%APPDATA%\nitro" | tar -zxvf '%TEMP%\nitro.tar.gz' -DestinationPath '%APPDATA%\nitro'"
 
 :: Add nitro to the PATH
 setx PATH "%APPDATA%\nitro;%PATH%"
