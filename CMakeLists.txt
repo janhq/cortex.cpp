@@ -25,7 +25,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
- # This is the critical line for installing another package
 
 if(LLAMA_CUBLAS)
   cmake_minimum_required(VERSION 3.17)
@@ -88,11 +87,11 @@ endif()
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
 
+add_subdirectory(llama.cpp)
 add_executable(${PROJECT_NAME} main.cc)
 
 # interface package for llama (better namespace/dependency declaration) 
 add_subdirectory(nitro_deps/llama_interface)
-add_subdirectory(llama.cpp)
 
 
 # init nitrolib
