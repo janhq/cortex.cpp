@@ -1,28 +1,8 @@
-declare const NODE: string;
-declare const INFERENCE_URL: string;
-declare const TROUBLESHOOTING_URL: string;
-
-/**
- * The parameters for the initModel function.
- * @property settings - The settings for the machine learning model.
- * @property settings.ctx_len - The context length.
- * @property settings.ngl - The number of generated tokens.
- * @property settings.cont_batching - Whether to use continuous batching.
- * @property settings.embedding - Whether to use embedding.
- */
-interface EngineSettings {
-  ctx_len: number;
-  ngl: number;
-  cpu_threads: number;
-  cont_batching: boolean;
-  embedding: boolean;
-}
-
 /**
  * The response from the initModel function.
  * @property error - An error message if the model fails to load.
  */
-interface ModelOperationResponse {
+interface NitroModelOperationResponse {
   error?: any;
   modelFile?: string;
 }
@@ -30,4 +10,37 @@ interface ModelOperationResponse {
 interface ResourcesInfo {
   numCpuPhysicalCore: number;
   memAvailable: number;
+}
+
+/**
+ * Setting for prompts when inferencing with Nitro
+ */
+interface NitroPromptSetting {
+  prompt_template?: string;
+  system_prompt?: string;
+  ai_prompt?: string;
+  user_prompt?: string;
+}
+
+/**
+ * The available model settings
+ */
+interface NitroModelSetting extends NitroPromptSetting {
+  llama_model_path: string;
+  cpu_threads: number;
+}
+
+/**
+ * The response object for model init operation.
+ */
+interface NitroModelInitOptions {
+  modelFullPath: string;
+  settings: NitroPromptSetting;
+}
+
+/**
+ * Logging interface for passing custom logger to nitro-node
+ */
+interface NitroLogger {
+  (message: string, fileName?: string): void;
 }

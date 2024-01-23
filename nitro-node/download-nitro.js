@@ -1,8 +1,6 @@
-const fs = require('fs');
 const path = require('path');
 const download = require('download');
 const stream = require('stream');
-const pipeline = stream.promises.pipeline;
 
 // Define nitro version to download in env variable
 const NITRO_VERSION = process.env.NITRO_VERSION || '0.2.11';

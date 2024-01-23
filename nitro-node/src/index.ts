@@ -1,277 +1,356 @@
-/**
- * @file This file exports a class that implements the InferenceExtension interface from the @janhq/core package.
- * The class provides methods for initializing and stopping a model, and for making inference requests.
- * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
- * @version 1.0.0
- * @module inference-extension/src/index
- */
-
-import {
-  ChatCompletionRole,
-  ContentType,
-  MessageRequest,
-  MessageStatus,
-  ThreadContent,
-  ThreadMessage,
-  events,
-  executeOnMain,
-  fs,
-  Model,
-  joinPath,
-  InferenceExtension,
-  log,
-  InferenceEngine,
-  MessageEvent,
-  ModelEvent,
-  InferenceEvent,
-} from "@janhq/core";
-import { requestInference } from "./helpers/sse";
-import { ulid } from "ulid";
+import fs from "fs";
+import path from "path";
+import { ChildProcessWithoutNullStreams, spawn } from "child_process";
+import tcpPortUsed from "tcp-port-used";
+import fetchRT from "fetch-retry";
+import osUtils from "os-utils";
+import { getNitroProcessInfo, updateNvidiaInfo } from "./nvidia";
+import { executableNitroFile } from "./execute";
+// Polyfill fetch with retry
+const fetchRetry = fetchRT(fetch);
 
 /**
- * A class that implements the InferenceExtension interface from the @janhq/core package.
- * The class provides methods for initializing and stopping a model, and for making inference requests.
- * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
+ * The response object of Prompt Template parsing.
  */
-export default class JanInferenceNitroExtension extends InferenceExtension {
-  private static readonly _homeDir = "file://engines";
-  private static readonly _settingsDir = "file://settings";
-  private static readonly _engineMetadataFileName = "nitro.json";
+type PromptTemplate = Omit<NitroPromptSetting, 'prompt_template'> & {
+  error?: string;
+}
 
-  /**
-   * Checking the health for Nitro's process each 5 secs.
-   */
-  private static readonly _intervalHealthCheck = 5 * 1000;
+// The PORT to use for the Nitro subprocess
+const PORT = 3928;
+// The HOST address to use for the Nitro subprocess
+const LOCAL_HOST = "127.0.0.1";
+// The URL for the Nitro subprocess
+const NITRO_HTTP_SERVER_URL = `http://${LOCAL_HOST}:${PORT}`;
+// The URL for the Nitro subprocess to load a model
+const NITRO_HTTP_LOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/loadmodel`;
+// The URL for the Nitro subprocess to validate a model
+const NITRO_HTTP_VALIDATE_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/modelstatus`;
+// The URL for the Nitro subprocess to kill itself
+const NITRO_HTTP_KILL_URL = `${NITRO_HTTP_SERVER_URL}/processmanager/destroy`;
 
-  private _currentModel: Model | undefined;
+// The supported model format
+// TODO: Should be an array to support more models
+const SUPPORTED_MODEL_FORMAT = ".gguf";
 
-  private _engineSettings: EngineSettings = {
-    ctx_len: 2048,
-    ngl: 100,
-    cpu_threads: 1,
-    cont_batching: false,
-    embedding: false,
+// The subprocess instance for Nitro
+let subprocess: ChildProcessWithoutNullStreams | undefined = undefined;
+// The current model file url
+let currentModelFile: string = "";
+// The current model settings
+let currentSettings: NitroModelSetting | undefined = undefined;
+// The logger to use, default to console.log
+let log: NitroLogger = (message, ..._) => console.log(message);
+
+/**
+ * Set logger before running nitro
+ */
+function setLogger(logger: NitroLogger) {
+  log = logger;
+}
+
+/**
+ * Stops a Nitro subprocess.
+ * @param wrapper - The model wrapper.
+ * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
+ */
+function stopModel(): Promise<void> {
+  return killSubprocess();
+}
+
+/**
+ * Initializes a Nitro subprocess to load a machine learning model.
+ * @param modelFullPath - The absolute full path to model directory.
+ * @param wrapper - The model wrapper.
+ * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
+ * TODO: Should pass absolute of the model file instead of just the name - So we can modurize the module.ts to npm package
+ */
+async function runModel(
+  {
+    modelFullPath,
+    settings,
+  }: NitroModelInitOptions
+): Promise<NitroModelOperationResponse | void> {
+  const files: string[] = fs.readdirSync(modelFullPath);
+
+  // Look for GGUF model file
+  const ggufBinFile = files.find(
+    (file) =>
+      file === path.basename(modelFullPath) ||
+      file.toLowerCase().includes(SUPPORTED_MODEL_FORMAT)
+  );
+
+  if (!ggufBinFile) return Promise.reject("No GGUF model file found");
+
+  currentModelFile = path.join(modelFullPath, ggufBinFile);
+
+  const nitroResourceProbe = await getResourcesInfo();
+  // Convert settings.prompt_template to system_prompt, user_prompt, ai_prompt
+  if (settings.prompt_template) {
+    const promptTemplate = settings.prompt_template;
+    const prompt = promptTemplateConverter(promptTemplate);
+    if (prompt?.error) {
+      return Promise.reject(prompt.error);
+    }
+    settings.system_prompt = prompt.system_prompt;
+    settings.user_prompt = prompt.user_prompt;
+    settings.ai_prompt = prompt.ai_prompt;
+  }
+
+  currentSettings = {
+    llama_model_path: currentModelFile,
+    ...settings,
+    // This is critical and requires real system information
+    cpu_threads: Math.max(1, Math.round(nitroResourceProbe.numCpuPhysicalCore / 2)),
   };
+  return runNitroAndLoadModel();
+}
 
-  controller = new AbortController();
-  isCancelled = false;
-
-  /**
-   * The interval id for the health check. Used to stop the health check.
-   */
-  private getNitroProcesHealthIntervalId: NodeJS.Timeout | undefined =
-    undefined;
-
-  /**
-   * Tracking the current state of nitro process.
-   */
-  private nitroProcessInfo: any = undefined;
-
-  /**
-   * Subscribes to events emitted by the @janhq/core package.
-   */
-  async onLoad() {
-    if (!(await fs.existsSync(JanInferenceNitroExtension._homeDir))) {
-      await fs
-        .mkdirSync(JanInferenceNitroExtension._homeDir)
-        .catch((err: Error) => console.debug(err));
-    }
-
-    if (!(await fs.existsSync(JanInferenceNitroExtension._settingsDir)))
-      await fs.mkdirSync(JanInferenceNitroExtension._settingsDir);
-    this.writeDefaultEngineSettings();
-
-    // Events subscription
-    events.on(MessageEvent.OnMessageSent, (data: MessageRequest) =>
-      this.onMessageRequest(data)
-    );
-
-    events.on(ModelEvent.OnModelInit, (model: Model) => this.onModelInit(model));
-
-    events.on(ModelEvent.OnModelStop, (model: Model) => this.onModelStop(model));
-
-    events.on(InferenceEvent.OnInferenceStopped, () => this.onInferenceStopped());
-
-    // Attempt to fetch nvidia info
-    await executeOnMain(NODE, "updateNvidiaInfo", {});
-  }
-
-  /**
-   * Stops the model inference.
-   */
-  onUnload(): void {}
-
-  private async writeDefaultEngineSettings() {
-    try {
-      const engineFile = await joinPath([
-        JanInferenceNitroExtension._homeDir,
-        JanInferenceNitroExtension._engineMetadataFileName,
-      ]);
-      if (await fs.existsSync(engineFile)) {
-        const engine = await fs.readFileSync(engineFile, "utf-8");
-        this._engineSettings =
-          typeof engine === "object" ? engine : JSON.parse(engine);
+/**
+ * 1. Spawn Nitro process
+ * 2. Load model into Nitro subprocess
+ * 3. Validate model status
+ * @returns
+ */
+async function runNitroAndLoadModel(): Promise<NitroModelOperationResponse | { error: any; }> {
+  // Gather system information for CPU physical cores and memory
+  return killSubprocess()
+    .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
+    .then(() => {
+      /**
+       * There is a problem with Windows process manager
+       * Should wait for awhile to make sure the port is free and subprocess is killed
+       * The tested threshold is 500ms
+       **/
+      if (process.platform === "win32") {
+        return new Promise((resolve) => setTimeout(resolve, 500));
       } else {
-        await fs.writeFileSync(
-          engineFile,
-          JSON.stringify(this._engineSettings, null, 2)
-        );
+        return Promise.resolve();
       }
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  private async onModelInit(model: Model) {
-    if (model.engine !== InferenceEngine.nitro) return;
-
-    const modelFullPath = await joinPath(["models", model.id]);
-
-    const nitroInitResult = await executeOnMain(NODE, "runModel", {
-      modelFullPath,
-      model,
+    })
+    .then(spawnNitroProcess)
+    .then(() => loadLLMModel(currentSettings))
+    .then(validateModelStatus)
+    .catch((err) => {
+      // TODO: Broadcast error so app could display proper error message
+      log(`[NITRO]::Error: ${err}`);
+      return { error: err };
     });
+}
 
-    if (nitroInitResult?.error) {
-      events.emit(ModelEvent.OnModelFail, model);
-      return;
-    }
+/**
+ * Parse prompt template into agrs settings
+ * @param promptTemplate Template as string
+ * @returns
+ */
+function promptTemplateConverter(promptTemplate: string): PromptTemplate {
+  // Split the string using the markers
+  const systemMarker = "{system_message}";
+  const promptMarker = "{prompt}";
 
-    this._currentModel = model;
-    events.emit(ModelEvent.OnModelReady, model);
+  if (
+    promptTemplate.includes(systemMarker) &&
+    promptTemplate.includes(promptMarker)
+  ) {
+    // Find the indices of the markers
+    const systemIndex = promptTemplate.indexOf(systemMarker);
+    const promptIndex = promptTemplate.indexOf(promptMarker);
 
-    this.getNitroProcesHealthIntervalId = setInterval(
-      () => this.periodicallyGetNitroHealth(),
-      JanInferenceNitroExtension._intervalHealthCheck
+    // Extract the parts of the string
+    const system_prompt = promptTemplate.substring(0, systemIndex);
+    const user_prompt = promptTemplate.substring(
+      systemIndex + systemMarker.length,
+      promptIndex
     );
+    const ai_prompt = promptTemplate.substring(
+      promptIndex + promptMarker.length
+    );
+
+    // Return the split parts
+    return { system_prompt, user_prompt, ai_prompt };
+  } else if (promptTemplate.includes(promptMarker)) {
+    // Extract the parts of the string for the case where only promptMarker is present
+    const promptIndex = promptTemplate.indexOf(promptMarker);
+    const user_prompt = promptTemplate.substring(0, promptIndex);
+    const ai_prompt = promptTemplate.substring(
+      promptIndex + promptMarker.length
+    );
+
+    // Return the split parts
+    return { user_prompt, ai_prompt };
   }
 
-  private async onModelStop(model: Model) {
-    if (model.engine !== "nitro") return;
+  // Return an error if none of the conditions are met
+  return { error: "Cannot split prompt template" };
+}
 
-    await executeOnMain(NODE, "stopModel");
-    events.emit(ModelEvent.OnModelStopped, {});
-
-    // stop the periocally health check
-    if (this.getNitroProcesHealthIntervalId) {
-      clearInterval(this.getNitroProcesHealthIntervalId);
-      this.getNitroProcesHealthIntervalId = undefined;
-    }
-  }
-
-  /**
-   * Periodically check for nitro process's health.
-   */
-  private async periodicallyGetNitroHealth(): Promise<void> {
-    const health = await executeOnMain(NODE, "getCurrentNitroProcessInfo");
-
-    const isRunning = this.nitroProcessInfo?.isRunning ?? false;
-    if (isRunning && health.isRunning === false) {
-      console.debug("Nitro process is stopped");
-      events.emit(ModelEvent.OnModelStopped, {});
-    }
-    this.nitroProcessInfo = health;
-  }
-
-  private async onInferenceStopped() {
-    this.isCancelled = true;
-    this.controller?.abort();
-  }
-
-  /**
-   * Makes a single response inference request.
-   * @param {MessageRequest} data - The data for the inference request.
-   * @returns {Promise<any>} A promise that resolves with the inference response.
-   */
-  async inference(data: MessageRequest): Promise<ThreadMessage> {
-    const timestamp = Date.now();
-    const message: ThreadMessage = {
-      thread_id: data.threadId,
-      created: timestamp,
-      updated: timestamp,
-      status: MessageStatus.Ready,
-      id: "",
-      role: ChatCompletionRole.Assistant,
-      object: "thread.message",
-      content: [],
-    };
-
-    return new Promise(async (resolve, reject) => {
-      if (!this._currentModel) return Promise.reject("No model loaded");
-
-      requestInference(data.messages ?? [], this._currentModel).subscribe({
-        next: (_content) => {},
-        complete: async () => {
-          resolve(message);
-        },
-        error: async (err) => {
-          reject(err);
-        },
-      });
+/**
+ * Loads a LLM model into the Nitro subprocess by sending a HTTP POST request.
+ * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
+ */
+async function loadLLMModel(settings: any): Promise<Response> {
+  log(`[NITRO]::Debug: Loading model with params ${JSON.stringify(settings)}`);
+  try {
+    const res = await fetchRetry(NITRO_HTTP_LOAD_MODEL_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(settings),
+      retries: 3,
+      retryDelay: 500,
     });
-  }
-
-  /**
-   * Handles a new message request by making an inference request and emitting events.
-   * Function registered in event manager, should be static to avoid binding issues.
-   * Pass instance as a reference.
-   * @param {MessageRequest} data - The data for the new message request.
-   */
-  private async onMessageRequest(data: MessageRequest) {
-    if (data.model?.engine !== InferenceEngine.nitro || !this._currentModel) {
-      return;
-    }
-
-    const timestamp = Date.now();
-    const message: ThreadMessage = {
-      id: ulid(),
-      thread_id: data.threadId,
-      assistant_id: data.assistantId,
-      role: ChatCompletionRole.Assistant,
-      content: [],
-      status: MessageStatus.Pending,
-      created: timestamp,
-      updated: timestamp,
-      object: "thread.message",
-    };
-    events.emit(MessageEvent.OnMessageResponse, message);
-
-    this.isCancelled = false;
-    this.controller = new AbortController();
-
-    // @ts-ignore
-    const model: Model = {
-      ...(this._currentModel || {}),
-      ...(data.model || {}),
-    };
-    requestInference(data.messages ?? [], model, this.controller).subscribe({
-      next: (content) => {
-        const messageContent: ThreadContent = {
-          type: ContentType.Text,
-          text: {
-            value: content.trim(),
-            annotations: [],
-          },
-        };
-        message.content = [messageContent];
-        events.emit(MessageEvent.OnMessageUpdate, message);
-      },
-      complete: async () => {
-        message.status = message.content.length
-          ? MessageStatus.Ready
-          : MessageStatus.Error;
-        events.emit(MessageEvent.OnMessageUpdate, message);
-      },
-      error: async (err) => {
-        if (this.isCancelled || message.content.length) {
-          message.status = MessageStatus.Stopped;
-          events.emit(MessageEvent.OnMessageUpdate, message);
-          return;
-        }
-        message.status = MessageStatus.Error;
-        events.emit(MessageEvent.OnMessageUpdate, message);
-        log(`[APP]::Error: ${err.message}`);
-      },
-    });
+    log(
+      `[NITRO]::Debug: Load model success with response ${JSON.stringify(
+        res
+      )}`
+    );
+    return await Promise.resolve(res);
+  } catch (err) {
+    log(`[NITRO]::Error: Load model failed with error ${err}`);
+    return await Promise.reject();
   }
 }
+
+/**
+ * Validates the status of a model.
+ * @returns {Promise<NitroModelOperationResponse>} A promise that resolves to an object.
+ * If the model is loaded successfully, the object is empty.
+ * If the model is not loaded successfully, the object contains an error message.
+ */
+async function validateModelStatus(): Promise<NitroModelOperationResponse> {
+  // Send a GET request to the validation URL.
+  // Retry the request up to 3 times if it fails, with a delay of 500 milliseconds between retries.
+  return fetchRetry(NITRO_HTTP_VALIDATE_MODEL_URL, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    retries: 5,
+    retryDelay: 500,
+  }).then(async (res: Response) => {
+    log(
+      `[NITRO]::Debug: Validate model state success with response ${JSON.stringify(
+        res
+      )}`
+    );
+    // If the response is OK, check model_loaded status.
+    if (res.ok) {
+      const body = await res.json();
+      // If the model is loaded, return an empty object.
+      // Otherwise, return an object with an error message.
+      if (body.model_loaded) {
+        return Promise.resolve({});
+      }
+    }
+    return Promise.reject("Validate model status failed");
+  });
+}
+
+/**
+ * Terminates the Nitro subprocess.
+ * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
+ */
+async function killSubprocess(): Promise<void> {
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), 5000);
+  log(`[NITRO]::Debug: Request to kill Nitro`);
+
+  return fetch(NITRO_HTTP_KILL_URL, {
+    method: "DELETE",
+    signal: controller.signal,
+  })
+    .then(() => {
+      subprocess?.kill();
+      subprocess = undefined;
+    })
+    .catch(() => { })
+    .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
+    .then(() => log(`[NITRO]::Debug: Nitro process is terminated`));
+}
+
+/**
+ * Spawns a Nitro subprocess.
+ * @returns A promise that resolves when the Nitro subprocess is started.
+ */
+function spawnNitroProcess(): Promise<void> {
+  log(`[NITRO]::Debug: Spawning Nitro subprocess...`);
+
+  return new Promise<void>(async (resolve, reject) => {
+    const binaryFolder = path.join(__dirname, "..", "bin"); // Current directory by default
+    const executableOptions = executableNitroFile();
+
+    const args: string[] = ["1", LOCAL_HOST, PORT.toString()];
+    // Execute the binary
+    log(
+      `[NITRO]::Debug: Spawn nitro at path: ${executableOptions.executablePath}, and args: ${args}`
+    );
+    subprocess = spawn(
+      executableOptions.executablePath,
+      ["1", LOCAL_HOST, PORT.toString()],
+      {
+        cwd: binaryFolder,
+        env: {
+          ...process.env,
+          CUDA_VISIBLE_DEVICES: executableOptions.cudaVisibleDevices,
+        },
+      }
+    );
+
+    // Handle subprocess output
+    subprocess.stdout.on("data", (data: any) => {
+      log(`[NITRO]::Debug: ${data}`);
+    });
+
+    subprocess.stderr.on("data", (data: any) => {
+      log(`[NITRO]::Error: ${data}`);
+    });
+
+    subprocess.on("close", (code: any) => {
+      log(`[NITRO]::Debug: Nitro exited with code: ${code}`);
+      subprocess = undefined;
+      reject(`child process exited with code ${code}`);
+    });
+
+    tcpPortUsed.waitUntilUsed(PORT, 300, 30000).then(() => {
+      log(`[NITRO]::Debug: Nitro is ready`);
+      resolve();
+    });
+  });
+}
+
+/**
+ * Get the system resources information
+ * TODO: Move to Core so that it can be reused
+ */
+function getResourcesInfo(): Promise<ResourcesInfo> {
+  return new Promise(async (resolve) => {
+    const cpu = osUtils.cpuCount();
+    log(`[NITRO]::CPU informations - ${cpu}`);
+    const response: ResourcesInfo = {
+      numCpuPhysicalCore: cpu,
+      memAvailable: 0,
+    };
+    resolve(response);
+  });
+}
+
+/**
+ * Every module should have a dispose function
+ * This will be called when the extension is unloaded and should clean up any resources
+ * Also called when app is closed
+ */
+function dispose() {
+  // clean other registered resources here
+  killSubprocess();
+}
+
+export default {
+  setLogger,
+  runModel,
+  stopModel,
+  killSubprocess,
+  dispose,
+  updateNvidiaInfo,
+  getCurrentNitroProcessInfo: () => getNitroProcessInfo(subprocess),
+};

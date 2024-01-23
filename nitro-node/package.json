@@ -1,9 +1,9 @@
 {
   "name": "@janhq/nitro-node",
   "version": "1.0.0",
-  "description": "This extension embeds Nitro, a lightweight (3mb) inference engine written in C++. See nitro.jan.ai",
+  "description": "This NodeJS library is a wrapper for Nitro, a lightweight (3mb) inference engine written in C++. See nitro.jan.ai",
   "main": "dist/index.js",
-  "node": "dist/node/index.cjs.js",
+  "node": "dist/index.cjs.js",
   "author": "Jan <service@jan.ai>",
   "license": "AGPL-3.0",
   "scripts": {
@@ -18,7 +18,7 @@
   },
   "exports": {
     ".": "./dist/index.js",
-    "./main": "./dist/node/index.cjs.js"
+    "./main": "./dist/index.cjs.js"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
