@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #if defined(_WIN32)
+#include <windows.h>
 #define NOMINMAX
 #endif
 
