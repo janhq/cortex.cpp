@@ -359,7 +359,8 @@ void llamaCPP::chatCompletion(
           while (state->instance->single_queue_is_busy) {
             LOG_INFO << "Waiting for task to be released status:"
                      << state->instance->single_queue_is_busy;
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Waiting in 500 miliseconds step
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                500)); // Waiting in 500 miliseconds step
           }
         }
         std::string str = "\n\n";
@@ -475,6 +476,9 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["grp_attn_w"].isNull()) {
 
       params.grp_attn_w = jsonBody["grp_attn_w"].asInt();
+    }
+    if (!jsonBody["mlock"].isNull()) {
+      params.use_mlock = jsonBody["mlock"].asBool();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
