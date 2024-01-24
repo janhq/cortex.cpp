@@ -22,13 +22,8 @@ std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
 
 // --------------------------------------------
 
-std::string create_embedding_payload(const std::vector<float> &embedding,
+Json::Value create_embedding_payload(const std::vector<float> &embedding,
                                      int prompt_tokens) {
-  Json::Value root;
-
-  root["object"] = "list";
-
-  Json::Value dataArray(Json::arrayValue);
   Json::Value dataItem;
 
   dataItem["object"] = "embedding";
@@ -40,20 +35,7 @@ std::string create_embedding_payload(const std::vector<float> &embedding,
   dataItem["embedding"] = embeddingArray;
   dataItem["index"] = 0;
 
-  dataArray.append(dataItem);
-  root["data"] = dataArray;
-
-  root["model"] = "_";
-
-  Json::Value usage;
-  usage["prompt_tokens"] = prompt_tokens;
-  usage["total_tokens"] = prompt_tokens; // Assuming total tokens equals prompt
-                                         // tokens in this context
-  root["usage"] = usage;
-
-  Json::StreamWriterBuilder writer;
-  writer["indentation"] = ""; // Compact output
-  return Json::writeString(writer, root);
+  return dataItem;
 }
 
 std::string create_full_return_json(const std::string &id,
@@ -241,18 +223,33 @@ void llamaCPP::chatCompletion(
           for (auto content_piece : message["content"]) {
             role = user_prompt;
 
+            json content_piece_image_data;
+            content_piece_image_data["data"] = "";
+
             auto content_piece_type = content_piece["type"].asString();
             if (content_piece_type == "text") {
               auto text = content_piece["text"].asString();
               formatted_output += text;
             } else if (content_piece_type == "image_url") {
               auto image_url = content_piece["image_url"]["url"].asString();
-              auto base64_image_data = nitro_utils::extractBase64(image_url);
-              LOG_INFO << base64_image_data;
-              formatted_output += "[img-" + std::to_string(no_images) + "]";
-
-              json content_piece_image_data;
+              std::string base64_image_data;
+              if (image_url.find("http") != std::string::npos) {
+                LOG_INFO << "Remote image detected but not supported yet";
+              } else if (image_url.find("data:image") != std::string::npos) {
+                LOG_INFO << "Base64 image detected";
+                base64_image_data = nitro_utils::extractBase64(image_url);
+                LOG_INFO << base64_image_data;
+              } else {
+                LOG_INFO << "Local image detected";
+                nitro_utils::processLocalImage(
+                    image_url, [&](const std::string &base64Image) {
+                      base64_image_data = base64Image;
+                    });
+                LOG_INFO << base64_image_data;
+              }
               content_piece_image_data["data"] = base64_image_data;
+
+              formatted_output += "[img-" + std::to_string(no_images) + "]";
               content_piece_image_data["id"] = no_images;
               data["image_data"].push_back(content_piece_image_data);
               no_images++;
@@ -360,7 +357,8 @@ void llamaCPP::chatCompletion(
           while (state->instance->single_queue_is_busy) {
             LOG_INFO << "Waiting for task to be released status:"
                      << state->instance->single_queue_is_busy;
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Waiting in 500 miliseconds step
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                500)); // Waiting in 500 miliseconds step
           }
         }
         std::string str = "\n\n";
@@ -406,19 +404,42 @@ void llamaCPP::embedding(
     std::function<void(const HttpResponsePtr &)> &&callback) {
   const auto &jsonBody = req->getJsonObject();
 
-  json prompt;
-  if (jsonBody->isMember("input") != 0) {
-    prompt = (*jsonBody)["input"].asString();
-  } else {
-    prompt = "";
+  Json::Value responseData(Json::arrayValue);
+
+  if (jsonBody->isMember("input")) {
+    const Json::Value &input = (*jsonBody)["input"];
+    if (input.isString()) {
+      // Process the single string input
+      const int task_id = llama.request_completion(
+          {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
+      task_result result = llama.next_result(task_id);
+      std::vector<float> embedding_result = result.result_json["embedding"];
+      responseData.append(create_embedding_payload(embedding_result, 0));
+    } else if (input.isArray()) {
+      // Process each element in the array input
+      for (const auto &elem : input) {
+        if (elem.isString()) {
+          const int task_id = llama.request_completion(
+              {{"prompt", elem.asString()}, {"n_predict", 0}}, false, true, -1);
+          task_result result = llama.next_result(task_id);
+          std::vector<float> embedding_result = result.result_json["embedding"];
+          responseData.append(create_embedding_payload(embedding_result, 0));
+        }
+      }
+    }
   }
-  const int task_id = llama.request_completion(
-      {{"prompt", prompt}, {"n_predict", 0}}, false, true, -1);
-  task_result result = llama.next_result(task_id);
-  std::vector<float> embedding_result = result.result_json["embedding"];
+
   auto resp = nitro_utils::nitroHttpResponse();
-  std::string embedding_resp = create_embedding_payload(embedding_result, 0);
-  resp->setBody(embedding_resp);
+  Json::Value root;
+  root["data"] = responseData;
+  root["model"] = "_";
+  root["object"] = "list";
+  Json::Value usage;
+  usage["prompt_tokens"] = 0;
+  usage["total_tokens"] = 0;
+  root["usage"] = usage;
+
+  resp->setBody(Json::writeString(Json::StreamWriterBuilder(), root));
   resp->setContentTypeString("application/json");
   callback(resp);
   return;
@@ -476,6 +497,9 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["grp_attn_w"].isNull()) {
 
       params.grp_attn_w = jsonBody["grp_attn_w"].asInt();
+    }
+    if (!jsonBody["mlock"].isNull()) {
+      params.use_mlock = jsonBody["mlock"].asBool();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
