@@ -10,20 +10,20 @@ const PLATFORM = process.env.npm_config_platform || process.platform;
 //const ARCH = process.env.npm_config_arch || process.arch;
 
 const linuxVariants = {
-  'linux-amd64': path.join('.', 'bin', 'linux-cpu'),
-  'linux-amd64-cuda-12-0': path.join('.', 'bin', 'linux-cuda-12-0'),
-  'linux-amd64-cuda-11-7': path.join('.', 'bin', 'linux-cuda-11-7'),
+  'linux-amd64': path.join(__dirname, 'bin', 'linux-cpu'),
+  'linux-amd64-cuda-12-0': path.join(__dirname, 'bin', 'linux-cuda-12-0'),
+  'linux-amd64-cuda-11-7': path.join(__dirname, 'bin', 'linux-cuda-11-7'),
 }
 
 const darwinVariants = {
-  'mac-arm64': path.join('.', 'bin', 'mac-arm64'),
-  'mac-amd64': path.join('.', 'bin', 'mac-x64'),
+  'mac-arm64': path.join(__dirname, 'bin', 'mac-arm64'),
+  'mac-amd64': path.join(__dirname, 'bin', 'mac-x64'),
 }
 
 const win32Variants = {
-  'win-amd64-cuda-12-0': path.join('.', 'bin', 'win-cuda-12-0'),
-  'win-amd64-cuda-11-7': path.join('.', 'bin', 'win-cuda-11-7'),
-  'win-amd64': path.join('.', 'bin', 'win-cpu'),
+  'win-amd64-cuda-12-0': path.join(__dirname, 'bin', 'win-cuda-12-0'),
+  'win-amd64-cuda-11-7': path.join(__dirname, 'bin', 'win-cuda-11-7'),
+  'win-amd64': path.join(__dirname, 'bin', 'win-cpu'),
 }
 
 // Mapping to installation variants
