@@ -1,6 +1,5 @@
 const path = require('path');
 const download = require('download');
-const stream = require('stream');
 
 // Define nitro version to download in env variable
 const NITRO_VERSION = process.env.NITRO_VERSION || '0.2.11';
@@ -46,8 +45,11 @@ const getTarUrl = (version, suffix) => `https://github.com/janhq/nitro/releases/
 const createProgressReporter = (variant) => (stream) => stream.on(
   'downloadProgress',
   (progress) => {
+    // Print and update progress on a single line of terminal
     process.stdout.write(`\r[${variant}] ${progress.transferred}/${progress.total} ${Math.floor(progress.percent * 100)}%...`);
-  }).on('finish', () => {
+  }).on('end', () => {
+    // Jump to new line to log next message
+    console.log();
     console.log(`[${variant}] Finished downloading!`);
   })
 
@@ -65,11 +67,9 @@ const downloadBinary = (version, suffix, filePath) => {
 }
 
 // Download the binaries
-const downloadBinaries = async (version, config) => {
-  await Object.entries(config).reduce(
-    async (p, [k, v]) => {
-      p.then(() => downloadBinary(version, k, v));
-    },
+const downloadBinaries = (version, config) => {
+  return Object.entries(config).reduce(
+    (p, [k, v]) => p.then(() => downloadBinary(version, k, v)),
     Promise.resolve(),
   );
 }
