@@ -7,6 +7,8 @@
   "author": "Jan <service@jan.ai>",
   "license": "AGPL-3.0",
   "scripts": {
+    "test": "jest --verbose --detectOpenHandles",
+    "pretest": "node download-nitro.js",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "downloadnitro": "node download-nitro.js",
     "build:publish": "npm pack",
@@ -21,6 +23,8 @@
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-replace": "^5.0.5",
+    "@types/download": "^8.0.5",
+    "@types/jest": "^29.5.11",
     "@types/node": "^20.11.4",
     "@types/os-utils": "^0.0.4",
     "@types/tcp-port-used": "^1.0.4",
@@ -30,6 +34,7 @@
     "rollup-plugin-define": "^1.0.1",
     "rollup-plugin-sourcemaps": "^0.6.3",
     "rollup-plugin-typescript2": "^0.36.0",
+    "ts-jest": "^29.1.2",
     "typescript": "^5.3.3"
   },
   "dependencies": {

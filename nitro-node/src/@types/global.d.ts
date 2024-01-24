@@ -16,7 +16,6 @@ interface ResourcesInfo {
  * Setting for prompts when inferencing with Nitro
  */
 interface NitroPromptSetting {
-  prompt_template?: string;
   system_prompt?: string;
   ai_prompt?: string;
   user_prompt?: string;
@@ -35,7 +34,7 @@ interface NitroModelSetting extends NitroPromptSetting {
  */
 interface NitroModelInitOptions {
   modelFullPath: string;
-  settings: NitroPromptSetting;
+  promptTemplate?: string;
 }
 
 /**

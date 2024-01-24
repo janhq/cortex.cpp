@@ -80,6 +80,7 @@ const run = () => {
 }
 
 module.exports = run;
+module.exports.createProgressReporter = createProgressReporter
 
 // Run script if called directly instead of import as module
 if (require.main === module) {

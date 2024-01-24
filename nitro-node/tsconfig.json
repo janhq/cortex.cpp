@@ -17,6 +17,7 @@
     "declarationDir": "dist/types",
     "outDir": "dist",
     "importHelpers": true,
+    "esModuleInterop": true,
     "typeRoots": [
       "node_modules/@types"
     ]

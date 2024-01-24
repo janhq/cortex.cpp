@@ -1,7 +1,7 @@
-import { writeFileSync, existsSync, readFileSync } from "fs";
-import { exec } from "child_process";
-import path from "path";
-import { homedir } from "os";
+import { writeFileSync, existsSync, readFileSync } from "node:fs";
+import { exec } from "node:child_process";
+import path from "node:path";
+import { homedir } from "node:os";
 
 /**
  * Default GPU settings

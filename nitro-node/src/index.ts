@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import { ChildProcessWithoutNullStreams, spawn } from "child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import tcpPortUsed from "tcp-port-used";
 import fetchRT from "fetch-retry";
 import osUtils from "os-utils";
@@ -8,13 +8,6 @@ import { getNitroProcessInfo, updateNvidiaInfo } from "./nvidia";
 import { executableNitroFile } from "./execute";
 // Polyfill fetch with retry
 const fetchRetry = fetchRT(fetch);
-
-/**
- * The response object of Prompt Template parsing.
- */
-type PromptTemplate = Omit<NitroPromptSetting, 'prompt_template'> & {
-  error?: string;
-}
 
 // The PORT to use for the Nitro subprocess
 const PORT = 3928;
@@ -68,9 +61,9 @@ function stopModel(): Promise<void> {
 async function runModel(
   {
     modelFullPath,
-    settings,
+    promptTemplate,
   }: NitroModelInitOptions
-): Promise<NitroModelOperationResponse | void> {
+): Promise<NitroModelOperationResponse | Error> {
   const files: string[] = fs.readdirSync(modelFullPath);
 
   // Look for GGUF model file
@@ -85,21 +78,19 @@ async function runModel(
   currentModelFile = path.join(modelFullPath, ggufBinFile);
 
   const nitroResourceProbe = await getResourcesInfo();
-  // Convert settings.prompt_template to system_prompt, user_prompt, ai_prompt
-  if (settings.prompt_template) {
-    const promptTemplate = settings.prompt_template;
-    const prompt = promptTemplateConverter(promptTemplate);
-    if (prompt?.error) {
-      return Promise.reject(prompt.error);
+  // Convert promptTemplate to system_prompt, user_prompt, ai_prompt
+  const prompt: NitroPromptSetting = {};
+  if (promptTemplate) {
+    try {
+      Object.assign(prompt, promptTemplateConverter(promptTemplate));
+    } catch (e: any) {
+      return Promise.reject(e);
     }
-    settings.system_prompt = prompt.system_prompt;
-    settings.user_prompt = prompt.user_prompt;
-    settings.ai_prompt = prompt.ai_prompt;
   }
 
   currentSettings = {
+    ...prompt,
     llama_model_path: currentModelFile,
-    ...settings,
     // This is critical and requires real system information
     cpu_threads: Math.max(1, Math.round(nitroResourceProbe.numCpuPhysicalCore / 2)),
   };
@@ -140,10 +131,11 @@ async function runNitroAndLoadModel(): Promise<NitroModelOperationResponse | { e
 
 /**
  * Parse prompt template into agrs settings
- * @param promptTemplate Template as string
- * @returns
+ * @param {string} promptTemplate Template as string
+ * @returns {(NitroPromptSetting | never)} parsed prompt setting
+ * @throws {Error} if cannot split promptTemplate
  */
-function promptTemplateConverter(promptTemplate: string): PromptTemplate {
+function promptTemplateConverter(promptTemplate: string): NitroPromptSetting | never {
   // Split the string using the markers
   const systemMarker = "{system_message}";
   const promptMarker = "{prompt}";
@@ -180,8 +172,8 @@ function promptTemplateConverter(promptTemplate: string): PromptTemplate {
     return { user_prompt, ai_prompt };
   }
 
-  // Return an error if none of the conditions are met
-  return { error: "Cannot split prompt template" };
+  // Throw error if none of the conditions are met
+  throw Error("Cannot split prompt template");
 }
 
 /**

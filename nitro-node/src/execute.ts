@@ -1,5 +1,5 @@
-import { readFileSync } from "fs";
-import * as path from "path";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { NVIDIA_INFO_FILE } from "./nvidia";
 
 
