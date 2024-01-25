@@ -61,7 +61,7 @@ jobs:
           cd scripts
           node e2e-test-install-nitro-node.js
 
-  windows-build:
+  windows-install:
     runs-on: windows-latest
     steps:
       - name: Clone
