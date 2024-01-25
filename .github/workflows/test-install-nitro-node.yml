@@ -1,0 +1,83 @@
+name: Test install nitro-node
+
+on:
+  #schedule:
+  #  - cron: "0 20 * * *" # At 8 PM UTC, which is 3 AM UTC+7
+  push:
+    branches:
+      - main
+      - feat/1635/decouple-nitro-inference-engine-into-a-library
+    #tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    paths:
+      - ".github/scripts/e2e-test-install-nitro-node.js"
+      - ".github/workflows/test-install-nitro-node.yml"
+      - "nitro-node"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/scripts/e2e-test-install-nitro-node.js"
+      - ".github/workflows/test-install-nitro-node.yml"
+      - "nitro-node"
+  workflow_dispatch:
+
+jobs:
+  ubuntu-install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run tests
+        id: test_install_nitro_node
+        run: |
+          cd .github
+          cd scripts
+          node e2e-test-install-nitro-node.js
+
+  macOS-install:
+    runs-on: macos-latest
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run tests
+        id: test_install_nitro_node
+        run: |
+          cd .github
+          cd scripts
+          node e2e-test-install-nitro-node.js
+
+  windows-build:
+    runs-on: windows-latest
+    steps:
+      - name: Clone
+
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run tests
+        id: test_install_nitro_node
+        run: |
+          cd .github
+          cd scripts
+          node e2e-test-install-nitro-node.js
