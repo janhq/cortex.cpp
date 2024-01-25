@@ -181,7 +181,7 @@ void llamaCPP::chatCompletion(
 
   const auto &jsonBody = req->getJsonObject();
 
-  std::cout << (*jsonBody) << "\n";
+  // std::cout << (*jsonBody) << "\n";
 
   std::string formatted_output = pre_prompt;
 
@@ -506,7 +506,7 @@ void llamaCPP::modelStatus(
 
 bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
 
-  std::cout << jsonBody << "\n";
+  // std::cout << jsonBody << "\n";
 
   gpt_params params;
 
