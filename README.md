@@ -127,6 +127,7 @@ Table of parameters
 | `clean_cache_threshold` | Integer | Number of chats that will trigger clean cache action|
 |`grp_attn_n`|Integer|Group attention factor in self-extend|
 |`grp_attn_w`|Integer|Group attention width in self-extend|
+|`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh

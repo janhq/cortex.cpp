@@ -80,3 +80,4 @@ In case you got error while loading models. Please check for the correct model p
 |`clean_cache_threshold`|	Integer|	Number of chats that will trigger clean cache action.|
 |`grp_attn_n`|Integer|Group attention factor in self-extend|
 |`grp_attn_w`|Integer|Group attention width in self-extend|
+|`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
