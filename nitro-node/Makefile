@@ -21,13 +21,21 @@ build: install
 download-nitro: install
 	yarn run downloadnitro
 
+test-ci: install
+	yarn test
+
+# Note, this make target is just for testing on *NIX systems
+test: install
+	@test -e test/test_assets/model.gguf &&  echo "test/test_assets/model.gguf is already downloaded" || (mkdir -p test/test_assets && curl -JLo test/test_assets/model.gguf "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf")
+	yarn test
+
 # Builds and publishes the extension
 publish: build
 	yarn run build:publish
 
 clean:
 ifeq ($(OS),Windows_NT)
-	del /F /S *.tgz .yarn yarn.lock package-lock.json bin
+	powershell -Command "Remove-Item -Recurse -Force -Path *.tgz, .yarn, yarn.lock, package-lock.json, bin"
 	powershell -Command "Get-ChildItem -Path . -Include node_modules, dist -Recurse -Directory | Remove-Item -Recurse -Force"
 else
 	rm -rf *.tgz .yarn yarn.lock package-lock.json bin

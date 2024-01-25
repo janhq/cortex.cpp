@@ -1,3 +1,4 @@
+const os = require('os');
 const path = require('path');
 const download = require('download');
 
@@ -46,7 +47,7 @@ const createProgressReporter = (variant) => (stream) => stream.on(
   'downloadProgress',
   (progress) => {
     // Print and update progress on a single line of terminal
-    process.stdout.write(`\r[${variant}] ${progress.transferred}/${progress.total} ${Math.floor(progress.percent * 100)}%...`);
+    process.stdout.write(`\r\x1b[K[${variant}] ${progress.transferred}/${progress.total} ${Math.floor(progress.percent * 100)}%...`);
   }).on('end', () => {
     // Jump to new line to log next message
     console.log();

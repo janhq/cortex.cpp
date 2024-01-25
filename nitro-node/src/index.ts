@@ -1,3 +1,4 @@
+import os from 'node:os';
 import fs from "node:fs";
 import path from "node:path";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
@@ -21,6 +22,8 @@ const NITRO_HTTP_LOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/
 const NITRO_HTTP_VALIDATE_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/modelstatus`;
 // The URL for the Nitro subprocess to kill itself
 const NITRO_HTTP_KILL_URL = `${NITRO_HTTP_SERVER_URL}/processmanager/destroy`;
+// The URL for the Nitro subprocess to run chat completion
+const NITRO_HTTP_CHAT_URL = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/chat_completion`
 
 // The supported model format
 // TODO: Should be an array to support more models
@@ -33,7 +36,7 @@ let currentModelFile: string = "";
 // The current model settings
 let currentSettings: NitroModelSetting | undefined = undefined;
 // The logger to use, default to console.log
-let log: NitroLogger = (message, ..._) => console.log(message);
+let log: NitroLogger = (message, ..._) => process.stdout.write(message + os.EOL);
 
 /**
  * Set logger before running nitro
@@ -47,7 +50,7 @@ function setLogger(logger: NitroLogger) {
  * @param wrapper - The model wrapper.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
  */
-function stopModel(): Promise<void> {
+function stopModel(): Promise<NitroModelOperationResponse> {
   return killSubprocess();
 }
 
@@ -114,9 +117,9 @@ async function runNitroAndLoadModel(): Promise<NitroModelOperationResponse | { e
        * The tested threshold is 500ms
        **/
       if (process.platform === "win32") {
-        return new Promise((resolve) => setTimeout(resolve, 500));
+        return new Promise((resolve) => setTimeout(() => resolve({}), 500));
       } else {
-        return Promise.resolve();
+        return Promise.resolve({});
       }
     })
     .then(spawnNitroProcess)
@@ -192,6 +195,7 @@ async function loadLLMModel(settings: any): Promise<Response> {
       retries: 3,
       retryDelay: 500,
     });
+    // FIXME: Actually check response, as the model directory might not exist
     log(
       `[NITRO]::Debug: Load model success with response ${JSON.stringify(
         res
@@ -202,6 +206,51 @@ async function loadLLMModel(settings: any): Promise<Response> {
     log(`[NITRO]::Error: Load model failed with error ${err}`);
     return await Promise.reject();
   }
+}
+
+/**
+ * Run chat completion by sending a HTTP POST request and stream the response if outStream is specified
+ * @param {any} request The request that is then sent to nitro
+ * @param {WritableStream} outStream Optional stream that consume the response body
+ * @returns {Promise<Response>} A Promise that resolves when the chat completion success, or rejects with an error if the completion fails.
+ * @description If outStream is specified, the response body is consumed and cannot be used to reconstruct the data
+ */
+async function chatCompletion(request: any, outStream?: WritableStream): Promise<Response> {
+  if (outStream) {
+    // Add stream option if there is an outStream specified when calling this function
+    Object.assign(request, {
+      stream: true,
+    })
+  }
+  log(`[NITRO]::Debug: Running chat completion with request ${JSON.stringify(request)}`);
+  return fetchRetry(NITRO_HTTP_CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      'Accept': 'text/event-stream',
+      'Access-Control-Allow-Origin': '*',
+    },
+    body: JSON.stringify(request),
+    retries: 3,
+    retryDelay: 500,
+  }).then(async (response) => {
+    if (outStream) {
+      if (!response.body) {
+        throw new Error("Error running chat completion");
+      }
+      const outPipe = response
+        .body
+        .pipeThrough(new TextDecoderStream())
+        .pipeTo(outStream);
+      // Wait for all the streams to complete before returning from async function
+      await outPipe;
+    }
+    log(`[NITRO]::Debug: Chat completion success`);
+    return response;
+  }).catch((err) => {
+    log(`[NITRO]::Error: Chat completion failed with error ${err}`)
+    throw err
+  })
 }
 
 /**
@@ -235,7 +284,7 @@ async function validateModelStatus(): Promise<NitroModelOperationResponse> {
         return Promise.resolve({});
       }
     }
-    return Promise.reject("Validate model status failed");
+    return Promise.resolve({ error: "Validate model status failed" });
   });
 }
 
@@ -243,7 +292,7 @@ async function validateModelStatus(): Promise<NitroModelOperationResponse> {
  * Terminates the Nitro subprocess.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
  */
-async function killSubprocess(): Promise<void> {
+async function killSubprocess(): Promise<NitroModelOperationResponse> {
   const controller = new AbortController();
   setTimeout(() => controller.abort(), 5000);
   log(`[NITRO]::Debug: Request to kill Nitro`);
@@ -256,19 +305,20 @@ async function killSubprocess(): Promise<void> {
       subprocess?.kill();
       subprocess = undefined;
     })
-    .catch(() => { })
+    .catch((err) => ({ error: err }))
     .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
-    .then(() => log(`[NITRO]::Debug: Nitro process is terminated`));
+    .then(() => log(`[NITRO]::Debug: Nitro process is terminated`))
+    .then(() => Promise.resolve({}));
 }
 
 /**
  * Spawns a Nitro subprocess.
  * @returns A promise that resolves when the Nitro subprocess is started.
  */
-function spawnNitroProcess(): Promise<void> {
+function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
   log(`[NITRO]::Debug: Spawning Nitro subprocess...`);
 
-  return new Promise<void>(async (resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const binaryFolder = path.join(__dirname, "..", "bin"); // Current directory by default
     const executableOptions = executableNitroFile();
 
@@ -306,7 +356,7 @@ function spawnNitroProcess(): Promise<void> {
 
     tcpPortUsed.waitUntilUsed(PORT, 300, 30000).then(() => {
       log(`[NITRO]::Debug: Nitro is ready`);
-      resolve();
+      resolve({});
     });
   });
 }
@@ -341,6 +391,9 @@ export default {
   setLogger,
   runModel,
   stopModel,
+  loadLLMModel,
+  validateModelStatus,
+  chatCompletion,
   killSubprocess,
   dispose,
   updateNvidiaInfo,

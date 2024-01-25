@@ -2,7 +2,6 @@
 .env
 
 # Jan inference
-error.log
 .yarn
 node_modules
 *.tgz
@@ -14,10 +13,7 @@ package-lock.json
 
 *.log
 
-# Nitro binary files
-bin/*/nitro
-bin/*/*.metal
-bin/*/*.exe
-bin/*/*.dll
-bin/*/*.exp
-bin/*/*.lib
+# Nitro binary directory
+bin/
+# Locally downloaded model for testing
+test/test_assets/*.gguf
