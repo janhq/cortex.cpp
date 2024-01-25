@@ -768,6 +768,7 @@ std::string whisper_server_context::inference(std::string &input_file_path, std:
 
     // return whisper model mutex lock
     whisper_mutex.unlock();
+    LOG_INFO << "Successfully processed " << input_file_path << ": " << result;
 
     return result;
 }
@@ -813,7 +814,7 @@ void whisperCPP::load_model(
     // Check if model is already loaded
     if (whispers.find(model_id) != whispers.end())
     {
-        std::string error_msg = "Model " + model_id + "has not been loaded, please load that model into nitro";
+        std::string error_msg = "Model " + model_id + " already loaded";
         LOG_INFO << error_msg;
         Json::Value jsonResp;
         jsonResp["message"] = error_msg;
@@ -977,9 +978,12 @@ void whisperCPP::transcription_impl(
     }
 
     // Save input file to temp location
-    std::string temp_file_path = std::filesystem::temp_directory_path().string() + "/" +  std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".wav";
-    file.save(temp_file_path);
-
+    std::string temp_dir = std::filesystem::temp_directory_path().string() + "/" + std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    // Create the directory
+    std::filesystem::create_directory(temp_dir);
+    // Save the file to the directory, with its original name
+    std::string temp_file_path = temp_dir + "/" + file.getFileName();
+    file.saveAs(temp_file_path);
 
     // Run inference
     std::string result;
@@ -994,8 +998,10 @@ void whisperCPP::transcription_impl(
         callback(resp);
         return;
     }
+    // TODO: Need to remove the entire temp directory, not just the file
+    std::remove(temp_file_path.c_str());
 
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    auto resp = nitro_utils::nitroHttpResponse();
     resp->setBody(result);
     resp->setStatusCode(k200OK);
     // Set content type based on response format
@@ -1015,7 +1021,6 @@ void whisperCPP::transcription_impl(
     {
         resp->addHeader("Content-Type", "text/vtt");
     }
-    std::remove(temp_file_path.c_str());
     callback(resp);
     return;
 }
