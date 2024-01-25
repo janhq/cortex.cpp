@@ -132,13 +132,36 @@ bool parse_str_to_bool(const std::string &s);
 struct whisper_server_context
 {
     whisper_params params;
-    // store default params so we can reset after each inference request
-    whisper_params default_params = params;
+    whisper_params default_params;
     std::mutex whisper_mutex;
     std::string model_id;
 
     struct whisper_context_params cparams;
     struct whisper_context *ctx = nullptr;
+
+    whisper_server_context() = default; // add this line
+
+    // Constructor
+    whisper_server_context(const std::string &model_id)
+    {
+        this->model_id = model_id;
+        this->cparams = whisper_context_params();
+        this->ctx = nullptr;
+        // store default params so we can reset after each inference request
+        this->default_params = whisper_params();
+        this->params = whisper_params();
+    }
+
+    // Move constructor
+    whisper_server_context(whisper_server_context&& other) noexcept
+        : params(std::move(other.params))
+        , default_params(std::move(other.default_params))
+        , whisper_mutex() // std::mutex is not movable, so we initialize a new one
+        , model_id(std::move(other.model_id))
+        , cparams(std::move(other.cparams))
+        , ctx(std::exchange(other.ctx, nullptr)) // ctx is a raw pointer, so we use std::exchange
+    {
+    }
 
     bool load_model(std::string &model_path);
 
@@ -155,9 +178,9 @@ class whisperCPP : public drogon::HttpController<whisperCPP>
 public:
     METHOD_LIST_BEGIN
 
-    METHOD_ADD(whisperCPP::load_model, "load_model", Post);
-    METHOD_ADD(whisperCPP::unload_model, "unload_model", Post);
-    METHOD_ADD(whisperCPP::model_status, "model_status", Get);
+    ADD_METHOD_TO(whisperCPP::load_model, "/v1/audio/load_model", Post);
+    ADD_METHOD_TO(whisperCPP::unload_model, "/v1/audio/unload_model", Post);
+    ADD_METHOD_TO(whisperCPP::model_status, "/v1/audio/model_status", Get);
 
     ADD_METHOD_TO(whisperCPP::transcription, "/v1/audio/transcriptions", Post);
     ADD_METHOD_TO(whisperCPP::translation, "/v1/audio/translations", Post);

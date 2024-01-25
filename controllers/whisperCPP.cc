@@ -838,7 +838,8 @@ void whisperCPP::load_model(
         return;
     }
 
-    whisper_server_context whisper;
+
+    whisper_server_context whisper = whisper_server_context(model_id);
     bool model_loaded = whisper.load_model(model_path);
     // If model failed to load, return a 500 error
     if (!model_loaded)
@@ -856,9 +857,7 @@ void whisperCPP::load_model(
 
     // Model loaded successfully, add it to the map of loaded models
     // and return a 200 response
-    // whispers.emplace(model_id, std::move(whisper));
-    // whispers[model_id] = std::move(whisper);
-    whispers[model_id] = whisper;
+    whispers.emplace(model_id, std::move(whisper));
     Json::Value jsonResp;
     std::string success_msg = "Model " + model_id + " loaded successfully";
     jsonResp["message"] = success_msg;
