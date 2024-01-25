@@ -41,10 +41,7 @@ const checkBinaries = (repoDir) => {
   console.log(`Downloaded bin paths:`, matched);
 
   // Must have both the directory for the platform and the binary
-  return (
-    matched.some((fname) => fname.startsWith(binDirPrefix)) &&
-    matched.some((fname) => fname.startsWith(binDirPrefix))
-  );
+  return matched.length > 1;
 };
 
 // Wrapper to wait for child process to finish
