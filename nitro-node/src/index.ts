@@ -43,7 +43,7 @@ const NVIDIA_DEFAULT_CONFIG: NitroNvidiaConfig = {
 
 // The supported model format
 // TODO: Should be an array to support more models
-const SUPPORTED_MODEL_FORMAT = ".gguf";
+const SUPPORTED_MODEL_FORMATS = [".gguf"];
 
 // The subprocess instance for Nitro
 let subprocess: ChildProcessWithoutNullStreams | undefined = undefined;
@@ -53,19 +53,31 @@ let currentModelFile: string = "";
 let currentSettings: NitroModelSetting | undefined = undefined;
 // The Nvidia info file for checking for CUDA support on the system
 let nvidiaConfig: NitroNvidiaConfig = NVIDIA_DEFAULT_CONFIG;
-// The logger to use, default to console.log
+// The logger to use, default to stdout
 let log: NitroLogger = (message, ..._) =>
   process.stdout.write(message + os.EOL);
 
 /**
- * Set custom Nvidia config for running inference over GPU
+ * Get current Nvidia config
+ * @returns {NitroNvidiaConfig} A copy of the config object
+ * The returned object should be used for reading only
+ * Writing to config should be via the function {@setNvidiaConfig}
  */
-function setNvidiaConfig(settings: NitroNvidiaConfig) {
-  nvidiaConfig = settings;
+function getNvidiaConfig(): NitroNvidiaConfig {
+  return Object.assign({}, nvidiaConfig);
+}
+
+/**
+ * Set custom Nvidia config for running inference over GPU
+ * @param {NitroNvidiaConfig} config The new config to apply
+ */
+function setNvidiaConfig(config: NitroNvidiaConfig) {
+  nvidiaConfig = config;
 }
 
 /**
  * Set logger before running nitro
+ * @param {NitroLogger} logger The logger to use
  */
 function setLogger(logger: NitroLogger) {
   log = logger;
@@ -93,11 +105,11 @@ async function runModel({
 }: NitroModelInitOptions): Promise<NitroModelOperationResponse | Error> {
   const files: string[] = fs.readdirSync(modelFullPath);
 
-  // Look for GGUF model file
+  // Look for model file with supported format
   const ggufBinFile = files.find(
     (file) =>
       file === path.basename(modelFullPath) ||
-      file.toLowerCase().includes(SUPPORTED_MODEL_FORMAT),
+      SUPPORTED_MODEL_FORMATS.some((ext) => file.toLowerCase().endsWith(ext)),
   );
 
   if (!ggufBinFile) return Promise.reject("No GGUF model file found");
@@ -398,7 +410,6 @@ function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
 
 /**
  * Get the system resources information
- * TODO: Move to @janhq/core so that it can be reused
  */
 function getResourcesInfo(): Promise<ResourcesInfo> {
   return new Promise(async (resolve) => {
@@ -412,17 +423,8 @@ function getResourcesInfo(): Promise<ResourcesInfo> {
   });
 }
 
-/**
- * Every module should have a dispose function
- * This will be called when the extension is unloaded and should clean up any resources
- * Also called when app is closed
- */
-function dispose() {
-  // clean other registered resources here
-  killSubprocess();
-}
-
 export default {
+  getNvidiaConfig,
   setNvidiaConfig,
   setLogger,
   runModel,
@@ -431,7 +433,6 @@ export default {
   validateModelStatus,
   chatCompletion,
   killSubprocess,
-  dispose,
   updateNvidiaInfo: async () => await updateNvidiaInfo(nvidiaConfig),
   getCurrentNitroProcessInfo: () => getNitroProcessInfo(subprocess),
 };

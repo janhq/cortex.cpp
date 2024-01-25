@@ -1,7 +1,6 @@
-import { writeFileSync, existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { exec } from "node:child_process";
 import path from "node:path";
-
 
 /**
  * Current nitro process
@@ -12,7 +11,7 @@ let nitroProcessInfo: NitroProcessInfo | undefined = undefined;
  * Nitro process info
  */
 export interface NitroProcessInfo {
-  isRunning: boolean
+  isRunning: boolean;
 }
 
 /**
@@ -42,7 +41,9 @@ export const getNitroProcessInfo = (subprocess: any): NitroProcessInfo => {
 /**
  * Validate nvidia and cuda for linux and windows
  */
-export async function updateNvidiaDriverInfo(nvidiaSettings: NitroNvidiaConfig): Promise<void> {
+export async function updateNvidiaDriverInfo(
+  nvidiaSettings: NitroNvidiaConfig,
+): Promise<void> {
   exec(
     "nvidia-smi --query-gpu=driver_version --format=csv,noheader",
     (error, stdout) => {
@@ -53,7 +54,7 @@ export async function updateNvidiaDriverInfo(nvidiaSettings: NitroNvidiaConfig):
       } else {
         nvidiaSettings["nvidia_driver"].exist = false;
       }
-    }
+    },
   );
 }
 
@@ -62,7 +63,7 @@ export async function updateNvidiaDriverInfo(nvidiaSettings: NitroNvidiaConfig):
  */
 export function checkFileExistenceInPaths(
   file: string,
-  paths: string[]
+  paths: string[],
 ): boolean {
   return paths.some((p) => existsSync(path.join(p, file)));
 }
@@ -90,12 +91,12 @@ export function updateCudaExistence(nvidiaSettings: NitroNvidiaConfig) {
   }
 
   let cudaExists = filesCuda12.every(
-    (file) => existsSync(file) || checkFileExistenceInPaths(file, paths)
+    (file) => existsSync(file) || checkFileExistenceInPaths(file, paths),
   );
 
   if (!cudaExists) {
     cudaExists = filesCuda11.every(
-      (file) => existsSync(file) || checkFileExistenceInPaths(file, paths)
+      (file) => existsSync(file) || checkFileExistenceInPaths(file, paths),
     );
     if (cudaExists) {
       cudaVersion = "11";
@@ -114,7 +115,9 @@ export function updateCudaExistence(nvidiaSettings: NitroNvidiaConfig) {
 /**
  * Get GPU information
  */
-export async function updateGpuInfo(nvidiaSettings: NitroNvidiaConfig): Promise<void> {
+export async function updateGpuInfo(
+  nvidiaSettings: NitroNvidiaConfig,
+): Promise<void> {
   exec(
     "nvidia-smi --query-gpu=index,memory.total --format=csv,noheader,nounits",
     (error, stdout) => {
@@ -140,6 +143,6 @@ export async function updateGpuInfo(nvidiaSettings: NitroNvidiaConfig): Promise<
       } else {
         nvidiaSettings["gpus"] = [];
       }
-    }
+    },
   );
 }
