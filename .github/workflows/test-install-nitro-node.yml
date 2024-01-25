@@ -11,13 +11,13 @@ on:
     paths:
       - ".github/scripts/e2e-test-install-nitro-node.js"
       - ".github/workflows/test-install-nitro-node.yml"
-      - "nitro-node"
+      - "nitro-node/**"
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - ".github/scripts/e2e-test-install-nitro-node.js"
       - ".github/workflows/test-install-nitro-node.yml"
-      - "nitro-node"
+      - "nitro-node/**"
   workflow_dispatch:
 
 jobs:

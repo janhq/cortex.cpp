@@ -22,7 +22,18 @@
       "node_modules/@types"
     ]
   },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    },
+    "include": [
+      "scripts"
+    ]
+  },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "node_modules"
   ]
 }

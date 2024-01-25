@@ -8,15 +8,16 @@
   "license": "AGPL-3.0",
   "scripts": {
     "test": "jest --verbose --detectOpenHandles",
-    "pretest": "node download-nitro.js",
+    "pretest": "ts-node scripts/download-nitro.ts",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
-    "downloadnitro": "node download-nitro.js",
+    "downloadnitro": "ts-node scripts/download-nitro.ts",
     "build:publish": "npm pack",
-    "postinstall": "node postinstall.js"
+    "postinstall": "node -r @janhq/nitro-node/postinstall"
   },
   "exports": {
     ".": "./dist/index.js",
-    "./main": "./dist/index.cjs.js"
+    "./main": "./dist/index.cjs.js",
+    "./postinstall": "./postinstall.js"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -45,15 +46,9 @@
     "node": ">=18.0.0"
   },
   "files": [
-    "download-nitro.js",
     "postinstall.js",
     "dist/*",
     "package.json",
     "README.md"
-  ],
-  "bundleDependencies": [
-    "tcp-port-used",
-    "fetch-retry",
-    "os-utils"
   ]
 }

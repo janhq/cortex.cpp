@@ -6,7 +6,7 @@
 node_modules
 *.tgz
 yarn.lock
-dist
+dist/bin/
 build
 .DS_Store
 package-lock.json

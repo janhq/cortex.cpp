@@ -35,10 +35,9 @@ publish: build
 
 clean:
 ifeq ($(OS),Windows_NT)
-	powershell -Command "Remove-Item -Recurse -Force -Path *.tgz, .yarn, yarn.lock, package-lock.json, bin"
-	powershell -Command "Get-ChildItem -Path . -Include node_modules, dist -Recurse -Directory | Remove-Item -Recurse -Force"
+	powershell -Command "Remove-Item -Recurse -Force -Path *.tgz, .yarn, yarn.lock, package-lock.json, bin, dist"
+	powershell -Command "Get-ChildItem -Path . -Include node_modules -Recurse -Directory | Remove-Item -Recurse -Force"
 else
-	rm -rf *.tgz .yarn yarn.lock package-lock.json bin
+	rm -rf *.tgz .yarn yarn.lock package-lock.json bin dist
 	find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
-	find . -name "dist" -type d -exec rm -rf '{}' +
 endif
