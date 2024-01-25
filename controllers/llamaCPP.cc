@@ -21,20 +21,54 @@ std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
 
 // --------------------------------------------
 
-Json::Value create_embedding_payload(const std::vector<float> &embedding,
+std::string create_embedding_payload(const task_result &task_result,
                                      int prompt_tokens) {
-  Json::Value dataItem;
+  json data = std::move(task_result.result_json);
+  Json::Value root;
+  Json::Value dataArray(Json::arrayValue);
+  root["object"] = "list";
 
-  dataItem["object"] = "embedding";
-
-  Json::Value embeddingArray(Json::arrayValue);
-  for (const auto &value : embedding) {
-    embeddingArray.append(value);
+  if(data.type() == json::value_t::array) { // multi task
+    int i = 0;
+    auto embeddings = data.at(1);
+    for (const auto &embedding : embeddings) {
+      std::vector<float> embedding_result = embedding["embedding"];
+      Json::Value dataItem;
+      dataItem["object"] = "embedding";
+      Json::Value embeddingArray(Json::arrayValue);
+      for (const auto &value : embedding_result) {
+        embeddingArray.append(value);
+      }
+      dataItem["embedding"] = embeddingArray;  
+      dataItem["index"] = i++;
+      dataArray.append(dataItem);
+    }
+  } else if(data.type() == json::value_t::object) { // single task
+    std::vector<float> embedding_result = data["embedding"];
+    Json::Value dataItem;
+    dataItem["object"] = "embedding";
+    Json::Value embeddingArray(Json::arrayValue);
+    for (const auto &value : embedding_result) {
+      embeddingArray.append(value);
+    }
+    dataItem["embedding"] = embeddingArray;  
+    dataItem["index"] = 0;
+    dataArray.append(dataItem);
   }
-  dataItem["embedding"] = embeddingArray;
-  dataItem["index"] = 0;
 
-  return dataItem;
+  root["data"] = dataArray;
+
+  root["model"] = "_";
+
+  Json::Value usage;
+  usage["prompt_tokens"] = prompt_tokens;
+  usage["total_tokens"] = prompt_tokens; // Assuming total tokens equals prompt
+                                         // tokens in this context
+  root["usage"] = usage;
+
+  Json::StreamWriterBuilder writer;
+  writer["indentation"] = ""; // Compact output
+  return Json::writeString(writer, root);
 }
 
 std::string create_full_return_json(const std::string &id,
@@ -146,6 +180,9 @@ void llamaCPP::chatCompletion(
   }
 
   const auto &jsonBody = req->getJsonObject();
+
+  std::cout << (*jsonBody) << "\n";
+
   std::string formatted_output = pre_prompt;
 
   json data;
@@ -180,7 +217,8 @@ void llamaCPP::chatCompletion(
     std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
     std::ifstream file(grammar_file);
     if (!file) {
-      LOG_ERROR << "Grammar file not found";
+      // LOG_ERROR << "Grammar file not found";
+      data["grammar"] = "";
     } else {
       std::stringstream grammarBuf;
       grammarBuf << file.rdbuf();
@@ -402,43 +440,30 @@ void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   const auto &jsonBody = req->getJsonObject();
+  json payload;
 
-  Json::Value responseData(Json::arrayValue);
-
-  if (jsonBody->isMember("input")) {
-    const Json::Value &input = (*jsonBody)["input"];
-    if (input.isString()) {
-      // Process the single string input
-      const int task_id = llama.request_completion(
-          {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
-      task_result result = llama.next_result(task_id);
-      std::vector<float> embedding_result = result.result_json["embedding"];
-      responseData.append(create_embedding_payload(embedding_result, 0));
-    } else if (input.isArray()) {
-      // Process each element in the array input
-      for (const auto &elem : input) {
-        if (elem.isString()) {
-          const int task_id = llama.request_completion(
-              {{"prompt", elem.asString()}, {"n_predict", 0}}, false, true, -1);
-          task_result result = llama.next_result(task_id);
-          std::vector<float> embedding_result = result.result_json["embedding"];
-          responseData.append(create_embedding_payload(embedding_result, 0));
-        }
+  if (jsonBody->isMember("input") != 0) {
+    const Json::Value &messages = (*jsonBody)["input"];
+    if(messages.isArray()) {
+      json prompts = json::array();
+      for (const auto &message : messages) {
+        prompts.push_back(message.asString());
       }
+      payload["prompt"] = prompts;
+    } else if(messages.isString()) {
+      payload["prompt"] = messages.asString();
+    } else {
+      payload["prompt"] = "";
     }
+  } else {
+    payload["prompt"] = "";
   }
-
+  payload["n_predict"] = 0;
+  const int task_id = llama.request_completion(payload, false, true, -1);
+  task_result result = llama.next_result(task_id);
+  std::string embedding_resp = create_embedding_payload(result, 0);
   auto resp = nitro_utils::nitroHttpResponse();
-  Json::Value root;
-  root["data"] = responseData;
-  root["model"] = "_";
-  root["object"] = "list";
-  Json::Value usage;
-  usage["prompt_tokens"] = 0;
-  usage["total_tokens"] = 0;
-  root["usage"] = usage;
-
-  resp->setBody(Json::writeString(Json::StreamWriterBuilder(), root));
+  resp->setBody(embedding_resp);
   resp->setContentTypeString("application/json");
   callback(resp);
   return;
@@ -480,6 +505,8 @@ void llamaCPP::modelStatus(
 }
 
 bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
+
+  std::cout << jsonBody << "\n";
 
   gpt_params params;
 
