@@ -1,35 +1,7 @@
 import { writeFileSync, existsSync, readFileSync } from "node:fs";
 import { exec } from "node:child_process";
 import path from "node:path";
-import { homedir } from "node:os";
 
-/**
- * Default GPU settings
- **/
-const DEFALT_SETTINGS = {
-  notify: true,
-  run_mode: "cpu",
-  nvidia_driver: {
-    exist: false,
-    version: "",
-  },
-  cuda: {
-    exist: false,
-    version: "",
-  },
-  gpus: [],
-  gpu_highest_vram: "",
-};
-
-/**
- * Path to the settings file
- **/
-export const NVIDIA_INFO_FILE = path.join(
-  homedir(),
-  "jan",
-  "settings",
-  "settings.json"
-);
 
 /**
  * Current nitro process
@@ -47,12 +19,12 @@ export interface NitroProcessInfo {
  * This will retrive GPU informations and persist settings.json
  * Will be called when the extension is loaded to turn on GPU acceleration if supported
  */
-export async function updateNvidiaInfo() {
+export async function updateNvidiaInfo(nvidiaSettings: NitroNvidiaConfig) {
   if (process.platform !== "darwin") {
     await Promise.all([
-      updateNvidiaDriverInfo(),
-      updateCudaExistence(),
-      updateGpuInfo(),
+      updateNvidiaDriverInfo(nvidiaSettings),
+      updateCudaExistence(nvidiaSettings),
+      updateGpuInfo(nvidiaSettings),
     ]);
   }
 }
@@ -70,27 +42,17 @@ export const getNitroProcessInfo = (subprocess: any): NitroProcessInfo => {
 /**
  * Validate nvidia and cuda for linux and windows
  */
-export async function updateNvidiaDriverInfo(): Promise<void> {
+export async function updateNvidiaDriverInfo(nvidiaSettings: NitroNvidiaConfig): Promise<void> {
   exec(
     "nvidia-smi --query-gpu=driver_version --format=csv,noheader",
     (error, stdout) => {
-      let data;
-      try {
-        data = JSON.parse(readFileSync(NVIDIA_INFO_FILE, "utf-8"));
-      } catch (error) {
-        data = DEFALT_SETTINGS;
-      }
-
       if (!error) {
         const firstLine = stdout.split("\n")[0].trim();
-        data["nvidia_driver"].exist = true;
-        data["nvidia_driver"].version = firstLine;
+        nvidiaSettings["nvidia_driver"].exist = true;
+        nvidiaSettings["nvidia_driver"].version = firstLine;
       } else {
-        data["nvidia_driver"].exist = false;
+        nvidiaSettings["nvidia_driver"].exist = false;
       }
-
-      writeFileSync(NVIDIA_INFO_FILE, JSON.stringify(data, null, 2));
-      Promise.resolve();
     }
   );
 }
@@ -108,7 +70,7 @@ export function checkFileExistenceInPaths(
 /**
  * Validate cuda for linux and windows
  */
-export function updateCudaExistence() {
+export function updateCudaExistence(nvidiaSettings: NitroNvidiaConfig) {
   let filesCuda12: string[];
   let filesCuda11: string[];
   let paths: string[];
@@ -142,35 +104,20 @@ export function updateCudaExistence() {
     cudaVersion = "12";
   }
 
-  let data;
-  try {
-    data = JSON.parse(readFileSync(NVIDIA_INFO_FILE, "utf-8"));
-  } catch (error) {
-    data = DEFALT_SETTINGS;
-  }
-
-  data["cuda"].exist = cudaExists;
-  data["cuda"].version = cudaVersion;
+  nvidiaSettings["cuda"].exist = cudaExists;
+  nvidiaSettings["cuda"].version = cudaVersion;
   if (cudaExists) {
-    data.run_mode = "gpu";
+    nvidiaSettings.run_mode = "gpu";
   }
-  writeFileSync(NVIDIA_INFO_FILE, JSON.stringify(data, null, 2));
 }
 
 /**
  * Get GPU information
  */
-export async function updateGpuInfo(): Promise<void> {
+export async function updateGpuInfo(nvidiaSettings: NitroNvidiaConfig): Promise<void> {
   exec(
     "nvidia-smi --query-gpu=index,memory.total --format=csv,noheader,nounits",
     (error, stdout) => {
-      let data;
-      try {
-        data = JSON.parse(readFileSync(NVIDIA_INFO_FILE, "utf-8"));
-      } catch (error) {
-        data = DEFALT_SETTINGS;
-      }
-
       if (!error) {
         // Get GPU info and gpu has higher memory first
         let highestVram = 0;
@@ -188,14 +135,11 @@ export async function updateGpuInfo(): Promise<void> {
             return { id, vram };
           });
 
-        data["gpus"] = gpus;
-        data["gpu_highest_vram"] = highestVramId;
+        nvidiaSettings["gpus"] = gpus;
+        nvidiaSettings["gpu_highest_vram"] = highestVramId;
       } else {
-        data["gpus"] = [];
+        nvidiaSettings["gpus"] = [];
       }
-
-      writeFileSync(NVIDIA_INFO_FILE, JSON.stringify(data, null, 2));
-      Promise.resolve();
     }
   );
 }

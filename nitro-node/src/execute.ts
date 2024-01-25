@@ -1,7 +1,4 @@
-import { readFileSync } from "node:fs";
 import path from "node:path";
-import { NVIDIA_INFO_FILE } from "./nvidia";
-
 
 export interface NitroExecutableOptions {
   executablePath: string;
@@ -12,7 +9,9 @@ export interface NitroExecutableOptions {
  * Find which executable file to run based on the current platform.
  * @returns The name of the executable file to run.
  */
-export const executableNitroFile = (): NitroExecutableOptions => {
+export const executableNitroFile = (
+  nvidiaSettings: NitroNvidiaConfig,
+): NitroExecutableOptions => {
   let binaryFolder = path.join(__dirname, "..", "bin"); // Current directory by default
   let cudaVisibleDevices = "";
   let binaryName = "nitro";
@@ -23,16 +22,15 @@ export const executableNitroFile = (): NitroExecutableOptions => {
     /**
      *  For Windows: win-cpu, win-cuda-11-7, win-cuda-12-0
      */
-    let nvidiaInfo = JSON.parse(readFileSync(NVIDIA_INFO_FILE, "utf-8"));
-    if (nvidiaInfo["run_mode"] === "cpu") {
+    if (nvidiaSettings["run_mode"] === "cpu") {
       binaryFolder = path.join(binaryFolder, "win-cpu");
     } else {
-      if (nvidiaInfo["cuda"].version === "12") {
+      if (nvidiaSettings["cuda"].version === "12") {
         binaryFolder = path.join(binaryFolder, "win-cuda-12-0");
       } else {
         binaryFolder = path.join(binaryFolder, "win-cuda-11-7");
       }
-      cudaVisibleDevices = nvidiaInfo["gpu_highest_vram"];
+      cudaVisibleDevices = nvidiaSettings["gpu_highest_vram"];
     }
     binaryName = "nitro.exe";
   } else if (process.platform === "darwin") {
@@ -45,19 +43,15 @@ export const executableNitroFile = (): NitroExecutableOptions => {
       binaryFolder = path.join(binaryFolder, "mac-x64");
     }
   } else {
-    /**
-     *  For Linux: linux-cpu, linux-cuda-11-7, linux-cuda-12-0
-     */
-    let nvidiaInfo = JSON.parse(readFileSync(NVIDIA_INFO_FILE, "utf-8"));
-    if (nvidiaInfo["run_mode"] === "cpu") {
+    if (nvidiaSettings["run_mode"] === "cpu") {
       binaryFolder = path.join(binaryFolder, "linux-cpu");
     } else {
-      if (nvidiaInfo["cuda"].version === "12") {
+      if (nvidiaSettings["cuda"].version === "12") {
         binaryFolder = path.join(binaryFolder, "linux-cuda-12-0");
       } else {
         binaryFolder = path.join(binaryFolder, "linux-cuda-11-7");
       }
-      cudaVisibleDevices = nvidiaInfo["gpu_highest_vram"];
+      cudaVisibleDevices = nvidiaSettings["gpu_highest_vram"];
     }
   }
   return {

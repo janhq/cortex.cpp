@@ -43,3 +43,21 @@ interface NitroModelInitOptions {
 interface NitroLogger {
   (message: string, fileName?: string): void;
 }
+
+/**
+ * Nvidia settings
+ */
+interface NitroNvidiaConfig {
+  notify: boolean,
+  run_mode: "cpu" | "gpu",
+  nvidia_driver: {
+    exist: boolean,
+    version: string,
+  },
+  cuda: {
+    exist: boolean,
+    version: string,
+  },
+  gpus: { id: string, vram: string }[],
+  gpu_highest_vram: string,
+}
