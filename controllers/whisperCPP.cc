@@ -590,6 +590,7 @@ std::string whisper_server_context::inference(std::string &input_file_path, std:
 
     params.translate = translate;
     params.language = language;
+    params.response_format = response_format;
     if (!whisper_is_multilingual(ctx))
     {
         if (params.language != "en" || params.translate)
@@ -702,11 +703,11 @@ std::string whisper_server_context::inference(std::string &input_file_path, std:
 
     // return results to user
     std::string result;
-    if (response_format == text_format)
+    if (params.response_format == text_format)
     {
         result = output_str(ctx, params, pcmf32s);
     }
-    else if (response_format == srt_format)
+    else if (params.response_format == srt_format)
     {
         std::stringstream ss;
         const int n_segments = whisper_full_n_segments(ctx);
@@ -754,7 +755,43 @@ std::string whisper_server_context::inference(std::string &input_file_path, std:
         }
         result = ss.str();
     }
-    // TODO add more output formats
+    else if (params.response_format == vjson_format) {
+        /* try to match openai/whisper's Python format */
+        std::string results = output_str(ctx, params, pcmf32s);
+        json jres = json{{"text", results}};
+        const int n_segments = whisper_full_n_segments(ctx);
+        for (int i = 0; i < n_segments; ++i)
+        {
+            json segment = json{
+                {"id", i},
+                {"text", whisper_full_get_segment_text(ctx, i)},
+            };
+
+            if (!params.no_timestamps) {
+                segment["start"] = whisper_full_get_segment_t0(ctx, i) * 0.01;
+                segment["end"] = whisper_full_get_segment_t1(ctx, i) * 0.01;
+            }
+
+            const int n_tokens = whisper_full_n_tokens(ctx, i);
+            for (int j = 0; j < n_tokens; ++j) {
+                whisper_token_data token = whisper_full_get_token_data(ctx, i, j);
+                if (token.id >= whisper_token_eot(ctx)) {
+                    continue;
+                }
+
+                segment["tokens"].push_back(token.id);
+                json word = json{{"word", whisper_full_get_token_text(ctx, i, j)}};
+                if (!params.no_timestamps) {
+                    word["start"] = token.t0 * 0.01;
+                    word["end"] = token.t1 * 0.01;
+                }
+                word["probability"] = token.p;
+                segment["words"].push_back(word);
+            }
+            jres["segments"].push_back(segment);
+        }
+        result = jres.dump(-1, ' ', false, json::error_handler_t::replace);
+        }
     else
     {
         std::string results = output_str(ctx, params, pcmf32s);
@@ -908,7 +945,7 @@ void whisperCPP::unload_model(
     return;
 }
 
-void whisperCPP::model_status(
+void whisperCPP::list_model(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback)
 {
@@ -1005,7 +1042,7 @@ void whisperCPP::transcription_impl(
     resp->setBody(result);
     resp->setStatusCode(k200OK);
     // Set content type based on response format
-    if (response_format == json_format)
+    if (response_format == json_format || response_format == vjson_format)
     {
         resp->addHeader("Content-Type", "application/json");
     }
