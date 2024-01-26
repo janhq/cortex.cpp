@@ -29,8 +29,8 @@ test: install
 	@test -e test/test_assets/*.gguf &&  echo "test/test_assets/*.gguf is already downloaded" || (mkdir -p test/test_assets && cd test/test_assets/ && curl -JLO "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf")
 	yarn test
 
-# Builds and publishes the extension
-publish: build
+# Builds and pack
+pack: build
 	yarn run build:publish
 
 clean:

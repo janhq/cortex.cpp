@@ -11,9 +11,9 @@ const ADD_DEP_CMDS = {
   yarn: "add",
 };
 // Path to the package to install
-const NITRO_NODE_PKG = path.resolve(
-  path.normalize(path.join(__dirname, "..", "..", "nitro-node")),
-);
+const NITRO_NODE_PKG =
+  process.env.NITRO_NODE_PKG ||
+  path.resolve(path.normalize(path.join(__dirname, "..", "..", "nitro-node")));
 // Prefixes of downloaded nitro bin subdirectories
 const BIN_DIR_PREFIXES = {
   darwin: "mac",
@@ -33,11 +33,11 @@ const checkBinaries = (repoDir) => {
     "bin",
   );
   // Get the dir and files that indicate successful download of binaries
-  const matched = fs
-    .readdirSync(searchRoot, { recursive: true })
-    .filter(
-      (fname) => fname.startsWith(binDirPrefix) || fname.startsWith("nitro"),
-    );
+  const matched = fs.readdirSync(searchRoot, { recursive: true }).filter(
+    // FIXME: the result of readdirSync with recursive option is filename
+    // with intermediate subdirectories so this logic might not be correct
+    (fname) => fname.startsWith(binDirPrefix) || fname.includes("nitro"),
+  );
   console.log(`Downloaded bin paths:`, matched);
 
   // Must have both the directory for the platform and the binary

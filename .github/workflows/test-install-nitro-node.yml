@@ -21,8 +21,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  ubuntu-install:
+  linux-pack-tarball:
     runs-on: ubuntu-latest
+    outputs:
+      tarball-url: ${{ steps.upload.outputs.artifact-url }}
     steps:
       - name: Clone
         id: checkout
@@ -34,8 +36,53 @@ jobs:
         with:
           node-version: 18
 
+      - name: Build tarball
+        id: build
+        run: |
+          cd nitro-node
+          make pack
+          find . -type f -name 'janhq-nitro-node-*.tgz' -exec mv {} janhq-nitro-node.tgz \;
+
+      - name: Upload tarball as artifact
+        id: upload
+        uses: actions/upload-artifact@master
+        with:
+          name: janhq-nitro-node
+          path: nitro-node/janhq-nitro-node.tgz
+          if-no-files-found: error
+
+  ubuntu-install:
+    runs-on: ubuntu-latest
+    needs: [linux-pack-tarball]
+    if: always() && needs.linux-pack-tarball.result == 'success'
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Download prebuilt tarball
+        uses: actions/download-artifact@master
+        with:
+          name: janhq-nitro-node
+          path: .github/scripts/
+
+      - name: List tarball content
+        id: tar-tf
+        run: |
+          cd .github
+          cd scripts
+          tar tf janhq-nitro-node.tgz
+
       - name: Run tests
         id: test_install_nitro_node
+        env:
+          NITRO_NODE_PKG: ${{ github.workspace }}/.github/scripts/janhq-nitro-node.tgz
         run: |
           cd .github
           cd scripts
@@ -43,6 +90,8 @@ jobs:
 
   macOS-install:
     runs-on: macos-latest
+    needs: [linux-pack-tarball]
+    if: always() && needs.linux-pack-tarball.result == 'success'
     steps:
       - name: Clone
         id: checkout
@@ -54,8 +103,23 @@ jobs:
         with:
           node-version: 18
 
+      - name: Download prebuilt tarball
+        uses: actions/download-artifact@master
+        with:
+          name: janhq-nitro-node
+          path: .github/scripts/
+
+      - name: List tarball content
+        id: tar-tf
+        run: |
+          cd .github
+          cd scripts
+          tar tf janhq-nitro-node.tgz
+
       - name: Run tests
         id: test_install_nitro_node
+        env:
+          NITRO_NODE_PKG: ${{ github.workspace }}/.github/scripts/janhq-nitro-node.tgz
         run: |
           cd .github
           cd scripts
@@ -63,6 +127,8 @@ jobs:
 
   windows-install:
     runs-on: windows-latest
+    needs: [linux-pack-tarball]
+    if: always() && needs.linux-pack-tarball.result == 'success'
     steps:
       - name: Clone
 
@@ -75,8 +141,23 @@ jobs:
         with:
           node-version: 18
 
+      - name: Download prebuilt tarball
+        uses: actions/download-artifact@master
+        with:
+          name: janhq-nitro-node
+          path: .github/scripts/
+
+      - name: List tarball content
+        id: tar-tf
+        run: |
+          cd .github
+          cd scripts
+          tar tf janhq-nitro-node.tgz
+
       - name: Run tests
         id: test_install_nitro_node
+        env:
+          NITRO_NODE_PKG: ${{ github.workspace }}\.github\scripts\janhq-nitro-node.tgz
         run: |
           cd .github
           cd scripts
