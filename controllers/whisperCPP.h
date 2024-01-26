@@ -180,7 +180,7 @@ public:
 
     ADD_METHOD_TO(whisperCPP::load_model, "/v1/audio/load_model", Post);
     ADD_METHOD_TO(whisperCPP::unload_model, "/v1/audio/unload_model", Post);
-    ADD_METHOD_TO(whisperCPP::model_status, "/v1/audio/model_status", Get);
+    ADD_METHOD_TO(whisperCPP::list_model, "/v1/audio/list_model", Get);
 
     ADD_METHOD_TO(whisperCPP::transcription, "/v1/audio/transcriptions", Post);
     ADD_METHOD_TO(whisperCPP::translation, "/v1/audio/translations", Post);
@@ -197,8 +197,8 @@ public:
     void unload_model(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
 
-    void model_status(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback);
+    void list_model(const HttpRequestPtr &req,
+                    std::function<void(const HttpResponsePtr &)> &&callback);
 
     void transcription(const HttpRequestPtr &req,
                        std::function<void(const HttpResponsePtr &)> &&callback);
