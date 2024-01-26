@@ -203,6 +203,7 @@ void llamaCPP::chatCompletion(
           role = system_prompt;
           std::string content = message["content"].asString();
           formatted_output = role + content + formatted_output;
+
         } else {
           role = input_role;
           std::string content = message["content"].asString();
@@ -253,6 +254,7 @@ void llamaCPP::chatCompletion(
               no_images++;
             }
           }
+
         } else if (input_role == "assistant") {
           role = ai_prompt;
           std::string content = message["content"].asString();
@@ -261,6 +263,7 @@ void llamaCPP::chatCompletion(
           role = system_prompt;
           std::string content = message["content"].asString();
           formatted_output = role + content + formatted_output;
+
         } else {
           role = input_role;
           std::string content = message["content"].asString();
