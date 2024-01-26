@@ -2,6 +2,7 @@
 title: Quickstart
 slug: /quickstart
 description: How to use Nitro
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 ## Step 1: Install Nitro

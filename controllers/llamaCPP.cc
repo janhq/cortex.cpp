@@ -1,69 +1,40 @@
 #include "llamaCPP.h"
 #include "llama.h"
+#include "log.h"
 #include "utils/nitro_utils.h"
-#include <chrono>
-#include <cstring>
-#include <drogon/HttpResponse.h>
-#include <drogon/HttpTypes.h>
-#include <regex>
-#include <string>
-#include <thread>
-#include <trantor/utils/Logger.h>
 
 using namespace inferences;
 using json = nlohmann::json;
 
-// To store state of each inference request
-struct State
-{
-  bool isStopped = false;
+struct inferenceState {
+  bool is_stopped = false;
+  bool is_streaming = false;
   int task_id;
   llamaCPP *instance;
 
-  State(int tid, llamaCPP *inst) : task_id(tid), instance(inst) {}
+  inferenceState(llamaCPP *inst) : instance(inst) {}
 };
 
-std::shared_ptr<State> createState(int task_id, llamaCPP *instance)
-{
-  return std::make_shared<State>(task_id, instance);
+std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
+  return std::make_shared<inferenceState>(instance);
 }
 
 // --------------------------------------------
 
-std::string create_embedding_payload(const std::vector<float> &embedding,
-                                     int prompt_tokens)
-{
-  Json::Value root;
-
-  root["object"] = "list";
-
-  Json::Value dataArray(Json::arrayValue);
+Json::Value create_embedding_payload(const std::vector<float> &embedding,
+                                     int prompt_tokens) {
   Json::Value dataItem;
 
   dataItem["object"] = "embedding";
 
   Json::Value embeddingArray(Json::arrayValue);
-  for (const auto &value : embedding)
-  {
+  for (const auto &value : embedding) {
     embeddingArray.append(value);
   }
   dataItem["embedding"] = embeddingArray;
   dataItem["index"] = 0;
 
-  dataArray.append(dataItem);
-  root["data"] = dataArray;
-
-  root["model"] = "_";
-
-  Json::Value usage;
-  usage["prompt_tokens"] = prompt_tokens;
-  usage["total_tokens"] = prompt_tokens; // Assuming total tokens equals prompt
-                                         // tokens in this context
-  root["usage"] = usage;
-
-  Json::StreamWriterBuilder writer;
-  writer["indentation"] = ""; // Compact output
-  return Json::writeString(writer, root);
+  return dataItem;
 }
 
 std::string create_full_return_json(const std::string &id,
@@ -71,8 +42,7 @@ std::string create_full_return_json(const std::string &id,
                                     const std::string &content,
                                     const std::string &system_fingerprint,
                                     int prompt_tokens, int completion_tokens,
-                                    Json::Value finish_reason = Json::Value())
-{
+                                    Json::Value finish_reason = Json::Value()) {
 
   Json::Value root;
 
@@ -108,8 +78,7 @@ std::string create_full_return_json(const std::string &id,
 
 std::string create_return_json(const std::string &id, const std::string &model,
                                const std::string &content,
-                               Json::Value finish_reason = Json::Value())
-{
+                               Json::Value finish_reason = Json::Value()) {
 
   Json::Value root;
 
@@ -136,18 +105,16 @@ std::string create_return_json(const std::string &id, const std::string &model,
   return Json::writeString(writer, root);
 }
 
-void llamaCPP::warmupModel()
-{
+void llamaCPP::warmupModel() {
   json pseudo;
 
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
-  const int task_id = llama.request_completion(pseudo, false, false);
+  const int task_id = llama.request_completion(pseudo, false, false, -1);
   std::string completion_text;
   task_result result = llama.next_result(task_id);
-  if (!result.error && result.stop)
-  {
+  if (!result.error && result.stop) {
     LOG_INFO << result.result_json.dump(-1, ' ', false,
                                         json::error_handler_t::replace);
   }
@@ -156,8 +123,7 @@ void llamaCPP::warmupModel()
 
 void llamaCPP::chatCompletionPrelight(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
+    std::function<void(const HttpResponsePtr &)> &&callback) {
   auto resp = drogon::HttpResponse::newHttpResponse();
   resp->setStatusCode(drogon::HttpStatusCode::k200OK);
   resp->addHeader("Access-Control-Allow-Origin", "*");
@@ -168,11 +134,9 @@ void llamaCPP::chatCompletionPrelight(
 
 void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
+    std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (!model_loaded)
-  {
+  if (!llama.model_loaded_external) {
     Json::Value jsonResp;
     jsonResp["message"] =
         "Model has not been loaded, please load model into nitro";
@@ -189,12 +153,10 @@ void llamaCPP::chatCompletion(
   int no_images = 0;
   // To set default value
 
-  if (jsonBody)
-  {
+  if (jsonBody) {
     // Increase number of chats received and clean the prompt
     no_of_chats++;
-    if (no_of_chats % clean_cache_threshold == 0)
-    {
+    if (no_of_chats % clean_cache_threshold == 0) {
       LOG_INFO << "Clean cache threshold reached!";
       llama.kv_cache_clear();
       LOG_INFO << "Cache cleaned";
@@ -215,91 +177,91 @@ void llamaCPP::chatCompletion(
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
+    std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
+    std::ifstream file(grammar_file);
+    if (!file) {
+      LOG_ERROR << "Grammar file not found";
+    } else {
+      std::stringstream grammarBuf;
+      grammarBuf << file.rdbuf();
+      data["grammar"] = grammarBuf.str();
+    }
+    if (!llama.multimodal) {
 
-    if (!llama.multimodal)
-    {
-
-      for (const auto &message : messages)
-      {
+      for (const auto &message : messages) {
         std::string input_role = message["role"].asString();
         std::string role;
-        if (input_role == "user")
-        {
+        if (input_role == "user") {
           role = user_prompt;
           std::string content = message["content"].asString();
           formatted_output += role + content;
-        }
-        else if (input_role == "assistant")
-        {
+        } else if (input_role == "assistant") {
           role = ai_prompt;
           std::string content = message["content"].asString();
           formatted_output += role + content;
-        }
-        else if (input_role == "system")
-        {
+        } else if (input_role == "system") {
           role = system_prompt;
           std::string content = message["content"].asString();
           formatted_output = role + content + formatted_output;
-        }
-        else
-        {
+        } else {
           role = input_role;
           std::string content = message["content"].asString();
           formatted_output += role + content;
         }
       }
       formatted_output += ai_prompt;
-    }
-    else
-    {
+    } else {
 
       data["image_data"] = json::array();
-      for (const auto &message : messages)
-      {
+      for (const auto &message : messages) {
         std::string input_role = message["role"].asString();
         std::string role;
-        if (input_role == "user")
-        {
+        if (input_role == "user") {
           formatted_output += role;
-          for (auto content_piece : message["content"])
-          {
+          for (auto content_piece : message["content"]) {
             role = user_prompt;
 
+            json content_piece_image_data;
+            content_piece_image_data["data"] = "";
+
             auto content_piece_type = content_piece["type"].asString();
-            if (content_piece_type == "text")
-            {
+            if (content_piece_type == "text") {
               auto text = content_piece["text"].asString();
               formatted_output += text;
-            }
-            else if (content_piece_type == "image_url")
-            {
+            } else if (content_piece_type == "image_url") {
               auto image_url = content_piece["image_url"]["url"].asString();
-              auto base64_image_data = nitro_utils::extractBase64(image_url);
-              LOG_INFO << base64_image_data;
-              formatted_output += "[img-" + std::to_string(no_images) + "]";
-
-              json content_piece_image_data;
+              std::string base64_image_data;
+              if (image_url.find("http") != std::string::npos) {
+                LOG_INFO << "Remote image detected but not supported yet";
+              } else if (image_url.find("data:image") != std::string::npos) {
+                LOG_INFO << "Base64 image detected";
+                base64_image_data = nitro_utils::extractBase64(image_url);
+                LOG_INFO << base64_image_data;
+              } else {
+                LOG_INFO << "Local image detected";
+                nitro_utils::processLocalImage(
+                    image_url, [&](const std::string &base64Image) {
+                      base64_image_data = base64Image;
+                    });
+                LOG_INFO << base64_image_data;
+              }
               content_piece_image_data["data"] = base64_image_data;
+
+              formatted_output += "[img-" + std::to_string(no_images) + "]";
               content_piece_image_data["id"] = no_images;
               data["image_data"].push_back(content_piece_image_data);
               no_images++;
             }
           }
-        }
-        else if (input_role == "assistant")
-        {
+        } else if (input_role == "assistant") {
           role = ai_prompt;
           std::string content = message["content"].asString();
           formatted_output += role + content;
-        }
-        else if (input_role == "system")
-        {
+        } else if (input_role == "system") {
           role = system_prompt;
           std::string content = message["content"].asString();
           formatted_output = role + content + formatted_output;
-        }
-        else
-        {
+        } else {
           role = input_role;
           std::string content = message["content"].asString();
           formatted_output += role + content;
@@ -310,8 +272,7 @@ void llamaCPP::chatCompletion(
     }
 
     data["prompt"] = formatted_output;
-    for (const auto &stop_word : (*jsonBody)["stop"])
-    {
+    for (const auto &stop_word : (*jsonBody)["stop"]) {
       stopWords.push_back(stop_word.asString());
     }
     // specify default stop words
@@ -327,30 +288,37 @@ void llamaCPP::chatCompletion(
   LOG_INFO << "Current completion text";
   LOG_INFO << formatted_output;
 #endif
-  const int task_id = llama.request_completion(data, false, false);
+  int task_id;
+
   LOG_INFO << "Resolved request for task_id:" << task_id;
 
-  if (is_streamed)
-  {
-    auto state = createState(task_id, this);
-
+  if (is_streamed) {
+    auto state = create_inference_state(this);
+    state->task_id = task_id;
     auto chunked_content_provider =
-        [state](char *pBuffer, std::size_t nBuffSize) -> std::size_t
-    {
-      if (!pBuffer)
-      {
+        [state, data](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
+      if (!state->is_streaming) {
+        state->task_id =
+            state->instance->llama.request_completion(data, false, false, -1);
+        state->instance->single_queue_is_busy = true;
+      }
+      if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
         state->instance->llama.request_cancel(state->task_id);
+        state->is_streaming = false;
+        state->instance->single_queue_is_busy = false;
         return 0;
       }
-      if (state->isStopped)
-      {
+      if (state->is_stopped) {
+        state->is_streaming = false;
+        state->instance->single_queue_is_busy = false;
         return 0;
       }
 
       task_result result = state->instance->llama.next_result(state->task_id);
-      if (!result.error)
-      {
+      if (!result.error) {
+        // Update streaming state to being streamed
+        state->is_streaming = true;
         const std::string to_send = result.result_json["content"];
         const std::string str =
             "data: " +
@@ -361,8 +329,7 @@ void llamaCPP::chatCompletion(
         std::size_t nRead = std::min(str.size(), nBuffSize);
         memcpy(pBuffer, str.data(), nRead);
 
-        if (result.stop)
-        {
+        if (result.stop) {
           const std::string str =
               "data: " +
               create_return_json(nitro_utils::generate_random_string(20), "_",
@@ -373,16 +340,31 @@ void llamaCPP::chatCompletion(
           std::size_t nRead = std::min(str.size(), nBuffSize);
           memcpy(pBuffer, str.data(), nRead);
           LOG_INFO << "reached result stop";
-          state->isStopped = true;
+          state->is_stopped = true;
           state->instance->llama.request_cancel(state->task_id);
+          state->is_streaming = false;
+          state->instance->single_queue_is_busy = false;
+
           return nRead;
         }
         return nRead;
+      } else {
+        if (state->instance->llama.params.n_parallel == 1) {
+          while (state->instance->single_queue_is_busy) {
+            LOG_INFO << "Waiting for task to be released status:"
+                     << state->instance->single_queue_is_busy;
+            std::this_thread::sleep_for(std::chrono::milliseconds(
+                500)); // Waiting in 500 miliseconds step
+          }
+        }
+        std::string str = "\n\n";
+        std::size_t nRead = str.size();
+        memcpy(pBuffer, str.data(), nRead);
+        LOG_INFO << "Failing retrying now";
+        return nRead;
       }
-      else
-      {
-        return 0;
-      }
+      state->is_streaming = false;
+      state->instance->single_queue_is_busy = false;
       return 0;
     };
     auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
@@ -390,18 +372,13 @@ void llamaCPP::chatCompletion(
     callback(resp);
 
     return;
-  }
-  else
-  {
+  } else {
     Json::Value respData;
     auto resp = nitro_utils::nitroHttpResponse();
-    respData["testing"] = "thunghiem value moi";
-    if (!json_value(data, "stream", false))
-    {
+    if (!json_value(data, "stream", false)) {
       std::string completion_text;
       task_result result = llama.next_result(task_id);
-      if (!result.error && result.stop)
-      {
+      if (!result.error && result.stop) {
         int prompt_tokens = result.result_json["tokens_evaluated"];
         int predicted_tokens = result.result_json["tokens_predicted"];
         std::string full_return =
@@ -409,9 +386,7 @@ void llamaCPP::chatCompletion(
                                     "_", result.result_json["content"], "_",
                                     prompt_tokens, predicted_tokens);
         resp->setBody(full_return);
-      }
-      else
-      {
+      } else {
         resp->setBody("internal error during inference");
         return;
       }
@@ -422,26 +397,45 @@ void llamaCPP::chatCompletion(
 }
 void llamaCPP::embedding(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
+    std::function<void(const HttpResponsePtr &)> &&callback) {
   const auto &jsonBody = req->getJsonObject();
 
-  json prompt;
-  if (jsonBody->isMember("input") != 0)
-  {
-    prompt = (*jsonBody)["input"].asString();
+  Json::Value responseData(Json::arrayValue);
+
+  if (jsonBody->isMember("input")) {
+    const Json::Value &input = (*jsonBody)["input"];
+    if (input.isString()) {
+      // Process the single string input
+      const int task_id = llama.request_completion(
+          {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
+      task_result result = llama.next_result(task_id);
+      std::vector<float> embedding_result = result.result_json["embedding"];
+      responseData.append(create_embedding_payload(embedding_result, 0));
+    } else if (input.isArray()) {
+      // Process each element in the array input
+      for (const auto &elem : input) {
+        if (elem.isString()) {
+          const int task_id = llama.request_completion(
+              {{"prompt", elem.asString()}, {"n_predict", 0}}, false, true, -1);
+          task_result result = llama.next_result(task_id);
+          std::vector<float> embedding_result = result.result_json["embedding"];
+          responseData.append(create_embedding_payload(embedding_result, 0));
+        }
+      }
+    }
   }
-  else
-  {
-    prompt = "";
-  }
-  const int task_id = llama.request_completion(
-      {{"prompt", prompt}, {"n_predict", 0}}, false, true);
-  task_result result = llama.next_result(task_id);
-  std::vector<float> embedding_result = result.result_json["embedding"];
+
   auto resp = nitro_utils::nitroHttpResponse();
-  std::string embedding_resp = create_embedding_payload(embedding_result, 0);
-  resp->setBody(embedding_resp);
+  Json::Value root;
+  root["data"] = responseData;
+  root["model"] = "_";
+  root["object"] = "list";
+  Json::Value usage;
+  usage["prompt_tokens"] = 0;
+  usage["total_tokens"] = 0;
+  root["usage"] = usage;
+
+  resp->setBody(Json::writeString(Json::StreamWriterBuilder(), root));
   resp->setContentTypeString("application/json");
   callback(resp);
   return;
@@ -449,12 +443,10 @@ void llamaCPP::embedding(
 
 void llamaCPP::unloadModel(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
+    std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
   jsonResp["message"] = "No model loaded";
-  if (model_loaded)
-  {
+  if (llama.model_loaded_external) {
     stopBackgroundTask();
 
     llama_free(llama.ctx);
@@ -469,17 +461,13 @@ void llamaCPP::unloadModel(
 }
 void llamaCPP::modelStatus(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
+    std::function<void(const HttpResponsePtr &)> &&callback) {
   Json::Value jsonResp;
-  bool is_model_loaded = this->model_loaded;
-  if (is_model_loaded)
-  {
+  bool is_model_loaded = llama.model_loaded_external;
+  if (is_model_loaded) {
     jsonResp["model_loaded"] = is_model_loaded;
     jsonResp["model_data"] = llama.get_model_props().dump();
-  }
-  else
-  {
+  } else {
     jsonResp["model_loaded"] = is_model_loaded;
   }
 
@@ -488,20 +476,26 @@ void llamaCPP::modelStatus(
   return;
 }
 
-bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
-{
+bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
 
   gpt_params params;
 
   // By default will setting based on number of handlers
-  int drogon_thread = drogon::app().getThreadNum() - 1;
-  LOG_INFO << "Drogon thread is:" << drogon_thread;
-  if (jsonBody)
-  {
-    if (!jsonBody["mmproj"].isNull())
-    {
+  if (jsonBody) {
+    if (!jsonBody["mmproj"].isNull()) {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody["mmproj"].asString();
+    }
+    if (!jsonBody["grp_attn_n"].isNull()) {
+
+      params.grp_attn_n = jsonBody["grp_attn_n"].asInt();
+    }
+    if (!jsonBody["grp_attn_w"].isNull()) {
+
+      params.grp_attn_w = jsonBody["grp_attn_w"].asInt();
+    }
+    if (!jsonBody["mlock"].isNull()) {
+      params.use_mlock = jsonBody["mlock"].asBool();
     }
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
@@ -509,12 +503,11 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
     params.embedding = jsonBody.get("embedding", true).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody.get("n_batch", 512).asInt();
-    params.n_parallel = jsonBody.get("n_parallel", drogon_thread).asInt();
+    params.n_parallel = jsonBody.get("n_parallel", 1).asInt();
     params.n_threads =
         jsonBody.get("cpu_threads", std::thread::hardware_concurrency())
             .asInt();
     params.cont_batching = jsonBody.get("cont_batching", false).asBool();
-
     this->clean_cache_threshold =
         jsonBody.get("clean_cache_threshold", 5).asInt();
     this->caching_enabled = jsonBody.get("caching_enabled", false).asBool();
@@ -524,13 +517,18 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
         jsonBody.get("system_prompt", "ASSISTANT's RULE: ").asString();
     this->pre_prompt = jsonBody.get("pre_prompt", "").asString();
     this->repeat_last_n = jsonBody.get("repeat_last_n", 32).asInt();
+
+    if (!jsonBody["llama_log_folder"].isNull()) {
+      log_enable();
+      std::string llama_log_folder = jsonBody["llama_log_folder"].asString();
+      log_set_target(llama_log_folder + "llama.log");
+    } // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
   params.mul_mat_q = false;
 #endif // GGML_USE_CUBLAS
-  if (params.model_alias == "unknown")
-  {
+  if (params.model_alias == "unknown") {
     params.model_alias = params.model;
   }
 
@@ -546,13 +544,14 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
                  });
 
   // load the model
-  if (!llama.load_model(params))
-  {
+  if (!llama.load_model(params)) {
     LOG_ERROR << "Error loading the model";
     return false; // Indicate failure
   }
   llama.initialize();
-  model_loaded = true;
+
+  llama.model_loaded_external = true;
+
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
   warmupModel();
@@ -561,11 +560,9 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody)
 
 void llamaCPP::loadModel(
     const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback)
-{
+    std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (model_loaded)
-  {
+  if (llama.model_loaded_external) {
     LOG_INFO << "model loaded";
     Json::Value jsonResp;
     jsonResp["message"] = "Model already loaded";
@@ -576,17 +573,14 @@ void llamaCPP::loadModel(
   }
 
   const auto &jsonBody = req->getJsonObject();
-  if (!loadModelImpl(*jsonBody))
-  {
+  if (!loadModelImpl(*jsonBody)) {
     // Error occurred during model loading
     Json::Value jsonResp;
     jsonResp["message"] = "Failed to load model";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
     callback(resp);
-  }
-  else
-  {
+  } else {
     // Model loaded successfully
     Json::Value jsonResp;
     jsonResp["message"] = "Model loaded successfully";
@@ -595,10 +589,8 @@ void llamaCPP::loadModel(
   }
 }
 
-void llamaCPP::backgroundTask()
-{
-  while (model_loaded)
-  {
+void llamaCPP::backgroundTask() {
+  while (llama.model_loaded_external) {
     // model_loaded =
     llama.update_slots();
   }
@@ -608,14 +600,12 @@ void llamaCPP::backgroundTask()
   return;
 }
 
-void llamaCPP::stopBackgroundTask()
-{
-  if (model_loaded)
-  {
-    model_loaded = false;
+void llamaCPP::stopBackgroundTask() {
+  if (llama.model_loaded_external) {
+    llama.model_loaded_external = false;
+    llama.condition_tasks.notify_one();
     LOG_INFO << "changed to false";
-    if (backgroundThread.joinable())
-    {
+    if (backgroundThread.joinable()) {
       backgroundThread.join();
     }
   }

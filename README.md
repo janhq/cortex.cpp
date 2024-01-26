@@ -92,6 +92,21 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 ```
 
+***OPTIONAL***: You can constrain the sampling using GBNF grammars by providing path to a grammar file
+```bash title="Nitro Inference With Grammar"
+curl http://localhost:3928/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Who won the world series in 2020?"
+      },
+    ],
+    "grammar_file": "/path/to/grammarfile"
+  }'
+```
+
 Table of parameters
 
 | Parameter        | Type    | Description                                                  |
@@ -110,19 +125,23 @@ Table of parameters
 | `n_batch`       | Integer | The batch size for prompt eval step |
 | `caching_enabled` | Boolean | To enable prompt caching or not   |
 | `clean_cache_threshold` | Integer | Number of chats that will trigger clean cache action|
+|`grp_attn_n`|Integer|Group attention factor in self-extend|
+|`grp_attn_w`|Integer|Group attention width in self-extend|
+|`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
-./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port])
+./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port] [uploads_folder_path])
 ```
 - thread_num : the number of thread that nitro webserver needs to have
 - host : host value normally 127.0.0.1 or 0.0.0.0
 - port : the port that nitro got deployed onto
+- uploads_folder_path: custom path for file uploads in Drogon.
 
 Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
 ## Compile from source
-To compile nitro please visit [Compile from source](docs/new/build-source.md)
+To compile nitro please visit [Compile from source](docs/docs/new/build-source.md)
 
 ## Download
 
@@ -136,37 +155,37 @@ To compile nitro please visit [Compile from source](docs/new/build-source.md)
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.1.30/nitro-0.1.30-win-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.14/nitro-0.2.14-win-amd64.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.1.30/nitro-0.1.30-win-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.14/nitro-0.2.14-win-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.1.30/nitro-0.1.30-mac-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.14/nitro-0.2.14-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.1.30/nitro-0.1.30-mac-arm64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.14/nitro-0.2.14-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.1.30/nitro-0.1.30-linux-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.14/nitro-0.2.14-linux-amd64.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.1.30/nitro-0.1.30-linux-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.2.14/nitro-0.2.14-linux-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
@@ -175,8 +194,8 @@ To compile nitro please visit [Compile from source](docs/new/build-source.md)
   <tr style="text-align: center">
     <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
     <td style="text-align:center" colspan="6">
-      <a href='https://github.com/janhq/nitro/actions/runs/7226513714'>
-        <b>Github action artifactory</b>
+      <a href='https://github.com/janhq/nitro/actions/runs/7616687953'>
+        <b>GitHub action artifactory</b>
       </a>
     </td>
   </tr>

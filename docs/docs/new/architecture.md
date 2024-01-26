@@ -1,6 +1,7 @@
 ---
 title: Architecture
 slug: /achitecture
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 ![Nitro Architecture](img/architecture.drawio.png)

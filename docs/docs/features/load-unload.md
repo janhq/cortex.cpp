@@ -1,6 +1,7 @@
 ---
 title: Load and Unload models
 description: Nitro loads and unloads local AI models (local LLMs).
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 ## Load model
@@ -77,3 +78,6 @@ In case you got error while loading models. Please check for the correct model p
 | `system_prompt`    | String  | The prompt for system rules.                          |
 | `pre_prompt`    | String  | The prompt to use for internal configuration.                          |
 |`clean_cache_threshold`|	Integer|	Number of chats that will trigger clean cache action.|
+|`grp_attn_n`|Integer|Group attention factor in self-extend|
+|`grp_attn_w`|Integer|Group attention width in self-extend|
+|`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|

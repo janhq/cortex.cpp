@@ -1,6 +1,7 @@
 ---
 title: Embedding
 description: Inference engine for embedding, the same as OpenAI's
+keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
 Embeddings are lists of numbers (floats). To find how similar two embeddings are, we measure the [distance](https://en.wikipedia.org/wiki/Cosine_similarity) between them.
