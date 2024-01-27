@@ -26,6 +26,17 @@ cmake -B build -DWHISPER_COREML=1
 cmake --build build -j --config Release
 ```
 
+### For Windows with CUDA
+
+```
+mkdir -p build
+cd build
+cmake .. -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DWHISPER_CUBLAS=ON -DWHISPER_SDL2=ON
+cmake --build . --config Release
+
+# Then copy llama.dll, whisper.dll and zlib.dll
+```
+
 ## Sample test command
 
 - Download `ggml-base.en.bin` with [whisper.cpp/models/download-ggml-model.sh](whisper.cpp/models/download-ggml-model.sh)
@@ -50,6 +61,12 @@ curl 127.0.0.1:3928/v1/audio/list_model
 
 ```bash
 wget https://github.com/ggerganov/whisper.cpp/raw/master/samples/jfk.wav
+```
+
+- The input needs to be converted to expected one
+
+```
+ffmpeg -i INPUT.MP3 -ar 16000 -ac 1 -c:a pcm_s16le OUTPUT.WAV
 ```
 
 - Sample transcription:
