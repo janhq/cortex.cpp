@@ -95,9 +95,8 @@ function stopModel(): Promise<NitroModelOperationResponse> {
 /**
  * Initializes a Nitro subprocess to load a machine learning model.
  * @param modelFullPath - The absolute full path to model directory.
- * @param wrapper - The model wrapper.
+ * @param promptTemplate - The template to use for generating prompts.
  * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
- * TODO: Should pass absolute of the model file instead of just the name - So we can modurize the module.ts to npm package
  */
 async function runModel({
   modelFullPath,
@@ -273,8 +272,8 @@ async function chatCompletion(
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Accept: "text/event-stream",
       "Access-Control-Allow-Origin": "*",
+      Accept: Boolean(outStream) ? "text/event-stream" : "application/json",
     },
     body: JSON.stringify(request),
     retries: 3,
@@ -352,10 +351,10 @@ async function killSubprocess(): Promise<NitroModelOperationResponse> {
       subprocess?.kill();
       subprocess = undefined;
     })
-    .catch((err) => ({ error: err }))
     .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
     .then(() => log(`[NITRO]::Debug: Nitro process is terminated`))
-    .then(() => Promise.resolve({}));
+    .then(() => Promise.resolve({}))
+    .catch((err) => ({ error: err }));
 }
 
 /**

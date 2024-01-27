@@ -1,5 +1,7 @@
+import fs from 'node:fs';
 import path from "node:path";
 import download from "download";
+import { Duplex } from "node:stream";
 
 // Define nitro version to download in env variable
 const NITRO_VERSION = process.env.NITRO_VERSION || "0.2.11";
@@ -51,7 +53,7 @@ const getTarUrl = (version: string, suffix: string) =>
   `https://github.com/janhq/nitro/releases/download/v${version}/nitro-${version}-${suffix}.tar.gz`;
 
 // Report download progress
-const createProgressReporter = (variant: string) => (stream: any) =>
+const createProgressReporter = (variant: string) => (stream: Promise<Buffer> & Duplex) =>
   stream
     .on(
       "downloadProgress",
@@ -69,16 +71,27 @@ const createProgressReporter = (variant: string) => (stream: any) =>
     });
 
 // Download single binary
-const downloadBinary = (version: string, suffix: string, filePath: string) => {
+const downloadBinary = (version: string, suffix: string, destDirPath: string) => {
   const tarUrl = getTarUrl(version, suffix);
-  console.log(`Downloading ${tarUrl} to ${filePath}`);
+  console.log(`Downloading ${tarUrl} to ${destDirPath}`);
   const progressReporter = createProgressReporter(suffix);
   return progressReporter(
-    download(tarUrl, filePath, {
+    download(tarUrl, destDirPath, {
       strip: 1,
       extract: true,
     }),
-  );
+  ).then(() => {
+    // Set mode of downloaded binaries to executable
+    (fs
+      .readdirSync(destDirPath, { recursive: true }) as string[])
+      .filter((fname) => fs.lstatSync(path.join(destDirPath, fname)).isFile())
+      .filter((fname) => fname.includes('nitro'))
+      .forEach(
+        (nitroBinary) => {
+          const absPath = path.join(destDirPath, nitroBinary)
+          fs.chmodSync(absPath, fs.constants.S_IRWXU | fs.constants.S_IRWXG | fs.constants.S_IRWXO)
+        })
+  });
 };
 
 // Download the binaries
