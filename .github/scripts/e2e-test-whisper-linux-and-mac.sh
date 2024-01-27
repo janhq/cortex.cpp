@@ -51,11 +51,11 @@ response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://1
 response2=$(
     curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/transcriptions" \
         --header 'Access-Control-Allow-Origin: *' \
-        --form 'file=@"whisper.cpp/samples/jfk.wav"' \
+        --form 'file=@"../whisper.cpp/samples/jfk.wav"' \
         --form 'model_id="whisper.cpp"' \
         --form 'temperature="0.0"' \
-        --form 'prompt="The transcript is about OpenAI which makes technology like DALL·E, GPT-3, and ChatGPT with the hope of one day building an AGI system that benefits all of humanity. The president is trying to raly people to support the cause."'
-    2>&1
+        --form 'prompt="The transcript is about OpenAI which makes technology like DALL·E, GPT-3, and ChatGPT with the hope of one day building an AGI system that benefits all of humanity. The president is trying to raly people to support the cause."' \
+        2>&1
 )
 
 error_occurred=0

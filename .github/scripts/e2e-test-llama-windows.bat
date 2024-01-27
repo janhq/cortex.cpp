@@ -62,7 +62,7 @@ echo curl_data2=%curl_data2%
 rem Run the curl commands and capture the status code
 curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
 
-curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/chat/completions" ^
+curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
 --header "Content-Type: application/json" ^
 --header "Accept: text/event-stream" ^
 --header "Access-Control-Allow-Origin: *" ^

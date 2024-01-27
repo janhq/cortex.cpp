@@ -300,6 +300,10 @@ jobs:
       - name: Run e2e testing - Whisper.CPP
         shell: bash
         run: |
+          # To test with CoreML
+          wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-encoder.mlmodelc.zip
+          unzip ggml-tiny.en-encoder.mlmodelc.zip
+          mv ggml-tiny.en-encoder.mlmodelc /tmp/testwhisper-encoder.mlmodelc
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}

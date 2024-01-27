@@ -63,7 +63,7 @@ curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.
 curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
 --header "Access-Control-Allow-Origin: *" ^
 --form 'model_id="whisper.cpp"' ^
---form 'file=@"whisper.cpp\samples\jfk.wav"' ^
+--form 'file=@"..\whisper.cpp\samples\jfk.wav"' ^
 --form 'temperature="0.0"' ^
 --form 'prompt="The transcript is about OpenAI which makes technology like DALL·E, GPT-3, and ChatGPT with the hope of one day building an AGI system that benefits all of humanity. The president is trying to raly people to support the cause."' ^
 > %TEMP%\response2_code.log 2>&1
