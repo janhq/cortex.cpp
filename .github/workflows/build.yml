@@ -459,7 +459,7 @@ jobs:
 
       - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
         run: |
-          C:/msys64/usr/bin/wget.exe -qO sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
+          curl -L -o sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
           7z x sdl2.zip
           echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
 
