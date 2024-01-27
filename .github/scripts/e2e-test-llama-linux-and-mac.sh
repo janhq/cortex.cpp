@@ -21,12 +21,12 @@ range=$((max - min + 1))
 PORT=$((RANDOM % range + min))
 
 # Start the binary file
-"$BINARY_PATH" 1 127.0.0.1 $PORT > /tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log 2>&1 &
 
 # Get the process id of the binary file
 pid=$!
 
-if ! ps -p $pid > /dev/null; then
+if ! ps -p $pid >/dev/null; then
     echo "nitro failed to start. Logs:"
     cat /tmp/nitro.log
     exit 1
@@ -35,26 +35,27 @@ fi
 # Wait for a few seconds to let the server start
 sleep 5
 
-# Check if /tmp/testmodel exists, if not, download it
-if [[ ! -f "/tmp/testmodel" ]]; then
-    wget $DOWNLOAD_URL -O /tmp/testmodel
+# Check if /tmp/testllm exists, if not, download it
+if [[ ! -f "/tmp/testllm" ]]; then
+    wget $DOWNLOAD_URL -O /tmp/testllm
 fi
 
 # Run the curl commands
 response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
---header 'Content-Type: application/json' \
---data '{
-    "llama_model_path": "/tmp/testmodel",
+    --header 'Content-Type: application/json' \
+    --data '{
+    "llama_model_path": "/tmp/testllm",
     "ctx_len": 50,
     "ngl": 32,
     "embedding": false
 }' 2>&1)
 
-response2=$(curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/chat_completion" \
---header 'Content-Type: application/json' \
---header 'Accept: text/event-stream' \
---header 'Access-Control-Allow-Origin: *' \
---data '{
+response2=$(
+    curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
+        --header 'Content-Type: application/json' \
+        --header 'Accept: text/event-stream' \
+        --header 'Access-Control-Allow-Origin: *' \
+        --data '{
         "messages": [
             {"content": "Hello there", "role": "assistant"},
             {"content": "Write a long and sad story for me", "role": "user"}
@@ -97,7 +98,6 @@ cat /tmp/response1.log
 echo "----------------------"
 echo "Log run test:"
 cat /tmp/response2.log
-
 
 echo "Nitro test run successfully!"
 
