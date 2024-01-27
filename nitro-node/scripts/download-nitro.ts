@@ -11,28 +11,20 @@ const PLATFORM = process.env.npm_config_platform || process.platform;
 //const ARCH = process.env.npm_config_arch || process.arch;
 
 const linuxVariants = {
-  "linux-amd64": path.normalize(path.join(__dirname, "..", "bin", "linux-cpu")),
-  "linux-amd64-cuda-12-0": path.normalize(
-    path.join(__dirname, "..", "bin", "linux-cuda-12-0"),
-  ),
-  "linux-amd64-cuda-11-7": path.normalize(
-    path.join(__dirname, "..", "bin", "linux-cuda-11-7"),
-  ),
+  "linux-amd64": "linux-cpu",
+  "linux-amd64-cuda-12-0": "linux-cuda-12-0",
+  "linux-amd64-cuda-11-7": "linux-cuda-11-7",
 };
 
 const darwinVariants = {
-  "mac-arm64": path.normalize(path.join(__dirname, "..", "bin", "mac-arm64")),
-  "mac-amd64": path.normalize(path.join(__dirname, "..", "bin", "mac-x64")),
+  "mac-arm64": "mac-arm64",
+  "mac-amd64": "mac-x64",
 };
 
 const win32Variants = {
-  "win-amd64-cuda-12-0": path.normalize(
-    path.join(__dirname, "..", "bin", "win-cuda-12-0"),
-  ),
-  "win-amd64-cuda-11-7": path.normalize(
-    path.join(__dirname, "..", "bin", "win-cuda-11-7"),
-  ),
-  "win-amd64": path.normalize(path.join(__dirname, "..", "bin", "win-cpu")),
+  "win-amd64-cuda-12-0": "win-cuda-12-0",
+  "win-amd64-cuda-11-7": "win-cuda-11-7",
+  "win-amd64": "win-cpu",
 };
 
 // Mapping to installation variants
@@ -84,39 +76,50 @@ const downloadBinary = async (
     download(tarUrl, destDirPath, {
       strip: 1,
       extract: true,
-    }));
+    }),
+  );
   // Set mode of downloaded binaries to executable
   (fs.readdirSync(destDirPath, { recursive: true }) as string[])
-    .filter((fname) => fs.lstatSync(path.join(destDirPath, fname)).isFile())
-    .filter((fname_1) => fname_1.includes("nitro"))
+    .filter(
+      (fname) =>
+        fname.includes("nitro") &&
+        fs.lstatSync(path.join(destDirPath, fname)).isFile(),
+    )
     .forEach((nitroBinary) => {
       const absPath = path.join(destDirPath, nitroBinary);
       fs.chmodSync(
         absPath,
-        fs.constants.S_IRWXU | fs.constants.S_IRWXG | fs.constants.S_IRWXO);
+        fs.constants.S_IRWXU | fs.constants.S_IRWXG | fs.constants.S_IRWXO,
+      );
     });
 };
 
 // Download the binaries
-const downloadBinaries = (version: string, config: Record<string, string>) => {
+const downloadBinaries = (
+  version: string,
+  config: Record<string, string>,
+  absBinDirPath: string,
+) => {
   return Object.entries(config).reduce(
-    (p: Promise<any>, [k, v]) => p.then(() => downloadBinary(version, k, v)),
+    (p: Promise<any>, [k, v]) =>
+      p.then(() => downloadBinary(version, k, path.join(absBinDirPath, v))),
     Promise.resolve(),
   );
 };
 
 // Check for a files with nitro in name in the corresponding directory
-const verifyDownloadedBinaries = () => {
+const verifyDownloadedBinaries = (absBinDirPath: string) => {
   // Check all the paths in variantConfig for a file with nitro in its name
   return Object.values(variantConfig).every((binDirVariant: string) => {
     try {
-      const pathToCheck = path.join(binDirVariant, "nitro");
-      return (
-        fs.readdirSync(binDirVariant, { recursive: true }) as string[]
-      ).some((fname) => {
-        const fullPath = path.join(binDirVariant, fname);
-        return fullPath.startsWith(pathToCheck);
-      });
+      const dirToCheck = path.join(absBinDirPath, binDirVariant);
+      const pathToCheck = path.join(dirToCheck, "nitro");
+      return (fs.readdirSync(dirToCheck, { recursive: true }) as string[]).some(
+        (fname) => {
+          const fullPath = path.join(dirToCheck, fname);
+          return fullPath.startsWith(pathToCheck);
+        },
+      );
     } catch (_e: any) {
       return false;
     }
@@ -124,13 +127,15 @@ const verifyDownloadedBinaries = () => {
 };
 
 // Call the download function with version and config
-const downloadNitro = async () => {
+const downloadNitro = async (
+  absBinDirPath: string = path.join(__dirname, "..", '..', "bin"),
+) => {
   // Return early without downloading if nitro binaries are already downloaded
-  if (verifyDownloadedBinaries()) {
+  if (verifyDownloadedBinaries(absBinDirPath)) {
     //console.log("Nitro binaries are already downloaded!");
     return;
   }
-  return await downloadBinaries(NITRO_VERSION, variantConfig);
+  return await downloadBinaries(NITRO_VERSION, variantConfig, absBinDirPath);
 };
 
 export default downloadNitro;

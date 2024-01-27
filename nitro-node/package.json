@@ -16,6 +16,7 @@
   "exports": {
     ".": "./dist/index.js",
     "./main": "./dist/index.cjs.js",
+    "./scripts/download-nitro": "./dist/scripts/download-nitro.js",
     "./postinstall": "./postinstall.js"
   },
   "devDependencies": {

@@ -7,7 +7,7 @@ import json from "@rollup/plugin-json";
 export default [
   {
     input: `src/index.ts`,
-    output: [{ file: "dist/index.cjs.js", format: "cjs", sourcemap: true }],
+    output: [{ file: "dist/index.js", format: "cjs", sourcemap: true }],
     // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
     external: [],
     watch: {
@@ -34,7 +34,11 @@ export default [
   {
     input: `scripts/download-nitro.ts`,
     output: [
-      { file: "dist/scripts/download-nitro.js", format: "cjs", sourcemap: true },
+      {
+        file: "dist/scripts/download-nitro.js",
+        format: "cjs",
+        sourcemap: true,
+      },
     ],
     // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
     external: [],

@@ -11,8 +11,8 @@ export interface NitroExecutableOptions {
  */
 export const executableNitroFile = (
   nvidiaSettings: NitroNvidiaConfig,
+  binaryFolder: string,
 ): NitroExecutableOptions => {
-  let binaryFolder = path.join(__dirname, "..", "bin"); // Current directory by default
   let cudaVisibleDevices = "";
   let binaryName = "nitro";
   /**

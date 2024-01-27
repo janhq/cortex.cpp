@@ -33,6 +33,14 @@ test: install
 pack: build
 	yarn run build:publish
 
+# Test that installation will also download nitro binaries
+test-e2e-installation: pack
+ifeq ($(OS),Windows_NT)
+	$env:NITRO_NODE_PKG=(Resolve-Path -Path janhq-nitro-node-1.0.0.tgz) node ..\.github\scripts\e2e-test-install-nitro-node.js
+else
+	NITRO_NODE_PKG=$(realpath janhq-nitro-node-1.0.0.tgz) node ../.github/scripts/e2e-test-install-nitro-node.js
+endif
+
 clean:
 ifeq ($(OS),Windows_NT)
 	powershell -Command "Remove-Item -Recurse -Force -Path *.tgz, .yarn, yarn.lock, package-lock.json, bin, dist"

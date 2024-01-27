@@ -7,7 +7,7 @@ import fetchRT from "fetch-retry";
 import osUtils from "os-utils";
 import { getNitroProcessInfo, updateNvidiaInfo } from "./nvidia";
 import { executableNitroFile } from "./execute";
-import downloadNitro from '../scripts/download-nitro';
+import downloadNitro from "../scripts/download-nitro";
 // Polyfill fetch with retry
 const fetchRetry = fetchRT(fetch);
 
@@ -57,6 +57,32 @@ let nvidiaConfig: NitroNvidiaConfig = NVIDIA_DEFAULT_CONFIG;
 // The logger to use, default to stdout
 let log: NitroLogger = (message, ..._) =>
   process.stdout.write(message + os.EOL);
+// The absolute path to bin directory
+let binPath: string = path.join(__dirname, "..", "bin");
+
+/**
+ * Get current bin path
+ * @returns {string} The bin path
+ */
+function getBinPath(): string {
+  return binPath;
+}
+/**
+ * Set custom bin path
+ */
+function setBinPath(customBinPath: string): void | never {
+  // Check if the path is a directory
+  if (
+    fs.existsSync(customBinPath) &&
+    fs.statSync(customBinPath).isDirectory()
+  ) {
+    // If a valid directory, resolve to absolute path and set to binPath
+    const resolvedPath = path.resolve(customBinPath);
+    binPath = resolvedPath;
+  } else {
+    throw new Error(`${customBinPath} is not a valid directory!`);
+  }
+}
 
 /**
  * Get current Nvidia config
@@ -104,7 +130,7 @@ async function runModel({
   promptTemplate,
 }: NitroModelInitOptions): Promise<NitroModelOperationResponse | Error> {
   // Download nitro binaries if it's not already downloaded
-  await downloadNitro();
+  await downloadNitro(binPath);
   const files: string[] = fs.readdirSync(modelFullPath);
 
   // Look for model file with supported format
@@ -368,8 +394,7 @@ function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
   log(`[NITRO]::Debug: Spawning Nitro subprocess...`);
 
   return new Promise(async (resolve, reject) => {
-    const binaryFolder = path.join(__dirname, "..", "bin"); // Current directory by default
-    const executableOptions = executableNitroFile(nvidiaConfig);
+    const executableOptions = executableNitroFile(nvidiaConfig, binPath);
 
     const args: string[] = ["1", LOCAL_HOST, PORT.toString()];
     // Execute the binary
@@ -380,7 +405,7 @@ function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
       executableOptions.executablePath,
       ["1", LOCAL_HOST, PORT.toString()],
       {
-        cwd: binaryFolder,
+        cwd: binPath,
         env: {
           ...process.env,
           CUDA_VISIBLE_DEVICES: executableOptions.cudaVisibleDevices,
@@ -426,6 +451,8 @@ function getResourcesInfo(): Promise<ResourcesInfo> {
 }
 
 export default {
+  getBinPath,
+  setBinPath,
   getNvidiaConfig,
   setNvidiaConfig,
   setLogger,
