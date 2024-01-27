@@ -196,7 +196,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DLLAMA_CUBLAS=ON -DLLAMA_NATIVE=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          cmake  -DLLAMA_NATIVE=OFF -DLLAMA_CUBLAS=ON -DLLAMA_CUBLAS=ON -DWHISPER_CUBLAS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           make -j $(nproc)
           ls -la
 
@@ -249,14 +249,14 @@ jobs:
         continue-on-error: true
         run: |
           brew update
-          brew install cmake
+          brew install cmake sdl2
 
       - name: Build
         id: cmake_build
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
+          cmake -DWHISPER_COREML=1 -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 
@@ -310,6 +310,7 @@ jobs:
         continue-on-error: true
         run: |
           brew update
+          brew install sdl2
 
       - name: Build
         id: cmake_build
@@ -374,6 +375,15 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
+        run: |
+          C:/msys64/usr/bin/wget.exe -qO sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
+          7z x sdl2.zip
+          echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
+
       - name: actions-setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.14.1
 
@@ -385,7 +395,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -394,6 +404,8 @@ jobs:
         run: |
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
+          robocopy build\bin\Release\ .\build\Release\ whisper.dll
+          robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
           dotnet tool install --global AzureSignTool
           azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
@@ -442,6 +454,15 @@ jobs:
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
+        run: |
+          C:/msys64/usr/bin/wget.exe -qO sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
+          7z x sdl2.zip
+          echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
+
       - name: actions-setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.14.1
 
@@ -471,7 +492,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DWHISPER_CUBLAS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -481,6 +502,8 @@ jobs:
           set PATH=%PATH%;C:\Program Files\7-Zip\
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
+          robocopy build\bin\Release\ .\build\Release\ whisper.dll
+          robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
           dotnet tool install --global AzureSignTool
           %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
