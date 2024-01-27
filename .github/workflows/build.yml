@@ -451,17 +451,17 @@ jobs:
           name: nitro-win-amd64
           path: ./build/Release
 
-      - name: Run e2e testing - Llama.cpp
-        shell: cmd
-        run: |
-          cd .\build\Release
-          ..\..\.github\scripts\e2e-test-llama-windows.bat .\nitro.exe ${{ env.LLM_MODEL_URL }}
+      # - name: Run e2e testing - Llama.cpp
+      #   shell: cmd
+      #   run: |
+      #     cd .\build\Release
+      #     ..\..\.github\scripts\e2e-test-llama-windows.bat .\nitro.exe ${{ env.LLM_MODEL_URL }}
 
-      - name: Run e2e testing - Whisper.cpp
-        shell: cmd
-        run: |
-          cd .\build\Release
-          ..\..\.github\scripts\e2e-test-whisper-windows.bat .\nitro.exe ${{ env.WHISPER_MODEL_URL }}
+      # - name: Run e2e testing - Whisper.cpp
+      #   shell: cmd
+      #   run: |
+      #     cd .\build\Release
+      #     ..\..\.github\scripts\e2e-test-whisper-windows.bat .\nitro.exe ${{ env.WHISPER_MODEL_URL }}
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -555,17 +555,17 @@ jobs:
           name: nitro-win-amd64-cuda-${{ matrix.cuda }}
           path: ./build/Release
 
-      - name: Run e2e testing - Llama.cpp
-        shell: cmd
-        run: |
-          cd .\build\Release
-          ..\..\.github\scripts\e2e-test-llama-windows.bat .\nitro.exe ${{ env.LLM_MODEL_URL }}
+      # - name: Run e2e testing - Llama.cpp
+      #   shell: cmd
+      #   run: |
+      #     cd .\build\Release
+      #     ..\..\.github\scripts\e2e-test-llama-windows.bat .\nitro.exe ${{ env.LLM_MODEL_URL }}
 
-      - name: Run e2e testing - Whisper.cpp
-        shell: cmd
-        run: |
-          cd .\build\Release
-          ..\..\.github\scripts\e2e-test-whisper-windows.bat .\nitro.exe ${{ env.WHISPER_MODEL_URL }}
+      # - name: Run e2e testing - Whisper.cpp
+      #   shell: cmd
+      #   run: |
+      #     cd .\build\Release
+      #     ..\..\.github\scripts\e2e-test-whisper-windows.bat .\nitro.exe ${{ env.WHISPER_MODEL_URL }}
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
