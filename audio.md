@@ -33,9 +33,9 @@ mkdir -p build
 cd build
 cmake .. -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DWHISPER_CUBLAS=ON -DWHISPER_SDL2=ON
 cmake --build . --config Release
-
-# Then copy llama.dll, whisper.dll and zlib.dll
 ```
+
+Then copy llama.dll, whisper.dll and zlib.dll
 
 ## Sample test command
 
@@ -45,11 +45,16 @@ cmake --build . --config Release
 ```bash
 curl 127.0.0.1:3928/v1/audio/load_model \
 -X POST -H "Content-Type: application/json" \
--d '{"model_id":"ggml-base.en.bin","model_path":"/abs/path/to/whisper.cpp/models/ggml-base.en.bin"}'
-
-
-# If we enable CoreML on Mac silicon, we need to include `ggml-base.mlmodelc` file in the same folder as `ggml-base.en.bin`
+-d '{
+    "model_id":"ggml-base.en.bin",
+    "model_path":"/abs/path/to/whisper.cpp/models/ggml-base.en.bin"
+    "warm_up_audio_path":"/abs/path/to/samples.wav"
+}'
 ```
+
+`warm_up_audio_path` is optional
+
+If we enable CoreML on Mac silicon, we need to include `ggml-base.mlmodelc` file in the same folder as `ggml-base.en.bin`
 
 - List model:
 

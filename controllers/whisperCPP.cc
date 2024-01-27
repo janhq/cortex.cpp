@@ -583,7 +583,7 @@ std::string whisper_server_context::inference(
 
   // print some processing info
   std::string processing_info =
-      "Model " + model_id + "processing " + input_file_path + " (" +
+      "Model " + model_id + " processing " + input_file_path + " (" +
       std::to_string(pcmf32.size()) + " samples, " +
       std::to_string(float(pcmf32.size()) / WHISPER_SAMPLE_RATE) + " sec), " +
       std::to_string(params.n_threads) + " threads, " +
@@ -861,6 +861,33 @@ void whisperCPP::load_model(
     resp->setStatusCode(k500InternalServerError);
     callback(resp);
     return;
+  }
+
+  // Warm up the model
+  // Parse warm up audio path from request
+  if (jsonBody->isMember("warm_up_audio_path")) {
+    std::string warm_up_msg = "Warming up model " + model_id;
+    LOG_INFO << warm_up_msg;
+    std::string warm_up_audio_path =
+        (*jsonBody)["warm_up_audio_path"].asString();
+    // Return 400 error if warm up audio path is not found
+    if (!is_file_exist(warm_up_audio_path.c_str())) {
+      std::string error_msg = "Warm up audio " + warm_up_audio_path + " not found, please provide a valid path or don't specify it at all";
+      LOG_INFO << error_msg;
+      Json::Value jsonResp;
+      jsonResp["message"] = error_msg;
+      auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    } else {
+      LOG_INFO << "Warming up model " << model_id << " with audio " << warm_up_audio_path << " ...";
+      std::string warm_up_result = whisper.inference(
+          warm_up_audio_path, "en", "", text_format, 0, false);
+      LOG_INFO << "Warm up model " << model_id << " completed";
+    }
+  } else {
+    LOG_INFO << "No warm up audio provided, skipping warm up";
   }
 
   // Model loaded successfully, add it to the map of loaded models
