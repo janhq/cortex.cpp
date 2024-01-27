@@ -127,9 +127,7 @@ const verifyDownloadedBinaries = (absBinDirPath: string) => {
 };
 
 // Call the download function with version and config
-const downloadNitro = async (
-  absBinDirPath: string = path.join(__dirname, "..", '..', "bin"),
-) => {
+export const downloadNitro = async (absBinDirPath: string) => {
   // Return early without downloading if nitro binaries are already downloaded
   if (verifyDownloadedBinaries(absBinDirPath)) {
     //console.log("Nitro binaries are already downloaded!");
@@ -138,9 +136,9 @@ const downloadNitro = async (
   return await downloadBinaries(NITRO_VERSION, variantConfig, absBinDirPath);
 };
 
-export default downloadNitro;
-
 // Run script if called directly instead of import as module
 if (require.main === module) {
-  downloadNitro();
+  // Assume calling the source typescript files
+  // bin path will be relative to the source code root
+  downloadNitro(path.join(__dirname, '..', "..", "bin"));
 }

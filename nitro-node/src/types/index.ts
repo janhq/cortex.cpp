@@ -2,12 +2,12 @@
  * The response from the initModel function.
  * @property error - An error message if the model fails to load.
  */
-interface NitroModelOperationResponse {
+export interface NitroModelOperationResponse {
   error?: any;
   modelFile?: string;
 }
 
-interface ResourcesInfo {
+export interface ResourcesInfo {
   numCpuPhysicalCore: number;
   memAvailable: number;
 }
@@ -15,7 +15,7 @@ interface ResourcesInfo {
 /**
  * Setting for prompts when inferencing with Nitro
  */
-interface NitroPromptSetting {
+export interface NitroPromptSetting {
   system_prompt?: string;
   ai_prompt?: string;
   user_prompt?: string;
@@ -24,7 +24,7 @@ interface NitroPromptSetting {
 /**
  * The available model settings
  */
-interface NitroModelSetting extends NitroPromptSetting {
+export interface NitroModelSetting extends NitroPromptSetting {
   llama_model_path: string;
   cpu_threads: number;
 }
@@ -32,7 +32,7 @@ interface NitroModelSetting extends NitroPromptSetting {
 /**
  * The response object for model init operation.
  */
-interface NitroModelInitOptions {
+export interface NitroModelInitOptions {
   modelFullPath: string;
   promptTemplate?: string;
 }
@@ -40,24 +40,24 @@ interface NitroModelInitOptions {
 /**
  * Logging interface for passing custom logger to nitro-node
  */
-interface NitroLogger {
+export interface NitroLogger {
   (message: string, fileName?: string): void;
 }
 
 /**
  * Nvidia settings
  */
-interface NitroNvidiaConfig {
-  notify: boolean,
-  run_mode: "cpu" | "gpu",
+export interface NitroNvidiaConfig {
+  notify: boolean;
+  run_mode: "cpu" | "gpu";
   nvidia_driver: {
-    exist: boolean,
-    version: string,
-  },
+    exist: boolean;
+    version: string;
+  };
   cuda: {
-    exist: boolean,
-    version: string,
-  },
-  gpus: { id: string, vram: string }[],
-  gpu_highest_vram: string,
+    exist: boolean;
+    version: string;
+  };
+  gpus: { id: string; vram: string }[];
+  gpu_highest_vram: string;
 }

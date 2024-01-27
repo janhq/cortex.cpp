@@ -7,14 +7,13 @@ import path from "node:path";
 import download from "download";
 
 import { Duplex } from "node:stream";
-import { default as nitro } from "../src/index";
-const {
+import {
   stopModel,
   runModel,
   loadLLMModel,
   validateModelStatus,
   chatCompletion,
-} = nitro;
+} from "../src";
 
 // FIXME: Shorthand only possible for es6 targets and up
 //import * as model from './model.json' assert {type: 'json'}

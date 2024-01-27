@@ -36,9 +36,9 @@ pack: build
 # Test that installation will also download nitro binaries
 test-e2e-installation: pack
 ifeq ($(OS),Windows_NT)
-	$env:NITRO_NODE_PKG=(Resolve-Path -Path janhq-nitro-node-1.0.0.tgz) node ..\.github\scripts\e2e-test-install-nitro-node.js
+	$$env:NITRO_NODE_VERSION=(npm version --json | jq '.["@janhq/nitro-node"]' | foreach {$$_.replace('"','')}) $$env:NITRO_NODE_PKG=(Resolve-Path -Path "janhq-nitro-node$$NITRO_NODE_VERSION.tgz") node ..\.github\scripts\e2e-test-install-nitro-node.js
 else
-	NITRO_NODE_PKG=$(realpath janhq-nitro-node-1.0.0.tgz) node ../.github/scripts/e2e-test-install-nitro-node.js
+	NITRO_NODE_VERSION=$$(npm version --json | jq '.["@janhq/nitro-node"]' | tr -d '"') NITRO_NODE_PKG=$$(realpath "janhq-nitro-node-$${NITRO_NODE_VERSION}.tgz") node ../.github/scripts/e2e-test-install-nitro-node.js
 endif
 
 clean:

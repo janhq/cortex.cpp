@@ -1,4 +1,5 @@
 import path from "node:path";
+import { NitroNvidiaConfig } from "./types";
 
 export interface NitroExecutableOptions {
   executablePath: string;

@@ -6,28 +6,21 @@
     "lib": [
       "es2015",
       "es2016",
-      "es2017"
+      "es2017",
+      "dom"
     ],
     "strict": true,
     "sourceMap": true,
     "declaration": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "declarationDir": "dist/types",
     "outDir": "dist",
     "importHelpers": true,
-    "esModuleInterop": true,
     "typeRoots": [
       "node_modules/@types"
-    ]
-  },
-  "ts-node": {
-    "compilerOptions": {
-      "module": "commonjs"
-    },
-    "include": [
-      "scripts"
     ]
   },
   "include": [

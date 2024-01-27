@@ -2,22 +2,44 @@
   "name": "@janhq/nitro-node",
   "version": "1.0.0",
   "description": "This NodeJS library is a wrapper for Nitro, a lightweight (3mb) inference engine written in C++. See nitro.jan.ai",
-  "main": "dist/index.js",
-  "node": "dist/index.cjs.js",
+  "main": "./dist/index",
+  "module": "./dist/index.esm.js",
+  "types": "./dist/types/index",
   "author": "Jan <service@jan.ai>",
   "license": "AGPL-3.0",
   "scripts": {
     "test": "jest --verbose --detectOpenHandles",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
-    "downloadnitro": "ts-node scripts/download-nitro.ts",
+    "downloadnitro": "tsx src/scripts/download-nitro.ts",
     "build:publish": "npm pack",
     "postinstall": "node -r @janhq/nitro-node/postinstall"
   },
   "exports": {
-    ".": "./dist/index.js",
-    "./main": "./dist/index.cjs.js",
-    "./scripts/download-nitro": "./dist/scripts/download-nitro.js",
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/types/index.d.ts"
+    },
+    "./scripts": {
+      "import": "./dist/scripts/index.esm.js",
+      "require": "./dist/scripts/index.cjs",
+      "types": "./dist/types/scripts/index.d.ts"
+    },
     "./postinstall": "./postinstall.js"
+  },
+  "typesVersions": {
+    "*": {
+      ".": [
+        "./dist/index.esm.js",
+        "./dist/index.esm.js.map",
+        "./dist/types/index.d.ts"
+      ],
+      "./scripts": [
+        "./dist/scripts/index.esm.js",
+        "./dist/scripts/index.esm.js.map",
+        "./dist/types/scripts/index.d.ts"
+      ]
+    }
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
@@ -33,7 +55,7 @@
     "rollup-plugin-sourcemaps": "^0.6.3",
     "rollup-plugin-typescript2": "^0.36.0",
     "ts-jest": "^29.1.2",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {
@@ -47,8 +69,9 @@
   },
   "files": [
     "postinstall.js",
-    "dist/*",
+    "dist",
     "package.json",
+    "tsconfig.json",
     "README.md"
   ]
 }

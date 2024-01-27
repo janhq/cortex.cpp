@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { exec } from "node:child_process";
+import { NitroNvidiaConfig } from "./types";
 import path from "node:path";
 
 /**
