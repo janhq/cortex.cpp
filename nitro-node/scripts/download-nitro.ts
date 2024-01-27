@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+import fs from "node:fs";
 import path from "node:path";
 import download from "download";
 import { Duplex } from "node:stream";
@@ -53,45 +53,48 @@ const getTarUrl = (version: string, suffix: string) =>
   `https://github.com/janhq/nitro/releases/download/v${version}/nitro-${version}-${suffix}.tar.gz`;
 
 // Report download progress
-const createProgressReporter = (variant: string) => (stream: Promise<Buffer> & Duplex) =>
-  stream
-    .on(
-      "downloadProgress",
-      (progress: { transferred: any; total: any; percent: number }) => {
-        // Print and update progress on a single line of terminal
-        process.stdout.write(
-          `\r\x1b[K[${variant}] ${progress.transferred}/${progress.total} ${Math.floor(progress.percent * 100)}%...`,
-        );
-      },
-    )
-    .on("end", () => {
-      // Jump to new line to log next message
-      console.log();
-      console.log(`[${variant}] Finished downloading!`);
-    });
+const createProgressReporter =
+  (variant: string) => (stream: Promise<Buffer> & Duplex) =>
+    stream
+      .on(
+        "downloadProgress",
+        (progress: { transferred: any; total: any; percent: number }) => {
+          // Print and update progress on a single line of terminal
+          process.stdout.write(
+            `\r\x1b[K[${variant}] ${progress.transferred}/${progress.total} ${Math.floor(progress.percent * 100)}%...`,
+          );
+        },
+      )
+      .on("end", () => {
+        // Jump to new line to log next message
+        console.log();
+        console.log(`[${variant}] Finished downloading!`);
+      });
 
 // Download single binary
-const downloadBinary = (version: string, suffix: string, destDirPath: string) => {
+const downloadBinary = async (
+  version: string,
+  suffix: string,
+  destDirPath: string,
+) => {
   const tarUrl = getTarUrl(version, suffix);
   console.log(`Downloading ${tarUrl} to ${destDirPath}`);
   const progressReporter = createProgressReporter(suffix);
-  return progressReporter(
+  await progressReporter(
     download(tarUrl, destDirPath, {
       strip: 1,
       extract: true,
-    }),
-  ).then(() => {
-    // Set mode of downloaded binaries to executable
-    (fs
-      .readdirSync(destDirPath, { recursive: true }) as string[])
-      .filter((fname) => fs.lstatSync(path.join(destDirPath, fname)).isFile())
-      .filter((fname) => fname.includes('nitro'))
-      .forEach(
-        (nitroBinary) => {
-          const absPath = path.join(destDirPath, nitroBinary)
-          fs.chmodSync(absPath, fs.constants.S_IRWXU | fs.constants.S_IRWXG | fs.constants.S_IRWXO)
-        })
-  });
+    }));
+  // Set mode of downloaded binaries to executable
+  (fs.readdirSync(destDirPath, { recursive: true }) as string[])
+    .filter((fname) => fs.lstatSync(path.join(destDirPath, fname)).isFile())
+    .filter((fname_1) => fname_1.includes("nitro"))
+    .forEach((nitroBinary) => {
+      const absPath = path.join(destDirPath, nitroBinary);
+      fs.chmodSync(
+        absPath,
+        fs.constants.S_IRWXU | fs.constants.S_IRWXG | fs.constants.S_IRWXO);
+    });
 };
 
 // Download the binaries
@@ -102,9 +105,32 @@ const downloadBinaries = (version: string, config: Record<string, string>) => {
   );
 };
 
+// Check for a files with nitro in name in the corresponding directory
+const verifyDownloadedBinaries = () => {
+  // Check all the paths in variantConfig for a file with nitro in its name
+  return Object.values(variantConfig).every((binDirVariant: string) => {
+    try {
+      const pathToCheck = path.join(binDirVariant, "nitro");
+      return (
+        fs.readdirSync(binDirVariant, { recursive: true }) as string[]
+      ).some((fname) => {
+        const fullPath = path.join(binDirVariant, fname);
+        return fullPath.startsWith(pathToCheck);
+      });
+    } catch (_e: any) {
+      return false;
+    }
+  });
+};
+
 // Call the download function with version and config
-const downloadNitro = () => {
-  downloadBinaries(NITRO_VERSION, variantConfig);
+const downloadNitro = async () => {
+  // Return early without downloading if nitro binaries are already downloaded
+  if (verifyDownloadedBinaries()) {
+    //console.log("Nitro binaries are already downloaded!");
+    return;
+  }
+  return await downloadBinaries(NITRO_VERSION, variantConfig);
 };
 
 export default downloadNitro;

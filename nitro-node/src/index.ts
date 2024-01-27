@@ -7,6 +7,7 @@ import fetchRT from "fetch-retry";
 import osUtils from "os-utils";
 import { getNitroProcessInfo, updateNvidiaInfo } from "./nvidia";
 import { executableNitroFile } from "./execute";
+import downloadNitro from '../scripts/download-nitro';
 // Polyfill fetch with retry
 const fetchRetry = fetchRT(fetch);
 
@@ -102,6 +103,8 @@ async function runModel({
   modelFullPath,
   promptTemplate,
 }: NitroModelInitOptions): Promise<NitroModelOperationResponse | Error> {
+  // Download nitro binaries if it's not already downloaded
+  await downloadNitro();
   const files: string[] = fs.readdirSync(modelFullPath);
 
   // Look for model file with supported format

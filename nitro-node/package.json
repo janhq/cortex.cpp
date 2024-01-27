@@ -8,7 +8,6 @@
   "license": "AGPL-3.0",
   "scripts": {
     "test": "jest --verbose --detectOpenHandles",
-    "pretest": "ts-node scripts/download-nitro.ts",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "downloadnitro": "ts-node scripts/download-nitro.ts",
     "build:publish": "npm pack",
