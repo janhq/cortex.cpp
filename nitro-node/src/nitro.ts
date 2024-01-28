@@ -83,7 +83,7 @@ export function getBinPath(): string {
 /**
  * Set custom bin path
  */
-export function setBinPath(customBinPath: string): void | never {
+export async function setBinPath(customBinPath: string): Promise<void> {
   // Check if the path is a directory
   if (
     fs.existsSync(customBinPath) &&
@@ -111,7 +111,9 @@ export function getNvidiaConfig(): NitroNvidiaConfig {
  * Set custom Nvidia config for running inference over GPU
  * @param {NitroNvidiaConfig} config The new config to apply
  */
-export function setNvidiaConfig(config: NitroNvidiaConfig) {
+export async function setNvidiaConfig(
+  config: NitroNvidiaConfig,
+): Promise<void> {
   nvidiaConfig = config;
 }
 
@@ -119,7 +121,7 @@ export function setNvidiaConfig(config: NitroNvidiaConfig) {
  * Set logger before running nitro
  * @param {NitroLogger} logger The logger to use
  */
-export function setLogger(logger: NitroLogger) {
+export async function setLogger(logger: NitroLogger): Promise<void> {
   log = logger;
 }
 
@@ -141,7 +143,7 @@ export function stopModel(): Promise<NitroModelOperationResponse> {
 export async function runModel({
   modelFullPath,
   promptTemplate,
-}: NitroModelInitOptions): Promise<NitroModelOperationResponse | Error> {
+}: NitroModelInitOptions): Promise<NitroModelOperationResponse> {
   // Download nitro binaries if it's not already downloaded
   await downloadNitro(binPath);
   const files: string[] = fs.readdirSync(modelFullPath);
@@ -153,7 +155,7 @@ export async function runModel({
       SUPPORTED_MODEL_FORMATS.some((ext) => file.toLowerCase().endsWith(ext)),
   );
 
-  if (!ggufBinFile) return Promise.reject("No GGUF model file found");
+  if (!ggufBinFile) throw new Error("No GGUF model file found");
 
   currentModelFile = path.join(modelFullPath, ggufBinFile);
 
@@ -161,11 +163,7 @@ export async function runModel({
   // Convert promptTemplate to system_prompt, user_prompt, ai_prompt
   const prompt: NitroPromptSetting = {};
   if (promptTemplate) {
-    try {
-      Object.assign(prompt, promptTemplateConverter(promptTemplate));
-    } catch (e: any) {
-      return Promise.reject(e);
-    }
+    Object.assign(prompt, promptTemplateConverter(promptTemplate));
   }
 
   currentSettings = {
@@ -186,32 +184,35 @@ export async function runModel({
  * 3. Validate model status
  * @returns
  */
-export async function runNitroAndLoadModel(): Promise<
-  NitroModelOperationResponse | { error: any }
-> {
-  // Gather system information for CPU physical cores and memory
-  return killSubprocess()
-    .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
-    .then(() => {
-      /**
-       * There is a problem with Windows process manager
-       * Should wait for awhile to make sure the port is free and subprocess is killed
-       * The tested threshold is 500ms
-       **/
-      if (process.platform === "win32") {
-        return new Promise((resolve) => setTimeout(() => resolve({}), 500));
-      } else {
-        return Promise.resolve({});
-      }
-    })
-    .then(spawnNitroProcess)
-    .then(() => loadLLMModel(currentSettings))
-    .then(validateModelStatus)
-    .catch((err) => {
-      // TODO: Broadcast error so app could display proper error message
-      log(`[NITRO]::Error: ${err}`);
-      return { error: err };
-    });
+export async function runNitroAndLoadModel(): Promise<NitroModelOperationResponse> {
+  try {
+    // Gather system information for CPU physical cores and memory
+    await killSubprocess();
+    await tcpPortUsed.waitUntilFree(PORT, 300, 5000);
+    /**
+     * There is a problem with Windows process manager
+     * Should wait for awhile to make sure the port is free and subprocess is killed
+     * The tested threshold is 500ms
+     **/
+    if (process.platform === "win32") {
+      return await new Promise((resolve) => setTimeout(() => resolve({}), 500));
+    }
+    const spawnResult = await spawnNitroProcess();
+    if (spawnResult.error) {
+      return spawnResult;
+    }
+    // TODO: Use this response?
+    const _loadModelResponse = await loadLLMModel(currentSettings);
+    const validationResult = await validateModelStatus();
+    if (validationResult.error) {
+      return validationResult;
+    }
+    return {};
+  } catch (err: any) {
+    // TODO: Broadcast error so app could display proper error message
+    log(`[NITRO]::Error: ${err}`);
+    return { error: err };
+  }
 }
 
 /**
@@ -220,7 +221,7 @@ export async function runNitroAndLoadModel(): Promise<
  * @returns {(NitroPromptSetting | never)} parsed prompt setting
  * @throws {Error} if cannot split promptTemplate
  */
-export function promptTemplateConverter(
+function promptTemplateConverter(
   promptTemplate: string,
 ): NitroPromptSetting | never {
   // Split the string using the markers
@@ -283,10 +284,10 @@ export async function loadLLMModel(settings: any): Promise<Response> {
     log(
       `[NITRO]::Debug: Load model success with response ${JSON.stringify(res)}`,
     );
-    return await Promise.resolve(res);
+    return res;
   } catch (err) {
     log(`[NITRO]::Error: Load model failed with error ${err}`);
-    return await Promise.reject();
+    throw err;
   }
 }
 
@@ -310,35 +311,34 @@ export async function chatCompletion(
   log(
     `[NITRO]::Debug: Running chat completion with request ${JSON.stringify(request)}`,
   );
-  return fetchRetry(NITRO_HTTP_CHAT_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      Accept: Boolean(outStream) ? "text/event-stream" : "application/json",
-    },
-    body: JSON.stringify(request),
-    retries: 3,
-    retryDelay: 500,
-  })
-    .then(async (response) => {
-      if (outStream) {
-        if (!response.body) {
-          throw new Error("Error running chat completion");
-        }
-        const outPipe = response.body
-          .pipeThrough(new TextDecoderStream())
-          .pipeTo(outStream);
-        // Wait for all the streams to complete before returning from async function
-        await outPipe;
-      }
-      log(`[NITRO]::Debug: Chat completion success`);
-      return response;
-    })
-    .catch((err) => {
-      log(`[NITRO]::Error: Chat completion failed with error ${err}`);
-      throw err;
+  try {
+    const response = await fetchRetry(NITRO_HTTP_CHAT_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Accept: Boolean(outStream) ? "text/event-stream" : "application/json",
+      },
+      body: JSON.stringify(request),
+      retries: 3,
+      retryDelay: 500,
     });
+    if (outStream) {
+      if (!response.body) {
+        throw new Error("Error running chat completion");
+      }
+      const outPipe = response.body
+        .pipeThrough(new TextDecoderStream())
+        .pipeTo(outStream);
+      // Wait for all the streams to complete before returning from async function
+      await outPipe;
+    }
+    log(`[NITRO]::Debug: Chat completion success`);
+    return response;
+  } catch (err) {
+    log(`[NITRO]::Error: Chat completion failed with error ${err}`);
+    throw err;
+  }
 }
 
 /**
@@ -350,30 +350,29 @@ export async function chatCompletion(
 export async function validateModelStatus(): Promise<NitroModelOperationResponse> {
   // Send a GET request to the validation URL.
   // Retry the request up to 3 times if it fails, with a delay of 500 milliseconds between retries.
-  return fetchRetry(NITRO_HTTP_VALIDATE_MODEL_URL, {
+  const response = await fetchRetry(NITRO_HTTP_VALIDATE_MODEL_URL, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
     },
     retries: 5,
     retryDelay: 500,
-  }).then(async (res: Response) => {
-    log(
-      `[NITRO]::Debug: Validate model state success with response ${JSON.stringify(
-        res,
-      )}`,
-    );
-    // If the response is OK, check model_loaded status.
-    if (res.ok) {
-      const body = await res.json();
-      // If the model is loaded, return an empty object.
-      // Otherwise, return an object with an error message.
-      if (body.model_loaded) {
-        return Promise.resolve({});
-      }
-    }
-    return Promise.resolve({ error: "Validate model status failed" });
   });
+  log(
+    `[NITRO]::Debug: Validate model state success with response ${JSON.stringify(
+      response,
+    )}`,
+  );
+  // If the response is OK, check model_loaded status.
+  if (response.ok) {
+    const body = await response.json();
+    // If the model is loaded, return an empty object.
+    // Otherwise, return an object with an error message.
+    if (body.model_loaded) {
+      return {};
+    }
+  }
+  return { error: "Validate model status failed" };
 }
 
 /**
@@ -385,18 +384,19 @@ export async function killSubprocess(): Promise<NitroModelOperationResponse> {
   setTimeout(() => controller.abort(), 5000);
   log(`[NITRO]::Debug: Request to kill Nitro`);
 
-  return fetch(NITRO_HTTP_KILL_URL, {
-    method: "DELETE",
-    signal: controller.signal,
-  })
-    .then(() => {
-      subprocess?.kill();
-      subprocess = undefined;
-    })
-    .then(() => tcpPortUsed.waitUntilFree(PORT, 300, 5000))
-    .then(() => log(`[NITRO]::Debug: Nitro process is terminated`))
-    .then(() => Promise.resolve({}))
-    .catch((err) => ({ error: err }));
+  try {
+    const _response = await fetch(NITRO_HTTP_KILL_URL, {
+      method: "DELETE",
+      signal: controller.signal,
+    });
+    subprocess?.kill();
+    subprocess = undefined;
+    await tcpPortUsed.waitUntilFree(PORT, 300, 5000);
+    log(`[NITRO]::Debug: Nitro process is terminated`);
+    return {};
+  } catch (err) {
+    return { error: err };
+  }
 }
 
 /**
@@ -451,16 +451,14 @@ export function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
 /**
  * Get the system resources information
  */
-export function getResourcesInfo(): Promise<ResourcesInfo> {
-  return new Promise(async (resolve) => {
-    const cpu = osUtils.cpuCount();
-    log(`[NITRO]::CPU informations - ${cpu}`);
-    const response: ResourcesInfo = {
-      numCpuPhysicalCore: cpu,
-      memAvailable: 0,
-    };
-    resolve(response);
-  });
+export async function getResourcesInfo(): Promise<ResourcesInfo> {
+  const cpu = osUtils.cpuCount();
+  log(`[NITRO]::CPU informations - ${cpu}`);
+  const response: ResourcesInfo = {
+    numCpuPhysicalCore: cpu,
+    memAvailable: 0,
+  };
+  return response;
 }
 
 export const updateNvidiaInfo = async () =>
