@@ -1,7 +1,7 @@
 @echo off
 
 set "TEMP=C:\Users\%UserName%\AppData\Local\Temp"
-set "MODEL_PATH=%TEMP%\testmodel"
+set "MODEL_PATH=%TEMP%\testllm"
 
 rem Check for required arguments
 if "%~2"=="" (
