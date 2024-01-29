@@ -56,8 +56,10 @@ const NVIDIA_DEFAULT_CONFIG: NitroNvidiaConfig = {
 };
 
 // The supported model format
-// TODO: Should be an array to support more models
 const SUPPORTED_MODEL_FORMATS = [".gguf"];
+
+// The supported model magic number
+const SUPPORTED_MODEL_MAGIC_NUMBERS = ["GGUF"];
 
 // The subprocess instance for Nitro
 let subprocess: ChildProcessWithoutNullStreams | undefined = undefined;
@@ -135,6 +137,27 @@ export function stopModel(): Promise<NitroModelOperationResponse> {
 }
 
 /**
+ * Read the magic bytes from a file and check if they match the provided magic bytes
+ */
+export async function checkMagicBytes(
+  filePath: string,
+  magicBytes: string,
+): Promise<boolean> {
+  const desired = Buffer.from(magicBytes);
+  const nBytes = desired.byteLength;
+  const chunks = [];
+  for await (let chunk of fs.createReadStream(filePath, {
+    start: 0,
+    end: nBytes - 1,
+  })) {
+    chunks.push(chunk);
+  }
+  const actual = Buffer.concat(chunks);
+  log(`Comparing file's magic bytes <${actual.toString()}> and desired <${desired.toString()}>`);
+  return Buffer.compare(actual, desired) === 0;
+}
+
+/**
  * Initializes a Nitro subprocess to load a machine learning model.
  * @param modelFullPath - The absolute full path to model directory.
  * @param promptTemplate - The template to use for generating prompts.
@@ -149,11 +172,24 @@ export async function runModel({
   const files: string[] = fs.readdirSync(modelFullPath);
 
   // Look for model file with supported format
-  const ggufBinFile = files.find(
+  let ggufBinFile = files.find(
     (file) =>
       file === path.basename(modelFullPath) ||
       SUPPORTED_MODEL_FORMATS.some((ext) => file.toLowerCase().endsWith(ext)),
   );
+
+  // If not found from path and extension, try from magic number
+  if (!ggufBinFile) {
+    for (const f of files) {
+      for (const magicNum of SUPPORTED_MODEL_MAGIC_NUMBERS) {
+        if (await checkMagicBytes(path.join(modelFullPath, f), magicNum)) {
+          ggufBinFile = f;
+          break;
+        }
+      }
+      if (ggufBinFile) break;
+    }
+  }
 
   if (!ggufBinFile) throw new Error("No GGUF model file found");
 

@@ -13,6 +13,7 @@ import {
   loadLLMModel,
   validateModelStatus,
   chatCompletion,
+  checkMagicBytes,
 } from "../src";
 
 // FIXME: Shorthand only possible for es6 targets and up
@@ -104,7 +105,7 @@ describe("Manage nitro process", () => {
   const modelFullPath = fs.mkdtempSync(
     path.join(os.tmpdir(), "nitro-node-test"),
   );
-  let modelCfg: any = {};
+  let modelCfg: Record<string, any> = {};
 
   // Setup steps before running the suite
   const setupHooks = [
@@ -225,5 +226,39 @@ describe("Manage nitro process", () => {
     // Set timeout to 1 minutes
     1 * 60 * 1000,
   );
+  describe("search model file by magic number", () => {
+    // Rename model file before test
+    beforeEach(async () => {
+      const fileName = modelCfg.source_url.split("/")?.pop() ?? "model.gguf";
+      // Rename the extension of model file
+      fs.renameSync(
+        path.join(modelFullPath, fileName),
+        path.join(modelFullPath, `${fileName.replace(/\.gguf$/gi, ".bak")}`),
+      );
+    });
+    afterEach(async () => {
+      const fileName = modelCfg.source_url.split("/")?.pop() ?? "model.gguf";
+      // Restore the extension of model file
+      fs.renameSync(
+        path.join(modelFullPath, `${fileName.replace(/\.gguf$/gi, ".bak")}`),
+        path.join(modelFullPath, fileName),
+      );
+    });
+    test(
+      "should be able to detect model file by magic number",
+      async () => {
+        const files = fs.readdirSync(modelFullPath) as string[];
+        // Test checking magic bytes
+        const res = await Promise.all(
+          files.map((f) =>
+            checkMagicBytes(path.join(modelFullPath, f), "GGUF"),
+          ),
+        );
+        expect(res).toContain(true);
+      },
+      // Set timeout to 2 seconds
+      2 * 1000,
+    );
+  });
   /// END TESTS
 });
