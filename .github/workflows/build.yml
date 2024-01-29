@@ -320,7 +320,7 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda-${{ matrix.cuda }}.tar.gz
           asset_content_type: application/gzip
 
-  macOS-M-build:
+  macOS-silicon-build:
     runs-on: mac-silicon
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
@@ -398,7 +398,7 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.tar.gz
           asset_content_type: application/gzip
 
-  macOS-Intel-build:
+  macOS-amd64-build:
     runs-on: macos-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
@@ -467,7 +467,7 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.tar.gz
           asset_content_type: application/gzip
 
-  macOS-vulkan-build:
+  macOS-amd64-vulkan-build:
     runs-on: macos-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
