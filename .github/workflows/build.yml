@@ -456,10 +456,10 @@ jobs:
           7z a -ttar temp.tar .\build\Release\*
           7z a -tgzip nitro.tar.gz temp.tar
 
-          - name: Run e2e testing - Llama.cpp
-          shell: cmd
-          run: |
-            .\.github\scripts\e2e-test-llama-windows.bat .\build\Release\nitro.exe ${{ env.LLM_MODEL_URL }}
+      - name: Run e2e testing - Llama.cpp
+        shell: cmd
+        run: |
+          .\.github\scripts\e2e-test-llama-windows.bat .\build\Release\nitro.exe ${{ env.LLM_MODEL_URL }}
 
       - name: Run e2e testing - Whisper.cpp
         shell: cmd
