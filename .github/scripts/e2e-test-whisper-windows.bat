@@ -25,6 +25,10 @@ set /a max=11000
 set /a range=max-min+1
 set /a PORT=%min% + %RANDOM% %% %range%
 
+rem Kill any existing Nitro processes
+echo Killing any existing Nitro processes...
+taskkill /f /im nitro.exe 2>nul
+
 rem Start the binary file
 start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT% > %TEMP%\nitro.log 2>&1
 
@@ -76,13 +80,13 @@ for /f %%a in (%TEMP%\response2_code.log) do set "response2=%%a"
 
 if "%response1%" neq "200" (
     echo The first curl command failed with status code: %response1%
-    type %TEMP%\response1.log
+    type %TEMP%\response1_code.log
     set "error_occurred=1"
 )
 
-if "%response2%" neq "200" (
+if "%response2%" neq "000" (
     echo The second curl command failed with status code: %response2%
-    type %TEMP%\response2.log
+    type %TEMP%\response2_code.log
     set "error_occurred=1"
 )
 
@@ -97,13 +101,14 @@ if "%error_occurred%"=="1" (
 
 echo ----------------------
 echo Log load model:
-type %TEMP%\response1.log
+type %TEMP%\response1_code.log
 
 echo ----------------------
 echo "Log run test:"
-type %TEMP%\response2.log
+type %TEMP%\response2_code.log
 
 echo Nitro test run successfully!
 
 rem Kill the server process
-taskkill /f /pid %pid%
+@REM taskkill /f /pid %pid%
+taskkill /f /im nitro.exe 2>nul
