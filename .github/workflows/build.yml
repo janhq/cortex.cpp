@@ -184,6 +184,76 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64.tar.gz
           asset_content_type: application/gzip
 
+  ubuntu-amd64-vulkan-build:
+    runs-on: ubuntu-18-04-cuda-11-7
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      - name: Build
+        id: make_build
+        run: |
+          ldd --version
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake -DLLAMA_NATIVE=OFF -DLLAMA_VULKAN=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          make -j $(nproc)
+          ls -la
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp build/nitro nitro/
+          tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-linux-amd64
+          path: ./nitro
+
+      - name: Run e2e testing - LLama.CPP
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+          rm -rf uploads/
+
+      - name: Run e2e testing - Whisper.CPP
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+          rm -rf uploads/
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-vulkan.tar.gz
+          asset_content_type: application/gzip
+
   ubuntu-amd64-cuda-build:
     runs-on: ubuntu-18-04-cuda-${{ matrix.cuda }}
     needs: [create-draft-release, set-nitro-version]
@@ -250,7 +320,7 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda-${{ matrix.cuda }}.tar.gz
           asset_content_type: application/gzip
 
-  macOS-M-build:
+  macOS-silicon-build:
     runs-on: mac-silicon
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
@@ -328,7 +398,7 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.tar.gz
           asset_content_type: application/gzip
 
-  macOS-Intel-build:
+  macOS-amd64-build:
     runs-on: macos-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
@@ -395,6 +465,82 @@ jobs:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.tar.gz
+          asset_content_type: application/gzip
+
+  macOS-amd64-vulkan-build:
+    runs-on: macos-latest
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+    permissions:
+      contents: write
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Dependencies
+        id: depends
+        continue-on-error: true
+        run: |
+          brew update
+          brew install sdl2
+
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      - name: Build
+        id: cmake_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_VULKAN=OFF -DLLAMA_METAL=OFF .. 
+          CC=gcc-8 make -j $(sysctl -n hw.ncp)
+          ls -la
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp build/nitro nitro/
+          tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-mac-amd64
+          path: ./nitro
+
+      - name: Run e2e testing - LLama.CPP
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+          rm -rf uploads/
+
+      - name: Run e2e testing - Whisper.CPP
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+          rm -rf uploads/
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64-vulkan.tar.gz
           asset_content_type: application/gzip
 
   windows-amd64-build:
@@ -481,6 +627,89 @@ jobs:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64.tar.gz
+          asset_content_type: application/gzip
+
+  windows-amd64-vulkan-build:
+    runs-on: windows-latest
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+    permissions:
+      contents: write
+
+    steps:
+      - name: Clone
+
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup VSWhere.exe
+        uses: warrenbuckley/Setup-VSWhere@v1
+        with:
+          version: latest
+          silent: true
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1
+
+      - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
+        run: |
+          C:/msys64/usr/bin/wget.exe -qO sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
+          7z x sdl2.zip
+          echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
+
+      - name: actions-setup-cmake
+        uses: jwlawson/actions-setup-cmake@v1.14.1
+
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
+        with:
+          vulkan-query-version: 1.3.204.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      - name: Build
+        id: cmake_build
+        shell: cmd
+        run: |
+          cmake -S ./nitro_deps -B ./build_deps/nitro_deps
+          cmake --build ./build_deps/nitro_deps --config Release
+          mkdir -p build
+          cd build
+          cmake .. -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_VULKAN=ON -DBUILD_SHARED_LIBS=ON -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
+
+      - name: Pack artifacts
+        id: pack_artifacts
+        shell: cmd
+        run: |
+          robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
+          robocopy build\bin\Release\ .\build\Release\ llama.dll
+          robocopy build\bin\Release\ .\build\Release\ whisper.dll
+          robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
+          dotnet tool install --global AzureSignTool
+          azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
+          7z a -ttar temp.tar .\build\Release\*
+          7z a -tgzip nitro.tar.gz temp.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        with:
+          name: nitro-win-amd64
+          path: ./build/Release
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-amd64-vulkan.tar.gz
           asset_content_type: application/gzip
 
   windows-amd64-cuda-build:
@@ -581,10 +810,13 @@ jobs:
       [
         ubuntu-amd64-build,
         ubuntu-amd64-cuda-build,
-        macOS-M-build,
-        macOS-Intel-build,
+        macOS-silicon-build,
+        macOS-amd64-build,
         windows-amd64-build,
         windows-amd64-cuda-build,
+        macOS-amd64-vulkan-build,
+        ubuntu-amd64-vulkan-build,
+        windows-amd64-vulkan-build,
       ]
     permissions:
       contents: write
@@ -596,16 +828,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   noti-discord-nightly:
-    if: always() && github.event_name == 'schedule' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
+    if: always() && github.event_name == 'schedule' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-silicon-build.result == 'success' && needs.macOS-amd64-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
     needs:
       [
         create-draft-release,
         ubuntu-amd64-build,
         ubuntu-amd64-cuda-build,
-        macOS-M-build,
-        macOS-Intel-build,
+        macOS-silicon-build,
+        macOS-amd64-build,
         windows-amd64-build,
         windows-amd64-cuda-build,
+        macOS-amd64-vulkan-build,
+        ubuntu-amd64-vulkan-build,
+        windows-amd64-vulkan-build,
       ]
     runs-on: ubuntu-latest
     steps:
@@ -632,16 +867,19 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
 
   noti-discord-manual:
-    if: always() && github.event_name == 'workflow_dispatch' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-M-build.result == 'success' && needs.macOS-Intel-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
+    if: always() && github.event_name == 'workflow_dispatch' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-silicon-build.result == 'success' && needs.macOS-amd64-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
     needs:
       [
         create-draft-release,
         ubuntu-amd64-build,
         ubuntu-amd64-cuda-build,
-        macOS-M-build,
-        macOS-Intel-build,
+        macOS-silicon-build,
+        macOS-amd64-build,
         windows-amd64-build,
         windows-amd64-cuda-build,
+        macOS-amd64-vulkan-build,
+        ubuntu-amd64-vulkan-build,
+        windows-amd64-vulkan-build,
       ]
     runs-on: ubuntu-latest
     steps:
