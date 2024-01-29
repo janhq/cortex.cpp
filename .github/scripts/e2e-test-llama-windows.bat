@@ -111,4 +111,4 @@ echo Nitro test run successfully!
 
 rem Kill the server process
 @REM taskkill /f /pid %pid%
-taskkill /f /im nitro.exe 2>nul
+taskkill /f /im nitro.exe 2>nul || exit /B 0
