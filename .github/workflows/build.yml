@@ -499,7 +499,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_VULKAN=OFF .. 
+          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_VULKAN=OFF -DLLAMA_METAL=OFF .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 
