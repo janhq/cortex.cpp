@@ -62,9 +62,9 @@ rem Print the values of curl_data1 for debugging
 echo curl_data1=%curl_data1%
 
 rem Run the curl commands and capture the status code
-curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/load_model" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
+curl.exe -o %TEMP%\response1_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/load_model" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
 
-curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
+curl.exe -o %TEMP%\response2_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
 --header "Access-Control-Allow-Origin: *" ^
 --form 'model_id="whisper.cpp"' ^
 --form 'file=@"..\whisper.cpp\samples\jfk.wav"' ^
