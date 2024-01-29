@@ -305,6 +305,7 @@ jobs:
             wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-encoder.mlmodelc.zip
             unzip ggml-tiny.en-encoder.mlmodelc.zip
             rm ggml-tiny.en-encoder.mlmodelc.zip
+            rm -rf /tmp/testwhisper-encoder.mlmodelc
             mv ggml-tiny.en-encoder.mlmodelc /tmp/testwhisper-encoder.mlmodelc
           fi
           # run e2e testing
