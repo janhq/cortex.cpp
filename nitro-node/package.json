@@ -30,12 +30,10 @@
   "typesVersions": {
     "*": {
       ".": [
-        "./dist/index.esm.js",
         "./dist/index.esm.js.map",
         "./dist/types/index.d.ts"
       ],
-      "./scripts": [
-        "./dist/scripts/index.esm.js",
+      "scripts": [
         "./dist/scripts/index.esm.js.map",
         "./dist/types/scripts/index.d.ts"
       ]
