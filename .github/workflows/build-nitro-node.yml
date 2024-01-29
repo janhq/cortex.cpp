@@ -6,8 +6,7 @@ on:
   push:
     branches:
       - main
-      - feat/1635/decouple-nitro-inference-engine-into-a-library
-    #tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths: [".github/workflows/build-nitro-node.yml", "nitro-node"]
   pull_request:
     types: [opened, synchronize, reopened]

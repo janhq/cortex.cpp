@@ -7,7 +7,7 @@ on:
     branches:
       - main
       - feat/1635/decouple-nitro-inference-engine-into-a-library
-    #tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths:
       - ".github/scripts/e2e-test-install-nitro-node.js"
       - ".github/workflows/test-install-nitro-node.yml"
