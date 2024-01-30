@@ -19,7 +19,7 @@ const getReleaseInfo = async (taggedVersion: string): Promise<any> => {
   const releaseUrlPrefix =
     taggedVersion === "latest"
       ? releaseUrlPrefixVariants.latest
-      : taggedVersion.match(/^\d+\.\d+\.\d+$/gi)
+      : taggedVersion.match(/^v?\d+\.\d+\.\d+$/gi)
         ? releaseUrlPrefixVariants.tag
         : undefined;
   if (!releaseUrlPrefix) throw Error(`Invalid version: ${taggedVersion}`);
