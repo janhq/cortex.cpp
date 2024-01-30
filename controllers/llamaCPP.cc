@@ -301,7 +301,6 @@ void llamaCPP::chatCompletion(
   LOG_INFO << formatted_output;
 #endif
 
-
   if (is_streamed) {
     auto state = create_inference_state(this);
     auto chunked_content_provider =
