@@ -152,7 +152,9 @@ export async function checkMagicBytes(
     chunks.push(chunk);
   }
   const actual = Buffer.concat(chunks);
-  log(`Comparing file's magic bytes <${actual.toString()}> and desired <${desired.toString()}>`);
+  log(
+    `Comparing file's magic bytes <${actual.toString()}> and desired <${desired.toString()}>`,
+  );
   return Buffer.compare(actual, desired) === 0;
 }
 
@@ -499,3 +501,11 @@ export async function getResourcesInfo(): Promise<ResourcesInfo> {
 export const updateNvidiaInfo = async () =>
   await _updateNvidiaInfo(nvidiaConfig);
 export const getCurrentNitroProcessInfo = () => getNitroProcessInfo(subprocess);
+
+/**
+ * Trap for system signal so we can stop nitro process on exit
+ */
+process.on("SIGTERM", async () => {
+  log(`[NITRO]::Debug: Received SIGTERM signal`);
+  await killSubprocess();
+});

@@ -150,7 +150,7 @@ const downloadBinaries = (
   );
 };
 
-// Check for a files with nitro in name in the corresponding directory
+// Check for files with nitro in name in the corresponding directory
 const verifyDownloadedBinaries = (absBinDirPath: string) => {
   // Check all the paths in variantConfig for a file with nitro in its name
   return Object.values(variantConfig).every((binDirVariant: string) => {
