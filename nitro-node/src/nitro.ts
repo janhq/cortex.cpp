@@ -21,7 +21,6 @@ import {
 } from "./types";
 import { downloadNitro } from "./scripts";
 // Polyfill fetch with retry
-console.log(typeof fetchRT);
 const fetchRetry = fetchRT(fetch);
 
 // The PORT to use for the Nitro subprocess
