@@ -2496,25 +2496,6 @@ public:
     log_disable(); // Disable the log to file feature, reduce bloat for
     // target
     // system ()
-    std::vector<std::string> llama_models =
-        nitro_utils::listFilesInDir(nitro_utils::models_folder);
-    std::string model_index;
-    if (llama_models.size() > 0) {
-      LOG_INFO << "Found models folder, here are the llama models you have:";
-      int index_val = 0;
-      for (auto llama_model : llama_models) {
-        LOG_INFO << "index: " << index_val++ << "| model: " << llama_model;
-        std::cout
-            << "Please type the index of the model you want to load here >>  ";
-        std::cin >> model_index;
-        Json::Value jsonBody;
-        jsonBody["llama_model_path"] = nitro_utils::models_folder + "/" +
-                                       llama_models[std::stoi(model_index)];
-        loadModelImpl(jsonBody);
-      }
-    } else {
-      LOG_INFO << "Not found models folder, start server as usual";
-    }
   }
 
   ~llamaCPP() { stopBackgroundTask(); }
