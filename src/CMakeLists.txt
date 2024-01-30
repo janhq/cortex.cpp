@@ -25,6 +25,7 @@ set(NITRO_LINK_LIBS
   common 
   llava
   llama_interface
+  whisper
   ${NITRO_SYSTEM_LIBS}
   ${CMAKE_THREAD_LIBS_INIT}
   )

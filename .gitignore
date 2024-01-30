@@ -565,3 +565,4 @@ build_deps
 .DS_Store
 
 .vscode
+uploads/**

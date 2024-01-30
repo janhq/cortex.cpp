@@ -22,6 +22,21 @@ std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
 
 // --------------------------------------------
 
+// Function to check if the model is loaded
+void check_model_loaded(
+    llama_server_context &llama, const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &callback) {
+  if (!llama.model_loaded_external) {
+    Json::Value jsonResp;
+    jsonResp["message"] =
+        "Model has not been loaded, please load model into nitro";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k409Conflict);
+    callback(resp);
+    return;
+  }
+}
+
 Json::Value create_embedding_payload(const std::vector<float> &embedding,
                                      int prompt_tokens) {
   Json::Value dataItem;
@@ -137,14 +152,8 @@ void llamaCPP::chatCompletion(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
-  if (!llama.model_loaded_external) {
-    Json::Value jsonResp;
-    jsonResp["message"] =
-        "Model has not been loaded, please load model into nitro";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k409Conflict);
-    callback(resp);
-  }
+  // Check if model is loaded
+  check_model_loaded(llama, req, callback);
 
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output = pre_prompt;
@@ -292,13 +301,9 @@ void llamaCPP::chatCompletion(
   LOG_INFO << "Current completion text";
   LOG_INFO << formatted_output;
 #endif
-  int task_id;
-
-  LOG_INFO << "Resolved request for task_id:" << task_id;
 
   if (is_streamed) {
     auto state = create_inference_state(this);
-    state->task_id = task_id;
     auto chunked_content_provider =
         [state, data](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
       if (!state->is_streaming) {
@@ -379,9 +384,12 @@ void llamaCPP::chatCompletion(
   } else {
     Json::Value respData;
     auto resp = nitro_utils::nitroHttpResponse();
+    int task_id = llama.request_completion(data, false, false, -1);
+    LOG_INFO << "sent the non stream, waiting for respone";
     if (!json_value(data, "stream", false)) {
       std::string completion_text;
       task_result result = llama.next_result(task_id);
+      LOG_INFO << "Here is the result:" << result.error;
       if (!result.error && result.stop) {
         int prompt_tokens = result.result_json["tokens_evaluated"];
         int predicted_tokens = result.result_json["tokens_predicted"];
@@ -402,6 +410,8 @@ void llamaCPP::chatCompletion(
 void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
+  check_model_loaded(llama, req, callback);
+
   const auto &jsonBody = req->getJsonObject();
 
   Json::Value responseData(Json::arrayValue);

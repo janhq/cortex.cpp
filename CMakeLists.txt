@@ -51,7 +51,6 @@ add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
 
 
-
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
 ) # This is the critical line for installing another package
 
@@ -88,6 +87,8 @@ endif()
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
 
 add_subdirectory(llama.cpp)
+add_subdirectory(whisper.cpp)
+
 add_executable(${PROJECT_NAME} main.cc)
 
 # interface package for llama (better namespace/dependency declaration) 
