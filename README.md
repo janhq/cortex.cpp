@@ -127,6 +127,7 @@ Table of parameters
 | `clean_cache_threshold` | Integer | Number of chats that will trigger clean cache action|
 |`grp_attn_n`|Integer|Group attention factor in self-extend|
 |`grp_attn_w`|Integer|Group attention width in self-extend|
+|`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
@@ -154,37 +155,37 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-win-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.3/nitro-0.3.3-win-amd64.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-win-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.3/nitro-0.3.3-win-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-mac-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.3/nitro-0.3.3-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-mac-arm64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.3/nitro-0.3.3-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-linux-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.3/nitro-0.3.3-linux-amd64.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.2.13/nitro-0.2.13-linux-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.3/nitro-0.3.3-linux-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
@@ -193,7 +194,7 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   <tr style="text-align: center">
     <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
     <td style="text-align:center" colspan="6">
-      <a href='https://github.com/janhq/nitro/actions/runs/7616687953'>
+      <a href='https://github.com/janhq/nitro/actions/runs/7701765982'>
         <b>GitHub action artifactory</b>
       </a>
     </td>

@@ -23,8 +23,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install
-)# This is the critical line for installing another package
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install)
+# This is the critical line for installing another package
 
 if(LLAMA_CUBLAS)
   cmake_minimum_required(VERSION 3.17)
@@ -48,6 +48,8 @@ endif()
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
 add_subdirectory(llama.cpp)
+add_subdirectory(whisper.cpp)
+
 add_executable(${PROJECT_NAME} main.cc)
 
 # ##############################################################################
@@ -57,7 +59,7 @@ add_executable(${PROJECT_NAME} main.cc)
 #
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llava
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon common llama llava whisper
                                               ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################

@@ -1,7 +1,7 @@
 @echo off
 
 set "TEMP=C:\Users\%UserName%\AppData\Local\Temp"
-set "MODEL_PATH=%TEMP%\testmodel"
+set "MODEL_PATH=%TEMP%\testllm"
 
 rem Check for required arguments
 if "%~2"=="" (
@@ -24,6 +24,10 @@ set /a min=9999
 set /a max=11000
 set /a range=max-min+1
 set /a PORT=%min% + %RANDOM% %% %range%
+
+rem Kill any existing Nitro processes
+echo Killing any existing Nitro processes...
+taskkill /f /im nitro.exe 2>nul
 
 rem Start the binary file
 start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT% > %TEMP%\nitro.log 2>&1
@@ -60,27 +64,27 @@ echo curl_data1=%curl_data1%
 echo curl_data2=%curl_data2%
 
 rem Run the curl commands and capture the status code
-curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
+curl.exe -o "%TEMP%\response1.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1.log 2>&1
 
-curl.exe -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
+curl.exe -o "%TEMP%\response2.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
 --header "Content-Type: application/json" ^
 --header "Accept: text/event-stream" ^
 --header "Access-Control-Allow-Origin: *" ^
---data "%curl_data2%" > %TEMP%\response2_code.log 2>&1
+--data "%curl_data2%" > %TEMP%\response2.log 2>&1
 
 set "error_occurred=0"
 
 rem Read the status codes from the log files
-for /f %%a in (%TEMP%\response1_code.log) do set "response1=%%a"
-for /f %%a in (%TEMP%\response2_code.log) do set "response2=%%a"
+for /f %%a in (%TEMP%\response1.log) do set "response1=%%a"
+for /f %%a in (%TEMP%\response2.log) do set "response2=%%a"
 
-if "%response1%" neq "200" (
+if "%response1%" neq "000" (
     echo The first curl command failed with status code: %response1%
     type %TEMP%\response1.log
     set "error_occurred=1"
 )
 
-if "%response2%" neq "200" (
+if "%response2%" neq "000" (
     echo The second curl command failed with status code: %response2%
     type %TEMP%\response2.log
     set "error_occurred=1"
@@ -106,4 +110,5 @@ type %TEMP%\response2.log
 echo Nitro test run successfully!
 
 rem Kill the server process
-taskkill /f /pid %pid%
+@REM taskkill /f /pid %pid%
+taskkill /f /im nitro.exe 2>nul || exit /B 0

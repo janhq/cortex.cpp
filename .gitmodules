@@ -2,3 +2,6 @@
 	path = llama.cpp
 	url = https://github.com/ggerganov/llama.cpp
 	branch = master
+[submodule "whisper.cpp"]
+	path = whisper.cpp
+	url = https://github.com/ggerganov/whisper.cpp.git
