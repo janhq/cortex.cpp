@@ -22,7 +22,7 @@ std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
 // --------------------------------------------
 
 // Function to check if the model is loaded
-void checkModelLoaded(llama_server_context &llama, const HttpRequestPtr &req,
+void check_model_loaded(llama_server_context &llama, const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &callback) {
   if (!llama.model_loaded_external) {
     Json::Value jsonResp;
@@ -151,7 +151,7 @@ void llamaCPP::chatCompletion(
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
   // Check if model is loaded
-  checkModelLoaded(llama, req, callback);
+  check_model_loaded(llama, req, callback);
 
   const auto &jsonBody = req->getJsonObject();
   std::string formatted_output = pre_prompt;
@@ -409,7 +409,7 @@ void llamaCPP::chatCompletion(
 void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-  checkModelLoaded(llama, req, callback);
+  check_model_loaded(llama, req, callback);
 
   const auto &jsonBody = req->getJsonObject();
 
