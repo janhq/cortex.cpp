@@ -7,10 +7,11 @@
 #include <trantor/utils/Logger.h>
 
 #define DR_WAV_IMPLEMENTATION
-#include "utils/dr_wav.h"
 
-#include "utils/json.hpp"
-#include "utils/nitro_utils.h"
+#include "nitro/utils/dr_wav.h"
+
+#include "nitro/utils/json.hpp"
+#include "nitro/utils/nitro_utils.h"
 
 using json = nlohmann::ordered_json;
 
