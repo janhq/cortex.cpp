@@ -56,7 +56,7 @@ if not exist "%MODEL_PATH%" (
 
 rem Define JSON strings for curl data
 call set "MODEL_PATH_STRING=%%MODEL_PATH:\=\\%%"
-set "curl_data1={\"model_path\":\"%MODEL_PATH_STRING%\",\"model_id\":\"whisper.cpp\"}"
+set "curl_data1={\"model_path\":\"%MODEL_PATH_STRING%\",\"model_id\":\"whisper\"}"
 
 rem Print the values of curl_data1 for debugging
 echo curl_data1=%curl_data1%
@@ -66,10 +66,8 @@ curl.exe -o %TEMP%\response1_code.log -s -w "%%{http_code}" --location "http://1
 
 curl.exe -o %TEMP%\response2_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
 --header "Access-Control-Allow-Origin: *" ^
---form 'model_id="whisper.cpp"' ^
+--form 'model_id="whisper"' ^
 --form 'file=@"..\whisper.cpp\samples\jfk.wav"' ^
---form 'temperature="0.0"' ^
---form 'prompt="The transcript is about OpenAI which makes technology like DALL·E, GPT-3, and ChatGPT with the hope of one day building an AGI system that benefits all of humanity. The president is trying to raly people to support the cause."' ^
 > %TEMP%\response2_code.log 2>&1
 
 set "error_occurred=0"
