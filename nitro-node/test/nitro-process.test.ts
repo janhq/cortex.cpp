@@ -7,6 +7,7 @@ import path from "node:path";
 import download from "download";
 
 import { Duplex } from "node:stream";
+import { WritableStream } from "node:stream/web";
 import {
   stopModel,
   runModel,
@@ -175,42 +176,49 @@ describe("Manage nitro process", () => {
       // Validate model status
       await validateModelStatus();
       // Arrays of all the chunked response
-      let streamedContent: string[] = [];
+      let streamedContent: Record<string, any>[] = [];
       // Run chat completion with stream
       const response = await chatCompletion(
         {
           messages: [
-            { content: "Hello there", role: "assistant" },
-            { content: "Write a long and sad story for me", role: "user" },
+            {
+              content:
+                "You are a good productivity assistant. You help user with what they are asking in Markdown format . For responses that contain code, you must use ``` with the appropriate coding language to help display the code to user correctly.",
+              role: "assistant",
+            },
+            {
+              content: "Please give me a hello world code in cpp",
+              role: "user",
+            },
           ],
           model: "gpt-3.5-turbo",
-          max_tokens: 50,
-          stop: ["hello"],
+          max_tokens: 2048,
+          stop: [],
           frequency_penalty: 0,
           presence_penalty: 0,
-          temperature: 0.1,
+          temperature: 0.7,
+          top_p: 0.95,
+          context_length: 4096,
         },
         new WritableStream({
           write(chunk: string) {
-            if (chunk.trim() == "data: [DONE]") {
+            const data = chunk.replace(/^\s*data:\s*/, "").trim();
+            // Stop at [DONE] message
+            if (data.match(/\[DONE\]/)) {
               return;
             }
-            return new Promise((resolve) => {
-              streamedContent.push(chunk.slice("data:".length).trim());
-              resolve();
-            });
+            streamedContent.push(JSON.parse(data));
           },
           //close() {},
           //abort(_err) {}
         }),
       );
-      // Remove the [DONE] message
-      streamedContent.pop();
-      // Parse json
-      streamedContent = streamedContent.map((str) => JSON.parse(str));
       // Show the streamed content
       console.log(
         `[Streamed response] ${JSON.stringify(streamedContent, null, 2)}`,
+      );
+      console.log(
+        `Generated reply: ${streamedContent.map((r) => r.choices[0].delta.content ?? "").join("")}`,
       );
 
       // The response body is unusable if consumed by out stream
