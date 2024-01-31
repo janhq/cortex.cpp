@@ -53,7 +53,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     c-ares
     GIT_REPOSITORY https://github.com/c-ares/c-ares
-    GIT_TAG cares-1_19_1
+    GIT_TAG cares-1_26_0
     CMAKE_ARGS
     	-DCARES_SHARED=OFF
 	-DCARES_STATIC=ON
@@ -63,7 +63,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     drogon
     GIT_REPOSITORY https://github.com/drogonframework/drogon
-    GIT_TAG v1.8.6
+    GIT_TAG v1.9.2
     CMAKE_ARGS
 	-DCMAKE_BUILD_TYPE=release
 	-DOPENSSL_USE_STATIC_LIBS=TRUE
