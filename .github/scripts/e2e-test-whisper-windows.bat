@@ -62,12 +62,12 @@ rem Print the values of curl_data1 for debugging
 echo curl_data1=%curl_data1%
 
 rem Run the curl commands and capture the status code
-curl.exe -o %TEMP%\response1_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/load_model" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
+curl.exe --connect-timeout 60 -o %TEMP%\response1_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/load_model" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
 
-curl.exe -o %TEMP%\response2_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
+curl.exe --connect-timeout 60 -o %TEMP%\response2_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
 --header "Access-Control-Allow-Origin: *" ^
 --form 'model_id="whisper"' ^
---form 'file=@"whisper.cpp\samples\jfk.wav"' ^
+--form 'file=@"..\whisper.cpp\samples\jfk.wav"' ^
 > %TEMP%\response2_code.log 2>&1
 
 set "error_occurred=0"
@@ -82,7 +82,7 @@ if "%response1%" neq "200" (
     set "error_occurred=1"
 )
 
-if "%response2%" neq "000" (
+if "%response2%" neq "200" (
     echo The second curl command failed with status code: %response2%
     type %TEMP%\response2_code.log
     set "error_occurred=1"
