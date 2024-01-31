@@ -1,6 +1,4 @@
 #include "whisperCPP.h"
-// #include "whisper.h"
-// #include "llama.h"
 
 bool read_wav(const std::string &fname, std::vector<float> &pcmf32,
               std::vector<std::vector<float>> &pcmf32s, bool stereo) {
@@ -872,7 +870,9 @@ void whisperCPP::load_model(
         (*jsonBody)["warm_up_audio_path"].asString();
     // Return 400 error if warm up audio path is not found
     if (!is_file_exist(warm_up_audio_path.c_str())) {
-      std::string error_msg = "Warm up audio " + warm_up_audio_path + " not found, please provide a valid path or don't specify it at all";
+      std::string error_msg =
+          "Warm up audio " + warm_up_audio_path +
+          " not found, please provide a valid path or don't specify it at all";
       LOG_INFO << error_msg;
       Json::Value jsonResp;
       jsonResp["message"] = error_msg;
@@ -881,9 +881,10 @@ void whisperCPP::load_model(
       callback(resp);
       return;
     } else {
-      LOG_INFO << "Warming up model " << model_id << " with audio " << warm_up_audio_path << " ...";
-      std::string warm_up_result = whisper.inference(
-          warm_up_audio_path, "en", "", text_format, 0, false);
+      LOG_INFO << "Warming up model " << model_id << " with audio "
+               << warm_up_audio_path << " ...";
+      std::string warm_up_result = whisper.inference(warm_up_audio_path, "en",
+                                                     "", text_format, 0, false);
       LOG_INFO << "Warm up model " << model_id << " completed";
     }
   } else {
