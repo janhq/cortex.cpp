@@ -13,11 +13,10 @@ export default [
     ],
     // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
     external: [
-      "electron",
-      "node:fs",
-      "node:child_process",
-      "node:os",
-      "node:path",
+      // `download@8.0.0` requires `got@^8.3.1` which then optionally requires `electron`, result in wrong dependency
+      // Ref: https://github.com/kubernetes-client/javascript/issues/350#issue-500860208
+      // Ref: https://github.com/kubernetes-client/javascript/issues/350#issuecomment-553644659
+      "got",
     ],
     watch: {
       include: "src/**",
@@ -30,7 +29,6 @@ export default [
       // https://github.com/rollup/rollup-plugin-node-resolve#usage
       resolve({
         extensions: [".ts", ".js", ".json"],
-        preferBuiltins: false,
       }),
       // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
       // This should be after resolve() plugin
@@ -38,7 +36,6 @@ export default [
       // Compile TypeScript files
       typescript({
         useTsconfigDeclarationDir: true,
-        tsconfig: "tsconfig.json",
       }),
 
       // Resolve source maps to the original source
@@ -60,7 +57,12 @@ export default [
       },
     ],
     // Indicate here external modules you don't wanna include in your bundle (i.e.: 'lodash')
-    external: ["electron", "node:fs", "node:path"],
+    external: [
+      // `download@8.0.0` requires `got@^8.3.1` which then optionally requires `electron`, result in wrong dependency
+      // Ref: https://github.com/kubernetes-client/javascript/issues/350#issue-500860208
+      // Ref: https://github.com/kubernetes-client/javascript/issues/350#issuecomment-553644659
+      "got",
+    ],
     watch: {
       include: "src/scripts/**",
     },
@@ -71,18 +73,16 @@ export default [
       // Allow node_modules resolution, so you can use 'external' to control
       // which external modules to include in the bundle
       // https://github.com/rollup/rollup-plugin-node-resolve#usage
-      //resolve({
-      //  extensions: [".ts", ".js", ".json"],
-      //  preferBuiltins: false,
-      //}),
+      resolve({
+        extensions: [".ts", ".js", ".json"],
+      }),
 
       // Allow bundling cjs modules (unlike webpack, rollup doesn't understand cjs)
       // This should be after resolve() plugin
       commonjs(),
       // Compile TypeScript files
       typescript({
-        useTsconfigDeclarationDir: true,
-        tsconfig: "tsconfig.json",
+        useTsconfigDeclarationDir: true
       }),
 
       // Resolve source maps to the original source
