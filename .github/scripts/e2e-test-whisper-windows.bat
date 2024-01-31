@@ -67,7 +67,7 @@ curl.exe -o %TEMP%\response1_code.log -s -w "%%{http_code}" --location "http://1
 curl.exe -o %TEMP%\response2_code.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/transcriptions" ^
 --header "Access-Control-Allow-Origin: *" ^
 --form 'model_id="whisper"' ^
---form 'file=@"..\whisper.cpp\samples\jfk.wav"' ^
+--form 'file=@"whisper.cpp\samples\jfk.wav"' ^
 > %TEMP%\response2_code.log 2>&1
 
 set "error_occurred=0"
