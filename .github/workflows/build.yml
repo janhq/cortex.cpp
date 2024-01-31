@@ -321,7 +321,7 @@ jobs:
           asset_content_type: application/gzip
 
   macOS-silicon-build:
-    runs-on: mac-silicon
+    runs-on: macos-14
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     permissions:
