@@ -1919,66 +1919,87 @@ static void server_print_usage(const char *argv0, const gpt_params &params,
          "key+value (default: disabled)\n");
   printf("                            not recommended: doubles context memory "
          "required and no measurable increase in quality\n");
-  if (llama_mlock_supported()) {
-    printf("  --mlock               force system to keep model in RAM rather "
-           "than swapping or compressing\n");
+  if (llama_supports_mlock()) {
+    printf("  --mlock                   force system to keep model in RAM "
+           "rather than swapping or compressing\n");
   }
-  if (llama_mmap_supported()) {
-    printf("  --no-mmap             do not memory-map model (slower load but "
-           "may reduce pageouts if not using mlock)\n");
+  if (llama_supports_mmap()) {
+    printf("  --no-mmap                 do not memory-map model (slower load "
+           "but may reduce pageouts if not using mlock)\n");
   }
-  printf("  --numa                attempt optimizations that help on some NUMA "
-         "systems\n");
-#ifdef LLAMA_SUPPORTS_GPU_OFFLOAD
-  printf("  -ngl N, --n-gpu-layers N\n");
-  printf("                        number of layers to store in VRAM\n");
-  printf("  -ts SPLIT --tensor-split SPLIT\n");
-  printf("                        how to split tensors across multiple GPUs, "
-         "comma-separated list of proportions, e.g. 3,1\n");
-  printf(
-      "  -mg i, --main-gpu i   the GPU to use for scratch and small tensors\n");
-  printf("  -nommq, --no-mul-mat-q\n");
-  printf("                        use cuBLAS instead of custom mul_mat_q CUDA "
-         "kernels.\n");
-  printf("                        Not recommended since this is both slower "
-         "and uses more VRAM.\n");
-#endif
+  printf("  --numa                    attempt optimizations that help on some "
+         "NUMA systems\n");
+  if (llama_supports_gpu_offload()) {
+    printf("  -ngl N, --n-gpu-layers N\n");
+    printf("                            number of layers to store in VRAM\n");
+    printf("  -sm SPLIT_MODE, --split-mode SPLIT_MODE\n");
+    printf("                            how to split the model across multiple "
+           "GPUs, one of:\n");
+    printf("                              - none: use one GPU only\n");
+    printf("                              - layer (default): split layers and "
+           "KV across GPUs\n");
+    printf("                              - row: split rows across GPUs\n");
+    printf("  -ts SPLIT --tensor-split SPLIT\n");
+    printf("                            fraction of the model to offload to "
+           "each GPU, comma-separated list of proportions, e.g. 3,1\n");
+    printf("  -mg i, --main-gpu i       the GPU to use for the model (with "
+           "split-mode = none),\n");
+    printf("                            or for intermediate results and KV "
+           "(with split-mode = row)\n");
+  }
   printf("  -m FNAME, --model FNAME\n");
-  printf("                        model path (default: %s)\n",
+  printf("                            model path (default: %s)\n",
          params.model.c_str());
   printf("  -a ALIAS, --alias ALIAS\n");
-  printf("                        set an alias for the model, will be added as "
-         "`model` field in completion response\n");
-  printf("  --lora FNAME          apply LoRA adapter (implies --no-mmap)\n");
-  printf("  --lora-base FNAME     optional model to use as a base for the "
-         "layers modified by the LoRA adapter\n");
+  printf("                            set an alias for the model, will be "
+         "added as `model` field in completion response\n");
   printf(
-      "  --host                ip address to listen (default  (default: %s)\n",
-      sparams.hostname.c_str());
-  printf("  --port PORT           port to listen (default  (default: %d)\n",
+      "  --lora FNAME              apply LoRA adapter (implies --no-mmap)\n");
+  printf("  --lora-base FNAME         optional model to use as a base for the "
+         "layers modified by the LoRA adapter\n");
+  printf("  --host                    ip address to listen (default  (default: "
+         "%s)\n",
+         sparams.hostname.c_str());
+  printf("  --port PORT               port to listen (default  (default: %d)\n",
          sparams.port);
-  printf("  --path PUBLIC_PATH    path from which to serve static files "
+  printf("  --path PUBLIC_PATH        path from which to serve static files "
          "(default %s)\n",
          sparams.public_path.c_str());
-  printf("  --api-key API_KEY     optional api key to enhance server security. "
-         "If set, requests must include this key for access.\n");
-  printf("  -to N, --timeout N    server read/write timeout in seconds "
+  printf("  --api-key API_KEY         optional api key to enhance server "
+         "security. If set, requests must include this key for access.\n");
+  printf("  --api-key-file FNAME      path to file containing api keys "
+         "delimited by new lines. If set, requests must include one of the "
+         "keys for access.\n");
+  printf("  -to N, --timeout N        server read/write timeout in seconds "
          "(default: %d)\n",
          sparams.read_timeout);
-  printf(
-      "  --embedding           enable embedding vector output (default: %s)\n",
-      params.embedding ? "enabled" : "disabled");
-  printf("  -np N, --parallel N   number of slots for process requests "
+  printf("  --embedding               enable embedding vector output (default: "
+         "%s)\n",
+         params.embedding ? "enabled" : "disabled");
+  printf("  -np N, --parallel N       number of slots for process requests "
          "(default: %d)\n",
          params.n_parallel);
-  printf("  -cb, --cont-batching  enable continuous batching (a.k.a dynamic "
-         "batching) (default: disabled)\n");
-  printf("    -spf FNAME, --system-prompt-file FNAME\n");
-  printf("                        Set a file to load a system prompt (initial "
-         "prompt of all slots), this is useful for chat applications.\n");
-  printf("  --mmproj MMPROJ_FILE  path to a multimodal projector file for "
+  printf("  -cb, --cont-batching      enable continuous batching (a.k.a "
+         "dynamic batching) (default: disabled)\n");
+  printf("  -spf FNAME, --system-prompt-file FNAME\n");
+  printf(
+      "                            set a file to load a system prompt (initial "
+      "prompt of all slots), this is useful for chat applications.\n");
+  printf("  --mmproj MMPROJ_FILE      path to a multimodal projector file for "
          "LLaVA.\n");
-  printf("  --log-disable         disables logging to a file.\n");
+  printf("  --log-disable             disables logging to a file.\n");
+  printf("\n");
+  printf("  --override-kv KEY=TYPE:VALUE\n");
+  printf("                            advanced option to override model "
+         "metadata by key. may be specified multiple times.\n");
+  printf("                            types: int, float, bool. example: "
+         "--override-kv tokenizer.ggml.add_bos_token=bool:false\n");
+  printf("  -gan N, --grp-attn-n N    set the group attention factor to extend "
+         "context size through self-extend(default: 1=disabled), used together "
+         "with group attention width `--grp-attn-w`");
+  printf("  -gaw N, --grp-attn-w N    set the group attention width to extend "
+         "context size through self-extend(default: 512), used together with "
+         "group attention factor `--grp-attn-n`");
   printf("\n");
 }
 
@@ -2121,15 +2142,15 @@ static void server_params_parse(int argc, char **argv, server_params &sparams,
         invalid_param = true;
         break;
       }
-#ifdef LLAMA_SUPPORTS_GPU_OFFLOAD
-      params.n_gpu_layers = std::stoi(argv[i]);
-#else
-      LOG_WARNING_LLAMA(
-          "Not compiled with GPU offload support, --n-gpu-layers option will "
-          "be ignored. "
-          "See main README.md for information on enabling GPU BLAS support",
-          {{"n_gpu_layers", params.n_gpu_layers}});
-#endif
+      if (llama_supports_gpu_offload()) {
+        params.n_gpu_layers = std::stoi(argv[i]);
+      } else {
+        LOG_WARNING_LLAMA(
+            "Not compiled with GPU offload support, --n-gpu-layers option will "
+            "be ignored. "
+            "See main README.md for information on enabling GPU BLAS support",
+            {{"n_gpu_layers", params.n_gpu_layers}});
+      }
     } else if (arg == "--tensor-split" || arg == "-ts") {
       if (++i >= argc) {
         invalid_param = true;
@@ -2143,9 +2164,9 @@ static void server_params_parse(int argc, char **argv, server_params &sparams,
       std::sregex_token_iterator it{arg_next.begin(), arg_next.end(), regex,
                                     -1};
       std::vector<std::string> split_arg{it, {}};
-      GGML_ASSERT(split_arg.size() <= LLAMA_MAX_DEVICES);
+      GGML_ASSERT(split_arg.size() <= llama_max_devices());
 
-      for (size_t i_device = 0; i_device < LLAMA_MAX_DEVICES; ++i_device) {
+      for (size_t i_device = 0; i_device < llama_max_devices(); ++i_device) {
         if (i_device < split_arg.size()) {
           params.tensor_split[i_device] = std::stof(split_arg[i_device]);
         } else {
