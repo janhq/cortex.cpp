@@ -50,7 +50,7 @@ on:
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   LLM_MODEL_URL: https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
-  WHISPER_MODEL_URL: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+  WHISPER_MODEL_URL: https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-q5_1.bin
 
 jobs:
   create-draft-release:
@@ -377,11 +377,11 @@ jobs:
         run: |
           # To test with CoreML
           if [[ ! -f "/tmp/testwhisper-encoder.mlmodelc" ]]; then
-            wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.en-encoder.mlmodelc.zip
-            unzip ggml-tiny.en-encoder.mlmodelc.zip
-            rm ggml-tiny.en-encoder.mlmodelc.zip
+            wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-encoder.mlmodelc.zip
+            unzip ggml-tiny-encoder.mlmodelc.zip
+            rm ggml-tiny-encoder.mlmodelc.zip
             rm -rf /tmp/testwhisper-encoder.mlmodelc
-            mv ggml-tiny.en-encoder.mlmodelc /tmp/testwhisper-encoder.mlmodelc
+            mv ggml-tiny-encoder.mlmodelc /tmp/testwhisper-encoder.mlmodelc
           fi
           # run e2e testing
           cd nitro
@@ -605,13 +605,15 @@ jobs:
       - name: Run e2e testing - Llama.cpp
         shell: cmd
         run: |
-          .\.github\scripts\e2e-test-llama-windows.bat .\build\Release\nitro.exe ${{ env.LLM_MODEL_URL }}
+          cd build\Release
+          ..\..\.github\scripts\e2e-test-whisper-windows.bat nitro.exe ${{ env.LLM_MODEL_URL }}
           rmdir /S /Q .\build\Release\uploads
 
       - name: Run e2e testing - Whisper.cpp
         shell: cmd
         run: |
-          .\.github\scripts\e2e-test-whisper-windows.bat .\build\Release\nitro.exe ${{ env.WHISPER_MODEL_URL }}
+          cd build\Release
+          ..\..\.github\scripts\e2e-test-whisper-windows.bat nitro.exe ${{ env.WHISPER_MODEL_URL }}
           rmdir /S /Q .\build\Release\uploads
 
       - name: Upload Artifact
