@@ -186,15 +186,11 @@ void llamaCPP::chatCompletion(
         (*jsonBody).get("frequency_penalty", 0).asFloat();
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
-    std::string grammar_file = (*jsonBody).get("grammar_file", "").asString();
-    std::ifstream file(grammar_file);
-    if (!file) {
-      LOG_ERROR << "Grammar file not found";
-    } else {
-      std::stringstream grammarBuf;
-      grammarBuf << file.rdbuf();
-      data["grammar"] = grammarBuf.str();
-    }
+
+    if (!grammar_file_content.empty()) {
+      data["grammar"] = grammar_file_content;
+    };
+
     if (!llama.multimodal) {
 
       for (const auto &message : messages) {
@@ -411,17 +407,31 @@ void llamaCPP::embedding(
     std::function<void(const HttpResponsePtr &)> &&callback) {
   check_model_loaded(llama, req, callback);
 
+  auto state = create_inference_state(this);
+
   const auto &jsonBody = req->getJsonObject();
 
   Json::Value responseData(Json::arrayValue);
 
   if (jsonBody->isMember("input")) {
+    // If single queue is busy, we will wait if not we will just go ahead and
+    // process and make it busy, and yet i'm aware not DRY, i have the same
+    // stuff on chatcompletion as well
+    if (state->instance->llama.params.n_parallel == 1) {
+      while (state->instance->single_queue_is_busy) {
+        LOG_INFO << "Waiting for task to be released status:"
+                 << state->instance->single_queue_is_busy;
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(500)); // Waiting in 500 miliseconds step
+      }
+    }
     const Json::Value &input = (*jsonBody)["input"];
     if (input.isString()) {
       // Process the single string input
-      const int task_id = llama.request_completion(
+      state->task_id = llama.request_completion(
           {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
-      task_result result = llama.next_result(task_id);
+      state->instance->single_queue_is_busy = true;
+      task_result result = llama.next_result(state->task_id);
       std::vector<float> embedding_result = result.result_json["embedding"];
       responseData.append(create_embedding_payload(embedding_result, 0));
     } else if (input.isArray()) {
@@ -437,6 +447,9 @@ void llamaCPP::embedding(
       }
     }
   }
+
+  // We already got result of the embedding so no longer busy
+  state->instance->single_queue_is_busy = false;
 
   auto resp = nitro_utils::nitroHttpResponse();
   Json::Value root;
@@ -510,6 +523,19 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["mlock"].isNull()) {
       params.use_mlock = jsonBody["mlock"].asBool();
     }
+
+    if (!jsonBody["grammar_file"].isNull()) {
+      std::string grammar_file = jsonBody["grammar_file"].asString();
+      std::ifstream file(grammar_file);
+      if (!file) {
+        LOG_ERROR << "Grammar file not found";
+      } else {
+        std::stringstream grammarBuf;
+        grammarBuf << file.rdbuf();
+        grammar_file_content = grammarBuf.str();
+      }
+    };
+
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
     params.n_ctx = jsonBody.get("ctx_len", 2048).asInt();
