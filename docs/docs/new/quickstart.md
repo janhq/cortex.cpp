@@ -17,7 +17,7 @@ You can directly choose the pre-built binary that compatible with your system at
 
 After you have downloaded the binary, you can directly use the binary with "./nitro".
 
-If you want to build from source rather than using the pre-built binary, you can also check: [Install from Source](install.md)
+If you want to build from source rather than using the pre-built binary, you can also check: [Build from Source](build-source.md)
 
 ## Step 2: Downloading a Model
 
