@@ -187,16 +187,8 @@ void llamaCPP::chatCompletion(
     data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
     const Json::Value &messages = (*jsonBody)["messages"];
 
-    if (!(*jsonBody)["grammar_file"].isNull()) {
-      std::string grammar_file = (*jsonBody)["grammar_file"].asString();
-      std::ifstream file(grammar_file);
-      if (!file) {
-        LOG_ERROR << "Grammar file not found";
-      } else {
-        std::stringstream grammarBuf;
-        grammarBuf << file.rdbuf();
-        data["grammar"] = grammarBuf.str();
-      }
+    if (!grammar_file_content.empty()) {
+      data["grammar"] = grammar_file_content;
     };
 
     if (!llama.multimodal) {
@@ -514,6 +506,19 @@ bool llamaCPP::loadModelImpl(const Json::Value &jsonBody) {
     if (!jsonBody["mlock"].isNull()) {
       params.use_mlock = jsonBody["mlock"].asBool();
     }
+
+    if (!jsonBody["grammar_file"].isNull()) {
+      std::string grammar_file = jsonBody["grammar_file"].asString();
+      std::ifstream file(grammar_file);
+      if (!file) {
+        LOG_ERROR << "Grammar file not found";
+      } else {
+        std::stringstream grammarBuf;
+        grammarBuf << file.rdbuf();
+        grammar_file_content = grammarBuf.str();
+      }
+    };
+
     params.model = jsonBody["llama_model_path"].asString();
     params.n_gpu_layers = jsonBody.get("ngl", 100).asInt();
     params.n_ctx = jsonBody.get("ctx_len", 2048).asInt();

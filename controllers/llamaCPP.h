@@ -2576,5 +2576,6 @@ private:
   int clean_cache_threshold;
   std::atomic<bool> single_queue_is_busy; // This value only used under the
                                           // condition n_parallel is 1
+  std::string grammar_file_content;
 };
 }; // namespace inferences
