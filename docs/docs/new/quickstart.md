@@ -11,23 +11,13 @@ Download and install Nitro on your system.
 
 ### From the release page
 
+You can directly choose the pre-built binary that compatible with your system at
+
 > [Nitro Release Page](https://github.com/janhq/nitro/releases)
 
-### For Linux and MacOS
+After you have downloaded the binary, you can directly use the binary with "./nitro".
 
-  ```bash
-  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -
-  ```
-
-### For Windows
-
-  ```bash
-  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"
-  ```
-
-> Installing Nitro will add new files and configurations to your system to enable it to run.
-
-For a manual installation process, see: [Install from Source](install.md)
+If you want to build from source rather than using the pre-built binary, you can also check: [Install from Source](install.md)
 
 ## Step 2: Downloading a Model
 
