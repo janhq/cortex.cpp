@@ -5,6 +5,12 @@ description: How to install Nitro
 keywords: [Nitro, Jan, fast inference, inference server, local AI, large language model, OpenAI compatible, open source, llama]
 ---
 
+# Notices
+
+Nitro is an extremely simple program compiled into a single binary, you are encouraged to go directly to the releases page of Nitro and just download a binary and use. The below installation process is just for the purpose of being a "helper" script that does not guarantee working.
+
+You can find releases page of nitro at at [Release](https://github.com/janhq/nitro/releases).
+
 # Nitro Installation Guide
 
 This guide provides instructions for installing Nitro using the provided [install.sh](https://github.com/janhq/nitro/blob/main/install.sh) and [install.bat](https://github.com/janhq/nitro/blob/main/install.bat) scripts for Linux, macOS, and Windows systems.
