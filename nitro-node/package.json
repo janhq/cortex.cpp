@@ -10,7 +10,8 @@
   "scripts": {
     "test": "jest --verbose --detectOpenHandles",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
-    "downloadnitro": "tsx src/scripts/download-nitro.ts",
+    "predownloadnitro": "npm run build",
+    "downloadnitro": "node dist/scripts/index.cjs",
     "build:publish": "npm pack",
     "postinstall": "node -r @janhq/nitro-node/postinstall"
   },
@@ -43,6 +44,7 @@
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.5",
     "@types/download": "^8.0.5",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.4",
@@ -54,7 +56,6 @@
     "rollup-plugin-typescript2": "^0.36.0",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   },
   "dependencies": {

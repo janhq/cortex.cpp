@@ -3,6 +3,7 @@ import commonjs from "@rollup/plugin-commonjs";
 import sourceMaps from "rollup-plugin-sourcemaps";
 import typescript from "rollup-plugin-typescript2";
 import json from "@rollup/plugin-json";
+import replace from "@rollup/plugin-replace";
 
 export default [
   {
@@ -67,6 +68,14 @@ export default [
       include: "src/scripts/**",
     },
     plugins: [
+      replace({
+        RELEASE_URL_PREFIX: JSON.stringify(
+          "https://api.github.com/repos/janhq/nitro/releases/",
+        ),
+        TAGGED_RELEASE_URL_PREFIX: JSON.stringify(
+          "https://api.github.com/repos/janhq/nitro/releases/tags",
+        ),
+      }),
       // Allow json resolution
       json(),
 
@@ -82,7 +91,7 @@ export default [
       commonjs(),
       // Compile TypeScript files
       typescript({
-        useTsconfigDeclarationDir: true
+        useTsconfigDeclarationDir: true,
       }),
 
       // Resolve source maps to the original source

@@ -10,17 +10,12 @@ const PLATFORM = process.env.npm_config_platform || process.platform;
 // The platform architecture
 //const ARCH = process.env.npm_config_arch || process.arch;
 
-const releaseUrlPrefixVariants = {
-  latest: "https://api.github.com/repos/janhq/nitro/releases/",
-  tag: "https://api.github.com/repos/janhq/nitro/releases/tags/",
-};
-
 const getReleaseInfo = async (taggedVersion: string): Promise<any> => {
   const releaseUrlPrefix =
     taggedVersion === "latest"
-      ? releaseUrlPrefixVariants.latest
+      ? RELEASE_URL_PREFIX
       : taggedVersion.match(/^v?\d+\.\d+\.\d+$/gi)
-        ? releaseUrlPrefixVariants.tag
+        ? TAGGED_RELEASE_URL_PREFIX
         : undefined;
   if (!releaseUrlPrefix) throw Error(`Invalid version: ${taggedVersion}`);
   const url = `${releaseUrlPrefix}${taggedVersion}`;
@@ -59,17 +54,19 @@ const extractDownloadInfo = async (
   suffixVariants: Record<string, string>,
 ): Promise<Record<string, { url: string; dir: string }>> => {
   console.log(`[Release URL][prerelease=${prerelease}] ${html_url}`);
-  const assetNames = assets.map(({ name }: { name: string }) => name);
   const assetsToDownloads = Object.entries(suffixVariants).reduce(
     (
       dict: Record<string, { url: string; dir: string }>,
       [suffix, dir]: [string, string],
     ) => {
+      const assetInfo = assets.find(
+        (a) => a.name === `nitro-${name}-${suffix}.tar.gz`,
+      );
       // Skip if suffix is not in asset names
-      if (!assetNames.includes(`nitro-${name}-${suffix}.tar.gz`)) return dict;
+      if (!assetInfo) return dict;
       // Else add the download url
       dict[suffix] = {
-        url: `https://github.com/janhq/nitro/releases/download/${tag_name}/nitro-${name}-${suffix}.tar.gz`,
+        url: assetInfo.browser_download_url,
         dir,
       };
       return dict;
