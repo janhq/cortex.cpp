@@ -444,7 +444,7 @@ export function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
       reject(`child process exited with code ${code}`);
     });
 
-    tcpPortUsed.waitUntilUsed(PORT, 300, 30000).then(() => {
+    tcpPortUsed.waitUntilUsed(PORT, 300, 5000).then(() => {
       log(`[NITRO]::Debug: Nitro is ready`);
       resolve({});
     });
