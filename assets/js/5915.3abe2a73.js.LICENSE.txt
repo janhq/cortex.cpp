@@ -1,0 +1,22 @@
+/*!
+   * Wait for document loaded before starting the execution
+   */
+
+/*! @license DOMPurify 3.0.6 | (c) Cure53 and other contributors | Released under the Apache license 2.0 and Mozilla Public License 2.0 | github.com/cure53/DOMPurify/blob/3.0.6/LICENSE */
+
+/*! Bundled license information:
+
+prismjs/prism.js:
+  (**
+   * Prism: Lightweight, robust, elegant syntax highlighting
+   *
+   * @license MIT <https://opensource.org/licenses/MIT>
+   * @author Lea Verou <https://lea.verou.me>
+   * @namespace
+   * @public
+   *)
+*/
+
+/*! Check if previously processed */
+
+/*! js-yaml 4.1.0 https://github.com/nodeca/js-yaml @license MIT */

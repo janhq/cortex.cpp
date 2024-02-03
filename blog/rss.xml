@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title>Nitro Blog</title>
+        <link>https://nitro.jan.ai/blog</link>
+        <description>Nitro Blog</description>
+        <lastBuildDate>Sat, 03 Feb 2024 02:31:50 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>https://github.com/jpmonette/feed</generator>
+        <language>en</language>
+        <item>
+            <title><![CDATA[Hello World]]></title>
+            <link>https://nitro.jan.ai/blog/hello-world</link>
+            <guid>https://nitro.jan.ai/blog/hello-world</guid>
+            <pubDate>Sat, 03 Feb 2024 02:31:50 GMT</pubDate>
+            <description><![CDATA[This is my first post on Docusaurus.]]></description>
+            <content:encoded><![CDATA[<p>Hello World!</p>]]></content:encoded>
+            <category>hello</category>
+            <category>jan</category>
+        </item>
+        <item>
+            <title><![CDATA[test]]></title>
+            <link>https://nitro.jan.ai/blog/test</link>
+            <guid>https://nitro.jan.ai/blog/test</guid>
+            <pubDate>Sat, 03 Feb 2024 02:31:50 GMT</pubDate>
+        </item>
+    </channel>
+</rss>
