@@ -38,6 +38,9 @@ export default function MultiModal() {
             className="mb-2"
           />
           <h6 className="font-medium text-xl">Vision</h6>
+          <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm text-white">
+            Coming Soon
+          </p>
         </div>
         <div className="dark:bg-[#27272A]/20 bg-[#D4D4D8]/20 border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg">
           <img
@@ -45,7 +48,10 @@ export default function MultiModal() {
             alt="Icon Speech"
             className="mb-2"
           />
-          <h6 className="font-medium text-xl">Hear</h6>
+          <h6 className="font-medium text-xl">Speech</h6>
+          <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm text-white">
+            Coming Soon
+          </p>
         </div>
       </div>
     </div>
