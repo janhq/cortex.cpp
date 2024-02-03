@@ -3,57 +3,71 @@ import { exec } from "node:child_process";
 import { NitroNvidiaConfig } from "./types";
 import path from "node:path";
 
-/**
- * Current nitro process
- */
-let nitroProcessInfo: NitroProcessInfo | undefined = undefined;
+// The default config for using Nvidia GPU
+const NVIDIA_DEFAULT_CONFIG: NitroNvidiaConfig = {
+  notify: true,
+  nvidia_driver: {
+    exist: false,
+    version: "",
+  },
+  cuda: {
+    exist: false,
+    version: "",
+  },
+  gpus: [],
+  gpu_highest_vram: "",
+};
+
+// The Nvidia info config for checking for CUDA support on the system
+let nvidiaConfig: NitroNvidiaConfig = NVIDIA_DEFAULT_CONFIG;
 
 /**
- * Nitro process info
+ * Get current Nvidia config
+ * @returns {NitroNvidiaConfig} A copy of the config object
+ * The returned object should be used for reading only
+ * Writing to config should be via the function {@setNvidiaConfig}
  */
-export interface NitroProcessInfo {
-  isRunning: boolean;
+export function getNvidiaConfig(): NitroNvidiaConfig {
+  return Object.assign({}, nvidiaConfig);
 }
 
 /**
- * This will retrive GPU informations and persist settings.json
- * Will be called when the extension is loaded to turn on GPU acceleration if supported
+ * Set custom Nvidia config for running inference over GPU
+ * @param {NitroNvidiaConfig} config The new config to apply
  */
-export async function updateNvidiaInfo(nvidiaSettings: NitroNvidiaConfig) {
+export async function setNvidiaConfig(
+  config: NitroNvidiaConfig,
+): Promise<void> {
+  nvidiaConfig = config;
+}
+
+/**
+ * This will retrieve GPU informations
+ * Should be called when the library is loaded to turn on GPU acceleration if supported
+ */
+export async function updateNvidiaInfo() {
   if (process.platform !== "darwin") {
     await Promise.all([
-      updateNvidiaDriverInfo(nvidiaSettings),
-      updateCudaExistence(nvidiaSettings),
-      updateGpuInfo(nvidiaSettings),
+      updateNvidiaDriverInfo(),
+      updateCudaExistence(),
+      updateGpuInfo(),
     ]);
   }
 }
 
 /**
- * Retrieve current nitro process
- */
-export const getNitroProcessInfo = (subprocess: any): NitroProcessInfo => {
-  nitroProcessInfo = {
-    isRunning: subprocess != null,
-  };
-  return nitroProcessInfo;
-};
-
-/**
  * Validate nvidia and cuda for linux and windows
  */
-export async function updateNvidiaDriverInfo(
-  nvidiaSettings: NitroNvidiaConfig,
-): Promise<void> {
+async function updateNvidiaDriverInfo(): Promise<void> {
   exec(
     "nvidia-smi --query-gpu=driver_version --format=csv,noheader",
     (error, stdout) => {
       if (!error) {
         const firstLine = stdout.split("\n")[0].trim();
-        nvidiaSettings["nvidia_driver"].exist = true;
-        nvidiaSettings["nvidia_driver"].version = firstLine;
+        nvidiaConfig["nvidia_driver"].exist = true;
+        nvidiaConfig["nvidia_driver"].version = firstLine;
       } else {
-        nvidiaSettings["nvidia_driver"].exist = false;
+        nvidiaConfig["nvidia_driver"].exist = false;
       }
     },
   );
@@ -72,7 +86,7 @@ export function checkFileExistenceInPaths(
 /**
  * Validate cuda for linux and windows
  */
-export function updateCudaExistence(nvidiaSettings: NitroNvidiaConfig) {
+function updateCudaExistence() {
   let filesCuda12: string[];
   let filesCuda11: string[];
   let paths: string[];
@@ -106,19 +120,14 @@ export function updateCudaExistence(nvidiaSettings: NitroNvidiaConfig) {
     cudaVersion = "12";
   }
 
-  nvidiaSettings["cuda"].exist = cudaExists;
-  nvidiaSettings["cuda"].version = cudaVersion;
-  if (cudaExists) {
-    nvidiaSettings.run_mode = "gpu";
-  }
+  nvidiaConfig["cuda"].exist = cudaExists;
+  nvidiaConfig["cuda"].version = cudaVersion;
 }
 
 /**
  * Get GPU information
  */
-export async function updateGpuInfo(
-  nvidiaSettings: NitroNvidiaConfig,
-): Promise<void> {
+async function updateGpuInfo(): Promise<void> {
   exec(
     "nvidia-smi --query-gpu=index,memory.total --format=csv,noheader,nounits",
     (error, stdout) => {
@@ -139,10 +148,10 @@ export async function updateGpuInfo(
             return { id, vram };
           });
 
-        nvidiaSettings["gpus"] = gpus;
-        nvidiaSettings["gpu_highest_vram"] = highestVramId;
+        nvidiaConfig["gpus"] = gpus;
+        nvidiaConfig["gpu_highest_vram"] = highestVramId;
       } else {
-        nvidiaSettings["gpus"] = [];
+        nvidiaConfig["gpus"] = [];
       }
     },
   );

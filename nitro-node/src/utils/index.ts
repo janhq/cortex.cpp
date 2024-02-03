@@ -1,5 +1,20 @@
 import fs from "node:fs";
+import osUtils from "os-utils";
 import { log } from "../logger";
+import { ResourcesInfo } from "../types";
+
+/**
+ * Get the system resources information
+ */
+export async function getResourcesInfo(): Promise<ResourcesInfo> {
+  const cpu = osUtils.cpuCount();
+  log(`[NITRO]::CPU informations - ${cpu}`);
+  const response: ResourcesInfo = {
+    numCpuPhysicalCore: cpu,
+    memAvailable: 0,
+  };
+  return response;
+}
 
 /**
  * Read the magic bytes from a file and check if they match the provided magic bytes

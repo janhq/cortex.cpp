@@ -1,5 +1,5 @@
 import path from "node:path";
-import { NitroNvidiaConfig } from "./types";
+import { getNvidiaConfig } from "./nvidia";
 
 export interface NitroExecutableOptions {
   executablePath: string;
@@ -11,9 +11,11 @@ export interface NitroExecutableOptions {
  * @returns The name of the executable file to run.
  */
 export const executableNitroFile = (
-  nvidiaSettings: NitroNvidiaConfig,
   binaryFolder: string,
+  // Default to GPU if CUDA is available when calling
+  runMode: "cpu" | "gpu" = getNvidiaConfig().cuda.exist ? "gpu" : "cpu",
 ): NitroExecutableOptions => {
+  const nvidiaSettings = getNvidiaConfig();
   let cudaVisibleDevices = "";
   let binaryName = "nitro";
   /**
@@ -23,7 +25,7 @@ export const executableNitroFile = (
     /**
      *  For Windows: win-cpu, win-cuda-11-7, win-cuda-12-0
      */
-    if (nvidiaSettings["run_mode"] === "cpu") {
+    if (runMode === "cpu") {
       binaryFolder = path.join(binaryFolder, "win-cpu");
     } else {
       if (nvidiaSettings["cuda"].version === "12") {
@@ -44,7 +46,7 @@ export const executableNitroFile = (
       binaryFolder = path.join(binaryFolder, "mac-x64");
     }
   } else {
-    if (nvidiaSettings["run_mode"] === "cpu") {
+    if (runMode === "cpu") {
       binaryFolder = path.join(binaryFolder, "linux-cpu");
     } else {
       if (nvidiaSettings["cuda"].version === "12") {

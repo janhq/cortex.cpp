@@ -14,6 +14,7 @@ import {
   loadLLMModel,
   validateModelStatus,
   chatCompletion,
+  initialize,
 } from "../src";
 import { checkMagicBytes } from "../src/utils";
 
@@ -141,6 +142,8 @@ describe("Manage nitro process", () => {
   test(
     "start/stop nitro process normally",
     async () => {
+      // Init the library
+      await initialize();
       // Start nitro
       await runModel({
         modelPath,
@@ -157,6 +160,8 @@ describe("Manage nitro process", () => {
   test(
     "chat completion",
     async () => {
+      // Init the library
+      await initialize();
       // Start nitro
       await runModel({
         modelPath,

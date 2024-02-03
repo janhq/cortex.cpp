@@ -3,23 +3,19 @@ import path from "node:path";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import tcpPortUsed from "tcp-port-used";
 import fetchRT from "fetch-retry";
-import osUtils from "os-utils";
-import {
-  getNitroProcessInfo,
-  updateNvidiaInfo as _updateNvidiaInfo,
-} from "./nvidia";
 import { executableNitroFile } from "./execute";
 import {
-  NitroNvidiaConfig,
   NitroModelSetting,
   NitroPromptSetting,
   NitroModelOperationResponse,
   NitroModelInitOptions,
-  ResourcesInfo,
+  NitroProcessInfo,
 } from "./types";
 import { downloadNitro } from "./scripts";
-import { checkMagicBytes } from "./utils";
+import { checkMagicBytes, getResourcesInfo } from "./utils";
 import { log } from "./logger";
+import { updateNvidiaInfo } from "./nvidia";
+import { promptTemplateConverter } from "./prompt";
 // Polyfill fetch with retry
 const fetchRetry = fetchRT(fetch);
 
@@ -38,22 +34,6 @@ const NITRO_HTTP_KILL_URL = `${NITRO_HTTP_SERVER_URL}/processmanager/destroy`;
 // The URL for the Nitro subprocess to run chat completion
 const NITRO_HTTP_CHAT_URL = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/chat_completion`;
 
-// The default config for using Nvidia GPU
-const NVIDIA_DEFAULT_CONFIG: NitroNvidiaConfig = {
-  notify: true,
-  run_mode: "cpu",
-  nvidia_driver: {
-    exist: false,
-    version: "",
-  },
-  cuda: {
-    exist: false,
-    version: "",
-  },
-  gpus: [],
-  gpu_highest_vram: "",
-};
-
 // The supported model format
 const SUPPORTED_MODEL_FORMATS = [".gguf"];
 
@@ -62,12 +42,18 @@ const SUPPORTED_MODEL_MAGIC_BYTES = ["GGUF"];
 
 // The subprocess instance for Nitro
 let subprocess: ChildProcessWithoutNullStreams | undefined = undefined;
+/**
+ * Retrieve current nitro process
+ */
+const getNitroProcessInfo = (subprocess: any): NitroProcessInfo => ({
+  isRunning: subprocess != null,
+});
+const getCurrentNitroProcessInfo = () => getNitroProcessInfo(subprocess);
+
 // The current model file url
 let currentModelFile: string = "";
 // The current model settings
 let currentSettings: NitroModelSetting | undefined = undefined;
-// The Nvidia info file for checking for CUDA support on the system
-let nvidiaConfig: NitroNvidiaConfig = NVIDIA_DEFAULT_CONFIG;
 // The absolute path to bin directory
 let binPath: string = path.join(__dirname, "..", "bin");
 
@@ -75,13 +61,13 @@ let binPath: string = path.join(__dirname, "..", "bin");
  * Get current bin path
  * @returns {string} The bin path
  */
-export function getBinPath(): string {
+function getBinPath(): string {
   return binPath;
 }
 /**
  * Set custom bin path
  */
-export async function setBinPath(customBinPath: string): Promise<void> {
+async function setBinPath(customBinPath: string): Promise<void> {
   // Check if the path is a directory
   if (
     fs.existsSync(customBinPath) &&
@@ -96,23 +82,13 @@ export async function setBinPath(customBinPath: string): Promise<void> {
 }
 
 /**
- * Get current Nvidia config
- * @returns {NitroNvidiaConfig} A copy of the config object
- * The returned object should be used for reading only
- * Writing to config should be via the function {@setNvidiaConfig}
+ * Initializes the library. Must be called before any other function.
+ * This loads the neccesary system information and set some defaults before running model
  */
-export function getNvidiaConfig(): NitroNvidiaConfig {
-  return Object.assign({}, nvidiaConfig);
-}
-
-/**
- * Set custom Nvidia config for running inference over GPU
- * @param {NitroNvidiaConfig} config The new config to apply
- */
-export async function setNvidiaConfig(
-  config: NitroNvidiaConfig,
-): Promise<void> {
-  nvidiaConfig = config;
+async function initialize(): Promise<void> {
+  // Update nvidia info
+  await updateNvidiaInfo();
+  log("[NITRO]::Debug: Nitro initialized");
 }
 
 /**
@@ -120,7 +96,7 @@ export async function setNvidiaConfig(
  * @param wrapper - The model wrapper.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
  */
-export function stopModel(): Promise<NitroModelOperationResponse> {
+function stopModel(): Promise<NitroModelOperationResponse> {
   return killSubprocess();
 }
 
@@ -130,10 +106,10 @@ export function stopModel(): Promise<NitroModelOperationResponse> {
  * @param promptTemplate - The template to use for generating prompts.
  * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
  */
-export async function runModel({
-  modelPath,
-  promptTemplate,
-}: NitroModelInitOptions): Promise<NitroModelOperationResponse> {
+async function runModel(
+  { modelPath, promptTemplate }: NitroModelInitOptions,
+  runMode?: "cpu" | "gpu",
+): Promise<NitroModelOperationResponse> {
   // Download nitro binaries if it's not already downloaded
   await downloadNitro(binPath);
   const files: string[] = fs.readdirSync(modelPath);
@@ -178,7 +154,7 @@ export async function runModel({
       Math.round(nitroResourceProbe.numCpuPhysicalCore / 2),
     ),
   };
-  return runNitroAndLoadModel();
+  return runNitroAndLoadModel(runMode);
 }
 
 /**
@@ -187,7 +163,9 @@ export async function runModel({
  * 3. Validate model status
  * @returns
  */
-export async function runNitroAndLoadModel(): Promise<NitroModelOperationResponse> {
+async function runNitroAndLoadModel(
+  runMode?: "cpu" | "gpu",
+): Promise<NitroModelOperationResponse> {
   try {
     // Gather system information for CPU physical cores and memory
     await killSubprocess();
@@ -200,7 +178,7 @@ export async function runNitroAndLoadModel(): Promise<NitroModelOperationRespons
     if (process.platform === "win32") {
       return await new Promise((resolve) => setTimeout(() => resolve({}), 500));
     }
-    const spawnResult = await spawnNitroProcess();
+    const spawnResult = await spawnNitroProcess(runMode);
     if (spawnResult.error) {
       return spawnResult;
     }
@@ -219,59 +197,13 @@ export async function runNitroAndLoadModel(): Promise<NitroModelOperationRespons
 }
 
 /**
- * Parse prompt template into agrs settings
- * @param {string} promptTemplate Template as string
- * @returns {(NitroPromptSetting | never)} parsed prompt setting
- * @throws {Error} if cannot split promptTemplate
- */
-function promptTemplateConverter(
-  promptTemplate: string,
-): NitroPromptSetting | never {
-  // Split the string using the markers
-  const systemMarker = "{system_message}";
-  const promptMarker = "{prompt}";
-
-  if (
-    promptTemplate.includes(systemMarker) &&
-    promptTemplate.includes(promptMarker)
-  ) {
-    // Find the indices of the markers
-    const systemIndex = promptTemplate.indexOf(systemMarker);
-    const promptIndex = promptTemplate.indexOf(promptMarker);
-
-    // Extract the parts of the string
-    const system_prompt = promptTemplate.substring(0, systemIndex);
-    const user_prompt = promptTemplate.substring(
-      systemIndex + systemMarker.length,
-      promptIndex,
-    );
-    const ai_prompt = promptTemplate.substring(
-      promptIndex + promptMarker.length,
-    );
-
-    // Return the split parts
-    return { system_prompt, user_prompt, ai_prompt };
-  } else if (promptTemplate.includes(promptMarker)) {
-    // Extract the parts of the string for the case where only promptMarker is present
-    const promptIndex = promptTemplate.indexOf(promptMarker);
-    const user_prompt = promptTemplate.substring(0, promptIndex);
-    const ai_prompt = promptTemplate.substring(
-      promptIndex + promptMarker.length,
-    );
-
-    // Return the split parts
-    return { user_prompt, ai_prompt };
-  }
-
-  // Throw error if none of the conditions are met
-  throw Error("Cannot split prompt template");
-}
-
-/**
  * Loads a LLM model into the Nitro subprocess by sending a HTTP POST request.
  * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
  */
-export async function loadLLMModel(settings: any): Promise<Response> {
+async function loadLLMModel(settings: any): Promise<Response> {
+  // The nitro subprocess must be started before loading model
+  if (!subprocess) throw Error("Calling loadLLMModel without running nitro");
+
   log(`[NITRO]::Debug: Loading model with params ${JSON.stringify(settings)}`);
   try {
     const res = await fetchRetry(NITRO_HTTP_LOAD_MODEL_URL, {
@@ -301,7 +233,7 @@ export async function loadLLMModel(settings: any): Promise<Response> {
  * @returns {Promise<Response>} A Promise that resolves when the chat completion success, or rejects with an error if the completion fails.
  * @description If outStream is specified, the response body is consumed and cannot be used to reconstruct the data
  */
-export async function chatCompletion(
+async function chatCompletion(
   request: any,
   outStream?: WritableStream,
 ): Promise<Response> {
@@ -350,7 +282,7 @@ export async function chatCompletion(
  * If the model is loaded successfully, the object is empty.
  * If the model is not loaded successfully, the object contains an error message.
  */
-export async function validateModelStatus(): Promise<NitroModelOperationResponse> {
+async function validateModelStatus(): Promise<NitroModelOperationResponse> {
   // Send a GET request to the validation URL.
   // Retry the request up to 3 times if it fails, with a delay of 500 milliseconds between retries.
   const response = await fetchRetry(NITRO_HTTP_VALIDATE_MODEL_URL, {
@@ -382,12 +314,13 @@ export async function validateModelStatus(): Promise<NitroModelOperationResponse
  * Terminates the Nitro subprocess.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
  */
-export async function killSubprocess(): Promise<NitroModelOperationResponse> {
+async function killSubprocess(): Promise<NitroModelOperationResponse> {
   const controller = new AbortController();
   setTimeout(() => controller.abort(), 5000);
   log(`[NITRO]::Debug: Request to kill Nitro`);
 
   try {
+    // FIXME: should use this response?
     const _response = await fetch(NITRO_HTTP_KILL_URL, {
       method: "DELETE",
       signal: controller.signal,
@@ -406,11 +339,13 @@ export async function killSubprocess(): Promise<NitroModelOperationResponse> {
  * Spawns a Nitro subprocess.
  * @returns A promise that resolves when the Nitro subprocess is started.
  */
-export function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
+function spawnNitroProcess(
+  runMode?: "cpu" | "gpu",
+): Promise<NitroModelOperationResponse> {
   log(`[NITRO]::Debug: Spawning Nitro subprocess...`);
 
   return new Promise(async (resolve, reject) => {
-    const executableOptions = executableNitroFile(nvidiaConfig, binPath);
+    const executableOptions = executableNitroFile(binPath, runMode);
 
     const args: string[] = ["1", LOCAL_HOST, PORT.toString()];
     // Execute the binary
@@ -452,26 +387,22 @@ export function spawnNitroProcess(): Promise<NitroModelOperationResponse> {
 }
 
 /**
- * Get the system resources information
- */
-export async function getResourcesInfo(): Promise<ResourcesInfo> {
-  const cpu = osUtils.cpuCount();
-  log(`[NITRO]::CPU informations - ${cpu}`);
-  const response: ResourcesInfo = {
-    numCpuPhysicalCore: cpu,
-    memAvailable: 0,
-  };
-  return response;
-}
-
-export const updateNvidiaInfo = async () =>
-  await _updateNvidiaInfo(nvidiaConfig);
-export const getCurrentNitroProcessInfo = () => getNitroProcessInfo(subprocess);
-
-/**
  * Trap for system signal so we can stop nitro process on exit
  */
 process.on("SIGTERM", async () => {
   log(`[NITRO]::Debug: Received SIGTERM signal`);
   await killSubprocess();
 });
+
+export {
+  getCurrentNitroProcessInfo,
+  getBinPath,
+  setBinPath,
+  initialize,
+  stopModel,
+  runModel,
+  loadLLMModel,
+  chatCompletion,
+  validateModelStatus,
+  killSubprocess,
+};

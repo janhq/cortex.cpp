@@ -13,6 +13,13 @@ export interface ResourcesInfo {
 }
 
 /**
+ * Nitro process info
+ */
+export interface NitroProcessInfo {
+  isRunning: boolean;
+}
+
+/**
  * Setting for prompts when inferencing with Nitro
  */
 export interface NitroPromptSetting {
@@ -49,7 +56,6 @@ export interface NitroLogger {
  */
 export interface NitroNvidiaConfig {
   notify: boolean;
-  run_mode: "cpu" | "gpu";
   nvidia_driver: {
     exist: boolean;
     version: string;
