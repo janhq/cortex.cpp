@@ -92,21 +92,6 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 ```
 
-***OPTIONAL***: You can constrain the sampling using GBNF grammars by providing path to a grammar file
-```bash title="Nitro Inference With Grammar"
-curl http://localhost:3928/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {
-        "role": "user",
-        "content": "Who won the world series in 2020?"
-      },
-    ],
-    "grammar_file": "/path/to/grammarfile"
-  }'
-```
-
 Table of parameters
 
 | Parameter        | Type    | Description                                                  |
@@ -128,6 +113,7 @@ Table of parameters
 |`grp_attn_n`|Integer|Group attention factor in self-extend|
 |`grp_attn_w`|Integer|Group attention width in self-extend|
 |`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
+|`grammar_file`| String |You can constrain the sampling using GBNF grammars by providing path to a grammar file|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
