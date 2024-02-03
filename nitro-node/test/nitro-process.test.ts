@@ -14,8 +14,8 @@ import {
   loadLLMModel,
   validateModelStatus,
   chatCompletion,
-  checkMagicBytes,
 } from "../src";
+import { checkMagicBytes } from "../src/utils";
 
 // FIXME: Shorthand only possible for es6 targets and up
 //import * as model from './model.json' assert {type: 'json'}
@@ -103,9 +103,7 @@ const sleep = async (ms: number): Promise<NodeJS.Timeout> =>
  */
 describe("Manage nitro process", () => {
   /// BEGIN SUITE CONFIG
-  const modelFullPath = fs.mkdtempSync(
-    path.join(os.tmpdir(), "nitro-node-test"),
-  );
+  const modelPath = fs.mkdtempSync(path.join(os.tmpdir(), "nitro-node-test"));
   let modelCfg: Record<string, any> = {};
 
   // Setup steps before running the suite
@@ -113,14 +111,14 @@ describe("Manage nitro process", () => {
     // Get model config from json
     getModelConfigHook((cfg) => Object.assign(modelCfg, cfg)),
     // Download model before starting tests
-    downloadModelHook(modelCfg, modelFullPath),
+    downloadModelHook(modelCfg, modelPath),
   ];
   // Teardown steps after running the suite
   const teardownHooks = [
     // Stop nitro after running, regardless of error or not
     () => stopModel(),
     // On teardown, cleanup tmp directory that was created earlier
-    cleanupTargetDirHook(modelFullPath),
+    cleanupTargetDirHook(modelPath),
   ];
   /// END SUITE CONFIG
 
@@ -145,7 +143,7 @@ describe("Manage nitro process", () => {
     async () => {
       // Start nitro
       await runModel({
-        modelFullPath,
+        modelPath,
         promptTemplate: modelCfg.settings.prompt_template,
       });
       // Wait 5s for nitro to start
@@ -161,14 +159,14 @@ describe("Manage nitro process", () => {
     async () => {
       // Start nitro
       await runModel({
-        modelFullPath,
+        modelPath,
         promptTemplate: modelCfg.settings.prompt_template,
       });
       // Wait 5s for nitro to start
       await sleep(5 * 1000);
       // Load LLM model
       await loadLLMModel({
-        llama_model_path: modelFullPath,
+        llama_model_path: modelPath,
         ctx_len: modelCfg.settings.ctx_len,
         ngl: modelCfg.settings.ngl,
         embedding: false,
@@ -240,27 +238,25 @@ describe("Manage nitro process", () => {
       const fileName = modelCfg.source_url.split("/")?.pop() ?? "model.gguf";
       // Rename the extension of model file
       fs.renameSync(
-        path.join(modelFullPath, fileName),
-        path.join(modelFullPath, `${fileName.replace(/\.gguf$/gi, ".bak")}`),
+        path.join(modelPath, fileName),
+        path.join(modelPath, `${fileName.replace(/\.gguf$/gi, ".bak")}`),
       );
     });
     afterEach(async () => {
       const fileName = modelCfg.source_url.split("/")?.pop() ?? "model.gguf";
       // Restore the extension of model file
       fs.renameSync(
-        path.join(modelFullPath, `${fileName.replace(/\.gguf$/gi, ".bak")}`),
-        path.join(modelFullPath, fileName),
+        path.join(modelPath, `${fileName.replace(/\.gguf$/gi, ".bak")}`),
+        path.join(modelPath, fileName),
       );
     });
     test(
       "should be able to detect model file by magic number",
       async () => {
-        const files = fs.readdirSync(modelFullPath) as string[];
+        const files = fs.readdirSync(modelPath) as string[];
         // Test checking magic bytes
         const res = await Promise.all(
-          files.map((f) =>
-            checkMagicBytes(path.join(modelFullPath, f), "GGUF"),
-          ),
+          files.map((f) => checkMagicBytes(path.join(modelPath, f), "GGUF")),
         );
         expect(res).toContain(true);
       },

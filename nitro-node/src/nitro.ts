@@ -1,4 +1,3 @@
-import os from "node:os";
 import fs from "node:fs";
 import path from "node:path";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
@@ -14,12 +13,13 @@ import {
   NitroNvidiaConfig,
   NitroModelSetting,
   NitroPromptSetting,
-  NitroLogger,
   NitroModelOperationResponse,
   NitroModelInitOptions,
   ResourcesInfo,
 } from "./types";
 import { downloadNitro } from "./scripts";
+import { checkMagicBytes } from "./utils";
+import { log } from "./logger";
 // Polyfill fetch with retry
 const fetchRetry = fetchRT(fetch);
 
@@ -58,7 +58,7 @@ const NVIDIA_DEFAULT_CONFIG: NitroNvidiaConfig = {
 const SUPPORTED_MODEL_FORMATS = [".gguf"];
 
 // The supported model magic number
-const SUPPORTED_MODEL_MAGIC_NUMBERS = ["GGUF"];
+const SUPPORTED_MODEL_MAGIC_BYTES = ["GGUF"];
 
 // The subprocess instance for Nitro
 let subprocess: ChildProcessWithoutNullStreams | undefined = undefined;
@@ -68,9 +68,6 @@ let currentModelFile: string = "";
 let currentSettings: NitroModelSetting | undefined = undefined;
 // The Nvidia info file for checking for CUDA support on the system
 let nvidiaConfig: NitroNvidiaConfig = NVIDIA_DEFAULT_CONFIG;
-// The logger to use, default to stdout
-let log: NitroLogger = (message, ..._) =>
-  process.stdout.write(message + os.EOL);
 // The absolute path to bin directory
 let binPath: string = path.join(__dirname, "..", "bin");
 
@@ -119,14 +116,6 @@ export async function setNvidiaConfig(
 }
 
 /**
- * Set logger before running nitro
- * @param {NitroLogger} logger The logger to use
- */
-export async function setLogger(logger: NitroLogger): Promise<void> {
-  log = logger;
-}
-
-/**
  * Stops a Nitro subprocess.
  * @param wrapper - The model wrapper.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
@@ -136,54 +125,31 @@ export function stopModel(): Promise<NitroModelOperationResponse> {
 }
 
 /**
- * Read the magic bytes from a file and check if they match the provided magic bytes
- */
-export async function checkMagicBytes(
-  filePath: string,
-  magicBytes: string,
-): Promise<boolean> {
-  const desired = Buffer.from(magicBytes);
-  const nBytes = desired.byteLength;
-  const chunks = [];
-  for await (let chunk of fs.createReadStream(filePath, {
-    start: 0,
-    end: nBytes - 1,
-  })) {
-    chunks.push(chunk);
-  }
-  const actual = Buffer.concat(chunks);
-  log(
-    `Comparing file's magic bytes <${actual.toString()}> and desired <${desired.toString()}>`,
-  );
-  return Buffer.compare(actual, desired) === 0;
-}
-
-/**
  * Initializes a Nitro subprocess to load a machine learning model.
  * @param modelFullPath - The absolute full path to model directory.
  * @param promptTemplate - The template to use for generating prompts.
  * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
  */
 export async function runModel({
-  modelFullPath,
+  modelPath,
   promptTemplate,
 }: NitroModelInitOptions): Promise<NitroModelOperationResponse> {
   // Download nitro binaries if it's not already downloaded
   await downloadNitro(binPath);
-  const files: string[] = fs.readdirSync(modelFullPath);
+  const files: string[] = fs.readdirSync(modelPath);
 
   // Look for model file with supported format
   let ggufBinFile = files.find(
     (file) =>
-      file === path.basename(modelFullPath) ||
+      file === path.basename(modelPath) ||
       SUPPORTED_MODEL_FORMATS.some((ext) => file.toLowerCase().endsWith(ext)),
   );
 
   // If not found from path and extension, try from magic number
   if (!ggufBinFile) {
     for (const f of files) {
-      for (const magicNum of SUPPORTED_MODEL_MAGIC_NUMBERS) {
-        if (await checkMagicBytes(path.join(modelFullPath, f), magicNum)) {
+      for (const magicBytes of SUPPORTED_MODEL_MAGIC_BYTES) {
+        if (await checkMagicBytes(path.join(modelPath, f), magicBytes)) {
           ggufBinFile = f;
           break;
         }
@@ -194,7 +160,7 @@ export async function runModel({
 
   if (!ggufBinFile) throw new Error("No GGUF model file found");
 
-  currentModelFile = path.join(modelFullPath, ggufBinFile);
+  currentModelFile = path.join(modelPath, ggufBinFile);
 
   const nitroResourceProbe = await getResourcesInfo();
   // Convert promptTemplate to system_prompt, user_prompt, ai_prompt

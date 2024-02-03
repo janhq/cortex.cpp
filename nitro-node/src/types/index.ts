@@ -33,7 +33,7 @@ export interface NitroModelSetting extends NitroPromptSetting {
  * The response object for model init operation.
  */
 export interface NitroModelInitOptions {
-  modelFullPath: string;
+  modelPath: string;
   promptTemplate?: string;
 }
 
