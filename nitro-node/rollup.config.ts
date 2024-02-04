@@ -23,6 +23,14 @@ export default [
       include: "src/**",
     },
     plugins: [
+      replace({
+        RELEASE_URL_PREFIX: JSON.stringify(
+          "https://api.github.com/repos/janhq/nitro/releases/",
+        ),
+        TAGGED_RELEASE_URL_PREFIX: JSON.stringify(
+          "https://api.github.com/repos/janhq/nitro/releases/tags",
+        ),
+      }),
       // Allow json resolution
       json(),
       // Allow node_modules resolution, so you can use 'external' to control
