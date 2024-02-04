@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import tcpPortUsed from "tcp-port-used";
+import "isomorphic-fetch";
 import fetchRT from "fetch-retry";
 import { executableNitroFile } from "./execute";
 import {

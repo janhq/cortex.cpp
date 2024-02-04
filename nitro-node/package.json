@@ -61,6 +61,7 @@
   "dependencies": {
     "download": "^8.0.0",
     "fetch-retry": "^5.0.6",
+    "isomorphic-fetch": "^3.0.0",
     "os-utils": "^0.0.14",
     "tcp-port-used": "^1.0.2"
   },
