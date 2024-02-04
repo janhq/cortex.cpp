@@ -16,8 +16,9 @@ import { checkMagicBytes, getResourcesInfo } from "./utils";
 import { log } from "./logger";
 import { updateNvidiaInfo } from "./nvidia";
 import { promptTemplateConverter } from "./prompt";
+import crossFetch from "cross-fetch";
 // Polyfill fetch with retry
-const fetchRetry = fetchRT(fetch);
+const fetchRetry = fetchRT(globalThis.fetch ?? crossFetch);
 
 // The PORT to use for the Nitro subprocess
 const PORT = 3928;

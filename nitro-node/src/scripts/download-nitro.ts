@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import download from "download";
 import { Duplex } from "node:stream";
+import crossFetch from "cross-fetch";
 
 // Define nitro version to download in env variable ("latest" or tag "v1.2.3")
 const NITRO_VERSION = process.env.NITRO_VERSION || "latest";
@@ -20,7 +21,7 @@ const getReleaseInfo = async (taggedVersion: string): Promise<any> => {
   if (!releaseUrlPrefix) throw Error(`Invalid version: ${taggedVersion}`);
   const url = `${releaseUrlPrefix}${taggedVersion}`;
   console.log(`[Getting release info] ${url}`);
-  const response = await fetch(url, {
+  const response = await crossFetch(url, {
     headers: {
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",

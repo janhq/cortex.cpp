@@ -59,6 +59,7 @@
     "typescript": "^5.3.3"
   },
   "dependencies": {
+    "cross-fetch": "^4.0.0",
     "download": "^8.0.0",
     "fetch-retry": "^5.0.6",
     "os-utils": "^0.0.14",
