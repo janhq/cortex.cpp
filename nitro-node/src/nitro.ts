@@ -108,7 +108,15 @@ function stopModel(): Promise<NitroModelOperationResponse> {
  * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
  */
 async function runModel(
-  { modelPath, promptTemplate }: NitroModelInitOptions,
+  {
+    modelPath,
+    promptTemplate,
+    ctx_len = 2048,
+    ngl = 100,
+    cont_batching = false,
+    embedding = true,
+    cpu_threads,
+  }: NitroModelInitOptions,
   runMode?: "cpu" | "gpu",
 ): Promise<NitroModelOperationResponse> {
   // Download nitro binaries if it's not already downloaded
@@ -149,11 +157,15 @@ async function runModel(
   currentSettings = {
     ...prompt,
     llama_model_path: currentModelFile,
+    ctx_len,
+    ngl,
+    cont_batching,
+    embedding,
     // This is critical and requires real system information
-    cpu_threads: Math.max(
-      1,
-      Math.round(nitroResourceProbe.numCpuPhysicalCore / 2),
-    ),
+    cpu_threads:
+      cpu_threads && cpu_threads > 0
+        ? cpu_threads
+        : Math.max(1, Math.round(nitroResourceProbe.numCpuPhysicalCore / 2)),
   };
   return runNitroAndLoadModel(runMode);
 }
@@ -184,7 +196,7 @@ async function runNitroAndLoadModel(
       return spawnResult;
     }
     // TODO: Use this response?
-    const _loadModelResponse = await loadLLMModel(currentSettings);
+    const _loadModelResponse = await loadLLMModel(currentSettings!);
     const validationResult = await validateModelStatus();
     if (validationResult.error) {
       return validationResult;
@@ -201,7 +213,7 @@ async function runNitroAndLoadModel(
  * Loads a LLM model into the Nitro subprocess by sending a HTTP POST request.
  * @returns A Promise that resolves when the model is loaded successfully, or rejects with an error message if the model is not found or fails to load.
  */
-async function loadLLMModel(settings: any): Promise<Response> {
+async function loadLLMModel(settings: NitroModelSetting): Promise<Response> {
   // The nitro subprocess must be started before loading model
   if (!subprocess) throw Error("Calling loadLLMModel without running nitro");
 

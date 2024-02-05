@@ -33,15 +33,24 @@ export interface NitroPromptSetting {
  */
 export interface NitroModelSetting extends NitroPromptSetting {
   llama_model_path: string;
+  ctx_len: number;
+  ngl: number;
+  cont_batching: boolean;
+  embedding: boolean;
   cpu_threads: number;
 }
 
 /**
- * The response object for model init operation.
+ * The parameters for model init operation.
  */
 export interface NitroModelInitOptions {
   modelPath: string;
   promptTemplate?: string;
+  ctx_len?: number;
+  ngl?: number;
+  cont_batching?: boolean;
+  embedding?: boolean;
+  cpu_threads?: number;
 }
 
 /**

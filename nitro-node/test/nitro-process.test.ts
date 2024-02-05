@@ -166,16 +166,14 @@ describe("Manage nitro process", () => {
       await runModel({
         modelPath,
         promptTemplate: modelCfg.settings.prompt_template,
+        ctx_len: modelCfg.settings.ctx_len,
+        ngl: modelCfg.settings.ngl,
+        cont_batching: false,
+        embedding: false,
+        cpu_threads: -1, // Default to auto
       });
       // Wait 5s for nitro to start
       await sleep(5 * 1000);
-      // Load LLM model
-      await loadLLMModel({
-        llama_model_path: modelPath,
-        ctx_len: modelCfg.settings.ctx_len,
-        ngl: modelCfg.settings.ngl,
-        embedding: false,
-      });
       // Validate model status
       await validateModelStatus();
       // Arrays of all the chunked response
