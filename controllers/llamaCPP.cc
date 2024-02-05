@@ -149,7 +149,7 @@ void llamaCPP::warmupModel() {
   return;
 }
 
-void llamaCPP::chatCompletionPrelight(
+void llamaCPP::handlePrelight(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   auto resp = drogon::HttpResponse::newHttpResponse();
