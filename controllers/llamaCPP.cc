@@ -7,6 +7,13 @@
 using namespace inferences;
 using json = nlohmann::json;
 
+/**
+ * There is a need to save state of current ongoing inference status of a
+ * handler, this struct is to solve that issue
+ *
+ * @param inst Pointer to the llamaCPP instance this inference task is
+ * associated with.
+ */
 struct inferenceState {
   bool is_stopped = false;
   bool is_streaming = false;
@@ -16,13 +23,19 @@ struct inferenceState {
   inferenceState(llamaCPP *inst) : instance(inst) {}
 };
 
+/**
+ * This function is to create the smart pointer to inferenceState, hence the
+ * inferenceState will be persisting even tho the lambda in streaming might go
+ * out of scope and the handler already moved on
+ */
 std::shared_ptr<inferenceState> create_inference_state(llamaCPP *instance) {
   return std::make_shared<inferenceState>(instance);
 }
 
-// --------------------------------------------
-
-// Function to check if the model is loaded
+/**
+ * Check if model already loaded if not return message to user
+ * @param callback the function to return message to user
+ */
 void llamaCPP::checkModelLoaded(
     std::function<void(const HttpResponsePtr &)> &callback) {
   if (!llama.model_loaded_external) {
@@ -513,6 +526,36 @@ void llamaCPP::modelStatus(
   callback(resp);
   return;
 }
+void llamaCPP::loadModel(
+    const HttpRequestPtr &req,
+    std::function<void(const HttpResponsePtr &)> &&callback) {
+
+  if (llama.model_loaded_external) {
+    LOG_INFO << "model loaded";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model already loaded";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k409Conflict);
+    callback(resp);
+    return;
+  }
+
+  const auto &jsonBody = req->getJsonObject();
+  if (!loadModelImpl(jsonBody)) {
+    // Error occurred during model loading
+    Json::Value jsonResp;
+    jsonResp["message"] = "Failed to load model";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k500InternalServerError);
+    callback(resp);
+  } else {
+    // Model loaded successfully
+    Json::Value jsonResp;
+    jsonResp["message"] = "Model loaded successfully";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    callback(resp);
+  }
+}
 
 bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
@@ -608,37 +651,6 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   backgroundThread = std::thread(&llamaCPP::backgroundTask, this);
   warmupModel();
   return true;
-}
-
-void llamaCPP::loadModel(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-
-  if (llama.model_loaded_external) {
-    LOG_INFO << "model loaded";
-    Json::Value jsonResp;
-    jsonResp["message"] = "Model already loaded";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k409Conflict);
-    callback(resp);
-    return;
-  }
-
-  const auto &jsonBody = req->getJsonObject();
-  if (!loadModelImpl(jsonBody)) {
-    // Error occurred during model loading
-    Json::Value jsonResp;
-    jsonResp["message"] = "Failed to load model";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k500InternalServerError);
-    callback(resp);
-  } else {
-    // Model loaded successfully
-    Json::Value jsonResp;
-    jsonResp["message"] = "Model loaded successfully";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    callback(resp);
-  }
 }
 
 void llamaCPP::backgroundTask() {
