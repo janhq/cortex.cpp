@@ -198,13 +198,16 @@ if (!(PLATFORM in variantMapping)) {
 // Get download config for this platform
 const variantConfig: Record<string, string> = variantMapping[PLATFORM];
 // Call the download function with version and config
-export const downloadNitro = async (absBinDirPath: string) => {
+export const downloadNitro = async (
+  absBinDirPath: string,
+  version?: string,
+) => {
   // Return early without downloading if nitro binaries are already downloaded
   if (verifyDownloadedBinaries(absBinDirPath)) {
     //console.log("Nitro binaries are already downloaded!");
     return;
   }
-  const releaseInfo = await getReleaseInfo(NITRO_VERSION);
+  const releaseInfo = await getReleaseInfo(version ?? NITRO_VERSION);
   const downloadInfo = await extractDownloadInfo(releaseInfo, variantConfig);
   return await downloadBinaries(downloadInfo, absBinDirPath);
 };
