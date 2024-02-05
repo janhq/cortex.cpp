@@ -2530,35 +2530,25 @@ public:
 
   // Openai compatible path
   ADD_METHOD_TO(llamaCPP::chatCompletion, "/v1/chat/completions", Post);
-  ADD_METHOD_TO(llamaCPP::chatCompletionPrelight, "/v1/chat/completions",
-                Options);
+  ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/chat/completions", Options);
 
   ADD_METHOD_TO(llamaCPP::embedding, "/v1/embeddings", Post);
+  ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/embeddings", Options);
 
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void chatCompletion(const HttpRequestPtr &req,
                       std::function<void(const HttpResponsePtr &)> &&callback);
-  void chatCompletionPrelight(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback);
+  void handlePrelight(const HttpRequestPtr &req,
+                      std::function<void(const HttpResponsePtr &)> &&callback);
   void embedding(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void loadModel(const HttpRequestPtr &req,
                  std::function<void(const HttpResponsePtr &)> &&callback);
   void unloadModel(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
-
   void modelStatus(const HttpRequestPtr &req,
                    std::function<void(const HttpResponsePtr &)> &&callback);
-
-  bool loadModelImpl(const Json::Value &jsonBody);
-
-  void warmupModel();
-
-  void backgroundTask();
-
-  void stopBackgroundTask();
 
 private:
   llama_server_context llama;
@@ -2577,5 +2567,16 @@ private:
   std::atomic<bool> single_queue_is_busy; // This value only used under the
                                           // condition n_parallel is 1
   std::string grammar_file_content;
+
+  bool loadModelImpl(std::shared_ptr<Json::Value> jsonBody);
+  void
+  chatCompletionImpl(std::shared_ptr<Json::Value> jsonBody,
+                     std::function<void(const HttpResponsePtr &)> &callback);
+  void embeddingImpl(std::shared_ptr<Json::Value> jsonBody,
+                     std::function<void(const HttpResponsePtr &)> &callback);
+  void checkModelLoaded(std::function<void(const HttpResponsePtr &)> &callback);
+  void warmupModel();
+  void backgroundTask();
+  void stopBackgroundTask();
 };
 }; // namespace inferences
