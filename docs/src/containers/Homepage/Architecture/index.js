@@ -78,9 +78,6 @@ export default function Architecture() {
                     className="mb-4 mx-auto w-[70px]"
                   />
                   <p>Whisper.cpp</p>
-                  <p className="mt-2 font-medium bg-blue-600 inline-flex px-2 rounded-md text-sm text-white">
-                    Coming Soon
-                  </p>
                 </div>
               </div>
               <div className="border dark:border-gray-800 border-gray-300 p-4 lg:p-6 rounded-lg backdrop-blur-md">

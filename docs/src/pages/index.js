@@ -6,7 +6,6 @@ import Layout from "@theme/Layout";
 
 import GithubButtob from "@site/src/containers/GithubButton";
 
-import GetNitro from "@site/src/containers/Homepage/GetNitro";
 import Statistic from "@site/src/containers/Homepage/Statistic";
 import OpenAI from "@site/src/containers/Homepage/OpenAI";
 import Platform from "@site/src/containers/Homepage/Platform";
@@ -48,9 +47,6 @@ export default function Home() {
               <div className="mt-10">
                 <GithubButtob />
               </div>
-            </div>
-            <div className="mt-10">
-              <GetNitro />
             </div>
           </div>
 

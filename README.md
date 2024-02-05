@@ -92,21 +92,6 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 ```
 
-***OPTIONAL***: You can constrain the sampling using GBNF grammars by providing path to a grammar file
-```bash title="Nitro Inference With Grammar"
-curl http://localhost:3928/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "messages": [
-      {
-        "role": "user",
-        "content": "Who won the world series in 2020?"
-      },
-    ],
-    "grammar_file": "/path/to/grammarfile"
-  }'
-```
-
 Table of parameters
 
 | Parameter        | Type    | Description                                                  |
@@ -128,6 +113,7 @@ Table of parameters
 |`grp_attn_n`|Integer|Group attention factor in self-extend|
 |`grp_attn_w`|Integer|Group attention width in self-extend|
 |`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
+|`grammar_file`| String |You can constrain the sampling using GBNF grammars by providing path to a grammar file|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
@@ -155,37 +141,37 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.1/nitro-0.3.1-win-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.6/nitro-0.3.6-win-amd64.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.1/nitro-0.3.1-win-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.6/nitro-0.3.6-win-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.1/nitro-0.3.1-mac-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.6/nitro-0.3.6-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.1/nitro-0.3.1-mac-arm64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.6/nitro-0.3.6-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.1/nitro-0.3.1-linux-amd64.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.6/nitro-0.3.6-linux-amd64.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.1/nitro-0.3.1-linux-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/nitro/releases/download/v0.3.6/nitro-0.3.6-linux-amd64-cuda.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
@@ -194,7 +180,7 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   <tr style="text-align: center">
     <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
     <td style="text-align:center" colspan="6">
-      <a href='https://github.com/janhq/nitro/actions/runs/7701765982'>
+      <a href='https://github.com/janhq/nitro/actions/runs/7790169166'>
         <b>GitHub action artifactory</b>
       </a>
     </td>
