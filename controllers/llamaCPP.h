@@ -2573,5 +2573,7 @@ private:
   void warmupModel();
   void backgroundTask();
   void stopBackgroundTask();
+  void checkModelLoaded(const HttpRequestPtr &req,
+                        std::function<void(const HttpResponsePtr &)> &callback);
 };
 }; // namespace inferences
