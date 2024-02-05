@@ -2569,11 +2569,15 @@ private:
                                           // condition n_parallel is 1
   std::string grammar_file_content;
 
-  bool loadModelImpl(const Json::Value &jsonBody);
+  bool loadModelImpl(std::shared_ptr<Json::Value> jsonBody);
+  void
+  chatCompletionImpl(std::shared_ptr<Json::Value> jsonBody,
+                     std::function<void(const HttpResponsePtr &)> &callback);
+  void embeddingImpl(std::shared_ptr<Json::Value> jsonBody,
+                     std::function<void(const HttpResponsePtr &)> &callback);
+  void checkModelLoaded(std::function<void(const HttpResponsePtr &)> &callback);
   void warmupModel();
   void backgroundTask();
   void stopBackgroundTask();
-  void checkModelLoaded(const HttpRequestPtr &req,
-                        std::function<void(const HttpResponsePtr &)> &callback);
 };
 }; // namespace inferences
