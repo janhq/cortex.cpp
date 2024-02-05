@@ -2,7 +2,6 @@
 #include "llama.h"
 #include "log.h"
 #include "utils/nitro_utils.h"
-#include <algorithm>
 
 using namespace inferences;
 using json = nlohmann::json;
