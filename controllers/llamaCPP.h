@@ -2511,7 +2511,7 @@ append_to_generated_text_from_generated_token_probs(llama_server_context &llama,
 using namespace drogon;
 
 namespace inferences {
-class llamaCPP : public drogon::HttpController<llamaCPP>, public ChatProvider {
+class llamaCPP : public ChatProvider, public drogon::HttpController<llamaCPP> {
 public:
   llamaCPP();
   ~llamaCPP();
