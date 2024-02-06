@@ -132,6 +132,15 @@ std::string create_return_json(const std::string &id, const std::string &model,
   return Json::writeString(writer, root);
 }
 
+llamaCPP::llamaCPP() {
+  // Some default values for now below
+  log_disable(); // Disable the log to file feature, reduce bloat for
+  // target
+  // system ()
+};
+
+llamaCPP::~llamaCPP() { stopBackgroundTask(); }
+
 void llamaCPP::warmupModel() {
   json pseudo;
 
@@ -148,18 +157,7 @@ void llamaCPP::warmupModel() {
   return;
 }
 
-void llamaCPP::handlePrelight(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-  auto resp = drogon::HttpResponse::newHttpResponse();
-  resp->setStatusCode(drogon::HttpStatusCode::k200OK);
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-  resp->addHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  resp->addHeader("Access-Control-Allow-Headers", "*");
-  callback(resp);
-}
-
-void llamaCPP::chatCompletion(
+void llamaCPP::inference(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
@@ -167,10 +165,10 @@ void llamaCPP::chatCompletion(
   // Check if model is loaded
   checkModelLoaded(callback);
 
-  chatCompletionImpl(jsonBody, callback);
+  inferenceImpl(jsonBody, callback);
 }
 
-void llamaCPP::chatCompletionImpl(
+void llamaCPP::inferenceImpl(
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(const HttpResponsePtr &)> &callback) {
 
