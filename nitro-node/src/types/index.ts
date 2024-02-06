@@ -40,10 +40,6 @@ export interface NitroProcessStdioHanler {
   stderr: (_: stream.Readable | null | undefined) => void;
 }
 
-export interface NitroProcessCloseHandler {
-  (code: number, signal: string): void;
-}
-
 /**
  * Setting for prompts when inferencing with Nitro
  */
