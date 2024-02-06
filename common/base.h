@@ -3,11 +3,6 @@
 
 using namespace drogon;
 
-#pragma once
-#include <drogon/HttpController.h>
-
-using namespace drogon;
-
 class BaseProvider {
 public:
   virtual ~BaseProvider() {}
