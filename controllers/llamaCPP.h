@@ -24,6 +24,7 @@
 #define CPPHTTPLIB_NO_EXCEPTIONS 1
 #endif
 
+#include "common/base.h"
 #include "utils/json.hpp"
 
 // auto generated files (update with ./deps.sh)
@@ -2510,26 +2511,20 @@ append_to_generated_text_from_generated_token_probs(llama_server_context &llama,
 using namespace drogon;
 
 namespace inferences {
-class llamaCPP : public drogon::HttpController<llamaCPP> {
+class llamaCPP : public drogon::HttpController<llamaCPP>, public ChatProvider {
 public:
-  llamaCPP() {
-    // Some default values for now below
-    log_disable(); // Disable the log to file feature, reduce bloat for
-    // target
-    // system ()
-  }
-
-  ~llamaCPP() { stopBackgroundTask(); }
+  llamaCPP();
+  ~llamaCPP();
   METHOD_LIST_BEGIN
   // list path definitions here;
-  METHOD_ADD(llamaCPP::chatCompletion, "chat_completion", Post);
+  METHOD_ADD(llamaCPP::inference, "chat_completion", Post);
   METHOD_ADD(llamaCPP::embedding, "embedding", Post);
   METHOD_ADD(llamaCPP::loadModel, "loadmodel", Post);
   METHOD_ADD(llamaCPP::unloadModel, "unloadmodel", Get);
   METHOD_ADD(llamaCPP::modelStatus, "modelstatus", Get);
 
   // Openai compatible path
-  ADD_METHOD_TO(llamaCPP::chatCompletion, "/v1/chat/completions", Post);
+  ADD_METHOD_TO(llamaCPP::inference, "/v1/chat/completions", Post);
   ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/chat/completions", Options);
 
   ADD_METHOD_TO(llamaCPP::embedding, "/v1/embeddings", Post);
@@ -2537,18 +2532,21 @@ public:
 
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
-  void chatCompletion(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback);
-  void handlePrelight(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback);
-  void embedding(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback);
-  void loadModel(const HttpRequestPtr &req,
-                 std::function<void(const HttpResponsePtr &)> &&callback);
-  void unloadModel(const HttpRequestPtr &req,
-                   std::function<void(const HttpResponsePtr &)> &&callback);
-  void modelStatus(const HttpRequestPtr &req,
-                   std::function<void(const HttpResponsePtr &)> &&callback);
+  void
+  inference(const HttpRequestPtr &req,
+            std::function<void(const HttpResponsePtr &)> &&callback) override;
+  void
+  embedding(const HttpRequestPtr &req,
+            std::function<void(const HttpResponsePtr &)> &&callback) override;
+  void
+  loadModel(const HttpRequestPtr &req,
+            std::function<void(const HttpResponsePtr &)> &&callback) override;
+  void
+  unloadModel(const HttpRequestPtr &req,
+              std::function<void(const HttpResponsePtr &)> &&callback) override;
+  void
+  modelStatus(const HttpRequestPtr &req,
+              std::function<void(const HttpResponsePtr &)> &&callback) override;
 
 private:
   llama_server_context llama;
@@ -2569,8 +2567,7 @@ private:
   std::string grammar_file_content;
 
   bool loadModelImpl(std::shared_ptr<Json::Value> jsonBody);
-  void
-  chatCompletionImpl(std::shared_ptr<Json::Value> jsonBody,
+  void inferenceImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr &)> &callback);
   void embeddingImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr &)> &callback);
