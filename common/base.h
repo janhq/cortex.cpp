@@ -27,10 +27,6 @@ public:
   virtual void
   modelStatus(const HttpRequestPtr &req,
               std::function<void(const HttpResponsePtr &)> &&callback) = 0;
-
-  // Additional methods
-  void handlePrelight(const HttpRequestPtr &req,
-                      std::function<void(const HttpResponsePtr &)> &&callback);
 };
 
 class ChatProvider : public BaseProvider {

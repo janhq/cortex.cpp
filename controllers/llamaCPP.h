@@ -2511,7 +2511,7 @@ append_to_generated_text_from_generated_token_probs(llama_server_context &llama,
 using namespace drogon;
 
 namespace inferences {
-class llamaCPP : public ChatProvider, public drogon::HttpController<llamaCPP> {
+class llamaCPP : public drogon::HttpController<llamaCPP>, public ChatProvider {
 public:
   llamaCPP();
   ~llamaCPP();
@@ -2525,10 +2525,10 @@ public:
 
   // Openai compatible path
   ADD_METHOD_TO(llamaCPP::inference, "/v1/chat/completions", Post);
-  ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/chat/completions", Options);
+  // ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/chat/completions", Options); NOTE: prelight will be added back when browser support is properly planned
 
   ADD_METHOD_TO(llamaCPP::embedding, "/v1/embeddings", Post);
-  ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/embeddings", Options);
+  //ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/embeddings", Options);
 
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
