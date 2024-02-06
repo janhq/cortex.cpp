@@ -1,3 +1,7 @@
+import { ChildProcessWithoutNullStreams } from "node:child_process";
+import net from "node:net";
+import stream from "node:stream";
+
 /**
  * The response from the initModel function.
  * @property error - An error message if the model fails to load.
@@ -17,6 +21,27 @@ export interface ResourcesInfo {
  */
 export interface NitroProcessInfo {
   isRunning: boolean;
+}
+
+export interface NitroProcessEventHandler {
+  close?: (code: number, signal: string) => void;
+  disconnect?: () => void;
+  error?: (e: Error) => void;
+  exit?: (code: number, signal: string) => void;
+  message?: (
+    message: object,
+    sendHandle: net.Socket | net.Server | undefined,
+  ) => void;
+  spawn?: () => void;
+}
+
+export interface NitroProcessStdioHanler {
+  stdout: (_: stream.Readable | null | undefined) => void;
+  stderr: (_: stream.Readable | null | undefined) => void;
+}
+
+export interface NitroProcessCloseHandler {
+  (code: number, signal: string): void;
 }
 
 /**

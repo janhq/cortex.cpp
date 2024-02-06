@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import stream from "node:stream";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import tcpPortUsed from "tcp-port-used";
 import fetchRT from "fetch-retry";
@@ -10,6 +11,8 @@ import {
   NitroModelOperationResponse,
   NitroModelInitOptions,
   NitroProcessInfo,
+  NitroProcessEventHandler,
+  NitroProcessStdioHanler,
 } from "./types";
 import { downloadNitro } from "./scripts";
 import { checkMagicBytes, getResourcesInfo } from "./utils";
@@ -50,6 +53,28 @@ const getNitroProcessInfo = (subprocess: any): NitroProcessInfo => ({
   isRunning: subprocess != null,
 });
 const getCurrentNitroProcessInfo = () => getNitroProcessInfo(subprocess);
+// Default event handler: do nothing
+let processEventHandler: NitroProcessEventHandler = {};
+// Default stdio handler: log stdout and stderr
+let processStdioHandler: NitroProcessStdioHanler = {
+  stdout: (stdout: stream.Readable | null | undefined) => {
+    stdout?.on("data", (data: any) => {
+      log(`[NITRO]::Debug: ${data}`);
+    });
+  },
+  stderr: (stderr: stream.Readable | null | undefined) => {
+    stderr?.on("data", (data: any) => {
+      log(`[NITRO]::Error: ${data}`);
+    });
+  },
+};
+
+const registerEventHandler = (handler: NitroProcessEventHandler) => {
+  processEventHandler = handler;
+};
+const registerStdioHandler = (handler: NitroProcessStdioHanler) => {
+  processStdioHandler = handler;
+};
 
 // The current model file url
 let currentModelFile: string = "";
@@ -378,16 +403,16 @@ function spawnNitroProcess(
     );
 
     // Handle subprocess output
-    subprocess.stdout.on("data", (data: any) => {
-      log(`[NITRO]::Debug: ${data}`);
-    });
+    processStdioHandler.stdout(subprocess.stdout);
+    processStdioHandler.stderr(subprocess.stderr);
+    // Handle events
+    let evt: keyof NitroProcessEventHandler;
+    for (evt in processEventHandler) {
+      subprocess.on(evt, processEventHandler[evt]!);
+    }
 
-    subprocess.stderr.on("data", (data: any) => {
-      log(`[NITRO]::Error: ${data}`);
-    });
-
-    subprocess.on("close", (code: any) => {
-      log(`[NITRO]::Debug: Nitro exited with code: ${code}`);
+    subprocess.on("close", (code: number, signal: string) => {
+      log(`[NITRO]::Debug: Nitro exited with code: ${code}, signal: ${signal}`);
       subprocess = undefined;
       reject(`child process exited with code ${code}`);
     });
@@ -411,6 +436,8 @@ export {
   getCurrentNitroProcessInfo,
   getBinPath,
   setBinPath,
+  registerStdioHandler,
+  registerEventHandler,
   initialize,
   stopModel,
   runModel,
