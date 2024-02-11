@@ -2571,7 +2571,7 @@ private:
                      std::function<void(const HttpResponsePtr &)> &callback);
   void embeddingImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr &)> &callback);
-  void checkModelLoaded(std::function<void(const HttpResponsePtr &)> &callback);
+  bool checkModelLoaded(std::function<void(const HttpResponsePtr &)> &callback);
   void warmupModel();
   void backgroundTask();
   void stopBackgroundTask();
