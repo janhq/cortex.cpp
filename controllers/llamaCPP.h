@@ -26,6 +26,7 @@
 
 #include "common/base.h"
 #include "utils/json.hpp"
+#include <trantor/utils/ConcurrentTaskQueue.h>
 
 // auto generated files (update with ./deps.sh)
 
@@ -2562,9 +2563,12 @@ private:
   bool caching_enabled;
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
-  std::atomic<bool> single_queue_is_busy; // This value only used under the
-                                          // condition n_parallel is 1
   std::string grammar_file_content;
+
+  /**
+   * Queue to handle the inference tasks
+   */
+  trantor::ConcurrentTaskQueue *queue;
 
   bool loadModelImpl(std::shared_ptr<Json::Value> jsonBody);
   void inferenceImpl(std::shared_ptr<Json::Value> jsonBody,
