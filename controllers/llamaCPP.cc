@@ -338,12 +338,10 @@ void llamaCPP::inferenceImpl(
 
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
-        state->instance->llama.request_cancel(state->task_id);
         state->inferenceStatus = FINISHED;
         return 0;
       }
    
-
       task_result result = state->instance->llama.next_result(state->task_id);
       if (!result.error) {
         const std::string to_send = result.result_json["content"];
@@ -367,7 +365,6 @@ void llamaCPP::inferenceImpl(
           std::size_t nRead = std::min(str.size(), nBuffSize);
           memcpy(pBuffer, str.data(), nRead);
           LOG_INFO << "reached result stop";
-          state->instance->llama.request_cancel(state->task_id);
           state->inferenceStatus = FINISHED;
         }
         
@@ -401,11 +398,13 @@ void llamaCPP::inferenceImpl(
         if(state->inferenceStatus == PENDING) {
           retries += 1;
         }
-        LOG_INFO << "Wait for task to be released:" << state->task_id;
-        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        if(state->inferenceStatus != RUNNING)
+          LOG_INFO << "Wait for task to be released:" << state->task_id;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
+      // Request completed, release it
+      state->instance->llama.request_cancel(state->task_id);
     });
-    return;
   } else {
     Json::Value respData;
     auto resp = nitro_utils::nitroHttpResponse();
@@ -424,11 +423,9 @@ void llamaCPP::inferenceImpl(
                                     prompt_tokens, predicted_tokens);
         resp->setBody(full_return);
       } else {
-        resp->setBody("internal error during inference");
-        return;
+        resp->setBody("Internal error during inference");
       }
       callback(resp);
-      return;
     }
   }
 }
