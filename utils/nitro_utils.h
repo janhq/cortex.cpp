@@ -239,8 +239,8 @@ inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value &data) {
 inline drogon::HttpResponsePtr nitroStreamResponse(
     const std::function<std::size_t(char *, std::size_t)> &callback,
     const std::string &attachmentFileName = "") {
-  auto resp =
-      drogon::HttpResponse::newStreamResponse(callback, attachmentFileName);
+  auto resp = drogon::HttpResponse::newStreamResponse(
+      callback, attachmentFileName, drogon::CT_NONE, "text/event-stream");
 #ifdef ALLOW_ALL_CORS
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
