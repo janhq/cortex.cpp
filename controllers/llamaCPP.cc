@@ -10,11 +10,7 @@ using json = nlohmann::json;
 /**
  * The state of the inference task
  */
-enum InferenceStatus {
-  PENDING,
-  RUNNING,
-  FINISHED
-};
+enum InferenceStatus { PENDING, RUNNING, FINISHED };
 
 /**
  * There is a need to save state of current ongoing inference status of a
@@ -141,7 +137,9 @@ std::string create_return_json(const std::string &id, const std::string &model,
   return Json::writeString(writer, root);
 }
 
-llamaCPP::llamaCPP(): queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel, "llamaCPP")) {
+llamaCPP::llamaCPP()
+    : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
+                                             "llamaCPP")) {
   // Some default values for now below
   log_disable(); // Disable the log to file feature, reduce bloat for
   // target
@@ -172,7 +170,7 @@ void llamaCPP::inference(
 
   const auto &jsonBody = req->getJsonObject();
   // Check if model is loaded
-  if(checkModelLoaded(callback)) {
+  if (checkModelLoaded(callback)) {
     // Model is loaded
     // Do Inference
     inferenceImpl(jsonBody, callback);
@@ -329,8 +327,7 @@ void llamaCPP::inferenceImpl(
     auto state = create_inference_state(this);
     auto chunked_content_provider =
         [state, data](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
-
-      if(state->inferenceStatus == PENDING) {
+      if (state->inferenceStatus == PENDING) {
         state->inferenceStatus = RUNNING;
       } else if (state->inferenceStatus == FINISHED) {
         return 0;
@@ -341,7 +338,7 @@ void llamaCPP::inferenceImpl(
         state->inferenceStatus = FINISHED;
         return 0;
       }
-   
+
       task_result result = state->instance->llama.next_result(state->task_id);
       if (!result.error) {
         const std::string to_send = result.result_json["content"];
@@ -367,10 +364,10 @@ void llamaCPP::inferenceImpl(
           LOG_INFO << "reached result stop";
           state->inferenceStatus = FINISHED;
         }
-        
+
         // Make sure nBufferSize is not zero
         // Otherwise it stop streaming
-        if(!nRead) {
+        if (!nRead) {
           state->inferenceStatus = FINISHED;
         }
 
@@ -380,31 +377,33 @@ void llamaCPP::inferenceImpl(
       return 0;
     };
     // Queued task
-    state->instance->queue->runTaskInQueue([callback, state, data,
-                      chunked_content_provider]() {
-      state->task_id =
-          state->instance->llama.request_completion(data, false, false, -1);
+    state->instance->queue->runTaskInQueue(
+        [callback, state, data, chunked_content_provider]() {
+          state->task_id =
+              state->instance->llama.request_completion(data, false, false, -1);
 
-      // Start streaming response
-      auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
-                                                   "chat_completions.txt");
-      callback(resp);
+          // Start streaming response
+          auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
+                                                       "chat_completions.txt");
+          callback(resp);
 
-      int retries = 0;
+          int retries = 0;
 
-      // Since this is an async task, we will wait for the task to be completed
-      while (state->inferenceStatus != FINISHED && retries < 10) {
-        // Should wait chunked_content_provider lambda to be called within 3s
-        if(state->inferenceStatus == PENDING) {
-          retries += 1;
-        }
-        if(state->inferenceStatus != RUNNING)
-          LOG_INFO << "Wait for task to be released:" << state->task_id;
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-      }
-      // Request completed, release it
-      state->instance->llama.request_cancel(state->task_id);
-    });
+          // Since this is an async task, we will wait for the task to be
+          // completed
+          while (state->inferenceStatus != FINISHED && retries < 10) {
+            // Should wait chunked_content_provider lambda to be called within
+            // 3s
+            if (state->inferenceStatus == PENDING) {
+              retries += 1;
+            }
+            if (state->inferenceStatus != RUNNING)
+              LOG_INFO << "Wait for task to be released:" << state->task_id;
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+          }
+          // Request completed, release it
+          state->instance->llama.request_cancel(state->task_id);
+        });
   } else {
     Json::Value respData;
     auto resp = nitro_utils::nitroHttpResponse();
@@ -434,7 +433,7 @@ void llamaCPP::embedding(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
   // Check if model is loaded
-  if(checkModelLoaded(callback)) {
+  if (checkModelLoaded(callback)) {
     // Model is loaded
     const auto &jsonBody = req->getJsonObject();
     // Run embedding
