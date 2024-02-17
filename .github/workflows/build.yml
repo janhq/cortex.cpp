@@ -751,7 +751,6 @@ jobs:
         macOS-amd64-build,
         windows-amd64-build,
         windows-amd64-cuda-build,
-        macOS-amd64-vulkan-build,
         ubuntu-amd64-vulkan-build,
         windows-amd64-vulkan-build,
       ]
@@ -775,7 +774,6 @@ jobs:
         macOS-amd64-build,
         windows-amd64-build,
         windows-amd64-cuda-build,
-        macOS-amd64-vulkan-build,
         ubuntu-amd64-vulkan-build,
         windows-amd64-vulkan-build,
       ]
@@ -814,7 +812,6 @@ jobs:
         macOS-amd64-build,
         windows-amd64-build,
         windows-amd64-cuda-build,
-        macOS-amd64-vulkan-build,
         ubuntu-amd64-vulkan-build,
         windows-amd64-vulkan-build,
       ]
