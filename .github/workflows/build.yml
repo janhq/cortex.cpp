@@ -285,6 +285,7 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
+          cp "$CUDA_PATH/lib64/libcudart.so $CUDA_PATH/lib64/libcublasLt.so $CUDA_PATH/lib64/libcublas.so" nitro/
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -795,6 +796,12 @@ jobs:
           robocopy .github\patches\windows\ .\build\Release\ vcruntime140_1.dll
           robocopy .github\patches\windows\ .\build\Release\ vcruntime140.dll
           robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
+          robocopy "$env:CUDA_PATH/bin/" 
+          IF "${{ matrix.cuda }}" == "12-0" (
+            robocopy "$env:CUDA_PATH/bin" .\build\Release\ cudart64_12.dll cublasLt64_12.dll cublas64_12.dll 
+          ) ELSE (
+            robocopy "$env:CUDA_PATH/bin" .\build\Release\ cudart64_11.dll cublasLt64_11.dll cublas64_11.dll 
+          )
           dotnet tool install --global AzureSignTool
           %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
