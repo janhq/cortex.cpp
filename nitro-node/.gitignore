@@ -1,0 +1,19 @@
+.vscode
+.env
+
+# Jan inference
+.yarn
+node_modules
+*.tgz
+yarn.lock
+dist
+build
+.DS_Store
+package-lock.json
+
+*.log
+
+# Nitro binary directory
+bin/
+# Locally downloaded model for testing
+test/test_assets/*.gguf
