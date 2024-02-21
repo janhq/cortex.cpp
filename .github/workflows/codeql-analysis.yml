@@ -34,6 +34,8 @@ on:
         "!docs/**",
         "!.gitignore",
         "!README.md",
+        "!.github/scripts/nitro-node/**",
+        "!nitro-node/**",
       ]
   pull_request:
     types: [opened, synchronize, reopened]
@@ -55,6 +57,8 @@ on:
         "!docs/**",
         "!.gitignore",
         "!README.md",
+        "!.github/scripts/nitro-node/**",
+        "!nitro-node/**",
       ]
 
 jobs:
@@ -96,7 +100,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake .. 
+          cmake ..
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 

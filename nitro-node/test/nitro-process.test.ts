@@ -183,9 +183,8 @@ describe("Manage nitro process", () => {
         {
           messages: [
             {
-              content:
-                "You are a good productivity assistant. You help user with what they are asking in Markdown format . For responses that contain code, you must use ``` with the appropriate coding language to help display the code to user correctly.",
-              role: "assistant",
+              content: "You are a good assistant.",
+              role: "system",
             },
             {
               content: "Please give me a hello world code in cpp",
@@ -203,12 +202,18 @@ describe("Manage nitro process", () => {
         },
         new WritableStream({
           write(chunk: string) {
-            const data = chunk.replace(/^\s*data:\s*/, "").trim();
-            // Stop at [DONE] message
-            if (data.match(/\[DONE\]/)) {
-              return;
+            const parts = chunk
+              .split("\n")
+              .filter((p) => Boolean(p.trim().length));
+            for (const part of parts) {
+              const data = part.replace(/^\s*data:\s*/, "").trim();
+              // Stop at [DONE] message
+              if (data.match(/\[DONE\]/)) {
+                return;
+              }
+              // Parse the streamed content
+              streamedContent.push(JSON.parse(data));
             }
-            streamedContent.push(JSON.parse(data));
           },
           //close() {},
           //abort(_err) {}

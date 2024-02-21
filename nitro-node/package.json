@@ -9,6 +9,7 @@
   "license": "AGPL-3.0",
   "scripts": {
     "test": "jest --verbose --detectOpenHandles",
+    "test:ci": "jest --verbose --detectOpenHandles --runInBand",
     "build": "tsc --module commonjs && rollup -c rollup.config.ts",
     "predownloadnitro": "npm run build",
     "downloadnitro": "node dist/scripts/index.cjs",
