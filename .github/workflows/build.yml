@@ -210,7 +210,7 @@ jobs:
           ldd --version
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DLLAMA_NATIVE=OFF -DLLAMA_VULKAN=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          cmake -DLLAMA_NATIVE=OFF -DLLAMA_VULKAN=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           make -j $(nproc)
           ls -la
 
@@ -499,7 +499,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_VULKAN=OFF -DLLAMA_METAL=OFF .. 
+          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_VULKAN=ON -DLLAMA_METAL=OFF .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 
