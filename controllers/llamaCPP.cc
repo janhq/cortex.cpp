@@ -154,13 +154,16 @@ void llamaCPP::warmupModel() {
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
-  const int task_id = llama.request_completion(pseudo, false, false, -1);
+  const int task_id = llama.queue_tasks.get_new_id();
+  llama.queue_results.add_waiting_task_id(task_id);
+  llama.request_completion(task_id, pseudo, false, false, -1);
   std::string completion_text;
-  task_result result = llama.next_result(task_id);
+  task_result result = llama.queue_results.recv(task_id);
   if (!result.error && result.stop) {
     LOG_INFO << result.result_json.dump(-1, ' ', false,
                                         json::error_handler_t::replace);
   }
+  llama.queue_results.remove_waiting_task_id(task_id);
   return;
 }
 
@@ -339,7 +342,8 @@ void llamaCPP::inferenceImpl(
         return 0;
       }
 
-      task_result result = state->instance->llama.next_result(state->task_id);
+      task_result result =
+          state->instance->llama.queue_results.recv(state->task_id);
       if (!result.error) {
         const std::string to_send = result.result_json["content"];
         const std::string str =
@@ -358,7 +362,6 @@ void llamaCPP::inferenceImpl(
                                  "", "stop") +
               "\n\n" + "data: [DONE]" + "\n\n";
 
-          LOG_VERBOSE("data stream", {{"to_send", str}});
           std::size_t nRead = std::min(str.size(), nBuffSize);
           memcpy(pBuffer, str.data(), nRead);
           LOG_INFO << "reached result stop";
@@ -377,41 +380,45 @@ void llamaCPP::inferenceImpl(
       return 0;
     };
     // Queued task
-    state->instance->queue->runTaskInQueue(
-        [callback, state, data, chunked_content_provider]() {
-          state->task_id =
-              state->instance->llama.request_completion(data, false, false, -1);
+    state->instance->queue->runTaskInQueue([callback, state, data,
+                                            chunked_content_provider]() {
+      state->task_id = state->instance->llama.queue_tasks.get_new_id();
+      state->instance->llama.queue_results.add_waiting_task_id(state->task_id);
+      state->instance->llama.request_completion(state->task_id, data, false,
+                                                false, -1);
 
-          // Start streaming response
-          auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
-                                                       "chat_completions.txt");
-          callback(resp);
+      // Start streaming response
+      auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
+                                                   "chat_completions.txt");
+      callback(resp);
 
-          int retries = 0;
+      int retries = 0;
 
-          // Since this is an async task, we will wait for the task to be
-          // completed
-          while (state->inferenceStatus != FINISHED && retries < 10) {
-            // Should wait chunked_content_provider lambda to be called within
-            // 3s
-            if (state->inferenceStatus == PENDING) {
-              retries += 1;
-            }
-            if (state->inferenceStatus != RUNNING)
-              LOG_INFO << "Wait for task to be released:" << state->task_id;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-          // Request completed, release it
-          state->instance->llama.request_cancel(state->task_id);
-        });
+      // Since this is an async task, we will wait for the task to be
+      // completed
+      while (state->inferenceStatus != FINISHED && retries < 10) {
+        // Should wait chunked_content_provider lambda to be called within
+        // 3s
+        if (state->inferenceStatus == PENDING) {
+          retries += 1;
+        }
+        if (state->inferenceStatus != RUNNING)
+          LOG_INFO << "Wait for task to be released:" << state->task_id;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      // Request completed, release it
+      state->instance->llama.request_cancel(state->task_id);
+    });
   } else {
     Json::Value respData;
     auto resp = nitro_utils::nitroHttpResponse();
-    int task_id = llama.request_completion(data, false, false, -1);
+    int task_id = llama.queue_tasks.get_new_id();
+    llama.queue_results.add_waiting_task_id(task_id);
+    llama.request_completion(task_id, data, false, false, -1);
     LOG_INFO << "sent the non stream, waiting for respone";
     if (!json_value(data, "stream", false)) {
       std::string completion_text;
-      task_result result = llama.next_result(task_id);
+      task_result result = llama.queue_results.recv(task_id);
       LOG_INFO << "Here is the result:" << result.error;
       if (!result.error && result.stop) {
         int prompt_tokens = result.result_json["tokens_evaluated"];
@@ -456,19 +463,24 @@ void llamaCPP::embeddingImpl(
       const Json::Value &input = (*jsonBody)["input"];
       if (input.isString()) {
         // Process the single string input
-        state->task_id = llama.request_completion(
-            {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
-        task_result result = llama.next_result(state->task_id);
+        state->task_id = llama.queue_tasks.get_new_id();
+        llama.queue_results.add_waiting_task_id(state->task_id);
+        llama.request_completion(
+            state->task_id, {{"prompt", input.asString()}, {"n_predict", 0}},
+            false, false, -1);
+        task_result result = llama.queue_results.recv(state->task_id);
         std::vector<float> embedding_result = result.result_json["embedding"];
         responseData.append(create_embedding_payload(embedding_result, 0));
       } else if (input.isArray()) {
         // Process each element in the array input
         for (const auto &elem : input) {
           if (elem.isString()) {
-            const int task_id = llama.request_completion(
-                {{"prompt", elem.asString()}, {"n_predict", 0}}, false, true,
-                -1);
-            task_result result = llama.next_result(task_id);
+            const int task_id = llama.queue_tasks.get_new_id();
+            llama.queue_results.add_waiting_task_id(task_id);
+            llama.request_completion(
+                task_id, {{"prompt", elem.asString()}, {"n_predict", 0}}, false,
+                true, -1);
+            task_result result = llama.queue_results.recv(task_id);
             std::vector<float> embedding_result =
                 result.result_json["embedding"];
             responseData.append(create_embedding_payload(embedding_result, 0));
@@ -519,7 +531,7 @@ void llamaCPP::modelStatus(
   bool is_model_loaded = llama.model_loaded_external;
   if (is_model_loaded) {
     jsonResp["model_loaded"] = is_model_loaded;
-    jsonResp["model_data"] = llama.get_model_props().dump();
+    jsonResp["model_data"] = "";
   } else {
     jsonResp["model_loaded"] = is_model_loaded;
   }
@@ -630,7 +642,7 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.model_alias = params.model;
   }
 
-  llama_backend_init(params.numa);
+  llama_backend_init();
 
   // LOG_INFO_LLAMA("build info",
   //                {{"build", BUILD_NUMBER}, {"commit", BUILD_COMMIT}});
@@ -676,7 +688,6 @@ void llamaCPP::backgroundTask() {
 void llamaCPP::stopBackgroundTask() {
   if (llama.model_loaded_external) {
     llama.model_loaded_external = false;
-    llama.condition_tasks.notify_one();
     LOG_INFO << "changed to false";
     if (backgroundThread.joinable()) {
       backgroundThread.join();
