@@ -630,7 +630,7 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.model_alias = params.model;
   }
 
-  llama_backend_init(params.numa);
+  llama_backend_init();
 
   // LOG_INFO_LLAMA("build info",
   //                {{"build", BUILD_NUMBER}, {"commit", BUILD_COMMIT}});
