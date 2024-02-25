@@ -10,7 +10,7 @@ using json = nlohmann::json;
 /**
  * The state of the inference task
  */
-enum InferenceStatus { PENDING, RUNNING, FINISHED };
+enum InferenceStatus { PENDING, RUNNING, EOS, FINISHED };
 
 /**
  * There is a need to save state of current ongoing inference status of a
@@ -21,7 +21,7 @@ enum InferenceStatus { PENDING, RUNNING, FINISHED };
  */
 struct inferenceState {
   int task_id;
-  InferenceStatus inferenceStatus = PENDING;
+  InferenceStatus inference_status = PENDING;
   llamaCPP *instance;
 
   inferenceState(llamaCPP *inst) : instance(inst) {}
@@ -104,14 +104,13 @@ std::string create_full_return_json(const std::string &id,
   root["usage"] = usage;
 
   Json::StreamWriterBuilder writer;
-  writer["indentation"] = ""; // Compact output
+  writer["indentation"] = "";  // Compact output
   return Json::writeString(writer, root);
 }
 
 std::string create_return_json(const std::string &id, const std::string &model,
                                const std::string &content,
                                Json::Value finish_reason = Json::Value()) {
-
   Json::Value root;
 
   root["id"] = id;
@@ -132,8 +131,8 @@ std::string create_return_json(const std::string &id, const std::string &model,
   root["choices"] = choicesArray;
 
   Json::StreamWriterBuilder writer;
-  writer["indentation"] = ""; // This sets the indentation to an empty string,
-                              // producing compact output.
+  writer["indentation"] = "";  // This sets the indentation to an empty string,
+                               // producing compact output.
   return Json::writeString(writer, root);
 }
 
@@ -141,7 +140,7 @@ llamaCPP::llamaCPP()
     : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
                                              "llamaCPP")) {
   // Some default values for now below
-  log_disable(); // Disable the log to file feature, reduce bloat for
+  log_disable();  // Disable the log to file feature, reduce bloat for
   // target
   // system ()
 };
@@ -167,7 +166,6 @@ void llamaCPP::warmupModel() {
 void llamaCPP::inference(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-
   const auto &jsonBody = req->getJsonObject();
   // Check if model is loaded
   if (checkModelLoaded(callback)) {
@@ -180,7 +178,6 @@ void llamaCPP::inference(
 void llamaCPP::inferenceImpl(
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(const HttpResponsePtr &)> &callback) {
-
   std::string formatted_output = pre_prompt;
 
   json data;
@@ -218,7 +215,6 @@ void llamaCPP::inferenceImpl(
     };
 
     if (!llama.multimodal) {
-
       for (const auto &message : messages) {
         std::string input_role = message["role"].asString();
         std::string role;
@@ -243,7 +239,6 @@ void llamaCPP::inferenceImpl(
       }
       formatted_output += ai_prompt;
     } else {
-
       data["image_data"] = json::array();
       for (const auto &message : messages) {
         std::string input_role = message["role"].asString();
@@ -327,16 +322,31 @@ void llamaCPP::inferenceImpl(
     auto state = create_inference_state(this);
     auto chunked_content_provider =
         [state, data](char *pBuffer, std::size_t nBuffSize) -> std::size_t {
-      if (state->inferenceStatus == PENDING) {
-        state->inferenceStatus = RUNNING;
-      } else if (state->inferenceStatus == FINISHED) {
+      if (state->inference_status == PENDING) {
+        state->inference_status = RUNNING;
+      } else if (state->inference_status == FINISHED) {
         return 0;
       }
 
       if (!pBuffer) {
         LOG_INFO << "Connection closed or buffer is null. Reset context";
-        state->inferenceStatus = FINISHED;
+        state->inference_status = FINISHED;
         return 0;
+      }
+
+      if (state->inference_status == EOS) {
+        LOG_INFO << "End of result";
+        const std::string str =
+            "data: " +
+            create_return_json(nitro_utils::generate_random_string(20), "_", "",
+                               "stop") +
+            "\n\n" + "data: [DONE]" + "\n\n";
+
+        LOG_VERBOSE("data stream", {{"to_send", str}});
+        std::size_t nRead = std::min(str.size(), nBuffSize);
+        memcpy(pBuffer, str.data(), nRead);
+        state->inference_status = FINISHED;
+        return nRead;
       }
 
       task_result result = state->instance->llama.next_result(state->task_id);
@@ -352,28 +362,22 @@ void llamaCPP::inferenceImpl(
         memcpy(pBuffer, str.data(), nRead);
 
         if (result.stop) {
-          const std::string str =
-              "data: " +
-              create_return_json(nitro_utils::generate_random_string(20), "_",
-                                 "", "stop") +
-              "\n\n" + "data: [DONE]" + "\n\n";
-
-          LOG_VERBOSE("data stream", {{"to_send", str}});
-          std::size_t nRead = std::min(str.size(), nBuffSize);
-          memcpy(pBuffer, str.data(), nRead);
           LOG_INFO << "reached result stop";
-          state->inferenceStatus = FINISHED;
+          state->inference_status = EOS;
+          return nRead;
         }
 
         // Make sure nBufferSize is not zero
         // Otherwise it stop streaming
         if (!nRead) {
-          state->inferenceStatus = FINISHED;
+          state->inference_status = FINISHED;
         }
 
         return nRead;
+      } else {
+        LOG_INFO << "Error during inference";
       }
-      state->inferenceStatus = FINISHED;
+      state->inference_status = FINISHED;
       return 0;
     };
     // Queued task
@@ -391,16 +395,17 @@ void llamaCPP::inferenceImpl(
 
           // Since this is an async task, we will wait for the task to be
           // completed
-          while (state->inferenceStatus != FINISHED && retries < 10) {
+          while (state->inference_status != FINISHED && retries < 10) {
             // Should wait chunked_content_provider lambda to be called within
             // 3s
-            if (state->inferenceStatus == PENDING) {
+            if (state->inference_status == PENDING) {
               retries += 1;
             }
-            if (state->inferenceStatus != RUNNING)
+            if (state->inference_status != RUNNING)
               LOG_INFO << "Wait for task to be released:" << state->task_id;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
+          LOG_INFO << "Task completed, release it";
           // Request completed, release it
           state->instance->llama.request_cancel(state->task_id);
         });
@@ -445,7 +450,6 @@ void llamaCPP::embedding(
 void llamaCPP::embeddingImpl(
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(const HttpResponsePtr &)> &callback) {
-
   // Queue embedding task
   auto state = create_inference_state(this);
 
@@ -532,7 +536,6 @@ void llamaCPP::modelStatus(
 void llamaCPP::loadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-
   if (llama.model_loaded_external) {
     LOG_INFO << "model loaded";
     Json::Value jsonResp;
@@ -561,7 +564,6 @@ void llamaCPP::loadModel(
 }
 
 bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
-
   gpt_params params;
   // By default will setting based on number of handlers
   if (jsonBody) {
@@ -570,11 +572,9 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       params.mmproj = jsonBody->operator[]("mmproj").asString();
     }
     if (!jsonBody->operator[]("grp_attn_n").isNull()) {
-
       params.grp_attn_n = jsonBody->operator[]("grp_attn_n").asInt();
     }
     if (!jsonBody->operator[]("grp_attn_w").isNull()) {
-
       params.grp_attn_w = jsonBody->operator[]("grp_attn_w").asInt();
     }
     if (!jsonBody->operator[]("mlock").isNull()) {
@@ -620,12 +620,12 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       std::string llama_log_folder =
           jsonBody->operator[]("llama_log_folder").asString();
       log_set_target(llama_log_folder + "llama.log");
-    } // Set folder for llama log
+    }  // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
   params.mul_mat_q = false;
-#endif // GGML_USE_CUBLAS
+#endif  // GGML_USE_CUBLAS
   if (params.model_alias == "unknown") {
     params.model_alias = params.model;
   }
@@ -644,7 +644,7 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   // load the model
   if (!llama.load_model(params)) {
     LOG_ERROR << "Error loading the model";
-    return false; // Indicate failure
+    return false;  // Indicate failure
   }
   llama.initialize();
 
