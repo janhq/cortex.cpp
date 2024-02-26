@@ -2262,6 +2262,7 @@ private:
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
   std::string grammar_file_content;
+  std::mutex load_model_mutex;
 
   /**
    * Queue to handle the inference tasks
@@ -2277,5 +2278,8 @@ private:
   void warmupModel();
   void backgroundTask();
   void stopBackgroundTask();
+  void model_loaded_response(
+      const HttpRequestPtr ptr,
+      std::function<void(const HttpResponsePtr&)> function);
 };
 }; // namespace inferences
