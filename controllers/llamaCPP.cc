@@ -104,7 +104,7 @@ std::string create_full_return_json(const std::string &id,
   root["usage"] = usage;
 
   Json::StreamWriterBuilder writer;
-  writer["indentation"] = "";  // Compact output
+  writer["indentation"] = ""; // Compact output
   return Json::writeString(writer, root);
 }
 
@@ -131,8 +131,8 @@ std::string create_return_json(const std::string &id, const std::string &model,
   root["choices"] = choicesArray;
 
   Json::StreamWriterBuilder writer;
-  writer["indentation"] = "";  // This sets the indentation to an empty string,
-                               // producing compact output.
+  writer["indentation"] = ""; // This sets the indentation to an empty string,
+                              // producing compact output.
   return Json::writeString(writer, root);
 }
 
@@ -140,7 +140,7 @@ llamaCPP::llamaCPP()
     : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
                                              "llamaCPP")) {
   // Some default values for now below
-  log_disable();  // Disable the log to file feature, reduce bloat for
+  log_disable(); // Disable the log to file feature, reduce bloat for
   // target
   // system ()
 };
@@ -620,12 +620,12 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       std::string llama_log_folder =
           jsonBody->operator[]("llama_log_folder").asString();
       log_set_target(llama_log_folder + "llama.log");
-    }  // Set folder for llama log
+    } // Set folder for llama log
   }
 #ifdef GGML_USE_CUBLAS
   LOG_INFO << "Setting up GGML CUBLAS PARAMS";
   params.mul_mat_q = false;
-#endif  // GGML_USE_CUBLAS
+#endif // GGML_USE_CUBLAS
   if (params.model_alias == "unknown") {
     params.model_alias = params.model;
   }
@@ -644,7 +644,7 @@ bool llamaCPP::loadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   // load the model
   if (!llama.load_model(params)) {
     LOG_ERROR << "Error loading the model";
-    return false;  // Indicate failure
+    return false; // Indicate failure
   }
   llama.initialize();
 
