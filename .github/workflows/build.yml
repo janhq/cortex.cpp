@@ -197,10 +197,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install pkg-config
+        run: sudo apt-get install -y pkg-config
+
       - name: Prepare Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
-          vulkan-query-version: 1.3.204.0
+          vulkan-query-version: 1.3.275.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
@@ -674,7 +677,7 @@ jobs:
       - name: Prepare Vulkan SDK
         uses: humbletim/setup-vulkan-sdk@v1.2.0
         with:
-          vulkan-query-version: 1.3.204.0
+          vulkan-query-version: 1.3.275.0
           vulkan-components: Vulkan-Headers, Vulkan-Loader
           vulkan-use-cache: true
 
