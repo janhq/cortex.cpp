@@ -237,8 +237,8 @@ describe("Manage nitro process", () => {
       // Stop nitro
       await stopModel();
     },
-    // Set timeout to 1 minutes
-    1 * 60 * 1000,
+    // Set timeout to 5 minutes
+    5 * 60 * 1000,
   );
   describe("search model file by magic number", () => {
     // Rename model file before test

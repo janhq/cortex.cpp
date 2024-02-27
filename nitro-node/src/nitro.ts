@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import net from "node:net";
 import stream from "node:stream";
 import { ChildProcessWithoutNullStreams, spawn } from "node:child_process";
 import tcpPortUsed from "tcp-port-used";
@@ -54,7 +55,29 @@ const getNitroProcessInfo = (subprocess: any): NitroProcessInfo => ({
 });
 const getCurrentNitroProcessInfo = () => getNitroProcessInfo(subprocess);
 // Default event handler: do nothing
-let processEventHandler: NitroProcessEventHandler = {};
+let processEventHandler: NitroProcessEventHandler = {
+  close: (code: number, signal: string) => {
+      log(`[NITRO]::Debug: Nitro process closed with code ${code} and signal ${signal}`);
+  },
+  disconnect: () => {
+    log("[NITRO]::Debug: Nitro process disconnected");
+  },
+  error: (e: Error) => {
+    log(`[NITRO]::Error: Nitro process error: ${JSON.stringify(e)}`);
+  },
+  exit: (code: number, signal: string) => {
+    log(`[NITRO]::Debug: Nitro process exited with code ${code} and signal ${signal}`);
+  },
+  message: (
+    message: object,
+    sendHandle: net.Socket | net.Server | undefined,
+  ) => {
+    log(`[NITRO]::Debug: Nitro process message: ${JSON.stringify(message)}`);
+  },
+  spawn: () => {
+    log("[NITRO]::Debug: Nitro process spawned");
+  },
+};
 // Default stdio handler: log stdout and stderr
 let processStdioHandler: NitroProcessStdioHanler = {
   stdout: (stdout: stream.Readable | null | undefined) => {
