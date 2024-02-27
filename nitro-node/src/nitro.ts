@@ -217,7 +217,7 @@ async function runNitroAndLoadModel(
      * The tested threshold is 500ms
      **/
     if (process.platform === "win32") {
-      return await new Promise((resolve) => setTimeout(() => resolve({}), 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
     await spawnNitroProcess(runMode);
     // TODO: Use this response?
