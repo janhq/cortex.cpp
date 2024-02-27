@@ -551,7 +551,7 @@ void llamaCPP::loadModel(
       return;
     }
     modelLoadedSuccess = loadModelImpl(jsonBody);
-    llama.model_loaded_external.store(modelLoadedSuccess, std::memory_order_relaxed);
+    llama.model_loaded_external.store(modelLoadedSuccess, std::memory_order_release);
   }
 
   if (modelLoadedSuccess) {
