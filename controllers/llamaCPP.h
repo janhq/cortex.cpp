@@ -2278,7 +2278,7 @@ private:
   void warmupModel();
   void backgroundTask();
   void stopBackgroundTask();
-  void model_loaded_response(
+  void modelLoadedResponse(
       const HttpRequestPtr ptr,
       std::function<void(const HttpResponsePtr&)> function);
 };

@@ -538,7 +538,7 @@ void llamaCPP::loadModel(
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
   if(llama.model_loaded_external.load(std::memory_order_acquire)){
-    model_loaded_response(req, callback);
+    modelLoadedResponse(req, callback);
     return;
   }
   bool modelLoadedSuccess;
@@ -547,7 +547,7 @@ void llamaCPP::loadModel(
   {
     std::scoped_lock lck{load_model_mutex};
     if (llama.model_loaded_external.load(std::memory_order_relaxed)) {
-      model_loaded_response(req, callback);
+      modelLoadedResponse(req, callback);
       return;
     }
     modelLoadedSuccess = loadModelImpl(jsonBody);
@@ -691,7 +691,7 @@ void llamaCPP::stopBackgroundTask() {
     }
   }
 }
-void llamaCPP::model_loaded_response(
+void llamaCPP::modelLoadedResponse(
     const HttpRequestPtr ptr,
     std::function<void(const HttpResponsePtr&)> callback) {
   LOG_INFO << "model loaded";
