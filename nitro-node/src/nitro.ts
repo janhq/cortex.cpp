@@ -122,8 +122,11 @@ async function initialize(): Promise<void> {
  * @param wrapper - The model wrapper.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
  */
-function stopModel(): Promise<NitroModelOperationResponse> {
-  return killSubprocess();
+async function stopModel(): Promise<NitroModelOperationResponse> {
+  await killSubprocess();
+  // Unload settings
+  currentSettings = undefined;
+  return {};
 }
 
 /**
@@ -216,21 +219,15 @@ async function runNitroAndLoadModel(
     if (process.platform === "win32") {
       return await new Promise((resolve) => setTimeout(() => resolve({}), 500));
     }
-    const spawnResult = await spawnNitroProcess(runMode);
-    if (spawnResult.error) {
-      return spawnResult;
-    }
+    await spawnNitroProcess(runMode);
     // TODO: Use this response?
     const _loadModelResponse = await loadLLMModel(currentSettings!);
-    const validationResult = await validateModelStatus();
-    if (validationResult.error) {
-      return validationResult;
-    }
-    return {};
+    await validateModelStatus();
+    return { modelFile: currentSettings?.llama_model_path };
   } catch (err: any) {
     // TODO: Broadcast error so app could display proper error message
     log(`[NITRO]::Error: ${err}`);
-    return { error: err };
+    throw err;
   }
 }
 
@@ -320,7 +317,7 @@ async function chatCompletion(
  * If the model is loaded successfully, the object is empty.
  * If the model is not loaded successfully, the object contains an error message.
  */
-async function validateModelStatus(): Promise<NitroModelOperationResponse> {
+async function validateModelStatus(): Promise<void> {
   // Send a GET request to the validation URL.
   // Retry the request up to 3 times if it fails, with a delay of 500 milliseconds between retries.
   const response = await fetchRetry(NITRO_HTTP_VALIDATE_MODEL_URL, {
@@ -342,44 +339,47 @@ async function validateModelStatus(): Promise<NitroModelOperationResponse> {
     // If the model is loaded, return an empty object.
     // Otherwise, return an object with an error message.
     if (body.model_loaded) {
-      return {};
+      return;
     }
   }
-  return { error: "Validate model status failed" };
+  throw Error("Validate model status failed");
 }
 
 /**
  * Terminates the Nitro subprocess.
  * @returns A Promise that resolves when the subprocess is terminated successfully, or rejects with an error message if the subprocess fails to terminate.
  */
-async function killSubprocess(): Promise<NitroModelOperationResponse> {
+async function killSubprocess(): Promise<void> {
   const controller = new AbortController();
   setTimeout(() => controller.abort(), 5000);
   log(`[NITRO]::Debug: Request to kill Nitro`);
 
-  try {
-    // FIXME: should use this response?
-    const _response = await fetch(NITRO_HTTP_KILL_URL, {
-      method: "DELETE",
-      signal: controller.signal,
-    });
-    subprocess?.kill();
-    subprocess = undefined;
-    await tcpPortUsed.waitUntilFree(PORT, 300, 5000);
-    log(`[NITRO]::Debug: Nitro process is terminated`);
-    return {};
-  } catch (err) {
-    return { error: err };
+  // Request self-kill if server is running
+  if (await tcpPortUsed.check(PORT)) {
+    try {
+      // FIXME: should use this response?
+      const response = await fetch(NITRO_HTTP_KILL_URL, {
+        method: "DELETE",
+        signal: controller.signal,
+      });
+    } catch (err: any) {
+      // FIXME: Nitro exits without response so fetching will fail
+      // Intentionally ignore the error
+    }
   }
+  // Force kill subprocess
+  subprocess?.kill();
+  subprocess = undefined;
+  await tcpPortUsed.waitUntilFree(PORT, 300, 5000);
+  log(`[NITRO]::Debug: Nitro process is terminated`);
+  return;
 }
 
 /**
  * Spawns a Nitro subprocess.
  * @returns A promise that resolves when the Nitro subprocess is started.
  */
-function spawnNitroProcess(
-  runMode?: "cpu" | "gpu",
-): Promise<NitroModelOperationResponse> {
+function spawnNitroProcess(runMode?: "cpu" | "gpu"): Promise<void> {
   log(`[NITRO]::Debug: Spawning Nitro subprocess...`);
 
   return new Promise(async (resolve, reject) => {
@@ -419,7 +419,7 @@ function spawnNitroProcess(
 
     tcpPortUsed.waitUntilUsed(PORT, 300, 5000).then(() => {
       log(`[NITRO]::Debug: Nitro is ready`);
-      resolve({});
+      resolve();
     });
   });
 }

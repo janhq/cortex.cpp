@@ -7,7 +7,6 @@ import stream from "node:stream";
  * @property error - An error message if the model fails to load.
  */
 export interface NitroModelOperationResponse {
-  error?: any;
   modelFile?: string;
 }
 
