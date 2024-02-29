@@ -9,14 +9,14 @@ class BaseModel {
 
   // Model management
   virtual void LoadModel(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
   virtual void UnloadModel(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
   virtual void ModelStatus(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 };
 
 class BaseChatCompletion {
@@ -25,8 +25,8 @@ class BaseChatCompletion {
 
   // General chat method
   virtual void ChatCompletion(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 };
 
 class BaseEmbedding {
@@ -35,8 +35,8 @@ class BaseEmbedding {
 
   // Implement embedding functionality specific to chat
   virtual void Embedding(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 
   // The derived class can also override other methods if needed
 };
@@ -46,13 +46,13 @@ class BaseAudio {
   virtual ~BaseAudio() {}
   // Transcribes audio into the input language.
   virtual void CreateTranscription(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 
   //  Translates audio into the input language.
   virtual void CreateTranslation(
-      const HttpRequestPtr &req,
-      std::function<void(const HttpResponsePtr &)> &&callback) = 0;
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 
   // The derived class can also override other methods if needed
 };
