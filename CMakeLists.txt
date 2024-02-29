@@ -77,8 +77,10 @@ endif()
 
 aux_source_directory(controllers CTL_SRC)
 aux_source_directory(common COMMON_SRC)
+aux_source_directory(context CONTEXT_SRC)
+aux_source_directory(models MODEL_SRC)
 # aux_source_directory(filters FILTER_SRC) aux_source_directory(plugins
-# PLUGIN_SRC) aux_source_directory(models MODEL_SRC)
+# PLUGIN_SRC) 
 
 # drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
 # ${CMAKE_CURRENT_BINARY_DIR}) use the following line to create views with
@@ -87,7 +89,7 @@ aux_source_directory(common COMMON_SRC)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # ${CMAKE_CURRENT_SOURCE_DIR}/models)
-target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC})
+target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC} ${CONTEXT_SRC})
 # ${FILTER_SRC} ${PLUGIN_SRC} ${MODEL_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
