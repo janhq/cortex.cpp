@@ -2,14 +2,9 @@
 #if defined(_WIN32)
 #define NOMINMAX
 #endif
-
 #pragma once
-#define LOG_TARGET stdout
 
 #include <drogon/HttpController.h>
-
-#include "stb_image.h"
-#include "context/llama_server_context.h"
 
 #ifndef NDEBUG
 // crash the server in debug mode, otherwise send an http 500 error
@@ -17,27 +12,27 @@
 #endif
 
 #include <trantor/utils/ConcurrentTaskQueue.h>
+#include <cstddef>
+#include <string>
+#include <thread>
+
 #include "common/base.h"
+#include "context/llama_server_context.h"
+#include "stb_image.h"
 #include "utils/json.hpp"
 
-// auto generated files (update with ./deps.sh)
-
-#include <cstddef>
-#include <thread>
-
-#include <cstddef>
-#include <thread>
+#include "models/chat_completion_request.h"
 
 #ifndef SERVER_VERBOSE
 #define SERVER_VERBOSE 1
 #endif
-
 
 using json = nlohmann::json;
 
 using namespace drogon;
 
 namespace inferences {
+
 class llamaCPP : public drogon::HttpController<llamaCPP>,
                  public BaseModel,
                  public BaseChatCompletion,
@@ -64,14 +59,13 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void ChatCompletion(
-      const HttpRequestPtr& req,
+      inferences::ChatCompletionRequest &&completion,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
   void Embedding(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void LoadModel(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void LoadModel(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>&& callback) override;
   void UnloadModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
@@ -101,7 +95,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   trantor::ConcurrentTaskQueue* queue;
 
   bool LoadModelImpl(std::shared_ptr<Json::Value> jsonBody);
-  void InferenceImpl(std::shared_ptr<Json::Value> jsonBody,
+  void InferenceImpl(inferences::ChatCompletionRequest&& completion,
                      std::function<void(const HttpResponsePtr&)>& callback);
   void EmbeddingImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr&)>& callback);
