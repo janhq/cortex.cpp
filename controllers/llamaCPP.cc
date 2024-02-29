@@ -1,6 +1,15 @@
 #include "llamaCPP.h"
 
+
+#include <iostream>
+#include <fstream>
+#include "log.h"
+#include "utils/nitro_utils.h"
+
+// External
+#include "common.h"
 #include "llama.h"
+
 #include "log.h"
 #include "utils/nitro_utils.h"
 
