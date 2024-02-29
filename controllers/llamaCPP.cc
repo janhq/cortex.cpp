@@ -554,7 +554,7 @@ void llamaCPP::loadModel(
   const auto& jsonBody = req->getJsonObject();
 
   {
-    std::scoped_lock lck{load_model_mutex};
+    std::lock_guard lck{load_model_mutex};
     if (llama.model_loaded_external.load(std::memory_order_relaxed)) {
       ModelLoadedResponse(callback);
       return;
