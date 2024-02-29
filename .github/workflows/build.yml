@@ -2,7 +2,7 @@ name: CI
 
 on:
   schedule:
-    - cron: "0 20 * * *" # At 0:20 UTC, which is 7:20 AM UTC+7
+    - cron: "0 20 * * *" # At 8 PM UTC, which is 3 AM UTC+7
   push:
     branches:
       - main
@@ -821,8 +821,7 @@ jobs:
 
   update_release_draft:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs:
-      [
+    needs: [
         ubuntu-amd64-build,
         ubuntu-amd64-cuda-build,
         macOS-silicon-build,
@@ -844,8 +843,7 @@ jobs:
 
   noti-discord-nightly:
     if: always() && github.event_name == 'schedule' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-silicon-build.result == 'success' && needs.macOS-amd64-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
-    needs:
-      [
+    needs: [
         create-draft-release,
         ubuntu-amd64-build,
         ubuntu-amd64-cuda-build,
@@ -883,8 +881,7 @@ jobs:
 
   noti-discord-manual:
     if: always() && github.event_name == 'workflow_dispatch' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-silicon-build.result == 'success' && needs.macOS-amd64-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
-    needs:
-      [
+    needs: [
         create-draft-release,
         ubuntu-amd64-build,
         ubuntu-amd64-cuda-build,
