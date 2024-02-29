@@ -1,10 +1,8 @@
 #include "llamaCPP.h"
 
-
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include "log.h"
-#include "utils/nitro_utils.h"
 
 // External
 #include "common.h"
@@ -175,19 +173,18 @@ void llamaCPP::WarmupModel() {
 }
 
 void llamaCPP::ChatCompletion(
-    const HttpRequestPtr& req,
+    inferences::ChatCompletionRequest&& completion,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  const auto& jsonBody = req->getJsonObject();
   // Check if model is loaded
   if (CheckModelLoaded(callback)) {
     // Model is loaded
     // Do Inference
-    InferenceImpl(jsonBody, callback);
+    InferenceImpl(std::move(completion), callback);
   }
 }
 
 void llamaCPP::InferenceImpl(
-    std::shared_ptr<Json::Value> jsonBody,
+    inferences::ChatCompletionRequest&& completion,
     std::function<void(const HttpResponsePtr&)>& callback) {
   std::string formatted_output = pre_prompt;
 
@@ -196,131 +193,131 @@ void llamaCPP::InferenceImpl(
   int no_images = 0;
   // To set default value
 
-  if (jsonBody) {
-    // Increase number of chats received and clean the prompt
-    no_of_chats++;
-    if (no_of_chats % clean_cache_threshold == 0) {
-      LOG_INFO << "Clean cache threshold reached!";
-      llama.kv_cache_clear();
-      LOG_INFO << "Cache cleaned";
-    }
-
-    // Default values to enable auto caching
-    data["cache_prompt"] = caching_enabled;
-    data["n_keep"] = -1;
-
-    // Passing load value
-    data["repeat_last_n"] = this->repeat_last_n;
-
-    data["stream"] = (*jsonBody).get("stream", false).asBool();
-    data["n_predict"] = (*jsonBody).get("max_tokens", 500).asInt();
-    data["top_p"] = (*jsonBody).get("top_p", 0.95).asFloat();
-    data["temperature"] = (*jsonBody).get("temperature", 0.8).asFloat();
-    data["frequency_penalty"] =
-        (*jsonBody).get("frequency_penalty", 0).asFloat();
-    data["presence_penalty"] = (*jsonBody).get("presence_penalty", 0).asFloat();
-    const Json::Value& messages = (*jsonBody)["messages"];
-
-    if (!grammar_file_content.empty()) {
-      data["grammar"] = grammar_file_content;
-    };
-
-    if (!llama.multimodal) {
-      for (const auto& message : messages) {
-        std::string input_role = message["role"].asString();
-        std::string role;
-        if (input_role == "user") {
-          role = user_prompt;
-          std::string content = message["content"].asString();
-          formatted_output += role + content;
-        } else if (input_role == "assistant") {
-          role = ai_prompt;
-          std::string content = message["content"].asString();
-          formatted_output += role + content;
-        } else if (input_role == "system") {
-          role = system_prompt;
-          std::string content = message["content"].asString();
-          formatted_output = role + content + formatted_output;
-
-        } else {
-          role = input_role;
-          std::string content = message["content"].asString();
-          formatted_output += role + content;
-        }
-      }
-      formatted_output += ai_prompt;
-    } else {
-      data["image_data"] = json::array();
-      for (const auto& message : messages) {
-        std::string input_role = message["role"].asString();
-        std::string role;
-        if (input_role == "user") {
-          formatted_output += role;
-          for (auto content_piece : message["content"]) {
-            role = user_prompt;
-
-            json content_piece_image_data;
-            content_piece_image_data["data"] = "";
-
-            auto content_piece_type = content_piece["type"].asString();
-            if (content_piece_type == "text") {
-              auto text = content_piece["text"].asString();
-              formatted_output += text;
-            } else if (content_piece_type == "image_url") {
-              auto image_url = content_piece["image_url"]["url"].asString();
-              std::string base64_image_data;
-              if (image_url.find("http") != std::string::npos) {
-                LOG_INFO << "Remote image detected but not supported yet";
-              } else if (image_url.find("data:image") != std::string::npos) {
-                LOG_INFO << "Base64 image detected";
-                base64_image_data = nitro_utils::extractBase64(image_url);
-                LOG_INFO << base64_image_data;
-              } else {
-                LOG_INFO << "Local image detected";
-                nitro_utils::processLocalImage(
-                    image_url, [&](const std::string& base64Image) {
-                      base64_image_data = base64Image;
-                    });
-                LOG_INFO << base64_image_data;
-              }
-              content_piece_image_data["data"] = base64_image_data;
-
-              formatted_output += "[img-" + std::to_string(no_images) + "]";
-              content_piece_image_data["id"] = no_images;
-              data["image_data"].push_back(content_piece_image_data);
-              no_images++;
-            }
-          }
-
-        } else if (input_role == "assistant") {
-          role = ai_prompt;
-          std::string content = message["content"].asString();
-          formatted_output += role + content;
-        } else if (input_role == "system") {
-          role = system_prompt;
-          std::string content = message["content"].asString();
-          formatted_output = role + content + formatted_output;
-
-        } else {
-          role = input_role;
-          std::string content = message["content"].asString();
-          formatted_output += role + content;
-        }
-      }
-      formatted_output += ai_prompt;
-      LOG_INFO << formatted_output;
-    }
-
-    data["prompt"] = formatted_output;
-    for (const auto& stop_word : (*jsonBody)["stop"]) {
-      stopWords.push_back(stop_word.asString());
-    }
-    // specify default stop words
-    // Ensure success case for chatML
-    stopWords.push_back("<|im_end|>");
-    stopWords.push_back(nitro_utils::rtrim(user_prompt));
-    data["stop"] = stopWords;
+  // Increase number of chats received and clean the prompt
+  no_of_chats++;
+  if (no_of_chats % clean_cache_threshold == 0) {
+    LOG_INFO << "Clean cache threshold reached!";
+    llama.kv_cache_clear();
+    LOG_INFO << "Cache cleaned";
   }
+
+  // Default values to enable auto caching
+  data["cache_prompt"] = caching_enabled;
+  data["n_keep"] = -1;
+
+  // Passing load value
+  data["repeat_last_n"] = this->repeat_last_n;
+
+  LOG_INFO << "Messages:" << completion.messages.toStyledString();
+  LOG_INFO << "Stop:" << completion.stop.toStyledString();
+
+  data["stream"] = completion.stream;
+  data["n_predict"] = completion.max_tokens;
+  data["top_p"] = completion.top_p;
+  data["temperature"] = completion.temperature;
+  data["frequency_penalty"] = completion.frequency_penalty;
+  data["presence_penalty"] = completion.presence_penalty;
+  const Json::Value& messages = completion.messages;
+
+  if (!grammar_file_content.empty()) {
+    data["grammar"] = grammar_file_content;
+  };
+
+  if (!llama.multimodal) {
+    for (const auto& message : messages) {
+      std::string input_role = message["role"].asString();
+      std::string role;
+      if (input_role == "user") {
+        role = user_prompt;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
+      } else if (input_role == "assistant") {
+        role = ai_prompt;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
+      } else if (input_role == "system") {
+        role = system_prompt;
+        std::string content = message["content"].asString();
+        formatted_output = role + content + formatted_output;
+
+      } else {
+        role = input_role;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
+      }
+    }
+    formatted_output += ai_prompt;
+  } else {
+    data["image_data"] = json::array();
+    for (const auto& message : messages) {
+      std::string input_role = message["role"].asString();
+      std::string role;
+      if (input_role == "user") {
+        formatted_output += role;
+        for (auto content_piece : message["content"]) {
+          role = user_prompt;
+
+          json content_piece_image_data;
+          content_piece_image_data["data"] = "";
+
+          auto content_piece_type = content_piece["type"].asString();
+          if (content_piece_type == "text") {
+            auto text = content_piece["text"].asString();
+            formatted_output += text;
+          } else if (content_piece_type == "image_url") {
+            auto image_url = content_piece["image_url"]["url"].asString();
+            std::string base64_image_data;
+            if (image_url.find("http") != std::string::npos) {
+              LOG_INFO << "Remote image detected but not supported yet";
+            } else if (image_url.find("data:image") != std::string::npos) {
+              LOG_INFO << "Base64 image detected";
+              base64_image_data = nitro_utils::extractBase64(image_url);
+              LOG_INFO << base64_image_data;
+            } else {
+              LOG_INFO << "Local image detected";
+              nitro_utils::processLocalImage(
+                  image_url, [&](const std::string& base64Image) {
+                    base64_image_data = base64Image;
+                  });
+              LOG_INFO << base64_image_data;
+            }
+            content_piece_image_data["data"] = base64_image_data;
+
+            formatted_output += "[img-" + std::to_string(no_images) + "]";
+            content_piece_image_data["id"] = no_images;
+            data["image_data"].push_back(content_piece_image_data);
+            no_images++;
+          }
+        }
+
+      } else if (input_role == "assistant") {
+        role = ai_prompt;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
+      } else if (input_role == "system") {
+        role = system_prompt;
+        std::string content = message["content"].asString();
+        formatted_output = role + content + formatted_output;
+
+      } else {
+        role = input_role;
+        std::string content = message["content"].asString();
+        formatted_output += role + content;
+      }
+    }
+    formatted_output += ai_prompt;
+    LOG_INFO << formatted_output;
+  }
+
+  data["prompt"] = formatted_output;
+  for (const auto& stop_word : completion.stop) {
+    stopWords.push_back(stop_word.asString());
+  }
+  // specify default stop words
+  // Ensure success case for chatML
+  stopWords.push_back("<|im_end|>");
+  stopWords.push_back(nitro_utils::rtrim(user_prompt));
+  data["stop"] = stopWords;
 
   bool is_streamed = data["stream"];
 // Enable full message debugging
