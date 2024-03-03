@@ -1,5 +1,5 @@
 # Use alpine latest as the base image
-FROM alpine:latest
+FROM alpine:latest as builder
 
 # Build variables
 ARG NITRO_VERSION=0.3.14
@@ -8,7 +8,7 @@ ARG NITRO_VERSION=0.3.14
 WORKDIR /work
 
 # Install build dependencies
-RUN apk add --no-cache git cmake build-base util-linux-dev zlib-dev
+RUN apk add --no-cache git cmake g++ make util-linux-dev zlib-dev
 
 # Clone code
 RUN git clone --recurse-submodules -j2 --depth 1 --branch v${NITRO_VERSION} --single-branch https://github.com/janhq/nitro.git
@@ -20,16 +20,20 @@ RUN cd nitro && \
     mkdir build && \
     cd build && \
     cmake .. && \
-    make -j $(nproc)
+    make -j $(nproc) && \
+    chmod +x ./nitro
 
-# Install
+# Create the final image
+FROM alpine:latest
+
+# Install runtime dependencies from stripped down g++ and util-linux-dev (without dev packages)
+RUN apk add --no-cache libstdc++ gmp isl25 mpc1 mpfr4 zlib libuuid
+
+# Create working directory
 WORKDIR /app
-RUN cp /work/nitro/build/nitro /app/nitro && \
-    chmod +x /app/nitro
 
-# Cleanup
-RUN apk del git cmake util-linux-dev zlib-dev && \
-    rm -rf /work
+# Copy the binary from the builder image
+COPY --from=builder /work/nitro/build/nitro /app/nitro
 
 # Expose port
 EXPOSE 3928
