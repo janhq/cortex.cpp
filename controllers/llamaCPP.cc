@@ -541,7 +541,7 @@ void llamaCPP::ModelStatus(
   return;
 }
 
-void llamaCPP::loadModel(
+void llamaCPP::LoadModel(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
 
@@ -559,7 +559,7 @@ void llamaCPP::loadModel(
       ModelLoadedResponse(callback);
       return;
     }
-    modelLoadedSuccess = loadModelImpl(jsonBody);
+    modelLoadedSuccess = LoadModelImpl(jsonBody);
     llama.model_loaded_external.store(modelLoadedSuccess, std::memory_order_release);
   }
   if (modelLoadedSuccess) {
