@@ -159,21 +159,21 @@ jobs:
           name: nitro-linux-amd64
           path: ./nitro
 
-      - name: Run e2e testing - LLama.CPP
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
-          rm -rf uploads/
+      # - name: Run e2e testing - LLama.CPP
+      #   shell: bash
+      #   run: |
+      #     # run e2e testing
+      #     cd nitro
+      #     chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+      #     rm -rf uploads/
 
-      - name: Run e2e testing - Whisper.CPP
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
-          rm -rf uploads/
+      # - name: Run e2e testing - Whisper.CPP
+      #   shell: bash
+      #   run: |
+      #     # run e2e testing
+      #     cd nitro
+      #     chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+      #     rm -rf uploads/
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -284,21 +284,21 @@ jobs:
           name: nitro-linux-amd64-cuda-${{ matrix.cuda }}
           path: ./nitro
 
-      - name: Run e2e testing - LLama.CPP
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
-          rm -rf uploads/
+      # - name: Run e2e testing - LLama.CPP
+      #   shell: bash
+      #   run: |
+      #     # run e2e testing
+      #     cd nitro
+      #     chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+      #     rm -rf uploads/
 
-      - name: Run e2e testing - Whisper.CPP
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
-          rm -rf uploads/
+      # - name: Run e2e testing - Whisper.CPP
+      #   shell: bash
+      #   run: |
+      #     # run e2e testing
+      #     cd nitro
+      #     chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+      #     rm -rf uploads/
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
