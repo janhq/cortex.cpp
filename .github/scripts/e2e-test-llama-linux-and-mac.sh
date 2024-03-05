@@ -21,7 +21,7 @@ range=$((max - min + 1))
 PORT=$((RANDOM % range + min))
 
 # Start the binary file
-"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log &
 
 # Get the process id of the binary file
 pid=$!
@@ -48,7 +48,7 @@ response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://1
     "ctx_len": 50,
     "ngl": 32,
     "embedding": false
-}' 2>&1)
+}')
 
 response2=$(
     curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
@@ -67,7 +67,7 @@ response2=$(
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 0.1
-     }' 2>&1
+     }'
 )
 
 error_occurred=0
