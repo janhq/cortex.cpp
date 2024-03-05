@@ -37,7 +37,7 @@ sleep 5
 
 # Check if /tmp/testllm exists, if not, download it
 if [[ ! -f "/tmp/testllm" ]]; then
-    wget $DOWNLOAD_URL -O /tmp/testllm
+    curl $DOWNLOAD_URL --output /tmp/testllm
 fi
 
 # Run the curl commands

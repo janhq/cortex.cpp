@@ -37,7 +37,7 @@ sleep 5
 
 # Check if /tmp/testwhisper exists, if not, download it
 if [[ ! -f "/tmp/testwhisper" ]]; then
-    wget $DOWNLOAD_URL -O /tmp/testwhisper
+    curl $DOWNLOAD_URL --output /tmp/testwhisper
 fi
 
 # Run the curl commands
