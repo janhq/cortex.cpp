@@ -41,7 +41,7 @@ if [[ ! -f "/tmp/testllm" ]]; then
 fi
 
 # Run the curl commands
-response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
+response1=$(curl --connect-timeout 60 -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
     --header 'Content-Type: application/json' \
     --data '{
     "llama_model_path": "/tmp/testllm",
@@ -50,8 +50,14 @@ response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://1
     "embedding": false
 }')
 
+if ! ps -p $pid >/dev/null; then
+    echo "nitro failed to load model. Logs:"
+    cat /tmp/nitro.log
+    exit 1
+fi
+
 response2=$(
-    curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
+    curl --connect-timeout -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
         --header 'Content-Type: application/json' \
         --header 'Accept: text/event-stream' \
         --header 'Access-Control-Allow-Origin: *' \
