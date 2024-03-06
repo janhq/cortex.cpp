@@ -37,11 +37,11 @@ sleep 5
 
 # Check if /tmp/testwhisper exists, if not, download it
 if [[ ! -f "/tmp/testwhisper" ]]; then
-    curl $DOWNLOAD_URL --output /tmp/testwhisper
+    curl --connect-timeout 300 $DOWNLOAD_URL --output /tmp/testwhisper
 fi
 
 # Run the curl commands
-response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/load_model" \
+response1=$(curl --connect-timeout 60 -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/load_model" \
     --header 'Content-Type: application/json' \
     --data '{
     "model_path": "/tmp/testwhisper",
@@ -49,7 +49,7 @@ response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://1
 }')
 
 response2=$(
-    curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/transcriptions" \
+    curl --connect-timeout 60 -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/transcriptions" \
         --header 'Access-Control-Allow-Origin: *' \
         --form 'file=@"../whisper.cpp/samples/jfk.wav"' \
         --form 'model_id="whisper.cpp"' \

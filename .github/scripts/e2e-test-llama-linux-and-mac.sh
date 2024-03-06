@@ -37,7 +37,7 @@ sleep 5
 
 # Check if /tmp/testllm exists, if not, download it
 if [[ ! -f "/tmp/testllm" ]]; then
-    curl $DOWNLOAD_URL --output /tmp/testllm
+    curl --connect-timeout 300 $DOWNLOAD_URL --output /tmp/testllm
 fi
 
 # Run the curl commands
@@ -57,7 +57,7 @@ if ! ps -p $pid >/dev/null; then
 fi
 
 response2=$(
-    curl --connect-timeout -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
+    curl --connect-timeout 60 -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
         --header 'Content-Type: application/json' \
         --header 'Accept: text/event-stream' \
         --header 'Access-Control-Allow-Origin: *' \

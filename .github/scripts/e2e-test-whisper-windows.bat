@@ -47,7 +47,7 @@ rem Wait for a few seconds to let the server start
 
 rem Check if %TEMP%\testwhisper exists, if not, download it
 if not exist "%MODEL_PATH%" (
-    bitsadmin.exe /transfer "DownloadTestModel" %DOWNLOAD_URL% "%MODEL_PATH%"
+    curl.exe --connect-timeout 300 %DOWNLOAD_URL% --output "%MODEL_PATH%"
 )
 
 rem Define JSON strings for curl data
@@ -55,9 +55,9 @@ call set "MODEL_PATH_STRING=%%MODEL_PATH:\=\\%%"
 set "curl_data1={\"model_path\":\"%MODEL_PATH_STRING%\",\"model_id\":\"whisper\"}"
 
 rem Run the curl commands and capture the status code
-curl.exe -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/load_model" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
+curl.exe --connect-timeout 60 -o %TEMP%\response1.log -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/audio/load_model" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1_code.log 2>&1
 
-curl -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://localhost:%PORT%/v1/audio/transcriptions" ^
+curl --connect-timeout 60 -o %TEMP%\response2.log -s -w "%%{http_code}" --location "http://localhost:%PORT%/v1/audio/transcriptions" ^
 --form "file=@../..//whisper.cpp/samples/jfk.wav" ^
 --form "model_id=whisper" > %TEMP%\response2_code.log 2>&1
 
