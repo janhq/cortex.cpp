@@ -47,7 +47,7 @@ rem Wait for a few seconds to let the server start
 
 rem Check if %TEMP%\testmodel exists, if not, download it
 if not exist "%MODEL_PATH%" (
-    bitsadmin.exe /transfer "DownloadTestModel" %DOWNLOAD_URL% "%MODEL_PATH%"
+    curl.exe --connect-timeout 300 %DOWNLOAD_URL% --output "%MODEL_PATH%"
 )
 
 rem Define JSON strings for curl data

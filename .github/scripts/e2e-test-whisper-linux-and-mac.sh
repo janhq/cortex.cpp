@@ -21,7 +21,7 @@ range=$((max - min + 1))
 PORT=$((RANDOM % range + min))
 
 # Start the binary file
-"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log &
 
 # Get the process id of the binary file
 pid=$!
@@ -37,25 +37,25 @@ sleep 5
 
 # Check if /tmp/testwhisper exists, if not, download it
 if [[ ! -f "/tmp/testwhisper" ]]; then
-    wget $DOWNLOAD_URL -O /tmp/testwhisper
+    curl --connect-timeout 300 $DOWNLOAD_URL --output /tmp/testwhisper
 fi
 
 # Run the curl commands
-response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/load_model" \
+response1=$(curl --connect-timeout 60 -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/load_model" \
     --header 'Content-Type: application/json' \
     --data '{
     "model_path": "/tmp/testwhisper",
     "model_id": "whisper.cpp"
-}' 2>&1)
+}')
 
 response2=$(
-    curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/transcriptions" \
+    curl --connect-timeout 60 -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/audio/transcriptions" \
         --header 'Access-Control-Allow-Origin: *' \
         --form 'file=@"../whisper.cpp/samples/jfk.wav"' \
         --form 'model_id="whisper.cpp"' \
         --form 'temperature="0.0"' \
         --form 'prompt="The transcript is about OpenAI which makes technology like DALL·E, GPT-3, and ChatGPT with the hope of one day building an AGI system that benefits all of humanity. The president is trying to raly people to support the cause."' \
-        2>&1
+       
 )
 
 error_occurred=0

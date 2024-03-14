@@ -21,7 +21,7 @@ range=$((max - min + 1))
 PORT=$((RANDOM % range + min))
 
 # Start the binary file
-"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log 2>&1 &
+"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log &
 
 # Get the process id of the binary file
 pid=$!
@@ -37,21 +37,27 @@ sleep 5
 
 # Check if /tmp/testllm exists, if not, download it
 if [[ ! -f "/tmp/testllm" ]]; then
-    wget $DOWNLOAD_URL -O /tmp/testllm
+    curl --connect-timeout 300 $DOWNLOAD_URL --output /tmp/testllm
 fi
 
 # Run the curl commands
-response1=$(curl -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
+response1=$(curl --connect-timeout 60 -o /tmp/response1.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
     --header 'Content-Type: application/json' \
     --data '{
     "llama_model_path": "/tmp/testllm",
     "ctx_len": 50,
     "ngl": 32,
     "embedding": false
-}' 2>&1)
+}')
+
+if ! ps -p $pid >/dev/null; then
+    echo "nitro failed to load model. Logs:"
+    cat /tmp/nitro.log
+    exit 1
+fi
 
 response2=$(
-    curl -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
+    curl --connect-timeout 60 -o /tmp/response2.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
         --header 'Content-Type: application/json' \
         --header 'Accept: text/event-stream' \
         --header 'Access-Control-Allow-Origin: *' \
@@ -67,7 +73,7 @@ response2=$(
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "temperature": 0.1
-     }' 2>&1
+     }'
 )
 
 error_occurred=0

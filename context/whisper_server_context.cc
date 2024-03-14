@@ -1,11 +1,16 @@
-#include "whisperCPP.h"
-// #include "whisper.h"
-// #include "llama.h"
+#include "whisper_server_context.h"
+#include "utils/dr_wav.h"
+#include <trantor/utils/Logger.h>
+#include <fstream>
+#include <sstream>
+#include "utils/json.hpp"
 
-bool read_wav(const std::string &fname, std::vector<float> &pcmf32,
-              std::vector<std::vector<float>> &pcmf32s, bool stereo) {
+using json = nlohmann::json;
+
+bool read_wav(const std::string& fname, std::vector<float>& pcmf32,
+              std::vector<std::vector<float>>& pcmf32s, bool stereo) {
   drwav wav;
-  std::vector<uint8_t> wav_data; // used for pipe input from stdin
+  std::vector<uint8_t> wav_data;  // used for pipe input from stdin
 
   if (fname == "-") {
     {
@@ -93,13 +98,13 @@ bool read_wav(const std::string &fname, std::vector<float> &pcmf32,
   return true;
 }
 
-std::string output_str(struct whisper_context *ctx,
-                       const whisper_params &params,
+std::string output_str(struct whisper_context* ctx,
+                       const whisper_params& params,
                        std::vector<std::vector<float>> pcmf32s) {
   std::stringstream result;
   const int n_segments = whisper_full_n_segments(ctx);
   for (int i = 0; i < n_segments; ++i) {
-    const char *text = whisper_full_get_segment_text(ctx, i);
+    const char* text = whisper_full_get_segment_text(ctx, i);
     std::string speaker = "";
 
     if (params.diarize && pcmf32s.size() == 2) {
@@ -113,9 +118,9 @@ std::string output_str(struct whisper_context *ctx,
   return result.str();
 }
 
-std::string
-estimate_diarization_speaker(std::vector<std::vector<float>> pcmf32s,
-                             int64_t t0, int64_t t1, bool id_only) {
+std::string estimate_diarization_speaker(
+    std::vector<std::vector<float>> pcmf32s, int64_t t0, int64_t t1,
+    bool id_only) {
   std::string speaker = "";
   const int64_t n_samples = pcmf32s[0].size();
 
@@ -172,19 +177,20 @@ int timestamp_to_sample(int64_t t, int n_samples) {
                                   (int)((t * WHISPER_SAMPLE_RATE) / 100)));
 }
 
-bool is_file_exist(const char *fileName) {
+bool is_file_exist(const char* fileName) {
   std::ifstream infile(fileName);
   return infile.good();
 }
 
-void whisper_print_usage(int /*argc*/, char **argv,
-                         const whisper_params &params) {
+void whisper_print_usage(int /*argc*/, char** argv,
+                         const whisper_params& params) {
   fprintf(stderr, "\n");
   fprintf(stderr, "usage: %s [options] \n", argv[0]);
   fprintf(stderr, "\n");
   fprintf(stderr, "options:\n");
-  fprintf(stderr, "  -h,        --help              [default] show this help "
-                  "message and exit\n");
+  fprintf(stderr,
+          "  -h,        --help              [default] show this help "
+          "message and exit\n");
   fprintf(stderr,
           "  -t N,      --threads N         [%-7d] number of threads to use "
           "during computation\n",
@@ -292,7 +298,7 @@ void whisper_print_usage(int /*argc*/, char **argv,
   fprintf(stderr, "\n");
 }
 
-bool whisper_params_parse(int argc, char **argv, whisper_params &params) {
+bool whisper_params_parse(int argc, char** argv, whisper_params& params) {
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
 
@@ -387,7 +393,7 @@ void check_ffmpeg_availibility() {
   }
 }
 
-bool convert_to_wav(const std::string &temp_filename, std::string &error_resp) {
+bool convert_to_wav(const std::string& temp_filename, std::string& error_resp) {
   std::ostringstream cmd_stream;
   std::string converted_filename_temp = temp_filename + "_temp.wav";
   cmd_stream << "ffmpeg -i \"" << temp_filename
@@ -415,23 +421,23 @@ bool convert_to_wav(const std::string &temp_filename, std::string &error_resp) {
   return true;
 }
 
-void whisper_print_progress_callback(struct whisper_context * /*ctx*/,
-                                     struct whisper_state * /*state*/,
-                                     int progress, void *user_data) {
+void whisper_print_progress_callback(struct whisper_context* /*ctx*/,
+                                     struct whisper_state* /*state*/,
+                                     int progress, void* user_data) {
   int progress_step =
-      ((whisper_print_user_data *)user_data)->params->progress_step;
-  int *progress_prev = &(((whisper_print_user_data *)user_data)->progress_prev);
+      ((whisper_print_user_data*)user_data)->params->progress_step;
+  int* progress_prev = &(((whisper_print_user_data*)user_data)->progress_prev);
   if (progress >= *progress_prev + progress_step) {
     *progress_prev += progress_step;
     fprintf(stderr, "%s: progress = %3d%%\n", __func__, progress);
   }
 }
 
-void whisper_print_segment_callback(struct whisper_context *ctx,
-                                    struct whisper_state * /*state*/, int n_new,
-                                    void *user_data) {
-  const auto &params = *((whisper_print_user_data *)user_data)->params;
-  const auto &pcmf32s = *((whisper_print_user_data *)user_data)->pcmf32s;
+void whisper_print_segment_callback(struct whisper_context* ctx,
+                                    struct whisper_state* /*state*/, int n_new,
+                                    void* user_data) {
+  const auto& params = *((whisper_print_user_data*)user_data)->params;
+  const auto& pcmf32s = *((whisper_print_user_data*)user_data)->pcmf32s;
 
   const int n_segments = whisper_full_n_segments(ctx);
 
@@ -471,7 +477,7 @@ void whisper_print_segment_callback(struct whisper_context *ctx,
           }
         }
 
-        const char *text = whisper_full_get_token_text(ctx, i, j);
+        const char* text = whisper_full_get_token_text(ctx, i, j);
         const float p = whisper_full_get_token_p(ctx, i, j);
 
         const int col = (std::max)(
@@ -482,7 +488,7 @@ void whisper_print_segment_callback(struct whisper_context *ctx,
                "\033[0m");
       }
     } else {
-      const char *text = whisper_full_get_segment_text(ctx, i);
+      const char* text = whisper_full_get_segment_text(ctx, i);
 
       printf("%s%s", speaker.c_str(), text);
     }
@@ -501,14 +507,15 @@ void whisper_print_segment_callback(struct whisper_context *ctx,
   }
 }
 
-bool parse_str_to_bool(const std::string &s) {
-  if (s == "true" || s == "1" || s == "yes" || s == "y") {
-    return true;
+whisper_server_context::~whisper_server_context() {
+  if (ctx) {
+    whisper_print_timings(ctx);
+    whisper_free(ctx);
+    ctx = nullptr;
   }
-  return false;
 }
 
-bool whisper_server_context::load_model(std::string &model_path) {
+bool whisper_server_context::load_model(std::string& model_path) {
   whisper_mutex.lock();
 
   // clean up
@@ -534,14 +541,14 @@ bool whisper_server_context::load_model(std::string &model_path) {
 }
 
 std::string whisper_server_context::inference(
-    std::string &input_file_path, std::string language, std::string prompt,
+    std::string& input_file_path, std::string language, std::string prompt,
     std::string response_format, float temperature, bool translate) {
   // acquire whisper model mutex lock
   whisper_mutex.lock();
 
   // audio arrays
-  std::vector<float> pcmf32;               // mono-channel F32 PCM
-  std::vector<std::vector<float>> pcmf32s; // stereo-channel F32 PCM
+  std::vector<float> pcmf32;                // mono-channel F32 PCM
+  std::vector<std::vector<float>> pcmf32s;  // stereo-channel F32 PCM
 
   // if file is not wav, convert to wav
   if (params.ffmpeg_converter) {
@@ -625,7 +632,7 @@ std::string whisper_server_context::inference(
     wparams.speed_up = params.speed_up;
     wparams.debug_mode = params.debug_mode;
 
-    wparams.tdrz_enable = params.tinydiarize; // [TDRZ]
+    wparams.tdrz_enable = params.tinydiarize;  // [TDRZ]
 
     wparams.initial_prompt = prompt.c_str();
 
@@ -660,12 +667,12 @@ std::string whisper_server_context::inference(
     // the processing is aborted
     {
       static bool is_aborted =
-          false; // NOTE: this should be atomic to avoid data race
+          false;  // NOTE: this should be atomic to avoid data race
 
-      wparams.encoder_begin_callback = [](struct whisper_context * /*ctx*/,
-                                          struct whisper_state * /*state*/,
-                                          void *user_data) {
-        bool is_aborted = *(bool *)user_data;
+      wparams.encoder_begin_callback = [](struct whisper_context* /*ctx*/,
+                                          struct whisper_state* /*state*/,
+                                          void* user_data) {
+        bool is_aborted = *(bool*)user_data;
         return !is_aborted;
       };
       wparams.encoder_begin_callback_user_data = &is_aborted;
@@ -675,10 +682,10 @@ std::string whisper_server_context::inference(
     // computation is aborted
     {
       static bool is_aborted =
-          false; // NOTE: this should be atomic to avoid data race
+          false;  // NOTE: this should be atomic to avoid data race
 
-      wparams.abort_callback = [](void *user_data) {
-        bool is_aborted = *(bool *)user_data;
+      wparams.abort_callback = [](void* user_data) {
+        bool is_aborted = *(bool*)user_data;
         return is_aborted;
       };
       wparams.abort_callback_user_data = &is_aborted;
@@ -701,7 +708,7 @@ std::string whisper_server_context::inference(
     std::stringstream ss;
     const int n_segments = whisper_full_n_segments(ctx);
     for (int i = 0; i < n_segments; ++i) {
-      const char *text = whisper_full_get_segment_text(ctx, i);
+      const char* text = whisper_full_get_segment_text(ctx, i);
       const int64_t t0 = whisper_full_get_segment_t0(ctx, i);
       const int64_t t1 = whisper_full_get_segment_t1(ctx, i);
       std::string speaker = "";
@@ -722,7 +729,7 @@ std::string whisper_server_context::inference(
 
     const int n_segments = whisper_full_n_segments(ctx);
     for (int i = 0; i < n_segments; ++i) {
-      const char *text = whisper_full_get_segment_text(ctx, i);
+      const char* text = whisper_full_get_segment_text(ctx, i);
       const int64_t t0 = whisper_full_get_segment_t0(ctx, i);
       const int64_t t1 = whisper_full_get_segment_t1(ctx, i);
       std::string speaker = "";
@@ -786,292 +793,4 @@ std::string whisper_server_context::inference(
   LOG_INFO << "Successfully processed " << input_file_path << ": " << result;
 
   return result;
-}
-
-whisper_server_context::~whisper_server_context() {
-  if (ctx) {
-    whisper_print_timings(ctx);
-    whisper_free(ctx);
-    ctx = nullptr;
-  }
-}
-
-std::optional<std::string> whisperCPP::parse_model_id(
-    const std::shared_ptr<Json::Value> &jsonBody,
-    const std::function<void(const HttpResponsePtr &)> &callback) {
-  if (!jsonBody->isMember("model_id")) {
-    LOG_INFO << "No model_id found in request body";
-    Json::Value jsonResp;
-    jsonResp["message"] = "No model_id found in request body";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-    return std::nullopt; // Signal that an error occurred
-  }
-
-  return (*jsonBody)["model_id"].asString();
-}
-
-void whisperCPP::load_model(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-  const auto jsonBody = req->getJsonObject();
-  auto optional_model_id = parse_model_id(jsonBody, callback);
-  if (!optional_model_id) {
-    return;
-  }
-  std::string model_id = *optional_model_id;
-
-  // Check if model is already loaded
-  if (whispers.find(model_id) != whispers.end()) {
-    std::string error_msg = "Model " + model_id + " already loaded";
-    LOG_INFO << error_msg;
-    Json::Value jsonResp;
-    jsonResp["message"] = error_msg;
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k409Conflict);
-    callback(resp);
-    return;
-  }
-
-  // Model not loaded, load it
-  // Parse model path from request
-  std::string model_path = (*jsonBody)["model_path"].asString();
-  if (!is_file_exist(model_path.c_str())) {
-    std::string error_msg = "Model " + model_path + " not found";
-    LOG_INFO << error_msg;
-    Json::Value jsonResp;
-    jsonResp["message"] = error_msg;
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k404NotFound);
-    callback(resp);
-    return;
-  }
-
-  whisper_server_context whisper = whisper_server_context(model_id);
-  bool model_loaded = whisper.load_model(model_path);
-  // If model failed to load, return a 500 error
-  if (!model_loaded) {
-    whisper.~whisper_server_context();
-    std::string error_msg = "Failed to load model " + model_path;
-    LOG_INFO << error_msg;
-    Json::Value jsonResp;
-    jsonResp["message"] = error_msg;
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k500InternalServerError);
-    callback(resp);
-    return;
-  }
-
-  // Warm up the model
-  // Parse warm up audio path from request
-  if (jsonBody->isMember("warm_up_audio_path")) {
-    std::string warm_up_msg = "Warming up model " + model_id;
-    LOG_INFO << warm_up_msg;
-    std::string warm_up_audio_path =
-        (*jsonBody)["warm_up_audio_path"].asString();
-    // Return 400 error if warm up audio path is not found
-    if (!is_file_exist(warm_up_audio_path.c_str())) {
-      std::string error_msg =
-          "Warm up audio " + warm_up_audio_path +
-          " not found, please provide a valid path or don't specify it at all";
-      LOG_INFO << error_msg;
-      Json::Value jsonResp;
-      jsonResp["message"] = error_msg;
-      auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-      return;
-    } else {
-      LOG_INFO << "Warming up model " << model_id << " with audio "
-               << warm_up_audio_path << " ...";
-      std::string warm_up_result = whisper.inference(warm_up_audio_path, "en",
-                                                     "", text_format, 0, false);
-      LOG_INFO << "Warm up model " << model_id << " completed";
-    }
-  } else {
-    LOG_INFO << "No warm up audio provided, skipping warm up";
-  }
-
-  // Model loaded successfully, add it to the map of loaded models
-  // and return a 200 response
-  whispers.emplace(model_id, std::move(whisper));
-  Json::Value jsonResp;
-  std::string success_msg = "Model " + model_id + " loaded successfully";
-  jsonResp["message"] = success_msg;
-  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  resp->setStatusCode(k200OK);
-  callback(resp);
-  return;
-}
-
-void whisperCPP::unload_model(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-  const auto &jsonBody = req->getJsonObject();
-  auto optional_model_id = parse_model_id(jsonBody, callback);
-  if (!optional_model_id) {
-    return;
-  }
-  std::string model_id = *optional_model_id;
-
-  // If model is not loaded, return a 404 error
-  if (whispers.find(model_id) == whispers.end()) {
-    std::string error_msg =
-        "Model " + model_id +
-        " has not been loaded, please load that model into nitro";
-    LOG_INFO << error_msg;
-    Json::Value jsonResp;
-    jsonResp["message"] = error_msg;
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k404NotFound);
-    callback(resp);
-    return;
-  }
-
-  // Model loaded, unload it
-  whispers[model_id].~whisper_server_context();
-  whispers.erase(model_id);
-
-  // Return a 200 response
-  Json::Value jsonResp;
-  std::string success_msg = "Model " + model_id + " unloaded successfully";
-  LOG_INFO << success_msg;
-  jsonResp["message"] = success_msg;
-  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  resp->setStatusCode(k200OK);
-  callback(resp);
-  return;
-}
-
-void whisperCPP::list_model(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-  // Return a list of all loaded models
-  Json::Value jsonResp;
-  Json::Value models;
-  for (auto const &model : whispers) {
-    models.append(model.first);
-  }
-  jsonResp["models"] = models;
-  auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  resp->setStatusCode(k200OK);
-  callback(resp);
-  return;
-}
-
-void whisperCPP::transcription_impl(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback, bool translate) {
-  MultiPartParser partParser;
-  Json::Value jsonResp;
-  if (partParser.parse(req) != 0 || partParser.getFiles().size() != 1) {
-    auto resp = HttpResponse::newHttpResponse();
-    resp->setBody("Must have exactly one file");
-    resp->setStatusCode(k403Forbidden);
-    callback(resp);
-    return;
-  }
-  auto &file = partParser.getFiles()[0];
-  const auto &formFields = partParser.getParameters();
-
-  // Check if model_id are present in the request. If not, return a 400 error
-  if (formFields.find("model_id") == formFields.end()) {
-    LOG_INFO << "No model_id found in request body";
-    Json::Value jsonResp;
-    jsonResp["message"] = "No model_id found in request body";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-    return;
-  }
-
-  std::string model_id = formFields.at("model_id");
-
-  // Parse all other optional parameters from the request
-  std::string language = formFields.find("language") != formFields.end()
-                             ? formFields.at("language")
-                             : "en";
-  std::string prompt = formFields.find("prompt") != formFields.end()
-                           ? formFields.at("prompt")
-                           : "";
-  std::string response_format =
-      formFields.find("response_format") != formFields.end()
-          ? formFields.at("response_format")
-          : json_format;
-  float temperature = formFields.find("temperature") != formFields.end()
-                          ? std::stof(formFields.at("temperature"))
-                          : 0;
-
-  // Check if model is loaded. If not, return a 404 error
-  if (whispers.find(model_id) == whispers.end()) {
-    std::string error_msg =
-        "Model " + model_id +
-        " has not been loaded, please load that model into nitro";
-    LOG_INFO << error_msg;
-    Json::Value jsonResp;
-    jsonResp["message"] = error_msg;
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k404NotFound);
-    callback(resp);
-    return;
-  }
-
-  // Save input file to temp location
-  std::string temp_dir =
-      std::filesystem::temp_directory_path().string() + "/" +
-      std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(
-                         std::chrono::system_clock::now().time_since_epoch())
-                         .count());
-  // Create the directory
-  std::filesystem::create_directory(temp_dir);
-  // Save the file to the directory, with its original name
-  std::string temp_file_path = temp_dir + "/" + file.getFileName();
-  file.saveAs(temp_file_path);
-
-  // Run inference
-  std::string result;
-  try {
-    result =
-        whispers[model_id].inference(temp_file_path, language, prompt,
-                                     response_format, temperature, translate);
-  } catch (const std::exception &e) {
-    std::remove(temp_file_path.c_str());
-    Json::Value jsonResp;
-    jsonResp["message"] = e.what();
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(k500InternalServerError);
-    callback(resp);
-    return;
-  }
-  // TODO: Need to remove the entire temp directory, not just the file
-  std::remove(temp_file_path.c_str());
-
-  auto resp = nitro_utils::nitroHttpResponse();
-  resp->setBody(result);
-  resp->setStatusCode(k200OK);
-  // Set content type based on response format
-  if (response_format == json_format || response_format == vjson_format) {
-    resp->addHeader("Content-Type", "application/json");
-  } else if (response_format == text_format) {
-    resp->addHeader("Content-Type", "text/html");
-  } else if (response_format == srt_format) {
-    resp->addHeader("Content-Type", "application/x-subrip");
-  } else if (response_format == vtt_format) {
-    resp->addHeader("Content-Type", "text/vtt");
-  }
-  callback(resp);
-  return;
-}
-
-void whisperCPP::transcription(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-  return transcription_impl(req, std::move(callback), false);
-}
-
-void whisperCPP::translation(
-    const HttpRequestPtr &req,
-    std::function<void(const HttpResponsePtr &)> &&callback) {
-  return transcription_impl(req, std::move(callback), true);
 }
