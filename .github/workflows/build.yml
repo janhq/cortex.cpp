@@ -140,8 +140,8 @@ jobs:
           #   defines: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
           - build: "amd64-vulkan"
             defines: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
-          - build: "arm64"
-            defines: "-A ARM64 -DLLAMA_NATIVE=OFF"
+          # - build: "arm64"
+          #   defines: "-A ARM64 -DLLAMA_NATIVE=OFF"
 
     steps:
       - name: Clone
@@ -461,14 +461,13 @@ jobs:
       - name: actions-setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.14.1
 
-      - name: Install Vulkan SDK
-        id: get_vulkan
+      - name: Prepare Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.0
         if: ${{ matrix.build == 'amd64-vulkan' }}
-        run: |
-          curl.exe -o $env:RUNNER_TEMP/VulkanSDK-Installer.exe -L "https://sdk.lunarg.com/sdk/download/${env:VULKAN_VERSION}/windows/VulkanSDK-${env:VULKAN_VERSION}-Installer.exe"
-          & "$env:RUNNER_TEMP\VulkanSDK-Installer.exe" --accept-licenses --default-answer --confirm-command install
-          Add-Content $env:GITHUB_ENV "VULKAN_SDK=C:\VulkanSDK\${env:VULKAN_VERSION}"
-          Add-Content $env:GITHUB_PATH "C:\VulkanSDK\${env:VULKAN_VERSION}\bin"
+        with:
+          vulkan-query-version: 1.3.275.0
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
 
       - name: Build
         id: cmake_build
@@ -544,7 +543,7 @@ jobs:
           asset_content_type: application/gzip
 
   windows-amd64-cuda-build:
-    runs-on: windows-cuda-${{ matrix.cuda }}
+    runs-on: windows-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     timeout-minutes: 20
@@ -567,6 +566,13 @@ jobs:
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1
+
+      - uses: Jimver/cuda-toolkit@v0.2.11
+        id: cuda-toolkit
+        with:
+          cuda: ${{ matrix.cuda }}
+          method: "network"
+          sub-packages: '["nvcc", "cudart", "cublas", "cublas_dev", "thrust", "visual_studio_integration"]'
 
       - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
         run: |
@@ -596,15 +602,18 @@ jobs:
           dotnet-version: "6.0.x"
 
       # Conditional instruction check and set environment variable
-      - name: Set INSTRUCTION Based on Instructions
+      - name: Set INSTRUCTION Based on Instructions ${{ matrix.instructions }}
         shell: cmd
         run: |
           IF "${{ matrix.instructions }}" == "amd64-avx2" (
             echo "INSTRUCTION=-DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
+            echo "INSTRUCTION=-DLLAMA_NATIVE=OFF"
           ) ELSE IF "${{ matrix.instructions }}" == "amd64-avx" (
             echo "INSTRUCTION=-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
+            echo "INSTRUCTION=-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
           ) ELSE IF "${{ matrix.instructions }}" == "amd64-avx512" (
             echo "INSTRUCTION=-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
+            echo "INSTRUCTION=-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
           )
 
       - name: Build
@@ -615,7 +624,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. %DEFINES%  -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. %INSTRUCTION%  -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
