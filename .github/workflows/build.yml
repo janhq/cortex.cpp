@@ -552,7 +552,7 @@ jobs:
 
     strategy:
       matrix:
-        cuda: ["12-0", "11-7"]
+        cuda: ["12.2.0", "11.7.1"]
         instructions: ["amd64-avx2", "amd64-avx", "amd64-avx512"]
 
     steps:
