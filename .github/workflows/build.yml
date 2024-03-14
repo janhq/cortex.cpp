@@ -554,13 +554,7 @@ jobs:
     strategy:
       matrix:
         cuda: ["12-0", "11-7"]
-        include:
-          - build: "amd64"
-            defines: "-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
-          - build: "amd64-avx"
-            defines: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
-          - build: "amd64-avx512"
-            defines: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+        instructions: ["amd64-avx2", "amd64-avx", "amd64-avx512"]
 
     steps:
       - name: Setup VSWhere.exe
@@ -601,6 +595,18 @@ jobs:
         with:
           dotnet-version: "6.0.x"
 
+      # Conditional instruction check and set environment variable
+      - name: Set INSTRUCTION Based on Instructions
+        shell: cmd
+        run: |
+          IF "${{ matrix.instructions }}" == "amd64-avx2" (
+            echo "INSTRUCTION=-DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
+          ) ELSE IF "${{ matrix.instructions }}" == "amd64-avx" (
+            echo "INSTRUCTION=-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
+          ) ELSE IF "${{ matrix.instructions }}" == "amd64-avx512" (
+            echo "INSTRUCTION=-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
+          )
+
       - name: Build
         id: cmake_build
         shell: cmd
@@ -609,7 +615,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. ${{ matrix.defines }} -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. %DEFINES%  -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -633,7 +639,7 @@ jobs:
         uses: actions/upload-artifact@v2
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
-          name: nitro-win-${{ matrix.build }}-cuda-${{ matrix.cuda }}
+          name: nitro-win-${{ matrix.instructions }}-cuda-${{ matrix.cuda }}
           path: ./build/Release
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -643,7 +649,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-${{ matrix.build }}-cuda-${{ matrix.cuda }}.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-${{ matrix.instructions }}-cuda-${{ matrix.cuda }}.tar.gz
           asset_content_type: application/gzip
 
   update_release_draft:
