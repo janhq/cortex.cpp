@@ -433,6 +433,7 @@ void llamaCPP::InferenceImpl(
             create_full_return_json(nitro_utils::generate_random_string(20),
                                     "_", result.result_json["content"], "_",
                                     prompt_tokens, predicted_tokens);
+        resp->setContentTypeString("application/json");
         resp->setBody(full_return);
       } else {
         resp->setBody("Internal error during inference");
