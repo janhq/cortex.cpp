@@ -12,7 +12,7 @@ set "VERSION=latest"
 set "GPU=false"
 set "AVX=-avx2"
 
-echo Please enter the AVX version you want (avx, avx2, avx512) or leave blank for default (avx2):
+echo Please specify the desired AVX version (avx, avx2, avx512), or leave it blank to use the default version (avx2):
 set /p USER_AVX=
 
 if not "%USER_AVX%"=="" (
