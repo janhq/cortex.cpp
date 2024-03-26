@@ -101,6 +101,17 @@ if [ "$GPU" == "-cuda" ] && [ "$OS" == "Darwin" ]; then
     exit 1
 fi
 
+# There are only two supported CUDA version. Let it fail if unsupported.
+if [ "$GPU" == "-cuda" ]; then
+    export PATH="/usr/local/cuda/bin:$PATH"
+    CUDA_MAJ=$(nvcc --version | grep -oP "(?<=release )\d+") || 0
+    if [[ $CUDA_MAJ == 12 ]]; then
+        CUDA_VERSION="-12-0";
+    elif [[ $CUDA_MAJ == 11 ]]; then
+        CUDA_VERSION="-11-7"
+    fi
+fi
+
 # Construct GitHub API URL and get latest version if not specified
 if [ "$VERSION" == "latest" ]; then
     API_URL="https://api.github.com/repos/janhq/nitro/releases/latest"
@@ -116,7 +127,7 @@ fi
 # Construct download URL based on OS, ARCH, GPU and VERSION
 case $OS in
     Linux)
-        FILE_NAME="nitro-${VERSION}-linux-amd64${GPU}.tar.gz"
+        FILE_NAME="nitro-${VERSION}-linux-amd64${GPU}${CUDA_VERSION}.tar.gz"
         ;;
     Darwin)
         ARCH_FORMAT=$( [[ "$ARCH" == "arm64" ]] && echo "mac-arm64" || echo "mac-amd64")
