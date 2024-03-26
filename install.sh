@@ -73,7 +73,6 @@ create_uninstall_script() {
 
 # Determine OS and architecture
 OS=$(uname -s)
-ARCH=$(uname -m)
 VERSION="latest"
 GPU=""
 
@@ -119,7 +118,7 @@ case $OS in
         FILE_NAME="nitro-${VERSION}-linux-amd64${GPU}.tar.gz"
         ;;
     Darwin)
-        ARCH_FORMAT=$( [[ "$ARCH" == "arm64" ]] && echo "mac-arm64" || echo "mac-amd64")
+        ARCH_FORMAT="mac-universal"
         FILE_NAME="nitro-${VERSION}-${ARCH_FORMAT}.tar.gz"
         ;;
     *)

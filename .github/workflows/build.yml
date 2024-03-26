@@ -4,8 +4,6 @@ on:
   schedule:
     - cron: "0 20 * * *" # At 8 PM UTC, which is 3 AM UTC+7
   push:
-    branches:
-      - main
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths:
       [
@@ -291,6 +289,13 @@ jobs:
           CC=gcc-8 make -j $(sysctl -n hw.ncpu)
           ls -la
 
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp llama.cpp/ggml-metal.metal nitro/
+          cp build/nitro nitro/
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -350,6 +355,12 @@ jobs:
           cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} -DLLAMA_METAL=OFF .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp build/nitro nitro/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
