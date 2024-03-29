@@ -4,8 +4,6 @@ on:
   schedule:
     - cron: "0 20 * * *" # At 8 PM UTC, which is 3 AM UTC+7
   push:
-    branches:
-      - main
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths:
       [
@@ -297,11 +295,9 @@ jobs:
           mkdir -p nitro
           cp llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: nitro-mac-arm64
           path: ./nitro
@@ -329,16 +325,6 @@ jobs:
           cd nitro
           chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-arm64.tar.gz
-          asset_content_type: application/gzip
 
   macOS-amd64-build:
     runs-on: macos-latest
@@ -375,11 +361,9 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: nitro-mac-amd64
           path: ./nitro
@@ -400,6 +384,40 @@ jobs:
           chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
 
+  universal-nitro-artifact-macos:
+    runs-on: macos-latest
+    needs: [create-draft-release, set-nitro-version, macOS-silicon-build, macOS-amd64-build]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success' 
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: download artifact amd64
+        uses: actions/download-artifact@v2
+        with:
+          name: nitro-mac-amd64
+          path: ./nitro-mac-amd64
+
+      - name: download artifact arm64
+        uses: actions/download-artifact@v2
+        with:
+          name: nitro-mac-arm64
+          path: ./nitro-mac-arm64
+      
+      - name: bundle universal binary
+        run: |
+          mkdir -p nitro
+          ls ./nitro-mac-amd64
+          lipo -create ./nitro-mac-amd64/nitro ./nitro-mac-arm64/nitro -output ./nitro/nitro
+          cp ./nitro-mac-arm64/ggml-metal.metal ./nitro/ggml-metal.metal
+          tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: nitro-mac-universal
+          path: ./nitro
+
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
@@ -407,7 +425,7 @@ jobs:
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./nitro.tar.gz
-          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-amd64.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-universal.tar.gz
           asset_content_type: application/gzip
 
   windows-amd64-build:
