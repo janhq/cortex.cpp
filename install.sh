@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 # Check for root privileges
 if [ "$(id -u)" != "0" ]; then
