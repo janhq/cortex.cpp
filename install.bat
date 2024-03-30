@@ -7,10 +7,18 @@ if exist "%APPDATA%\nitro" (
     rmdir /S /Q "%APPDATA%\nitro"
 )
 
-
 :: Parse arguments
 set "VERSION=latest"
 set "GPU=false"
+set "AVX=-avx2"
+
+echo Please specify the desired AVX version (avx, avx2, avx512), or leave it blank to use the default version (avx2):
+set /p USER_AVX=
+
+if not "%USER_AVX%"=="" (
+    set "AVX=-%USER_AVX%"
+)
+
 :arg_loop
 if "%~1"=="" goto arg_loop_end
 if "%~1"=="--gpu" (
@@ -37,7 +45,7 @@ if "%VERSION%"=="latest" (
 )
 
 :: Construct the download URL
-set "URL=https://github.com/janhq/nitro/releases/download/v%VERSION%/nitro-%VERSION%-win-amd64"
+set "URL=https://github.com/janhq/nitro/releases/download/v%VERSION%/nitro-%VERSION%-win-amd64%AVX%"
 if "%GPU%"=="true" (
     :: If --gpu option is provided, append -cuda to the URL
     set "URL=%URL%-cuda"
