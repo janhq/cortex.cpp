@@ -285,7 +285,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake -DWHISPER_COREML=1 -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
+          cmake -DLLAMA_METAL_EMBED_LIBRARY=ON -DWHISPER_COREML=1 -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncpu)
           ls -la
 
