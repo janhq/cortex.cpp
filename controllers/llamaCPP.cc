@@ -630,10 +630,6 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       log_set_target(llama_log_folder + "llama.log");
     }  // Set folder for llama log
   }
-#ifdef GGML_USE_CUBLAS
-  LOG_INFO << "Setting up GGML CUBLAS PARAMS";
-  params.mul_mat_q = false;
-#endif  // GGML_USE_CUBLAS
   if (params.model_alias == "unknown") {
     params.model_alias = params.model;
   }

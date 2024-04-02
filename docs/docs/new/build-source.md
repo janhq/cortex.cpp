@@ -69,7 +69,7 @@ Now, let's generate the build files.
 
   ```bash
   mkdir build && cd build
-  cmake -DLLAMA_CUBLAS=ON ..
+  cmake -DLLAMA_CUDA=ON ..
   ```
 
 ## Build the Application

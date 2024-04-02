@@ -6,7 +6,7 @@
 
 ```bash
 mkdir build && cd build
-cmake -DLLAMA_CUBLAS=ON -DWHISPER_CUBLAS=ON ..
+cmake -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON ..
 make -j$(nproc)
 ```
 
@@ -31,7 +31,7 @@ cmake --build build -j --config Release
 ```
 mkdir -p build
 cd build
-cmake .. -DLLAMA_CUBLAS=ON -DBUILD_SHARED_LIBS=ON -DWHISPER_CUBLAS=ON -DWHISPER_SDL2=ON
+cmake .. -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=ON -DWHISPER_CUDA=ON -DWHISPER_SDL2=ON
 cmake --build . --config Release
 ```
 

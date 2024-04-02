@@ -12,7 +12,7 @@ RUN apt-get update && \
     ./install_deps.sh && \
     mkdir build && \
     cd build && \
-    cmake .. -DDEBUG=ON -DLLAMA_CUBLAS=ON -DLLAMA_CUDA_F16=ON -DLLAMA_CUDA_DMMV_X=64 -DLLAMA_CUDA_MMV_Y=32 && \
+    cmake .. -DDEBUG=ON -DLLAMA_CUDA=ON -DLLAMA_CUDA_F16=ON -DLLAMA_CUDA_DMMV_X=64 -DLLAMA_CUDA_MMV_Y=32 && \
     cmake --build . --config Release -j $(nproc) && \
     apt-get remove --purge -y git cmake && \
     apt-get autoremove -y && \
