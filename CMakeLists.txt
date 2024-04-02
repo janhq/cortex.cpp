@@ -32,7 +32,7 @@ if(LLAMA_CUDA)
   find_package(CUDAToolkit)
   if(CUDAToolkit_FOUND)
     message(STATUS "cuBLAS found")
-    add_compile_definitions(GGML_USE_CUBLAS)
+    add_compile_definitions(GGML_USE_CUDA)
   endif()
 endif()
 
