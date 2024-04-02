@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://nitro.jan.ai/blog</id>
     <title>Nitro Blog</title>
-    <updated>2024-02-03T02:31:50.000Z</updated>
+    <updated>2024-04-02T23:57:32.000Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://nitro.jan.ai/blog"/>
     <subtitle>Nitro Blog</subtitle>
@@ -11,7 +11,7 @@
         <title type="html"><![CDATA[Hello World]]></title>
         <id>https://nitro.jan.ai/blog/hello-world</id>
         <link href="https://nitro.jan.ai/blog/hello-world"/>
-        <updated>2024-02-03T02:31:50.000Z</updated>
+        <updated>2024-04-02T23:57:32.000Z</updated>
         <summary type="html"><![CDATA[This is my first post on Docusaurus.]]></summary>
         <content type="html"><![CDATA[<p>Hello World!</p>]]></content>
         <author>
@@ -24,6 +24,6 @@
         <title type="html"><![CDATA[test]]></title>
         <id>https://nitro.jan.ai/blog/test</id>
         <link href="https://nitro.jan.ai/blog/test"/>
-        <updated>2024-02-03T02:31:50.000Z</updated>
+        <updated>2024-04-02T23:57:32.000Z</updated>
     </entry>
 </feed>
