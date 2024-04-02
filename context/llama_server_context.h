@@ -1,3 +1,5 @@
+#include <condition_variable>
+#include <atomic>
 #include <string>
 #include <vector>
 #include <set>
@@ -1525,7 +1527,7 @@ struct llama_server_context {
             slot.id, slot.params.n_keep, n_left, n_discard);
         llama_kv_cache_seq_rm(ctx, slot.id, slot.params.n_keep + 1,
                               slot.params.n_keep + n_discard + 1);
-        llama_kv_cache_seq_shift(ctx, slot.id,
+        llama_kv_cache_seq_add(ctx, slot.id,
                                  slot.params.n_keep + 1 + n_discard,
                                  slot.n_past, -n_discard);
 
