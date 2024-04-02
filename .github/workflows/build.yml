@@ -231,7 +231,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake  -DLLAMA_NATIVE=OFF -DLLAMA_CUBLAS=ON -DLLAMA_CUBLAS=ON -DWHISPER_CUBLAS=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          cmake  -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           make -j $(nproc)
           ls -la
 
