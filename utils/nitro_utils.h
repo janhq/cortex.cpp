@@ -233,6 +233,7 @@ inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value &data) {
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
+  resp->setContentTypeString("application/json");
   return resp;
 };
 
