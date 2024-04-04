@@ -471,7 +471,7 @@ struct llama_server_context {
   llama_batch batch;
 
   bool multimodal = false;
-  bool clean_kv_cache = true;
+  bool clean_kv_cache = false;
   bool all_slots_are_idle = false;
   bool add_bos_token = true;
 
@@ -860,7 +860,6 @@ struct llama_server_context {
   void kv_cache_clear() {
     // clear the entire KV cache
     llama_kv_cache_clear(ctx);
-    clean_kv_cache = false;
   }
 
   void update_system_prompt() {
