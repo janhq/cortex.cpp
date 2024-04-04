@@ -860,7 +860,6 @@ struct llama_server_context {
   void kv_cache_clear() {
     // clear the entire KV cache
     llama_kv_cache_clear(ctx);
-    clean_kv_cache = false;
   }
 
   void update_system_prompt() {
