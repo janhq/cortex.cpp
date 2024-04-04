@@ -471,7 +471,7 @@ struct llama_server_context {
   llama_batch batch;
 
   bool multimodal = false;
-  bool clean_kv_cache = true;
+  bool clean_kv_cache = false;
   bool all_slots_are_idle = false;
   bool add_bos_token = true;
 
