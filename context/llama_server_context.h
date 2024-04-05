@@ -532,7 +532,7 @@ struct llama_server_context {
 
     std::tie(model, ctx) = llama_init_from_gpt_params(params);
     if (model == nullptr) {
-      LOG_ERROR_LLAMA("unable to load model", {{"model", params.model}});
+      LOG_ERROR_LLAMA("llama.cpp unable to load model", {{"model", params.model}});
       return false;
     }
 
@@ -551,6 +551,10 @@ struct llama_server_context {
       }
     }
 
+    if (ctx == nullptr) {
+      LOG_ERROR_LLAMA("Unable to get llama.cpp context", {});
+      return false;
+    }
     n_ctx = llama_n_ctx(ctx);
 
     add_bos_token = llama_should_add_bos_token(model);
@@ -578,7 +582,11 @@ struct llama_server_context {
       slots.push_back(slot);
     }
 
-    batch = llama_batch_init(n_ctx, 0, params.n_parallel);
+    try {
+      batch = llama_batch_init(n_ctx, 0, params.n_parallel);
+    } catch (const std::exception& e) {
+      LOG_ERROR_LLAMA("Failed to allocate llama.cpp batch metadata" , {{"exception", e.what()}, {"n_tokens_alloc", n_ctx}, {"embd", 0}, {"n_seq_max", params.n_parallel}});
+    }
 
     // empty system prompt
     system_prompt = "";
@@ -1296,7 +1304,9 @@ struct llama_server_context {
         }
 
         if (queue_results[i].id == task_id) {
-          assert(queue_results[i].multitask_id == -1);
+          if (queue_results[i].multitask_id != -1) {
+            LOG_ERROR_LLAMA("Incorrect multitask ID", {{"task_id", task_id}});
+          }
           task_result res = queue_results[i];
           queue_results.erase(queue_results.begin() + i);
           return res;
