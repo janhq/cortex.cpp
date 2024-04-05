@@ -10,7 +10,13 @@
 #include <ostream>
 #include <regex>
 #include <vector>
-// Include platform-specific headers
+
+#if defined(__GNUC__) || defined(__clang__)
+#include <cpuid.h>
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#endif
+
 #ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
@@ -172,6 +178,25 @@ inline std::string generate_random_string(std::size_t length) {
                   [&]() { return characters[distribution(generator)]; });
 
   return random_string;
+}
+
+inline bool isAVX2Supported() {
+#if defined(__GNUC__) || defined(__clang__)
+    unsigned eax, ebx, ecx, edx;
+    if (__get_cpuid_max(0, nullptr) < 7) return false;
+
+    __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
+    return (ebx & (1 << 5)) != 0;
+#elif defined(_MSC_VER)
+    int cpuInfo[4];
+    __cpuid(cpuInfo, 0);
+    int nIds = cpuInfo[0];
+    if (nIds >= 7) {
+        __cpuidex(cpuInfo, 7, 0);
+        return (cpuInfo[1] & (1 << 5)) != 0;
+    }
+    return false;
+#endif
 }
 
 inline void nitro_logo() {

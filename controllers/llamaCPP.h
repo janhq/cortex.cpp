@@ -27,10 +27,6 @@
 #define SERVER_VERBOSE 1
 #endif
 
-#define LOG_INFO_REQUEST(RID) LOG_INFO << "Request " << RID << ": " 
-#define LOG_WARN_REQUEST(RID) LOG_WARN << "Request " << RID << ": " 
-#define LOG_ERROR_REQUEST(RID) LOG_ERROR << "Request " << RID << ": " 
-
 using json = nlohmann::json;
 
 using namespace drogon;
@@ -89,7 +85,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   std::string pre_prompt;
   int repeat_last_n;
   bool caching_enabled;
-  std::atomic<int> no_of_inference_requests = 0;
+  std::atomic<int> no_of_requests = 0;
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
   std::string grammar_file_content;

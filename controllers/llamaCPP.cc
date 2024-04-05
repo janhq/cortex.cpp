@@ -3,13 +3,12 @@
 #include <fstream>
 #include <iostream>
 #include "log.h"
+#include "utils/nitro_utils.h"
+#include "utils/logging_utils.h"
 
 // External
 #include "common.h"
 #include "llama.h"
-
-#include "log.h"
-#include "utils/nitro_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -189,7 +188,7 @@ void llamaCPP::InferenceImpl(
     inferences::ChatCompletionRequest&& completion,
     std::function<void(const HttpResponsePtr&)>& callback) {
   std::string formatted_output = pre_prompt;
-  int request_id = ++no_of_inference_requests;
+  int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for inference request";
 
   json data;
@@ -464,7 +463,7 @@ void llamaCPP::Embedding(
 void llamaCPP::EmbeddingImpl(
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(const HttpResponsePtr&)>& callback) {
-  int request_id = ++no_of_inference_requests;
+  int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for embedding request";
   // Queue embedding task
   auto state = create_inference_state(this);
@@ -558,6 +557,9 @@ void llamaCPP::LoadModel(
     callback(resp);
     return;
   }
+
+  if (!nitro_utils::isAVX2Supported() && ggml_cpu_has_avx2())
+    LOG_ERROR << "AVX2 is not supported by your processor, please download and replace the correct Nitro asset version";
 
   const auto& jsonBody = req->getJsonObject();
   if (!LoadModelImpl(jsonBody)) {
