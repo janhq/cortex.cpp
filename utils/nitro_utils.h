@@ -183,7 +183,7 @@ inline std::string generate_random_string(std::size_t length) {
     __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
     return (ebx & (1 << 5)) != 0;
   }
-#elif defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
+#elif defined(_MSC_VER) && defined(_M_X64) || defined(_M_IX86)
 #include <intrin.h>
   inline bool isAVX2Supported() {
     int cpuInfo[4];
