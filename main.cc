@@ -22,6 +22,9 @@ int main(int argc, char *argv[]) {
   std::string host = "127.0.0.1";
   int port = 3928;
   std::string uploads_folder_path;
+  bool useHttps = false; // Default to HTTP
+  std::string certPath;
+  std::string keyPath;
 
   // Number of nitro threads
   if (argc > 1) {
@@ -38,9 +41,23 @@ int main(int argc, char *argv[]) {
     port = std::atoi(argv[3]); // Convert string argument to int
   }
 
+  // Check for HTTPS argument
+  if (argc > 4 && std::string(argv[4]) == "--https") {
+    useHttps = true;
+  }
+
+  // Check for certificate and private key file paths
+  if (argc > 5 && useHttps) {
+    certPath = argv[5];
+  }
+
+  if (argc > 6 && useHttps) {
+    keyPath = argv[6];
+  }
+
   // Uploads folder path
-  if (argc > 4) {
-    uploads_folder_path = argv[4];
+  if (argc > 7) {
+    uploads_folder_path = argv[7];
   }
 
   int logical_cores = std::thread::hardware_concurrency();
@@ -53,14 +70,28 @@ int main(int argc, char *argv[]) {
 #endif
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(host, port);
+
+  if (useHttps) {
+    // Configure for HTTPS
+    drogon::ssl::SSLServerContextConfig sslConfig;
+    sslConfig.loadCertificate(certPath, keyPath);
+    drogon::ssl::SSLServerContextPtr sslContext = std::make_shared<drogon::ssl::SSLServerContext>(sslConfig);
+    drogon::app().addListener(host, port, sslContext);
+    LOG_INFO << "Using HTTPS";
+  } else {
+    // Configure for HTTP
+    drogon::app().addListener(host, port);
+    LOG_INFO << "Using HTTP";
+  }
+
   drogon::app().setThreadNum(drogon_thread_num);
+
   if (!uploads_folder_path.empty()) {
     LOG_INFO << "Drogon uploads folder is at: " << uploads_folder_path;
     drogon::app().setUploadPath(uploads_folder_path);
   }
-  LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
+  LOG_INFO << "Number of threads: " << drogon::app().getThreadNum();
   drogon::app().run();
 
   return 0;
