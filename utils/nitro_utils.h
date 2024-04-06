@@ -195,6 +195,10 @@ inline std::string generate_random_string(std::size_t length) {
     }
     return false;
   }
+#else
+  inline bool isAVX2Supported() {
+    return false;
+  }
 #endif
 
 inline void nitro_logo() {
