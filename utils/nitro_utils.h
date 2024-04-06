@@ -10,13 +10,7 @@
 #include <ostream>
 #include <regex>
 #include <vector>
-
-#if defined(__GNUC__) || defined(__clang__)
-#include <cpuid.h>
-#elif defined(_MSC_VER)
-#include <intrin.h>
-#endif
-
+// Include platform-specific headers
 #ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>
@@ -180,14 +174,18 @@ inline std::string generate_random_string(std::size_t length) {
   return random_string;
 }
 
-inline bool isAVX2Supported() {
-#if defined(__GNUC__) || defined(__clang__)
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+#include <cpuid.h>
+  inline bool isAVX2Supported() {
     unsigned eax, ebx, ecx, edx;
     if (__get_cpuid_max(0, nullptr) < 7) return false;
 
     __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
     return (ebx & (1 << 5)) != 0;
-#elif defined(_MSC_VER)
+  }
+#elif defined(_MSC_VER) && (defined(__x86_64__) || defined(__i386__))
+#include <intrin.h>
+  inline bool isAVX2Supported() {
     int cpuInfo[4];
     __cpuid(cpuInfo, 0);
     int nIds = cpuInfo[0];
@@ -196,8 +194,8 @@ inline bool isAVX2Supported() {
         return (cpuInfo[1] & (1 << 5)) != 0;
     }
     return false;
+  }
 #endif
-}
 
 inline void nitro_logo() {
   std::string rainbowColors[] = {
