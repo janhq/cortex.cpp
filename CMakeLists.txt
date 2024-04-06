@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nitro CXX)
+project(nitro C CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -17,7 +17,8 @@ else()
 endif()
 
 # llama cpp server need llava example to work, this is for llama cpp server
-set(LLAMA_BUILD_EXAMPLES ON)
+# set(LLAMA_BUILD_EXAMPLES ON)
+add_subdirectory(llama.cpp/examples/llava)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
