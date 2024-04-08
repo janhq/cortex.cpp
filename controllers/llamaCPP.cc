@@ -582,8 +582,10 @@ void llamaCPP::LoadModel(
 
 bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   gpt_params params;
+  LOG_INFO << "Start loading model";
   // By default will setting based on number of handlers
   if (jsonBody) {
+    LOG_DEBUG << "Start parsing jsonBody";
     if (!jsonBody->operator[]("mmproj").isNull()) {
       LOG_INFO << "MMPROJ FILE detected, multi-model enabled!";
       params.mmproj = jsonBody->operator[]("mmproj").asString();
