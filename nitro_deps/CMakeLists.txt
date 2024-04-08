@@ -83,7 +83,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     gtest
     GIT_REPOSITORY https://github.com/google/googletest
-	GIT_TAG v1.14.0
+    GIT_TAG v1.14.0
     CMAKE_ARGS
 	-DCMAKE_BUILD_TYPE=release
 	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}

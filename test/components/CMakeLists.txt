@@ -1,5 +1,5 @@
 file(GLOB SRCS *.cc)
-project(test-models)
+project(test-components)
 
 add_executable(${PROJECT_NAME} ${SRCS})
 
