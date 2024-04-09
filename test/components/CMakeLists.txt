@@ -1,6 +1,8 @@
 file(GLOB SRCS *.cc)
 project(test-components)
 
+enable_testing()
+
 add_executable(${PROJECT_NAME} ${SRCS})
 
 find_package(Drogon CONFIG REQUIRED)
