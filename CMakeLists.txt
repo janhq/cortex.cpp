@@ -16,10 +16,6 @@ else()
   set(CMAKE_CXX_STANDARD 14)
 endif()
 
-# llama cpp server need llava example to work, this is for llama cpp server
-# set(LLAMA_BUILD_EXAMPLES ON)
-add_subdirectory(llama.cpp/examples/llava)
-
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
@@ -48,6 +44,7 @@ endif()
 
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
+add_subdirectory(llama.cpp/examples/llava)
 add_subdirectory(llama.cpp)
 add_subdirectory(whisper.cpp)
 
