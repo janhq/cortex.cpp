@@ -42,6 +42,17 @@ if(NOT DEFINED NITRO_VERSION)
   set(NITRO_VERSION "default_version")
 endif()
 
+if(APPLE)
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm.*|ARM64)$")
+    # MacOS silicon
+    set(LLAMA_METAL_EMBED_LIBRARY ON)
+    set(WHISPER_COREML 1)
+  else()
+    # MacOS amd64
+    set(LLAMA_METAL OFF)
+  endif()
+endif()
+
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
 add_subdirectory(llama.cpp/examples/llava)
