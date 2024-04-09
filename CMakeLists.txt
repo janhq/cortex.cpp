@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nitro CXX)
+project(nitro C CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -15,9 +15,6 @@ elseif(HAS_ANY AND HAS_STRING_VIEW)
 else()
   set(CMAKE_CXX_STANDARD 14)
 endif()
-
-# llama cpp server need llava example to work, this is for llama cpp server
-set(LLAMA_BUILD_EXAMPLES ON)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -47,6 +44,7 @@ endif()
 
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
+add_subdirectory(llama.cpp/examples/llava)
 add_subdirectory(llama.cpp)
 add_subdirectory(whisper.cpp)
 
