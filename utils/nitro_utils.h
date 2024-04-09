@@ -251,6 +251,7 @@ inline drogon::HttpResponsePtr nitroHttpResponse() {
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
+  resp->setContentTypeString("application/json");
   return resp;
 }
 
@@ -273,6 +274,7 @@ inline drogon::HttpResponsePtr nitroStreamResponse(
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
+  resp->setContentTypeString("application/json");
   return resp;
 }
 
