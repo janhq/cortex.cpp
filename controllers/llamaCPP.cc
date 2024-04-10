@@ -77,7 +77,7 @@ Json::Value create_embedding_payload(const std::vector<float>& embedding,
   return dataItem;
 }
 
-std::string create_full_return_json(const std::string& id,
+Json::Value create_full_return_json(const std::string& id,
                                     const std::string& model,
                                     const std::string& content,
                                     const std::string& system_fingerprint,
@@ -110,9 +110,7 @@ std::string create_full_return_json(const std::string& id,
   usage["total_tokens"] = prompt_tokens + completion_tokens;
   root["usage"] = usage;
 
-  Json::StreamWriterBuilder writer;
-  writer["indentation"] = "";  // Compact output
-  return Json::writeString(writer, root);
+  return root;
 }
 
 std::string create_return_json(const std::string& id, const std::string& model,
@@ -422,7 +420,6 @@ void llamaCPP::InferenceImpl(
         });
   } else {
     Json::Value respData;
-    auto resp = nitro_utils::nitroHttpResponse();
     int task_id = llama.request_completion(data, false, false, -1);
     LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
     if (!json_value(data, "stream", false)) {
@@ -431,16 +428,14 @@ void llamaCPP::InferenceImpl(
       if (!result.error && result.stop) {
         int prompt_tokens = result.result_json["tokens_evaluated"];
         int predicted_tokens = result.result_json["tokens_predicted"];
-        std::string full_return =
-            create_full_return_json(nitro_utils::generate_random_string(20),
-                                    "_", result.result_json["content"], "_",
-                                    prompt_tokens, predicted_tokens);
-        resp->setBody(full_return);
+        respData = create_full_return_json(nitro_utils::generate_random_string(20),
+                                           "_", result.result_json["content"], "_",
+                                           prompt_tokens, predicted_tokens);
       } else {
         respData["message"] = "Internal error during inference";
-        resp = nitro_utils::nitroHttpJsonResponse(respData);
         LOG_ERROR_REQUEST(request_id) << "Error during inference";
       }
+      auto resp = nitro_utils::nitroHttpJsonResponse(respData);
       callback(resp);
       LOG_INFO_REQUEST(request_id) << "Inference completed";
     }
@@ -496,7 +491,6 @@ void llamaCPP::EmbeddingImpl(
       }
     }
 
-    auto resp = nitro_utils::nitroHttpResponse();
     Json::Value root;
     root["data"] = responseData;
     root["model"] = "_";
@@ -506,8 +500,7 @@ void llamaCPP::EmbeddingImpl(
     usage["total_tokens"] = 0;
     root["usage"] = usage;
 
-    resp->setBody(Json::writeString(Json::StreamWriterBuilder(), root));
-    resp->setContentTypeString("application/json");
+    auto resp = nitro_utils::nitroHttpJsonResponse(root);
     callback(resp);
     LOG_INFO_REQUEST(request_id) << "Embedding completed";
   });
