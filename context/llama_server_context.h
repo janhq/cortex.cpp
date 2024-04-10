@@ -502,6 +502,7 @@ struct llama_server_context {
   std::condition_variable condition_tasks;
   std::mutex mutex_results;
   std::condition_variable condition_results;
+  std::thread bgr_thread;
 
   ~llama_server_context() {
     if (ctx) {
@@ -512,6 +513,7 @@ struct llama_server_context {
       llama_free_model(model);
       model = nullptr;
     }
+    release_resources();
   }
 
   bool load_model(const gpt_params& params_) {
@@ -600,6 +602,10 @@ struct llama_server_context {
     // empty system prompt
     system_prompt = "";
     system_tokens.clear();
+    
+    model_loaded_external = true;
+    LOG_INFO << "Started background task here!";
+    bgr_thread = std::thread(std::bind(&llama_server_context::do_background_tasks, this));
   }
 
   std::vector<llama_token> tokenize(const json& json_prompt,
@@ -1878,6 +1884,33 @@ struct llama_server_context {
       }
     }
     return true;
+  }
+
+  void do_background_tasks() {
+    while (model_loaded_external) {
+      update_slots();
+    }
+    LOG_INFO << "Background task stopped! ";
+    kv_cache_clear();
+    LOG_INFO << "KV cache cleared!";
+  }
+
+  void release_resources() {
+    if(model_loaded_external) {
+      LOG_INFO << "Releasing llama_server_context resources";
+      model_loaded_external = false;
+      condition_tasks.notify_one();
+
+      if (bgr_thread.joinable()) {
+        bgr_thread.join();
+      }
+
+      llama_free(ctx);
+      llama_free_model(model);
+      ctx = nullptr;
+      model = nullptr;
+      LOG_INFO << "Released llama_server_context resources";
+    }
   }
 };
 

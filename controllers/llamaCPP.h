@@ -59,13 +59,14 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void ChatCompletion(
-      inferences::ChatCompletionRequest &&completion,
+      inferences::ChatCompletionRequest&& completion,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
   void Embedding(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void LoadModel(const HttpRequestPtr& req,
-                 std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void LoadModel(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
   void UnloadModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
@@ -74,11 +75,9 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
 
  private:
-  llama_server_context llama;
-  // std::atomic<bool> model_loaded = false;
+  std::unordered_map<std::string, llama_server_context> server_ctx_map;
   size_t sent_count = 0;
   size_t sent_token_probs_index = 0;
-  std::thread backgroundThread;
   std::string user_prompt;
   std::string ai_prompt;
   std::string system_prompt;
@@ -93,16 +92,18 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   /**
    * Queue to handle the inference tasks
    */
-  trantor::ConcurrentTaskQueue* queue;
+  int task_queue_thread_num = 1;
+  std::unique_ptr<trantor::ConcurrentTaskQueue> inference_task_queue;
 
   bool LoadModelImpl(std::shared_ptr<Json::Value> jsonBody);
   void InferenceImpl(inferences::ChatCompletionRequest&& completion,
                      std::function<void(const HttpResponsePtr&)>&& callback);
   void EmbeddingImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr&)>&& callback);
-  bool CheckModelLoaded(const std::function<void(const HttpResponsePtr&)>& callback);
-  void WarmupModel();
-  void BackgroundTask();
-  void StopBackgroundTask();
+  bool CheckModelLoaded(
+      const std::function<void(const HttpResponsePtr&)>& callback,
+      const std::string& model_id);
+  void WarmupModel(const std::string& model_id);
+  bool ShouldInitBackend() const;
 };
 };  // namespace inferences

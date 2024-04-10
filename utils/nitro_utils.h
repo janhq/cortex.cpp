@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
+#include <drogon/HttpRequest.h>
 #include <fstream>
 #include <iostream>
 #include <ostream>
@@ -281,5 +282,32 @@ inline void ltrim(std::string& s) {
             return !std::isspace(ch);
           }));
 };
+
+inline std::string getModelId(const Json::Value& jsonBody) {
+  // First check if model exists in request 
+  if(!jsonBody["model"].isNull()) {
+    return jsonBody["model"].asString(); 
+  } else if(!jsonBody["model_alias"].isNull()) {
+    return jsonBody["model_alias"].asString();
+  }
+  
+  // We check llama_model_path for loadmodel request
+  if (auto input = jsonBody["llama_model_path"]; !input.isNull()) {
+    auto s = input.asString();
+    std::replace(s.begin(), s.end(), '\\', '/');
+    auto const pos = s.find_last_of('/');
+    // We only if file name has gguf extension or nothing
+    if(s.substr(s.find_last_of('.') + 1) == "gguf") {
+      return s.substr(pos + 1, s.find_last_of('.') - pos - 1);
+    } else {
+      return s.substr(pos + 1);
+    }
+  }
+  return {};
+}
+
+inline std::string getModelId(const drogon::HttpRequestPtr& req) {
+  return getModelId(*(req->getJsonObject()));
+}
 
 } // namespace nitro_utils

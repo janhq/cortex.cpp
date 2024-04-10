@@ -45,6 +45,7 @@ response1=$(curl --connect-timeout 60 -o /tmp/response1.log -s -w "%{http_code}"
     --header 'Content-Type: application/json' \
     --data '{
     "llama_model_path": "/tmp/testllm",
+    "model_alias": "gpt-3.5-turbo",
     "ctx_len": 50,
     "ngl": 32,
     "embedding": false

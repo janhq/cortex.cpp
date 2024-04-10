@@ -11,6 +11,7 @@ struct ChatCompletionRequest {
   float presence_penalty = 0;
   Json::Value stop = Json::Value(Json::arrayValue);
   Json::Value messages = Json::Value(Json::arrayValue);
+  std::string model_id;
 };
 }  // namespace inferences
 
@@ -30,6 +31,7 @@ inline inferences::ChatCompletionRequest fromRequest(const HttpRequest& req) {
         (*jsonBody).get("presence_penalty", 0).asFloat();
     completion.messages = (*jsonBody)["messages"];
     completion.stop = (*jsonBody)["stop"];
+    completion.model_id = (*jsonBody).get("model", {}).asString();
   }
   return completion;
 }
