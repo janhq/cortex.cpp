@@ -154,14 +154,14 @@ llamaCPP::~llamaCPP() {
   StopBackgroundTask();
 }
 
-void llamaCPP::WarmupModel() {
+void llamaCPP::WarmupModel(bool is_embedding) {
   json pseudo;
 
   LOG_INFO << "Warm-up model";
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
-  const int task_id = llama.request_completion(pseudo, false, false, -1);
+  const int task_id = llama.request_completion(pseudo, false, is_embedding, -1);
   std::string completion_text;
   task_result result = llama.next_result(task_id);
   if (!result.error && result.stop) {
@@ -624,7 +624,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
     params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
-    params.embedding = jsonBody->get("embedding", true).asBool();
+    params.embedding = jsonBody->get("embedding", false).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
@@ -681,7 +681,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::BackgroundTask, this);
-  WarmupModel();
+  WarmupModel(params.embedding);
   return true;
 }
 
