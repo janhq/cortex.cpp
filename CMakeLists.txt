@@ -37,6 +37,11 @@ find_library(LIBLZMA_LIBRARY NAMES lzma)
 # Find Python 3 and its library
 find_package(Python3 COMPONENTS Interpreter Development)
 
+# Construct the source directory path
+set(PYTHON_STD_LIB_DIR
+    "${Python3_LIBRARY_DIRS}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+)
+
 # Function to copy actual file from symlink
 function(copy_dereferenced_symlink symlink_path destination)
   # Use 'readlink' to resolve the actual file path
@@ -83,6 +88,9 @@ endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/start_nitro.sh"
                "${CMAKE_BINARY_DIR}/start_nitro.sh" COPYONLY)
+
+# Copy the Python standard library directory to the destination
+file(COPY ${PYTHON_STD_LIB_DIR} DESTINATION "${CMAKE_BINARY_DIR}/python")
 
 # -----------------------End of packaging python
 
