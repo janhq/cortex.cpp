@@ -246,12 +246,11 @@ inline void nitro_logo() {
 }
 
 inline drogon::HttpResponsePtr nitroHttpResponse() {
-  auto resp = drogon::HttpResponse::newHttpResponse();
+  auto resp = drogon::HttpResponse::newHttpResponse(drogon::k200OK, drogon::CT_APPLICATION_JSON);
 #ifdef ALLOW_ALL_CORS
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
-  resp->setContentTypeString("application/json");
   return resp;
 }
 
@@ -274,7 +273,6 @@ inline drogon::HttpResponsePtr nitroStreamResponse(
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
-  resp->setContentTypeString("application/json");
   return resp;
 }
 
