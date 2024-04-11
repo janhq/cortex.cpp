@@ -542,7 +542,7 @@ void llamaCPP::LoadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
 
-  if (!nitro_utils::isAVX2Supported() && ggml_cpu_has_avx2()) {
+  if (!ggml_cpu_has_blas() && !nitro_utils::isAVX2Supported() && ggml_cpu_has_avx2()) {
     LOG_ERROR << "AVX2 is not supported by your processor";
     Json::Value jsonResp;
     jsonResp["message"] = "AVX2 is not supported by your processor, please download and replace the correct Nitro asset version";
