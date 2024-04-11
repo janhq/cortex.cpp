@@ -568,3 +568,4 @@ build_deps
 uploads/**
 
 env/
+.python-version
