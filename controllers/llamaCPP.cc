@@ -542,14 +542,16 @@ void llamaCPP::LoadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
 
-  if (!ggml_cpu_has_blas() && !nitro_utils::isAVX2Supported() && ggml_cpu_has_avx2()) {
-    LOG_ERROR << "AVX2 is not supported by your processor";
-    Json::Value jsonResp;
-    jsonResp["message"] = "AVX2 is not supported by your processor, please download and replace the correct Nitro asset version";
-    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    resp->setStatusCode(drogon::k500InternalServerError);
-    callback(resp);    
-    return;
+  if (!ggml_cpu_has_blas()) {
+    std::string message;
+    if (!nitro_utils::checkAVXandAVX2support(message)) {
+      Json::Value jsonResp;
+      jsonResp["message"] = message.c_str();
+      auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+      resp->setStatusCode(drogon::k500InternalServerError);
+      callback(resp);    
+      return;
+    }
   }
 
   if (llama.model_loaded_external) {

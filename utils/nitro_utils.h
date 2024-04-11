@@ -16,6 +16,7 @@
 #include <windows.h>
 #else
 #include <dirent.h>
+#include <ggml.h>
 #endif
 
 namespace nitro_utils {
@@ -176,6 +177,13 @@ inline std::string generate_random_string(std::size_t length) {
 
 #if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
 #include <cpuid.h>
+  inline bool isAVXSupported() {
+    unsigned eax, ebx, ecx, edx;
+    if (__get_cpuid_max(0, nullptr) < 1) return false;
+
+    __get_cpuid_count(1, 0, &eax, &ebx, &ecx, &edx);
+    return (ecx & (1 << 28)) != 0;
+  }
   inline bool isAVX2Supported() {
     unsigned eax, ebx, ecx, edx;
     if (__get_cpuid_max(0, nullptr) < 7) return false;
@@ -185,6 +193,16 @@ inline std::string generate_random_string(std::size_t length) {
   }
 #elif defined(_MSC_VER) && defined(_M_X64) || defined(_M_IX86)
 #include <intrin.h>
+  inline bool isAVXSupported() {
+    int cpuInfo[4];
+    __cpuid(cpuInfo, 0);
+    int nIds = cpuInfo[0];
+    if (nIds >= 1) {
+        __cpuidex(cpuInfo, 1, 0);
+        return (cpuInfo[2] & (1 << 28)) != 0;
+    }
+    return false;
+  }
   inline bool isAVX2Supported() {
     int cpuInfo[4];
     __cpuid(cpuInfo, 0);
@@ -196,6 +214,9 @@ inline std::string generate_random_string(std::size_t length) {
     return false;
   }
 #else
+  inline bool isAVXSupported() {
+    return false;
+  }
   inline bool isAVX2Supported() {
     return false;
   }
@@ -274,6 +295,21 @@ inline drogon::HttpResponsePtr nitroStreamResponse(
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
   return resp;
+}
+
+inline bool checkAVXandAVX2support(std::string& message)
+{
+  if (!isAVX2Supported() && ggml_cpu_has_avx2()) {
+    LOG_ERROR << "AVX2 is not supported by your processor";
+    message = "AVX2 is not supported by your processor, please download and replace the correct Nitro asset version.";
+    return false;
+  }
+  if (!isAVXSupported() && ggml_cpu_has_avx()) {
+    LOG_ERROR << "AVX is not supported by your processor";
+    message = "AVX is not supported by your processor.";
+    return false;
+  }
+  return true;
 }
 
 } // namespace nitro_utils
