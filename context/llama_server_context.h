@@ -1,15 +1,15 @@
+#include <mutex>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <mutex>
 
 // External
 #include "clip.h"
 #include "common.h"
 #include "llama.h"
-#include "utils/json.hpp"
-#include "stb_image.h"
 #include "llava.h"
+#include "stb_image.h"
+#include "utils/json.hpp"
 
 #if defined(_WIN32)
 #define NOMINMAX
@@ -532,7 +532,8 @@ struct llama_server_context {
 
     std::tie(model, ctx) = llama_init_from_gpt_params(params);
     if (model == nullptr) {
-      LOG_ERROR_LLAMA("llama.cpp unable to load model", {{"model", params.model}});
+      LOG_ERROR_LLAMA("llama.cpp unable to load model",
+                      {{"model", params.model}});
       return false;
     }
 
@@ -585,7 +586,11 @@ struct llama_server_context {
     try {
       batch = llama_batch_init(n_ctx, 0, params.n_parallel);
     } catch (const std::exception& e) {
-      LOG_ERROR_LLAMA("Failed to allocate llama.cpp batch metadata" , {{"exception", e.what()}, {"n_tokens_alloc", n_ctx}, {"embd", 0}, {"n_seq_max", params.n_parallel}});
+      LOG_ERROR_LLAMA("Failed to allocate llama.cpp batch metadata",
+                      {{"exception", e.what()},
+                       {"n_tokens_alloc", n_ctx},
+                       {"embd", 0},
+                       {"n_seq_max", params.n_parallel}});
     }
 
     // empty system prompt
@@ -1244,19 +1249,35 @@ struct llama_server_context {
     res.stop = true;
 
     const int n_embd = llama_n_embd(model);
-    if (!params.embedding) {
-      LOG_WARNING_LLAMA("embedding disabled",
-                        {
-                            {"params.embedding", params.embedding},
-                        });
+
+    std::vector<float> embd_res(n_embd, 0.0f);
+
+    for (int i = 0; i < batch.n_tokens; ++i) {
+      if (!batch.logits[i] || batch.seq_id[i][0] != slot.id + 1) {
+        continue;
+      }
+
+      const float* embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+      if (embd == NULL) {
+        embd = llama_get_embeddings_ith(ctx, i);
+      }
+
+      if (embd == NULL) {
+        LOG_ERROR << "failed to get embeddings "
+                  << "token: " << batch.token[i]
+                  << ", seq_id: " << batch.seq_id[i][0];
+
+        res.result_json = json{
+            {"embedding", std::vector<float>(n_embd, 0.0f)},
+        };
+
+        continue;
+      }
+
+      llama_embd_normalize(embd, embd_res.data(), n_embd);
+
       res.result_json = json{
-          {"embedding", std::vector<float>(n_embd, 0.0f)},
-      };
-    } else {
-      const float* data = llama_get_embeddings(ctx);
-      std::vector<float> embedding(data, data + n_embd);
-      res.result_json = json{
-          {"embedding", embedding},
+          {"embedding", embd_res},
       };
     }
     queue_results.push_back(res);
@@ -1380,7 +1401,7 @@ struct llama_server_context {
       std::vector<llama_token> append_tokens =
           tokenize(json_prompt, false);  // has next image
       for (int i = 0; i < (int)append_tokens.size(); ++i) {
-        llama_batch_add(batch, append_tokens[i], slot.n_past, {slot.id}, true);
+        llama_batch_add(batch, append_tokens[i], slot.n_past, {slot.id + 1}, true);
         slot.n_past += 1;
       }
     }
@@ -1523,27 +1544,28 @@ struct llama_server_context {
 
     for (llama_client_slot& slot : slots) {
       if (slot.is_processing() &&
-          slot.cache_tokens.size() >= (size_t)slot.n_ctx) {
+          (int)system_tokens.size() + slot.n_past >= slot.n_ctx - 1) {
         // Shift context
-        const int n_left = slot.n_past - slot.params.n_keep - 1;
+        const int n_keep = slot.params.n_keep + add_bos_token;
+        const int n_left = (int)system_tokens.size() + slot.n_past - n_keep;
         const int n_discard = n_left / 2;
 
         LOG_TEE(
             "slot %d: context shift - n_keep = %d, n_left = %d, n_discard "
             "= %d\n",
             slot.id, slot.params.n_keep, n_left, n_discard);
-        llama_kv_cache_seq_rm(ctx, slot.id, slot.params.n_keep + 1,
-                              slot.params.n_keep + n_discard + 1);
-        llama_kv_cache_seq_add(ctx, slot.id,
-                                 slot.params.n_keep + 1 + n_discard,
-                                 slot.n_past, -n_discard);
+        llama_kv_cache_seq_rm(ctx, slot.id + 1, n_keep, n_keep + n_discard);
+        llama_kv_cache_seq_add(ctx, slot.id + 1, n_keep + n_discard,
+                               system_tokens.size() + slot.n_past, -n_discard);
 
-        for (size_t i = slot.params.n_keep + 1 + n_discard;
-             i < slot.cache_tokens.size(); i++) {
-          slot.cache_tokens[i - n_discard] = slot.cache_tokens[i];
+        if (slot.params.cache_prompt) {
+          for (size_t i = n_keep + n_discard; i < slot.cache_tokens.size();
+               i++) {
+            slot.cache_tokens[i - n_discard] = slot.cache_tokens[i];
+          }
+
+          slot.cache_tokens.resize(slot.cache_tokens.size() - n_discard);
         }
-
-        slot.cache_tokens.resize(slot.cache_tokens.size() - n_discard);
 
         slot.n_past -= n_discard;
 
@@ -1556,6 +1578,9 @@ struct llama_server_context {
                                      });
       }
     }
+
+    // start populating the batch for this iteration
+    llama_batch_clear(batch);
 
     // decode any currently ongoing sequences
     for (auto& slot : slots) {
@@ -1578,14 +1603,15 @@ struct llama_server_context {
       slot.i_batch = batch.n_tokens;
 
       llama_batch_add(batch, slot.sampled, system_tokens.size() + slot.n_past,
-                      {slot.id}, true);
+                      {slot.id + 1}, true);
 
       slot.n_decoded += 1;
       slot.n_past += 1;
     }
 
     // process in chunks of params.n_batch
-    int32_t n_batch = params.n_batch;
+    int32_t n_batch = llama_n_batch(ctx);
+    int32_t n_ubatch = llama_n_ubatch(ctx);
 
     // assign workload to the slots
     if (params.cont_batching || batch.n_tokens == 0) {
@@ -1641,8 +1667,7 @@ struct llama_server_context {
           } else {
             prompt_tokens = tokenize(
                 slot.prompt,
-                system_prompt.empty() &&
-                    add_bos_token);  // add BOS if there isn't system prompt
+                system_prompt.empty());  // add BOS if there isn't system prompt
           }
 
           slot.num_prompt_tokens = prompt_tokens.size();
@@ -1738,9 +1763,11 @@ struct llama_server_context {
           std::vector<llama_token> prefix_tokens =
               has_images ? tokenize(slot.images[0].prefix_prompt, add_bos_token)
                          : prompt_tokens;
-          for (; slot.n_past < (int)prefix_tokens.size(); ++slot.n_past) {
+          for (;
+               slot.n_past < slot.num_prompt_tokens && batch.n_tokens < n_batch;
+               ++slot.n_past) {
             llama_batch_add(batch, prefix_tokens[slot.n_past],
-                            system_tokens.size() + slot.n_past, {slot.id},
+                            system_tokens.size() + slot.n_past, {slot.id + 1},
                             false);
           }
 
@@ -1803,7 +1830,8 @@ struct llama_server_context {
       }
 
       for (auto& slot : slots) {
-        if (slot.i_batch < (int)i || slot.i_batch >= (int)(i + n_tokens)) {
+        if (slot.state != PROCESSING || slot.i_batch < (int)i ||
+            slot.i_batch >= (int)(i + n_tokens)) {
           continue;
         }
 
@@ -1812,7 +1840,7 @@ struct llama_server_context {
           send_embedding(slot);
           slot.release();
           slot.i_batch = -1;
-          return true;
+          continue;
         }
 
         completion_token_output result;

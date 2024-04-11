@@ -101,7 +101,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   void EmbeddingImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr&)>& callback);
   bool CheckModelLoaded(std::function<void(const HttpResponsePtr&)>& callback);
-  void WarmupModel();
+  void WarmupModel(bool is_embedding);
   void BackgroundTask();
   void StopBackgroundTask();
 };
