@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <regex>
 #include <string>
+#include "Python.h"
 
 using namespace drogon;
 namespace fs = std::filesystem;
@@ -14,6 +15,10 @@ typedef void (*Py_FinalizeFunc)();
 typedef void (*PyErr_PrintFunc)();
 typedef int (*PyRun_SimpleStringFunc)(const char*);
 typedef int (*PyRun_SimpleFileFunc)(FILE*, const char*);
+typedef PyGILState_STATE (*PyGILState_EnsureFunc)();
+typedef void (*PyGILState_ReleaseFunc)(PyGILState_STATE);
+
+namespace workers {
 
 class pyrunner : public drogon::HttpController<pyrunner> {
  public:
@@ -25,6 +30,7 @@ class pyrunner : public drogon::HttpController<pyrunner> {
   METHOD_LIST_BEGIN
 
   ADD_METHOD_TO(pyrunner::testrun, "/testrun", Get);
+  METHOD_ADD(pyrunner::PyRunPath, "runpath", Post);
 
   // Method declarations...
   METHOD_LIST_END
@@ -35,6 +41,11 @@ class pyrunner : public drogon::HttpController<pyrunner> {
   void testrun(const HttpRequestPtr& req,
                std::function<void(const HttpResponsePtr&)>&& callback);
 
+  void PyRunPath(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>&& callback);
+
+  void ExecutePythonCode(const std::string& PyModulePath,
+                         const std::string& PyEntryPoint);
   std::string findPythonLib(const std::string& libDir) {
     std::string pattern;
 #if defined(_WIN32) || defined(_WIN64)
@@ -57,3 +68,4 @@ class pyrunner : public drogon::HttpController<pyrunner> {
     return "";  // Return an empty string if no matching library is found
   }
 };
+}  // namespace workers

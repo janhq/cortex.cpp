@@ -92,6 +92,18 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/start_nitro.sh"
 # Copy the Python standard library directory to the destination
 file(COPY ${PYTHON_STD_LIB_DIR} DESTINATION "${CMAKE_BINARY_DIR}/python")
 
+add_compile_options(
+  -fno-strict-overflow
+  -Wsign-compare
+  -Wunreachable-code
+  -g3                # Increased debugging information
+  -Og                # Optimize for debugging experience, better than -O0
+  -Wall
+  -Wextra            # Additional warnings
+  -Wpedantic         # Warn if non-standard C++ is used
+  -fno-omit-frame-pointer # Preserve the frame pointer for backtraces
+)
+
 # -----------------------End of packaging python
 
 if(LLAMA_CUDA)
@@ -140,7 +152,7 @@ add_executable(${PROJECT_NAME} main.cc)
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
 target_link_libraries(
-  ${PROJECT_NAME} PRIVATE Drogon::Drogon common llama whisper llava
+  ${PROJECT_NAME} PRIVATE Drogon::Drogon Python3::Python common llama whisper llava
                           ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
@@ -149,7 +161,7 @@ if(CMAKE_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and std::string_view
   message(STATUS "use c++14")
   find_package(Boost 1.61.0 REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
+  target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS} ${Python3_INCLUDE_DIRS})
 elseif(CMAKE_CXX_STANDARD LESS 20)
   message(STATUS "use c++17")
 else()
