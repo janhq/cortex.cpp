@@ -16,7 +16,7 @@
 #include <windows.h>
 #else
 #include <dirent.h>
-#include <ggml.h>
+#include "llama.h"
 #endif
 
 namespace nitro_utils {
