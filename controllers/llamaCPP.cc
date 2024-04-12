@@ -147,7 +147,7 @@ llamaCPP::llamaCPP()
     : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
                                              "llamaCPP")) {
   // Some default values for now below
-  log_disable();  // Disable the log to file feature, reduce bloat for
+  // log_disable();  // Disable the log to file feature, reduce bloat for
   // target
   // system ()
 };
@@ -706,7 +706,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::BackgroundTask, this);
-  WarmupModel();
+  // WarmupModel();
   return true;
 }
 
