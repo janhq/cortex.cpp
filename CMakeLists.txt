@@ -43,8 +43,8 @@ set(PYTHON_STD_LIB_DIR
 )
 
 
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)
 
 
 # Function to copy actual file from symlink
