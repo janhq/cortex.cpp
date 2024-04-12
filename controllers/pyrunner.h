@@ -5,7 +5,6 @@
 #include <filesystem>
 #include <regex>
 #include <string>
-#include "Python.h"
 
 using namespace drogon;
 namespace fs = std::filesystem;
@@ -15,8 +14,6 @@ typedef void (*Py_FinalizeFunc)();
 typedef void (*PyErr_PrintFunc)();
 typedef int (*PyRun_SimpleStringFunc)(const char*);
 typedef int (*PyRun_SimpleFileFunc)(FILE*, const char*);
-typedef PyGILState_STATE (*PyGILState_EnsureFunc)();
-typedef void (*PyGILState_ReleaseFunc)(PyGILState_STATE);
 
 namespace workers {
 

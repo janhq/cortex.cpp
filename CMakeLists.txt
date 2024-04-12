@@ -42,6 +42,11 @@ set(PYTHON_STD_LIB_DIR
     "${Python3_LIBRARY_DIRS}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
 )
 
+
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address)
+
+
 # Function to copy actual file from symlink
 function(copy_dereferenced_symlink symlink_path destination)
   # Use 'readlink' to resolve the actual file path
@@ -152,7 +157,7 @@ add_executable(${PROJECT_NAME} main.cc)
 # and comment out the following lines
 find_package(Drogon CONFIG REQUIRED)
 target_link_libraries(
-  ${PROJECT_NAME} PRIVATE Drogon::Drogon Python3::Python common llama whisper llava
+  ${PROJECT_NAME} PRIVATE Drogon::Drogon common llama whisper llava
                           ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
@@ -161,7 +166,7 @@ if(CMAKE_CXX_STANDARD LESS 17)
   # With C++14, use boost to support any and std::string_view
   message(STATUS "use c++14")
   find_package(Boost 1.61.0 REQUIRED)
-  target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS} ${Python3_INCLUDE_DIRS})
+  target_include_directories(${PROJECT_NAME} PRIVATE ${Boost_INCLUDE_DIRS})
 elseif(CMAKE_CXX_STANDARD LESS 20)
   message(STATUS "use c++17")
 else()

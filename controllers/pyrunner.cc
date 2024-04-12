@@ -1,10 +1,39 @@
 #include "pyrunner.h"
+#include <dlfcn.h>
 #include <cstdio>
 #include "utils/nitro_utils.h"
 void workers::pyrunner::testrun(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
 
+  printf("Starting program...\n");
+
+  void* libPython = dlopen(default_python_lib_dir.c_str(), RTLD_LAZY);
+  if (!libPython) {
+    fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
+  }
+
+  auto Py_Initialize = (Py_InitializeFunc)dlsym(libPython, "Py_Initialize");
+  auto Py_Finalize = (Py_FinalizeFunc)dlsym(libPython, "Py_Finalize");
+  auto PyErr_Print = (PyErr_PrintFunc)dlsym(libPython, "PyErr_Print");
+
+  auto PyRun_SimpleString =
+      (PyRun_SimpleStringFunc)dlsym(libPython, "PyRun_SimpleString");
+  auto PyRun_SimpleFile =
+      (PyRun_SimpleFileFunc)dlsym(libPython, "PyRun_SimpleFile");
+
+  if (!Py_Initialize || !Py_Finalize || !PyRun_SimpleString ||
+      !PyRun_SimpleFile) {
+    fprintf(stderr, "Failed to bind necessary Python functions\n");
+    dlclose(libPython);
+  }
+
+  Py_Initialize();
+
+  PyRun_SimpleString("print('hello world')");
+
+  Py_Finalize();
+  dlclose(libPython);
 
   Json::Value jsonResp;
   jsonResp["message"] = "Python test run succesfully done";
@@ -13,75 +42,93 @@ void workers::pyrunner::testrun(
   return;
 };
 
-void workers::pyrunner::ExecutePythonCode(const std::string& PyModulePath, const std::string& PyEntryPoint) {
-    std::string importCommand = "import sys\n"
-                                "sys.path = []\n"
-                                "sys.path.append('" + PyModulePath + "/deps/site-packages')\n"
-                                "sys.path.append('./lib')\n"
-                                "sys.path.append('./python/'+f'python{sys.version_info.major}.{sys.version_info.minor}')\n"
-                                "sys.path.append('./python/'+f'python{sys.version_info.major}.{sys.version_info.minor}'+'/lib-dynload')\n"
-                                "print(f'Python Version: {sys.version}')\n" // Print Python version
-                                "print(f'Library Directories: {sys.path}')\n"; // Print library directories
-
-        if (!Py_IsInitialized()) {
-        Py_Initialize();
-    }
-
-PyGILState_STATE gilState = PyGILState_Ensure();
-PyThreadState* mySubState = Py_NewInterpreter();
-    // Execute the constructed command
-    if (PyRun_SimpleString(importCommand.c_str()) != 0) {
-        fprintf(stderr, "Python script execution failed.\n");
-    }
-
-    std::string fileEntry = PyModulePath + "/" + PyEntryPoint;
-    FILE* file = fopen(fileEntry.c_str(), "r");
-    if (file == NULL) {
-        fprintf(stderr, "Failed to open Python entry point file.\n");
-    } else {
-        if (PyRun_SimpleFile(file, fileEntry.c_str()) != 0) {
-            PyErr_Print();
-            fprintf(stderr, "Python script file execution failed.\n");
-        }
-        fclose(file);
-    }
-
-Py_EndInterpreter(mySubState);
-PyGILState_Release(gilState);
-
-    PyGILState_Release(gilState);
-
-}
-
 void workers::pyrunner::PyRunPath(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
 
-    const auto& jsonBody = req->getJsonObject();
-    if (!jsonBody) {
-        Json::Value jsonResp;
-        jsonResp["message"] = "Json body is empty";
-        callback(nitro_utils::nitroHttpJsonResponse(jsonResp));
-        return;
-    }
+  const auto& jsonBody = req->getJsonObject();
 
-    std::string PyModulePath = jsonBody->operator[]("py_module_path").asString();
-    std::string PyEntryPoint = jsonBody->get("entrypoint", "main.py").asString();
-
-    if (PyModulePath.empty()) {
-        Json::Value jsonResp;
-        jsonResp["message"] = "No specified PyModulePath";
-        callback(nitro_utils::nitroHttpJsonResponse(jsonResp));
-        return;
-    }
-
-    // Run the Python code in a separate thread
-    std::thread pythonThread(&workers::pyrunner::ExecutePythonCode, this, PyModulePath, PyEntryPoint);
-    if (pythonThread.joinable()) {
-        pythonThread.join(); // Wait for the thread to finish
-    }
-
+  if (!jsonBody) {
     Json::Value jsonResp;
-    jsonResp["message"] = "Python test run successfully done";
-    callback(nitro_utils::nitroHttpJsonResponse(jsonResp));
-}
+    jsonResp["message"] = "Json body is empty";
+    auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    callback(response);
+    return;
+  }
+
+  // Get python module folder path
+  std::string PyModulePath = jsonBody->operator[]("py_module_path").asString();
+  std::string PyEntryPoint = jsonBody->get("entrypoint", "main.py").asString();
+
+  if (PyModulePath == "") {
+    Json::Value jsonResp;
+    jsonResp["message"] = "No specified PyModulePath";
+    auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    callback(response);
+    return;
+  }
+
+  printf("Starting program...\n");
+
+
+    auto libDeleter = [](void* lib) {
+        if (lib) dlclose(lib);
+    };
+    std::unique_ptr<void, decltype(libDeleter)> libPython(dlopen(default_python_lib_dir.c_str(), RTLD_LAZY), libDeleter);
+    if (!libPython) {
+        fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
+        return;
+    }
+    auto Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
+    auto Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
+    auto PyRun_SimpleString = reinterpret_cast<PyRun_SimpleStringFunc>(dlsym(libPython.get(), "PyRun_SimpleString"));
+    auto PyErr_Print = reinterpret_cast<PyErr_PrintFunc>(dlsym(libPython.get(), "PyErr_Print"));
+  auto PyRun_SimpleFile =
+      (PyRun_SimpleFileFunc)dlsym(libPython.get(), "PyRun_SimpleFile");
+
+    if (!Py_Initialize || !Py_Finalize || !PyRun_SimpleString || !PyErr_Print) {
+        fprintf(stderr, "Failed to bind necessary Python functions\n");
+        return;
+    }
+
+std::string importCommand = "import sys\n"
+                            "sys.path = []\n"
+                            "sys.path.append('" + PyModulePath + "/deps/site-packages')\n"
+                            "sys.path.append('./lib')\n"
+                            "sys.path.append('./python/'+f'python{sys.version_info.major}.{sys.version_info.minor}')\n"
+                            "sys.path.append('./python/'+f'python{sys.version_info.major}.{sys.version_info.minor}'+'/lib-dynload')\n"
+                            "print(f'Python Version: {sys.version}')\n" // Print Python version
+                            "print(f'Library Directories: {sys.path}')\n"; // Print library directories
+  Py_Initialize();
+
+
+  // Execute the constructed command
+  if (PyRun_SimpleString(importCommand.c_str()) != 0) {
+    fprintf(stderr, "Python script execution failed.\n");
+  }
+
+  std::string fileEntry = PyModulePath + "/" + PyEntryPoint;
+
+  LOG_INFO << "Trying to run file at: " << fileEntry;
+  // After the PyRun_SimpleString call that sets up sys.path
+  FILE* file = fopen(fileEntry.c_str(), "r");
+  if (file == NULL) {
+    fprintf(stderr, "Failed to open external_script.py\n");
+  } else {
+      LOG_INFO << "before run here";
+    if (PyRun_SimpleFile(file, fileEntry.c_str() ) != 0) {
+      PyErr_Print();
+      fprintf(stderr, "Python script file execution failed.\n");
+    }
+    fclose(file);
+  }
+
+  Py_Finalize();
+
+  Json::Value jsonResp;
+  jsonResp["message"] = "Python test run succesfully done";
+  auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  callback(response);
+  return;
+};
+// Add definition of your processing function here
