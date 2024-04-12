@@ -166,7 +166,7 @@ inline std::string generate_random_string(std::size_t length) {
   std::random_device rd;
   std::mt19937 generator(rd());
 
-  std::uniform_int_distribution<> distribution(0, characters.size() - 1);
+  std::uniform_int_distribution<> distribution(0, static_cast<int>(characters.size()) - 1);
 
   std::string random_string(length, '\0');
   std::generate_n(random_string.begin(), length,
@@ -311,5 +311,11 @@ inline bool checkAVXandAVX2support(std::string& message)
   }
   return true;
 }
+
+inline void ltrim(std::string& s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }));
+};
 
 } // namespace nitro_utils

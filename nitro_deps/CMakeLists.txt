@@ -79,8 +79,21 @@ ExternalProject_Add(
 	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
-# Fix trantor cmakelists to link c-ares on Windows
+# Download and install GoogleTest
+ExternalProject_Add(
+    gtest
+    GIT_REPOSITORY https://github.com/google/googletest
+    GIT_TAG v1.14.0
+    CMAKE_ARGS
+	-Dgtest_force_shared_crt=ON
+	-DCMAKE_BUILD_TYPE=release
+	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
+	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+)
+
+
 if(WIN32)
+	# Fix trantor cmakelists to link c-ares on Windows
     set(TRANTOR_CMAKE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/nitro_deps/drogon-prefix/src/drogon/trantor/CMakeLists.txt)
     ExternalProject_Add_Step(drogon trantor_custom_target
         COMMAND ${CMAKE_COMMAND} -E echo add_definitions(-DCARES_STATICLIB) >> ${TRANTOR_CMAKE_FILE}

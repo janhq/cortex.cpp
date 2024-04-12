@@ -3,8 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include "log.h"
-#include "utils/nitro_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/nitro_utils.h"
 
 // External
 #include "common.h"
@@ -29,6 +29,8 @@ struct inferenceState {
   int task_id;
   InferenceStatus inference_status = PENDING;
   llamaCPP* instance;
+  // Check if we receive the first token, set it to false after receiving
+  bool is_first_token = true;
 
   inferenceState(llamaCPP* inst) : instance(inst) {}
 };
@@ -208,7 +210,8 @@ void llamaCPP::InferenceImpl(
 
   // Passing load value
   data["repeat_last_n"] = this->repeat_last_n;
-  LOG_INFO_REQUEST(request_id) << "Stop words:" << completion.stop.toStyledString();
+  LOG_INFO_REQUEST(request_id)
+      << "Stop words:" << completion.stop.toStyledString();
 
   data["stream"] = completion.stream;
   data["n_predict"] = completion.max_tokens;
@@ -267,7 +270,8 @@ void llamaCPP::InferenceImpl(
             auto image_url = content_piece["image_url"]["url"].asString();
             std::string base64_image_data;
             if (image_url.find("http") != std::string::npos) {
-              LOG_INFO_REQUEST(request_id) << "Remote image detected but not supported yet";
+              LOG_INFO_REQUEST(request_id)
+                  << "Remote image detected but not supported yet";
             } else if (image_url.find("data:image") != std::string::npos) {
               LOG_INFO_REQUEST(request_id) << "Base64 image detected";
               base64_image_data = nitro_utils::extractBase64(image_url);
@@ -328,8 +332,10 @@ void llamaCPP::InferenceImpl(
   if (is_streamed) {
     LOG_INFO_REQUEST(request_id) << "Streamed, waiting for respone";
     auto state = create_inference_state(this);
-    auto chunked_content_provider =
-        [state, data, request_id](char* pBuffer, std::size_t nBuffSize) -> std::size_t {
+
+    auto chunked_content_provider = [state, data, request_id](
+                                        char* pBuffer,
+                                        std::size_t nBuffSize) -> std::size_t {
       if (state->inference_status == PENDING) {
         state->inference_status = RUNNING;
       } else if (state->inference_status == FINISHED) {
@@ -337,7 +343,8 @@ void llamaCPP::InferenceImpl(
       }
 
       if (!pBuffer) {
-        LOG_WARN_REQUEST(request_id) "Connection closed or buffer is null. Reset context";
+        LOG_WARN_REQUEST(request_id)
+        "Connection closed or buffer is null. Reset context";
         state->inference_status = FINISHED;
         return 0;
       }
@@ -350,7 +357,8 @@ void llamaCPP::InferenceImpl(
                                "stop") +
             "\n\n" + "data: [DONE]" + "\n\n";
 
-        LOG_VERBOSE("data stream", {{"request_id": request_id}, {"to_send", str}});
+        LOG_VERBOSE("data stream",
+                    {{"request_id": request_id}, {"to_send", str}});
         std::size_t nRead = std::min(str.size(), nBuffSize);
         memcpy(pBuffer, str.data(), nRead);
         state->inference_status = FINISHED;
@@ -359,7 +367,13 @@ void llamaCPP::InferenceImpl(
 
       task_result result = state->instance->llama.next_result(state->task_id);
       if (!result.error) {
-        const std::string to_send = result.result_json["content"];
+        std::string to_send = result.result_json["content"];
+
+        // trim the leading space if it is the first token
+        if (std::exchange(state->is_first_token, false)) {
+          nitro_utils::ltrim(to_send);
+        }
+
         const std::string str =
             "data: " +
             create_return_json(nitro_utils::generate_random_string(20), "_",
@@ -410,7 +424,8 @@ void llamaCPP::InferenceImpl(
               retries += 1;
             }
             if (state->inference_status != RUNNING)
-              LOG_INFO_REQUEST(request_id) << "Wait for task to be released:" << state->task_id;
+              LOG_INFO_REQUEST(request_id)
+                  << "Wait for task to be released:" << state->task_id;
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
           LOG_INFO_REQUEST(request_id) << "Task completed, release it";
@@ -428,9 +443,11 @@ void llamaCPP::InferenceImpl(
       if (!result.error && result.stop) {
         int prompt_tokens = result.result_json["tokens_evaluated"];
         int predicted_tokens = result.result_json["tokens_predicted"];
-        respData = create_full_return_json(nitro_utils::generate_random_string(20),
-                                           "_", result.result_json["content"], "_",
-                                           prompt_tokens, predicted_tokens);
+        std::string to_send = result.result_json["content"];
+        nitro_utils::ltrim(to_send);
+        respData = create_full_return_json(
+            nitro_utils::generate_random_string(20), "_", to_send, "_",
+            prompt_tokens, predicted_tokens);
       } else {
         respData["message"] = "Internal error during inference";
         LOG_ERROR_REQUEST(request_id) << "Error during inference";
@@ -463,7 +480,8 @@ void llamaCPP::EmbeddingImpl(
   // Queue embedding task
   auto state = create_inference_state(this);
 
-  state->instance->queue->runTaskInQueue([this, state, jsonBody, callback, request_id]() {
+  state->instance->queue->runTaskInQueue([this, state, jsonBody, callback,
+                                          request_id]() {
     Json::Value responseData(Json::arrayValue);
 
     if (jsonBody->isMember("input")) {
@@ -535,7 +553,7 @@ void llamaCPP::ModelStatus(
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     callback(resp);
     LOG_INFO << "Model status responded";
-  } 
+  }
 }
 
 void llamaCPP::LoadModel(
@@ -617,7 +635,8 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     if (model_path.isNull()) {
       LOG_ERROR << "Missing model path in request";
     } else {
-      if (std::filesystem::exists(std::filesystem::path(model_path.asString()))) {
+      if (std::filesystem::exists(
+              std::filesystem::path(model_path.asString()))) {
         params.model = model_path.asString();
       } else {
         LOG_ERROR << "Could not find model in path " << model_path.asString();
