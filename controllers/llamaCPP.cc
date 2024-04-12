@@ -29,6 +29,8 @@ struct inferenceState {
   int task_id;
   InferenceStatus inference_status = PENDING;
   llamaCPP* instance;
+  // Check if we receive the first token, set it to false after receiving
+  bool is_first_token = true;
 
   inferenceState(llamaCPP* inst) : instance(inst) {}
 };
@@ -330,10 +332,10 @@ void llamaCPP::InferenceImpl(
   if (is_streamed) {
     LOG_INFO_REQUEST(request_id) << "Streamed, waiting for respone";
     auto state = create_inference_state(this);
-    bool is_first_token = true;
-    auto chunked_content_provider =
-        [state, data, request_id, &is_first_token](
-            char* pBuffer, std::size_t nBuffSize) -> std::size_t {
+
+    auto chunked_content_provider = [state, data, request_id](
+                                        char* pBuffer,
+                                        std::size_t nBuffSize) -> std::size_t {
       if (state->inference_status == PENDING) {
         state->inference_status = RUNNING;
       } else if (state->inference_status == FINISHED) {
@@ -349,7 +351,6 @@ void llamaCPP::InferenceImpl(
 
       if (state->inference_status == EOS) {
         LOG_INFO_REQUEST(request_id) << "End of result";
-        is_first_token = true;
         const std::string str =
             "data: " +
             create_return_json(nitro_utils::generate_random_string(20), "_", "",
@@ -369,7 +370,7 @@ void llamaCPP::InferenceImpl(
         std::string to_send = result.result_json["content"];
 
         // trim the leading space if it is the first token
-        if (std::exchange(is_first_token, false)) {
+        if (std::exchange(state->is_first_token, false)) {
           nitro_utils::ltrim(to_send);
         }
 
@@ -444,9 +445,9 @@ void llamaCPP::InferenceImpl(
         int predicted_tokens = result.result_json["tokens_predicted"];
         std::string to_send = result.result_json["content"];
         nitro_utils::ltrim(to_send);
-        respData = create_full_return_json(nitro_utils::generate_random_string(20),
-                                           "_", to_send, "_",
-                                           prompt_tokens, predicted_tokens);
+        respData = create_full_return_json(
+            nitro_utils::generate_random_string(20), "_", to_send, "_",
+            prompt_tokens, predicted_tokens);
       } else {
         respData["message"] = "Internal error during inference";
         LOG_ERROR_REQUEST(request_id) << "Error during inference";
