@@ -143,6 +143,22 @@ std::string create_return_json(const std::string& id, const std::string& model,
   return Json::writeString(writer, root);
 }
 
+bool checkAVXandAVX2support(std::string& message)
+{
+  if (!nitro_utils::isAVX2Supported() && ggml_cpu_has_avx2()) {
+    LOG_ERROR << "AVX2 is not supported by your processor";
+    message = "AVX2 is not supported by your processor, "
+              "please download and replace the correct Nitro asset version.";
+    return false;
+  }
+  if (!nitro_utils::isAVXSupported() && ggml_cpu_has_avx()) {
+    LOG_ERROR << "AVX is not supported by your processor";
+    message = "AVX is not supported by your processor.";
+    return false;
+  }
+  return true;
+}
+
 llamaCPP::llamaCPP()
     : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
                                              "llamaCPP")) {
@@ -562,7 +578,7 @@ void llamaCPP::LoadModel(
 
   if (!ggml_cpu_has_blas()) {
     std::string message;
-    if (!nitro_utils::checkAVXandAVX2support(message)) {
+    if (!checkAVXandAVX2support(message)) {
       Json::Value jsonResp;
       jsonResp["message"] = message.c_str();
       auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);

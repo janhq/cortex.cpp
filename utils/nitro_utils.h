@@ -16,7 +16,6 @@
 #include <windows.h>
 #else
 #include <dirent.h>
-#include "llama.h"
 #endif
 
 namespace nitro_utils {
@@ -295,21 +294,6 @@ inline drogon::HttpResponsePtr nitroStreamResponse(
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
   return resp;
-}
-
-inline bool checkAVXandAVX2support(std::string& message)
-{
-  if (!isAVX2Supported() && ggml_cpu_has_avx2()) {
-    LOG_ERROR << "AVX2 is not supported by your processor";
-    message = "AVX2 is not supported by your processor, please download and replace the correct Nitro asset version.";
-    return false;
-  }
-  if (!isAVXSupported() && ggml_cpu_has_avx()) {
-    LOG_ERROR << "AVX is not supported by your processor";
-    message = "AVX is not supported by your processor.";
-    return false;
-  }
-  return true;
 }
 
 inline void ltrim(std::string& s) {
