@@ -85,6 +85,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   std::string pre_prompt;
   int repeat_last_n;
   bool caching_enabled;
+  std::atomic<int> no_of_requests = 0;
   std::atomic<int> no_of_chats = 0;
   int clean_cache_threshold;
   std::string grammar_file_content;

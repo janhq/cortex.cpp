@@ -39,6 +39,18 @@ check_install_jq_tar() {
     fi
 }
 
+determine_avx_support() {
+    if grep -q avx512 /proc/cpuinfo; then
+        echo "-avx512"
+    elif grep -q avx2 /proc/cpuinfo; then
+        echo "-avx2"
+    elif grep -q avx /proc/cpuinfo; then
+        echo "-avx"
+    else
+        echo ""
+    fi
+}
+
 # Function to download and install nitro
 install_nitro() {
     rm -rf /tmp/nitro
@@ -73,8 +85,10 @@ create_uninstall_script() {
 
 # Determine OS and architecture
 OS=$(uname -s)
+ARCH=$(uname -m)
 VERSION="latest"
 GPU=""
+AVX=""
 
 check_install_jq_tar
 
@@ -89,6 +103,18 @@ do
         --version)
         VERSION="$2"
         shift
+        shift
+        ;;
+        --avx)
+        AVX="-avx"
+        shift
+        ;;
+        --avx2)
+        AVX="-avx2"
+        shift
+        ;;
+        --avx512)
+        AVX="-avx512"
         shift
         ;;
     esac
@@ -126,7 +152,10 @@ fi
 # Construct download URL based on OS, ARCH, GPU and VERSION
 case $OS in
     Linux)
-        FILE_NAME="nitro-${VERSION}-linux-amd64${GPU}${CUDA_VERSION}.tar.gz"
+        if [ -z "$AVX" ]; then
+            AVX=$(determine_avx_support)
+        fi
+        FILE_NAME="nitro-${VERSION}-linux-amd64${AVX}${GPU}${CUDA_VERSION}.tar.gz"
         ;;
     Darwin)
         ARCH_FORMAT="mac-universal"
@@ -139,6 +168,16 @@ case $OS in
 esac
 
 DOWNLOAD_URL="https://github.com/janhq/nitro/releases/download/v${VERSION}/${FILE_NAME}"
+
+# Check AVX support
+if [ -z "$AVX" ] && [ "$OS" == "Linux" ]; then
+    echo "AVX is not supported on this system."
+    exit 1
+fi
+
+# Remove existing Nitro installation
+echo "Removing existing Nitro installation..."
+rm -rf /usr/local/bin/nitro
 
 # Download, install, and create uninstall script
 install_nitro "$DOWNLOAD_URL"

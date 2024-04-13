@@ -165,7 +165,7 @@ inline std::string generate_random_string(std::size_t length) {
   std::random_device rd;
   std::mt19937 generator(rd());
 
-  std::uniform_int_distribution<> distribution(0, characters.size() - 1);
+  std::uniform_int_distribution<> distribution(0, static_cast<int>(characters.size()) - 1);
 
   std::string random_string(length, '\0');
   std::generate_n(random_string.begin(), length,
@@ -173,6 +173,33 @@ inline std::string generate_random_string(std::size_t length) {
 
   return random_string;
 }
+
+#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+#include <cpuid.h>
+  inline bool isAVX2Supported() {
+    unsigned eax, ebx, ecx, edx;
+    if (__get_cpuid_max(0, nullptr) < 7) return false;
+
+    __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
+    return (ebx & (1 << 5)) != 0;
+  }
+#elif defined(_MSC_VER) && defined(_M_X64) || defined(_M_IX86)
+#include <intrin.h>
+  inline bool isAVX2Supported() {
+    int cpuInfo[4];
+    __cpuid(cpuInfo, 0);
+    int nIds = cpuInfo[0];
+    if (nIds >= 7) {
+        __cpuidex(cpuInfo, 7, 0);
+        return (cpuInfo[1] & (1 << 5)) != 0;
+    }
+    return false;
+  }
+#else
+  inline bool isAVX2Supported() {
+    return false;
+  }
+#endif
 
 inline void nitro_logo() {
   std::string rainbowColors[] = {
@@ -233,7 +260,7 @@ inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value &data) {
   LOG_INFO << "Respond for all cors!";
   resp->addHeader("Access-Control-Allow-Origin", "*");
 #endif
-  resp->setContentTypeString("application/json");
+  // Drogon already set the content-type header to "application/json"
   return resp;
 };
 
@@ -248,5 +275,11 @@ inline drogon::HttpResponsePtr nitroStreamResponse(
 #endif
   return resp;
 }
+
+inline void ltrim(std::string& s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }));
+};
 
 } // namespace nitro_utils

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nitro CXX)
+project(nitro C CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -15,9 +15,6 @@ elseif(HAS_ANY AND HAS_STRING_VIEW)
 else()
   set(CMAKE_CXX_STANDARD 14)
 endif()
-
-# llama cpp server need llava example to work, this is for llama cpp server
-set(LLAMA_BUILD_EXAMPLES ON)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -45,10 +42,23 @@ if(NOT DEFINED NITRO_VERSION)
   set(NITRO_VERSION "default_version")
 endif()
 
+if(APPLE)
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm.*|ARM64)$")
+    # MacOS silicon
+    set(LLAMA_METAL_EMBED_LIBRARY ON)
+    set(WHISPER_COREML 1)
+  else()
+    # MacOS amd64
+    set(LLAMA_METAL OFF)
+  endif()
+endif()
+
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
+add_subdirectory(llama.cpp/examples/llava)
 add_subdirectory(llama.cpp)
 add_subdirectory(whisper.cpp)
+add_subdirectory(test)
 
 add_executable(${PROJECT_NAME} main.cc)
 
