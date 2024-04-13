@@ -37,16 +37,6 @@ find_library(LIBLZMA_LIBRARY NAMES lzma)
 # Find Python 3 and its library
 find_package(Python3 COMPONENTS Interpreter Development)
 
-# Construct the source directory path
-set(PYTHON_STD_LIB_DIR
-    "${Python3_LIBRARY_DIRS}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-)
-
-
-#add_compile_options(-fsanitize=address)
-#add_link_options(-fsanitize=address)
-
-
 # Function to copy actual file from symlink
 function(copy_dereferenced_symlink symlink_path destination)
   # Use 'readlink' to resolve the actual file path
@@ -58,37 +48,61 @@ function(copy_dereferenced_symlink symlink_path destination)
   file(COPY ${actual_file_path} DESTINATION ${destination})
 endfunction()
 
-# Copy OpenSSL dylibs (actual files) to the destination folder
-copy_dereferenced_symlink("${OPENSSL_INCLUDE_DIR}/../lib/libcrypto.dylib"
-                          "${CMAKE_BINARY_DIR}/lib")
-copy_dereferenced_symlink("${OPENSSL_INCLUDE_DIR}/../lib/libssl.dylib"
-                          "${CMAKE_BINARY_DIR}/lib")
+# Construct the source directory path
+if (APPLE)
+  set(PYTHON_STD_LIB_DIR
+      "${Python3_LIBRARY_DIRS}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
+      )
+  # Copy OpenSSL dylibs (actual files) to the destination folder
+  copy_dereferenced_symlink("${OPENSSL_INCLUDE_DIR}/../lib/libcrypto.dylib"
+                            "${CMAKE_BINARY_DIR}/lib")
+  copy_dereferenced_symlink("${OPENSSL_INCLUDE_DIR}/../lib/libssl.dylib"
+                            "${CMAKE_BINARY_DIR}/lib")
 
-# Copy libintl dylib (actual file) to the destination folder, if found
-if(LIBINTL_LIBRARY)
-  copy_dereferenced_symlink("${LIBINTL_LIBRARY}" "${CMAKE_BINARY_DIR}/lib")
-else()
-  message(FATAL_ERROR "libintl not found. Please install libintl.")
-endif()
+  # Copy libintl dylib (actual file) to the destination folder, if found
+  if(LIBINTL_LIBRARY)
+    copy_dereferenced_symlink("${LIBINTL_LIBRARY}" "${CMAKE_BINARY_DIR}/lib")
+  else()
+    message(FATAL_ERROR "libintl not found. Please install libintl.")
+  endif()
 
-# Copy liblzma dylib (actual file) to the destination folder, if found
-if(LIBLZMA_LIBRARY)
-  copy_dereferenced_symlink("${LIBLZMA_LIBRARY}" "${CMAKE_BINARY_DIR}/lib")
-else()
-  message(FATAL_ERROR "liblzma not found. Please install liblzma.")
-endif()
+  # Copy liblzma dylib (actual file) to the destination folder, if found
+  if(LIBLZMA_LIBRARY)
+    copy_dereferenced_symlink("${LIBLZMA_LIBRARY}" "${CMAKE_BINARY_DIR}/lib")
+  else()
+    message(FATAL_ERROR "liblzma not found. Please install liblzma.")
+  endif()
 
-# Check if Python and its library were found
-if(Python3_FOUND AND Python3_Development_FOUND)
+  # Check if Python and its library were found
+  if(Python3_FOUND AND Python3_Development_FOUND)
   # Locate libpython (the Python library)
   set(LIBPYTHON_PATH
-      "${Python3_LIBRARY_DIRS}/libpython${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}.dylib"
+  "${Python3_LIBRARY_DIRS}/libpython${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}.dylib"
   )
 
-  # Copy libpython dylib to the destination folder
-  copy_dereferenced_symlink("${LIBPYTHON_PATH}" "${CMAKE_BINARY_DIR}/lib")
-else()
-  message(FATAL_ERROR "Python 3 or its development libraries not found.")
+    # Copy libpython dylib to the destination folder
+    copy_dereferenced_symlink("${LIBPYTHON_PATH}" "${CMAKE_BINARY_DIR}/lib")
+  else()
+    message(FATAL_ERROR "Python 3 or its development libraries not found.")
+  endif()
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  set(PYTHON_STD_LIB_DIR "/usr/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
+  set(LIB_SO_PATH "/usr/lib/x86_64-linux-gnu")
+  # Copy OpenSSL .so (actual files) to the destination folder
+  copy_dereferenced_symlink("${LIB_SO_PATH}/libcrypto.so"
+                            "${CMAKE_BINARY_DIR}/lib")
+  copy_dereferenced_symlink("${LIB_SO_PATH}/libssl.so"
+                            "${CMAKE_BINARY_DIR}/lib")
+  copy_dereferenced_symlink("${LIB_SO_PATH}/preloadable_libintl.so" "${CMAKE_BINARY_DIR}/lib")
+  copy_dereferenced_symlink("${LIB_SO_PATH}/liblzma.so" "${CMAKE_BINARY_DIR}/lib")
+  if(Python3_FOUND AND Python3_Development_FOUND)
+    set(LIBPYTHON_PATH "${LIB_SO_PATH}/libpython${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}.so")
+    copy_dereferenced_symlink("${LIBPYTHON_PATH}" "${CMAKE_BINARY_DIR}/lib")
+  else()
+    message(FATAL_ERROR "Python 3 or its development libraries not found.")
+  endif()
+  
 endif()
 
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/start_nitro.sh"

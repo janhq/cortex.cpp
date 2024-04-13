@@ -19,11 +19,8 @@ namespace workers {
 
 class pyrunner : public drogon::HttpController<pyrunner> {
  public:
-  pyrunner() {
-    LOG_INFO << "Looking for libpython inside lib";
-    default_python_lib_dir = findPythonLib("lib");
-    LOG_INFO << "Found Python in path: " + default_python_lib_dir;
-  }
+  pyrunner();
+  ~pyrunner();
   METHOD_LIST_BEGIN
 
   ADD_METHOD_TO(pyrunner::testrun, "/testrun", Get);
@@ -33,6 +30,8 @@ class pyrunner : public drogon::HttpController<pyrunner> {
   METHOD_LIST_END
 
  private:
+  Py_InitializeFunc Py_Initialize = nullptr;
+  Py_FinalizeFunc Py_Finalize = nullptr;
   std::string default_python_lib_dir;
 
   void testrun(const HttpRequestPtr& req,
@@ -53,7 +52,7 @@ class pyrunner : public drogon::HttpController<pyrunner> {
     pattern = "libpython[0-9]+\\.[0-9]+\\.dylib";
 #else
     // Linux or other Unix-like systems
-    pattern = "libpython[0-9]+\\.[0-9]+\\.so";
+    pattern = "libpython[0-9]+\\.[0-9]+\\.so.*";
 #endif
     std::regex regexPattern(pattern);
     for (const auto& entry : fs::directory_iterator(libDir)) {

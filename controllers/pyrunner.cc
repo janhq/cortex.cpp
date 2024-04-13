@@ -2,19 +2,32 @@
 #include <dlfcn.h>
 #include <cstdio>
 #include "utils/nitro_utils.h"
+
+workers::pyrunner::pyrunner() {
+  LOG_INFO << "Looking for libpython inside lib";
+  default_python_lib_dir = findPythonLib("lib");
+  LOG_INFO << "Found Python in path: " + default_python_lib_dir;
+}
+
+workers::pyrunner::~pyrunner() {
+  if (Py_Finalize != nullptr) {
+    Py_Finalize();
+  }
+}
+
 void workers::pyrunner::testrun(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
 
   printf("Starting program...\n");
 
-  void* libPython = dlopen(default_python_lib_dir.c_str(), RTLD_LAZY);
+  void* libPython = dlopen(default_python_lib_dir.c_str(), RTLD_LAZY | RTLD_GLOBAL);
   if (!libPython) {
     fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
   }
 
-  auto Py_Initialize = (Py_InitializeFunc)dlsym(libPython, "Py_Initialize");
-  auto Py_Finalize = (Py_FinalizeFunc)dlsym(libPython, "Py_Finalize");
+  Py_Initialize = (Py_InitializeFunc)dlsym(libPython, "Py_Initialize");
+  Py_Finalize = (Py_FinalizeFunc)dlsym(libPython, "Py_Finalize");
   auto PyErr_Print = (PyErr_PrintFunc)dlsym(libPython, "PyErr_Print");
 
   auto PyRun_SimpleString =
@@ -32,7 +45,7 @@ void workers::pyrunner::testrun(
 
   PyRun_SimpleString("print('hello world')");
 
-  Py_Finalize();
+  // Py_Finalize();
   dlclose(libPython);
 
   Json::Value jsonResp;
@@ -71,41 +84,27 @@ void workers::pyrunner::PyRunPath(
   printf("Starting program...\n");
 
 
-    auto libDeleter = [](void* lib) {
-        if (lib) dlclose(lib);
-    };
-    std::unique_ptr<void, decltype(libDeleter)> libPython(dlopen(default_python_lib_dir.c_str(), RTLD_LAZY), libDeleter);
-    if (!libPython) {
-        fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
-        return;
-    }
-    auto Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
-    auto Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
-    auto PyRun_SimpleString = reinterpret_cast<PyRun_SimpleStringFunc>(dlsym(libPython.get(), "PyRun_SimpleString"));
-    auto PyErr_Print = reinterpret_cast<PyErr_PrintFunc>(dlsym(libPython.get(), "PyErr_Print"));
+  auto libDeleter = [](void* lib) {
+      if (lib) dlclose(lib);
+  };
+  std::unique_ptr<void, decltype(libDeleter)> libPython(dlopen(default_python_lib_dir.c_str(), RTLD_LAZY | RTLD_GLOBAL), libDeleter);
+  if (!libPython) {
+      fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
+      return;
+  }
+  Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
+  Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
+  auto PyRun_SimpleString = reinterpret_cast<PyRun_SimpleStringFunc>(dlsym(libPython.get(), "PyRun_SimpleString"));
+  auto PyErr_Print = reinterpret_cast<PyErr_PrintFunc>(dlsym(libPython.get(), "PyErr_Print"));
   auto PyRun_SimpleFile =
       (PyRun_SimpleFileFunc)dlsym(libPython.get(), "PyRun_SimpleFile");
 
-    if (!Py_Initialize || !Py_Finalize || !PyRun_SimpleString || !PyErr_Print) {
-        fprintf(stderr, "Failed to bind necessary Python functions\n");
-        return;
-    }
-
-std::string importCommand = "import sys\n"
-                            "sys.path = []\n"
-                            "sys.path.append('" + PyModulePath + "/deps/site-packages')\n"
-                            "sys.path.append('./lib')\n"
-                            "sys.path.append('./python/'+f'python{sys.version_info.major}.{sys.version_info.minor}')\n"
-                            "sys.path.append('./python/'+f'python{sys.version_info.major}.{sys.version_info.minor}'+'/lib-dynload')\n"
-                            "print(f'Python Version: {sys.version}')\n" // Print Python version
-                            "print(f'Library Directories: {sys.path}')\n"; // Print library directories
-  Py_Initialize();
-
-
-  // Execute the constructed command
-  if (PyRun_SimpleString(importCommand.c_str()) != 0) {
-    fprintf(stderr, "Python script execution failed.\n");
+  if (!Py_Initialize || !Py_Finalize || !PyRun_SimpleString || !PyErr_Print) {
+      fprintf(stderr, "Failed to bind necessary Python functions\n");
+      return;
   }
+
+  Py_Initialize();
 
   std::string fileEntry = PyModulePath + "/" + PyEntryPoint;
 
@@ -115,7 +114,7 @@ std::string importCommand = "import sys\n"
   if (file == NULL) {
     fprintf(stderr, "Failed to open external_script.py\n");
   } else {
-      LOG_INFO << "before run here";
+    LOG_INFO << "before run here";
     if (PyRun_SimpleFile(file, fileEntry.c_str() ) != 0) {
       PyErr_Print();
       fprintf(stderr, "Python script file execution failed.\n");
@@ -123,7 +122,7 @@ std::string importCommand = "import sys\n"
     fclose(file);
   }
 
-  Py_Finalize();
+  // Py_Finalize();
 
   Json::Value jsonResp;
   jsonResp["message"] = "Python test run succesfully done";
