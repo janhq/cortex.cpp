@@ -3,7 +3,6 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <iostream>
-#include <drogon/ssl/SSLServer.h> // Add this line at the top of your file
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
@@ -23,9 +22,9 @@ int main(int argc, char *argv[]) {
   std::string host = "127.0.0.1";
   int port = 3928;
   std::string uploads_folder_path;
-  bool useHttps = false; // Default to HTTP
-  std::string certPath;
-  std::string keyPath;
+  std::string cert_path;
+  std::string key_path;
+  bool use_https = false;
 
   // Number of nitro threads
   if (argc > 1) {
@@ -42,23 +41,24 @@ int main(int argc, char *argv[]) {
     port = std::atoi(argv[3]); // Convert string argument to int
   }
 
-  // Check for HTTPS argument
-  if (argc > 5 && std::string(argv[4]) == "--https") {
-    useHttps = true;
-  }
-
-  // Check for certificate and private key file paths
-  if (argc > 6 && useHttps) {
-    certPath = argv[6];
-  }
-
-  if (argc > 7 && useHttps) {
-    keyPath = argv[7];
-  }
-
   // Uploads folder path
   if (argc > 4) {
     uploads_folder_path = argv[4];
+  }
+
+  // Check for HTTPS argument
+  if (argc > 5) {
+    use_https = std::atoi(argv[5]); // Convert string argument to bool
+  }
+
+  // Check for cert path argument
+  if (argc > 6) {
+    cert_path = argv[6];
+  }
+
+  // Check for key path argument
+  if (argc > 7) {
+    key_path = argv[7];
   }
 
   int logical_cores = std::thread::hardware_concurrency();
@@ -72,27 +72,19 @@ int main(int argc, char *argv[]) {
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";
 
-  if (useHttps) {
-    // Configure for HTTPS
-    drogon::ssl::SSLServerContextConfig sslConfig;
-    sslConfig.loadCertificate(certPath, keyPath);
-    drogon::ssl::SSLServerContextPtr sslContext = std::make_shared<drogon::ssl::SSLServerContext>(sslConfig);
-    drogon::app().addListener(host, port, sslContext);
-    LOG_INFO << "Using HTTPS";
-  } else {
-    // Configure for HTTP
-    drogon::app().addListener(host, port);
-    LOG_INFO << "Using HTTP";
+  // Enable SSL if use_https is true
+  if (use_https) {
+    drogon::app().enableSSL(cert_path, key_path);
   }
 
+  drogon::app().addListener(host, port);
   drogon::app().setThreadNum(drogon_thread_num);
-
   if (!uploads_folder_path.empty()) {
     LOG_INFO << "Drogon uploads folder is at: " << uploads_folder_path;
     drogon::app().setUploadPath(uploads_folder_path);
   }
+  LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
-  LOG_INFO << "Number of threads: " << drogon::app().getThreadNum();
   drogon::app().run();
 
   return 0;
