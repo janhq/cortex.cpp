@@ -75,7 +75,9 @@ int main(int argc, char *argv[]) {
   // Enable SSL if use_https is true
   if (use_https) {
     drogon::HttpAppFramework::instance().setSSLFiles(cert_path, key_path);
-    drogon::HttpAppFramework::instance().setSSLVerifyPeer(false); // Disable peer certificate verification
+    drogon::HttpAppFramework::instance().setSSLContextCallback([](SSL_CTX *ctx) {
+      SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr); // Disable peer certificate verification
+    });
   }
 
   drogon::app().addListener(host, port);
