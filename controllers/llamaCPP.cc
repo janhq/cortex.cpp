@@ -49,7 +49,7 @@ std::shared_ptr<inferenceState> create_inference_state(llamaCPP* instance) {
  * @param callback the function to return message to user
  */
 bool llamaCPP::CheckModelLoaded(
-    std::function<void(const HttpResponsePtr&)>& callback) {
+    const std::function<void(const HttpResponsePtr&)>& callback) {
   if (!llama.model_loaded_external) {
     LOG_ERROR << "Model has not been loaded";
     Json::Value jsonResp;
@@ -180,13 +180,13 @@ void llamaCPP::ChatCompletion(
   if (CheckModelLoaded(callback)) {
     // Model is loaded
     // Do Inference
-    InferenceImpl(std::move(completion), callback);
+    InferenceImpl(std::move(completion), std::move(callback));
   }
 }
 
 void llamaCPP::InferenceImpl(
     inferences::ChatCompletionRequest&& completion,
-    std::function<void(const HttpResponsePtr&)>& callback) {
+    std::function<void(const HttpResponsePtr&)>&& callback) {
   std::string formatted_output = pre_prompt;
   int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for inference request";
@@ -404,14 +404,14 @@ void llamaCPP::InferenceImpl(
     };
     // Queued task
     state->instance->queue->runTaskInQueue(
-        [callback, state, data, chunked_content_provider, request_id]() {
+        [cb = std::move(callback), state, data, chunked_content_provider, request_id]() {
           state->task_id =
               state->instance->llama.request_completion(data, false, false, -1);
 
           // Start streaming response
           auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
                                                        "chat_completions.txt");
-          callback(resp);
+          cb(resp);
 
           int retries = 0;
 
@@ -470,14 +470,14 @@ void llamaCPP::Embedding(
     // Model is loaded
     const auto& jsonBody = req->getJsonObject();
     // Run embedding
-    EmbeddingImpl(jsonBody, callback);
+    EmbeddingImpl(jsonBody, std::move(callback));
     return;
   }
 }
 
 void llamaCPP::EmbeddingImpl(
     std::shared_ptr<Json::Value> jsonBody,
-    std::function<void(const HttpResponsePtr&)>& callback) {
+    std::function<void(const HttpResponsePtr&)>&& callback) {
   int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for embedding request";
   // Queue embedding task

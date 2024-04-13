@@ -97,10 +97,10 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
 
   bool LoadModelImpl(std::shared_ptr<Json::Value> jsonBody);
   void InferenceImpl(inferences::ChatCompletionRequest&& completion,
-                     std::function<void(const HttpResponsePtr&)>& callback);
+                     std::function<void(const HttpResponsePtr&)>&& callback);
   void EmbeddingImpl(std::shared_ptr<Json::Value> jsonBody,
-                     std::function<void(const HttpResponsePtr&)>& callback);
-  bool CheckModelLoaded(std::function<void(const HttpResponsePtr&)>& callback);
+                     std::function<void(const HttpResponsePtr&)>&& callback);
+  bool CheckModelLoaded(const std::function<void(const HttpResponsePtr&)>& callback);
   void WarmupModel();
   void BackgroundTask();
   void StopBackgroundTask();
