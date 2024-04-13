@@ -42,22 +42,22 @@ int main(int argc, char *argv[]) {
   }
 
   // Check for HTTPS argument
-  if (argc > 4 && std::string(argv[4]) == "--https") {
+  if (argc > 5 && std::string(argv[4]) == "--https") {
     useHttps = true;
   }
 
   // Check for certificate and private key file paths
-  if (argc > 5 && useHttps) {
-    certPath = argv[5];
+  if (argc > 6 && useHttps) {
+    certPath = argv[6];
   }
 
-  if (argc > 6 && useHttps) {
-    keyPath = argv[6];
+  if (argc > 7 && useHttps) {
+    keyPath = argv[7];
   }
 
   // Uploads folder path
-  if (argc > 7) {
-    uploads_folder_path = argv[7];
+  if (argc > 4) {
+    uploads_folder_path = argv[4];
   }
 
   int logical_cores = std::thread::hardware_concurrency();
