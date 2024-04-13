@@ -3,6 +3,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <iostream>
+#include <openssl/ssl.h> // for SSL_CTX
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
   // Enable SSL if use_https is true
   if (use_https) {
     drogon::HttpAppFramework::instance().setSSLFiles(cert_path, key_path);
-    drogon::HttpAppFramework::instance().setSSLContextCallback([](SSL_CTX *ctx) {
+    drogon::HttpAppFramework::instance().setSSLContextInitCallback([](SSL_CTX *ctx) {
       SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, nullptr); // Disable peer certificate verification
     });
   }
