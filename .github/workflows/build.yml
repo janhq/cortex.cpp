@@ -429,10 +429,10 @@ jobs:
           asset_content_type: application/gzip
 
   windows-amd64-build:
-    runs-on: windows-latest
+    runs-on: self-hosted
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 120
 
     strategy:
       matrix:
@@ -661,7 +661,7 @@ jobs:
 
   update_release_draft:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    timeout-minutes: 20
+    timeout-minutes: 120
     needs:
       [
         ubuntu-amd64-build,
