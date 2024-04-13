@@ -145,25 +145,25 @@ std::string create_return_json(const std::string& id, const std::string& model,
 
 llamaCPP::llamaCPP()
     : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
-                                             "llamaCPP")) {
-  // Some default values for now below
-  // log_disable();  // Disable the log to file feature, reduce bloat for
-  // target
-  // system ()
-};
+                                             "llamaCPP")){
+          // Some default values for now below
+          // log_disable();  // Disable the log to file feature, reduce bloat for
+          // target
+          // system ()
+      };
 
 llamaCPP::~llamaCPP() {
   StopBackgroundTask();
 }
 
-void llamaCPP::WarmupModel() {
+void llamaCPP::WarmupModel(bool is_embedded_model) {
   json pseudo;
 
   LOG_INFO << "Warm-up model";
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
-  const int task_id = llama.request_completion(pseudo, false, false, -1);
+  const int task_id = llama.request_completion(pseudo, false, is_embedded_model, -1);
   std::string completion_text;
   task_result result = llama.next_result(task_id);
   if (!result.error && result.stop) {
@@ -606,6 +606,10 @@ void llamaCPP::LoadModel(
 
 bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   gpt_params params;
+  // For model like nomic-embed-text-v1.5.f16.gguf, etc, we need to warmup model with flag embedding = true.
+  // So we use this variable to differentiate with other models
+  // TODO: in case embedded model only, we should reject completion request from user?
+  bool is_embedded_model = false;
   // By default will setting based on number of handlers
   if (jsonBody) {
     if (!jsonBody->operator[]("mmproj").isNull()) {
@@ -649,6 +653,8 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
     params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
+    is_embedded_model =
+        !(*jsonBody)["embedding"].isNull() && (*jsonBody)["embedding"].asBool();
     params.embedding = jsonBody->get("embedding", true).asBool();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
@@ -706,7 +712,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::BackgroundTask, this);
-  // WarmupModel();
+  WarmupModel(is_embedded_model);
   return true;
 }
 
