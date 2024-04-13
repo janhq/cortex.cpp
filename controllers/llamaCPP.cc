@@ -434,28 +434,30 @@ void llamaCPP::InferenceImpl(
           LOG_INFO_REQUEST(request_id) << "Inference completed";
         });
   } else {
-    Json::Value respData;
-    int task_id = llama.request_completion(data, false, false, -1);
-    LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
-    if (!json_value(data, "stream", false)) {
-      std::string completion_text;
-      task_result result = llama.next_result(task_id);
-      if (!result.error && result.stop) {
-        int prompt_tokens = result.result_json["tokens_evaluated"];
-        int predicted_tokens = result.result_json["tokens_predicted"];
-        std::string to_send = result.result_json["content"];
-        nitro_utils::ltrim(to_send);
-        respData = create_full_return_json(
-            nitro_utils::generate_random_string(20), "_", to_send, "_",
-            prompt_tokens, predicted_tokens);
-      } else {
-        respData["message"] = "Internal error during inference";
-        LOG_ERROR_REQUEST(request_id) << "Error during inference";
+    queue->runTaskInQueue([this, request_id, data, callback]() {
+      Json::Value respData;
+      int task_id = llama.request_completion(data, false, false, -1);
+      LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
+      if (!json_value(data, "stream", false)) {
+        std::string completion_text;
+        task_result result = llama.next_result(task_id);
+        if (!result.error && result.stop) {
+          int prompt_tokens = result.result_json["tokens_evaluated"];
+          int predicted_tokens = result.result_json["tokens_predicted"];
+          std::string to_send = result.result_json["content"];
+          nitro_utils::ltrim(to_send);
+          respData = create_full_return_json(
+              nitro_utils::generate_random_string(20), "_", to_send, "_",
+              prompt_tokens, predicted_tokens);
+        } else {
+          respData["message"] = "Internal error during inference";
+          LOG_ERROR_REQUEST(request_id) << "Error during inference";
+        }
+        auto resp = nitro_utils::nitroHttpJsonResponse(respData);
+        callback(resp);
+        LOG_INFO_REQUEST(request_id) << "Inference completed";
       }
-      auto resp = nitro_utils::nitroHttpJsonResponse(respData);
-      callback(resp);
-      LOG_INFO_REQUEST(request_id) << "Inference completed";
-    }
+    });
   }
 }
 
