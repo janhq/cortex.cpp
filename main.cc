@@ -3,6 +3,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <iostream>
+#include <drogon/ssl/SSLServer.h> // Add this line at the top of your file
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
