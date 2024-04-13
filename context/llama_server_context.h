@@ -575,7 +575,7 @@ struct llama_server_context {
 
     const int32_t n_ctx_slot = n_ctx / params.n_parallel;
 
-    LOG_INFO << "Available slots: ";
+    LOG_DEBUG << "Available slots: ";
     for (int i = 0; i < params.n_parallel; i++) {
       llama_client_slot slot;
 
@@ -583,7 +583,7 @@ struct llama_server_context {
       slot.n_ctx = n_ctx_slot;
       slot.reset();
 
-      LOG_INFO << " -> Slot " << slot.id << " - max context: " << n_ctx_slot;
+      LOG_DEBUG << " -> Slot " << slot.id << " - max context: " << n_ctx_slot;
       slots.push_back(slot);
     }
 
@@ -810,7 +810,7 @@ struct llama_server_context {
                       << " - failed to load image [id: " << img_sl.id << "]";
             return false;
           }
-          LOG_INFO << "slot " << slot->id << " - loaded image";
+          LOG_DEBUG << "slot " << slot->id << " - loaded image";
           img_sl.request_encode_image = true;
           slot->images.push_back(img_sl);
         }
@@ -841,13 +841,13 @@ struct llama_server_context {
                   }
                 }
                 if (!found) {
-                  LOG_INFO << "ERROR: Image with id: " << img_id
+                  LOG_DEBUG << "ERROR: Image with id: " << img_id
                            << ", not found.\n";
                   slot->images.clear();
                   return false;
                 }
               } catch (const std::invalid_argument& e) {
-                LOG_INFO << "Invalid image number id in prompt";
+                LOG_DEBUG << "Invalid image number id in prompt";
                 slot->images.clear();
                 return false;
               }
@@ -870,7 +870,7 @@ struct llama_server_context {
 
     all_slots_are_idle = false;
 
-    LOG_INFO << "slot " << slot->id
+    LOG_DEBUG << "slot " << slot->id
              << " is processing [task id: " << slot->task_id << "]";
 
     return true;
@@ -902,7 +902,7 @@ struct llama_server_context {
       llama_kv_cache_seq_cp(ctx, 0, i, 0, system_tokens.size());
     }
 
-    LOG_INFO << "system prompt updated";
+    LOG_DEBUG << "system prompt updated";
     system_need_update = false;
   }
 
@@ -1377,7 +1377,7 @@ struct llama_server_context {
             0,  // unused
         };
         if (llama_decode(ctx, batch_view)) {
-          LOG_INFO << __func__ << " : failed to eval\n";
+          LOG_DEBUG << __func__ << " : failed to eval\n";
           return false;
         }
       }
@@ -1397,7 +1397,7 @@ struct llama_server_context {
             0,
         };
         if (llama_decode(ctx, batch_img)) {
-          LOG_INFO << __func__ << " : failed to eval image";
+          LOG_DEBUG << __func__ << " : failed to eval image";
           return false;
         }
         slot.n_past += n_eval;
@@ -1465,7 +1465,7 @@ struct llama_server_context {
           llama_client_slot* slot =
               get_slot(json_value(task.data, "slot_id", -1));
           if (slot == nullptr) {
-            LOG_INFO << "slot unavailable";
+            LOG_DEBUG << "slot unavailable";
             // send error result
             send_error(task, "slot unavailable");
             return;
@@ -1543,7 +1543,7 @@ struct llama_server_context {
 
     if (all_slots_are_idle) {
       if (system_prompt.empty() && clean_kv_cache) {
-        LOG_INFO
+        LOG_DEBUG
             << "all slots are idle and system prompt is empty, clear the KV "
                "cache";
       }
@@ -1563,7 +1563,7 @@ struct llama_server_context {
         const int n_left = slot.n_past - slot.params.n_keep - 1;
         const int n_discard = n_left / 2;
 
-        LOG_INFO << "slot " << slot.id
+        LOG_DEBUG << "slot " << slot.id
                  << " context shift - n_keep = " << slot.params.n_keep
                  << ", n_left = " << n_left << ", n_discard: " << n_discard;
         llama_kv_cache_seq_rm(ctx, slot.id, slot.params.n_keep + 1,
@@ -1598,7 +1598,7 @@ struct llama_server_context {
         slot.command = NONE;
         slot.t_last_used = ggml_time_us();
 
-        LOG_INFO << "slot " << slot.id << " released ("
+        LOG_DEBUG << "slot " << slot.id << " released ("
                  << (int)slot.cache_tokens.size() << " tokens in cache)";
 
         continue;
@@ -1732,12 +1732,12 @@ struct llama_server_context {
             slot.num_prompt_tokens_processed =
                 slot.num_prompt_tokens - slot.n_past;
 
-            LOG_INFO << "slot " << slot.id << " : in cache: " << slot.n_past
+            LOG_DEBUG << "slot " << slot.id << " : in cache: " << slot.n_past
                      << " tokens | to process: "
                      << slot.num_prompt_tokens_processed << " tokens";
           }
 
-          LOG_INFO << "slot " << slot.id << " : kv cache rm - ["
+          LOG_DEBUG << "slot " << slot.id << " : kv cache rm - ["
                    << (int)system_tokens.size() + slot.n_past << ", end)";
 
           llama_kv_cache_seq_rm(ctx, slot.id,
@@ -1747,7 +1747,7 @@ struct llama_server_context {
 
           if (slot.n_past == slot.num_prompt_tokens) {
             // we have to evaluate at least 1 token to generate logits.
-            LOG_INFO << "slot " << slot.id
+            LOG_DEBUG << "slot " << slot.id
                      << " : we have to evaluate at least 1 token to "
                         "generate logits";
             slot.n_past--;
@@ -1778,7 +1778,7 @@ struct llama_server_context {
           }
 
           if (has_images && !ingest_images(slot, n_batch)) {
-            LOG_INFO << "failed processing images";
+            LOG_DEBUG << "failed processing images";
             return false;
           }
 
@@ -1818,13 +1818,13 @@ struct llama_server_context {
         if (n_batch == 1 || ret < 0) {
           // if you get here, it means the KV cache is full - try increasing it
           // via the context size
-          LOG_INFO << __func__
+          LOG_DEBUG << __func__
                    << " : failed to decode the batch, n_batch = " << n_batch
                    << ", ret = " << ret;
           return false;
         }
 
-        LOG_INFO
+        LOG_DEBUG
             << __func__
             << " : failed to find free space in the KV cache, retrying with "
                "smaller n_batch = "
