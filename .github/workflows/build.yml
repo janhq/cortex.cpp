@@ -755,3 +755,4 @@ jobs:
           git -c http.extraheader="AUTHORIZATION: bearer ${{ secrets.PAT_SERVICE_ACCOUNT }}" push origin HEAD:main
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
+          
