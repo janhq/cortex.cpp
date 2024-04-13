@@ -74,7 +74,8 @@ int main(int argc, char *argv[]) {
 
   // Enable SSL if use_https is true
   if (use_https) {
-    drogon::app().enableSSL(cert_path, key_path);
+    drogon::HttpAppFramework::instance().setSSLFiles(cert_path, key_path);
+    drogon::HttpAppFramework::instance().setSSLVerifyPeer(false); // Disable peer certificate verification
   }
 
   drogon::app().addListener(host, port);
