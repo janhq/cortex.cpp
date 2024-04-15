@@ -1,5 +1,6 @@
 #include "pyrunner.h"
 #include <dlfcn.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <cstdio>
 #include "utils/nitro_utils.h"
@@ -114,6 +115,23 @@ void workers::pyrunner::PyRunPath(
     return;
   }
 
+//  if (pid == 0) {
+//         // Child process
+//         printf("Child process: %d\n", getpid());
+//         // Do some work here
+//         exit(0);
+//     } else if (pid > 0) {
+//         // Parent process
+//         printf("Parent process: %d\n", getpid());
+//         int status;
+//         wait(&status);
+//         printf("Child process finished with status: %d\n", status);
+//     } else {
+//         // Error forking
+//         perror("fork");
+//         exit(1);
+//     }
+
   if (pid == 0)
   {
     Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
@@ -137,13 +155,18 @@ void workers::pyrunner::PyRunPath(
     }
 
     Py_Finalize();
-
-    Json::Value jsonResp;
-    jsonResp["message"] = "Python test run succesfully done";
-    auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    callback(response);
-    LOG_INFO << "Child process has finished.";
     return;
+  } else {
+    int status;
+    wait(&status);  
+    printf("Child process finished with status: %d\n", status);
   }
+
+  Json::Value jsonResp;
+  jsonResp["message"] = "Python test run succesfully done";
+  auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
+  callback(response);
+  LOG_INFO << "Child process has finished.";
+  return;
 };
 // Add definition of your processing function here
