@@ -656,7 +656,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.cont_batching = jsonBody->get("cont_batching", false).asBool();
     this->clean_cache_threshold =
         jsonBody->get("clean_cache_threshold", 5).asInt();
-    this->caching_enabled = jsonBody->get("caching_enabled", true).asBool();
+    this->caching_enabled = jsonBody->get("caching_enabled", false).asBool();
     this->user_prompt = jsonBody->get("user_prompt", "USER: ").asString();
     this->ai_prompt = jsonBody->get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
