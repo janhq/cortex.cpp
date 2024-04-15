@@ -842,7 +842,7 @@ struct llama_server_context {
                 }
                 if (!found) {
                   LOG_DEBUG << "ERROR: Image with id: " << img_id
-                           << ", not found.\n";
+                            << ", not found.\n";
                   slot->images.clear();
                   return false;
                 }
@@ -871,7 +871,7 @@ struct llama_server_context {
     all_slots_are_idle = false;
 
     LOG_DEBUG << "slot " << slot->id
-             << " is processing [task id: " << slot->task_id << "]";
+              << " is processing [task id: " << slot->task_id << "]";
 
     return true;
   }
@@ -1255,45 +1255,36 @@ struct llama_server_context {
     res.stop = true;
 
     const int n_embd = llama_n_embd(model);
-    if (!params.embedding) {
-      LOG_WARNING_LLAMA("embedding disabled",
-                        {
-                            {"params.embedding", params.embedding},
-                        });
-      res.result_json = json{
-          {"embedding", std::vector<float>(n_embd, 0.0f)},
-      };
-    } else {
-      std::vector<float> embd_res(n_embd, 0.0f);
 
-      for (int i = 0; i < batch.n_tokens; ++i) {
-        if (!batch.logits[i] || batch.seq_id[i][0] != slot.id) {
-          continue;
-        }
+    std::vector<float> embd_res(n_embd, 0.0f);
 
-        const float* embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
-        if (embd == NULL) {
-          embd = llama_get_embeddings_ith(ctx, i);
-        }
-
-        if (embd == NULL) {
-          LOG_ERROR << "failed to get embeddings"
-                    << " token " << batch.token[i] << ", seq_id "
-                    << batch.seq_id[i][0];
-
-          res.result_json = json{
-              {"embedding", std::vector<float>(n_embd, 0.0f)},
-          };
-
-          continue;
-        }
-
-        llama_embd_normalize(embd, embd_res.data(), n_embd);
+    for (int i = 0; i < batch.n_tokens; ++i) {
+      if (!batch.logits[i] || batch.seq_id[i][0] != slot.id) {
+        continue;
       }
-      res.result_json = json{
-          {"embedding", embd_res},
-      };
+
+      const float* embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+      if (embd == NULL) {
+        embd = llama_get_embeddings_ith(ctx, i);
+      }
+
+      if (embd == NULL) {
+        LOG_ERROR << "failed to get embeddings"
+                  << " token " << batch.token[i] << ", seq_id "
+                  << batch.seq_id[i][0];
+
+        res.result_json = json{
+            {"embedding", std::vector<float>(n_embd, 0.0f)},
+        };
+
+        continue;
+      }
+
+      llama_embd_normalize(embd, embd_res.data(), n_embd);
     }
+    res.result_json = json{
+        {"embedding", embd_res},
+    };
 
     queue_results.push_back(res);
     condition_results.notify_all();
@@ -1565,8 +1556,8 @@ struct llama_server_context {
         const int n_discard = n_left / 2;
 
         LOG_DEBUG << "slot " << slot.id
-                 << " context shift - n_keep = " << slot.params.n_keep
-                 << ", n_left = " << n_left << ", n_discard: " << n_discard;
+                  << " context shift - n_keep = " << slot.params.n_keep
+                  << ", n_left = " << n_left << ", n_discard: " << n_discard;
         llama_kv_cache_seq_rm(ctx, slot.id, slot.params.n_keep + 1,
                               slot.params.n_keep + n_discard + 1);
         llama_kv_cache_seq_add(ctx, slot.id, slot.params.n_keep + 1 + n_discard,
@@ -1600,7 +1591,7 @@ struct llama_server_context {
         slot.t_last_used = ggml_time_us();
 
         LOG_DEBUG << "slot " << slot.id << " released ("
-                 << (int)slot.cache_tokens.size() << " tokens in cache)";
+                  << (int)slot.cache_tokens.size() << " tokens in cache)";
 
         continue;
       }
@@ -1734,12 +1725,12 @@ struct llama_server_context {
                 slot.num_prompt_tokens - slot.n_past;
 
             LOG_DEBUG << "slot " << slot.id << " : in cache: " << slot.n_past
-                     << " tokens | to process: "
-                     << slot.num_prompt_tokens_processed << " tokens";
+                      << " tokens | to process: "
+                      << slot.num_prompt_tokens_processed << " tokens";
           }
 
           LOG_DEBUG << "slot " << slot.id << " : kv cache rm - ["
-                   << (int)system_tokens.size() + slot.n_past << ", end)";
+                    << (int)system_tokens.size() + slot.n_past << ", end)";
 
           llama_kv_cache_seq_rm(ctx, slot.id,
                                 system_tokens.size() + slot.n_past, -1);
@@ -1749,8 +1740,8 @@ struct llama_server_context {
           if (slot.n_past == slot.num_prompt_tokens) {
             // we have to evaluate at least 1 token to generate logits.
             LOG_DEBUG << "slot " << slot.id
-                     << " : we have to evaluate at least 1 token to "
-                        "generate logits";
+                      << " : we have to evaluate at least 1 token to "
+                         "generate logits";
             slot.n_past--;
           }
 
@@ -1820,8 +1811,8 @@ struct llama_server_context {
           // if you get here, it means the KV cache is full - try increasing it
           // via the context size
           LOG_DEBUG << __func__
-                   << " : failed to decode the batch, n_batch = " << n_batch
-                   << ", ret = " << ret;
+                    << " : failed to decode the batch, n_batch = " << n_batch
+                    << ", ret = " << ret;
           return false;
         }
 
