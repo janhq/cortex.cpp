@@ -1,5 +1,6 @@
 #include "pyrunner.h"
 #include <dlfcn.h>
+#include <unistd.h>
 #include <cstdio>
 #include "utils/nitro_utils.h"
 
@@ -104,30 +105,45 @@ void workers::pyrunner::PyRunPath(
       return;
   }
 
-  Py_Initialize();
 
-  std::string fileEntry = PyModulePath + "/" + PyEntryPoint;
+  pid_t pid = fork();
 
-  LOG_INFO << "Trying to run file at: " << fileEntry;
-  // After the PyRun_SimpleString call that sets up sys.path
-  FILE* file = fopen(fileEntry.c_str(), "r");
-  if (file == NULL) {
-    fprintf(stderr, "Failed to open external_script.py\n");
-  } else {
-    LOG_INFO << "before run here";
-    if (PyRun_SimpleFile(file, fileEntry.c_str() ) != 0) {
-      PyErr_Print();
-      fprintf(stderr, "Python script file execution failed.\n");
-    }
-    fclose(file);
+  if (pid == -1)
+  {
+    fprintf(stderr, "Failed to fork\n");
+    return;
   }
 
-  // Py_Finalize();
+  if (pid == 0)
+  {
+    Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
+    Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
+    Py_Initialize();
 
-  Json::Value jsonResp;
-  jsonResp["message"] = "Python test run succesfully done";
-  auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
-  callback(response);
-  return;
+    std::string fileEntry = PyModulePath + "/" + PyEntryPoint;
+
+    LOG_INFO << "Trying to run file at: " << fileEntry;
+    // After the PyRun_SimpleString call that sets up sys.path
+    FILE* file = fopen(fileEntry.c_str(), "r");
+    if (file == NULL) {
+      fprintf(stderr, "Failed to open external_script.py\n");
+    } else {
+      LOG_INFO << "before run here";
+      if (PyRun_SimpleFile(file, fileEntry.c_str() ) != 0) {
+        PyErr_Print();
+        fprintf(stderr, "Python script file execution failed.\n");
+      }
+      fclose(file);
+    }
+
+    Py_Finalize();
+
+    Json::Value jsonResp;
+    jsonResp["message"] = "Python test run succesfully done";
+    auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    callback(response);
+    LOG_INFO << "Child process has finished.";
+    return;
+  }
 };
 // Add definition of your processing function here
