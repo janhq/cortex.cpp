@@ -155,18 +155,20 @@ void workers::pyrunner::PyRunPath(
     }
 
     Py_Finalize();
-    return;
-  } else {
-    int status;
-    wait(&status);  
-    printf("Child process finished with status: %d\n", status);
-  }
+    LOG_INFO << "Child process has finished.";
+    abort();
+    // exit(2);
+
+  } 
+  
+  int status;
+  // wait(&status);  
+  printf("Child process finished with status: %d\n", status);
 
   Json::Value jsonResp;
   jsonResp["message"] = "Python test run succesfully done";
   auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(response);
-  LOG_INFO << "Child process has finished.";
   return;
 };
 // Add definition of your processing function here
