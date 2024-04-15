@@ -145,12 +145,12 @@ std::string create_return_json(const std::string& id, const std::string& model,
 
 llamaCPP::llamaCPP()
     : queue(new trantor::ConcurrentTaskQueue(llama.params.n_parallel,
-                                             "llamaCPP")){
-          // Some default values for now below
-          // log_disable();  // Disable the log to file feature, reduce bloat for
-          // target
-          // system ()
-      };
+                                             "llamaCPP")) {
+  // Some default values for now below
+  log_disable();  // Disable the log to file feature, reduce bloat for
+                  // target
+                  // system ()
+};
 
 llamaCPP::~llamaCPP() {
   StopBackgroundTask();
@@ -163,7 +163,8 @@ void llamaCPP::WarmupModel(bool is_embedded_model) {
   pseudo["prompt"] = "Hello";
   pseudo["n_predict"] = 2;
   pseudo["stream"] = false;
-  const int task_id = llama.request_completion(pseudo, false, is_embedded_model, -1);
+  const int task_id =
+      llama.request_completion(pseudo, false, is_embedded_model, -1);
   std::string completion_text;
   task_result result = llama.next_result(task_id);
   if (!result.error && result.stop) {
