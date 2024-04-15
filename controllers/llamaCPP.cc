@@ -196,18 +196,9 @@ void llamaCPP::InferenceImpl(
   int no_images = 0;
   // To set default value
 
-  // Increase number of chats received and clean the prompt
-  //no_of_chats++;
-  //if (no_of_chats % clean_cache_threshold == 0) {
-  //  LOG_INFO_REQUEST(request_id) << "Clean cache threshold reached!";
-  //  llama.kv_cache_clear();
-  //  LOG_INFO_REQUEST(request_id) << "Cache cleaned";
-  //}
-
   // Default values to enable auto caching
-  //data["cache_prompt"] = caching_enabled;
-  data["cache_prompt"] = false;
-  data["n_keep"] = -1;
+  data["cache_prompt"] = caching_enabled;
+  data["n_keep"] = 0;
 
   // Passing load value
   data["repeat_last_n"] = this->repeat_last_n;
@@ -461,6 +452,7 @@ void llamaCPP::InferenceImpl(
             LOG_INFO_REQUEST(request_id) << "Inference completed";
           }
         });
+
   }
 }
 
@@ -653,6 +645,8 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
     model_type = jsonBody->get("model_type", "llm").asString();
+    LOG_DEBUG << "sangnv: params.embedding: " << params.embedding;
+
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
