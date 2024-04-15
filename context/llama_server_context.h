@@ -1546,6 +1546,7 @@ struct llama_server_context {
         LOG_DEBUG
             << "all slots are idle and system prompt is empty, clear the KV "
                "cache";
+        kv_cache_clear();
       }
       // std::this_thread::sleep_for(std::chrono::milliseconds(5));
       //  TODO: Need to implement queueing using CV for better performance
