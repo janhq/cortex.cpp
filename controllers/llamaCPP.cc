@@ -205,7 +205,8 @@ void llamaCPP::InferenceImpl(
   }
 
   // Default values to enable auto caching
-  data["cache_prompt"] = caching_enabled;
+  //data["cache_prompt"] = caching_enabled;
+  data["cache_prompt"] = false;
   data["n_keep"] = -1;
 
   // Passing load value
