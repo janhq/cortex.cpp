@@ -91,8 +91,6 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   int clean_cache_threshold;
   std::string grammar_file_content;
 
-  enum class ModelType { LLM = 0, EMBEDDING } model_type_;
-
   /**
    * Queue to handle the inference tasks
    */
