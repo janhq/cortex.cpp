@@ -6,13 +6,8 @@
 #include <csignal>
 #include "utils/nitro_utils.h"
 
-
-Py_InitializeFunc Py_Initialize = nullptr;
-Py_FinalizeFunc Py_Finalize = nullptr;
-
 void signalHandler(int signum) {
   std::cout << "Interrupt signal (" << signum << ") received.\n";
-  Py_Finalize();
   abort();
 }
 
@@ -24,13 +19,7 @@ workers::pyrunner::pyrunner() {
   signal(SIGINT, signalHandler);
 }
 
-workers::pyrunner::~pyrunner() {
-  LOG_INFO << "pyrunner destructor";
-  if (Py_Finalize != nullptr) {
-    LOG_INFO << "pyrunner Py_Finalize";
-    Py_Finalize();
-  }
-}
+workers::pyrunner::~pyrunner() {}
 
 void workers::pyrunner::testrun(
     const HttpRequestPtr& req,
@@ -43,8 +32,8 @@ void workers::pyrunner::testrun(
     fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
   }
 
-  Py_Initialize = (Py_InitializeFunc)dlsym(libPython, "Py_Initialize");
-  Py_Finalize = (Py_FinalizeFunc)dlsym(libPython, "Py_Finalize");
+  auto Py_Initialize = (Py_InitializeFunc)dlsym(libPython, "Py_Initialize");
+  auto Py_Finalize = (Py_FinalizeFunc)dlsym(libPython, "Py_Finalize");
   auto PyErr_Print = (PyErr_PrintFunc)dlsym(libPython, "PyErr_Print");
 
   auto PyRun_SimpleString =
@@ -62,7 +51,7 @@ void workers::pyrunner::testrun(
 
   PyRun_SimpleString("print('hello world')");
 
-  // Py_Finalize();
+  Py_Finalize();
   dlclose(libPython);
 
   Json::Value jsonResp;
@@ -100,7 +89,6 @@ void workers::pyrunner::PyRunPath(
 
   printf("Starting program...\n");
 
-
   auto libDeleter = [](void* lib) {
       if (lib) dlclose(lib);
   };
@@ -109,8 +97,8 @@ void workers::pyrunner::PyRunPath(
       fprintf(stderr, "Failed to load Python library: %s\n", dlerror());
       return;
   }
-  Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
-  Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
+  auto Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
+  auto Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
   auto PyRun_SimpleString = reinterpret_cast<PyRun_SimpleStringFunc>(dlsym(libPython.get(), "PyRun_SimpleString"));
   auto PyErr_Print = reinterpret_cast<PyErr_PrintFunc>(dlsym(libPython.get(), "PyErr_Print"));
   auto PyRun_SimpleFile =
@@ -126,33 +114,13 @@ void workers::pyrunner::PyRunPath(
 
   if (pid == -1)
   {
-    fprintf(stderr, "Failed to fork\n");
+    fprintf(stderr, "Failed to fork process for Python runtime\n");
     return;
   }
-
-//  if (pid == 0) {
-//         // Child process
-//         printf("Child process: %d\n", getpid());
-//         // Do some work here
-//         exit(0);
-//     } else if (pid > 0) {
-//         // Parent process
-//         printf("Parent process: %d\n", getpid());
-//         int status;
-//         wait(&status);
-//         printf("Child process finished with status: %d\n", status);
-//     } else {
-//         // Error forking
-//         perror("fork");
-//         exit(1);
-//     }
 
   if (pid == 0)
   {
     drogon::app().quit();
-
-    Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
-    Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
     Py_Initialize();
 
     std::string fileEntry = PyModulePath + "/" + PyEntryPoint;
@@ -161,7 +129,7 @@ void workers::pyrunner::PyRunPath(
     // After the PyRun_SimpleString call that sets up sys.path
     FILE* file = fopen(fileEntry.c_str(), "r");
     if (file == NULL) {
-      fprintf(stderr, "Failed to open external_script.py\n");
+      fprintf(stderr, "Failed to open %s\n", fileEntry.c_str());
     } else {
       LOG_INFO << "before run here";
       if (PyRun_SimpleFile(file, fileEntry.c_str() ) != 0) {
@@ -174,16 +142,10 @@ void workers::pyrunner::PyRunPath(
     Py_Finalize();
     LOG_INFO << "Child process has finished.";
     abort();
-    // exit(2);
-
   } 
-  
-  // int status;
-  // wait(&status);  
-  // printf("Child process finished with status: %d\n", status);
 
   Json::Value jsonResp;
-  jsonResp["message"] = "Python test run succesfully done";
+  jsonResp["message"] = "Running Python code";
   auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
   callback(response);
   return;

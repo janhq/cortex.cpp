@@ -90,10 +90,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(PYTHON_STD_LIB_DIR "/usr/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
   set(LIB_SO_PATH "/usr/lib/x86_64-linux-gnu")
   # Copy OpenSSL .so (actual files) to the destination folder
-  copy_dereferenced_symlink("${LIB_SO_PATH}/libcrypto.so"
-                            "${CMAKE_BINARY_DIR}/lib")
-  copy_dereferenced_symlink("${LIB_SO_PATH}/libssl.so"
-                            "${CMAKE_BINARY_DIR}/lib")
+  copy_dereferenced_symlink("${LIB_SO_PATH}/libcrypto.so" "${CMAKE_BINARY_DIR}/lib")
+  copy_dereferenced_symlink("${LIB_SO_PATH}/libssl.so" "${CMAKE_BINARY_DIR}/lib")
   copy_dereferenced_symlink("${LIB_SO_PATH}/preloadable_libintl.so" "${CMAKE_BINARY_DIR}/lib")
   copy_dereferenced_symlink("${LIB_SO_PATH}/liblzma.so" "${CMAKE_BINARY_DIR}/lib")
   if(Python3_FOUND AND Python3_Development_FOUND)
