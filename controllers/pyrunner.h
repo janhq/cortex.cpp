@@ -30,8 +30,6 @@ class pyrunner : public drogon::HttpController<pyrunner> {
   METHOD_LIST_END
 
  private:
-  Py_InitializeFunc Py_Initialize = nullptr;
-  Py_FinalizeFunc Py_Finalize = nullptr;
   std::string default_python_lib_dir;
 
   void testrun(const HttpRequestPtr& req,

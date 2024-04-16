@@ -3,16 +3,31 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include <cstdio>
+#include <csignal>
 #include "utils/nitro_utils.h"
+
+
+Py_InitializeFunc Py_Initialize = nullptr;
+Py_FinalizeFunc Py_Finalize = nullptr;
+
+void signalHandler(int signum) {
+  std::cout << "Interrupt signal (" << signum << ") received.\n";
+  Py_Finalize();
+  abort();
+}
 
 workers::pyrunner::pyrunner() {
   LOG_INFO << "Looking for libpython inside lib";
   default_python_lib_dir = findPythonLib("lib");
   LOG_INFO << "Found Python in path: " + default_python_lib_dir;
+
+  signal(SIGINT, signalHandler);
 }
 
 workers::pyrunner::~pyrunner() {
+  LOG_INFO << "pyrunner destructor";
   if (Py_Finalize != nullptr) {
+    LOG_INFO << "pyrunner Py_Finalize";
     Py_Finalize();
   }
 }
@@ -134,6 +149,8 @@ void workers::pyrunner::PyRunPath(
 
   if (pid == 0)
   {
+    drogon::app().quit();
+
     Py_Initialize = reinterpret_cast<Py_InitializeFunc>(dlsym(libPython.get(), "Py_Initialize"));
     Py_Finalize = reinterpret_cast<Py_FinalizeFunc>(dlsym(libPython.get(), "Py_Finalize"));
     Py_Initialize();
@@ -161,9 +178,9 @@ void workers::pyrunner::PyRunPath(
 
   } 
   
-  int status;
+  // int status;
   // wait(&status);  
-  printf("Child process finished with status: %d\n", status);
+  // printf("Child process finished with status: %d\n", status);
 
   Json::Value jsonResp;
   jsonResp["message"] = "Python test run succesfully done";
