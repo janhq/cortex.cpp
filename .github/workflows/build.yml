@@ -187,16 +187,7 @@ jobs:
         run: |
           # run e2e testing
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
-          rm -rf uploads/
-      
-      - name: Run e2e testing - Embedding
-        shell: bash
-        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-embedding-linux-and-mac.sh && ../.github/scripts/e2e-test-embedding-linux-and-mac.sh ./nitro ${{ env.EMBEDDING_MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
@@ -317,15 +308,7 @@ jobs:
         run: |
           # run e2e testing
           cd nitro/
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
-          rm -rf uploads/
-      
-      - name: Run e2e testing - Embedding
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro/
-          chmod +x ../.github/scripts/e2e-test-embedding-linux-and-mac.sh && ../.github/scripts/e2e-test-embedding-linux-and-mac.sh ./nitro ${{ env.EMBEDDING_MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
@@ -391,15 +374,7 @@ jobs:
         run: |
           # run e2e testing
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
-          rm -rf uploads/
-      
-      - name: Run e2e testing - Embedding
-        shell: bash
-        run: |
-          # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-embedding-linux-and-mac.sh && ../.github/scripts/e2e-test-embedding-linux-and-mac.sh ./nitro ${{ env.EMBEDDING_MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
