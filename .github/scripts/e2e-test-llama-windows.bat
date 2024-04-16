@@ -63,7 +63,7 @@ rem Define JSON strings for curl data
 call set "MODEL_LLM_PATH_STRING=%%MODEL_LLM_PATH:\=\\%%"
 call set "MODEL_EMBEDDING_PATH_STRING=%%MODEL_EMBEDDING_PATH:\=\\%%"
 set "curl_data1={\"llama_model_path\":\"%MODEL_LLM_PATH_STRING%\"}"
-set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":50,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.1}"
+set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":false,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":50,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.1}"
 set "curl_data3={\"llama_model_path\":\"%MODEL_LLM_PATH_STRING%\"}"
 set "curl_data4={\"llama_model_path\":\"%MODEL_EMBEDDING_PATH_STRING%\", \"embedding\": true, \"model_type\": \"embedding\"}"
 set "curl_data5={\"input\": \"Hello\", \"model\": \"test-embedding\", \"encoding_format\": \"float\"}"
@@ -81,9 +81,6 @@ curl.exe --connect-timeout 60 -o "%TEMP%\response1.log" -s -w "%%{http_code}" --
 curl.exe --connect-timeout 60 -o "%TEMP%\response2.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
 --header "Content-Type: application/json" ^
 --data "%curl_data2%" > %TEMP%\response2.log 2>&1
-
-rem give it some time to receive full response
-timeout /t 5
 
 curl.exe --connect-timeout 60 -o "%TEMP%\response3.log" --request GET -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/unloadModel" --header "Content-Type: application/json" --data "%curl_data3%" > %TEMP%\response3.log 2>&1
 
