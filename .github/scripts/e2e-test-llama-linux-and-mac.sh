@@ -65,14 +65,12 @@ fi
 response2=$(
     curl --connect-timeout 60 -o /tmp/completion-res.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/v1/chat/completions" \
         --header 'Content-Type: application/json' \
-        --header 'Accept: text/event-stream' \
-        --header 'Access-Control-Allow-Origin: *' \
         --data '{
         "messages": [
             {"content": "Hello there", "role": "assistant"},
             {"content": "Write a long and sad story for me", "role": "user"}
         ],
-        "stream": true,
+        "stream": false,
         "model": "gpt-3.5-turbo",
         "max_tokens": 50,
         "stop": ["hello"],
