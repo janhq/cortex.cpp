@@ -49,6 +49,7 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
   WHISPER_MODEL_URL: https://delta.jan.ai/ggml-tiny-q5_1.bin
+  EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
 
 jobs:
   create-draft-release:
@@ -188,6 +189,15 @@ jobs:
           cd nitro
           chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
           rm -rf uploads/
+      
+      - name: Run e2e testing - Embedding
+        shell: bash
+        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-embedding-linux-and-mac.sh && ../.github/scripts/e2e-test-embedding-linux-and-mac.sh ./nitro ${{ env.EMBEDDING_MODEL_URL }}
+          rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
         shell: bash
@@ -309,6 +319,14 @@ jobs:
           cd nitro/
           chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
           rm -rf uploads/
+      
+      - name: Run e2e testing - Embedding
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro/
+          chmod +x ../.github/scripts/e2e-test-embedding-linux-and-mac.sh && ../.github/scripts/e2e-test-embedding-linux-and-mac.sh ./nitro ${{ env.EMBEDDING_MODEL_URL }}
+          rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
         shell: bash
@@ -374,6 +392,14 @@ jobs:
           # run e2e testing
           cd nitro
           chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+          rm -rf uploads/
+      
+      - name: Run e2e testing - Embedding
+        shell: bash
+        run: |
+          # run e2e testing
+          cd nitro
+          chmod +x ../.github/scripts/e2e-test-embedding-linux-and-mac.sh && ../.github/scripts/e2e-test-embedding-linux-and-mac.sh ./nitro ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
