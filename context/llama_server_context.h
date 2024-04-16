@@ -1560,7 +1560,7 @@ struct llama_server_context {
 
     for (llama_client_slot& slot : slots) {
       if (slot.is_processing() &&
-          slot.cache_tokens.size() >= (size_t)slot.n_ctx) {
+          (int) system_tokens.size() + slot.n_past >= slot.n_ctx) {
         // Shift context
         const int n_left = slot.n_past - slot.params.n_keep - 1;
         const int n_discard = n_left / 2;
