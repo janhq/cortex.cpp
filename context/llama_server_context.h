@@ -1,15 +1,15 @@
+#include <mutex>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
-#include <mutex>
 
 // External
 #include "clip.h"
 #include "common.h"
 #include "llama.h"
-#include "utils/json.hpp"
-#include "stb_image.h"
 #include "llava.h"
+#include "stb_image.h"
+#include "utils/json.hpp"
 
 #if defined(_WIN32)
 #define NOMINMAX
@@ -443,20 +443,22 @@ struct llama_client_slot {
   }
 
   void print_timings() const {
-    LOG_TEE("\n");
-    LOG_TEE(
-        "%s: prompt eval time = %10.2f ms / %5d tokens (%8.2f ms per "
-        "token, %8.2f tokens per second)\n",
-        __func__, t_prompt_processing, num_prompt_tokens_processed,
-        t_prompt_processing / num_prompt_tokens_processed,
-        1e3 / t_prompt_processing * num_prompt_tokens_processed);
-    LOG_TEE(
-        "%s:        eval time = %10.2f ms / %5d runs   (%8.2f ms per "
-        "token, %8.2f tokens per second)\n",
-        __func__, t_token_generation, n_decoded, t_token_generation / n_decoded,
-        1e3 / t_token_generation * n_decoded);
-    LOG_TEE("%s:       total time = %10.2f ms\n", __func__,
-            t_prompt_processing + t_token_generation);
+    LOG_DEBUG << __func__ << ": prompt eval time = " << t_prompt_processing
+              << "ms / " << num_prompt_tokens_processed << " tokens ("
+              << t_prompt_processing / num_prompt_tokens_processed
+              << " ms per "
+                 "token, "
+              << 1e3 / t_prompt_processing * num_prompt_tokens_processed
+              << " tokens per second)";
+    LOG_DEBUG << __func__ << ":        eval time = " << t_token_generation
+              << " ms / " << n_decoded << " runs   ("
+              << t_token_generation / n_decoded
+              << " ms per "
+                 "token, "
+              << 1e3 / t_token_generation * n_decoded
+              << " tokens per second)\n";
+    LOG_DEBUG << __func__ << ":       total time = "
+              << t_prompt_processing + t_token_generation << " ms";
   }
 };
 
@@ -516,7 +518,7 @@ struct llama_server_context {
     params = params_;
     if (!params.mmproj.empty()) {
       multimodal = true;
-      LOG_TEE("Multi Modal Mode Enabled");
+      LOG_DEBUG << "Multi Modal Mode Enabled";
       clp_ctx = clip_model_load(params.mmproj.c_str(), /*verbosity=*/1);
       if (clp_ctx == nullptr) {
         LOG_ERROR_LLAMA("unable to load clip model",
@@ -532,7 +534,8 @@ struct llama_server_context {
 
     std::tie(model, ctx) = llama_init_from_gpt_params(params);
     if (model == nullptr) {
-      LOG_ERROR_LLAMA("llama.cpp unable to load model", {{"model", params.model}});
+      LOG_ERROR_LLAMA("llama.cpp unable to load model",
+                      {{"model", params.model}});
       return false;
     }
 
@@ -540,11 +543,13 @@ struct llama_server_context {
       const int n_embd_clip = clip_n_mmproj_embd(clp_ctx);
       const int n_embd_llm = llama_n_embd(model);
       if (n_embd_clip != n_embd_llm) {
-        LOG_TEE(
-            "%s: embedding dim of the multimodal projector (%d) is not "
-            "equal to that of LLaMA (%d). Make sure that you use the "
-            "correct mmproj file.\n",
-            __func__, n_embd_clip, n_embd_llm);
+        LOG_DEBUG << __func__ << ": embedding dim of the multimodal projector ("
+                  << n_embd_clip
+                  << ") is not "
+                     "equal to that of LLaMA ("
+                  << n_embd_llm
+                  << "). Make sure that you use the "
+                     "correct mmproj file.";
         llama_free(ctx);
         llama_free_model(model);
         return false;
@@ -570,7 +575,7 @@ struct llama_server_context {
 
     const int32_t n_ctx_slot = n_ctx / params.n_parallel;
 
-    LOG_TEE("Available slots:\n");
+    LOG_DEBUG << "Available slots: ";
     for (int i = 0; i < params.n_parallel; i++) {
       llama_client_slot slot;
 
@@ -578,14 +583,18 @@ struct llama_server_context {
       slot.n_ctx = n_ctx_slot;
       slot.reset();
 
-      LOG_TEE(" -> Slot %i - max context: %i\n", slot.id, n_ctx_slot);
+      LOG_DEBUG << " -> Slot " << slot.id << " - max context: " << n_ctx_slot;
       slots.push_back(slot);
     }
 
     try {
       batch = llama_batch_init(n_ctx, 0, params.n_parallel);
     } catch (const std::exception& e) {
-      LOG_ERROR_LLAMA("Failed to allocate llama.cpp batch metadata" , {{"exception", e.what()}, {"n_tokens_alloc", n_ctx}, {"embd", 0}, {"n_seq_max", params.n_parallel}});
+      LOG_ERROR_LLAMA("Failed to allocate llama.cpp batch metadata",
+                      {{"exception", e.what()},
+                       {"n_tokens_alloc", n_ctx},
+                       {"embd", 0},
+                       {"n_seq_max", params.n_parallel}});
     }
 
     // empty system prompt
@@ -797,11 +806,11 @@ struct llama_server_context {
           img_sl.img_data = clip_image_u8_init();
           if (!clip_image_load_from_bytes(
                   image_buffer.data(), image_buffer.size(), img_sl.img_data)) {
-            LOG_TEE("slot %i - failed to load image [id: %i]\n", slot->id,
-                    img_sl.id);
+            LOG_DEBUG << "slot " << slot->id
+                      << " - failed to load image [id: " << img_sl.id << "]";
             return false;
           }
-          LOG_TEE("slot %i - loaded image\n", slot->id);
+          LOG_DEBUG << "slot " << slot->id << " - loaded image";
           img_sl.request_encode_image = true;
           slot->images.push_back(img_sl);
         }
@@ -832,12 +841,13 @@ struct llama_server_context {
                   }
                 }
                 if (!found) {
-                  LOG_TEE("ERROR: Image with id: %i, not found.\n", img_id);
+                  LOG_DEBUG << "ERROR: Image with id: " << img_id
+                            << ", not found.\n";
                   slot->images.clear();
                   return false;
                 }
               } catch (const std::invalid_argument& e) {
-                LOG_TEE("Invalid image number id in prompt\n");
+                LOG_DEBUG << "Invalid image number id in prompt";
                 slot->images.clear();
                 return false;
               }
@@ -860,7 +870,8 @@ struct llama_server_context {
 
     all_slots_are_idle = false;
 
-    LOG_TEE("slot %i is processing [task id: %i]\n", slot->id, slot->task_id);
+    LOG_DEBUG << "slot " << slot->id
+              << " is processing [task id: " << slot->task_id << "]";
 
     return true;
   }
@@ -882,7 +893,7 @@ struct llama_server_context {
     }
 
     if (llama_decode(ctx, batch) != 0) {
-      LOG_TEE("%s: llama_decode() failed\n", __func__);
+      LOG_WARN << __func__ << ": llama_decode() failed";
       return;
     }
 
@@ -891,7 +902,7 @@ struct llama_server_context {
       llama_kv_cache_seq_cp(ctx, 0, i, 0, system_tokens.size());
     }
 
-    LOG_TEE("system prompt updated\n");
+    LOG_DEBUG << "system prompt updated";
     system_need_update = false;
   }
 
@@ -1055,7 +1066,7 @@ struct llama_server_context {
       if (!llava_image_embed_make_with_clip_img(
               clp_ctx, params.n_threads, img.img_data, &img.image_embedding,
               &img.image_tokens)) {
-        LOG_TEE("Error processing the given image");
+        LOG_DEBUG << "Error processing the given image";
         return false;
       }
 
@@ -1244,21 +1255,37 @@ struct llama_server_context {
     res.stop = true;
 
     const int n_embd = llama_n_embd(model);
-    if (!params.embedding) {
-      LOG_WARNING_LLAMA("embedding disabled",
-                        {
-                            {"params.embedding", params.embedding},
-                        });
-      res.result_json = json{
-          {"embedding", std::vector<float>(n_embd, 0.0f)},
-      };
-    } else {
-      const float* data = llama_get_embeddings(ctx);
-      std::vector<float> embedding(data, data + n_embd);
-      res.result_json = json{
-          {"embedding", embedding},
-      };
+
+    std::vector<float> embd_res(n_embd, 0.0f);
+
+    for (int i = 0; i < batch.n_tokens; ++i) {
+      if (!batch.logits[i] || batch.seq_id[i][0] != slot.id) {
+        continue;
+      }
+
+      const float* embd = llama_get_embeddings_seq(ctx, batch.seq_id[i][0]);
+      if (embd == NULL) {
+        embd = llama_get_embeddings_ith(ctx, i);
+      }
+
+      if (embd == NULL) {
+        LOG_ERROR << "failed to get embeddings"
+                  << " token " << batch.token[i] << ", seq_id "
+                  << batch.seq_id[i][0];
+
+        res.result_json = json{
+            {"embedding", std::vector<float>(n_embd, 0.0f)},
+        };
+
+        continue;
+      }
+
+      llama_embd_normalize(embd, embd_res.data(), n_embd);
     }
+    res.result_json = json{
+        {"embedding", embd_res},
+    };
+
     queue_results.push_back(res);
     condition_results.notify_all();
   }
@@ -1341,7 +1368,7 @@ struct llama_server_context {
             0,  // unused
         };
         if (llama_decode(ctx, batch_view)) {
-          LOG_TEE("%s : failed to eval\n", __func__);
+          LOG_DEBUG << __func__ << " : failed to eval\n";
           return false;
         }
       }
@@ -1361,7 +1388,7 @@ struct llama_server_context {
             0,
         };
         if (llama_decode(ctx, batch_img)) {
-          LOG_TEE("%s : failed to eval image\n", __func__);
+          LOG_DEBUG << __func__ << " : failed to eval image";
           return false;
         }
         slot.n_past += n_eval;
@@ -1429,7 +1456,7 @@ struct llama_server_context {
           llama_client_slot* slot =
               get_slot(json_value(task.data, "slot_id", -1));
           if (slot == nullptr) {
-            LOG_TEE("slot unavailable\n");
+            LOG_DEBUG << "slot unavailable";
             // send error result
             send_error(task, "slot unavailable");
             return;
@@ -1499,7 +1526,7 @@ struct llama_server_context {
 
     // update the system prompt wait until all slots are idle state
     if (system_need_update && all_slots_are_idle) {
-      LOG_TEE("updating system prompt\n");
+      LOG_DEBUG << "updating system prompt";
       update_system_prompt();
     }
 
@@ -1507,9 +1534,9 @@ struct llama_server_context {
 
     if (all_slots_are_idle) {
       if (system_prompt.empty() && clean_kv_cache) {
-        LOG_TEE(
-            "all slots are idle and system prompt is empty, clear the KV "
-            "cache\n");
+        LOG_DEBUG
+            << "all slots are idle and system prompt is empty, clear the KV "
+               "cache";
         kv_cache_clear();
       }
       // std::this_thread::sleep_for(std::chrono::milliseconds(5));
@@ -1528,15 +1555,13 @@ struct llama_server_context {
         const int n_left = slot.n_past - slot.params.n_keep - 1;
         const int n_discard = n_left / 2;
 
-        LOG_TEE(
-            "slot %d: context shift - n_keep = %d, n_left = %d, n_discard "
-            "= %d\n",
-            slot.id, slot.params.n_keep, n_left, n_discard);
+        LOG_DEBUG << "slot " << slot.id
+                  << " context shift - n_keep = " << slot.params.n_keep
+                  << ", n_left = " << n_left << ", n_discard: " << n_discard;
         llama_kv_cache_seq_rm(ctx, slot.id, slot.params.n_keep + 1,
                               slot.params.n_keep + n_discard + 1);
-        llama_kv_cache_seq_add(ctx, slot.id,
-                                 slot.params.n_keep + 1 + n_discard,
-                                 slot.n_past, -n_discard);
+        llama_kv_cache_seq_add(ctx, slot.id, slot.params.n_keep + 1 + n_discard,
+                               slot.n_past, -n_discard);
 
         for (size_t i = slot.params.n_keep + 1 + n_discard;
              i < slot.cache_tokens.size(); i++) {
@@ -1565,8 +1590,8 @@ struct llama_server_context {
         slot.command = NONE;
         slot.t_last_used = ggml_time_us();
 
-        LOG_TEE("slot %d released (%d tokens in cache)\n", slot.id,
-                (int)slot.cache_tokens.size());
+        LOG_DEBUG << "slot " << slot.id << " released ("
+                  << (int)slot.cache_tokens.size() << " tokens in cache)";
 
         continue;
       }
@@ -1699,12 +1724,13 @@ struct llama_server_context {
             slot.num_prompt_tokens_processed =
                 slot.num_prompt_tokens - slot.n_past;
 
-            LOG_TEE("slot %d : in cache: %i tokens | to process: %i tokens\n",
-                    slot.id, slot.n_past, slot.num_prompt_tokens_processed);
+            LOG_DEBUG << "slot " << slot.id << " : in cache: " << slot.n_past
+                      << " tokens | to process: "
+                      << slot.num_prompt_tokens_processed << " tokens";
           }
 
-          LOG_TEE("slot %d : kv cache rm - [%d, end)\n", slot.id,
-                  (int)system_tokens.size() + slot.n_past);
+          LOG_DEBUG << "slot " << slot.id << " : kv cache rm - ["
+                    << (int)system_tokens.size() + slot.n_past << ", end)";
 
           llama_kv_cache_seq_rm(ctx, slot.id,
                                 system_tokens.size() + slot.n_past, -1);
@@ -1713,10 +1739,9 @@ struct llama_server_context {
 
           if (slot.n_past == slot.num_prompt_tokens) {
             // we have to evaluate at least 1 token to generate logits.
-            LOG_TEE(
-                "slot %d : we have to evaluate at least 1 token to "
-                "generate logits\n",
-                slot.id);
+            LOG_DEBUG << "slot " << slot.id
+                      << " : we have to evaluate at least 1 token to "
+                         "generate logits";
             slot.n_past--;
           }
 
@@ -1745,7 +1770,7 @@ struct llama_server_context {
           }
 
           if (has_images && !ingest_images(slot, n_batch)) {
-            LOG_TEE("failed processing images\n");
+            LOG_DEBUG << "failed processing images";
             return false;
           }
 
@@ -1785,15 +1810,17 @@ struct llama_server_context {
         if (n_batch == 1 || ret < 0) {
           // if you get here, it means the KV cache is full - try increasing it
           // via the context size
-          LOG_TEE("%s : failed to decode the batch, n_batch = %d, ret = %d\n",
-                  __func__, n_batch, ret);
+          LOG_DEBUG << __func__
+                    << " : failed to decode the batch, n_batch = " << n_batch
+                    << ", ret = " << ret;
           return false;
         }
 
-        LOG_TEE(
-            "%s : failed to find free space in the KV cache, retrying with "
-            "smaller n_batch = %d\n",
-            __func__, n_batch / 2);
+        LOG_DEBUG
+            << __func__
+            << " : failed to find free space in the KV cache, retrying with "
+               "smaller n_batch = "
+            << n_batch / 2;
 
         // retry with half the batch size to try to find a free slot in the KV
         // cache
@@ -1870,7 +1897,8 @@ static void server_print_usage(const char* argv0, const gpt_params& params,
       "  -tb N, --threads-batch N  number of threads to use during batch "
       "and prompt processing (default: same as --threads)\n");
   printf(
-      "  -c N, --ctx-size N        size of the prompt context (default: %d)\n",
+      "  -c N, --ctx-size N        size of the prompt context (default: "
+      "%d)\n",
       params.n_ctx);
   printf("  --rope-scaling {none,linear,yarn}\n");
   printf(
@@ -1988,7 +2016,8 @@ static void server_print_usage(const char* argv0, const gpt_params& params,
       "dynamic batching) (default: disabled)\n");
   printf("  -spf FNAME, --system-prompt-file FNAME\n");
   printf(
-      "                            set a file to load a system prompt (initial "
+      "                            set a file to load a system prompt "
+      "(initial "
       "prompt of all slots), this is useful for chat applications.\n");
   printf(
       "  --mmproj MMPROJ_FILE      path to a multimodal projector file for "

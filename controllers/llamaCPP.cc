@@ -148,8 +148,8 @@ llamaCPP::llamaCPP()
                                              "llamaCPP")) {
   // Some default values for now below
   log_disable();  // Disable the log to file feature, reduce bloat for
-  // target
-  // system ()
+                  // target
+                  // system ()
 };
 
 llamaCPP::~llamaCPP() {
@@ -404,36 +404,37 @@ void llamaCPP::InferenceImpl(
       return 0;
     };
     // Queued task
-    state->instance->queue->runTaskInQueue(
-        [cb = std::move(callback), state, data, chunked_content_provider, request_id]() {
-          state->task_id =
-              state->instance->llama.request_completion(data, false, false, -1);
+    state->instance->queue->runTaskInQueue([cb = std::move(callback), state,
+                                            data, chunked_content_provider,
+                                            request_id]() {
+      state->task_id =
+          state->instance->llama.request_completion(data, false, false, -1);
 
-          // Start streaming response
-          auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
-                                                       "chat_completions.txt");
-          cb(resp);
+      // Start streaming response
+      auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
+                                                   "chat_completions.txt");
+      cb(resp);
 
-          int retries = 0;
+      int retries = 0;
 
-          // Since this is an async task, we will wait for the task to be
-          // completed
-          while (state->inference_status != FINISHED && retries < 10) {
-            // Should wait chunked_content_provider lambda to be called within
-            // 3s
-            if (state->inference_status == PENDING) {
-              retries += 1;
-            }
-            if (state->inference_status != RUNNING)
-              LOG_INFO_REQUEST(request_id)
-                  << "Wait for task to be released:" << state->task_id;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-          LOG_INFO_REQUEST(request_id) << "Task completed, release it";
-          // Request completed, release it
-          state->instance->llama.request_cancel(state->task_id);
-          LOG_INFO_REQUEST(request_id) << "Inference completed";
-        });
+      // Since this is an async task, we will wait for the task to be
+      // completed
+      while (state->inference_status != FINISHED && retries < 10) {
+        // Should wait chunked_content_provider lambda to be called within
+        // 3s
+        if (state->inference_status == PENDING) {
+          retries += 1;
+        }
+        if (state->inference_status != RUNNING)
+          LOG_INFO_REQUEST(request_id)
+              << "Wait for task to be released:" << state->task_id;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      LOG_INFO_REQUEST(request_id) << "Task completed, release it";
+      // Request completed, release it
+      state->instance->llama.request_cancel(state->task_id);
+      LOG_INFO_REQUEST(request_id) << "Inference completed";
+    });
   } else {
     queue->runTaskInQueue(
         [this, request_id, cb = std::move(callback), d = std::move(data)]() {
@@ -606,6 +607,7 @@ void llamaCPP::LoadModel(
 
 bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   gpt_params params;
+  std::string model_type;
   // By default will setting based on number of handlers
   if (jsonBody) {
     if (!jsonBody->operator[]("mmproj").isNull()) {
@@ -650,6 +652,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
+    model_type = jsonBody->get("model_type", "llm").asString();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
@@ -706,7 +709,13 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::BackgroundTask, this);
-  WarmupModel();
+
+  // For model like nomic-embed-text-v1.5.f16.gguf, etc, we don't need to warm up model.
+  // So we use this variable to differentiate with other models
+  // TODO: in case embedded model only, we should reject completion request from user?
+  if (model_type == "llm") {
+    WarmupModel();
+  }
   return true;
 }
 

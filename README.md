@@ -114,6 +114,7 @@ Table of parameters
 |`grp_attn_w`|Integer|Group attention width in self-extend|
 |`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
 |`grammar_file`| String |You can constrain the sampling using GBNF grammars by providing path to a grammar file|
+|`model_type` | String | Model type we want to use: llm or embedding, default value is llm|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
