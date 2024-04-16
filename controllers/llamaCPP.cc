@@ -187,6 +187,16 @@ void llamaCPP::ChatCompletion(
 void llamaCPP::InferenceImpl(
     inferences::ChatCompletionRequest&& completion,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (llama.model_type == ModelType::EMBEDDING) {
+    LOG_WARN << "Not support completion for embedding model";
+    Json::Value jsonResp;
+    jsonResp["message"] =
+        "Not support completion for embedding model";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
   std::string formatted_output = pre_prompt;
   int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for inference request";
@@ -645,8 +655,11 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
     model_type = jsonBody->get("model_type", "llm").asString();
-    LOG_DEBUG << "sangnv: params.embedding: " << params.embedding;
-
+    if (model_type == "llm") {
+      llama.model_type = ModelType::LLM;
+    } else {
+      llama.model_type = ModelType::EMBEDDING;
+    }
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
@@ -706,8 +719,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   // For model like nomic-embed-text-v1.5.f16.gguf, etc, we don't need to warm up model.
   // So we use this variable to differentiate with other models
-  // TODO: in case embedded model only, we should reject completion request from user?
-  if (model_type == "llm") {
+  if (llama.model_type == ModelType::LLM) {
     WarmupModel();
   }
   return true;

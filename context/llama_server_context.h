@@ -211,6 +211,8 @@ enum stop_type {
   STOP_PARTIAL,
 };
 
+enum class ModelType { LLM = 0, EMBEDDING };
+
 static bool ends_with(const std::string& str, const std::string& suffix) {
   return str.size() >= suffix.size() &&
          0 == str.compare(str.size() - suffix.size(), suffix.size(), suffix);
@@ -506,6 +508,7 @@ struct llama_server_context {
   std::condition_variable condition_tasks;
   std::mutex mutex_results;
   std::condition_variable condition_results;
+  ModelType model_type = ModelType::LLM;
 
   ~llama_server_context() {
     if (ctx) {
