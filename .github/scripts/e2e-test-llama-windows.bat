@@ -1,16 +1,18 @@
 @echo off
 
 set "TEMP=C:\Users\%UserName%\AppData\Local\Temp"
-set "MODEL_PATH=%TEMP%\testllm"
+set "MODEL_LLM_PATH=%TEMP%\testllm"
+set "MODEL_EMBEDDING_PATH=%TEMP%\test-embedding"
 
 rem Check for required arguments
-if "%~2"=="" (
-    echo Usage: %~0 ^<path_to_binary^> ^<url_to_download^>
+if "%~3"=="" (
+    echo Usage: %~0 ^<path_to_binary^> ^<url_to_download_llm^> ^<url_to_download_embedding^>
     exit /b 1
 )
 
 set "BINARY_PATH=%~1"
-set "DOWNLOAD_URL=%~2"
+set "DOWNLOAD_LLM_URL=%~2"
+set "DOWNLOAD_EMBEDDING_URL=%~3"
 
 for %%i in ("%BINARY_PATH%") do set "BINARY_NAME=%%~nxi"
 
@@ -18,6 +20,9 @@ echo BINARY_NAME=%BINARY_NAME%
 
 del %TEMP%\response1.log 2>nul
 del %TEMP%\response2.log 2>nul
+del %TEMP%\response3.log 2>nul
+del %TEMP%\response4.log 2>nul
+del %TEMP%\response5.log 2>nul
 del %TEMP%\nitro.log 2>nul
 
 set /a min=9999
@@ -46,33 +51,56 @@ if not defined pid (
 rem Wait for a few seconds to let the server start
 
 rem Check if %TEMP%\testmodel exists, if not, download it
-if not exist "%MODEL_PATH%" (
-    curl.exe --connect-timeout 300 %DOWNLOAD_URL% --output "%MODEL_PATH%"
+if not exist "%MODEL_LLM_PATH%" (
+    curl.exe --connect-timeout 300 %DOWNLOAD_LLM_URL% --output "%MODEL_LLM_PATH%"
+)
+
+if not exist "%MODEL_EMBEDDING_PATH%" (
+    curl.exe --connect-timeout 300 %DOWNLOAD_EMBEDDING_URL% --output "%MODEL_EMBEDDING_PATH%"
 )
 
 rem Define JSON strings for curl data
-call set "MODEL_PATH_STRING=%%MODEL_PATH:\=\\%%"
-set "curl_data1={\"llama_model_path\":\"%MODEL_PATH_STRING%\"}"
+call set "MODEL_LLM_PATH_STRING=%%MODEL_LLM_PATH:\=\\%%"
+call set "MODEL_EMBEDDING_PATH_STRING=%%MODEL_EMBEDDING_PATH:\=\\%%"
+set "curl_data1={\"llama_model_path\":\"%MODEL_LLM_PATH_STRING%\"}"
 set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":50,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.1}"
+set "curl_data3={\"llama_model_path\":\"%MODEL_LLM_PATH_STRING%\"}"
+set "curl_data4={\"llama_model_path\":\"%MODEL_EMBEDDING_PATH_STRING%\", \"embedding\": true, \"model_type\": \"embedding\"}"
+set "curl_data5={\"input\": \"Hello\", \"model\": \"test-embedding\", \"encoding_format\": \"float\"}"
 
-rem Print the values of curl_data1 and curl_data2 for debugging
+rem Print the values of curl_data for debugging
 echo curl_data1=%curl_data1%
 echo curl_data2=%curl_data2%
+echo curl_data3=%curl_data3%
+echo curl_data4=%curl_data4%
+echo curl_data5=%curl_data5%
 
 rem Run the curl commands and capture the status code
 curl.exe --connect-timeout 60 -o "%TEMP%\response1.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1.log 2>&1
 
 curl.exe --connect-timeout 60 -o "%TEMP%\response2.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
 --header "Content-Type: application/json" ^
---header "Accept: text/event-stream" ^
---header "Access-Control-Allow-Origin: *" ^
 --data "%curl_data2%" > %TEMP%\response2.log 2>&1
+
+rem give it some time to receive full response
+timeout /t 5
+
+curl.exe --connect-timeout 60 -o "%TEMP%\response3.log" --request GET -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/unloadModel" --header "Content-Type: application/json" --data "%curl_data3%" > %TEMP%\response3.log 2>&1
+
+curl.exe --connect-timeout 60 -o "%TEMP%\response4.log" --request POST -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data4%" > %TEMP%\response4.log 2>&1
+
+curl.exe --connect-timeout 60 -o "%TEMP%\response5.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/embeddings" ^
+--header "Content-Type: application/json" ^
+--data "%curl_data5%" > %TEMP%\response5.log 2>&1
 
 set "error_occurred=0"
 
 rem Read the status codes from the log files
 for /f %%a in (%TEMP%\response1.log) do set "response1=%%a"
 for /f %%a in (%TEMP%\response2.log) do set "response2=%%a"
+for /f %%a in (%TEMP%\response3.log) do set "response3=%%a"
+for /f %%a in (%TEMP%\response4.log) do set "response4=%%a"
+for /f %%a in (%TEMP%\response5.log) do set "response5=%%a"
 
 if "%response1%" neq "200" (
     echo The first curl command failed with status code: %response1%
@@ -86,6 +114,24 @@ if "%response2%" neq "200" (
     set "error_occurred=1"
 )
 
+if "%response3%" neq "200" (
+    echo The third curl command failed with status code: %response3%
+    type %TEMP%\response3.log
+    set "error_occurred=1"
+)
+
+if "%response4%" neq "200" (
+    echo The fourth curl command failed with status code: %response4%
+    type %TEMP%\response4.log
+    set "error_occurred=1"
+)
+
+if "%response5%" neq "200" (
+    echo The fifth curl command failed with status code: %response5%
+    type %TEMP%\response5.log
+    set "error_occurred=1"
+)
+
 if "%error_occurred%"=="1" (
     echo Nitro test run failed!!!!!!!!!!!!!!!!!!!!!!
     echo Nitro Error Logs:
@@ -96,12 +142,24 @@ if "%error_occurred%"=="1" (
 
 
 echo ----------------------
-echo Log load model:
+echo Log load llm model:
 type %TEMP%\response1.log
 
 echo ----------------------
-echo "Log run test:"
+echo Log run test:
 type %TEMP%\response2.log
+
+echo ----------------------
+echo Log unload model:
+type %TEMP%\response3.log
+
+echo ----------------------
+echo Log load embedding model:
+type %TEMP%\response3.log
+
+echo ----------------------
+echo Log run embedding test:
+type %TEMP%\response5.log
 
 echo Nitro test run successfully!
 
