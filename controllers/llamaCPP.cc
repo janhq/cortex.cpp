@@ -3,8 +3,8 @@
 #include <fstream>
 #include <iostream>
 #include "log.h"
-#include "utils/nitro_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/nitro_utils.h"
 
 // External
 #include "common.h"
@@ -29,6 +29,8 @@ struct inferenceState {
   int task_id;
   InferenceStatus inference_status = PENDING;
   llamaCPP* instance;
+  // Check if we receive the first token, set it to false after receiving
+  bool is_first_token = true;
 
   inferenceState(llamaCPP* inst) : instance(inst) {}
 };
@@ -47,7 +49,7 @@ std::shared_ptr<inferenceState> create_inference_state(llamaCPP* instance) {
  * @param callback the function to return message to user
  */
 bool llamaCPP::CheckModelLoaded(
-    std::function<void(const HttpResponsePtr&)>& callback) {
+    const std::function<void(const HttpResponsePtr&)>& callback) {
   if (!llama.model_loaded_external) {
     LOG_ERROR << "Model has not been loaded";
     Json::Value jsonResp;
@@ -146,8 +148,8 @@ llamaCPP::llamaCPP()
                                              "llamaCPP")) {
   // Some default values for now below
   log_disable();  // Disable the log to file feature, reduce bloat for
-  // target
-  // system ()
+                  // target
+                  // system ()
 };
 
 llamaCPP::~llamaCPP() {
@@ -178,13 +180,13 @@ void llamaCPP::ChatCompletion(
   if (CheckModelLoaded(callback)) {
     // Model is loaded
     // Do Inference
-    InferenceImpl(std::move(completion), callback);
+    InferenceImpl(std::move(completion), std::move(callback));
   }
 }
 
 void llamaCPP::InferenceImpl(
     inferences::ChatCompletionRequest&& completion,
-    std::function<void(const HttpResponsePtr&)>& callback) {
+    std::function<void(const HttpResponsePtr&)>&& callback) {
   std::string formatted_output = pre_prompt;
   int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for inference request";
@@ -195,20 +197,22 @@ void llamaCPP::InferenceImpl(
   // To set default value
 
   // Increase number of chats received and clean the prompt
-  no_of_chats++;
-  if (no_of_chats % clean_cache_threshold == 0) {
-    LOG_INFO_REQUEST(request_id) << "Clean cache threshold reached!";
-    llama.kv_cache_clear();
-    LOG_INFO_REQUEST(request_id) << "Cache cleaned";
-  }
+  //no_of_chats++;
+  //if (no_of_chats % clean_cache_threshold == 0) {
+  //  LOG_INFO_REQUEST(request_id) << "Clean cache threshold reached!";
+  //  llama.kv_cache_clear();
+  //  LOG_INFO_REQUEST(request_id) << "Cache cleaned";
+  //}
 
   // Default values to enable auto caching
-  data["cache_prompt"] = caching_enabled;
+  //data["cache_prompt"] = caching_enabled;
+  data["cache_prompt"] = false;
   data["n_keep"] = -1;
 
   // Passing load value
   data["repeat_last_n"] = this->repeat_last_n;
-  LOG_INFO_REQUEST(request_id) << "Stop words:" << completion.stop.toStyledString();
+  LOG_INFO_REQUEST(request_id)
+      << "Stop words:" << completion.stop.toStyledString();
 
   data["stream"] = completion.stream;
   data["n_predict"] = completion.max_tokens;
@@ -267,7 +271,8 @@ void llamaCPP::InferenceImpl(
             auto image_url = content_piece["image_url"]["url"].asString();
             std::string base64_image_data;
             if (image_url.find("http") != std::string::npos) {
-              LOG_INFO_REQUEST(request_id) << "Remote image detected but not supported yet";
+              LOG_INFO_REQUEST(request_id)
+                  << "Remote image detected but not supported yet";
             } else if (image_url.find("data:image") != std::string::npos) {
               LOG_INFO_REQUEST(request_id) << "Base64 image detected";
               base64_image_data = nitro_utils::extractBase64(image_url);
@@ -328,8 +333,10 @@ void llamaCPP::InferenceImpl(
   if (is_streamed) {
     LOG_INFO_REQUEST(request_id) << "Streamed, waiting for respone";
     auto state = create_inference_state(this);
-    auto chunked_content_provider =
-        [state, data, request_id](char* pBuffer, std::size_t nBuffSize) -> std::size_t {
+
+    auto chunked_content_provider = [state, data, request_id](
+                                        char* pBuffer,
+                                        std::size_t nBuffSize) -> std::size_t {
       if (state->inference_status == PENDING) {
         state->inference_status = RUNNING;
       } else if (state->inference_status == FINISHED) {
@@ -337,7 +344,8 @@ void llamaCPP::InferenceImpl(
       }
 
       if (!pBuffer) {
-        LOG_WARN_REQUEST(request_id) "Connection closed or buffer is null. Reset context";
+        LOG_WARN_REQUEST(request_id)
+        "Connection closed or buffer is null. Reset context";
         state->inference_status = FINISHED;
         return 0;
       }
@@ -350,7 +358,8 @@ void llamaCPP::InferenceImpl(
                                "stop") +
             "\n\n" + "data: [DONE]" + "\n\n";
 
-        LOG_VERBOSE("data stream", {{"request_id": request_id}, {"to_send", str}});
+        LOG_VERBOSE("data stream",
+                    {{"request_id": request_id}, {"to_send", str}});
         std::size_t nRead = std::min(str.size(), nBuffSize);
         memcpy(pBuffer, str.data(), nRead);
         state->inference_status = FINISHED;
@@ -359,7 +368,13 @@ void llamaCPP::InferenceImpl(
 
       task_result result = state->instance->llama.next_result(state->task_id);
       if (!result.error) {
-        const std::string to_send = result.result_json["content"];
+        std::string to_send = result.result_json["content"];
+
+        // trim the leading space if it is the first token
+        if (std::exchange(state->is_first_token, false)) {
+          nitro_utils::ltrim(to_send);
+        }
+
         const std::string str =
             "data: " +
             create_return_json(nitro_utils::generate_random_string(20), "_",
@@ -389,56 +404,63 @@ void llamaCPP::InferenceImpl(
       return 0;
     };
     // Queued task
-    state->instance->queue->runTaskInQueue(
-        [callback, state, data, chunked_content_provider, request_id]() {
-          state->task_id =
-              state->instance->llama.request_completion(data, false, false, -1);
+    state->instance->queue->runTaskInQueue([cb = std::move(callback), state,
+                                            data, chunked_content_provider,
+                                            request_id]() {
+      state->task_id =
+          state->instance->llama.request_completion(data, false, false, -1);
 
-          // Start streaming response
-          auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
-                                                       "chat_completions.txt");
-          callback(resp);
+      // Start streaming response
+      auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
+                                                   "chat_completions.txt");
+      cb(resp);
 
-          int retries = 0;
+      int retries = 0;
 
-          // Since this is an async task, we will wait for the task to be
-          // completed
-          while (state->inference_status != FINISHED && retries < 10) {
-            // Should wait chunked_content_provider lambda to be called within
-            // 3s
-            if (state->inference_status == PENDING) {
-              retries += 1;
-            }
-            if (state->inference_status != RUNNING)
-              LOG_INFO_REQUEST(request_id) << "Wait for task to be released:" << state->task_id;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-          LOG_INFO_REQUEST(request_id) << "Task completed, release it";
-          // Request completed, release it
-          state->instance->llama.request_cancel(state->task_id);
-          LOG_INFO_REQUEST(request_id) << "Inference completed";
-        });
-  } else {
-    Json::Value respData;
-    int task_id = llama.request_completion(data, false, false, -1);
-    LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
-    if (!json_value(data, "stream", false)) {
-      std::string completion_text;
-      task_result result = llama.next_result(task_id);
-      if (!result.error && result.stop) {
-        int prompt_tokens = result.result_json["tokens_evaluated"];
-        int predicted_tokens = result.result_json["tokens_predicted"];
-        respData = create_full_return_json(nitro_utils::generate_random_string(20),
-                                           "_", result.result_json["content"], "_",
-                                           prompt_tokens, predicted_tokens);
-      } else {
-        respData["message"] = "Internal error during inference";
-        LOG_ERROR_REQUEST(request_id) << "Error during inference";
+      // Since this is an async task, we will wait for the task to be
+      // completed
+      while (state->inference_status != FINISHED && retries < 10) {
+        // Should wait chunked_content_provider lambda to be called within
+        // 3s
+        if (state->inference_status == PENDING) {
+          retries += 1;
+        }
+        if (state->inference_status != RUNNING)
+          LOG_INFO_REQUEST(request_id)
+              << "Wait for task to be released:" << state->task_id;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
-      auto resp = nitro_utils::nitroHttpJsonResponse(respData);
-      callback(resp);
+      LOG_INFO_REQUEST(request_id) << "Task completed, release it";
+      // Request completed, release it
+      state->instance->llama.request_cancel(state->task_id);
       LOG_INFO_REQUEST(request_id) << "Inference completed";
-    }
+    });
+  } else {
+    queue->runTaskInQueue(
+        [this, request_id, cb = std::move(callback), d = std::move(data)]() {
+          Json::Value respData;
+          int task_id = llama.request_completion(d, false, false, -1);
+          LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
+          if (!json_value(d, "stream", false)) {
+            std::string completion_text;
+            task_result result = llama.next_result(task_id);
+            if (!result.error && result.stop) {
+              int prompt_tokens = result.result_json["tokens_evaluated"];
+              int predicted_tokens = result.result_json["tokens_predicted"];
+              std::string to_send = result.result_json["content"];
+              nitro_utils::ltrim(to_send);
+              respData = create_full_return_json(
+                  nitro_utils::generate_random_string(20), "_", to_send, "_",
+                  prompt_tokens, predicted_tokens);
+            } else {
+              respData["message"] = "Internal error during inference";
+              LOG_ERROR_REQUEST(request_id) << "Error during inference";
+            }
+            auto resp = nitro_utils::nitroHttpJsonResponse(respData);
+            cb(resp);
+            LOG_INFO_REQUEST(request_id) << "Inference completed";
+          }
+        });
   }
 }
 
@@ -450,20 +472,21 @@ void llamaCPP::Embedding(
     // Model is loaded
     const auto& jsonBody = req->getJsonObject();
     // Run embedding
-    EmbeddingImpl(jsonBody, callback);
+    EmbeddingImpl(jsonBody, std::move(callback));
     return;
   }
 }
 
 void llamaCPP::EmbeddingImpl(
     std::shared_ptr<Json::Value> jsonBody,
-    std::function<void(const HttpResponsePtr&)>& callback) {
+    std::function<void(const HttpResponsePtr&)>&& callback) {
   int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for embedding request";
   // Queue embedding task
   auto state = create_inference_state(this);
 
-  state->instance->queue->runTaskInQueue([this, state, jsonBody, callback, request_id]() {
+  state->instance->queue->runTaskInQueue([this, state, jsonBody, callback,
+                                          request_id]() {
     Json::Value responseData(Json::arrayValue);
 
     if (jsonBody->isMember("input")) {
@@ -535,7 +558,7 @@ void llamaCPP::ModelStatus(
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     callback(resp);
     LOG_INFO << "Model status responded";
-  } 
+  }
 }
 
 void llamaCPP::LoadModel(
@@ -545,10 +568,12 @@ void llamaCPP::LoadModel(
   if (!nitro_utils::isAVX2Supported() && ggml_cpu_has_avx2()) {
     LOG_ERROR << "AVX2 is not supported by your processor";
     Json::Value jsonResp;
-    jsonResp["message"] = "AVX2 is not supported by your processor, please download and replace the correct Nitro asset version";
+    jsonResp["message"] =
+        "AVX2 is not supported by your processor, please download and replace "
+        "the correct Nitro asset version";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k500InternalServerError);
-    callback(resp);    
+    callback(resp);
     return;
   }
 
@@ -582,6 +607,7 @@ void llamaCPP::LoadModel(
 
 bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   gpt_params params;
+  std::string model_type;
   // By default will setting based on number of handlers
   if (jsonBody) {
     if (!jsonBody->operator[]("mmproj").isNull()) {
@@ -615,7 +641,8 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     if (model_path.isNull()) {
       LOG_ERROR << "Missing model path in request";
     } else {
-      if (std::filesystem::exists(std::filesystem::path(model_path.asString()))) {
+      if (std::filesystem::exists(
+              std::filesystem::path(model_path.asString()))) {
         params.model = model_path.asString();
       } else {
         LOG_ERROR << "Could not find model in path " << model_path.asString();
@@ -625,6 +652,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
+    model_type = jsonBody->get("model_type", "llm").asString();
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
@@ -634,7 +662,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.cont_batching = jsonBody->get("cont_batching", false).asBool();
     this->clean_cache_threshold =
         jsonBody->get("clean_cache_threshold", 5).asInt();
-    this->caching_enabled = jsonBody->get("caching_enabled", true).asBool();
+    this->caching_enabled = jsonBody->get("caching_enabled", false).asBool();
     this->user_prompt = jsonBody->get("user_prompt", "USER: ").asString();
     this->ai_prompt = jsonBody->get("ai_prompt", "ASSISTANT: ").asString();
     this->system_prompt =
@@ -681,7 +709,13 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   LOG_INFO << "Started background task here!";
   backgroundThread = std::thread(&llamaCPP::BackgroundTask, this);
-  WarmupModel();
+
+  // For model like nomic-embed-text-v1.5.f16.gguf, etc, we don't need to warm up model.
+  // So we use this variable to differentiate with other models
+  // TODO: in case embedded model only, we should reject completion request from user?
+  if (model_type == "llm") {
+    WarmupModel();
+  }
   return true;
 }
 

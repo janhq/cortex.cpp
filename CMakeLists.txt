@@ -160,6 +160,7 @@ add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 add_subdirectory(llama.cpp/examples/llava)
 add_subdirectory(llama.cpp)
 add_subdirectory(whisper.cpp)
+add_subdirectory(test)
 
 add_executable(${PROJECT_NAME} main.cc)
 
