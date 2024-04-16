@@ -190,8 +190,7 @@ void llamaCPP::InferenceImpl(
   if (llama.model_type == ModelType::EMBEDDING) {
     LOG_WARN << "Not support completion for embedding model";
     Json::Value jsonResp;
-    jsonResp["message"] =
-        "Not support completion for embedding model";
+    jsonResp["message"] = "Not support completion for embedding model";
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     resp->setStatusCode(drogon::k400BadRequest);
     callback(resp);
@@ -420,7 +419,8 @@ void llamaCPP::InferenceImpl(
 
       // Since this is an async task, we will wait for the task to be
       // completed
-      while (state->inference_status != FINISHED && retries < 10) {
+      while (state->inference_status != FINISHED && retries < 10 &&
+             state->instance->llama.model_loaded_external) {
         // Should wait chunked_content_provider lambda to be called within
         // 3s
         if (state->inference_status == PENDING) {
@@ -740,9 +740,10 @@ void llamaCPP::StopBackgroundTask() {
   if (llama.model_loaded_external) {
     llama.model_loaded_external = false;
     llama.condition_tasks.notify_one();
-    LOG_INFO << "Background task stopped! ";
+    LOG_INFO << "Stopping background task! ";
     if (backgroundThread.joinable()) {
       backgroundThread.join();
     }
+    LOG_INFO << "Background task stopped! ";
   }
 }
