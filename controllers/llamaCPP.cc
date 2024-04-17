@@ -165,8 +165,7 @@ void llamaCPP::WarmupModel(const std::string& model_id) {
     pseudo["prompt"] = "Hello";
     pseudo["n_predict"] = 2;
     pseudo["stream"] = false;
-    const int task_id =
-        l->second.request_completion(pseudo, false, false, -1);
+    const int task_id = l->second.request_completion(pseudo, false, false, -1);
     task_result result = l->second.next_result(task_id);
     if (!result.error && result.stop) {
       LOG_INFO << result.result_json.dump(-1, ' ', false,
@@ -193,6 +192,16 @@ void llamaCPP::InferenceImpl(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   assert(server_ctx_map.find(completion.model_id) != server_ctx_map.end());
   auto& l = server_ctx_map[completion.model_id];
+
+  if (l.model_type == ModelType::EMBEDDING) {
+    LOG_WARN << "Not support completion for embedding model";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Not support completion for embedding model";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
 
   std::string formatted_output = pre_prompt;
   int request_id = ++no_of_requests;
@@ -412,10 +421,10 @@ void llamaCPP::InferenceImpl(
       return 0;
     };
     // Queued task
-    inference_task_queue->runTaskInQueue(
-        [cb = std::move(callback), state, data, chunked_content_provider, request_id]() {
-          state->task_id =
-              state->llama.request_completion(data, false, false, -1);
+    inference_task_queue->runTaskInQueue([cb = std::move(callback), state, data,
+                                          chunked_content_provider,
+                                          request_id]() {
+      state->task_id = state->llama.request_completion(data, false, false, -1);
 
       // Start streaming response
       auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
@@ -424,52 +433,53 @@ void llamaCPP::InferenceImpl(
 
       int retries = 0;
 
-          // Since this is an async task, we will wait for the task to be
-          // completed
-          while (state->inference_status != FINISHED && retries < 10) {
-            // Should wait chunked_content_provider lambda to be called within
-            // 3s
-            if (state->inference_status == PENDING) {
-              retries += 1;
-            }
-            if (state->inference_status != RUNNING)
-              LOG_INFO_REQUEST(request_id)
-                  << "Wait for task to be released:" << state->task_id;
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-          }
-          LOG_INFO_REQUEST(request_id) << "Task completed, release it";
-          // Request completed, release it
-          state->llama.request_cancel(state->task_id);
-          LOG_INFO_REQUEST(request_id) << "Inference completed";
-        });
-  
+      // Since this is an async task, we will wait for the task to be
+      // completed
+      while (state->inference_status != FINISHED && retries < 10 &&
+             state->llama.model_loaded_external) {
+        // Should wait chunked_content_provider lambda to be called within
+        // 3s
+        if (state->inference_status == PENDING) {
+          retries += 1;
+        }
+        if (state->inference_status != RUNNING)
+          LOG_INFO_REQUEST(request_id)
+              << "Wait for task to be released:" << state->task_id;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      }
+      LOG_INFO_REQUEST(request_id) << "Task completed, release it";
+      // Request completed, release it
+      state->llama.request_cancel(state->task_id);
+      LOG_INFO_REQUEST(request_id) << "Inference completed";
+    });
   } else {
     auto state = create_inference_state(l);
-    inference_task_queue->runTaskInQueue(
-        [this, request_id, state, cb = std::move(callback), d = std::move(data)]() {
-          Json::Value respData;
-          int task_id = state->llama.request_completion(d, false, false, -1);
-          LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
-          if (!json_value(d, "stream", false)) {
-            std::string completion_text;
-            task_result result = state->llama.next_result(task_id);
-            if (!result.error && result.stop) {
-              int prompt_tokens = result.result_json["tokens_evaluated"];
-              int predicted_tokens = result.result_json["tokens_predicted"];
-              std::string to_send = result.result_json["content"];
-              nitro_utils::ltrim(to_send);
-              respData = create_full_return_json(
-                  nitro_utils::generate_random_string(20), "_", to_send, "_",
-                  prompt_tokens, predicted_tokens);
-            } else {
-              respData["message"] = "Internal error during inference";
-              LOG_ERROR_REQUEST(request_id) << "Error during inference";
-            }
-            auto resp = nitro_utils::nitroHttpJsonResponse(respData);
-            cb(resp);
-            LOG_INFO_REQUEST(request_id) << "Inference completed";
-          }
-        });
+    inference_task_queue->runTaskInQueue([this, request_id, state,
+                                          cb = std::move(callback),
+                                          d = std::move(data)]() {
+      Json::Value respData;
+      int task_id = state->llama.request_completion(d, false, false, -1);
+      LOG_INFO_REQUEST(request_id) << "Non stream, waiting for respone";
+      if (!json_value(d, "stream", false)) {
+        std::string completion_text;
+        task_result result = state->llama.next_result(task_id);
+        if (!result.error && result.stop) {
+          int prompt_tokens = result.result_json["tokens_evaluated"];
+          int predicted_tokens = result.result_json["tokens_predicted"];
+          std::string to_send = result.result_json["content"];
+          nitro_utils::ltrim(to_send);
+          respData = create_full_return_json(
+              nitro_utils::generate_random_string(20), "_", to_send, "_",
+              prompt_tokens, predicted_tokens);
+        } else {
+          respData["message"] = "Internal error during inference";
+          LOG_ERROR_REQUEST(request_id) << "Error during inference";
+        }
+        auto resp = nitro_utils::nitroHttpJsonResponse(respData);
+        cb(resp);
+        LOG_INFO_REQUEST(request_id) << "Inference completed";
+      }
+    });
   }
 }
 
@@ -590,7 +600,7 @@ void llamaCPP::LoadModel(
   }
 
   auto model_id = nitro_utils::getModelId(req);
-  if(model_id.empty()) {
+  if (model_id.empty()) {
     LOG_INFO << "Model id is empty in request";
     Json::Value jsonResp;
     jsonResp["message"] = "No model id found in request body";
@@ -677,6 +687,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
     model_type = jsonBody->get("model_type", "llm").asString();
+
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
@@ -716,11 +727,19 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   }
 
   auto model_id = nitro_utils::getModelId(*jsonBody);
+
   // load the model
   if (!server_ctx_map[model_id].load_model(params)) {
     LOG_ERROR << "Error loading the model";
     return false;  // Indicate failure
   }
+
+  if (model_type == "llm") {
+    server_ctx_map[model_id].model_type = ModelType::LLM;
+  } else {
+    server_ctx_map[model_id].model_type = ModelType::EMBEDDING;
+  }
+
   server_ctx_map[model_id].initialize();
 
   if (inference_task_queue == nullptr ||
@@ -734,8 +753,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   // For model like nomic-embed-text-v1.5.f16.gguf, etc, we don't need to warm up model.
   // So we use this variable to differentiate with other models
-  // TODO: in case embedded model only, we should reject completion request from user?
-  if (model_type == "llm") {
+  if (server_ctx_map[model_id].model_type == ModelType::LLM) {
     WarmupModel(model_id);
   }
   return true;
