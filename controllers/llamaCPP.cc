@@ -669,6 +669,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     }
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
+    params.n_ubatch = jsonBody->get("n_ubatch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
     params.n_threads =
         jsonBody->get("cpu_threads", std::thread::hardware_concurrency())
