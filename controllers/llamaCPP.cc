@@ -204,7 +204,7 @@ void llamaCPP::InferenceImpl(
   json stopWords;
   int no_images = 0;
   // To set default value
-
+  LOG_DEBUG << "caching_enabled: " << caching_enabled;
   // Default values to enable auto caching
   data["cache_prompt"] = caching_enabled;
   data["n_keep"] = 0;
@@ -457,6 +457,7 @@ void llamaCPP::InferenceImpl(
               respData["message"] = "Internal error during inference";
               LOG_ERROR_REQUEST(request_id) << "Error during inference";
             }
+            llama.request_cancel(task_id);
             auto resp = nitro_utils::nitroHttpJsonResponse(respData);
             cb(resp);
             LOG_INFO_REQUEST(request_id) << "Inference completed";
@@ -498,8 +499,11 @@ void llamaCPP::EmbeddingImpl(
         state->task_id = llama.request_completion(
             {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
         task_result result = llama.next_result(state->task_id);
-        std::vector<float> embedding_result = result.result_json["embedding"];
-        responseData.append(create_embedding_payload(embedding_result, 0));
+        // TODO(sang) better handling, just to test now
+        if (result.result_json.contains("embedding")) {
+          std::vector<float> embedding_result = result.result_json["embedding"];
+          responseData.append(create_embedding_payload(embedding_result, 0));
+        }
       } else if (input.isArray()) {
         // Process each element in the array input
         for (const auto& elem : input) {
@@ -508,9 +512,12 @@ void llamaCPP::EmbeddingImpl(
                 {{"prompt", elem.asString()}, {"n_predict", 0}}, false, true,
                 -1);
             task_result result = llama.next_result(task_id);
-            std::vector<float> embedding_result =
-                result.result_json["embedding"];
-            responseData.append(create_embedding_payload(embedding_result, 0));
+            if (result.result_json.contains("embedding")) {
+              std::vector<float> embedding_result =
+                  result.result_json["embedding"];
+              responseData.append(
+                  create_embedding_payload(embedding_result, 0));
+            }
           }
         }
       }

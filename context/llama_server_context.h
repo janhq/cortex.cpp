@@ -1560,7 +1560,7 @@ struct llama_server_context {
 
     for (llama_client_slot& slot : slots) {
       if (slot.is_processing() &&
-          (int) system_tokens.size() + slot.n_past >= slot.n_ctx) {
+          (int)system_tokens.size() + slot.n_past >= slot.n_ctx) {
         // Shift context
         const int n_left = slot.n_past - slot.params.n_keep - 1;
         const int n_discard = n_left / 2;
@@ -1708,10 +1708,11 @@ struct llama_server_context {
                       << ", task_id: " << slot.task_id
                       << ", n_ctx: " << slot.n_ctx
                       << ", n_keep: " << slot.params.n_keep
+                      << ", n_ubatch: " << n_ubatch
                       << ", n_prompt_tokens: " << slot.num_prompt_tokens;
-            // << ", prompt_tokens: "
-            // << tokens_to_str(ctx, prompt_tokens.cbegin(),
-            //                  prompt_tokens.cend());
+                      // << ", prompt_tokens: "
+                      // << tokens_to_str(ctx, prompt_tokens.cbegin(),
+                      //                  prompt_tokens.cend());
 
             if (slot.embedding) {
               // this prompt is too large to process - discard it
@@ -1855,6 +1856,7 @@ struct llama_server_context {
           LOG_DEBUG << "prompt processing progress - "
                     << "id_slot: " << slot.id << ", n_past: " << slot.n_past
                     << ", n_ctx: " << n_ctx << ", n_tokens: " << batch.n_tokens
+                    << ", cache_tokens: " << (int)slot.cache_tokens.size()
                     << ", progress: "
                     << (float)slot.num_prompt_tokens_processed /
                            slot.num_prompt_tokens;
