@@ -421,7 +421,7 @@ void llamaCPP::InferenceImpl(
       return 0;
     };
     // Queued task
-    inference_task_queue->runTaskInQueue([cb = std::move(callback), state, data,
+    ifr_task_queue_map[completion.model_id]->runTaskInQueue([cb = std::move(callback), state, data,
                                           chunked_content_provider,
                                           request_id]() {
       state->task_id = state->llama.request_completion(data, false, false, -1);
@@ -454,7 +454,7 @@ void llamaCPP::InferenceImpl(
     });
   } else {
     auto state = create_inference_state(l);
-    inference_task_queue->runTaskInQueue([this, request_id, state,
+    ifr_task_queue_map[completion.model_id]->runTaskInQueue([this, request_id, state,
                                           cb = std::move(callback),
                                           d = std::move(data)]() {
       Json::Value respData;
@@ -507,7 +507,7 @@ void llamaCPP::EmbeddingImpl(
   // Queue embedding task
   auto state = create_inference_state(server_ctx_map[model_id]);
 
-  inference_task_queue->runTaskInQueue([this, state, jsonBody, callback,
+  ifr_task_queue_map[model_id]->runTaskInQueue([this, state, jsonBody, callback,
                                         request_id]() {
     Json::Value responseData(Json::arrayValue);
 
@@ -563,6 +563,7 @@ void llamaCPP::UnloadModel(
     auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
     callback(resp);
     server_ctx_map.erase(model_id);
+    ifr_task_queue_map.erase(model_id);
     LOG_INFO << "Model unloaded successfully";
   }
 }
@@ -741,15 +742,9 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
   }
 
   server_ctx_map[model_id].initialize();
-
-  if (inference_task_queue == nullptr ||
-      task_queue_thread_num < params.n_parallel) {
-    task_queue_thread_num = std::max(task_queue_thread_num, params.n_parallel);
-    LOG_INFO << "Start inference task queue, num threads: "
-             << task_queue_thread_num;
-    inference_task_queue = std::make_unique<trantor::ConcurrentTaskQueue>(
-        task_queue_thread_num, "llamaCPP");
-  }
+  
+  ifr_task_queue_map.emplace(model_id, std::make_unique<trantor::ConcurrentTaskQueue>(
+        params.n_parallel, model_id));
 
   // For model like nomic-embed-text-v1.5.f16.gguf, etc, we don't need to warm up model.
   // So we use this variable to differentiate with other models

@@ -296,7 +296,7 @@ inline std::string getModelId(const Json::Value& jsonBody) {
     auto s = input.asString();
     std::replace(s.begin(), s.end(), '\\', '/');
     auto const pos = s.find_last_of('/');
-    // We only if file name has gguf extension or nothing
+    // We only truncate the extension if file name has gguf extension
     if(s.substr(s.find_last_of('.') + 1) == "gguf") {
       return s.substr(pos + 1, s.find_last_of('.') - pos - 1);
     } else {

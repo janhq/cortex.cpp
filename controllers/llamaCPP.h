@@ -92,8 +92,9 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   /**
    * Queue to handle the inference tasks
    */
-  int task_queue_thread_num = 1;
-  std::unique_ptr<trantor::ConcurrentTaskQueue> inference_task_queue;
+  // TODO: should we move this to server_context?
+  std::unordered_map<std::string, std::unique_ptr<trantor::ConcurrentTaskQueue>>
+      ifr_task_queue_map;
 
   bool LoadModelImpl(std::shared_ptr<Json::Value> jsonBody);
   void InferenceImpl(inferences::ChatCompletionRequest&& completion,
