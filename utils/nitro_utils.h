@@ -10,6 +10,7 @@
 #include <ostream>
 #include <regex>
 #include <vector>
+#include <limits.h>
 // Include platform-specific headers
 #ifdef _WIN32
 #include <winsock2.h>
@@ -281,5 +282,34 @@ inline void ltrim(std::string& s) {
             return !std::isspace(ch);
           }));
 };
+
+inline std::wstring stringToWString(const std::string& str) {
+    if (str.empty()) return std::wstring();
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+
+inline std::wstring getCurrentExecutablePath() {
+#if defined(__linux__)
+    std::vector<char> buf(PATH_MAX);
+    ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
+    if (len == -1 || len == buf.size()) {
+        std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
+        return "";
+    }
+    return std::string(&buf[0], len);
+
+#elif defined(_WIN32)
+    wchar_t path[MAX_PATH];
+    DWORD result = GetModuleFileNameW(NULL, path, MAX_PATH);
+    if (result == 0) {
+        std::wcerr << L"Error getting module file name." << std::endl;
+        return L"";
+    }
+    return std::wstring(path);
+#endif
+}
 
 } // namespace nitro_utils

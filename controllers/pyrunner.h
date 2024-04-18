@@ -21,47 +21,13 @@ class pyrunner : public drogon::HttpController<pyrunner> {
  public:
   pyrunner();
   ~pyrunner();
-  void runPythonFile(std::string pyHomePath ,std::string pyFileName);
+  void executePythonFile(std::string py_dl_path ,std::string py_file_path);
 
   METHOD_LIST_BEGIN
-
-  ADD_METHOD_TO(pyrunner::testrun, "/testrun", Get);
-  METHOD_ADD(pyrunner::PyRunPath, "runpath", Post);
-
-  // Method declarations...
+  METHOD_ADD(pyrunner::executePythonFileRequest, "execute", Post);
   METHOD_LIST_END
 
  private:
-  std::string default_python_lib_dir;
-
-  void testrun(const HttpRequestPtr& req,
-               std::function<void(const HttpResponsePtr&)>&& callback);
-
-  void PyRunPath(const HttpRequestPtr& req,
-                 std::function<void(const HttpResponsePtr&)>&& callback);
-
-  void ExecutePythonCode(const std::string& PyModulePath,
-                         const std::string& PyEntryPoint);
-  std::string findPythonLib(const std::string& libDir) {
-    std::string pattern;
-#if defined(_WIN32) || defined(_WIN64)
-    // Windows
-    pattern = "python[0-9][0-9]+.*dll";
-#elif defined(__APPLE__) || defined(__MACH__)
-    // macOS
-    pattern = "libpython[0-9]+\\.[0-9]+\\.dylib";
-#else
-    // Linux or other Unix-like systems
-    pattern = "libpython[0-9]+\\.[0-9]+\\.so.*";
-#endif
-    std::regex regexPattern(pattern);
-    for (const auto& entry : fs::directory_iterator(libDir)) {
-      std::string fileName = entry.path().filename().string();
-      if (std::regex_match(fileName, regexPattern)) {
-        return entry.path().string();
-      }
-    }
-    return "";  // Return an empty string if no matching library is found
-  }
+  void executePythonFileRequest(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback);
 };
 }  // namespace workers

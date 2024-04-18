@@ -22,9 +22,11 @@ int main(int argc, char *argv[]) {
 
   // Check if this process is for python embedding
   if (argc > 1) {
+    LOG_INFO << "Cameron 1";
     if (strcmp(argv[1], "--run_python_file") == 0) {
+      LOG_INFO << "Cameron 2";
       workers::pyrunner py_runner;
-      py_runner.runPythonFile(argv[1], argv[2]);
+      py_runner.executePythonFile(argv[2], argv[3]);
       return 0;
     }
   }
