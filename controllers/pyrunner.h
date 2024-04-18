@@ -7,7 +7,6 @@
 #include <string>
 
 using namespace drogon;
-namespace fs = std::filesystem;
 
 typedef void (*Py_InitializeFunc)();
 typedef void (*Py_FinalizeFunc)();

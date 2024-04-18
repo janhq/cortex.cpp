@@ -17,6 +17,7 @@
 #include <windows.h>
 #else
 #include <dirent.h>
+#include <unistd.h>
 #endif
 
 namespace nitro_utils {
@@ -283,16 +284,8 @@ inline void ltrim(std::string& s) {
           }));
 };
 
-inline std::wstring stringToWString(const std::string& str) {
-    if (str.empty()) return std::wstring();
-    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
-    std::wstring wstrTo(size_needed, 0);
-    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
-    return wstrTo;
-}
-
-inline std::wstring getCurrentExecutablePath() {
 #if defined(__linux__)
+inline std::string getCurrentExecutablePath() {
     std::vector<char> buf(PATH_MAX);
     ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
     if (len == -1 || len == buf.size()) {
@@ -300,8 +293,16 @@ inline std::wstring getCurrentExecutablePath() {
         return "";
     }
     return std::string(&buf[0], len);
-
+}
 #elif defined(_WIN32)
+inline std::wstring stringToWString(const std::string& str) {
+    if (str.empty()) return std::wstring();
+    int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
+    std::wstring wstrTo(size_needed, 0);
+    MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &wstrTo[0], size_needed);
+    return wstrTo;
+}
+inline std::wstring getCurrentExecutablePath() {
     wchar_t path[MAX_PATH];
     DWORD result = GetModuleFileNameW(NULL, path, MAX_PATH);
     if (result == 0) {
@@ -309,7 +310,7 @@ inline std::wstring getCurrentExecutablePath() {
         return L"";
     }
     return std::wstring(path);
-#endif
 }
+#endif
 
 } // namespace nitro_utils
