@@ -1,15 +1,15 @@
-#include "utils/nitro_utils.h"
-#include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <climits>  // for PATH_MAX
 #include <iostream>
+#include "utils/nitro_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
-#include <libgen.h> // for dirname()
+#include <libgen.h>  // for dirname()
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
-#include <libgen.h> // for dirname()
-#include <unistd.h> // for readlink()
+#include <libgen.h>  // for dirname()
+#include <unistd.h>  // for readlink()
 #elif defined(_WIN32)
 #include <windows.h>
 #undef max
@@ -17,7 +17,7 @@
 #error "Unsupported platform!"
 #endif
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
@@ -35,13 +35,18 @@ int main(int argc, char *argv[]) {
 
   // Check for port argument
   if (argc > 3) {
-    port = std::atoi(argv[3]); // Convert string argument to int
+    port = std::atoi(argv[3]);  // Convert string argument to int
   }
 
   // Uploads folder path
   if (argc > 4) {
     uploads_folder_path = argv[4];
   }
+
+//TODO pass this to args
+#ifndef NDEBUG
+  trantor::Logger::setLogLevel(trantor::Logger::kTrace);
+#endif
 
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);

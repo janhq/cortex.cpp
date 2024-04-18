@@ -294,7 +294,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p nitro
-          cp llama.cpp/ggml-metal.metal nitro/
+          cp llama-engine/llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
 
       - name: Upload Artifact
@@ -447,7 +447,7 @@ jobs:
           - build: "amd64-vulkan"
             defines: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           # - build: "arm64"
-          #   defines: "-A ARM64 -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=ON"
+          #   defines: "-A ARM64 -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF"
 
     permissions:
       contents: write
@@ -623,7 +623,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. %INSTRUCTION%  -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. %INSTRUCTION%  -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=1 -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
