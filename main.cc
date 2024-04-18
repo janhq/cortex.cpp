@@ -1,4 +1,5 @@
 #include "utils/nitro_utils.h"
+#include "controllers/pyrunner.h"
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
@@ -18,6 +19,16 @@
 #endif
 
 int main(int argc, char *argv[]) {
+
+  // Check if this process is for python embedding
+  if (argc > 1) {
+    if (strcmp(argv[1], "--run_python_file") == 0) {
+      workers::pyrunner py_runner;
+      py_runner.runPythonFile(argv[1], argv[2]);
+      return 0;
+    }
+  }
+
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;

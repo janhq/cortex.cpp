@@ -21,6 +21,8 @@ class pyrunner : public drogon::HttpController<pyrunner> {
  public:
   pyrunner();
   ~pyrunner();
+  void runPythonFile(std::string pyHomePath ,std::string pyFileName);
+
   METHOD_LIST_BEGIN
 
   ADD_METHOD_TO(pyrunner::testrun, "/testrun", Get);
@@ -44,7 +46,7 @@ class pyrunner : public drogon::HttpController<pyrunner> {
     std::string pattern;
 #if defined(_WIN32) || defined(_WIN64)
     // Windows
-    pattern = "libpython[0-9]+\\.[0-9]+\\.dll";
+    pattern = "python[0-9][0-9]+.*dll";
 #elif defined(__APPLE__) || defined(__MACH__)
     // macOS
     pattern = "libpython[0-9]+\\.[0-9]+\\.dylib";

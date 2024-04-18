@@ -22,11 +22,11 @@ if(NOT ZLIB_FOUND)
     set(ZLIB_USE_STATIC_LIBS ON)
     ExternalProject_Add(
         zlib
-	GIT_REPOSITORY https://github.com/madler/zlib.git
-	GIT_TAG v1.2.11
-	CMAKE_ARGS
-	    -DBUILD_SHARED_LIBS=OFF
-	    -DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+		GIT_REPOSITORY https://github.com/madler/zlib.git
+		GIT_TAG v1.2.11
+		CMAKE_ARGS
+			-DBUILD_SHARED_LIBS=OFF
+			-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
     )
 endif()
 
@@ -35,10 +35,10 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/google/brotli
     GIT_TAG v1.1.0
     CMAKE_ARGS 
-	-DCMAKE_BUILD_TYPE=Release
-	-DBUILD_SHARED_LIBS=OFF
-	-DSHARE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR}/share
-	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+		-DCMAKE_BUILD_TYPE=Release
+		-DBUILD_SHARED_LIBS=OFF
+		-DSHARE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR}/share
+		-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
 ExternalProject_Add(
@@ -56,7 +56,7 @@ ExternalProject_Add(
     GIT_TAG cares-1_26_0
     CMAKE_ARGS
     	-DCARES_SHARED=OFF
-	-DCARES_STATIC=ON
+		-DCARES_STATIC=ON
     	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
@@ -65,18 +65,18 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/drogonframework/drogon
     GIT_TAG v1.9.2
     CMAKE_ARGS
-	-DCMAKE_BUILD_TYPE=release
-	-DOPENSSL_USE_STATIC_LIBS=TRUE
-	-DZLIB_USE_STATIC_LIBS=${ZLIB_USE_STATIC_LIBS}
-	-DBUILD_ORM=OFF
-	-DBUILD_YAML_CONFIG=OFF
-	-DBUILD_EXAMPLES=OFF
-	-DBUILD_CTL=OFF
-	-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-	-DBUILD_BROTLI=ON
-	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
-	# -DCMAKE_FIND_ROOT_PATH=${THIRD_PARTY_INSTALL_PATH} # To set the dir (that will be used to force the look for .a)
-	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+		-DCMAKE_BUILD_TYPE=release
+		-DOPENSSL_USE_STATIC_LIBS=TRUE
+		-DZLIB_USE_STATIC_LIBS=${ZLIB_USE_STATIC_LIBS}
+		-DBUILD_ORM=OFF
+		-DBUILD_YAML_CONFIG=OFF
+		-DBUILD_EXAMPLES=OFF
+		-DBUILD_CTL=OFF
+		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+		-DBUILD_BROTLI=ON
+		-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
+		# -DCMAKE_FIND_ROOT_PATH=${THIRD_PARTY_INSTALL_PATH} # To set the dir (that will be used to force the look for .a)
+		-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
 # Download and install GoogleTest
@@ -85,10 +85,10 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/google/googletest
     GIT_TAG v1.14.0
     CMAKE_ARGS
-	-Dgtest_force_shared_crt=ON
-	-DCMAKE_BUILD_TYPE=release
-	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
-	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+		-Dgtest_force_shared_crt=ON
+		-DCMAKE_BUILD_TYPE=release
+		-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
+		-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
 
@@ -97,8 +97,20 @@ if(WIN32)
     set(TRANTOR_CMAKE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/nitro_deps/drogon-prefix/src/drogon/trantor/CMakeLists.txt)
     ExternalProject_Add_Step(drogon trantor_custom_target
         COMMAND ${CMAKE_COMMAND} -E echo add_definitions(-DCARES_STATICLIB) >> ${TRANTOR_CMAKE_FILE}
-	DEPENDEES download
+		DEPENDEES download
     )
+
+	# Add dlfcn-win32 as an external project
+	ExternalProject_Add(
+		dlfcn-win32
+		GIT_REPOSITORY https://github.com/dlfcn-win32/dlfcn-win32
+		GIT_TAG v1.4.1
+		CMAKE_ARGS
+			-DCMAKE_BUILD_TYPE=release
+			-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+			-DBUILD_SHARED_LIBS=OFF
+			-DBUILD_TESTS=OFF
+)
 endif()
 
 include_directories(${THIRD_PARTY_INSTALL_PATH}/include)

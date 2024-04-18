@@ -23,106 +23,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install)
 # This is the critical line for installing another package
 
-# -----------------------------------Dynamically packaging python and libraries
-
-# Find OpenSSL
-find_package(OpenSSL REQUIRED)
-
-# Find libintl
-find_library(LIBINTL_LIBRARY NAMES intl)
-
-# Find liblzma
-find_library(LIBLZMA_LIBRARY NAMES lzma)
-
-# Find Python 3 and its library
-find_package(Python3 COMPONENTS Interpreter Development)
-
-# Function to copy actual file from symlink
-function(copy_dereferenced_symlink symlink_path destination)
-  # Use 'readlink' to resolve the actual file path
-  execute_process(
-    COMMAND readlink -f ${symlink_path}
-    OUTPUT_VARIABLE actual_file_path
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  # Copy the resolved actual file to the destination
-  file(COPY ${actual_file_path} DESTINATION ${destination})
-endfunction()
-
-# Construct the source directory path
-if (APPLE)
-  set(PYTHON_STD_LIB_DIR
-      "${Python3_LIBRARY_DIRS}/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}"
-      )
-  # Copy OpenSSL dylibs (actual files) to the destination folder
-  copy_dereferenced_symlink("${OPENSSL_INCLUDE_DIR}/../lib/libcrypto.dylib"
-                            "${CMAKE_BINARY_DIR}/lib")
-  copy_dereferenced_symlink("${OPENSSL_INCLUDE_DIR}/../lib/libssl.dylib"
-                            "${CMAKE_BINARY_DIR}/lib")
-
-  # Copy libintl dylib (actual file) to the destination folder, if found
-  if(LIBINTL_LIBRARY)
-    copy_dereferenced_symlink("${LIBINTL_LIBRARY}" "${CMAKE_BINARY_DIR}/lib")
-  else()
-    message(FATAL_ERROR "libintl not found. Please install libintl.")
-  endif()
-
-  # Copy liblzma dylib (actual file) to the destination folder, if found
-  if(LIBLZMA_LIBRARY)
-    copy_dereferenced_symlink("${LIBLZMA_LIBRARY}" "${CMAKE_BINARY_DIR}/lib")
-  else()
-    message(FATAL_ERROR "liblzma not found. Please install liblzma.")
-  endif()
-
-  # Check if Python and its library were found
-  if(Python3_FOUND AND Python3_Development_FOUND)
-  # Locate libpython (the Python library)
-  set(LIBPYTHON_PATH
-  "${Python3_LIBRARY_DIRS}/libpython${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}.dylib"
-  )
-
-    # Copy libpython dylib to the destination folder
-    copy_dereferenced_symlink("${LIBPYTHON_PATH}" "${CMAKE_BINARY_DIR}/lib")
-  else()
-    message(FATAL_ERROR "Python 3 or its development libraries not found.")
-  endif()
-
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-  set(PYTHON_STD_LIB_DIR "/usr/lib/python${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}")
-  set(LIB_SO_PATH "/usr/lib/x86_64-linux-gnu")
-  # Copy OpenSSL .so (actual files) to the destination folder
-  copy_dereferenced_symlink("${LIB_SO_PATH}/libcrypto.so" "${CMAKE_BINARY_DIR}/lib")
-  copy_dereferenced_symlink("${LIB_SO_PATH}/libssl.so" "${CMAKE_BINARY_DIR}/lib")
-  copy_dereferenced_symlink("${LIB_SO_PATH}/preloadable_libintl.so" "${CMAKE_BINARY_DIR}/lib")
-  copy_dereferenced_symlink("${LIB_SO_PATH}/liblzma.so" "${CMAKE_BINARY_DIR}/lib")
-  if(Python3_FOUND AND Python3_Development_FOUND)
-    set(LIBPYTHON_PATH "${LIB_SO_PATH}/libpython${Python3_VERSION_MAJOR}.${Python3_VERSION_MINOR}.so")
-    copy_dereferenced_symlink("${LIBPYTHON_PATH}" "${CMAKE_BINARY_DIR}/lib")
-  else()
-    message(FATAL_ERROR "Python 3 or its development libraries not found.")
-  endif()
-  
-endif()
-
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/start_nitro.sh"
-               "${CMAKE_BINARY_DIR}/start_nitro.sh" COPYONLY)
-
-# Copy the Python standard library directory to the destination
-file(COPY ${PYTHON_STD_LIB_DIR} DESTINATION "${CMAKE_BINARY_DIR}/python")
-
-add_compile_options(
-  -fno-strict-overflow
-  -Wsign-compare
-  -Wunreachable-code
-  -g3                # Increased debugging information
-  -Og                # Optimize for debugging experience, better than -O0
-  -Wall
-  -Wextra            # Additional warnings
-  -Wpedantic         # Warn if non-standard C++ is used
-  -fno-omit-frame-pointer # Preserve the frame pointer for backtraces
-)
-
-# -----------------------End of packaging python
-
 if(LLAMA_CUDA)
   cmake_minimum_required(VERSION 3.17)
 
@@ -172,6 +72,11 @@ find_package(Drogon CONFIG REQUIRED)
 target_link_libraries(
   ${PROJECT_NAME} PRIVATE Drogon::Drogon common llama whisper llava
                           ${CMAKE_THREAD_LIBS_INIT})
+
+if(WIN32)
+  find_package(dlfcn-win32 REQUIRED)
+  target_link_libraries(${PROJECT_NAME} PRIVATE dlfcn-win32::dl)
+endif()
 
 # ##############################################################################
 
