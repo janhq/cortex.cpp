@@ -284,17 +284,7 @@ inline void ltrim(std::string& s) {
           }));
 };
 
-#if defined(__linux__)
-inline std::string getCurrentExecutablePath() {
-    std::vector<char> buf(PATH_MAX);
-    ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
-    if (len == -1 || len == buf.size()) {
-        std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
-        return "";
-    }
-    return std::string(&buf[0], len);
-}
-#elif defined(_WIN32)
+#if defined(_WIN32)
 inline std::wstring stringToWString(const std::string& str) {
     if (str.empty()) return std::wstring();
     int size_needed = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);
@@ -310,6 +300,16 @@ inline std::wstring getCurrentExecutablePath() {
         return L"";
     }
     return std::wstring(path);
+}
+#else
+inline std::string getCurrentExecutablePath() {
+    std::vector<char> buf(PATH_MAX);
+    ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
+    if (len == -1 || len == buf.size()) {
+        std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
+        return "";
+    }
+    return std::string(&buf[0], len);
 }
 #endif
 

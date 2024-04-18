@@ -3,19 +3,19 @@
 #include <csignal>
 #include "utils/nitro_utils.h"
 
-#if defined(__linux__)
+#if defined(_WIN32)
+  #include <process.h>
+  #define PY_LIB HMODULE
+  #define PY_LOAD_LIB(path) LoadLibraryW(nitro_utils::stringToWString(path).c_str());
+  #define GET_PY_FUNC GetProcAddress
+  #define PY_FREE_LIB FreeLibrary
+#else
   #include <spawn.h>
   #include <sys/wait.h>
   #define PY_LIB void*
   #define PY_LOAD_LIB(path) dlopen(path.c_str(), RTLD_LAZY | RTLD_GLOBAL);
   #define GET_PY_FUNC dlsym
   #define PY_FREE_LIB dlclose
-#elif defined(_WIN32)
-  #include <process.h>
-  #define PY_LIB HMODULE
-  #define PY_LOAD_LIB(path) LoadLibraryW(nitro_utils::stringToWString(path).c_str());
-  #define GET_PY_FUNC GetProcAddress
-  #define PY_FREE_LIB FreeLibrary
 #endif
 
 void signalHandler(int signum) {
@@ -104,7 +104,23 @@ void workers::pyrunner::executePythonFileRequest(
   jsonResp["message"] = "Running the Python file";
   LOG_INFO << "Creating a new child process for Python embedding...\n";
 
-#if defined(__linux__)
+#if defined(_WIN32)
+  std::wstring exePath = nitro_utils::getCurrentExecutablePath();
+  std::wstring pyArrs = nitro_utils::stringToWString(" --run_python_file " + py_dl_path + " " + py_file_path);
+
+  STARTUPINFOW si;
+  PROCESS_INFORMATION pi;
+  ZeroMemory(&si, sizeof(si));
+  si.cb = sizeof(si);
+  ZeroMemory(&pi, sizeof(pi));
+
+  if (!CreateProcessW(const_cast<wchar_t*>(exePath.data()), // the path to the executable file
+                      const_cast<wchar_t*>(pyArrs.data()), // command line arguments passed to the child
+                      NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+    LOG_ERROR << "Failed to create child process: " << GetLastError();
+    jsonResp["message"] = "Failed to execute the Python file";
+  }
+#else
   std::string child_process_exe_path = nitro_utils::getCurrentExecutablePath();
   std::vector<char*> child_process_args;
   child_process_args.push_back(const_cast<char*>(child_process_exe_path.c_str()));
@@ -123,23 +139,6 @@ void workers::pyrunner::executePythonFileRequest(
   if (status) {
       LOG_ERROR << "Failed to spawn process: " << strerror(status);
       jsonResp["message"] = "Failed to execute the Python file";
-  }
-
-#elif defined(_WIN32)
-  std::wstring exePath = nitro_utils::getCurrentExecutablePath();
-  std::wstring pyArrs = nitro_utils::stringToWString(" --run_python_file " + py_dl_path + " " + py_file_path);
-
-  STARTUPINFOW si;
-  PROCESS_INFORMATION pi;
-  ZeroMemory(&si, sizeof(si));
-  si.cb = sizeof(si);
-  ZeroMemory(&pi, sizeof(pi));
-
-  if (!CreateProcessW(const_cast<wchar_t*>(exePath.data()), // the path to the executable file
-                      const_cast<wchar_t*>(pyArrs.data()), // command line arguments passed to the child
-                      NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-    LOG_ERROR << "Failed to create child process: " << GetLastError();
-    jsonResp["message"] = "Failed to execute the Python file";
   }
 #endif
 

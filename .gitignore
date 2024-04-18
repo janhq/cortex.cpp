@@ -566,6 +566,3 @@ build_deps
 .DS_Store
 
 uploads/**
-
-env/
-.python-version
