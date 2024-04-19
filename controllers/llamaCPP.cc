@@ -204,7 +204,6 @@ void llamaCPP::InferenceImpl(
   json stopWords;
   int no_images = 0;
   // To set default value
-  LOG_DEBUG << "caching_enabled: " << caching_enabled;
   // Default values to enable auto caching
   data["cache_prompt"] = caching_enabled;
   data["n_keep"] = 0;
@@ -359,7 +358,7 @@ void llamaCPP::InferenceImpl(
             "\n\n" + "data: [DONE]" + "\n\n";
 
         LOG_VERBOSE("data stream",
-                    {{"request_id": request_id}, {"to_send", str}});
+                    {{"request_id", request_id}, {"to_send", str}});
         std::size_t nRead = std::min(str.size(), nBuffSize);
         memcpy(pBuffer, str.data(), nRead);
         state->inference_status = FINISHED;
@@ -656,6 +655,13 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       } else {
         LOG_ERROR << "Could not find model in path " << model_path.asString();
       }
+    }
+
+    // For debugging purpose
+    bool log_verbose = jsonBody->get("server_verbose", false).asBool();
+    if(log_verbose) {
+      server_verbose = true;
+      log_enable();
     }
 
     params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();

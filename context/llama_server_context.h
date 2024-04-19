@@ -30,6 +30,10 @@ struct server_params {
 
 static bool server_verbose = false;
 
+#ifndef SERVER_VERBOSE
+#define SERVER_VERBOSE 1
+#endif
+
 #if SERVER_VERBOSE != 1
 #define LOG_VERBOSE(MSG, ...)
 #else
@@ -1703,10 +1707,10 @@ struct llama_server_context {
                 "prompt tokenized",
                 {
                     {"id_slot", slot.id},
-                    {"id_task", slot.id_task},
+                    {"id_task", slot.task_id},
                     {"n_ctx", slot.n_ctx},
                     {"n_keep", slot.params.n_keep},
-                    {"n_prompt_tokens", slot.n_prompt_tokens},
+                    {"n_prompt_tokens", slot.num_prompt_tokens},
                     {"prompt_tokens", tokens_to_str(ctx, prompt_tokens.cbegin(),
                                                     prompt_tokens.cend())},
                 });
@@ -1750,11 +1754,11 @@ struct llama_server_context {
                 LOG_VERBOSE("input truncated",
                             {
                                 {"id_slot", slot.id},
-                                {"id_task", slot.id_task},
+                                {"id_task", slot.task_id},
                                 {"n_ctx", slot.n_ctx},
                                 {"n_keep", slot.params.n_keep},
                                 {"n_left", n_left},
-                                {"n_prompt_tokens", slot.n_prompt_tokens},
+                                {"n_prompt_tokens", slot.num_prompt_tokens},
                                 {"prompt_tokens",
                                  tokens_to_str(ctx, prompt_tokens.cbegin(),
                                                prompt_tokens.cend())},
@@ -1864,8 +1868,8 @@ struct llama_server_context {
                           {"n_past", slot.n_past},
                           {"n_ctx", n_ctx},
                           {"n_tokens", batch.n_tokens},
-                          {"progress", (float)slot.n_prompt_tokens_processed /
-                                           slot.n_prompt_tokens},
+                          {"progress", (float)slot.num_prompt_tokens_processed /
+                                           slot.num_prompt_tokens},
                       });
 
           if (has_images && !ingest_images(slot, n_batch)) {
