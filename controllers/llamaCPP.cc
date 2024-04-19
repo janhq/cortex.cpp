@@ -462,7 +462,6 @@ void llamaCPP::InferenceImpl(
             LOG_INFO_REQUEST(request_id) << "Inference completed";
           }
         });
-
   }
 }
 
@@ -489,6 +488,7 @@ void llamaCPP::EmbeddingImpl(
 
   state->instance->queue->runTaskInQueue([this, state, jsonBody, callback,
                                           request_id]() {
+    Json::Value root;
     Json::Value responseData(Json::arrayValue);
 
     if (jsonBody->isMember("input")) {
@@ -498,13 +498,16 @@ void llamaCPP::EmbeddingImpl(
         state->task_id = llama.request_completion(
             {{"prompt", input.asString()}, {"n_predict", 0}}, false, true, -1);
         task_result result = llama.next_result(state->task_id);
-        // TODO(sang) better handling, just to test now
         if (result.result_json.contains("embedding")) {
           std::vector<float> embedding_result = result.result_json["embedding"];
           responseData.append(create_embedding_payload(embedding_result, 0));
+        } else {
+          root["message"] = "Internal error during embedding";
+          LOG_ERROR_REQUEST(request_id) << "Internal error during embedding";
         }
       } else if (input.isArray()) {
         // Process each element in the array input
+        bool has_error = false;
         for (const auto& elem : input) {
           if (elem.isString()) {
             const int task_id = llama.request_completion(
@@ -516,13 +519,18 @@ void llamaCPP::EmbeddingImpl(
                   result.result_json["embedding"];
               responseData.append(
                   create_embedding_payload(embedding_result, 0));
+            } else {
+              has_error = true;
             }
           }
+        }
+        if (has_error) {
+          root["message"] = "Internal error during embedding";
+          LOG_ERROR_REQUEST(request_id) << "Internal error during embedding";
         }
       }
     }
 
-    Json::Value root;
     root["data"] = responseData;
     root["model"] = "_";
     root["object"] = "list";
@@ -659,7 +667,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
     // For debugging purpose
     bool log_verbose = jsonBody->get("server_verbose", false).asBool();
-    if(log_verbose) {
+    if (log_verbose) {
       server_verbose = true;
       log_enable();
     }
