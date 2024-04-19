@@ -19,6 +19,10 @@
 #include <dirent.h>
 #include <unistd.h>
 #endif
+#if __APPLE__
+#include <limits.h>
+#include <mach-o/dyld.h>
+#endif
 
 namespace nitro_utils {
 
@@ -303,13 +307,23 @@ inline std::wstring getCurrentExecutablePath() {
 }
 #else
 inline std::string getCurrentExecutablePath() {
-    std::vector<char> buf(PATH_MAX);
-    ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
-    if (len == -1 || len == buf.size()) {
-        std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
-        return "";
-    }
-    return std::string(&buf[0], len);
+#ifdef __APPLE__
+  char buf[PATH_MAX];
+  uint32_t bufsize = PATH_MAX;
+
+  if (_NSGetExecutablePath(buf, &bufsize) == 0) {
+    return std::string(buf);
+  }
+  return "";
+#else
+  std::vector<char> buf(PATH_MAX);
+  ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
+  if (len == -1 || len == buf.size()) {
+    std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
+    return "";
+  }
+  return std::string(&buf[0], len);
+#endif
 }
 #endif
 
