@@ -91,6 +91,15 @@ ExternalProject_Add(
 		-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
+ExternalProject_Add(Python3
+    URL https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz
+    PREFIX ${THIRD_PARTY_INSTALL_PATH}/Python3
+    CONFIGURE_COMMAND ./configure --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=upgrade --enable-shared
+    BUILD_COMMAND make -j8
+    INSTALL_COMMAND make install
+    BUILD_IN_SOURCE 1
+)
+
 
 if(WIN32)
 	# Fix trantor cmakelists to link c-ares on Windows

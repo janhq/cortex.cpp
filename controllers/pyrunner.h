@@ -2,8 +2,6 @@
 
 #include <drogon/HttpController.h>
 #include <drogon/HttpTypes.h>
-#include <filesystem>
-#include <regex>
 #include <string>
 
 using namespace drogon;
@@ -21,6 +19,7 @@ class pyrunner : public drogon::HttpController<pyrunner> {
   pyrunner();
   ~pyrunner();
   void executePythonFile(std::string py_dl_path ,std::string py_file_path);
+  std::string findPythonLib(const std::string& libDir);
 
   METHOD_LIST_BEGIN
   METHOD_ADD(pyrunner::executePythonFileRequest, "execute", Post);

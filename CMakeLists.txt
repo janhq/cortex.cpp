@@ -23,6 +23,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install)
 # This is the critical line for installing another package
 
+# Copy the Python standard library directory to the destination
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/Python3/src/Python3 DESTINATION ${CMAKE_BINARY_DIR})
+
 if(LLAMA_CUDA)
   cmake_minimum_required(VERSION 3.17)
 

@@ -1,6 +1,8 @@
 #include "pyrunner.h"
 #include <dlfcn.h>
 #include <csignal>
+#include <filesystem>
+#include <regex>
 #include "utils/nitro_utils.h"
 
 #if defined(_WIN32)
@@ -27,13 +29,42 @@ void signalHandler(int signum) {
 workers::pyrunner::pyrunner() {}
 workers::pyrunner::~pyrunner() {}
 
-void workers::pyrunner::executePythonFile(std::string py_dl_path ,std::string py_file_path) {
+std::string workers::pyrunner::findPythonLib(const std::string& libDir) {
+  std::string pattern;
+#if defined(_WIN32) || defined(_WIN64)
+  // Windows
+  pattern = "python[0-9][0-9]+.*dll";
+#elif defined(__APPLE__) || defined(__MACH__)
+  // macOS
+  pattern = "libpython[0-9]+\\.[0-9]+\\.dylib";
+#else
+  // Linux or other Unix-like systems
+  pattern = "libpython[0-9]+\\.[0-9]+\\.so.*";
+#endif
+  std::regex regexPattern(pattern);
+  for (const auto& entry : std::filesystem::directory_iterator(libDir)) {
+    std::string fileName = entry.path().filename().string();
+    if (std::regex_match(fileName, regexPattern)) {
+      return entry.path().string();
+    }
+  }
+  return "";  // Return an empty string if no matching library is found
+}
+
+void workers::pyrunner::executePythonFile(std::string py_lib_path ,std::string py_file_path) {
 
   signal(SIGINT, signalHandler);
+
+  std::string py_dl_path = findPythonLib(py_lib_path);
+  if (py_dl_path == "") {
+    LOG_ERROR << "Could not find Python dynamic library file int path: " << py_lib_path;
+    return;
+  }
 
   PY_LIB libPython = PY_LOAD_LIB(py_dl_path);
   if (!libPython) {
     LOG_ERROR << "Failed to load Python dynamic library from path: " << py_dl_path;
+    return;
   } else {
     LOG_INFO << "Successully loaded Python dynamic library from path: " << py_dl_path;
   }
@@ -82,15 +113,12 @@ void workers::pyrunner::executePythonFileRequest(
     return;
   }
 
-  std::string py_dl_path = jsonBody->operator[]("py_dynamic_lib_path").asString();
+  std::string py_lib_path = jsonBody->operator[]("py_lib_path").asString();
   std::string py_file_path = jsonBody->operator[]("py_file_path").asString();
 
-  if (py_dl_path == "") {
-    Json::Value jsonResp;
-    jsonResp["message"] = "No specified Python dynamic library path";
-    auto response = nitro_utils::nitroHttpJsonResponse(jsonResp);
-    callback(response);
-    return;
+  if (py_lib_path == "") {
+    LOG_WARN << "Using the default Nitro Python library";
+    py_lib_path = "./Python3";
   }
 
   if (py_file_path == "") {
@@ -107,7 +135,7 @@ void workers::pyrunner::executePythonFileRequest(
 
 #if defined(_WIN32)
   std::wstring exePath = nitro_utils::getCurrentExecutablePath();
-  std::wstring pyArrs = nitro_utils::stringToWString(" --run_python_file " + py_dl_path + " " + py_file_path);
+  std::wstring pyArrs = nitro_utils::stringToWString(" --run_python_file " + py_lib_path + " " + py_file_path);
 
   STARTUPINFOW si;
   PROCESS_INFORMATION pi;
@@ -126,7 +154,7 @@ void workers::pyrunner::executePythonFileRequest(
   std::vector<char*> child_process_args;
   child_process_args.push_back(const_cast<char*>(child_process_exe_path.c_str()));
   child_process_args.push_back(const_cast<char*>("--run_python_file"));
-  child_process_args.push_back(const_cast<char*>(py_dl_path.c_str()));
+  child_process_args.push_back(const_cast<char*>(py_lib_path.c_str()));
   child_process_args.push_back(const_cast<char*>(py_file_path.c_str()));
 
   pid_t pid;
