@@ -91,8 +91,29 @@ ExternalProject_Add(
 		-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
+# Download and install libffi
+ExternalProject_Add(
+    libffi
+    URL                   ftp://sourceware.org/pub/libffi/libffi-3.1.tar.gz
+    URL_MD5               f5898b29bbfd70502831a212d9249d10
+    PREFIX ${THIRD_PARTY_INSTALL_PATH}
+    CONFIGURE_COMMAND ./configure --prefix=<INSTALL_DIR> --enable-shared
+    BUILD_COMMAND make -j8
+    INSTALL_COMMAND make install
+    BUILD_IN_SOURCE 1
+)
+
+ExternalProject_Add_Step(
+    libffi move_includes
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${THIRD_PARTY_INSTALL_PATH}/include
+    COMMAND ${CMAKE_COMMAND} -E copy_directory <INSTALL_DIR>/lib/libffi-3.1/include ${THIRD_PARTY_INSTALL_PATH}/include
+    DEPENDEES install
+    WORKING_DIRECTORY ${THIRD_PARTY_INSTALL_PATH}
+)
+
 # Download and install Python3
-ExternalProject_Add(Python3
+ExternalProject_Add(
+	Python3
     URL https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz
     PREFIX ${THIRD_PARTY_INSTALL_PATH}
     CONFIGURE_COMMAND ./configure --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared
@@ -126,6 +147,7 @@ endif()
 include_directories(${THIRD_PARTY_INSTALL_PATH}/include)
 link_directories(${THIRD_PARTY_INSTALL_PATH}/lib)
 # Optionally link or add dependencies to your targets
+add_dependencies(Python3 libffi)
 add_dependencies(drogon c-ares jsoncpp brotli)
 
 if(ZLIB_USE_STATIC_LIBS)
