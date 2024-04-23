@@ -1,5 +1,4 @@
 #include "utils/nitro_utils.h"
-#include "controllers/pyrunner.h"
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
@@ -22,11 +21,8 @@ int main(int argc, char *argv[]) {
 
   // Check if this process is for python embedding
   if (argc > 1) {
-    LOG_INFO << "Cameron 1";
     if (strcmp(argv[1], "--run_python_file") == 0) {
-      LOG_INFO << "Cameron 2";
-      workers::pyrunner py_runner;
-      py_runner.executePythonFile(argv[2], argv[3]);
+      nitro_utils::executePythonFile(argv[2], argv[3]);
       return 0;
     }
   }
