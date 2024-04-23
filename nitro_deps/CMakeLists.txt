@@ -19,12 +19,12 @@ set(THIRD_PARTY_INSTALL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/_install)
 
 if(APPLE)
   if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm.*|ARM64)$")
-    set(OS_HOST_TRIPLET "--host=aarch64-apple-darwin")
+    set(OS_CONFIGURATION "--host=aarch64-apple-darwin --build=aarch64-apple-darwin") 
   else()
-    set(OS_HOST_TRIPLET "--host=x86_64-apple-darwin")
+    set(OS_CONFIGURATION "--host=x86_64-apple-darwin --build=x86_64-apple-darwin")
   endif()
 else()
-  set(OS_HOST_TRIPLET "")
+  set(OS_CONFIGURATION "")
 endif()
 
 set(ZLIB_USE_STATIC_LIBS OFF)
@@ -108,7 +108,7 @@ ExternalProject_Add(
     URL                   ftp://sourceware.org/pub/libffi/libffi-3.1.tar.gz
     URL_MD5               f5898b29bbfd70502831a212d9249d10
     PREFIX ${THIRD_PARTY_INSTALL_PATH}
-    CONFIGURE_COMMAND ./configure ${OS_HOST_TRIPLET} --prefix=<INSTALL_DIR> --enable-shared
+    CONFIGURE_COMMAND ./configure ${OS_CONFIGURATION} --prefix=<INSTALL_DIR> --enable-shared
     BUILD_COMMAND make -j8
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 1
@@ -127,7 +127,7 @@ ExternalProject_Add(
 	Python3
     URL https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz
     PREFIX ${THIRD_PARTY_INSTALL_PATH}
-    CONFIGURE_COMMAND ./configure ${OS_HOST_TRIPLET} --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared
+    CONFIGURE_COMMAND ./configure ${OS_CONFIGURATION} --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared
     BUILD_COMMAND make -j8
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 1
