@@ -23,9 +23,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install)
 # This is the critical line for installing another package
 
-# Copy the Python standard library directory to the destination
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/Python3/src/Python3 DESTINATION ${CMAKE_BINARY_DIR})
-
 if(LLAMA_CUDA)
   cmake_minimum_required(VERSION 3.17)
 
@@ -64,6 +61,10 @@ add_subdirectory(whisper.cpp)
 add_subdirectory(test)
 
 add_executable(${PROJECT_NAME} main.cc)
+
+# Copy the standard library directory to the destination
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin DESTINATION ${CMAKE_BINARY_DIR})
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib DESTINATION ${CMAKE_BINARY_DIR})
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method

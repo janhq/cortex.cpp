@@ -1,5 +1,4 @@
 #pragma once
-#include "controllers/pyrunner.h"
 #include "cstdio"
 #include "random"
 #include "string"
@@ -11,7 +10,6 @@
 #include <ostream>
 #include <regex>
 #include <vector>
-#include <limits.h>
 // Include platform-specific headers
 #ifdef _WIN32
 #include <winsock2.h>
@@ -327,10 +325,5 @@ inline std::string getCurrentExecutablePath() {
 #endif
 }
 #endif
-
-inline void executePythonFile(std::string py_lib_path, std::string py_file_path) {
-  workers::pyrunner py_runner;
-  py_runner.executePythonFile(py_lib_path, py_file_path);
-}
 
 } // namespace nitro_utils

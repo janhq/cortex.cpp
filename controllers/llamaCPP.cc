@@ -640,12 +640,14 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     Json::Value model_path = jsonBody->operator[]("llama_model_path");
     if (model_path.isNull()) {
       LOG_ERROR << "Missing model path in request";
+      return false;
     } else {
       if (std::filesystem::exists(
               std::filesystem::path(model_path.asString()))) {
         params.model = model_path.asString();
       } else {
         LOG_ERROR << "Could not find model in path " << model_path.asString();
+        return false;
       }
     }
 

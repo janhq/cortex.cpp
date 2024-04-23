@@ -1,8 +1,7 @@
 #include "utils/nitro_utils.h"
-#include <climits> // for PATH_MAX
+#include "utils/python_embedding_helper.h"
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
-#include <iostream>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h> // for dirname()
@@ -22,7 +21,7 @@ int main(int argc, char *argv[]) {
   // Check if this process is for python embedding
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {
-      nitro_utils::executePythonFile(argv[2], argv[3]);
+      python_embedding_helper::executePythonFile(argv[2], argv[3]);
       return 0;
     }
   }
