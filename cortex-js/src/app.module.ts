@@ -6,15 +6,19 @@ import { MessagesModule } from './messages/messages.module';
 import { ThreadsModule } from './threads/threads.module';
 import { ModelsModule } from './models/models.module';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
+import { CoreModule } from './core/core.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
     DevtoolsModule.register({
       http: process.env.NODE_ENV !== 'production',
     }),
+    DatabaseModule,
     MessagesModule,
     ThreadsModule,
     ModelsModule,
+    CoreModule,
   ],
   controllers: [AppController, ThreadsController, ModelsController],
 })
