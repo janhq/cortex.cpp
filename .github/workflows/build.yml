@@ -172,8 +172,8 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          cp build/bin nitro/bin
-          cp build/lib nitro/lib
+          cp -r build/bin nitro/bin
+          cp -r build/lib nitro/lib
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -243,8 +243,8 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          cp build/bin nitro/bin
-          cp build/lib nitro/lib
+          cp -r build/bin nitro/bin
+          cp -r build/lib nitro/lib
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -300,8 +300,8 @@ jobs:
           mkdir -p nitro
           cp llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
-          cp build/bin nitro/bin
-          cp build/lib nitro/lib
+          cp -r build/bin nitro/bin
+          cp -r build/lib nitro/lib
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -368,8 +368,8 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          cp build/bin nitro/bin
-          cp build/lib nitro/lib
+          cp -r build/bin nitro/bin
+          cp -r build/lib nitro/lib
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
