@@ -659,7 +659,14 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       }
     }
 
-    params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
+#if defined(__APPLE__) && !defined(GGML_USE_METAL)
+  params.n_gpu_layers = 0;
+  fprintf(stderr, "Cameron1: params.n_gpu_layers = 0");
+#else
+  params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
+  fprintf(stderr, "Cameron2: params.n_gpu_layers = 100");
+#endif
+
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
     model_type = jsonBody->get("model_type", "llm").asString();
