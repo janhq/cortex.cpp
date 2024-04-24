@@ -49,6 +49,7 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
   WHISPER_MODEL_URL: https://delta.jan.ai/ggml-tiny-q5_1.bin
+  EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
 
 jobs:
   create-draft-release:
@@ -123,7 +124,7 @@ jobs:
     runs-on: ubuntu-18-04-cuda-11-7
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
 
@@ -186,7 +187,7 @@ jobs:
         run: |
           # run e2e testing
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
@@ -212,7 +213,7 @@ jobs:
     runs-on: ubuntu-18-04-cuda-${{ matrix.cuda }}
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
     strategy:
@@ -263,7 +264,7 @@ jobs:
     runs-on: mac-silicon
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
     steps:
@@ -307,7 +308,7 @@ jobs:
         run: |
           # run e2e testing
           cd nitro/
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
@@ -330,7 +331,7 @@ jobs:
     runs-on: macos-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
     steps:
@@ -373,7 +374,7 @@ jobs:
         run: |
           # run e2e testing
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }}
+          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
@@ -388,7 +389,7 @@ jobs:
     runs-on: macos-latest
     needs: [create-draft-release, set-nitro-version, macOS-silicon-build, macOS-amd64-build]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success' 
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
     steps:
@@ -432,7 +433,7 @@ jobs:
     runs-on: windows-latest
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 40
 
     strategy:
       matrix:
@@ -473,7 +474,7 @@ jobs:
       - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
         run: |
           C:/msys64/usr/bin/wget.exe -qO sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
-          7z x sdl2.zip
+          7z x sdl2.zip -aoa
           echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
 
       - name: actions-setup-cmake
@@ -519,7 +520,7 @@ jobs:
         if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
         run: |
           cd build\Release
-          ..\..\.github\scripts\e2e-test-llama-windows.bat nitro.exe ${{ env.LLM_MODEL_URL }}
+          ..\..\.github\scripts\e2e-test-llama-windows.bat nitro.exe ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rmdir /S /Q .\build\Release\uploads
 
       - name: Run e2e testing - Whisper.cpp
@@ -551,7 +552,7 @@ jobs:
     runs-on: windows-cuda-${{ matrix.cuda }}
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
-    timeout-minutes: 20
+    timeout-minutes: 40
     permissions:
       contents: write
 
@@ -575,7 +576,7 @@ jobs:
       - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
         run: |
           curl -L -o sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
-          7z x sdl2.zip
+          7z x sdl2.zip -aoa
           echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
 
       - name: actions-setup-cmake
@@ -661,7 +662,7 @@ jobs:
 
   update_release_draft:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    timeout-minutes: 20
+    timeout-minutes: 40
     needs:
       [
         ubuntu-amd64-build,
@@ -681,7 +682,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   noti-discord-nightly:
-    timeout-minutes: 20
+    timeout-minutes: 40
     if: github.event_name == 'schedule' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-silicon-build.result == 'success' && needs.macOS-amd64-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
     needs:
       [
@@ -718,7 +719,7 @@ jobs:
           GITHUB_RUN_ID: ${{ github.run_id }}
 
   noti-discord-manual:
-    timeout-minutes: 20
+    timeout-minutes: 40
     if: github.event_name == 'workflow_dispatch' && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.ubuntu-amd64-build.result == 'success' && needs.ubuntu-amd64-cuda-build.result == 'success' && needs.macOS-silicon-build.result == 'success' && needs.macOS-amd64-build.result == 'success' && needs.windows-amd64-build.result == 'success' && needs.windows-amd64-cuda-build.result == 'success'
     needs:
       [

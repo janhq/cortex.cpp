@@ -59,13 +59,14 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void ChatCompletion(
-      inferences::ChatCompletionRequest &&completion,
+      inferences::ChatCompletionRequest&& completion,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
   void Embedding(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void LoadModel(const HttpRequestPtr& req,
-                 std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void LoadModel(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
   void UnloadModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
@@ -100,7 +101,8 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
                      std::function<void(const HttpResponsePtr&)>&& callback);
   void EmbeddingImpl(std::shared_ptr<Json::Value> jsonBody,
                      std::function<void(const HttpResponsePtr&)>&& callback);
-  bool CheckModelLoaded(const std::function<void(const HttpResponsePtr&)>& callback);
+  bool CheckModelLoaded(
+      const std::function<void(const HttpResponsePtr&)>& callback);
   void WarmupModel();
   void BackgroundTask();
   void StopBackgroundTask();

@@ -187,6 +187,15 @@ void llamaCPP::ChatCompletion(
 void llamaCPP::InferenceImpl(
     inferences::ChatCompletionRequest&& completion,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (llama.model_type == ModelType::EMBEDDING) {
+    LOG_WARN << "Not support completion for embedding model";
+    Json::Value jsonResp;
+    jsonResp["message"] = "Not support completion for embedding model";
+    auto resp = nitro_utils::nitroHttpJsonResponse(jsonResp);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
   std::string formatted_output = pre_prompt;
   int request_id = ++no_of_requests;
   LOG_INFO_REQUEST(request_id) << "Generating reponse for inference request";
@@ -419,7 +428,8 @@ void llamaCPP::InferenceImpl(
 
       // Since this is an async task, we will wait for the task to be
       // completed
-      while (state->inference_status != FINISHED && retries < 10) {
+      while (state->inference_status != FINISHED && retries < 10 &&
+             state->instance->llama.model_loaded_external) {
         // Should wait chunked_content_provider lambda to be called within
         // 3s
         if (state->inference_status == PENDING) {
@@ -655,6 +665,11 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
     model_type = jsonBody->get("model_type", "llm").asString();
+    if (model_type == "llm") {
+      llama.model_type = ModelType::LLM;
+    } else {
+      llama.model_type = ModelType::EMBEDDING;
+    }
     // Check if n_parallel exists in jsonBody, if not, set to drogon_thread
     params.n_batch = jsonBody->get("n_batch", 512).asInt();
     params.n_parallel = jsonBody->get("n_parallel", 1).asInt();
@@ -714,8 +729,7 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
 
   // For model like nomic-embed-text-v1.5.f16.gguf, etc, we don't need to warm up model.
   // So we use this variable to differentiate with other models
-  // TODO: in case embedded model only, we should reject completion request from user?
-  if (model_type == "llm") {
+  if (llama.model_type == ModelType::LLM) {
     WarmupModel();
   }
   return true;
@@ -736,9 +750,10 @@ void llamaCPP::StopBackgroundTask() {
   if (llama.model_loaded_external) {
     llama.model_loaded_external = false;
     llama.condition_tasks.notify_one();
-    LOG_INFO << "Background task stopped! ";
+    LOG_INFO << "Stopping background task! ";
     if (backgroundThread.joinable()) {
       backgroundThread.join();
     }
+    LOG_INFO << "Background task stopped! ";
   }
 }
