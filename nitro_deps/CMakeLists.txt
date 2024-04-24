@@ -70,7 +70,7 @@ ExternalProject_Add(
     GIT_TAG cares-1_26_0
     CMAKE_ARGS
     	-DCARES_SHARED=OFF
-		-DCARES_STATIC=ON
+		  -DCARES_STATIC=ON
     	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
@@ -105,6 +105,31 @@ ExternalProject_Add(
 		-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
+if(APPLE)
+# Download and install OpenSSL
+ExternalProject_Add(
+    OpenSSL
+    URL https://www.openssl.org/source/openssl-3.3.0.tar.gz
+    PREFIX ${THIRD_PARTY_INSTALL_PATH}
+    CONFIGURE_COMMAND ./configure --prefix=<INSTALL_DIR>
+    BUILD_COMMAND make -j8
+    INSTALL_COMMAND make install
+    BUILD_IN_SOURCE 1
+)
+
+# Download and install XZUtils
+ExternalProject_Add(
+    XZUtils
+    GIT_REPOSITORY https://github.com/tukaani-project/xz
+    GIT_TAG v5.4.6
+		CMAKE_ARGS
+			-DCMAKE_BUILD_TYPE=release
+			-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+			-DBUILD_SHARED_LIBS=OFF
+			-DBUILD_TESTS=OFF
+)
+endif()
+
 # Download and install libffi
 ExternalProject_Add(
     libffi
@@ -130,7 +155,7 @@ ExternalProject_Add(
 	Python3
     URL https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz
     PREFIX ${THIRD_PARTY_INSTALL_PATH}
-    CONFIGURE_COMMAND ./configure ${CONFIGURATION_HOST_OS_TARGET} ${CONFIGURATION_BUILD_OS_TARGET} --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared
+    CONFIGURE_COMMAND ./configure ${CONFIGURATION_HOST_OS_TARGET} ${CONFIGURATION_BUILD_OS_TARGET} --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared --with-openssl=${THIRD_PARTY_INSTALL_PATH}
     BUILD_COMMAND make -j8
     INSTALL_COMMAND make install
     BUILD_IN_SOURCE 1
@@ -166,6 +191,10 @@ add_dependencies(drogon c-ares jsoncpp brotli)
 
 if(ZLIB_USE_STATIC_LIBS)
     add_dependencies(drogon zlib)
+endif()
+
+if(APPLE)
+  add_dependencies(Python3 XZUtils OpenSSL)
 endif()
 # target_link_libraries(<your-target> ...)
 

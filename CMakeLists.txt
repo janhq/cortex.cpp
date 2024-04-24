@@ -68,6 +68,11 @@ foreach(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLES})
     file(COPY ${PYTHON_EXECUTABLE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
 endforeach()
 
+file(GLOB PYTHON_PIPS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin/pip*)
+foreach(PYTHON_PIP ${PYTHON_PIPS})
+    file(COPY ${PYTHON_PIP} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+endforeach()
+
 file(GLOB PYTHON_LIBS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/python*)
 foreach(PYTHON_LIB ${PYTHON_LIBS})
     file(COPY ${PYTHON_LIB} DESTINATION ${CMAKE_BINARY_DIR}/lib)
