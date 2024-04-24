@@ -50,7 +50,6 @@ if(APPLE)
   else()
     # MacOS amd64
     set(LLAMA_METAL OFF)
-    add_compile_definitions(NITRO_NO_GPU)
   endif()
 endif()
 
@@ -63,9 +62,21 @@ add_subdirectory(test)
 
 add_executable(${PROJECT_NAME} main.cc)
 
-# Copy the standard library directory to the destination
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin DESTINATION ${CMAKE_BINARY_DIR})
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib DESTINATION ${CMAKE_BINARY_DIR})
+# Copy the python3 related files to the build folder
+file(GLOB PYTHON_EXECUTABLES ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin/python*)
+foreach(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLES})
+    file(COPY ${PYTHON_EXECUTABLE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
+endforeach()
+
+file(GLOB PYTHON_LIBS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/python*)
+foreach(PYTHON_LIB ${PYTHON_LIBS})
+    file(COPY ${PYTHON_LIB} DESTINATION ${CMAKE_BINARY_DIR}/lib)
+endforeach()
+
+file(GLOB PYTHON_LIBS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/libpython*)
+foreach(PYTHON_LIB ${PYTHON_LIBS})
+    file(COPY ${PYTHON_LIB} DESTINATION ${CMAKE_BINARY_DIR}/lib)
+endforeach()
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
