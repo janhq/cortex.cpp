@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { ThreadsController } from './threads/threads.controller';
 import { ModelsController } from './models/models.controller';
 import { MessagesModule } from './messages/messages.module';
@@ -18,6 +17,5 @@ import { DevtoolsModule } from '@nestjs/devtools-integration';
     ModelsModule,
   ],
   controllers: [AppController, ThreadsController, ModelsController],
-  providers: [AppService],
 })
 export class AppModule {}
