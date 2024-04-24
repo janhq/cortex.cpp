@@ -50,8 +50,7 @@ if(APPLE)
   else()
     # MacOS amd64
     set(LLAMA_METAL OFF)
-    set(LLAMA_NO_METAL 1)
-    set(LLAMA_METAL_EMBED_LIBRARY OFF)
+    add_compile_definitions(NITRO_NO_GPU)
   endif()
 endif()
 

@@ -661,7 +661,12 @@ bool llamaCPP::LoadModelImpl(std::shared_ptr<Json::Value> jsonBody) {
       }
     }
 
+  #ifdef NITRO_NO_GPU
+    params.n_gpu_layers = 0;
+  #else
     params.n_gpu_layers = jsonBody->get("ngl", 100).asInt();
+  #endif
+  
     params.n_ctx = jsonBody->get("ctx_len", 2048).asInt();
     params.embedding = jsonBody->get("embedding", true).asBool();
     model_type = jsonBody->get("model_type", "llm").asString();
