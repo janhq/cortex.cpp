@@ -566,3 +566,6 @@ build_deps
 .DS_Store
 
 uploads/**
+
+# cortex-js
+cortex-js/cortex.db
