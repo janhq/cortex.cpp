@@ -12,6 +12,7 @@ import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { InferenceSettingsModule } from './usecases/inference-settings/inference-settings.module';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
+import { CoreModule } from './core/core.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CortexModule } from './usecases/cortex/cortex.module';
     MessagesModule,
     ThreadsModule,
     ModelsModule,
+    CoreModule,
     ChatModule,
     AssistantsModule,
     InferenceSettingsModule,

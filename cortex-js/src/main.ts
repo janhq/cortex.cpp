@@ -12,6 +12,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       enableDebugMessages: true,
+      whitelist: true,
     }),
   );
 
@@ -19,6 +20,7 @@ async function bootstrap() {
     .setTitle('Cortex API')
     .setDescription('The Cortex API description')
     .setVersion('1.0')
+    .addTag('cortex')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
