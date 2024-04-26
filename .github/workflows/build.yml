@@ -327,7 +327,7 @@ jobs:
           rm -rf uploads/
 
   macOS-amd64-build:
-    runs-on: macos-latest
+    runs-on: macos-13
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     timeout-minutes: 40
@@ -352,9 +352,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          # Metal is disabled due to intermittent failures with Github runners not having a GPU:
-          # https://github.com/ggerganov/llama.cpp/actions/runs/8635935781/job/23674807267#step:5:2313
-          cmake -DLLAMA_METAL=OFF -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
+          cmake  -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 
