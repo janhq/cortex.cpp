@@ -21,7 +21,8 @@ int main(int argc, char *argv[]) {
   // Check if this process is for python embedding
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {
-      python_embedding_helper::executePythonFile(argv[2], argv[3]);
+      std::string py_file_path = (argc >= 4) ? argv[3] : "";
+      python_embedding_helper::executePythonFile(nitro_utils::getDirectoryPathFromFilePath(argv[0]), argv[2], py_file_path);
       return 0;
     }
   }

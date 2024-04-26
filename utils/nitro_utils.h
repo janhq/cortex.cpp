@@ -326,4 +326,13 @@ inline std::string getCurrentExecutablePath() {
 }
 #endif
 
+inline std::string getDirectoryPathFromFilePath(std::string file_path) {
+  size_t pos = file_path.find_last_of('/');
+  if (pos != std::string::npos) {
+      return file_path.substr(0, pos + 1);
+  } else {
+      return file_path;
+  }
+}
+
 } // namespace nitro_utils
