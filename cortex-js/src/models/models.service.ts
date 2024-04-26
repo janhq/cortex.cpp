@@ -1,26 +1,46 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateModelDto } from './dto/create-model.dto';
 import { UpdateModelDto } from './dto/update-model.dto';
+import { ModelEntity } from './entities/model.entity';
+import { Repository } from 'typeorm';
+import { Model } from 'src/core/interfaces/model.interface';
 
 @Injectable()
 export class ModelsService {
+  constructor(
+    @Inject('MODEL_REPOSITORY')
+    private modelRepository: Repository<ModelEntity>,
+  ) {}
+
   create(createModelDto: CreateModelDto) {
-    return 'This action adds a new model';
+    console.log('NamH', JSON.stringify(createModelDto));
+    const model: Model = {
+      ...createModelDto,
+      object: 'model',
+      created: Date.now(),
+    };
+
+    this.modelRepository.insert(model);
   }
 
-  findAll() {
-    return `This action returns all models`;
+  async findAll(): Promise<Model[]> {
+    return this.modelRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} model`;
+  async findOne(id: string) {
+    return this.modelRepository.findOne({
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateModelDto: UpdateModelDto) {
+  update(id: string, updateModelDto: UpdateModelDto) {
     return `This action updates a #${id} model`;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} model`;
+  async remove(id: string) {
+    // TODO: NamH not working
+    this.modelRepository.delete(`id = ${id}`);
   }
 }

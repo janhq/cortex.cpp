@@ -1,21 +1,23 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { UpdateThreadDto } from './dto/update-thread.dto';
-import { Thread } from './entities/thread.entity';
+import { ThreadEntity } from './entities/thread.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
 export class ThreadsService {
   constructor(
-    @Inject('THREAD_REPOSITORY') private threadRepository: Repository<Thread>,
+    @Inject('THREAD_REPOSITORY')
+    private threadRepository: Repository<ThreadEntity>,
   ) {}
 
-  async create(createThreadDto: CreateThreadDto): Promise<Thread> {
+  async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
     const { title } = createThreadDto;
     const id = `jan_${(Date.now() / 1000).toFixed(0)}`;
 
-    const thread: Thread = {
+    const thread: ThreadEntity = {
       id,
+      assistants: [], // TODO: NamH
       object: 'thread',
       title,
       createdAt: Date.now(),
@@ -24,7 +26,7 @@ export class ThreadsService {
     return thread;
   }
 
-  async findAll(): Promise<Thread[]> {
+  async findAll(): Promise<ThreadEntity[]> {
     return this.threadRepository.find();
   }
 

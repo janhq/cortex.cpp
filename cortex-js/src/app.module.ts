@@ -8,6 +8,8 @@ import { ModelsModule } from './models/models.module';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { CoreModule } from './core/core.module';
 import { DatabaseModule } from './database/database.module';
+import { ChatModule } from './chat/chat.module';
+import { AssistantsModule } from './assistants/assistants.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { DatabaseModule } from './database/database.module';
     ThreadsModule,
     ModelsModule,
     CoreModule,
+    ChatModule,
+    AssistantsModule,
   ],
   controllers: [AppController, ThreadsController, ModelsController],
 })
