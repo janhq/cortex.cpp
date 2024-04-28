@@ -130,6 +130,7 @@ ExternalProject_Add(
 )
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 # Download and install libffi
 ExternalProject_Add(
     libffi
@@ -149,18 +150,7 @@ ExternalProject_Add_Step(
     DEPENDEES install
     WORKING_DIRECTORY ${THIRD_PARTY_INSTALL_PATH}
 )
-
-# Download and install Python3
-ExternalProject_Add(
-	Python3
-    URL https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz
-    PREFIX ${THIRD_PARTY_INSTALL_PATH}
-    CONFIGURE_COMMAND ./configure ${CONFIGURATION_HOST_OS_TARGET} ${CONFIGURATION_BUILD_OS_TARGET} --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared --with-openssl=${THIRD_PARTY_INSTALL_PATH}
-    BUILD_COMMAND make -j8
-    INSTALL_COMMAND make install
-    BUILD_IN_SOURCE 1
-)
-
+endif()
 
 if(WIN32)
 	# Fix trantor cmakelists to link c-ares on Windows
@@ -183,19 +173,68 @@ if(WIN32)
 )
 endif()
 
+# Download and install Python3
+# set(PYTHON_INSTALL_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/install_python.bat")
+# execute_process(
+#   COMMAND cmd.exe /c "${PYTHON_INSTALL_SCRIPT}"
+#   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+#   RESULT_VARIABLE install_result
+#   OUTPUT_VARIABLE install_output
+# )
+# message("Installation output: ${install_output}")
+# if(NOT install_result EQUAL 0)
+#     message(FATAL_ERROR "Python installation failed.")
+# endif()
+
+
+# Define the external project for Python
+ExternalProject_Add(
+    PythonInstall
+    PREFIX "${CMAKE_BINARY_DIR}/python"
+    URL "https://www.python.org/ftp/python/3.10.4/python-3.10.4-amd64.exe"
+    DOWNLOAD_NO_EXTRACT 1
+    CONFIGURE_COMMAND ""  # No configure command
+    BUILD_COMMAND ""  # No build command
+    INSTALL_COMMAND ""  # No install command
+    )
+
+# Define a custom step that runs the batch script
+ExternalProject_Add_Step(
+    PythonInstall InstallPython
+    COMMAND cmd.exe /c "${CMAKE_CURRENT_SOURCE_DIR}/install_python.bat"
+    # DEPENDEES download  # This step depends on the download step
+    # WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+# ExternalProject_Add(
+# 	Python3
+#     URL https://www.python.org/ftp/python/3.10.4/Python-3.10.4.tgz
+#     PREFIX ${THIRD_PARTY_INSTALL_PATH}/python
+#     # CONFIGURE_COMMAND ./configure ${CONFIGURATION_HOST_OS_TARGET} ${CONFIGURATION_BUILD_OS_TARGET} --prefix=<INSTALL_DIR> --enable-optimizations --with-ensurepip=install --enable-shared --with-openssl=${THIRD_PARTY_INSTALL_PATH}
+#     # BUILD_COMMAND make -j8
+#     # INSTALL_COMMAND make install
+#     CONFIGURE_COMMAND ""
+#     BUILD_COMMAND cmd.exe /c ${THIRD_PARTY_INSTALL_PATH}/python/src/Python3/PCbuild/build.bat -e -p x64
+#     INSTALL_COMMAND ""
+#     BUILD_IN_SOURCE 1
+# )
+
 include_directories(${THIRD_PARTY_INSTALL_PATH}/include)
 link_directories(${THIRD_PARTY_INSTALL_PATH}/lib)
 # Optionally link or add dependencies to your targets
-add_dependencies(Python3 libffi)
 add_dependencies(drogon c-ares jsoncpp brotli)
 
 if(ZLIB_USE_STATIC_LIBS)
     add_dependencies(drogon zlib)
 endif()
 
-if(APPLE)
-  add_dependencies(Python3 XZUtils OpenSSL)
-endif()
+# if(APPLE)
+#   add_dependencies(Python3 XZUtils OpenSSL)
+# endif()
+
+# if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+#   add_dependencies(Python3 libffi)
+# endif()
 # target_link_libraries(<your-target> ...)
 
 

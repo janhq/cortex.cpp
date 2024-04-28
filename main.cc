@@ -21,8 +21,15 @@ int main(int argc, char *argv[]) {
   // Check if this process is for python embedding
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {
+      LOG_DEBUG << "CAMERON 1";
       std::string py_file_path = (argc >= 4) ? argv[3] : "";
-      python_embedding_helper::executePythonFile(nitro_utils::getDirectoryPathFromFilePath(argv[0]), argv[2], py_file_path);
+      LOG_DEBUG << "0|" << std::string(argv[0]); 
+      LOG_DEBUG << "1|" << std::string(argv[1]);
+      LOG_DEBUG << "2|" << std::string(argv[2]);
+      LOG_DEBUG << "3|" << py_file_path << '|';
+      std::string cur_dir_path = nitro_utils::getDirectoryPathFromFilePath(argv[0]);
+      LOG_DEBUG << "cur_dir_path:" << cur_dir_path;
+      python_embedding_helper::executePythonFile(cur_dir_path, argv[2], py_file_path);
       return 0;
     }
   }

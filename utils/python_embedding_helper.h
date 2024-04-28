@@ -44,7 +44,8 @@ inline std::string findPythonLib(const std::string& libDir) {
   std::string pattern;
 #if defined(_WIN32) || defined(_WIN64)
   // Windows
-  pattern = "python[0-9][0-9]+.*dll";
+  // python310.dll
+  pattern = "python[0-9][0-9]+\\.dll";
 #elif defined(__APPLE__) || defined(__MACH__)
   // macOS
   pattern = "libpython[0-9]+\\.[0-9]+\\.dylib";
@@ -52,6 +53,7 @@ inline std::string findPythonLib(const std::string& libDir) {
   // Linux or other Unix-like systems
   pattern = "libpython[0-9]+\\.[0-9]+\\.so.*";
 #endif
+  LOG_DEBUG << "CAMERON finding pattern " << pattern << " in " << libDir;
   std::regex regexPattern(pattern);
   for (const auto& entry : std::filesystem::directory_iterator(libDir)) {
     std::string fileName = entry.path().filename().string();
@@ -62,7 +64,7 @@ inline std::string findPythonLib(const std::string& libDir) {
   return "";  // Return an empty string if no matching library is found
 }
 
-inline void clearAndSetPythonSysPath(std::string default_py_lib_path, PY_DL py_dl) {
+inline void clearAndSetPythonSysPath(std::string default_py_lib_path, PY_DL py_dl) {  
   auto PySys_GetObject = (PySys_GetObjectFunc)GET_PY_FUNC(py_dl, "PySys_GetObject");
   auto PyList_Insert = (PyList_InsertFunc)GET_PY_FUNC(py_dl, "PyList_Insert");
   auto PyUnicode_FromString = (PyUnicode_FromStringFunc)GET_PY_FUNC(py_dl, "PyUnicode_FromString");
@@ -70,10 +72,15 @@ inline void clearAndSetPythonSysPath(std::string default_py_lib_path, PY_DL py_d
   auto PyList_Size = (PyList_SizeFunc)GET_PY_FUNC(py_dl, "PyList_Size");
   PyObject* sys_path = PySys_GetObject("path");
   PyList_SetSlice(sys_path, 0, PyList_Size(sys_path), NULL);
+  // std::vector<PyObject*> pathStrings = {PyUnicode_FromString((default_py_lib_path + "python310.zip").c_str()),
+  //                                       PyUnicode_FromString((default_py_lib_path + "python310/").c_str()),
+  //                                       PyUnicode_FromString((default_py_lib_path + "python3.10/lib-dynload/").c_str()),
+  //                                       PyUnicode_FromString((default_py_lib_path + "python3.10/site-packages/").c_str())};
   std::vector<PyObject*> pathStrings = {PyUnicode_FromString((default_py_lib_path + "python310.zip").c_str()),
-                                        PyUnicode_FromString((default_py_lib_path + "python310/").c_str()),
-                                        PyUnicode_FromString((default_py_lib_path + "python3.10/lib-dynload/").c_str()),
-                                        PyUnicode_FromString((default_py_lib_path + "python3.10/site-packages/").c_str())};
+                                        PyUnicode_FromString((default_py_lib_path + "Lib/").c_str()),
+                                        PyUnicode_FromString((default_py_lib_path + "DLLs/").c_str()),
+                                        PyUnicode_FromString((default_py_lib_path).c_str()),
+                                        PyUnicode_FromString((default_py_lib_path + "Lib/site-packages/").c_str())};
 
   if (sys_path) {
     for(PyObject* pathString : pathStrings) {
@@ -84,19 +91,23 @@ inline void clearAndSetPythonSysPath(std::string default_py_lib_path, PY_DL py_d
 
 inline void executePythonFile(std::string nitro_root_path, std::string py_file_path ,std::string py_lib_path) {
 
+  LOG_DEBUG << "CAMERON 3";
+
   signal(SIGINT, signalHandler);
 
   bool isPyDefaultLib = false;
   if (py_lib_path == "") {
-    LOG_WARN << "No specified Python library path, using default Python library";
     isPyDefaultLib = true;
-    py_lib_path = nitro_root_path + "lib/";
+    py_lib_path = nitro_root_path + "python/";
+    LOG_WARN << "No specified Python library path, using default Python library in " << py_lib_path;
   }
 
   std::string py_dl_path = findPythonLib(py_lib_path);
   if (py_dl_path == "") {
     LOG_ERROR << "Could not find Python dynamic library file in path: " << py_lib_path;
     return;
+  } else {
+    LOG_DEBUG << "Found py_dl_path in " << py_dl_path;
   }
 
   PY_DL py_dl = PY_LOAD_LIB(py_dl_path);

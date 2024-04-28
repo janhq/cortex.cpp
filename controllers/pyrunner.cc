@@ -41,10 +41,10 @@ void workers::pyrunner::executePythonFileRequest(
 
 #if defined(_WIN32)
   std::wstring exePath = nitro_utils::getCurrentExecutablePath();
-  std::string pyArgsString = " --run_python_file " + py_lib_path;
+  std::string pyArgsString = " --run_python_file " + py_file_path;
   if (py_lib_path != "")
     pyArgsString += " " + py_lib_path;
-  std::wstring pyArgs = nitro_utils::stringToWString(pyArgsString);
+  std::wstring pyArgs = exePath + nitro_utils::stringToWString(pyArgsString);
 
   STARTUPINFOW si;
   PROCESS_INFORMATION pi;
@@ -53,7 +53,7 @@ void workers::pyrunner::executePythonFileRequest(
   ZeroMemory(&pi, sizeof(pi));
 
   if (!CreateProcessW(const_cast<wchar_t*>(exePath.data()), // the path to the executable file
-                      const_cast<wchar_t*>(pyArrs.data()), // command line arguments passed to the child
+                      const_cast<wchar_t*>(pyArgs.data()), // command line arguments passed to the child
                       NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
     LOG_ERROR << "Failed to create child process: " << GetLastError();
     jsonResp["message"] = "Failed to execute the Python file";

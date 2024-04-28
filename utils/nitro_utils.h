@@ -2,7 +2,7 @@
 #include "cstdio"
 #include "random"
 #include "string"
-#include <algorithm>
+#include <cstdlib>
 #include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
 #include <fstream>
@@ -327,11 +327,23 @@ inline std::string getCurrentExecutablePath() {
 #endif
 
 inline std::string getDirectoryPathFromFilePath(std::string file_path) {
-  size_t pos = file_path.find_last_of('/');
+  LOG_DEBUG << "CAMERON 2.0" << file_path;
+  size_t lastSlashPos = file_path.find_last_of('/');
+  size_t lastBackslashPos = file_path.find_last_of('\\');
+
+  size_t pos = std::string::npos;
+  if (lastSlashPos != std::string::npos && lastBackslashPos != std::string::npos) {
+      pos = (std::max)(lastSlashPos, lastBackslashPos);
+  } else if (lastSlashPos != std::string::npos) {
+      pos = lastSlashPos;
+  } else if (lastBackslashPos != std::string::npos) {
+      pos = lastBackslashPos;
+  }
+  LOG_DEBUG << "CAMERON 2";
   if (pos != std::string::npos) {
       return file_path.substr(0, pos + 1);
   } else {
-      return file_path;
+      return "./";
   }
 }
 

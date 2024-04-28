@@ -63,25 +63,7 @@ add_subdirectory(test)
 add_executable(${PROJECT_NAME} main.cc)
 
 # Copy the python3 related files to the build folder
-file(GLOB PYTHON_EXECUTABLES ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin/python*)
-foreach(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLES})
-    file(COPY ${PYTHON_EXECUTABLE} DESTINATION ${CMAKE_BINARY_DIR}/bin)
-endforeach()
-
-file(GLOB PYTHON_PIPS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin/pip*)
-foreach(PYTHON_PIP ${PYTHON_PIPS})
-    file(COPY ${PYTHON_PIP} DESTINATION ${CMAKE_BINARY_DIR}/bin)
-endforeach()
-
-file(GLOB PYTHON_LIBS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/python*)
-foreach(PYTHON_LIB ${PYTHON_LIBS})
-    file(COPY ${PYTHON_LIB} DESTINATION ${CMAKE_BINARY_DIR}/lib)
-endforeach()
-
-file(GLOB PYTHON_LIBS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/libpython*)
-foreach(PYTHON_LIB ${PYTHON_LIBS})
-    file(COPY ${PYTHON_LIB} DESTINATION ${CMAKE_BINARY_DIR}/lib)
-endforeach()
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/python DESTINATION ${CMAKE_BINARY_DIR})
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
