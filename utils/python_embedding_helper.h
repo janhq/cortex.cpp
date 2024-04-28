@@ -72,15 +72,16 @@ inline void clearAndSetPythonSysPath(std::string default_py_lib_path, PY_DL py_d
   auto PyList_Size = (PyList_SizeFunc)GET_PY_FUNC(py_dl, "PyList_Size");
   PyObject* sys_path = PySys_GetObject("path");
   PyList_SetSlice(sys_path, 0, PyList_Size(sys_path), NULL);
-  // std::vector<PyObject*> pathStrings = {PyUnicode_FromString((default_py_lib_path + "python310.zip").c_str()),
-  //                                       PyUnicode_FromString((default_py_lib_path + "python310/").c_str()),
-  //                                       PyUnicode_FromString((default_py_lib_path + "python3.10/lib-dynload/").c_str()),
-  //                                       PyUnicode_FromString((default_py_lib_path + "python3.10/site-packages/").c_str())};
-  std::vector<PyObject*> pathStrings = {PyUnicode_FromString((default_py_lib_path + "python310.zip").c_str()),
-                                        PyUnicode_FromString((default_py_lib_path + "Lib/").c_str()),
+#if defined(_WIN32)
+  std::vector<PyObject*> pathStrings = {PyUnicode_FromString((default_py_lib_path).c_str()),
                                         PyUnicode_FromString((default_py_lib_path + "DLLs/").c_str()),
-                                        PyUnicode_FromString((default_py_lib_path).c_str()),
+                                        PyUnicode_FromString((default_py_lib_path + "Lib/").c_str()),
                                         PyUnicode_FromString((default_py_lib_path + "Lib/site-packages/").c_str())};
+#else
+  std::vector<PyObject*> pathStrings = {PyUnicode_FromString((default_py_lib_path + "lib/python/").c_str()),
+                                        PyUnicode_FromString((default_py_lib_path + "lib/python/lib-dynload/").c_str()),
+                                        PyUnicode_FromString((default_py_lib_path + "lib/python/site-packages/").c_str())};
+#endif
 
   if (sys_path) {
     for(PyObject* pathString : pathStrings) {

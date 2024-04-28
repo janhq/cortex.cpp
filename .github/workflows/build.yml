@@ -172,8 +172,8 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          cp -r build/bin nitro/bin
-          cp -r build/lib nitro/lib
+          # cp -r build/bin nitro/bin
+          # cp -r build/lib nitro/lib
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -243,8 +243,8 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          cp -r build/bin nitro/bin
-          cp -r build/lib nitro/lib
+          # cp -r build/bin nitro/bin
+          # cp -r build/lib nitro/lib
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -300,8 +300,8 @@ jobs:
           mkdir -p nitro
           cp llama.cpp/ggml-metal.metal nitro/
           cp build/nitro nitro/
-          cp -r build/bin nitro/bin
-          cp -r build/lib nitro/lib
+          # cp -r build/bin nitro/bin
+          # cp -r build/lib nitro/lib
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -368,8 +368,8 @@ jobs:
         run: |
           mkdir -p nitro
           cp build/nitro nitro/
-          cp -r build/bin nitro/bin
-          cp -r build/lib nitro/lib
+          # cp -r build/bin nitro/bin
+          # cp -r build/lib nitro/lib
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -514,8 +514,8 @@ jobs:
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
           robocopy build\bin\Release\ .\build\Release\ whisper.dll
-          robocopy build\bin .\build\Release\bin /E
-          robocopy build\lib .\build\Release\lib /E
+          # robocopy build\bin .\build\Release\bin /E
+          # robocopy build\lib .\build\Release\lib /E
           robocopy .github\patches\windows\ .\build\Release\ msvcp140.dll
           robocopy .github\patches\windows\ .\build\Release\ vcruntime140_1.dll
           robocopy .github\patches\windows\ .\build\Release\ vcruntime140.dll
@@ -644,8 +644,8 @@ jobs:
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
           robocopy build\bin\Release\ .\build\Release\ whisper.dll
-          robocopy build\bin .\build\Release\bin /E
-          robocopy build\lib .\build\Release\lib /E
+          # robocopy build\bin .\build\Release\bin /E
+          # robocopy build\lib .\build\Release\lib /E
           robocopy .github\patches\windows\ .\build\Release\ msvcp140.dll
           robocopy .github\patches\windows\ .\build\Release\ vcruntime140_1.dll
           robocopy .github\patches\windows\ .\build\Release\ vcruntime140.dll

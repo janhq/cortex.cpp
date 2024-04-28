@@ -63,7 +63,36 @@ add_subdirectory(test)
 add_executable(${PROJECT_NAME} main.cc)
 
 # Copy the python3 related files to the build folder
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/python DESTINATION ${CMAKE_BINARY_DIR})
+if (WIN32)
+  # Copy the whole library
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/python DESTINATION ${CMAKE_BINARY_DIR})
+else() # APPLE and LINUX
+  # Copy library files
+  file(GLOB PYTHON_LIBS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/python*)
+  if(PYTHON_LIBS)
+    list(GET PYTHON_LIBS 0 FIRST_PYTHON_LIB)
+    file(COPY ${FIRST_PYTHON_LIB} DESTINATION ${CMAKE_BINARY_DIR}/python/lib)
+  endif()
+
+  # Create symbolic link .../lib/python for target .../lib/python3.*
+  file(GLOB PYTHON_LIBS_DES ${CMAKE_BINARY_DIR}/python/lib/python*)
+  if(PYTHON_LIBS_DES)
+    list(GET PYTHON_LIBS_DES 0 FIRST_PYTHON_LIB)
+    file(CREATE_LINK ${FIRST_PYTHON_LIB} ${CMAKE_BINARY_DIR}/python/lib/python SYMBOLIC)
+  endif()
+
+  # Copy executable files
+  file(GLOB PYTHON_EXECUTABLES ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/bin/python*)
+  foreach(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLES})
+      file(COPY ${PYTHON_EXECUTABLE} DESTINATION ${CMAKE_BINARY_DIR}/python/bin)
+  endforeach()
+
+  # Copy dynamic library files
+  file(GLOB PYTHON_DLS ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install/lib/libpython*)
+  foreach(PYTHON_DL ${PYTHON_DLS})
+      file(COPY ${PYTHON_DL} DESTINATION ${CMAKE_BINARY_DIR}/python)
+  endforeach()
+endif()
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
