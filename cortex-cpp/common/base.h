@@ -1,6 +1,5 @@
 #pragma once
 #include <drogon/HttpController.h>
-#include <models/chat_completion_request.h>
 
 using namespace drogon;
 
@@ -25,7 +24,7 @@ class BaseChatCompletion {
 
   // General chat method
   virtual void ChatCompletion(
-      inferences::ChatCompletionRequest &&completion,
+      const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 };
 

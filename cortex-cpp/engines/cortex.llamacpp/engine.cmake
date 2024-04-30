@@ -1,0 +1,21 @@
+set(LIBLLAMA_ENGINE_VERSION v1.0)
+
+if(UNIX) 
+  set(LIBRARY_NAME llama-engine-lib.so)
+else()
+  set(LIBRARY_NAME engine.dll)
+endif()
+
+set(LIBLLAMA_ENGINE_URL https://github.com/.../releases/download/${LIBLLAMA_ENGINE_VERSION}/${LIBRARY_NAME})
+set(LIBLLAMA_ENGINE_PATH ${CMAKE_BINARY_DIR}/engines/${LIBRARY_NAME})
+
+MESSAGE("CMAKE_BINARY_DIR = " ${CMAKE_BINARY_DIR})
+
+file(DOWNLOAD ${LIBLLAMA_ENGINE_URL} ${LIBLLAMA_ENGINE_PATH} STATUS LIBLLAMA_ENGINE_DOWNLOAD_STATUS)
+list(GET LIBLLAMA_ENGINE_DOWNLOAD_STATUS 0 LIBLLAMA_ENGINE_DOWNLOAD_STATUS_NO)
+
+if(LIBLLAMA_ENGINE_DOWNLOAD_STATUS_NO)
+    message(STATUS "Pre-built library not downloaded. (${LIBLLAMA_ENGINE_DOWNLOAD_STATUS})")
+else()
+    message(STATUS "Linking downloaded pre-built library.")
+endif()
