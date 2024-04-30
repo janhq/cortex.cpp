@@ -10,6 +10,18 @@ cmake -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON ..
 make -j$(nproc)
 ```
 
+### For Intel® CPU & GPU on Linux
+1. Install Intel® OpenVINO following the [link](https://docs.openvino.ai/2024/get-started/install-openvino/install-openvino-archive-linux.html)
+2. After the installation, source the enviornment and build with `-DWHISPER_OPENVINO=1`
+```bash
+source /opt/intel/openvino_2024/setupvars.sh
+mkdir build && cd build
+cmake -DWHISPER_OPENVINO=1 ..
+make -j$(nproc)
+```
+3. If you prefer not to convert the model yourself, you can obtain the GGML format model and encoder in Intel® OpenVINO IR format from this [link](https://huggingface.co/Intel/whisper.cpp-openvino-models/tree/main)
+
+
 ### For x86 CPU on Linux
 
 ```bash
