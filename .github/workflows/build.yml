@@ -209,6 +209,60 @@ jobs:
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-${{ matrix.build }}.tar.gz
           asset_content_type: application/gzip
 
+  ubuntu-amd64-oneapi-build:
+    runs-on: ubuntu-22-04-oneapi-24-01
+    needs: [create-draft-release, set-nitro-version]
+    if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
+    timeout-minutes: 40
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Build
+        id: make_build
+        run: |
+          ./install_deps.sh
+          mkdir build && cd build
+          cmake -DLLAMA_SYCL=ON -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          make -j $(nproc)
+          ls -la
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp build/nitro nitro/
+          tar -czvf nitro.tar.gz nitro
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p nitro
+          cp build/nitro nitro/
+          tar -czvf nitro.tar.gz nitro
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
+        with:
+          name: nitro-linux-amd64-oneapi-24-01
+          path: ./nitro
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./nitro.tar.gz
+          asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-oneapi-24-01.tar.gz
+          asset_content_type: application/gzip
+
   ubuntu-amd64-cuda-build:
     runs-on: ubuntu-18-04-cuda-${{ matrix.cuda }}
     needs: [create-draft-release, set-nitro-version]
