@@ -12,14 +12,12 @@ export class ThreadsService {
   ) {}
 
   async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
-    const { title } = createThreadDto;
     const id = `jan_${(Date.now() / 1000).toFixed(0)}`;
 
     const thread: ThreadEntity = {
+      ...createThreadDto,
       id,
-      assistants: [], // TODO: NamH
       object: 'thread',
-      title,
       createdAt: Date.now(),
     };
     await this.threadRepository.insert(thread);
@@ -30,15 +28,15 @@ export class ThreadsService {
     return this.threadRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} thread`;
+  findOne(id: string) {
+    return this.threadRepository.findOne({ where: { id } });
   }
 
-  update(id: number, updateThreadDto: UpdateThreadDto) {
-    return `This action updates a #${id} thread`;
+  update(id: string, updateThreadDto: UpdateThreadDto) {
+    return this.threadRepository.update(id, updateThreadDto);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} thread`;
+  remove(id: string) {
+    this.threadRepository.delete(id);
   }
 }

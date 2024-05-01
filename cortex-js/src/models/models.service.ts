@@ -35,11 +35,10 @@ export class ModelsService {
   }
 
   update(id: string, updateModelDto: UpdateModelDto) {
-    return `This action updates a #${id} model`;
+    return this.modelRepository.update(id, updateModelDto);
   }
 
   async remove(id: string) {
-    // TODO: NamH not working
-    this.modelRepository.delete(`id = ${id}`);
+    return this.modelRepository.delete(id);
   }
 }

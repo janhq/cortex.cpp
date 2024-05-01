@@ -3,12 +3,13 @@ import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
 import {
   ChatCompletionRole,
   ErrorCode,
+  Message,
   MessageStatus,
 } from 'src/core/interfaces/message.interface';
 import { ThreadContentDto } from './thread-content.dto';
 import { Type } from 'class-transformer';
 
-export class CreateMessageDto {
+export class CreateMessageDto implements Partial<Message> {
   @IsString()
   thread_id: string;
 

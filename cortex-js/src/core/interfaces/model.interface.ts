@@ -2,12 +2,12 @@
  * Represents the information about a model.
  * @stored
  */
-export type ModelInfo = {
+export interface ModelInfo {
   id: string;
   settings: ModelSettingParams;
   parameters: ModelRuntimeParams;
   engine?: InferenceEngine;
-};
+}
 
 /**
  * Represents the inference engine.
