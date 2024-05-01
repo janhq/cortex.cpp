@@ -3,6 +3,7 @@ import { threadProviders } from './providers/thread.providers';
 import { sqliteDatabaseProviders } from './sqlite-database.providers';
 import { modelProviders } from './providers/model.providers';
 import { assistantProviders } from './providers/assistant.providers';
+import { messageProviders } from './providers/message.providers';
 
 @Module({
   providers: [
@@ -10,7 +11,13 @@ import { assistantProviders } from './providers/assistant.providers';
     ...threadProviders,
     ...modelProviders,
     ...assistantProviders,
+    ...messageProviders,
   ],
-  exports: [...threadProviders, ...modelProviders, ...assistantProviders],
+  exports: [
+    ...threadProviders,
+    ...modelProviders,
+    ...assistantProviders,
+    ...messageProviders,
+  ],
 })
 export class DatabaseModule {}

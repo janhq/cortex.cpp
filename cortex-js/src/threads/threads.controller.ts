@@ -27,16 +27,16 @@ export class ThreadsController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.threadsService.findOne(+id);
+    return this.threadsService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateThreadDto: UpdateThreadDto) {
-    return this.threadsService.update(+id, updateThreadDto);
+    return this.threadsService.update(id, updateThreadDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.threadsService.remove(+id);
+    return this.threadsService.remove(id);
   }
 }

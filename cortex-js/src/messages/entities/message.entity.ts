@@ -2,13 +2,14 @@ import {
   ChatCompletionRole,
   ErrorCode,
   Message,
+  MessageMetadata,
   MessageStatus,
   ThreadContent,
 } from 'src/core/interfaces/message.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('messages')
-export class MessageDto implements Message {
+export class MessageEntity implements Message {
   @PrimaryColumn()
   id: string;
 
@@ -33,11 +34,11 @@ export class MessageDto implements Message {
   @Column()
   created: number;
 
-  @Column()
-  updated: number;
+  @Column({ nullable: true })
+  updated?: number;
 
   @Column({ type: 'simple-json', nullable: true })
-  metadata?: Record<string, unknown>;
+  metadata?: MessageMetadata;
 
   @Column()
   type?: string;

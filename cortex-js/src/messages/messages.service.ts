@@ -1,26 +1,44 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { Repository } from 'typeorm';
+import { MessageEntity } from './entities/message.entity';
+import { ulid } from 'ulid';
 
 @Injectable()
 export class MessagesService {
+  constructor(
+    @Inject('MESSAGE_REPOSITORY')
+    private messageRepository: Repository<MessageEntity>,
+  ) {}
+
   create(createMessageDto: CreateMessageDto) {
-    return 'This action adds a new message';
+    const message: MessageEntity = {
+      ...createMessageDto,
+      id: ulid(),
+      object: 'message',
+      created: Date.now(),
+    };
+    this.messageRepository.insert(message);
   }
 
   findAll() {
-    return `This action returns all messages`;
+    return this.messageRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} message`;
+  findOne(id: string) {
+    return this.messageRepository.findOne({
+      where: {
+        id,
+      },
+    });
   }
 
-  update(id: number, updateMessageDto: UpdateMessageDto) {
-    return `This action updates a #${id} message`;
+  update(id: string, updateMessageDto: UpdateMessageDto) {
+    return this.messageRepository.update(id, updateMessageDto);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} message`;
+  remove(id: string) {
+    return this.messageRepository.delete(id);
   }
 }

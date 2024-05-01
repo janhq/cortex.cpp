@@ -65,10 +65,12 @@ export interface Message {
   /** The timestamp indicating when this message was created. Represented in Unix time. **/
   created: number;
   /** The timestamp indicating when this message was updated. Represented in Unix time. **/
-  updated: number;
+  updated?: number;
   /** The additional metadata of this message. **/
-  metadata?: Record<string, unknown>;
+  metadata?: MessageMetadata;
   type?: string; // TODO: NamH what is this
   /** The error code which explain what error type. Used in conjunction with MessageStatus.Error */
   error_code?: ErrorCode;
 }
+
+export interface MessageMetadata {}
