@@ -13,7 +13,6 @@ export class ModelsService {
   ) {}
 
   create(createModelDto: CreateModelDto) {
-    console.log('NamH', JSON.stringify(createModelDto));
     const model: Model = {
       ...createModelDto,
       object: 'model',
