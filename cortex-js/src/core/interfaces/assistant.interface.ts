@@ -36,4 +36,4 @@ export interface Assistant {
   metadata?: AssistantMetadata;
 }
 
-export type AssistantMetadata = Record<string, unknown>;
+export interface AssistantMetadata {}

@@ -13,7 +13,7 @@ export class AssistantEntity implements Assistant {
   @Column()
   avatar: string;
 
-  @Column()
+  @Column({ nullable: true })
   thread_location?: string;
 
   @Column()
@@ -25,21 +25,21 @@ export class AssistantEntity implements Assistant {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   description?: string;
 
   @Column()
   model: string;
 
-  @Column()
+  @Column({ nullable: true })
   instructions?: string;
 
-  @Column({ type: 'simple-json' })
+  @Column({ type: 'simple-json', nullable: true })
   tools?: AssistantTool[];
 
   @Column({ type: 'simple-array' })
   file_ids: string[];
 
-  @Column({ type: 'simple-json' })
+  @Column({ type: 'simple-json', nullable: true })
   metadata?: AssistantMetadata;
 }
