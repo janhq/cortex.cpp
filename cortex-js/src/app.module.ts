@@ -10,6 +10,7 @@ import { CoreModule } from './core/core.module';
 import { DatabaseModule } from './database/database.module';
 import { ChatModule } from './chat/chat.module';
 import { AssistantsModule } from './assistants/assistants.module';
+import { InferenceSettingsModule } from './inference-settings/inference-settings.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AssistantsModule } from './assistants/assistants.module';
     CoreModule,
     ChatModule,
     AssistantsModule,
+    InferenceSettingsModule,
   ],
   controllers: [AppController, ThreadsController, ModelsController],
 })
