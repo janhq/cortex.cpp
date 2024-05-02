@@ -1,8 +1,6 @@
 import { IsString, ValidateNested } from 'class-validator';
-import {
-  ControllerProps,
-  InferenceSettingDocument,
-} from 'src/domain/models/inference-setting.interface';
+import { InferenceSettingDocument } from 'src/domain/models/inference-setting.interface';
+import { ControllerPropsDto } from './controller-props.dto';
 
 export class InferenceSettingDocumentDto implements InferenceSettingDocument {
   @IsString()
@@ -21,5 +19,5 @@ export class InferenceSettingDocumentDto implements InferenceSettingDocument {
   controllerType: string;
 
   @ValidateNested()
-  controllerProps: ControllerProps;
+  controllerProps: ControllerPropsDto;
 }

@@ -1,7 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { AssistantsUsecases } from '../../usecases/assistants/assistants.usecases';
 import { CreateAssistantDto } from '../dtos/assistants/create-assistant.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Assistants')
 @Controller('assistants')
 export class AssistantsController {
   constructor(private readonly assistantsService: AssistantsUsecases) {}

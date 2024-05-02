@@ -10,7 +10,9 @@ import {
 import { MessagesUsecases } from '../../usecases/messages/messages.usecases';
 import { CreateMessageDto } from '../dtos/messages/create-message.dto';
 import { UpdateMessageDto } from '../dtos/messages/update-message.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Messages')
 @Controller('messages')
 export class MessagesController {
   constructor(private readonly messagesService: MessagesUsecases) {}
