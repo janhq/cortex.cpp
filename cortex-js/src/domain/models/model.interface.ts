@@ -6,8 +6,27 @@ export interface ModelInfo {
   id: string;
   settings: ModelSettingParams;
   parameters: ModelRuntimeParams;
-  engine?: string;
+  engine?: InferenceEngine;
 }
+
+/**
+ * Represents the remote inference engine.
+ * @stored
+ */
+export const RemoteInferenceEngines = ['openai', 'groq'];
+
+/**
+ * Represents all supported inference engine.
+ * @stored
+ */
+const AllInferenceEngines = [
+  ...RemoteInferenceEngines,
+  'nitro',
+  'triton_trtllm',
+  'nitro_tensorrt_llm',
+] as const;
+export type InferenceEngineTuple = typeof AllInferenceEngines;
+export type InferenceEngine = InferenceEngineTuple[number];
 
 export interface ModelArtifact {
   url: string;

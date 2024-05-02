@@ -10,7 +10,9 @@ import {
 import { ModelsUsecases } from '../../usecases/models/models.usecases';
 import { CreateModelDto } from '../dtos/models/create-model.dto';
 import { UpdateModelDto } from '../dtos/models/update-model.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Models')
 @Controller('models')
 export class ModelsController {
   constructor(private readonly modelsService: ModelsUsecases) {}
