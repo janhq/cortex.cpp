@@ -1,16 +1,15 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { ThreadsController } from './threads/threads.controller';
-import { ModelsController } from './models/models.controller';
-import { MessagesModule } from './messages/messages.module';
-import { ThreadsModule } from './threads/threads.module';
-import { ModelsModule } from './models/models.module';
+import { AppController } from './infrastructure/controllers/app.controller';
+import { ThreadsController } from './infrastructure/controllers/threads.controller';
+import { ModelsController } from './infrastructure/controllers/models.controller';
+import { MessagesModule } from './usecases/messages/messages.module';
+import { ThreadsModule } from './usecases/threads/threads.module';
+import { ModelsModule } from './usecases/models/models.module';
 import { DevtoolsModule } from '@nestjs/devtools-integration';
-import { CoreModule } from './core/core.module';
-import { DatabaseModule } from './database/database.module';
-import { ChatModule } from './chat/chat.module';
-import { AssistantsModule } from './assistants/assistants.module';
-import { InferenceSettingsModule } from './inference-settings/inference-settings.module';
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { ChatModule } from './usecases/chat/chat.module';
+import { AssistantsModule } from './usecases/assistants/assistants.module';
+import { InferenceSettingsModule } from './usecases/inference-settings/inference-settings.module';
 
 @Module({
   imports: [
@@ -21,7 +20,6 @@ import { InferenceSettingsModule } from './inference-settings/inference-settings
     MessagesModule,
     ThreadsModule,
     ModelsModule,
-    CoreModule,
     ChatModule,
     AssistantsModule,
     InferenceSettingsModule,
