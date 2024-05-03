@@ -171,7 +171,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p nitro
+          mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
+          cp build/engines/cortex.llamacpp/libengine.so nitro/engines/cortex.llamacpp/
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -218,7 +220,11 @@ jobs:
       contents: write
     strategy:
       matrix:
-        cuda: ["12-0", "11-7"]
+        include:
+          - cuda: "12-0"
+            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF"
+          - cuda: "11-7"
+            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON"
 
     steps:
       - name: Clone
@@ -232,7 +238,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake  -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          cmake  ${{matrix.flags}} -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           make -j $(nproc)
           ls -la
 
@@ -240,7 +246,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p nitro
+          mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
+          cp build/engines/cortex.llamacpp/libengine.so nitro/engines/cortex.llamacpp/
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
@@ -295,7 +303,9 @@ jobs:
         run: |
           mkdir -p nitro
           cp llama.cpp/ggml-metal.metal nitro/
+          mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
+          cp build/engines/cortex.llamacpp/libengine.dylib nitro/engines/cortex.llamacpp/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -361,7 +371,9 @@ jobs:
         shell: bash
         run: |
           mkdir -p nitro
+          mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
+          cp build/engines/cortex.llamacpp/libengine.dylib nitro/engines/cortex.llamacpp/
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
@@ -408,8 +420,10 @@ jobs:
       - name: bundle universal binary
         run: |
           mkdir -p nitro
+          mkdir -p nitro/engines/cortex.llamacpp/
           ls ./nitro-mac-amd64
           lipo -create ./nitro-mac-amd64/nitro ./nitro-mac-arm64/nitro -output ./nitro/nitro
+          lipo -create ./nitro-mac-amd64/engines/cortex.llamacpp/libengine.dylib ./nitro-mac-arm64/engines/cortex.llamacpp/libengine.dylib -output ./nitro/engines/cortex.llamacpp/libengine.dylib
           cp ./nitro-mac-arm64/ggml-metal.metal ./nitro/ggml-metal.metal
           tar -czvf nitro.tar.gz nitro
 
@@ -503,6 +517,8 @@ jobs:
         id: pack_artifacts
         shell: cmd
         run: |
+          mkdir .\build\Release\engines\cortex.llamacpp\
+          robocopy .\build\engines\cortex.llamacpp\ .\build\Release\engines\cortex.llamacpp\ engine.dll
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
           robocopy build\bin\Release\ .\build\Release\ whisper.dll
@@ -558,8 +574,25 @@ jobs:
 
     strategy:
       matrix:
-        cuda: ["12-0", "11-7"]
-        instructions: ["amd64-avx2", "amd64-avx", "amd64-avx512"]
+        include:
+          - cuda: "12-0"
+            instructions: "-DLLAMA_NATIVE=OFF"
+            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+          - cuda: "12-0"
+            instructions: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
+            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+          - cuda: "12-0"
+            instructions: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
+            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+          - cuda: "11-7"
+            instructions: "-DLLAMA_NATIVE=OFF"
+            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+          - cuda: "11-7"
+            instructions: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
+            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+          - cuda: "11-7"
+            instructions: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
+            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
 
     steps:
       - name: Setup VSWhere.exe
@@ -600,21 +633,6 @@ jobs:
         with:
           dotnet-version: "6.0.x"
 
-      # Conditional instruction check and set environment variable
-      - name: Set INSTRUCTION Based on Instructions ${{ matrix.instructions }}
-        shell: cmd
-        run: |
-          IF "${{ matrix.instructions }}" == "amd64-avx2" (
-            echo "INSTRUCTION=-DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
-            echo "INSTRUCTION=-DLLAMA_NATIVE=OFF"
-          ) ELSE IF "${{ matrix.instructions }}" == "amd64-avx" (
-            echo "INSTRUCTION=-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
-            echo "INSTRUCTION=-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
-          ) ELSE IF "${{ matrix.instructions }}" == "amd64-avx512" (
-            echo "INSTRUCTION=-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF" >> $env:GITHUB_ENV
-            echo "INSTRUCTION=-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
-          )
-
       - name: Build
         id: cmake_build
         shell: cmd
@@ -623,7 +641,7 @@ jobs:
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. %INSTRUCTION%  -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. ${{ matrix.instructions }} ${{ matrix.flags }} -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -631,6 +649,8 @@ jobs:
         shell: cmd
         run: |
           set PATH=%PATH%;C:\Program Files\7-Zip\
+          mkdir .\build\Release\engines\cortex.llamacpp\
+          robocopy .\build\engines\cortex.llamacpp\ .\build\Release\engines\cortex.llamacpp\ engine.dll
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
           robocopy build\bin\Release\ .\build\Release\ whisper.dll
