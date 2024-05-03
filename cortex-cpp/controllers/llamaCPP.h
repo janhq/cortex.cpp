@@ -78,6 +78,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
                         std::shared_ptr<SyncQueue> q);
   void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                            SyncQueue& q);
+  bool IsEngineLoaded();
 
  private:
   struct SyncQueue {
@@ -121,5 +122,6 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
  private:
   std::unique_ptr<dylib> dylib_;
   EngineI* engine_;
+  std::string cur_engine_name_;
 };
 };  // namespace inferences
