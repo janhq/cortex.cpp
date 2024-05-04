@@ -294,7 +294,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake  -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
+          cmake -DMAC_ARM64=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncpu)
           ls -la
 
@@ -363,7 +363,7 @@ jobs:
         run: |
           ./install_deps.sh
           mkdir build && cd build
-          cmake  -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
+          cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
           CC=gcc-8 make -j $(sysctl -n hw.ncp)
           ls -la
 
@@ -423,7 +423,7 @@ jobs:
           mkdir -p nitro/engines/cortex.llamacpp/
           ls ./nitro-mac-amd64
           lipo -create ./nitro-mac-amd64/nitro ./nitro-mac-arm64/nitro -output ./nitro/nitro
-          lipo -create ./nitro-mac-amd64/engines/cortex.llamacpp/libengine.dylib ./nitro-mac-arm64/engines/cortex.llamacpp/libengine.dylib -output ./nitro/engines/cortex.llamacpp/libengine.dylib
+          lipo -create ./nitro-mac-amd64/engines/cortex.llamacpp/libengine.dylib ./nitro-mac-arm64/engines/cortex.llamacpp/libengine.dylib ./nitro/engines/cortex.llamacpp/libengine.dylib
           cp ./nitro-mac-arm64/ggml-metal.metal ./nitro/ggml-metal.metal
           tar -czvf nitro.tar.gz nitro
 
