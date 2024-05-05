@@ -9,6 +9,7 @@ import {
   Model,
   RemoteInferenceEngines,
 } from 'src/domain/models/model.interface';
+import { InvalidApiUrlException } from 'src/chat/exception/invalid-api-url.exception';
 
 @Injectable()
 export class ChatUsecases {
@@ -32,7 +33,7 @@ export class ChatUsecases {
       return this.handleRemoteInference(createChatDto, model, res);
     }
 
-    return {}; // TODO: NamH
+    return this.handleLocalInference(createChatDto, res);
   }
 
   private async handleRemoteInference(
@@ -50,19 +51,28 @@ export class ChatUsecases {
     }
 
     const { settings } = engineSetting;
-    let apiKey: string | undefined = undefined;
+    let apiKey = '';
     let apiUrl: string | undefined = undefined;
+    let stopWordCount: number | undefined = undefined;
 
     settings.forEach((setting) => {
       if (setting.key.includes('api-key'))
         apiKey = setting.controllerProps.value;
       else if (setting.key.includes('chat-completions-endpoint'))
         apiUrl = setting.controllerProps.value;
+      else if (setting.key.includes('stop-word-count')) {
+        if (+setting.controllerProps.value) {
+          stopWordCount = +setting.controllerProps.value;
+        }
+      }
     });
 
-    if (!apiKey || !apiUrl) {
-      // TODO: NamH create exception
-      throw new Error('API Key or API URL not found');
+    if (!apiUrl) {
+      throw new InvalidApiUrlException(model.id, apiUrl);
+    }
+
+    if (stopWordCount) {
+      createChatDto.stop = createChatDto.stop.slice(0, stopWordCount);
     }
 
     const headers: Record<string, string> = {
@@ -71,8 +81,34 @@ export class ChatUsecases {
       'api-key': apiKey,
     };
 
-    console.log('createChatDto', settings);
-    // TODO: openAI only allow 4 stop words
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fetch = require('node-fetch');
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(createChatDto),
+    });
+    res.writeHead(200, {
+      'Content-Type':
+        createChatDto.stream === true
+          ? 'text/event-stream'
+          : 'application/json',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+    });
+    response.body?.pipe(res);
+  }
+
+  private async handleLocalInference(
+    createChatDto: CreateChatCompletionDto,
+    res: Response,
+  ) {
+    const apiUrl = 'http://127.0.0.1:3928/inferences/llamacpp/chat_completion';
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fetch = require('node-fetch');
     const response = await fetch(apiUrl, {
