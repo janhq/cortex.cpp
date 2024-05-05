@@ -569,3 +569,5 @@ uploads/**
 
 # cortex-js
 cortex-js/cortex.db
+dist
+*.lock

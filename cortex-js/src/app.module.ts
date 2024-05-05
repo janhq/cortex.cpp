@@ -10,6 +10,7 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { InferenceSettingsModule } from './usecases/inference-settings/inference-settings.module';
+import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { CortexModule } from './usecases/cortex/cortex.module';
     AssistantsModule,
     InferenceSettingsModule,
     CortexModule,
+    ExtensionModule,
   ],
   controllers: [AppController, ThreadsController, ModelsController],
 })
