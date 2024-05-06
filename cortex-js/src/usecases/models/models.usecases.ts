@@ -133,7 +133,6 @@ export class ModelsUsecases {
 
     const modelFolder = join(modelsContainerDir, model.id);
     await promises.mkdir(modelFolder, { recursive: true });
-
     const destination = join(modelFolder, fileName);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fetch = require('node-fetch');
