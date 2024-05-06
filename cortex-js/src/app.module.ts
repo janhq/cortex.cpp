@@ -9,7 +9,6 @@ import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { InferenceSettingsModule } from './usecases/inference-settings/inference-settings.module';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
-import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({

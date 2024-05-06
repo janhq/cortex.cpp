@@ -127,14 +127,15 @@ export class ModelsUsecases {
 
     const modelFolder = join(modelsContainerDir, model.id);
     await promises.mkdir(modelFolder, { recursive: true });
-
     const destination = join(modelFolder, fileName);
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fetch = require('node-fetch');
     const response = await fetch(downloadUrl);
-    const fileStream = createWriteStream(destination);
-    response.body.pipe(fileStream);
+    const buffer = Buffer.from(await response.arrayBuffer());
+    promises.writeFile(destination, buffer);
+
+    return {
+      message: `Model ${model.id} is being downloaded`,
+    };
   }
 
   // TODO: NamH move to a helper or utils

@@ -1,4 +1,4 @@
-import { Command, CommandRunner, Option } from 'nest-commander';
+import { Command, CommandRunner } from 'nest-commander';
 import { ModelsUsecases } from 'src/usecases/models/models.usecases';
 import { DownloadModelDto } from '../dtos/models/download-model.dto';
 
@@ -21,6 +21,8 @@ export class BasicCommand extends CommandRunner {
     const downloadDtoModel: DownloadModelDto = {
       modelId: 'mistral-ins-7b-q4',
     };
-    return this.modelsUsecases.downloadModel(downloadDtoModel);
+    this.modelsUsecases.downloadModel(downloadDtoModel);
+
+    return Promise.resolve();
   }
 }
