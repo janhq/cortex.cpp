@@ -1,13 +1,13 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { CortexService } from './cortex.service';
-import { StartCortexDto } from './dto/start-cortex.dto';
-import { CortexOperationSuccessfullyDto } from './dto/cortex-operation-successfully.dto';
+import { StartCortexDto } from '../dtos/cortex/start-cortex.dto';
+import { CortexOperationSuccessfullyDto } from '../dtos/cortex/cortex-operation-successfully.dto';
+import { CortexUsecases } from 'src/usecases/cortex/cortex.usecases';
 
 @ApiTags('Cortex')
 @Controller('cortex')
 export class CortexController {
-  constructor(private readonly cortexService: CortexService) {}
+  constructor(private readonly cortexUsecases: CortexUsecases) {}
 
   @HttpCode(200)
   @ApiResponse({
@@ -17,7 +17,7 @@ export class CortexController {
   })
   @Post('start')
   startCortex(@Body() startCortexDto: StartCortexDto) {
-    return this.cortexService.startCortex(
+    return this.cortexUsecases.startCortex(
       startCortexDto.host,
       startCortexDto.port,
     );
@@ -31,6 +31,6 @@ export class CortexController {
   })
   @Post('stop')
   stopCortex() {
-    return this.cortexService.stopCortex();
+    return this.cortexUsecases.stopCortex();
   }
 }
