@@ -1,19 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { CreateModelDto } from '../../infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '../../infrastructure/dtos/models/update-model.dto';
 import { ModelEntity } from '../../infrastructure/entities/model.entity';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { ModelNotFoundException } from 'src/exceptions/model-not-found.exception';
-import { CortexService } from 'src/cortex/cortex.service';
-import { join } from 'path';
 import {
   Model,
   NitroModelSettings,
   RemoteInferenceEngines,
 } from 'src/domain/models/model.interface';
-import { LoadModelDto } from 'src/infrastructure/dtos/models/load-model.dto';
+import { ModelNotFoundException } from 'src/exceptions/model-not-found.exception';
+import { CortexService } from 'src/cortex/cortex.service';
+import { join, basename, resolve } from 'path';
+import { createWriteStream, promises } from 'fs';
 import { LoadModelSuccessDto } from 'src/infrastructure/dtos/models/load-model-success.dto';
+import { LoadModelDto } from 'src/infrastructure/dtos/models/load-model.dto';
 import { PromptTemplate } from 'src/domain/models/message.interface';
+import { DownloadModelDto } from 'src/infrastructure/dtos/models/download-model.dto';
 
 @Injectable()
 export class ModelsUsecases {
@@ -168,4 +170,32 @@ export class ModelsUsecases {
     // Return an error if none of the conditions are met
     return { error: 'Cannot split prompt template' };
   };
+
+  async downloadModel(downloadModelDto: DownloadModelDto) {
+    const model = await this.findOne(downloadModelDto.modelId);
+    if (!model) {
+      throw new ModelNotFoundException(downloadModelDto.modelId);
+    }
+
+    if (RemoteInferenceEngines.includes(model.engine)) {
+      throw new BadRequestException('Cannot download remote model');
+    }
+
+    // TODO: NamH download multiple files
+
+    const downloadUrl = model.sources[0].url;
+    if (!downloadUrl || !downloadUrl.startsWith('http')) {
+      throw new BadRequestException('Invalid download URL');
+    }
+    const fileName = basename(downloadUrl);
+
+    await promises.mkdir(join(fileName, '..'), { recursive: true });
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fetch = require('node-fetch');
+    const response = await fetch(downloadUrl);
+    const destination = resolve('./downloads', fileName);
+    const fileStream = createWriteStream(destination);
+    response.body.pipe(fileStream);
+  }
 }
