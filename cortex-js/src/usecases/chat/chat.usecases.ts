@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { CreateChatCompletionDto } from '../../infrastructure/dtos/chat/create-chat-completion.dto';
 import { Response } from 'express';
-import { ModelNotFoundException } from 'src/exceptions/model-not-found.exception';
-import { ModelSettingNotFoundException } from 'src/exceptions/model-setting-not-found.exception';
+import { ModelNotFoundException } from 'src/infrastructure/exception/model-not-found.exception';
+import { ModelSettingNotFoundException } from 'src/infrastructure/exception/model-setting-not-found.exception';
 import { ModelsUsecases } from '../models/models.usecases';
 import { InferenceSettingsUsecases } from '../inference-settings/inference-settings.usecases';
 import {
   Model,
   RemoteInferenceEngines,
 } from 'src/domain/models/model.interface';
-import { InvalidApiUrlException } from 'src/chat/exception/invalid-api-url.exception';
+import { InvalidApiUrlException } from 'src/usecases/chat/exception/invalid-api-url.exception';
 
 @Injectable()
 export class ChatUsecases {

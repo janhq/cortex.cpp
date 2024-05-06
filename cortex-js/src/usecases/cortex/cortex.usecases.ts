@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
-import { CortexOperationSuccessfullyDto } from './dto/cortex-operation-successfully.dto';
+import { CortexOperationSuccessfullyDto } from 'src/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 
 @Injectable()
-export class CortexService {
+export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
 
   async startCortex(

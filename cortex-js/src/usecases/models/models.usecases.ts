@@ -8,21 +8,21 @@ import {
   NitroModelSettings,
   RemoteInferenceEngines,
 } from 'src/domain/models/model.interface';
-import { ModelNotFoundException } from 'src/exceptions/model-not-found.exception';
-import { CortexService } from 'src/cortex/cortex.service';
+import { ModelNotFoundException } from 'src/infrastructure/exception/model-not-found.exception';
 import { join, basename, resolve } from 'path';
 import { createWriteStream, promises } from 'fs';
 import { LoadModelSuccessDto } from 'src/infrastructure/dtos/models/load-model-success.dto';
 import { LoadModelDto } from 'src/infrastructure/dtos/models/load-model.dto';
 import { PromptTemplate } from 'src/domain/models/message.interface';
 import { DownloadModelDto } from 'src/infrastructure/dtos/models/download-model.dto';
+import { CortexUsecases } from '../cortex/cortex.usecases';
 
 @Injectable()
 export class ModelsUsecases {
   constructor(
     @Inject('MODEL_REPOSITORY')
     private readonly modelRepository: Repository<ModelEntity>,
-    private readonly cortexService: CortexService,
+    private readonly cortexUsecases: CortexUsecases,
   ) {}
 
   create(createModelDto: CreateModelDto) {
@@ -105,7 +105,7 @@ export class ModelsUsecases {
     // TODO: NamH check if we need to stop model first?
 
     // spawn cortex process
-    await this.cortexService.startCortex(LOCAL_HOST, `${NITRO_DEFAULT_PORT}`);
+    await this.cortexUsecases.startCortex(LOCAL_HOST, `${NITRO_DEFAULT_PORT}`);
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fetch = require('node-fetch');

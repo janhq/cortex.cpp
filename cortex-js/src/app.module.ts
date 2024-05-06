@@ -10,7 +10,7 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { InferenceSettingsModule } from './usecases/inference-settings/inference-settings.module';
-import { CortexModule } from './cortex/cortex.module';
+import { CortexModule } from './usecases/cortex/cortex.module';
 
 @Module({
   imports: [
