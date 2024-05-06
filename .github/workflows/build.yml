@@ -98,7 +98,7 @@ jobs:
               local max_retries=3
               local tag
               while [ $retries -lt $max_retries ]; do
-                tag=$(curl -s https://api.github.com/repos/janhq/nitro/releases/latest | jq -r .tag_name)
+                tag=$(curl -s https://api.github.com/repos/janhq/cortex/releases/latest | jq -r .tag_name)
                 if [ -n "$tag" ] && [ "$tag" != "null" ]; then
                   echo $tag
                   return
@@ -161,6 +161,7 @@ jobs:
         id: make_build
         run: |
           ldd --version
+          cd cortex-cpp
           ./install_deps.sh
           mkdir build && cd build
           cmake ${{ matrix.defines }} -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
@@ -170,35 +171,35 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          mkdir -p nitro
-          mkdir -p nitro/engines/cortex.llamacpp
-          cp build/nitro nitro/
-          cp build/engines/cortex.llamacpp/libengine.so nitro/engines/cortex.llamacpp/
-          tar -czvf nitro.tar.gz nitro
+          mkdir -p cortex-cpp/nitro
+          mkdir -p cortex-cpp/nitro/engines/cortex.llamacpp
+          cp cortex-cpp/build/nitro cortex-cpp/nitro/
+          cp cortex-cpp/build/engines/cortex.llamacpp/libengine.so cortex-cpp/nitro/engines/cortex.llamacpp/
+          tar -czvf cortex-cpp/nitro.tar.gz cortex-cpp/nitro
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: nitro-linux-${{ matrix.build }}
-          path: ./nitro
+          path: ./cortex-cpp/nitro
 
       - name: Run e2e testing - LLama.CPP
         shell: bash
-        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
+        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' && matrix.build != 'amd64-avx' }}
         run: |
           # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
+          cd cortex-cpp/nitro
+          chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
         shell: bash
-        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
+        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' && matrix.build != 'amd64-avx' }}
         run: |
           # run e2e testing
-          cd nitro
-          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+          cd cortex-cpp/nitro
+          chmod +x ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
 
       - uses: actions/upload-release-asset@v1.0.1
@@ -207,7 +208,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
+          asset_path: ./cortex-cpp/nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-${{ matrix.build }}.tar.gz
           asset_content_type: application/gzip
 
@@ -222,9 +223,9 @@ jobs:
       matrix:
         include:
           - cuda: "12-0"
-            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF"
+            flags: "-DCUDA_12_0=ON"
           - cuda: "11-7"
-            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON"
+            flags: "-DCUDA_11_7=ON"
 
     steps:
       - name: Clone
@@ -236,6 +237,7 @@ jobs:
       - name: Build
         id: make_build
         run: |
+          cd cortex-cpp
           ./install_deps.sh
           mkdir build && cd build
           cmake  ${{matrix.flags}} -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
@@ -245,6 +247,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
+          cd cortex-cpp
           mkdir -p nitro
           mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
@@ -256,7 +259,16 @@ jobs:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: nitro-linux-amd64-cuda-${{ matrix.cuda }}
-          path: ./nitro
+          path: ./cortex-cpp/nitro
+      
+      - name: Run e2e testing - LLama.CPP
+        shell: bash
+        if: ${{ matrix.cuda != '12-0'}}
+        run: |
+          # run e2e testing
+          cd cortex-cpp/nitro
+          chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
+          rm -rf uploads/
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -264,7 +276,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
+          asset_path: ./cortex-cpp/nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-linux-amd64-cuda-${{ matrix.cuda }}.tar.gz
           asset_content_type: application/gzip
 
@@ -292,6 +304,7 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
+          cd cortex-cpp
           ./install_deps.sh
           mkdir build && cd build
           cmake -DMAC_ARM64=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
@@ -301,8 +314,8 @@ jobs:
       - name: Package
         shell: bash
         run: |
+          cd cortex-cpp
           mkdir -p nitro
-          cp llama.cpp/ggml-metal.metal nitro/
           mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
           cp build/engines/cortex.llamacpp/libengine.dylib nitro/engines/cortex.llamacpp/
@@ -311,22 +324,21 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: nitro-mac-arm64
-          path: ./nitro
+          path: ./cortex-cpp/nitro
 
       - name: Run e2e testing - LLama.CPP
-        shell: bash
         run: |
           # run e2e testing
-          cd nitro/
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
+          cd cortex-cpp/nitro/
+          chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
-        shell: bash
         run: |
+          cd cortex-cpp
           # To test with CoreML
           if [[ ! -f "/tmp/testwhisper-encoder.mlmodelc" ]]; then
-            wget https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-encoder.mlmodelc.zip
+            curl -LO https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-encoder.mlmodelc.zip
             unzip ggml-tiny-encoder.mlmodelc.zip
             rm ggml-tiny-encoder.mlmodelc.zip
             rm -rf /tmp/testwhisper-encoder.mlmodelc
@@ -334,11 +346,11 @@ jobs:
           fi
           # run e2e testing
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+          chmod +x ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
 
   macOS-amd64-build:
-    runs-on: macos-latest
+    runs-on: macos-13
     needs: [create-draft-release, set-nitro-version]
     if: always() && (needs.create-draft-release.result == 'success' || needs.create-draft-release.result == 'skipped') && needs.set-nitro-version.result == 'success'
     timeout-minutes: 40
@@ -361,6 +373,7 @@ jobs:
       - name: Build
         id: cmake_build
         run: |
+          cd cortex-cpp
           ./install_deps.sh
           mkdir build && cd build
           cmake -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} .. 
@@ -370,6 +383,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
+          cd cortex-cpp
           mkdir -p nitro
           mkdir -p nitro/engines/cortex.llamacpp
           cp build/nitro nitro/
@@ -379,22 +393,24 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: nitro-mac-amd64
-          path: ./nitro
+          path: ./cortex-cpp/nitro
 
       - name: Run e2e testing - LLama.CPP
         shell: bash
         run: |
           # run e2e testing
+          cd cortex-cpp
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
+          chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
       - name: Run e2e testing - Whisper.CPP
         shell: bash
         run: |
           # run e2e testing
+          cd cortex-cpp
           cd nitro
-          chmod +x ../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
+          chmod +x ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
 
   universal-nitro-artifact-macos:
@@ -409,29 +425,29 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: nitro-mac-amd64
-          path: ./nitro-mac-amd64
+          path: ./cortex-cpp/nitro-mac-amd64
 
       - name: download artifact arm64
         uses: actions/download-artifact@v2
         with:
           name: nitro-mac-arm64
-          path: ./nitro-mac-arm64
+          path: ./cortex-cpp/nitro-mac-arm64
       
       - name: bundle universal binary
         run: |
+          cd cortex-cpp
           mkdir -p nitro
           mkdir -p nitro/engines/cortex.llamacpp/
           ls ./nitro-mac-amd64
           lipo -create ./nitro-mac-amd64/nitro ./nitro-mac-arm64/nitro -output ./nitro/nitro
-          lipo -create ./nitro-mac-amd64/engines/cortex.llamacpp/libengine.dylib ./nitro-mac-arm64/engines/cortex.llamacpp/libengine.dylib ./nitro/engines/cortex.llamacpp/libengine.dylib
-          cp ./nitro-mac-arm64/ggml-metal.metal ./nitro/ggml-metal.metal
+          lipo -create ./nitro-mac-amd64/engines/cortex.llamacpp/libengine.dylib ./nitro-mac-arm64/engines/cortex.llamacpp/libengine.dylib -output ./nitro/engines/cortex.llamacpp/libengine.dylib
           tar -czvf nitro.tar.gz nitro
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
           name: nitro-mac-universal
-          path: ./nitro
+          path: ./cortex-cpp/nitro
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -439,7 +455,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
+          asset_path: ./cortex-cpp/nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-mac-universal.tar.gz
           asset_content_type: application/gzip
 
@@ -506,6 +522,7 @@ jobs:
         id: cmake_build
         shell: cmd
         run: |
+          cd cortex-cpp
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
@@ -517,14 +534,15 @@ jobs:
         id: pack_artifacts
         shell: cmd
         run: |
+          cd cortex-cpp
           mkdir .\build\Release\engines\cortex.llamacpp\
           robocopy .\build\engines\cortex.llamacpp\ .\build\Release\engines\cortex.llamacpp\ engine.dll
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
           robocopy build\bin\Release\ .\build\Release\ whisper.dll
-          robocopy .github\patches\windows\ .\build\Release\ msvcp140.dll
-          robocopy .github\patches\windows\ .\build\Release\ vcruntime140_1.dll
-          robocopy .github\patches\windows\ .\build\Release\ vcruntime140.dll
+          robocopy ..\.github\patches\windows\ .\build\Release\ msvcp140.dll
+          robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140_1.dll
+          robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140.dll
           robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
           dotnet tool install --global AzureSignTool
           azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
@@ -535,16 +553,18 @@ jobs:
         shell: cmd
         if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
         run: |
+          cd cortex-cpp
           cd build\Release
-          ..\..\.github\scripts\e2e-test-llama-windows.bat nitro.exe ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
+          ..\..\..\.github\scripts\e2e-test-llama-windows.bat nitro.exe ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rmdir /S /Q .\build\Release\uploads
 
       - name: Run e2e testing - Whisper.cpp
         shell: cmd
         if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
         run: |
+          cd cortex-cpp
           cd build\Release
-          ..\..\.github\scripts\e2e-test-whisper-windows.bat nitro.exe ${{ env.WHISPER_MODEL_URL }}
+          ..\..\..\.github\scripts\e2e-test-whisper-windows.bat nitro.exe ${{ env.WHISPER_MODEL_URL }}
           rmdir /S /Q .\build\Release\uploads
 
       - name: Upload Artifact
@@ -552,7 +572,7 @@ jobs:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: nitro-win-${{ matrix.build }}
-          path: ./build/Release
+          path: ./cortex-cpp/build/Release
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -560,7 +580,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
+          asset_path: ./cortex-cpp/nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-${{ matrix.build }}.tar.gz
           asset_content_type: application/gzip
 
@@ -576,58 +596,42 @@ jobs:
       matrix:
         include:
           - cuda: "12-0"
-            instructions: "-DLLAMA_NATIVE=OFF"
-            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            instructions: "amd64-avx2"
+            inst-flags: "-DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "12-0"
-            instructions: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
-            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            instructions: "amd64-avx"
+            inst-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "12-0"
-            instructions: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
-            flags: "-DCUDA_12_0=ON -DCUDA_11_7=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            instructions: "amd64-avx512"
+            inst-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "11-7"
-            instructions: "-DLLAMA_NATIVE=OFF"
-            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            instructions: "amd64-avx2"
+            inst-flags: "-DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "11-7"
-            instructions: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
-            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            instructions: "amd64-avx"
+            inst-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "11-7"
-            instructions: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
-            flags: "-DCUDA_12_0=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            instructions: "amd64-avx512"
+            inst-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
 
     steps:
-      - name: Setup VSWhere.exe
-        uses: warrenbuckley/Setup-VSWhere@v1
-        with:
-          version: latest
-          silent: true
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-
-      - name: Add msbuild to PATH
-        uses: microsoft/setup-msbuild@v1
-
       - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
         run: |
           curl -L -o sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
           7z x sdl2.zip -aoa
           echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
 
-      - name: actions-setup-cmake
-        uses: jwlawson/actions-setup-cmake@v1.14.1
-
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-
-      - name: Setup VSWhere.exe
-        uses: warrenbuckley/Setup-VSWhere@v1
-        with:
-          version: latest
-          silent: true
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
       - uses: actions/setup-dotnet@v3
         with:
@@ -637,11 +641,12 @@ jobs:
         id: cmake_build
         shell: cmd
         run: |
+          cd cortex-cpp
           cmake -S ./nitro_deps -B ./build_deps/nitro_deps
           cmake --build ./build_deps/nitro_deps --config Release
           mkdir -p build
           cd build
-          cmake .. ${{ matrix.instructions }} ${{ matrix.flags }} -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
+          cmake .. ${{ matrix.inst-flags }} ${{ matrix.cmake-flags }} -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }}
           cmake --build . --config Release -j "%NUMBER_OF_PROCESSORS%"
 
       - name: Pack artifacts
@@ -649,14 +654,15 @@ jobs:
         shell: cmd
         run: |
           set PATH=%PATH%;C:\Program Files\7-Zip\
+          cd cortex-cpp
           mkdir .\build\Release\engines\cortex.llamacpp\
           robocopy .\build\engines\cortex.llamacpp\ .\build\Release\engines\cortex.llamacpp\ engine.dll
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
           robocopy build\bin\Release\ .\build\Release\ whisper.dll
-          robocopy .github\patches\windows\ .\build\Release\ msvcp140.dll
-          robocopy .github\patches\windows\ .\build\Release\ vcruntime140_1.dll
-          robocopy .github\patches\windows\ .\build\Release\ vcruntime140.dll
+          robocopy ..\.github\patches\windows\ .\build\Release\ msvcp140.dll
+          robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140_1.dll
+          robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140.dll
           robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
           dotnet tool install --global AzureSignTool
           %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
@@ -668,7 +674,7 @@ jobs:
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request'
         with:
           name: nitro-win-${{ matrix.instructions }}-cuda-${{ matrix.cuda }}
-          path: ./build/Release
+          path: ./cortex-cpp/build/Release
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -676,7 +682,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./nitro.tar.gz
+          asset_path: ./cortex-cpp/nitro.tar.gz
           asset_name: nitro-${{ needs.create-draft-release.outputs.version }}-win-${{ matrix.instructions }}-cuda-${{ matrix.cuda }}.tar.gz
           asset_content_type: application/gzip
 
