@@ -14,6 +14,7 @@ import { UpdateModelDto } from '../dtos/models/update-model.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LoadModelSuccessDto } from '../dtos/models/load-model-success.dto';
 import { LoadModelDto } from '../dtos/models/load-model.dto';
+import { DownloadModelDto } from '../dtos/models/download-model.dto';
 
 @ApiTags('Models')
 @Controller('models')
@@ -34,6 +35,11 @@ export class ModelsController {
   @Post('load')
   load(@Body() loadModelDto: LoadModelDto) {
     return this.modelsService.loadModel(loadModelDto);
+  }
+
+  @Post('download')
+  downloadModel(@Body() downloadModelDto: DownloadModelDto) {
+    return this.modelsService.downloadModel(downloadModelDto);
   }
 
   @Get()
