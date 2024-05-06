@@ -6,8 +6,34 @@ export interface ModelInfo {
   id: string;
   settings: ModelSettingParams;
   parameters: ModelRuntimeParams;
-  engine?: string;
+  engine?: InferenceEngine;
 }
+
+/**
+ * Represents the remote inference engine.
+ * @stored
+ */
+export const RemoteInferenceEngines = ['openai', 'groq'];
+
+/**
+ * Represents the local inference engine.
+ */
+export const LocalInferenceEngines = [
+  'nitro',
+  'triton_trtllm',
+  'nitro_tensorrt_llm',
+];
+
+/**
+ * Represents all supported inference engine.
+ * @stored
+ */
+const AllInferenceEngines = [
+  ...RemoteInferenceEngines,
+  ...LocalInferenceEngines,
+] as const;
+export type InferenceEngineTuple = typeof AllInferenceEngines;
+export type InferenceEngine = InferenceEngineTuple[number];
 
 export interface ModelArtifact {
   url: string;
@@ -133,3 +159,8 @@ export interface ModelRuntimeParams {
 export type ModelInitFailed = Model & {
   error: Error;
 };
+
+export interface NitroModelSettings extends ModelSettingParams {
+  llama_model_path: string;
+  cpu_threads: number;
+}

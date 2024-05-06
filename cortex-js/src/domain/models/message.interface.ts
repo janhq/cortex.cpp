@@ -79,3 +79,10 @@ export interface Message {
  * The additional metadata of this message.
  */
 export interface MessageMetadata {}
+
+export type PromptTemplate = {
+  system_prompt?: string;
+  ai_prompt?: string;
+  user_prompt?: string;
+  error?: string;
+};
