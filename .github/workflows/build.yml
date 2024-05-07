@@ -48,7 +48,6 @@ on:
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
-  WHISPER_MODEL_URL: https://delta.jan.ai/ggml-tiny-q5_1.bin
   EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
 
 jobs:
@@ -193,15 +192,6 @@ jobs:
           chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
           rm -rf uploads/
 
-      - name: Run e2e testing - Whisper.CPP
-        shell: bash
-        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' && matrix.build != 'amd64-avx' }}
-        run: |
-          # run e2e testing
-          cd cortex-cpp/nitro
-          chmod +x ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
-          rm -rf uploads/
-
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
@@ -240,7 +230,7 @@ jobs:
           cd cortex-cpp
           ./install_deps.sh
           mkdir build && cd build
-          cmake  ${{matrix.flags}} -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
+          cmake  ${{matrix.flags}} -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DNITRO_VERSION=${{ needs.set-nitro-version.outputs.version }} ..
           make -j $(nproc)
           ls -la
 
@@ -294,13 +284,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Dependencies
-        id: depends
-        continue-on-error: true
-        run: |
-          brew update
-          brew install cmake sdl2
-
       - name: Build
         id: cmake_build
         run: |
@@ -331,22 +314,6 @@ jobs:
           # run e2e testing
           cd cortex-cpp/nitro/
           chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
-          rm -rf uploads/
-
-      - name: Run e2e testing - Whisper.CPP
-        run: |
-          cd cortex-cpp
-          # To test with CoreML
-          if [[ ! -f "/tmp/testwhisper-encoder.mlmodelc" ]]; then
-            curl -LO https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny-encoder.mlmodelc.zip
-            unzip ggml-tiny-encoder.mlmodelc.zip
-            rm ggml-tiny-encoder.mlmodelc.zip
-            rm -rf /tmp/testwhisper-encoder.mlmodelc
-            mv ggml-tiny-encoder.mlmodelc /tmp/testwhisper-encoder.mlmodelc
-          fi
-          # run e2e testing
-          cd nitro
-          chmod +x ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
 
   macOS-amd64-build:
@@ -402,15 +369,6 @@ jobs:
           cd cortex-cpp
           cd nitro
           chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
-          rm -rf uploads/
-
-      - name: Run e2e testing - Whisper.CPP
-        shell: bash
-        run: |
-          # run e2e testing
-          cd cortex-cpp
-          cd nitro
-          chmod +x ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh && ../../.github/scripts/e2e-test-whisper-linux-and-mac.sh ./nitro ${{ env.WHISPER_MODEL_URL }}
           rm -rf uploads/
 
   universal-nitro-artifact-macos:
@@ -469,13 +427,13 @@ jobs:
       matrix:
         include:
           - build: "amd64-avx2"
-            defines: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            defines: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - build: "amd64-avx"
-            defines: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            defines: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - build: "amd64-avx512"
-            defines: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            defines: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - build: "amd64-vulkan"
-            defines: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            defines: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           # - build: "arm64"
           #   defines: "-A ARM64 -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=ON"
 
@@ -500,12 +458,6 @@ jobs:
 
       - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1
-
-      - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
-        run: |
-          C:/msys64/usr/bin/wget.exe -qO sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
-          7z x sdl2.zip -aoa
-          echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
 
       - name: actions-setup-cmake
         uses: jwlawson/actions-setup-cmake@v1.14.1
@@ -539,11 +491,9 @@ jobs:
           robocopy .\build\engines\cortex.llamacpp\ .\build\Release\engines\cortex.llamacpp\ engine.dll
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
-          robocopy build\bin\Release\ .\build\Release\ whisper.dll
           robocopy ..\.github\patches\windows\ .\build\Release\ msvcp140.dll
           robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140_1.dll
           robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140.dll
-          robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
           dotnet tool install --global AzureSignTool
           azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*
@@ -556,15 +506,6 @@ jobs:
           cd cortex-cpp
           cd build\Release
           ..\..\..\.github\scripts\e2e-test-llama-windows.bat nitro.exe ${{ env.LLM_MODEL_URL }} ${{ env.EMBEDDING_MODEL_URL }}
-          rmdir /S /Q .\build\Release\uploads
-
-      - name: Run e2e testing - Whisper.cpp
-        shell: cmd
-        if: ${{ matrix.build != 'arm64' && matrix.build != 'amd64-vulkan' && matrix.build != 'amd64-avx512' }}
-        run: |
-          cd cortex-cpp
-          cd build\Release
-          ..\..\..\.github\scripts\e2e-test-whisper-windows.bat nitro.exe ${{ env.WHISPER_MODEL_URL }}
           rmdir /S /Q .\build\Release\uploads
 
       - name: Upload Artifact
@@ -598,35 +539,29 @@ jobs:
           - cuda: "12-0"
             instructions: "amd64-avx2"
             inst-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
-            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - cuda: "12-0"
             instructions: "amd64-avx"
             inst-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
-            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - cuda: "12-0"
             instructions: "amd64-avx512"
             inst-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
-            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - cuda: "11-7"
             instructions: "amd64-avx2"
             inst-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
-            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - cuda: "11-7"
             instructions: "amd64-avx"
             inst-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
-            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
           - cuda: "11-7"
             instructions: "amd64-avx512"
             inst-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
-            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
 
     steps:
-      - name: Fetch SDL2 and set SDL2_DIR version 2.28.5
-        run: |
-          curl -L -o sdl2.zip https://github.com/libsdl-org/SDL/releases/download/release-2.28.5/SDL2-devel-2.28.5-VC.zip
-          7z x sdl2.zip -aoa
-          echo "SDL2_DIR=$env:GITHUB_WORKSPACE/SDL2-2.28.5/cmake" >> $env:GITHUB_ENV
-
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
@@ -659,11 +594,9 @@ jobs:
           robocopy .\build\engines\cortex.llamacpp\ .\build\Release\engines\cortex.llamacpp\ engine.dll
           robocopy build_deps\_install\bin\ .\build\Release\ zlib.dll
           robocopy build\bin\Release\ .\build\Release\ llama.dll
-          robocopy build\bin\Release\ .\build\Release\ whisper.dll
           robocopy ..\.github\patches\windows\ .\build\Release\ msvcp140.dll
           robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140_1.dll
           robocopy ..\.github\patches\windows\ .\build\Release\ vcruntime140.dll
-          robocopy "$env:SDL2_DIR\..\lib\2.28.5\" .\build\Release\ SDL2.dll
           dotnet tool install --global AzureSignTool
           %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu "${{ secrets.AZURE_KEY_VAULT_URI }}" -kvi "${{ secrets.AZURE_CLIENT_ID }}" -kvt "${{ secrets.AZURE_TENANT_ID }}" -kvs "${{ secrets.AZURE_CLIENT_SECRET }}" -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\build\Release\nitro.exe"
           7z a -ttar temp.tar .\build\Release\*

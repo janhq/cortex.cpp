@@ -39,19 +39,3 @@ class BaseEmbedding {
 
   // The derived class can also override other methods if needed
 };
-
-class BaseAudio {
- public:
-  virtual ~BaseAudio() {}
-  // Transcribes audio into the input language.
-  virtual void CreateTranscription(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
-
-  //  Translates audio into the input language.
-  virtual void CreateTranslation(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
-
-  // The derived class can also override other methods if needed
-};

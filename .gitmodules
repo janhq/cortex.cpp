@@ -1,3 +1,0 @@
-[submodule "cortex-cpp/whisper.cpp"]
-	path = cortex-cpp/whisper.cpp
-	url = https://github.com/ggerganov/whisper.cpp.git

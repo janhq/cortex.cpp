@@ -56,7 +56,6 @@ endif()
 
 add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
 
-add_subdirectory(whisper.cpp)
 add_subdirectory(test)
 
 add_executable(${PROJECT_NAME} main.cc)
@@ -69,7 +68,7 @@ add_executable(${PROJECT_NAME} main.cc)
 # and comment out the following lines
 
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon whisper
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
                                               ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
@@ -87,7 +86,6 @@ endif()
 
 aux_source_directory(controllers CTL_SRC)
 aux_source_directory(common COMMON_SRC)
-aux_source_directory(context CONTEXT_SRC)
 aux_source_directory(models MODEL_SRC)
 aux_source_directory(cortex-common CORTEX_COMMON)
 # aux_source_directory(filters FILTER_SRC) aux_source_directory(plugins
@@ -100,7 +98,7 @@ aux_source_directory(cortex-common CORTEX_COMMON)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 # ${CMAKE_CURRENT_SOURCE_DIR}/models)
-target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC} ${CONTEXT_SRC})
+target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC})
 # ${FILTER_SRC} ${PLUGIN_SRC} ${MODEL_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
