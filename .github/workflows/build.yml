@@ -132,7 +132,7 @@ jobs:
       matrix:
         include:
           - build: "amd64-avx2"
-            defines: "-DLLAMA_NATIVE=OFF"
+            defines: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
           - build: "amd64-avx"
             defines: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
           - build: "amd64-avx512"
@@ -469,7 +469,7 @@ jobs:
       matrix:
         include:
           - build: "amd64-avx2"
-            defines: "-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
+            defines: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - build: "amd64-avx"
             defines: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - build: "amd64-avx512"
@@ -597,7 +597,7 @@ jobs:
         include:
           - cuda: "12-0"
             instructions: "amd64-avx2"
-            inst-flags: "-DLLAMA_NATIVE=OFF"
+            inst-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "12-0"
             instructions: "amd64-avx"
@@ -609,7 +609,7 @@ jobs:
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "11-7"
             instructions: "amd64-avx2"
-            inst-flags: "-DLLAMA_NATIVE=OFF"
+            inst-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DWHISPER_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DWHISPER_SDL2=ON"
           - cuda: "11-7"
             instructions: "amd64-avx"
