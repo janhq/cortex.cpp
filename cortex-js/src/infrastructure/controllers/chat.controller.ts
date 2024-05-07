@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Headers, Res } from '@nestjs/common';
 import { CreateChatCompletionDto } from '../dtos/chat/create-chat-completion.dto';
 import { ChatUsecases } from '../../usecases/chat/chat.usecases';
 import { Response } from 'express';
@@ -11,9 +11,10 @@ export class ChatController {
 
   @Post('completions')
   async create(
+    @Headers() headers: Record<string, string>,
     @Body() createChatDto: CreateChatCompletionDto,
     @Res() res: Response,
   ) {
-    return this.chatService.createChatCompletions(createChatDto, res);
+    this.chatService.createChatCompletions(createChatDto, headers, res);
   }
 }

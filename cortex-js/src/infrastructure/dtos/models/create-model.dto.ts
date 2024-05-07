@@ -1,10 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
-import {
-  InferenceEngine,
-  Model,
-  ModelFormat,
-} from 'src/domain/models/model.interface';
+import { Model, ModelFormat } from 'src/domain/models/model.interface';
 import { ModelArtifactDto } from './model-artifact.dto';
 import { ModelSettingParamsDto } from './model-setting-params.dto';
 import { ModelRuntimeParamsDto } from './model-runtime-params.dto';
@@ -42,5 +38,5 @@ export class CreateModelDto implements Partial<Model> {
   metadata: ModelMetadataDto;
 
   @IsString()
-  engine: InferenceEngine;
+  engine: string;
 }

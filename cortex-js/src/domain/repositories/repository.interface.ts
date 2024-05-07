@@ -1,11 +1,11 @@
-export interface Repository<T> {
-  create(object: Partial<T>): Promise<T>;
+export abstract class Repository<T> {
+  abstract create(object: Partial<T>): Promise<T>;
 
-  findAll(): Promise<T[]>;
+  abstract findAll(): Promise<T[]>;
 
-  findOne(id: string): Promise<T | null>;
+  abstract findOne(id: string): Promise<T | null>;
 
-  update(id: string, object: Partial<T>): Promise<void>;
+  abstract update(id: string, object: Partial<T>): Promise<void>;
 
-  remove(id: string): Promise<void>;
+  abstract remove(id: string): Promise<void>;
 }
