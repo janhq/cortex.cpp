@@ -1,4 +1,4 @@
-#include "llamaCPP.h"
+#include "server.h"
 
 #include <chrono>
 #include <fstream>
@@ -6,7 +6,7 @@
 
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
-#include "utils/nitro_utils.h"
+#include "utils/cortex_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -16,7 +16,7 @@ constexpr static auto kLlamaEngine = "cortex.llamacpp";
 constexpr static auto kLlamaLibPath = "./engines/cortex.llamacpp";
 }  // namespace
 
-llamaCPP::llamaCPP()
+server::server()
     : engine_{nullptr} {
 
           // Some default values for now below
@@ -25,15 +25,15 @@ llamaCPP::llamaCPP()
           // system ()
       };
 
-llamaCPP::~llamaCPP() {}
+server::~server() {}
 
-void llamaCPP::ChatCompletion(
+void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!IsEngineLoaded()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = nitro_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -57,13 +57,13 @@ void llamaCPP::ChatCompletion(
   LOG_TRACE << "Done chat completion";
 }
 
-void llamaCPP::Embedding(
+void server::Embedding(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!IsEngineLoaded()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = nitro_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -81,13 +81,13 @@ void llamaCPP::Embedding(
   LOG_TRACE << "Done embedding";
 }
 
-void llamaCPP::UnloadModel(
+void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!IsEngineLoaded()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = nitro_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -97,7 +97,7 @@ void llamaCPP::UnloadModel(
   engine_->UnloadModel(
       req->getJsonObject(),
       [cb = std::move(callback)](Json::Value status, Json::Value res) {
-        auto resp = nitro_utils::nitroHttpJsonResponse(res);
+        auto resp = cortex_utils::nitroHttpJsonResponse(res);
         resp->setStatusCode(
             static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
         cb(resp);
@@ -105,13 +105,13 @@ void llamaCPP::UnloadModel(
   LOG_TRACE << "Done unload model";
 }
 
-void llamaCPP::ModelStatus(
+void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!IsEngineLoaded()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = nitro_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -122,7 +122,7 @@ void llamaCPP::ModelStatus(
   engine_->GetModelStatus(
       req->getJsonObject(),
       [cb = std::move(callback)](Json::Value status, Json::Value res) {
-        auto resp = nitro_utils::nitroHttpJsonResponse(res);
+        auto resp = cortex_utils::nitroHttpJsonResponse(res);
         resp->setStatusCode(
             static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
         cb(resp);
@@ -130,7 +130,7 @@ void llamaCPP::ModelStatus(
   LOG_TRACE << "Done get model status";
 }
 
-void llamaCPP::LoadModel(
+void server::LoadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
@@ -157,7 +157,7 @@ void llamaCPP::LoadModel(
     if (!dylib_) {
       Json::Value res;
       res["message"] = "Could not load engine " + cur_engine_name_;
-      auto resp = nitro_utils::nitroHttpJsonResponse(res);
+      auto resp = cortex_utils::nitroHttpJsonResponse(res);
       resp->setStatusCode(k500InternalServerError);
       callback(resp);
       return;
@@ -171,7 +171,7 @@ void llamaCPP::LoadModel(
   engine_->LoadModel(
       req->getJsonObject(),
       [cb = std::move(callback)](Json::Value status, Json::Value res) {
-        auto resp = nitro_utils::nitroHttpJsonResponse(res);
+        auto resp = cortex_utils::nitroHttpJsonResponse(res);
         resp->setStatusCode(
             static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
         cb(resp);
@@ -179,7 +179,7 @@ void llamaCPP::LoadModel(
   LOG_TRACE << "Done load model";
 }
 
-void llamaCPP::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
+void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                 std::shared_ptr<SyncQueue> q) {
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider =
@@ -208,21 +208,21 @@ void llamaCPP::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
     return n;
   };
 
-  auto resp = nitro_utils::nitroStreamResponse(chunked_content_provider,
+  auto resp = cortex_utils::nitroStreamResponse(chunked_content_provider,
                                                "chat_completions.txt");
   cb(resp);
 }
 
-void llamaCPP::ProcessNonStreamRes(
+void server::ProcessNonStreamRes(
     std::function<void(const HttpResponsePtr&)> cb, SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
-  auto resp = nitro_utils::nitroHttpJsonResponse(res);
+  auto resp = cortex_utils::nitroHttpJsonResponse(res);
   resp->setStatusCode(
       static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
   cb(resp);
 }
 
-bool llamaCPP::IsEngineLoaded() {
+bool server::IsEngineLoaded() {
   return !!engine_;
 }
 

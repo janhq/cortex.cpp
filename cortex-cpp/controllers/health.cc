@@ -1,12 +1,12 @@
 #include "health.h"
-#include "utils/nitro_utils.h"
+#include "utils/cortex_utils.h"
 
 void health::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-  auto resp = nitro_utils::nitroHttpResponse();
+  auto resp = cortex_utils::nitroHttpResponse();
   resp->setStatusCode(k200OK);
   resp->setContentTypeCode(CT_TEXT_HTML);
-  resp->setBody("Nitro is alive!!!");
+  resp->setBody("cortex-cpp is alive!!!");
   callback(resp);
 }

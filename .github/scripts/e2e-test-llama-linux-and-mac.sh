@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ## Example run command
-# ./linux-and-mac.sh './jan/plugins/@janhq/inference-plugin/dist/nitro/nitro_mac_arm64' https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
+# ./linux-and-mac.sh './jan/plugins/@janhq/inference-plugin/dist/cortex-cpp/nitro_mac_arm64' https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/resolve/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
 
 # Check for required arguments
 if [[ $# -ne 3 ]]; then
@@ -9,7 +9,7 @@ if [[ $# -ne 3 ]]; then
     exit 1
 fi
 
-rm /tmp/load-llm-model-res.log /tmp/completion-res.log /tmp/unload-model-res.log /tmp/load-embedding-model-res.log /tmp/embedding-res.log /tmp/nitro.log
+rm /tmp/load-llm-model-res.log /tmp/completion-res.log /tmp/unload-model-res.log /tmp/load-embedding-model-res.log /tmp/embedding-res.log /tmp/cortex-cpp.log
 
 BINARY_PATH=$1
 DOWNLOAD_LLM_URL=$2
@@ -22,14 +22,14 @@ range=$((max - min + 1))
 PORT=$((RANDOM % range + min))
 
 # Start the binary file
-"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/nitro.log &
+"$BINARY_PATH" 1 127.0.0.1 $PORT >/tmp/cortex-cpp.log &
 
 # Get the process id of the binary file
 pid=$!
 
 if ! ps -p $pid >/dev/null; then
-    echo "nitro failed to start. Logs:"
-    cat /tmp/nitro.log
+    echo "cortex-cpp failed to start. Logs:"
+    cat /tmp/cortex-cpp.log
     exit 1
 fi
 
@@ -47,7 +47,7 @@ if [[ ! -f "/tmp/test-embedding" ]]; then
 fi
 
 # Run the curl commands
-response1=$(curl --connect-timeout 60 -o /tmp/load-llm-model-res.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
+response1=$(curl --connect-timeout 60 -o /tmp/load-llm-model-res.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/server/loadModel" \
     --header 'Content-Type: application/json' \
     --data '{
     "llama_model_path": "/tmp/testllm",
@@ -57,8 +57,8 @@ response1=$(curl --connect-timeout 60 -o /tmp/load-llm-model-res.log -s -w "%{ht
 }')
 
 if ! ps -p $pid >/dev/null; then
-    echo "nitro failed to load model. Logs:"
-    cat /tmp/nitro.log
+    echo "cortex-cpp failed to load model. Logs:"
+    cat /tmp/cortex-cpp.log
     exit 1
 fi
 
@@ -83,14 +83,14 @@ response2=$(
 )
 
 # unload model
-response3=$(curl --connect-timeout 60 -o /tmp/unload-model-res.log --request GET -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/unloadModel" \
+response3=$(curl --connect-timeout 60 -o /tmp/unload-model-res.log --request GET -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/server/unloadModel" \
     --header 'Content-Type: application/json' \
     --data '{
     "llama_model_path": "/tmp/testllm"
 }')
 
 # load embedding model
-response4=$(curl --connect-timeout 60 -o /tmp/load-embedding-model-res.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/llamacpp/loadModel" \
+response4=$(curl --connect-timeout 60 -o /tmp/load-embedding-model-res.log -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/server/loadModel" \
     --header 'Content-Type: application/json' \
     --data '{
     "llama_model_path": "/tmp/test-embedding",
@@ -145,9 +145,9 @@ if [[ "$response5" -ne 200 ]]; then
 fi
 
 if [[ "$error_occurred" -eq 1 ]]; then
-    echo "Nitro test run failed!!!!!!!!!!!!!!!!!!!!!!"
-    echo "Nitro Error Logs:"
-    cat /tmp/nitro.log
+    echo "cortex-cpp test run failed!!!!!!!!!!!!!!!!!!!!!!"
+    echo "cortex-cpp Error Logs:"
+    cat /tmp/cortex-cpp.log
     kill $pid
     exit 1
 fi
@@ -172,7 +172,7 @@ echo "----------------------"
 echo "Log run test:"
 cat /tmp/embedding-res.log
 
-echo "Nitro test run successfully!"
+echo "cortex-cpp test run successfully!"
 
 # Kill the server process
 kill $pid

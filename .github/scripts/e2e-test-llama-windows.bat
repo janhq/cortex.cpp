@@ -23,7 +23,7 @@ del %TEMP%\response2.log 2>nul
 del %TEMP%\response3.log 2>nul
 del %TEMP%\response4.log 2>nul
 del %TEMP%\response5.log 2>nul
-del %TEMP%\nitro.log 2>nul
+del %TEMP%\cortex-cpp.log 2>nul
 
 set /a min=9999
 set /a max=11000
@@ -31,11 +31,11 @@ set /a range=max-min+1
 set /a PORT=%min% + %RANDOM% %% %range%
 
 rem Start the binary file
-start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT% > %TEMP%\nitro.log 2>&1
+start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT% > %TEMP%\cortex-cpp.log 2>&1
 
 ping -n 6 127.0.0.1 %PORT% > nul
 
-rem Capture the PID of the started process with "nitro" in its name
+rem Capture the PID of the started process with "cortex-cpp" in its name
 for /f "tokens=2" %%a in ('tasklist /fi "imagename eq %BINARY_NAME%" /fo list ^| findstr /B "PID:"') do (
     set "pid=%%a"
 )
@@ -43,8 +43,8 @@ for /f "tokens=2" %%a in ('tasklist /fi "imagename eq %BINARY_NAME%" /fo list ^|
 echo pid=%pid%
 
 if not defined pid (
-    echo nitro failed to start. Logs:
-    type %TEMP%\nitro.log
+    echo cortex-cpp failed to start. Logs:
+    type %TEMP%\cortex-cpp.log
     exit /b 1
 )
 
@@ -76,15 +76,15 @@ echo curl_data4=%curl_data4%
 echo curl_data5=%curl_data5%
 
 rem Run the curl commands and capture the status code
-curl.exe --connect-timeout 60 -o "%TEMP%\response1.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1.log 2>&1
+curl.exe --connect-timeout 60 -o "%TEMP%\response1.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/loadModel" --header "Content-Type: application/json" --data "%curl_data1%" > %TEMP%\response1.log 2>&1
 
-curl.exe --connect-timeout 60 -o "%TEMP%\response2.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/chat_completion" ^
+curl.exe --connect-timeout 60 -o "%TEMP%\response2.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/chat_completion" ^
 --header "Content-Type: application/json" ^
 --data "%curl_data2%" > %TEMP%\response2.log 2>&1
 
-curl.exe --connect-timeout 60 -o "%TEMP%\response3.log" --request GET -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/unloadModel" --header "Content-Type: application/json" --data "%curl_data3%" > %TEMP%\response3.log 2>&1
+curl.exe --connect-timeout 60 -o "%TEMP%\response3.log" --request GET -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/unloadModel" --header "Content-Type: application/json" --data "%curl_data3%" > %TEMP%\response3.log 2>&1
 
-curl.exe --connect-timeout 60 -o "%TEMP%\response4.log" --request POST -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/llamacpp/loadModel" --header "Content-Type: application/json" --data "%curl_data4%" > %TEMP%\response4.log 2>&1
+curl.exe --connect-timeout 60 -o "%TEMP%\response4.log" --request POST -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/loadModel" --header "Content-Type: application/json" --data "%curl_data4%" > %TEMP%\response4.log 2>&1
 
 curl.exe --connect-timeout 60 -o "%TEMP%\response5.log" -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/v1/embeddings" ^
 --header "Content-Type: application/json" ^
@@ -130,9 +130,9 @@ if "%response5%" neq "200" (
 )
 
 if "%error_occurred%"=="1" (
-    echo Nitro test run failed!!!!!!!!!!!!!!!!!!!!!!
-    echo Nitro Error Logs:
-    type %TEMP%\nitro.log
+    echo cortex-cpp test run failed!!!!!!!!!!!!!!!!!!!!!!
+    echo cortex-cpp Error Logs:
+    type %TEMP%\cortex-cpp.log
     taskkill /f /pid %pid%
     exit /b 1
 )
@@ -158,8 +158,8 @@ echo ----------------------
 echo Log run embedding test:
 type %TEMP%\response5.log
 
-echo Nitro test run successfully!
+echo cortex-cpp test run successfully!
 
 rem Kill the server process
 @REM taskkill /f /pid %pid%
-taskkill /f /im nitro.exe 2>nul || exit /B 0
+taskkill /f /im cortex-cpp.exe 2>nul || exit /B 0

@@ -1,4 +1,4 @@
-#include "utils/nitro_utils.h"
+#include "utils/cortex_utils.h"
 #include <climits> // for PATH_MAX
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   int port = 3928;
   std::string uploads_folder_path;
 
-  // Number of nitro threads
+  // Number of cortex-cpp threads
   if (argc > 1) {
     thread_num = std::atoi(argv[1]);
   }
@@ -45,11 +45,11 @@ int main(int argc, char *argv[]) {
 
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
-  nitro_utils::nitro_logo();
-#ifdef NITRO_VERSION
-  LOG_INFO << "Nitro version: " << NITRO_VERSION;
+  cortex_utils::nitro_logo();
+#ifdef CORTEX_CPP_VERSION
+  LOG_INFO << "cortex-cpp version: " << CORTEX_CPP_VERSION;
 #else
-  LOG_INFO << "Nitro version: undefined";
+  LOG_INFO << "cortex-cpp version: undefined";
 #endif
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";

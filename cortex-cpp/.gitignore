@@ -85,7 +85,6 @@ CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Testing
-!nitro-node/Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json
@@ -561,7 +560,7 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/intellij+all,visualstudio,visualstudiocode,cmake,c,c++
 build
-build_deps
+build-deps
 .DS_Store
 
 uploads/**

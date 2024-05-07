@@ -33,12 +33,12 @@ jobs:
           # Remove the v prefix
           release=${tag:1}
           echo "Release: $release"
-          sed -i "s|<a href='https://github.com/janhq/nitro/releases/download/v.*-linux-amd64-cuda.tar.gz'>|<a href='https://github.com/janhq/nitro/releases/download/v${release}/nitro-${release}-linux-amd64-cuda.tar.gz'>|" README.md
-          sed -i "s|<a href='https://github.com/janhq/nitro/releases/download/v.*-linux-amd64.tar.gz'>|<a href='https://github.com/janhq/nitro/releases/download/v${release}/nitro-${release}-linux-amd64.tar.gz'>|" README.md
-          sed -i "s|<a href='https://github.com/janhq/nitro/releases/download/v.*-mac-amd64.tar.gz'>|<a href='https://github.com/janhq/nitro/releases/download/v${release}/nitro-${release}-mac-amd64.tar.gz'>|" README.md
-          sed -i "s|<a href='https://github.com/janhq/nitro/releases/download/v.*-mac-arm64.tar.gz'>|<a href='https://github.com/janhq/nitro/releases/download/v${release}/nitro-${release}-mac-arm64.tar.gz'>|" README.md
-          sed -i "s|<a href='https://github.com/janhq/nitro/releases/download/v.*-win-amd64-cuda.tar.gz'>|<a href='https://github.com/janhq/nitro/releases/download/v${release}/nitro-${release}-win-amd64-cuda.tar.gz'>|" README.md
-          sed -i "s|<a href='https://github.com/janhq/nitro/releases/download/v.*-win-amd64.tar.gz'>|<a href='https://github.com/janhq/nitro/releases/download/v${release}/nitro-${release}-win-amd64.tar.gz'>|" README.md
+          sed -i "s|<a href='https://github.com/janhq/cortex/releases/download/v.*-linux-amd64-cuda.tar.gz'>|<a href='https://github.com/janhq/cortex/releases/download/v${release}/cortex-cpp-${release}-linux-amd64-cuda.tar.gz'>|" README.md
+          sed -i "s|<a href='https://github.com/janhq/cortex/releases/download/v.*-linux-amd64.tar.gz'>|<a href='https://github.com/janhq/cortex/releases/download/v${release}/cortex-cpp-${release}-linux-amd64.tar.gz'>|" README.md
+          sed -i "s|<a href='https://github.com/janhq/cortex/releases/download/v.*-mac-amd64.tar.gz'>|<a href='https://github.com/janhq/cortex/releases/download/v${release}/cortex-cpp-${release}-mac-amd64.tar.gz'>|" README.md
+          sed -i "s|<a href='https://github.com/janhq/cortex/releases/download/v.*-mac-arm64.tar.gz'>|<a href='https://github.com/janhq/cortex/releases/download/v${release}/cortex-cpp-${release}-mac-arm64.tar.gz'>|" README.md
+          sed -i "s|<a href='https://github.com/janhq/cortex/releases/download/v.*-win-amd64-cuda.tar.gz'>|<a href='https://github.com/janhq/cortex/releases/download/v${release}/cortex-cpp-${release}-win-amd64-cuda.tar.gz'>|" README.md
+          sed -i "s|<a href='https://github.com/janhq/cortex/releases/download/v.*-win-amd64.tar.gz'>|<a href='https://github.com/janhq/cortex/releases/download/v${release}/cortex-cpp-${release}-win-amd64.tar.gz'>|" README.md
 
       - name: Commit and Push changes
         if: github.event_name == 'release'

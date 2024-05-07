@@ -9,7 +9,7 @@ if(UNIX AND NOT APPLE)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
 endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(THIRD_PARTY_INSTALL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/_install)
+set(THIRD_PARTY_INSTALL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build-deps/_install)
 #if(NOT THIRD_PARTY_INSTALL_PATH )
 #  message(FATAL_ERROR "TRITON_THIRD_PARTY_INSTALL_PREFIX must be set")
 #endif() # TRITON_THIRD_PARTY_INSTALL_PREFIX
@@ -96,7 +96,7 @@ ExternalProject_Add(
 
 if(WIN32)
 	# Fix trantor cmakelists to link c-ares on Windows
-    set(TRANTOR_CMAKE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/nitro_deps/drogon-prefix/src/drogon/trantor/CMakeLists.txt)
+    set(TRANTOR_CMAKE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../build-deps/cortex-cpp-deps/drogon-prefix/src/drogon/trantor/CMakeLists.txt)
     ExternalProject_Add_Step(drogon trantor_custom_target
         COMMAND ${CMAKE_COMMAND} -E echo add_definitions(-DCARES_STATICLIB) >> ${TRANTOR_CMAKE_FILE}
 	DEPENDEES download

@@ -31,23 +31,23 @@ endif
 
 package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "mkdir -p cortex\engines\cortex.llamacpp\; cp build\engines\cortex.llamacpp\engine.dll cortex\engines\cortex.llamacpp\;"
-	@powershell -Command "cp build\Release\nitro.exe .\cortex\;"
-	@powershell -Command "cp build_deps\_install\bin\zlib.dll .\cortex\;"
-	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
-	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
-	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
-	@powershell -Command "7z a -ttar temp.tar cortex\\*; 7z a -tgzip cortex.tar.gz temp.tar;"
+	@powershell -Command "mkdir -p cortex-cpp\engines\cortex.llamacpp\; cp build\engines\cortex.llamacpp\engine.dll cortex\engines\cortex.llamacpp\;"
+	@powershell -Command "cp build\Release\nitro.exe .\cortex-cpp\;"
+	@powershell -Command "cp build_deps\_install\bin\zlib.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
+	@powershell -Command "7z a -ttar temp.tar cortex-cpp\\*; 7z a -tgzip cortex-cpp.tar.gz temp.tar;"
 else ifeq ($(shell uname -s),Linux)
-	@mkdir -p cortex/engines/cortex.llamacpp; \
-	cp build/engines/cortex.llamacpp/libengine.so cortex/engines/cortex.llamacpp/; \
-	cp build/nitro cortex/; \
-	tar -czvf cortex.tar.gz cortex;
+	@mkdir -p cortex-cpp/engines/cortex.llamacpp; \
+	cp build/engines/cortex.llamacpp/libengine.so cortex-cpp/engines/cortex.llamacpp/; \
+	cp build/cortex-cpp cortex-cpp/; \
+	tar -czvf cortex-cpp.tar.gz cortex-cpp;
 else
-	@mkdir -p cortex/engines/cortex.llamacpp; \
-	cp build/engines/cortex.llamacpp/libengine.dylib cortex/engines/cortex.llamacpp/; \
-	cp build/nitro cortex/; \
-	tar -czvf cortex.llamacpp.tar.gz cortex;
+	@mkdir -p cortex-cpp/engines/cortex.llamacpp; \
+	cp build/engines/cortex.llamacpp/libengine.dylib cortex-cpp/engines/cortex.llamacpp/; \
+	cp build/cortex-cpp cortex-cpp/; \
+	tar -czvf cortex-cpp.tar.gz cortex-cpp;
 endif
 
 run-e2e-test:
@@ -56,13 +56,13 @@ ifeq ($(RUN_TESTS),false)
 	@exit 0
 endif
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "cd cortex; ..\..\.github\scripts\e2e-test-llama-windows.bat nitro.exe $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL);"
+	@powershell -Command "cd cortex-cpp; ..\..\.github\scripts\e2e-test-llama-windows.bat cortex-cpp.exe $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL);"
 else ifeq ($(shell uname -s),Linux)
-	@cd cortex; \
-	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
+	@cd cortex-cpp; \
+	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./cortex-cpp $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
 	rm -rf uploads/;
 else
-	@cd cortex; \
-	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./nitro $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
+	@cd cortex-cpp; \
+	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./cortex-cpp $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
 	rm -rf uploads/;
 endif
