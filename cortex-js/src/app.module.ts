@@ -25,12 +25,10 @@ import { ConfigModule } from '@nestjs/config';
     MessagesModule,
     ThreadsModule,
     ModelsModule,
-    CoreModule,
     ChatModule,
     AssistantsModule,
     InferenceSettingsModule,
     CortexModule,
-    UsersModule,
     ExtensionModule,
   ],
 })

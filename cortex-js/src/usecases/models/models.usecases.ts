@@ -11,11 +11,10 @@ import { Repository } from 'typeorm';
 import { Model, ModelFormat } from 'src/domain/models/model.interface';
 import { ModelNotFoundException } from 'src/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
-import { createWriteStream, promises } from 'fs';
+import { promises, createWriteStream } from 'fs';
 import { LoadModelSuccessDto } from 'src/infrastructure/dtos/models/load-model-success.dto';
 import { LoadModelDto } from 'src/infrastructure/dtos/models/load-model.dto';
 import { DownloadModelDto } from 'src/infrastructure/dtos/models/download-model.dto';
-import { CortexUsecases } from '../cortex/cortex.usecases';
 import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@janhq/core';
@@ -26,7 +25,6 @@ export class ModelsUsecases {
     @Inject('MODEL_REPOSITORY')
     private readonly modelRepository: Repository<ModelEntity>,
     private readonly extensionRepository: ExtensionRepository,
-    private readonly cortexUsecases: CortexUsecases,
     private readonly configService: ConfigService,
   ) {}
 
@@ -50,6 +48,14 @@ export class ModelsUsecases {
         id,
       },
     });
+  }
+
+  async getModelOrThrow(id: string): Promise<Model> {
+    const model = await this.findOne(id);
+    if (!model) {
+      throw new ModelNotFoundException(id);
+    }
+    return model;
   }
 
   update(id: string, updateModelDto: UpdateModelDto) {
@@ -127,11 +133,13 @@ export class ModelsUsecases {
 
     const modelFolder = join(modelsContainerDir, model.id);
     await promises.mkdir(modelFolder, { recursive: true });
-    const destination = join(modelFolder, fileName);
 
+    const destination = join(modelFolder, fileName);
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const fetch = require('node-fetch');
     const response = await fetch(downloadUrl);
-    const buffer = Buffer.from(await response.arrayBuffer());
-    promises.writeFile(destination, buffer);
+    const fileStream = createWriteStream(destination);
+    response.body.pipe(fileStream);
 
     return {
       message: `Model ${model.id} is being downloaded`,
