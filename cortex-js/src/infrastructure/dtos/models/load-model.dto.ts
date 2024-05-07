@@ -7,5 +7,5 @@ export class LoadModelDto {
 
   @IsOptional()
   @ValidateNested()
-  settings: ModelSettingParamsDto;
+  settings?: ModelSettingParamsDto;
 }

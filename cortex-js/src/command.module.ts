@@ -3,11 +3,13 @@ import { BasicCommand } from './infrastructure/commanders/basic-command.commande
 import { ModelsModule } from './usecases/models/models.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { ConfigModule } from '@nestjs/config';
+import { CortexModule } from './usecases/cortex/cortex.module';
 
 @Module({
   imports: [
     DatabaseModule,
     ModelsModule,
+    CortexModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath:
