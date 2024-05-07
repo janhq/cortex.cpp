@@ -12,5 +12,9 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('root', () => {});
+  describe('root', () => {
+    it('should not be null', () => {
+      expect(appController).not.toBeNull();
+    });
+  });
 });
