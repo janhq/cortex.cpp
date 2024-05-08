@@ -5,6 +5,9 @@ project(MyProject)
 include(ExternalProject)
 
 # Define variables
+if(UNIX AND NOT APPLE)
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fPIC")
+endif()
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(THIRD_PARTY_INSTALL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build_deps/_install)
 #if(NOT THIRD_PARTY_INSTALL_PATH )
@@ -34,8 +37,7 @@ ExternalProject_Add(
     brotli
     GIT_REPOSITORY https://github.com/google/brotli
     GIT_TAG v1.1.0
-    CMAKE_ARGS 
-	-DCMAKE_BUILD_TYPE=Release
+    CMAKE_ARGS
 	-DBUILD_SHARED_LIBS=OFF
 	-DSHARE_INSTALL_PREFIX=${CMAKE_CURRENT_SOURCE_DIR}/share
 	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
@@ -47,6 +49,7 @@ ExternalProject_Add(
     GIT_TAG 1.9.5
     CMAKE_ARGS 
     	-DBUILD_SHARED_LIBS=OFF
+        -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
     	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
 
@@ -65,7 +68,7 @@ ExternalProject_Add(
     GIT_REPOSITORY https://github.com/drogonframework/drogon
     GIT_TAG v1.9.2
     CMAKE_ARGS
-	-DCMAKE_BUILD_TYPE=release
+    -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
 	-DOPENSSL_USE_STATIC_LIBS=TRUE
 	-DZLIB_USE_STATIC_LIBS=${ZLIB_USE_STATIC_LIBS}
 	-DBUILD_ORM=OFF
@@ -86,7 +89,6 @@ ExternalProject_Add(
     GIT_TAG v1.14.0
     CMAKE_ARGS
 	-Dgtest_force_shared_crt=ON
-	-DCMAKE_BUILD_TYPE=release
 	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
 	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
 )
@@ -110,5 +112,4 @@ if(ZLIB_USE_STATIC_LIBS)
     add_dependencies(drogon zlib)
 endif()
 # target_link_libraries(<your-target> ...)
-
 

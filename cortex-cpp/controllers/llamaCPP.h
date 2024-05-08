@@ -11,18 +11,15 @@
 #define CPPHTTPLIB_NO_EXCEPTIONS 1
 #endif
 
-#include <trantor/utils/ConcurrentTaskQueue.h>
+#include <condition_variable>
 #include <cstddef>
 #include <string>
-#include <thread>
 
 #include "common/base.h"
-#include "context/llama_server_context.h"
-#include "stb_image.h"
+#include "cortex-common/EngineI.h"
+#include "trantor/utils/SerialTaskQueue.h"
+#include "utils/dylib.h"
 #include "utils/json.hpp"
-
-#include "models/chat_completion_request.h"
-
 #ifndef SERVER_VERBOSE
 #define SERVER_VERBOSE 1
 #endif
@@ -37,6 +34,8 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
                  public BaseModel,
                  public BaseChatCompletion,
                  public BaseEmbedding {
+  struct SyncQueue;
+
  public:
   llamaCPP();
   ~llamaCPP();
@@ -59,7 +58,7 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END
   void ChatCompletion(
-      inferences::ChatCompletionRequest&& completion,
+      const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
   void Embedding(
       const HttpRequestPtr& req,
@@ -75,36 +74,54 @@ class llamaCPP : public drogon::HttpController<llamaCPP>,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
 
  private:
-  llama_server_context llama;
-  // std::atomic<bool> model_loaded = false;
-  size_t sent_count = 0;
-  size_t sent_token_probs_index = 0;
-  std::thread backgroundThread;
-  std::string user_prompt;
-  std::string ai_prompt;
-  std::string system_prompt;
-  std::string pre_prompt;
-  int repeat_last_n;
-  bool caching_enabled;
-  std::atomic<int> no_of_requests = 0;
-  std::atomic<int> no_of_chats = 0;
-  int clean_cache_threshold;
-  std::string grammar_file_content;
+  void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
+                        std::shared_ptr<SyncQueue> q);
+  void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
+                           SyncQueue& q);
+  bool IsEngineLoaded();
 
-  /**
-   * Queue to handle the inference tasks
-   */
-  trantor::ConcurrentTaskQueue* queue;
+ private:
+  struct SyncQueue {
+    void push(std::pair<Json::Value, Json::Value>&& p) {
+      std::unique_lock<std::mutex> l(mtx);
+      q.push(p);
+      cond.notify_one();
+    }
 
-  bool LoadModelImpl(std::shared_ptr<Json::Value> jsonBody);
-  void InferenceImpl(inferences::ChatCompletionRequest&& completion,
-                     std::function<void(const HttpResponsePtr&)>&& callback);
-  void EmbeddingImpl(std::shared_ptr<Json::Value> jsonBody,
-                     std::function<void(const HttpResponsePtr&)>&& callback);
-  bool CheckModelLoaded(
-      const std::function<void(const HttpResponsePtr&)>& callback);
-  void WarmupModel();
-  void BackgroundTask();
-  void StopBackgroundTask();
+    std::pair<Json::Value, Json::Value> wait_and_pop() {
+      std::unique_lock<std::mutex> l(mtx);
+      cond.wait(l, [this] { return !q.empty(); });
+      auto res = q.front();
+      q.pop();
+      return res;
+    }
+
+    std::mutex mtx;
+    std::condition_variable cond;
+    // Status and result
+    std::queue<std::pair<Json::Value, Json::Value>> q;
+  };
+  struct StreamStatus {
+    void Done() {
+      std::unique_lock<std::mutex> l(m);
+      stream_done = true;
+      cv.notify_all();
+    }
+
+    void Wait() {
+      std::unique_lock<std::mutex> l(m);
+      cv.wait(l, [this] { return stream_done; });
+    }
+
+   private:
+    std::mutex m;
+    std::condition_variable cv;
+    bool stream_done = false;
+  };
+
+ private:
+  std::unique_ptr<dylib> dylib_;
+  EngineI* engine_;
+  std::string cur_engine_name_;
 };
 };  // namespace inferences
