@@ -3,8 +3,10 @@
   "version": "0.0.1",
   "description": "",
   "author": "",
-  "private": true,
   "license": "AGPL-3.0",
+  "bin": {
+    "cortex": "./dist/src/command.js"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
