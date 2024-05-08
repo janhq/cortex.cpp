@@ -1,11 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import { CortexOperationSuccessfullyDto } from 'src/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 
 @Injectable()
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
+
+  constructor(private readonly configService: ConfigService) {}
 
   async startCortex(
     host: string,
@@ -18,13 +22,14 @@ export class CortexUsecases {
       };
     }
 
-    const binaryPath = await this.getCortexBinaryPath();
+    const binaryPath = this.configService.get<string>('CORTEX_BINARY_PATH');
+    if (!binaryPath || !existsSync(binaryPath)) {
+      throw new InternalServerErrorException('Cortex binary not found');
+    }
 
     const args: string[] = ['1', host, port];
     // go up one level to get the binary folder, have to also work on windows
     const binaryFolder = join(binaryPath, '..');
-    console.debug('cortex binary folder:', binaryFolder);
-    console.debug('relative path:', __dirname);
 
     this.cortexProcess = spawn(binaryPath, args, {
       detached: false,
@@ -47,11 +52,6 @@ export class CortexUsecases {
       message: 'Cortex started successfully',
       status: 'success',
     };
-  }
-
-  private async getCortexBinaryPath(): Promise<string> {
-    // TODO: NamH implement this
-    return '/Users/jamesnguyen/jan/extensions/@janhq/inference-nitro-extension/dist/bin/mac-universal/nitro';
   }
 
   async stopCortex(): Promise<CortexOperationSuccessfullyDto> {

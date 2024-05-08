@@ -33,7 +33,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     const extensionsPath = process.env.EXTENSIONS_PATH ?? 'extensions';
     readdir(extensionsPath).then((files) => {
       files.forEach(async (extension) => {
-        if ((await lstat(`${extensionsPath}/${extension}`)).isDirectory())
+        if (!(await lstat(`${extensionsPath}/${extension}`)).isDirectory())
           return;
 
         import(`${extensionsPath}/${extension}`).then((extensionClass) => {
