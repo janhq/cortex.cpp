@@ -67,16 +67,8 @@ export class ModelsUsecases {
   }
 
   async loadModel(loadModelDto: LoadModelDto): Promise<LoadModelSuccessDto> {
-    const model = await this.findOne(loadModelDto.modelId);
-
-    if (!model) {
-      return {
-        message: 'Model failed to load',
-        modelId: loadModelDto.modelId,
-      };
-    }
+    const model = await this.getModelOrThrow(loadModelDto.modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
-
     const engine = extensions.find((e: any) => e.provider === model?.engine) as
       | EngineExtension
       | undefined;
@@ -89,26 +81,24 @@ export class ModelsUsecases {
     }
 
     return engine
-      .loadModel(loadModelDto)
+      .loadModel(model)
       .then(() => {
         return {
-          message: 'Model failed to load',
+          message: 'Model loaded successfully',
           modelId: loadModelDto.modelId,
         };
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         return {
-          message: 'Model loaded successfully',
+          message: 'Model failed to load',
           modelId: loadModelDto.modelId,
         };
       });
   }
 
   async downloadModel(downloadModelDto: DownloadModelDto) {
-    const model = await this.findOne(downloadModelDto.modelId);
-    if (!model) {
-      throw new ModelNotFoundException(downloadModelDto.modelId);
-    }
+    const model = await this.getModelOrThrow(downloadModelDto.modelId);
 
     if (model.format === ModelFormat.API) {
       throw new BadRequestException('Cannot download remote model');

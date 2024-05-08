@@ -25,9 +25,6 @@ export class BasicCommand extends CommandRunner {
       case 'load':
         return this.loadModel(input);
 
-      case 'chat':
-        return this.inference();
-
       default:
         Promise.reject('Command not supported');
     }
