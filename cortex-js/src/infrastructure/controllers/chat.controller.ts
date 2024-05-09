@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Headers, Res } from '@nestjs/common';
-import { CreateChatCompletionDto } from '../dtos/chat/create-chat-completion.dto';
-import { ChatUsecases } from '../../usecases/chat/chat.usecases';
+import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
+import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 

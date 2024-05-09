@@ -1,4 +1,4 @@
-import { ThreadEntity } from 'src/infrastructure/entities/thread.entity';
+import { ThreadEntity } from '@/infrastructure/entities/thread.entity';
 import { DataSource } from 'typeorm';
 
 export const threadProviders = [

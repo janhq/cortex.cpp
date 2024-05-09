@@ -5,7 +5,7 @@ import {
   ModelMetadata,
   ModelRuntimeParams,
   ModelSettingParams,
-} from 'src/domain/models/model.interface';
+} from '@/domain/models/model.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('models')

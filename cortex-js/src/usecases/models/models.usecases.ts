@@ -1,6 +1,6 @@
-import { CreateModelDto } from '../../infrastructure/dtos/models/create-model.dto';
-import { UpdateModelDto } from '../../infrastructure/dtos/models/update-model.dto';
-import { ModelEntity } from '../../infrastructure/entities/model.entity';
+import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
+import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
+import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import {
   BadRequestException,
   Inject,
@@ -8,16 +8,16 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Model, ModelFormat } from 'src/domain/models/model.interface';
-import { ModelNotFoundException } from 'src/infrastructure/exception/model-not-found.exception';
+import { Model, ModelFormat } from '@/domain/models/model.interface';
+import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
 import { promises, createWriteStream } from 'fs';
-import { LoadModelSuccessDto } from 'src/infrastructure/dtos/models/load-model-success.dto';
-import { LoadModelDto } from 'src/infrastructure/dtos/models/load-model.dto';
-import { DownloadModelDto } from 'src/infrastructure/dtos/models/download-model.dto';
+import { LoadModelSuccessDto } from '@/infrastructure/dtos/models/load-model-success.dto';
+import { LoadModelDto } from '@/infrastructure/dtos/models/load-model.dto';
+import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
 import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
-import { EngineExtension } from '@janhq/core';
+import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 
 @Injectable()
 export class ModelsUsecases {

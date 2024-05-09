@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
-import { Model, ModelFormat } from 'src/domain/models/model.interface';
+import { Model, ModelFormat } from '@/domain/models/model.interface';
 import { ModelArtifactDto } from './model-artifact.dto';
 import { ModelSettingParamsDto } from './model-setting-params.dto';
 import { ModelRuntimeParamsDto } from './model-runtime-params.dto';

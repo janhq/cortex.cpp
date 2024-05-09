@@ -1,7 +1,7 @@
 import {
   InferenceSetting,
   InferenceSettingDocument,
-} from 'src/domain/models/inference-setting.interface';
+} from '@/domain/models/inference-setting.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('inference_setting')

@@ -7,9 +7,9 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { MessagesUsecases } from '../../usecases/messages/messages.usecases';
-import { CreateMessageDto } from '../dtos/messages/create-message.dto';
-import { UpdateMessageDto } from '../dtos/messages/update-message.dto';
+import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
+import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
+import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Messages')

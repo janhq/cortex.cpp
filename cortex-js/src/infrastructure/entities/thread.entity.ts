@@ -2,7 +2,7 @@ import {
   Thread,
   ThreadAssistantInfo,
   ThreadMetadata,
-} from 'src/domain/models/thread.interface';
+} from '@/domain/models/thread.interface';
 import { Entity, PrimaryColumn, Column } from 'typeorm';
 
 @Entity('threads')

@@ -1,4 +1,4 @@
-import { InferenceSettingEntity } from 'src/infrastructure/entities/inference-setting.entity';
+import { InferenceSettingEntity } from '@/infrastructure/entities/inference-setting.entity';
 import { DataSource } from 'typeorm';
 
 export const inferenceSettingProviders = [

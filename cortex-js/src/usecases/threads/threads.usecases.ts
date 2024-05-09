@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CreateThreadDto } from '../../infrastructure/dtos/threads/create-thread.dto';
-import { UpdateThreadDto } from '../../infrastructure/dtos/threads/update-thread.dto';
-import { ThreadEntity } from '../../infrastructure/entities/thread.entity';
+import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
+import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
+import { ThreadEntity } from '@/infrastructure/entities/thread.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()

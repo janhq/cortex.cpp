@@ -1,5 +1,5 @@
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ContentValue } from 'src/domain/models/message.interface';
+import { ContentValue } from '@/domain/models/message.interface';
 
 export class ContentValueDto implements ContentValue {
   @IsString()

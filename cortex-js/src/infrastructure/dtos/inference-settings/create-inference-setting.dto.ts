@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer';
 import { IsArray, IsString, ValidateNested } from 'class-validator';
-import { InferenceSetting } from 'src/domain/models/inference-setting.interface';
+import { InferenceSetting } from '@/domain/models/inference-setting.interface';
 import { InferenceSettingDocumentDto } from './inference-setting-document.dto';
 
 export class CreateInferenceSettingDto implements Partial<InferenceSetting> {

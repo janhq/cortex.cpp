@@ -1,4 +1,4 @@
-import { AssistantEntity } from 'src/infrastructure/entities/assistant.entity';
+import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
 import { DataSource } from 'typeorm';
 
 export const assistantProviders = [

@@ -4,10 +4,8 @@
   "license": "AGPL-3.0",
   "scripts": {
     "preinstall": "npm pre-install script; platform specific (MacOS / Windows / Linux)",
-    "build:core": "cd core && yarn && yarn build",
     "dev": "cd cortex-js && yarn start",
-    "build": "cd cortex-js && yarn build",
-    "build:extensions": "for dir in ./extensions/*/; do (cd \"$dir\" && yarn && yarn build); done"
+    "build": "cd cortex-js && yarn build"
   },
   "dependencies": {
     "express": "^4.17.1",

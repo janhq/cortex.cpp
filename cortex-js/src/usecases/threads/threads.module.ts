@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ThreadsUsecases } from './threads.usecases';
-import { ThreadsController } from '../../infrastructure/controllers/threads.controller';
-import { DatabaseModule } from 'src/infrastructure/database/database.module';
+import { ThreadsController } from '@/infrastructure/controllers/threads.controller';
+import { DatabaseModule } from '@/infrastructure/database/database.module';
 
 @Module({
   imports: [DatabaseModule],

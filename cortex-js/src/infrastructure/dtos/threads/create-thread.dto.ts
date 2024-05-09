@@ -1,5 +1,5 @@
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { Thread } from 'src/domain/models/thread.interface';
+import { Thread } from '@/domain/models/thread.interface';
 import { CreateThreadAssistantDto } from './create-thread-assistant.dto';
 import { Type } from 'class-transformer';
 

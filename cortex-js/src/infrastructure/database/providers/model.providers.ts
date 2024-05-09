@@ -1,4 +1,4 @@
-import { ModelEntity } from 'src/infrastructure/entities/model.entity';
+import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { DataSource } from 'typeorm';
 
 export const modelProviders = [

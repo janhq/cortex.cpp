@@ -7,9 +7,9 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { ThreadsUsecases } from '../../usecases/threads/threads.usecases';
-import { CreateThreadDto } from '../dtos/threads/create-thread.dto';
-import { UpdateThreadDto } from '../dtos/threads/update-thread.dto';
+import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
+import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
+import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Threads')

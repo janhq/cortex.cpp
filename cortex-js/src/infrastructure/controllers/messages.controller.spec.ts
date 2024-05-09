@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { MessagesController } from './messages.controller';
-import { MessagesUsecases } from '../../usecases/messages/messages.usecases';
+import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
 
 describe('MessagesController', () => {
   let controller: MessagesController;

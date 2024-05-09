@@ -5,7 +5,7 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
-import { ModelRuntimeParams } from 'src/domain/models/model.interface';
+import { ModelRuntimeParams } from '@/domain/models/model.interface';
 
 export class ModelRuntimeParamsDto implements ModelRuntimeParams {
   @IsOptional()
