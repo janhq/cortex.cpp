@@ -1,9 +1,9 @@
-import { Command, CommandRunner } from 'nest-commander';
+import { RootCommand, CommandRunner } from 'nest-commander';
 import { ModelsUsecases } from 'src/usecases/models/models.usecases';
 import { LoadModelDto } from '../dtos/models/load-model.dto';
 import { CortexUsecases } from 'src/usecases/cortex/cortex.usecases';
 
-@Command({ name: 'cortex' })
+@RootCommand({})
 export class BasicCommand extends CommandRunner {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
@@ -12,6 +12,7 @@ export class BasicCommand extends CommandRunner {
     super();
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async run(input: string[], options?: Record<string, any>): Promise<void> {
     const command = input[0];
 

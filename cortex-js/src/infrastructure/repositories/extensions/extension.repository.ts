@@ -59,7 +59,6 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
           return;
 
         import(`${extensionsPath}/${extension}`).then((extensionClass) => {
-          console.debug('Loaded extension: ', extensionClass.default.name);
           const newExtension = new extensionClass.default();
           this.extensions.set(extension, newExtension);
         });
