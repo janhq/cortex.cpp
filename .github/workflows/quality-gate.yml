@@ -159,5 +159,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: cortex-llamacpp-engine-${{ matrix.os }}-${{ matrix.name }}
-          path: ./cortex-cpp/cortex
+          name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
+          path: ./cortex-cpp/cortex-cpp
