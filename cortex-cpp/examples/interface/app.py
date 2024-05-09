@@ -5,8 +5,8 @@ import json
 import requests
 
 # URLs for model loading and chat completion
-load_model_url = "http://localhost:3928/inferences/llamacpp/loadmodel"
-chat_completion_url = "http://localhost:3928/inferences/llamacpp/chat_completion"
+load_model_url = "http://localhost:3928/inferences/server/loadmodel"
+chat_completion_url = "http://localhost:3928/inferences/server/chat_completion"
 
 headers = {
     'Content-Type': 'application/json'
@@ -15,7 +15,7 @@ headers = {
 # Function to load the model
 def load_model():
     load_data = {
-        "llama_model_path": "nitro/model/llama-2-7b-chat.Q5_K_M.gguf?download=true"
+        "llama_model_path": "cortex-cpp/model/llama-2-7b-chat.Q5_K_M.gguf?download=true"
         # Add other necessary parameters if required
     }
     response = requests.post(load_model_url, headers=headers, data=json.dumps(load_data))
@@ -43,7 +43,7 @@ def add_file(history, file):
 def bot(history):
     last_message = history[-1][0] if history else ""
     dat = {
-        "llama_model_path": "nitro/model/llama-2-7b-chat.Q5_K_M.gguf?download=true",
+        "llama_model_path": "cortex-cpp/model/llama-2-7b-chat.Q5_K_M.gguf?download=true",
         "messages": [
             {
                 "role": "user",
@@ -73,7 +73,7 @@ with gr.Blocks() as demo:
         [],
         elem_id="chatbot",
         bubble_full_width=False,
-        avatar_images=(None, (os.path.join(os.path.dirname(__file__), "nitro/example/avatar.png"))),
+        avatar_images=(None, (os.path.join(os.path.dirname(__file__), "cortex-cpp/example/avatar.png"))),
     )
 
     with gr.Row():
@@ -89,4 +89,4 @@ with gr.Blocks() as demo:
 # Launch the application
 if __name__ == "__main__":
     demo.queue()
-    demo.launch(allowed_paths=["nitro/example/avatar.png"])
+    demo.launch(allowed_paths=["cortex-cpp/example/avatar.png"])

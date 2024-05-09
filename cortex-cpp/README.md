@@ -1,14 +1,14 @@
-# Nitro - Embeddable AI
+# cortex-cpp - Embeddable AI
 <p align="center">
   <img alt="nitrologo" src="https://raw.githubusercontent.com/janhq/nitro/main/assets/Nitro%20README%20banner.png">
 </p>
 
 <p align="center">
   <a href="https://nitro.jan.ai/docs">Documentation</a> - <a href="https://nitro.jan.ai/api-reference">API Reference</a> 
-  - <a href="https://github.com/janhq/nitro/releases/">Changelog</a> - <a href="https://github.com/janhq/nitro/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+  - <a href="https://github.com/janhq/cortex/releases/">Changelog</a> - <a href="https://github.com/janhq/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Nitro is currently in Development**: Expect breaking changes and bugs!
+> ⚠️ **cortex-cpp is currently in Development**: Expect breaking changes and bugs!
 
 ## Features
 - Fast Inference: Built on top of the cutting-edge inference library llama.cpp, modified to be production ready.
@@ -17,11 +17,11 @@
 - Quick Setup: Approximately 10-second initialization for swift deployment.
 - Enhanced Web Framework: Incorporates drogon cpp to boost web service efficiency.
 
-## About Nitro
+## About cortex-cpp
 
-Nitro is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.
+cortex-cpp is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.
 
-The binary of nitro after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
+The binary of cortex-cpp after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
 
 > Read more about Nitro at https://nitro.jan.ai/
 
@@ -32,13 +32,13 @@ The binary of nitro after zipped is only ~3mb in size with none to minimal depen
 ├── controllers
 ├── docs 
 ├── llama.cpp -> Upstream llama C++
-├── nitro_deps -> Dependencies of the Nitro project as a sub-project
+├── cortex-cpp-deps -> Dependencies of the cortex-cpp project as a sub-project
 └── utils
 ```
 
 ## Quickstart
 
-**Step 1: Install Nitro**
+**Step 1: Install cortex-cpp**
 
 - For Linux and MacOS
 
@@ -59,16 +59,16 @@ mkdir model && cd model
 wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
 ```
 
-**Step 3: Run Nitro server**
+**Step 3: Run cortex-cpp server**
 
-```bash title="Run Nitro server"
-nitro
+```bash title="Run cortex-cpp server"
+cortex-cpp
 ```
 
 **Step 4: Load model** 
 
 ```bash title="Load model"
-curl http://localhost:3928/inferences/llamacpp/loadmodel \
+curl http://localhost:3928/inferences/server/loadmodel \
   -H 'Content-Type: application/json' \
   -d '{
     "llama_model_path": "/model/llama-2-7b-model.gguf",
@@ -79,7 +79,7 @@ curl http://localhost:3928/inferences/llamacpp/loadmodel \
 
 **Step 5: Making an Inference**
 
-```bash title="Nitro Inference"
+```bash title="cortex-cpp Inference"
 curl http://localhost:3928/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -118,17 +118,17 @@ Table of parameters
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
-./nitro 1 127.0.0.1 5000 ([thread_num] [host] [port] [uploads_folder_path])
+./cortex-cpp 1 127.0.0.1 5000 ([thread_num] [host] [port] [uploads_folder_path])
 ```
-- thread_num : the number of thread that nitro webserver needs to have
+- thread_num : the number of thread that cortex-cpp webserver needs to have
 - host : host value normally 127.0.0.1 or 0.0.0.0
-- port : the port that nitro got deployed onto
+- port : the port that cortex-cpp got deployed onto
 - uploads_folder_path: custom path for file uploads in Drogon.
 
-Nitro server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
+cortex-cpp server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
 ## Compile from source
-To compile nitro please visit [Compile from source](docs/docs/new/build-source.md)
+To compile cortex-cpp please visit [Compile from source](docs/docs/new/build-source.md)
 
 ## Download
 
@@ -188,7 +188,7 @@ To compile nitro please visit [Compile from source](docs/docs/new/build-source.m
   </tr>
 </table>
 
-Download the latest version of Nitro at https://nitro.jan.ai/ or visit the **[GitHub Releases](https://github.com/janhq/nitro/releases)** to download any previous release.
+Download the latest version of Nitro at https://nitro.jan.ai/ or visit the **[GitHub Releases](https://github.com/janhq/cortex/releases)** to download any previous release.
 
 ## Nightly Build
 

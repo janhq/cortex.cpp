@@ -51,17 +51,17 @@ determine_avx_support() {
     fi
 }
 
-# Function to download and install nitro
-install_nitro() {
-    rm -rf /tmp/nitro
-    rm /tmp/nitro.tar.gz
-    echo "Downloading Nitro version $VERSION... from $1"
-    curl -sL "$1" -o /tmp/nitro.tar.gz
-    tar -xzvf /tmp/nitro.tar.gz -C /tmp
-    ls /tmp/nitro
+# Function to download and install cortex-cpp
+install_cortex-cpp() {
+    rm -rf /tmp/cortex-cpp
+    rm /tmp/cortex-cpp.tar.gz
+    echo "Downloading cortex-cpp version $VERSION... from $1"
+    curl -sL "$1" -o /tmp/cortex-cpp.tar.gz
+    tar -xzvf /tmp/cortex-cpp.tar.gz -C /tmp
+    ls /tmp/cortex-cpp
 
     # Copying files to /usr/local/bin
-    for file in /tmp/nitro/*; do
+    for file in /tmp/cortex-cpp/*; do
         chmod +x "$file"
         cp "$file" /usr/local/bin/
     done
@@ -69,18 +69,18 @@ install_nitro() {
 
 # Function to create uninstall script
 create_uninstall_script() {
-    echo '#!/bin/bash' > /tmp/uninstall_nitro.sh
-    echo 'if [ "$(id -u)" != "0" ]; then' >> /tmp/uninstall_nitro.sh
-    echo '    echo "This script must be run as root. Please run again with sudo."' >> /tmp/uninstall_nitro.sh
-    echo '    exit 1' >> /tmp/uninstall_nitro.sh
-    echo 'fi' >> /tmp/uninstall_nitro.sh
-    for file in /tmp/nitro/*; do
-        echo "rm /usr/local/bin/$(basename "$file")" >> /tmp/uninstall_nitro.sh
+    echo '#!/bin/bash' > /tmp/uninstall_cortex-cpp.sh
+    echo 'if [ "$(id -u)" != "0" ]; then' >> /tmp/uninstall_cortex-cpp.sh
+    echo '    echo "This script must be run as root. Please run again with sudo."' >> /tmp/uninstall_cortex-cpp.sh
+    echo '    exit 1' >> /tmp/uninstall_cortex-cpp.sh
+    echo 'fi' >> /tmp/uninstall_cortex-cpp.sh
+    for file in /tmp/cortex-cpp/*; do
+        echo "rm /usr/local/bin/$(basename "$file")" >> /tmp/uninstall_cortex-cpp.sh
     done
-    echo "rm /usr/local/bin/uninstall_nitro.sh" >> /tmp/uninstall_nitro.sh
-    echo 'echo "Nitro remove successfully."' >> /tmp/uninstall_nitro.sh
-    chmod +x /tmp/uninstall_nitro.sh
-    mv /tmp/uninstall_nitro.sh /usr/local/bin/
+    echo "rm /usr/local/bin/uninstall_cortex-cpp.sh" >> /tmp/uninstall_cortex-cpp.sh
+    echo 'echo "cortex-cpp remove successfully."' >> /tmp/uninstall_cortex-cpp.sh
+    chmod +x /tmp/uninstall_cortex-cpp.sh
+    mv /tmp/uninstall_cortex-cpp.sh /usr/local/bin/
 }
 
 # Determine OS and architecture
@@ -139,7 +139,7 @@ fi
 
 # Construct GitHub API URL and get latest version if not specified
 if [ "$VERSION" == "latest" ]; then
-    API_URL="https://api.github.com/repos/janhq/nitro/releases/latest"
+    API_URL="https://api.github.com/repos/janhq/cortex/releases/latest"
     VERSION=$(curl -s $API_URL | jq -r ".tag_name" | sed 's/^v//')
 fi
 
@@ -155,11 +155,11 @@ case $OS in
         if [ -z "$AVX" ]; then
             AVX=$(determine_avx_support)
         fi
-        FILE_NAME="nitro-${VERSION}-linux-amd64${AVX}${GPU}${CUDA_VERSION}.tar.gz"
+        FILE_NAME="cortex-cpp-${VERSION}-linux-amd64${AVX}${GPU}${CUDA_VERSION}.tar.gz"
         ;;
     Darwin)
         ARCH_FORMAT="mac-universal"
-        FILE_NAME="nitro-${VERSION}-${ARCH_FORMAT}.tar.gz"
+        FILE_NAME="cortex-cpp-${VERSION}-${ARCH_FORMAT}.tar.gz"
         ;;
     *)
         echo "Unsupported OS."
@@ -167,7 +167,7 @@ case $OS in
         ;;
 esac
 
-DOWNLOAD_URL="https://github.com/janhq/nitro/releases/download/v${VERSION}/${FILE_NAME}"
+DOWNLOAD_URL="https://github.com/janhq/cortex/releases/download/v${VERSION}/${FILE_NAME}"
 
 # Check AVX support
 if [ -z "$AVX" ] && [ "$OS" == "Linux" ]; then
@@ -175,12 +175,12 @@ if [ -z "$AVX" ] && [ "$OS" == "Linux" ]; then
     exit 1
 fi
 
-# Remove existing Nitro installation
-echo "Removing existing Nitro installation..."
-rm -rf /usr/local/bin/nitro
+# Remove existing cortex-cpp installation
+echo "Removing existing cortex-cpp installation..."
+rm -rf /usr/local/bin/cortex-cpp
 
 # Download, install, and create uninstall script
-install_nitro "$DOWNLOAD_URL"
+install_cortex-cpp "$DOWNLOAD_URL"
 create_uninstall_script
 
-echo "Nitro installed successfully."
+echo "cortex-cpp installed successfully."

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(nitro C CXX)
+project(cortex-cpp C CXX)
 
 include(engines/cortex.llamacpp/engine.cmake)
 include(CheckIncludeFileCXX)
@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build_deps/_install)
+set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build-deps/_install)
 # This is the critical line for installing another package
 
 if(LLAMA_CUDA)
@@ -35,12 +35,12 @@ if(LLAMA_CUDA)
 endif()
 
 if(DEBUG)
-  message(STATUS "NITRO DEBUG IS ON")
+  message(STATUS "CORTEX-CPP DEBUG IS ON")
   add_compile_definitions(ALLOW_ALL_CORS)
 endif()
 
-if(NOT DEFINED NITRO_VERSION)
-  set(NITRO_VERSION "default_version")
+if(NOT DEFINED CORTEX_CPP_VERSION)
+  set(CORTEX_CPP_VERSION "default_version")
 endif()
 
 if(APPLE)
@@ -54,7 +54,7 @@ if(APPLE)
   endif()
 endif()
 
-add_compile_definitions(NITRO_VERSION="${NITRO_VERSION}")
+add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 
 add_subdirectory(test)
 
@@ -62,8 +62,8 @@ add_executable(${PROJECT_NAME} main.cc)
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
-# to add drogon add_subdirectory(nitro_deps)
-# target_link_libraries(${PROJECT_NAME} PRIVATE nitro_deps)
+# to add drogon add_subdirectory(cortex-cpp-deps)
+# target_link_libraries(${PROJECT_NAME} PRIVATE cortex-cpp-deps)
 #
 # and comment out the following lines
 

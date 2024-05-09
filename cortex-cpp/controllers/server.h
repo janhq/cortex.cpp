@@ -30,30 +30,30 @@ using namespace drogon;
 
 namespace inferences {
 
-class llamaCPP : public drogon::HttpController<llamaCPP>,
+class server : public drogon::HttpController<server>,
                  public BaseModel,
                  public BaseChatCompletion,
                  public BaseEmbedding {
   struct SyncQueue;
 
  public:
-  llamaCPP();
-  ~llamaCPP();
+  server();
+  ~server();
   METHOD_LIST_BEGIN
   // list path definitions here;
-  METHOD_ADD(llamaCPP::ChatCompletion, "chat_completion", Post);
-  METHOD_ADD(llamaCPP::Embedding, "embedding", Post);
-  METHOD_ADD(llamaCPP::LoadModel, "loadmodel", Post);
-  METHOD_ADD(llamaCPP::UnloadModel, "unloadmodel", Get);
-  METHOD_ADD(llamaCPP::ModelStatus, "modelstatus", Get);
+  METHOD_ADD(server::ChatCompletion, "chat_completion", Post);
+  METHOD_ADD(server::Embedding, "embedding", Post);
+  METHOD_ADD(server::LoadModel, "loadmodel", Post);
+  METHOD_ADD(server::UnloadModel, "unloadmodel", Get);
+  METHOD_ADD(server::ModelStatus, "modelstatus", Get);
 
   // Openai compatible path
-  ADD_METHOD_TO(llamaCPP::ChatCompletion, "/v1/chat/completions", Post);
-  // ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/chat/completions", Options);
+  ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
+  // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
   // NOTE: prelight will be added back when browser support is properly planned
 
-  ADD_METHOD_TO(llamaCPP::Embedding, "/v1/embeddings", Post);
-  // ADD_METHOD_TO(llamaCPP::handlePrelight, "/v1/embeddings", Options);
+  ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Post);
+  // ADD_METHOD_TO(server::handlePrelight, "/v1/embeddings", Options);
 
   // PATH_ADD("/llama/chat_completion", Post);
   METHOD_LIST_END

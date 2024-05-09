@@ -1,4 +1,4 @@
-This guide provides instructions to create a chatbot powered by Nitro using the GGUF model.
+This guide provides instructions to create a chatbot powered by cortex-cpp using the GGUF model.
 
 ## Step 1: Download the Model
 
@@ -34,7 +34,7 @@ Now, you'll set up the model in your application.
 
     ```zsh title="Example Configuration" {2}
     dat = {
-        "llama_model_path": "nitro/interface/models/zephyr-7b-beta.Q5_K_M.gguf",
+        "llama_model_path": "cortex-cpp/interface/models/zephyr-7b-beta.Q5_K_M.gguf",
         "ctx_len": 2048,
         "ngl": 100,
         "embedding": True,
@@ -44,6 +44,6 @@ Now, you'll set up the model in your application.
         "ai_prompt": "ASSISTANT: "}
     ```
 
-Congratulations! Your Nitro chatbot is now set up. Feel free to experiment with different configuration parameters to tailor the chatbot to your needs.
+Congratulations! Your cortex-cpp chatbot is now set up. Feel free to experiment with different configuration parameters to tailor the chatbot to your needs.
 
-For more information on parameter settings and their effects, please refer to Run Nitro(using-nitro) for a comprehensive parameters table.
+For more information on parameter settings and their effects, please refer to Run cortex-cpp(using-cortex-cpp) for a comprehensive parameters table.

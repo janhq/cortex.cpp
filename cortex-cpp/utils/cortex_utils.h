@@ -18,7 +18,7 @@
 #include <dirent.h>
 #endif
 
-namespace nitro_utils {
+namespace cortex_utils {
 
 inline std::string models_folder = "./models";
 
@@ -282,4 +282,4 @@ inline void ltrim(std::string& s) {
           }));
 };
 
-} // namespace nitro_utils
+} // namespace cortex_utils

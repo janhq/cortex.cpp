@@ -1,3 +1,3 @@
-cmake -S ./nitro_deps -B ./build_deps/nitro_deps
-make -C ./build_deps/nitro_deps -j 10
-rm -rf ./build_deps/nitro_deps
+cmake -S ./cortex-cpp-deps -B ./build-deps/cortex-cpp-deps
+make -C ./build-deps/cortex-cpp-deps -j 10
+rm -rf ./build-deps/cortex-cpp-deps
