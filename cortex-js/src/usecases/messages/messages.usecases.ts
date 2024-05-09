@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CreateMessageDto } from '../../infrastructure/dtos/messages/create-message.dto';
-import { UpdateMessageDto } from '../../infrastructure/dtos/messages/update-message.dto';
+import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
+import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.dto';
 import { Repository } from 'typeorm';
-import { MessageEntity } from '../../infrastructure/entities/message.entity';
+import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { ulid } from 'ulid';
 
 @Injectable()

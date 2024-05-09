@@ -8,13 +8,13 @@ import {
   Delete,
   HttpCode,
 } from '@nestjs/common';
-import { ModelsUsecases } from '../../usecases/models/models.usecases';
-import { CreateModelDto } from '../dtos/models/create-model.dto';
-import { UpdateModelDto } from '../dtos/models/update-model.dto';
+import { ModelsUsecases } from '@/usecases/models/models.usecases';
+import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
+import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LoadModelSuccessDto } from '../dtos/models/load-model-success.dto';
-import { LoadModelDto } from '../dtos/models/load-model.dto';
-import { DownloadModelDto } from '../dtos/models/download-model.dto';
+import { LoadModelSuccessDto } from '@/infrastructure/dtos/models/load-model-success.dto';
+import { LoadModelDto } from '@/infrastructure/dtos/models/load-model.dto';
+import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
 
 @ApiTags('Models')
 @Controller('models')

@@ -1,7 +1,7 @@
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
-import { ThreadAssistantInfo } from 'src/domain/models/thread.interface';
+import { ThreadAssistantInfo } from '@/domain/models/thread.interface';
 import { CreateThreadModelInfoDto } from './create-thread-model-info.dto';
-import { AssistantToolDto } from 'src/infrastructure/dtos/assistants/assistant-tool.dto';
+import { AssistantToolDto } from '@/infrastructure/dtos/assistants/assistant-tool.dto';
 import { Type } from 'class-transformer';
 
 export class CreateThreadAssistantDto implements ThreadAssistantInfo {

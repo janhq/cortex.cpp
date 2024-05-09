@@ -7,9 +7,9 @@ import {
   Param,
   Delete,
 } from '@nestjs/common';
-import { InferenceSettingsUsecases } from '../../usecases/inference-settings/inference-settings.usecases';
-import { CreateInferenceSettingDto } from '../dtos/inference-settings/create-inference-setting.dto';
-import { UpdateInferenceSettingDto } from '../dtos/inference-settings/update-inference-setting.dto';
+import { InferenceSettingsUsecases } from '@/usecases/inference-settings/inference-settings.usecases';
+import { CreateInferenceSettingDto } from '@/infrastructure/dtos/inference-settings/create-inference-setting.dto';
+import { UpdateInferenceSettingDto } from '@/infrastructure/dtos/inference-settings/update-inference-setting.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Inference Settings')

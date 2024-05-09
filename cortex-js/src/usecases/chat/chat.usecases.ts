@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CreateChatCompletionDto } from '../../infrastructure/dtos/chat/create-chat-completion.dto';
+import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { Response } from 'express';
-import { ExtensionRepository } from 'src/domain/repositories/extension.interface';
+import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Repository } from 'typeorm';
-import { ModelEntity } from 'src/infrastructure/entities/model.entity';
-import { EngineExtension } from '@janhq/core';
+import { ModelEntity } from '@/infrastructure/entities/model.entity';
+import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 
 @Injectable()
 export class ChatUsecases {

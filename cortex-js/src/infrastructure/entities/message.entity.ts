@@ -5,7 +5,7 @@ import {
   MessageMetadata,
   MessageStatus,
   ThreadContent,
-} from 'src/domain/models/message.interface';
+} from '@/domain/models/message.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('messages')

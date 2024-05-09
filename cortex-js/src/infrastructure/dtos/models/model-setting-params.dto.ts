@@ -1,5 +1,5 @@
 import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ModelSettingParams } from 'src/domain/models/model.interface';
+import { ModelSettingParams } from '@/domain/models/model.interface';
 
 export class ModelSettingParamsDto implements ModelSettingParams {
   @IsOptional()

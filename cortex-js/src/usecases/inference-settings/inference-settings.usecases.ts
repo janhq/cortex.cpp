@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { CreateInferenceSettingDto } from '../../infrastructure/dtos/inference-settings/create-inference-setting.dto';
-import { UpdateInferenceSettingDto } from '../../infrastructure/dtos/inference-settings/update-inference-setting.dto';
+import { CreateInferenceSettingDto } from '@/infrastructure/dtos/inference-settings/create-inference-setting.dto';
+import { UpdateInferenceSettingDto } from '@/infrastructure/dtos/inference-settings/update-inference-setting.dto';
 import { Repository } from 'typeorm';
-import { InferenceSettingEntity } from '../../infrastructure/entities/inference-setting.entity';
+import { InferenceSettingEntity } from '@/infrastructure/entities/inference-setting.entity';
 
 @Injectable()
 export class InferenceSettingsUsecases {

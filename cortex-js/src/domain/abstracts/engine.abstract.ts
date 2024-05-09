@@ -1,4 +1,4 @@
-import { Extension } from "./extension";
+import { Extension } from './extension.abstract';
 
 export abstract class EngineExtension extends Extension {
   abstract provider: string;

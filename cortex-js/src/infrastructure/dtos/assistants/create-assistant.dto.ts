@@ -3,7 +3,7 @@ import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
 import {
   Assistant,
   AssistantMetadata,
-} from 'src/domain/models/assistant.interface';
+} from '@/domain/models/assistant.interface';
 import { AssistantToolDto } from './assistant-tool.dto';
 
 export class CreateAssistantDto implements Partial<Assistant> {

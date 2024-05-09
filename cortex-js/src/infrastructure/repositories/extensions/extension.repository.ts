@@ -1,15 +1,21 @@
-import { Injectable } from '@nestjs/common';
-import { LazyModuleLoader } from '@nestjs/core';
-import { ExtensionRepository } from 'src/domain/repositories/extension.interface';
-import { Extension } from '@janhq/core';
-import { readdir, lstat } from 'fs/promises';
+import { Inject, Injectable } from '@nestjs/common';
+import { ExtensionRepository } from '@/domain/repositories/extension.interface';
+import { Extension } from '@/domain/abstracts/extension.abstract';
+import { readdir, lstat, access } from 'fs/promises';
+import { join } from 'path';
+import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
-  extensions = new Map<string, Extension>();
+  // Initialize the Extensions Map with the key-value pairs of the core providers.
+  extensions = new Map<string, Extension>([['cortex', this.cortexProvider]]);
 
-  constructor(private lazyModuleLoader: LazyModuleLoader) {
-    this.loadExtensions();
+  constructor(
+    @Inject('CORTEX_PROVIDER')
+    private readonly cortexProvider: EngineExtension,
+  ) {
+    this.loadCoreExtensions();
+    this.loadExternalExtensions();
   }
   create(object: Extension): Promise<Extension> {
     this.extensions.set(object.name ?? '', object);
@@ -29,14 +35,31 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     return Promise.resolve();
   }
 
-  loadExtensions(): void {
+  loadCoreExtensions(): void {
+    const extensionsPath = join(__dirname, './../../../extensions');
+    this.loadExtensions(extensionsPath);
+  }
+
+  loadExternalExtensions(): void {
     const extensionsPath = process.env.EXTENSIONS_PATH ?? 'extensions';
+    this.loadExtensions(extensionsPath);
+  }
+
+  private async loadExtensions(extensionsPath: string) {
+    if (
+      !(await access(extensionsPath)
+        .then(() => true)
+        .catch(() => false))
+    )
+      return;
+
     readdir(extensionsPath).then((files) => {
       files.forEach(async (extension) => {
         if (!(await lstat(`${extensionsPath}/${extension}`)).isDirectory())
           return;
 
         import(`${extensionsPath}/${extension}`).then((extensionClass) => {
+          console.debug('Loaded extension: ', extensionClass.default.name);
           const newExtension = new extensionClass.default();
           this.extensions.set(extension, newExtension);
         });

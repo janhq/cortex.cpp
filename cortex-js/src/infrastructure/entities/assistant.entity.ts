@@ -2,7 +2,7 @@ import {
   Assistant,
   AssistantMetadata,
   AssistantTool,
-} from 'src/domain/models/assistant.interface';
+} from '@/domain/models/assistant.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('assistants')

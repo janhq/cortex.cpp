@@ -1,5 +1,5 @@
 import { IsOptional, IsString } from 'class-validator';
-import { ControllerProps } from 'src/domain/models/inference-setting.interface';
+import { ControllerProps } from '@/domain/models/inference-setting.interface';
 
 export class ControllerPropsDto implements ControllerProps {
   @IsString()

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { InferenceSettingsController } from './inference-settings.controller';
-import { InferenceSettingsUsecases } from '../../usecases/inference-settings/inference-settings.usecases';
+import { InferenceSettingsUsecases } from '@/usecases/inference-settings/inference-settings.usecases';
 
 describe('InferenceSettingsController', () => {
   let controller: InferenceSettingsController;

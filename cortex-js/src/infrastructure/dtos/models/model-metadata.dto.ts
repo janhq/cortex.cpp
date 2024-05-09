@@ -1,5 +1,5 @@
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
-import { ModelMetadata } from 'src/domain/models/model.interface';
+import { ModelMetadata } from '@/domain/models/model.interface';
 
 export class ModelMetadataDto implements ModelMetadata {
   @IsString()

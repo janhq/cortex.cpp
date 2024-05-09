@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { existsSync } from 'fs';
-import { CortexOperationSuccessfullyDto } from 'src/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
+import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 
 @Injectable()
 export class CortexUsecases {

@@ -1,4 +1,4 @@
-import { MessageEntity } from 'src/infrastructure/entities/message.entity';
+import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { DataSource } from 'typeorm';
 
 export const messageProviders = [

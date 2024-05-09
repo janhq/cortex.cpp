@@ -1,8 +1,8 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { StartCortexDto } from '../dtos/cortex/start-cortex.dto';
+import { StartCortexDto } from '@/infrastructure/dtos/cortex/start-cortex.dto';
 import { CortexOperationSuccessfullyDto } from '../dtos/cortex/cortex-operation-successfully.dto';
-import { CortexUsecases } from 'src/usecases/cortex/cortex.usecases';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @ApiTags('Cortex')
 @Controller('cortex')

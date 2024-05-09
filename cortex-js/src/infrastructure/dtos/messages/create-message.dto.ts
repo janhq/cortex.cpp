@@ -5,7 +5,7 @@ import {
   ErrorCode,
   Message,
   MessageStatus,
-} from 'src/domain/models/message.interface';
+} from '@/domain/models/message.interface';
 import { ThreadContentDto } from './thread-content.dto';
 import { Type } from 'class-transformer';
 

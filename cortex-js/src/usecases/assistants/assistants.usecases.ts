@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AssistantEntity } from '../../infrastructure/entities/assistant.entity';
+import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
 import { Repository } from 'typeorm';
-import { CreateAssistantDto } from '../../infrastructure/dtos/assistants/create-assistant.dto';
-import { Assistant } from 'src/domain/models/assistant.interface';
+import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
+import { Assistant } from '@/domain/models/assistant.interface';
 
 @Injectable()
 export class AssistantsUsecases {

@@ -2,7 +2,7 @@ import { IsEnum, ValidateNested } from 'class-validator';
 import {
   ContentType,
   ThreadContent,
-} from 'src/domain/models/message.interface';
+} from '@/domain/models/message.interface';
 import { ContentValueDto } from './content-value.dto';
 
 export class ThreadContentDto implements ThreadContent {

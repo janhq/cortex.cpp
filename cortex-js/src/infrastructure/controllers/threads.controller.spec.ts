@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ThreadsController } from './threads.controller';
-import { ThreadsUsecases } from '../../usecases/threads/threads.usecases';
+import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
 
 describe('ThreadsController', () => {
   let controller: ThreadsController;
