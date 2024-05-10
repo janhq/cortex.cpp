@@ -5,13 +5,13 @@ import CortexProvider from './cortex.provider';
   providers: [
     {
       provide: 'CORTEX_PROVIDER',
-      useValue: CortexProvider,
+      useClass: CortexProvider,
     },
   ],
   exports: [
     {
       provide: 'CORTEX_PROVIDER',
-      useValue: CortexProvider,
+      useClass: CortexProvider,
     },
   ],
 })

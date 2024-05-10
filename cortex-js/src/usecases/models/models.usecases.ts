@@ -11,7 +11,7 @@ import { Repository } from 'typeorm';
 import { Model, ModelFormat } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
-import { promises, createWriteStream } from 'fs';
+import { promises, createWriteStream, existsSync, mkdir } from 'fs';
 import { LoadModelSuccessDto } from '@/infrastructure/dtos/models/load-model-success.dto';
 import { LoadModelDto } from '@/infrastructure/dtos/models/load-model.dto';
 import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
@@ -113,8 +113,11 @@ export class ModelsUsecases {
 
     const fileName = basename(downloadUrl);
     const modelsContainerDir =
-      this.configService.get<string>('CORTEX_MODELS_DIR');
+      this.configService.get<string>('CORTEX_MODELS_DIR') ?? './models';
 
+    if (!existsSync(modelsContainerDir)) {
+      mkdir(modelsContainerDir, { recursive: true }, () => {});
+    }
     if (!modelsContainerDir) {
       throw new InternalServerErrorException(
         'CORTEX_MODELS_DIR is null. Recheck your environment variables to ensure all required directories are created',
@@ -125,10 +128,27 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true });
     const destination = join(modelFolder, fileName);
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fetch = require('node-fetch');
-    const response = await fetch(downloadUrl);
-    const fileStream = createWriteStream(destination);
-    response.body.pipe(fileStream);
+    const request = require('request');
+
+    const rq = request({ url: model.sources[0].url });
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const progress = require('request-progress');
+    progress(rq, {})
+      .on('progress', (progress: any) => {
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        process.stdout.write(
+          `Downloading... ${Math.round(progress.percent * 100.0)}%`,
+        );
+      })
+      .on('end', () => {
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        process.stdout.write(`Downloading... 100%\n`);
+        process.stdout.write(`Model download complete`);
+      })
+      .pipe(createWriteStream(destination));
 
     return {
       message: `Model ${model.id} is being downloaded`,

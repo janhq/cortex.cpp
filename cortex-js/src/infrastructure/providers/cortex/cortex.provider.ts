@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
-import { join } from 'path';
+import { basename, join, resolve } from 'path';
+import { Model } from '@/domain/models/model.interface';
+import { ConfigService } from '@nestjs/config';
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
  * The class provides methods for initializing and stopping a model, and for making inference requests.
@@ -12,19 +14,26 @@ export default class CortexProvider extends OAIEngineExtension {
   provider: string = 'cortex';
   apiUrl = 'http://127.0.0.1:3928/inferences/llamacpp/chat_completion';
 
-  constructor() {
+  constructor(private readonly configService: ConfigService) {
     super();
   }
 
-  override async loadModel(request: any): Promise<void> {
+  override async loadModel(model: Model): Promise<void> {
     const LOCAL_HOST = '127.0.0.1';
     const NITRO_DEFAULT_PORT = 3928;
     const NITRO_HTTP_SERVER_URL = `http://${LOCAL_HOST}:${NITRO_DEFAULT_PORT}`;
     const url = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/loadmodel`;
 
-    // TODO: NamH fix this, this only support import local model
-    const modelBinaryLocalPath = request.model.sources[0].url;
-    const modelFolderFullPath = join(modelBinaryLocalPath, '..');
+    const modelsContainerDir =
+      this.configService.get<string>('CORTEX_MODELS_DIR') ??
+      resolve('./models');
+
+    const modelFolderFullPath = join(modelsContainerDir, model.id);
+    //TODO: recheck this
+    const modelBinaryLocalPath = join(
+      modelFolderFullPath,
+      basename(model.sources[0].url),
+    );
 
     // TODO: NamH check if the binary is there
 
@@ -32,16 +41,16 @@ export default class CortexProvider extends OAIEngineExtension {
     const nitroModelSettings = {
       // This is critical and requires real CPU physical core count (or performance core)
       cpu_threads: cpuThreadCount,
-      ...request.model.settings,
+      ...model.settings,
       llama_model_path: modelBinaryLocalPath,
-      ...(request.model.settings.mmproj && {
-        mmproj: join(modelFolderFullPath, request.model.settings.mmproj),
+      ...(model.settings.mmproj && {
+        mmproj: join(modelFolderFullPath, model.settings.mmproj),
       }),
     };
 
     // Convert settings.prompt_template to system_prompt, user_prompt, ai_prompt
-    if (request.model.settings.prompt_template) {
-      const promptTemplate = request.model.settings.prompt_template;
+    if (model.settings.prompt_template) {
+      const promptTemplate = model.settings.prompt_template;
       const prompt = this.promptTemplateConverter(promptTemplate);
       if (prompt?.error) {
         throw new Error(prompt.error);
@@ -62,7 +71,9 @@ export default class CortexProvider extends OAIEngineExtension {
     });
   }
 
-  promptTemplateConverter = (promptTemplate: string): PromptTemplate => {
+  private readonly promptTemplateConverter = (
+    promptTemplate: string,
+  ): PromptTemplate => {
     // Split the string using the markers
     const systemMarker = '{system_message}';
     const promptMarker = '{prompt}';
