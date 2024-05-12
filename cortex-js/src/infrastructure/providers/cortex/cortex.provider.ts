@@ -60,8 +60,6 @@ export default class CortexProvider extends OAIEngineExtension {
       nitroModelSettings.ai_prompt = prompt.ai_prompt;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fetch = require('node-fetch');
     await fetch(url, {
       method: 'POST',
       headers: {

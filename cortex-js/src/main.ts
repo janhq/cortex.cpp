@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -24,6 +25,12 @@ async function bootstrap() {
 
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(7331).then(() => console.log('Server running on port 7331'));
+  // getting port from env
+  const host = process.env.CORTEX_JS_HOST || defaultCortexJsHost;
+  const port = process.env.CORTEX_JS_PORT || defaultCortexJsPort;
+
+  await app.listen(port, host);
+  console.log(`Server running on ${host}:${port}`);
 }
+
 bootstrap();

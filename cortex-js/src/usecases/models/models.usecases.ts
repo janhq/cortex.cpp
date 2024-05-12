@@ -18,6 +18,7 @@ import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dt
 import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class ModelsUsecases {
@@ -26,16 +27,17 @@ export class ModelsUsecases {
     private readonly modelRepository: Repository<ModelEntity>,
     private readonly extensionRepository: ExtensionRepository,
     private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
   ) {}
 
-  create(createModelDto: CreateModelDto) {
+  async create(createModelDto: CreateModelDto) {
     const model: Model = {
       ...createModelDto,
       object: 'model',
       created: Date.now(),
     };
 
-    this.modelRepository.insert(model);
+    await this.modelRepository.insert(model);
   }
 
   async findAll(): Promise<Model[]> {
@@ -153,6 +155,68 @@ export class ModelsUsecases {
     return {
       message: `Model ${model.id} is being downloaded`,
     };
+  }
+
+  async downloadModelProgress(
+    downloadModelDto: DownloadModelDto,
+    callback: (progress: number) => void,
+  ) {
+    const model = await this.getModelOrThrow(downloadModelDto.modelId);
+
+    if (model.format === ModelFormat.API) {
+      throw new BadRequestException('Cannot download remote model');
+    }
+
+    // TODO: NamH download multiple files
+
+    const downloadUrl = model.sources[0].url;
+    if (!this.isValidUrl(downloadUrl)) {
+      throw new BadRequestException(`Invalid download URL: ${downloadUrl}`);
+    }
+
+    const fileName = basename(downloadUrl);
+    const modelsContainerDir =
+      this.configService.get<string>('CORTEX_MODELS_DIR');
+
+    if (!modelsContainerDir) {
+      throw new InternalServerErrorException(
+        'CORTEX_MODELS_DIR is null. Recheck your environment variables to ensure all required directories are created',
+      );
+    }
+
+    const modelFolder = join(modelsContainerDir, model.id);
+    await promises.mkdir(modelFolder, { recursive: true });
+    const destination = join(modelFolder, fileName);
+
+    const response = await this.httpService
+      .get(downloadUrl, {
+        responseType: 'stream',
+      })
+      .toPromise();
+    if (!response) {
+      throw new Error('Failed to download model');
+    }
+
+    return new Promise((resolve, reject) => {
+      const writer = createWriteStream(destination);
+      let receivedBytes = 0;
+      const totalBytes = response.headers['content-length'];
+
+      writer.on('finish', () => {
+        resolve(true);
+      });
+
+      writer.on('error', (error) => {
+        reject(error);
+      });
+
+      response.data.on('data', (chunk: any) => {
+        receivedBytes += chunk.length;
+        callback(Math.floor((receivedBytes / totalBytes) * 100));
+      });
+
+      response.data.pipe(writer);
+    });
   }
 
   // TODO: NamH move to a helper or utils
