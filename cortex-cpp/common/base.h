@@ -8,12 +8,19 @@ class BaseModel {
   virtual ~BaseModel() {}
 
   // Model management
-  virtual void LoadModel(const HttpRequestPtr& req,
-                         std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void LoadModel(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
   virtual void UnloadModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
   virtual void ModelStatus(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void GetEngines(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 };
