@@ -4,12 +4,16 @@ import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { existsSync } from 'fs';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly httpService: HttpService,
+  ) {}
 
   async startCortex(
     host: string,
@@ -70,25 +74,18 @@ export class CortexUsecases {
     host?: string,
     port?: number,
   ): Promise<CortexOperationSuccessfullyDto> {
-    if (this.cortexProcess) {
-      this.cortexProcess.kill();
+    try {
+      await this.httpService
+        .delete(`http://${host}:${port}/processmanager/destroy`)
+        .toPromise();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      this.cortexProcess?.kill();
       return {
         message: 'Cortex stopped successfully',
         status: 'success',
       };
-    } else {
-      return new Promise((resolve) => {
-        return fetch(`http://${host}:${port}/processmanager/destroy`, {
-          method: 'DELETE',
-        })
-          .catch(() => {})
-          .finally(() => {
-            resolve({
-              message: 'Cortex stopped successfully',
-              status: 'success',
-            });
-          });
-      });
     }
   }
 
