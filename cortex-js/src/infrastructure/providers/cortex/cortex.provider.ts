@@ -9,21 +9,21 @@ import { ConfigService } from '@nestjs/config';
  * The class provides methods for initializing and stopping a model, and for making inference requests.
  * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
  */
+const LOCAL_HOST = '127.0.0.1';
+const NITRO_DEFAULT_PORT = 3928;
+const NITRO_HTTP_SERVER_URL = `http://${LOCAL_HOST}:${NITRO_DEFAULT_PORT}`;
+const LOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/server/loadmodel`;
+const UNLOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/server/unloadmodel`;
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
   provider: string = 'cortex';
-  apiUrl = 'http://127.0.0.1:3928/inferences/llamacpp/chat_completion';
+  apiUrl = 'http://127.0.0.1:3928/inferences/server/chat_completion';
 
   constructor(private readonly configService: ConfigService) {
     super();
   }
 
   override async loadModel(model: Model): Promise<void> {
-    const LOCAL_HOST = '127.0.0.1';
-    const NITRO_DEFAULT_PORT = 3928;
-    const NITRO_HTTP_SERVER_URL = `http://${LOCAL_HOST}:${NITRO_DEFAULT_PORT}`;
-    const url = `${NITRO_HTTP_SERVER_URL}/inferences/llamacpp/loadmodel`;
-
     const modelsContainerDir =
       this.configService.get<string>('CORTEX_MODELS_DIR') ??
       resolve('./models');
@@ -60,13 +60,33 @@ export default class CortexProvider extends OAIEngineExtension {
       nitroModelSettings.ai_prompt = prompt.ai_prompt;
     }
 
-    await fetch(url, {
+    return fetch(LOAD_MODEL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(nitroModelSettings),
-    });
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Failed to load model');
+        }
+      })
+      .catch((e) => {
+        throw e;
+      });
+  }
+
+  override async unloadModel(modelId: string): Promise<void> {
+    return fetch(UNLOAD_MODEL_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelId,
+      }),
+    }).then();
   }
 
   private readonly promptTemplateConverter = (

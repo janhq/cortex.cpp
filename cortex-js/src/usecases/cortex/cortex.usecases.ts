@@ -48,25 +48,48 @@ export class CortexUsecases {
 
     this.registerCortexEvents();
 
-    return {
-      message: 'Cortex started successfully',
-      status: 'success',
-    };
+    // Await for the /healthz status ok
+    return new Promise<CortexOperationSuccessfullyDto>((resolve, reject) => {
+      const interval = setInterval(() => {
+        fetch(`http://${host}:${port}/healthz`)
+          .then((res) => {
+            if (res.ok) {
+              clearInterval(interval);
+              resolve({
+                message: 'Cortex started successfully',
+                status: 'success',
+              });
+            }
+          })
+          .catch(reject);
+      }, 1000);
+    });
   }
 
-  async stopCortex(): Promise<CortexOperationSuccessfullyDto> {
-    if (!this.cortexProcess) {
+  async stopCortex(
+    host?: string,
+    port?: number,
+  ): Promise<CortexOperationSuccessfullyDto> {
+    if (this.cortexProcess) {
+      this.cortexProcess.kill();
       return {
-        message: 'Cortex is not running',
+        message: 'Cortex stopped successfully',
         status: 'success',
       };
+    } else {
+      return new Promise((resolve) => {
+        return fetch(`http://${host}:${port}/processmanager/destroy`, {
+          method: 'DELETE',
+        })
+          .catch(() => {})
+          .finally(() => {
+            resolve({
+              message: 'Cortex stopped successfully',
+              status: 'success',
+            });
+          });
+      });
     }
-
-    this.cortexProcess.kill();
-    return {
-      message: 'Cortex stopped successfully',
-      status: 'success',
-    };
   }
 
   private registerCortexEvents() {

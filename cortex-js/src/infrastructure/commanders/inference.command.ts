@@ -1,7 +1,6 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
 
-// TODO: might need to change the name of the command. Inference seems a bit hard to type lol
-@SubCommand({ name: 'inference' })
+@SubCommand({ name: 'chat' })
 export class InferenceCommand extends CommandRunner {
   constructor() {
     super();

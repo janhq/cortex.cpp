@@ -34,7 +34,7 @@ export class ModelsController {
   })
   @Post('load')
   load(@Body() loadModelDto: LoadModelDto) {
-    return this.modelsService.loadModel(loadModelDto);
+    return this.modelsService.startModel(loadModelDto);
   }
 
   @Post('download')
