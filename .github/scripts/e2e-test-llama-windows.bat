@@ -82,7 +82,7 @@ curl.exe --connect-timeout 60 -o "%TEMP%\response2.log" -s -w "%%{http_code}" --
 --header "Content-Type: application/json" ^
 --data "%curl_data2%" > %TEMP%\response2.log 2>&1
 
-curl.exe --connect-timeout 60 -o "%TEMP%\response3.log" --request GET -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/unloadModel" --header "Content-Type: application/json" --data "%curl_data3%" > %TEMP%\response3.log 2>&1
+curl.exe --connect-timeout 60 -o "%TEMP%\response3.log" --request POST -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/unloadModel" --header "Content-Type: application/json" --data "%curl_data3%" > %TEMP%\response3.log 2>&1
 
 curl.exe --connect-timeout 60 -o "%TEMP%\response4.log" --request POST -s -w "%%{http_code}" --location "http://127.0.0.1:%PORT%/inferences/server/loadModel" --header "Content-Type: application/json" --data "%curl_data4%" > %TEMP%\response4.log 2>&1
 

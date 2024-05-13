@@ -44,8 +44,8 @@ class server : public drogon::HttpController<server>,
   METHOD_ADD(server::ChatCompletion, "chat_completion", Post);
   METHOD_ADD(server::Embedding, "embedding", Post);
   METHOD_ADD(server::LoadModel, "loadmodel", Post);
-  METHOD_ADD(server::UnloadModel, "unloadmodel", Get);
-  METHOD_ADD(server::ModelStatus, "modelstatus", Get);
+  METHOD_ADD(server::UnloadModel, "unloadmodel", Post);
+  METHOD_ADD(server::ModelStatus, "modelstatus", Post);
 
   // Openai compatible path
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
