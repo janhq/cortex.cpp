@@ -108,7 +108,8 @@ export class ModelsUsecases {
           modelId: loadModelDto.modelId,
         };
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err);
         return {
           message: 'Model failed to load',
           modelId: loadModelDto.modelId,

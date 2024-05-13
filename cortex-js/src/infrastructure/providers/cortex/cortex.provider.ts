@@ -4,6 +4,8 @@ import { PromptTemplate } from '@/domain/models/prompt-template.interface';
 import { basename, join, resolve } from 'path';
 import { Model } from '@/domain/models/model.interface';
 import { ConfigService } from '@nestjs/config';
+import { HttpService } from '@nestjs/axios';
+
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
  * The class provides methods for initializing and stopping a model, and for making inference requests.
@@ -14,13 +16,17 @@ const NITRO_DEFAULT_PORT = 3928;
 const NITRO_HTTP_SERVER_URL = `http://${LOCAL_HOST}:${NITRO_DEFAULT_PORT}`;
 const LOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/server/loadmodel`;
 const UNLOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/server/unloadmodel`;
+
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
   provider: string = 'cortex';
   apiUrl = 'http://127.0.0.1:3928/inferences/server/chat_completion';
 
-  constructor(private readonly configService: ConfigService) {
-    super();
+  constructor(
+    private readonly configService: ConfigService,
+    protected readonly httpService: HttpService,
+  ) {
+    super(httpService);
   }
 
   override async loadModel(model: Model): Promise<void> {
@@ -38,7 +44,7 @@ export default class CortexProvider extends OAIEngineExtension {
     // TODO: NamH check if the binary is there
 
     const cpuThreadCount = 1; // TODO: NamH Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
-    const nitroModelSettings = {
+    const modelSettings = {
       // This is critical and requires real CPU physical core count (or performance core)
       cpu_threads: cpuThreadCount,
       ...model.settings,
@@ -55,38 +61,18 @@ export default class CortexProvider extends OAIEngineExtension {
       if (prompt?.error) {
         throw new Error(prompt.error);
       }
-      nitroModelSettings.system_prompt = prompt.system_prompt;
-      nitroModelSettings.user_prompt = prompt.user_prompt;
-      nitroModelSettings.ai_prompt = prompt.ai_prompt;
+      modelSettings.system_prompt = prompt.system_prompt;
+      modelSettings.user_prompt = prompt.user_prompt;
+      modelSettings.ai_prompt = prompt.ai_prompt;
     }
 
-    return fetch(LOAD_MODEL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(nitroModelSettings),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error('Failed to load model');
-        }
-      })
-      .catch((e) => {
-        throw e;
-      });
+    await this.httpService.post(LOAD_MODEL_URL, modelSettings).toPromise();
   }
 
   override async unloadModel(modelId: string): Promise<void> {
-    return fetch(UNLOAD_MODEL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelId,
-      }),
-    }).then();
+    await this.httpService
+      .post(UNLOAD_MODEL_URL, { model: modelId })
+      .toPromise();
   }
 
   private readonly promptTemplateConverter = (

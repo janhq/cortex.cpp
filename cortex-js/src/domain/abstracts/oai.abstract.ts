@@ -1,38 +1,52 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { HttpService } from '@nestjs/axios';
 import { EngineExtension } from './engine.abstract';
 
 export abstract class OAIEngineExtension extends EngineExtension {
   abstract apiUrl: string;
+
+  constructor(protected readonly httpService: HttpService) {
+    super();
+  }
 
   async inference(
     createChatDto: any,
     headers: Record<string, string>,
     res: any,
   ) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fetch = require('node-fetch');
-    const response = await fetch(this.apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': headers['content-type'] ?? 'application/json',
-        Authorization: headers['authorization'],
-      },
-      body: JSON.stringify(createChatDto),
-    });
+    if (createChatDto.stream === true) {
+      const response = await this.httpService
+        .post(this.apiUrl, createChatDto, {
+          headers: {
+            'Content-Type': headers['content-type'] ?? 'application/json',
+            Authorization: headers['authorization'],
+          },
+          responseType: 'stream',
+        })
+        .toPromise();
 
-    res.writeHead(200, {
-      'Content-Type':
-        createChatDto.stream === true
-          ? 'text/event-stream'
-          : 'application/json',
-      'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-    });
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
 
-    response.body.pipe(res);
+      response?.data.pipe(res);
+    } else {
+      const response = await this.httpService
+        .post(this.apiUrl, createChatDto, {
+          headers: {
+            'Content-Type': headers['content-type'] ?? 'application/json',
+            Authorization: headers['authorization'],
+          },
+        })
+        .toPromise();
+
+      res.json(response?.data);
+    }
   }
 
-  async loadModel(loadModel: any): Promise<void> {}
-  async unloadModel(modelId: string): Promise<void> {}
+  async loadModel(_loadModel: any): Promise<void> {}
+  async unloadModel(_modelId: string): Promise<void> {}
 }
