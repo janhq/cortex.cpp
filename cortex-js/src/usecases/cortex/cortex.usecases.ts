@@ -34,6 +34,7 @@ export class CortexUsecases {
     this.cortexProcess = spawn(binaryPath, args, {
       detached: false,
       cwd: binaryFolder,
+      stdio: 'inherit',
       env: {
         ...process.env,
         // TODO: NamH need to get below information
@@ -45,7 +46,6 @@ export class CortexUsecases {
       },
     });
 
-    this.pipeStdout();
     this.registerCortexEvents();
 
     return {
@@ -67,16 +67,6 @@ export class CortexUsecases {
       message: 'Cortex stopped successfully',
       status: 'success',
     };
-  }
-
-  private pipeStdout() {
-    this.cortexProcess?.stdout?.on('data', (data) => {
-      console.log('Cortex stdout', data);
-    });
-
-    this.cortexProcess?.stderr?.on('data', (data) => {
-      console.error('Cortex stderr', data);
-    });
   }
 
   private registerCortexEvents() {
