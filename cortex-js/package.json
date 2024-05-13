@@ -41,8 +41,6 @@
     "node-fetch": "2",
     "readline": "^1.3.0",
     "reflect-metadata": "^0.2.0",
-    "request": "^2.88.2",
-    "request-progress": "^3.0.0",
     "rxjs": "^7.8.1",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",

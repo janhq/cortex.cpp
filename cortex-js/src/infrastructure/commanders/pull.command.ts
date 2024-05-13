@@ -2,6 +2,7 @@ import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { CreateModelDto } from '../dtos/models/create-model.dto';
 import { ModelFormat } from '@/domain/models/model.interface';
+import { Presets, SingleBar } from 'cli-progress';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -26,14 +27,14 @@ const AllQuantizations = [
   'COPY',
 ];
 
-@SubCommand({ name: 'pull' })
+@SubCommand({ name: 'pull', aliases: ['download'] })
 export class PullCommand extends CommandRunner {
   constructor(private readonly modelsUsecases: ModelsUsecases) {
     super();
   }
 
   async run(input: string[]): Promise<void> {
-    if (input.length < 2) {
+    if (input.length < 1) {
       return Promise.reject('Model ID is required');
     }
 
@@ -41,15 +42,14 @@ export class PullCommand extends CommandRunner {
     if (modelId.includes('/')) {
       await this.pullHuggingFaceModel(modelId);
     }
-    this.modelsUsecases.downloadModel({ modelId });
 
-    // const bar = new SingleBar({}, Presets.shades_classic);
-    // bar.start(100, 0);
-    // await this.modelsUsecases.downloadModelProgress({ modelId }, (progress) => {
-    //   bar.update(progress);
-    // });
-    // console.log('\nDownload complete!');
-    // process.exit(0);
+    const bar = new SingleBar({}, Presets.shades_classic);
+    bar.start(100, 0);
+    await this.modelsUsecases.downloadModel({ modelId }, (progress) => {
+      bar.update(progress);
+    });
+    console.log('\nDownload complete!');
+    process.exit(0);
   }
 
   async pullHuggingFaceModel(modelId: string) {

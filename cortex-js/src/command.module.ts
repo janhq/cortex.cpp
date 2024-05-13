@@ -7,6 +7,8 @@ import { CortexModule } from './usecases/cortex/cortex.module';
 import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { PullCommand } from './infrastructure/commanders/pull.command';
 import { InferenceCommand } from './infrastructure/commanders/inference.command';
+import { ModelsCommand } from './infrastructure/commanders/models.command';
+import { StartCommand } from './infrastructure/commanders/start.command';
 
 @Module({
   imports: [
@@ -19,6 +21,13 @@ import { InferenceCommand } from './infrastructure/commanders/inference.command'
     ModelsModule,
     CortexModule,
   ],
-  providers: [BasicCommand, PullCommand, ServeCommand, InferenceCommand],
+  providers: [
+    BasicCommand,
+    ModelsCommand,
+    PullCommand,
+    ServeCommand,
+    InferenceCommand,
+    StartCommand,
+  ],
 })
 export class CommandModule {}

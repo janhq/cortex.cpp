@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { EngineExtension } from './engine.abstract';
 
 export abstract class OAIEngineExtension extends EngineExtension {
@@ -32,6 +33,6 @@ export abstract class OAIEngineExtension extends EngineExtension {
     response.body.pipe(res);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async loadModel(loadModel: any): Promise<void> {}
+  async unloadModel(modelId: string): Promise<void> {}
 }

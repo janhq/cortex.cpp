@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { defaultCortexJsHost } from 'constant';
+import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { join } from 'path';
 
@@ -16,7 +16,7 @@ export class ServeCommand extends CommandRunner {
 
   async run(_input: string[], options?: ServeOptions): Promise<void> {
     const host = options?.host || defaultCortexJsHost;
-    const port = options?.port || defaultCortexJsHost;
+    const port = options?.port || defaultCortexJsPort;
 
     spawn('node', [join(__dirname, '../../main.js')], {
       env: {
