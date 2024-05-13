@@ -3,11 +3,15 @@
   "version": "0.0.1",
   "description": "",
   "author": "",
-  "private": true,
-  "license": "UNLICENSED",
+  "license": "AGPL-3.0",
+  "bin": {
+    "cortex": "./dist/src/command.js"
+  },
   "scripts": {
-    "build": "nest build",
+    "dev": "nest dev",
+    "build": "yarn build:extensions && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "build:extensions": "for dir in ./src/extensions/*/; do (cd \"$dir\" && yarn && yarn build); done",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -21,28 +25,39 @@
     "typeorm": "typeorm-ts-node-esm"
   },
   "dependencies": {
+    "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.0.0",
+    "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",
     "@nestjs/devtools-integration": "^0.1.6",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.3.1",
+    "axios": "^1.6.8",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "cli-progress": "^3.12.0",
+    "nest-commander": "^3.13.0",
+    "node-fetch": "2",
+    "readline": "^1.3.0",
     "reflect-metadata": "^0.2.0",
+    "request": "^2.88.2",
+    "request-progress": "^3.0.0",
     "rxjs": "^7.8.1",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "ulid": "^2.3.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@nestjs/typeorm": "^10.0.2",
+    "@types/cli-progress": "^3.11.5",
     "@types/express": "^4.17.17",
     "@types/jest": "^29.5.2",
-    "@types/node": "^20.3.1",
+    "@types/node": "^20.12.9",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
@@ -55,10 +70,12 @@
     "supertest": "^6.3.3",
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.3",
-    "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.1.3"
   },
+  "files": [
+    "dist"
+  ],
   "jest": {
     "moduleFileExtensions": [
       "js",

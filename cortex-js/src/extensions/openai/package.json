@@ -1,0 +1,30 @@
+{
+  "name": "@janhq/openai-inference-engine",
+  "productName": "OpenAI Inference Engine",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "type": "commonjs",
+  "description": "This extension enables OpenAI chat completion API calls",
+  "author": "Jan <service@jan.ai>",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "build": "tsc"
+  },
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "devDependencies": {
+    "cpx": "^1.5.0",
+    "rimraf": "^3.0.2",
+    "ts-loader": "^9.5.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist/*"
+  ],
+  "bundleDependencies": []
+}
