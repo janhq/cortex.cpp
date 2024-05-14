@@ -16,6 +16,12 @@
 #include <winsock2.h>
 #else
 #include <dirent.h>
+#include <unistd.h>
+#endif
+
+#if __APPLE__
+#include <limits.h>
+#include <mach-o/dyld.h>
 #endif
 
 namespace cortex_utils {
