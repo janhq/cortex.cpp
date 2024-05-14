@@ -46,6 +46,7 @@ export default class CortexProvider extends OAIEngineExtension {
     const cpuThreadCount = 1; // TODO: NamH Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
     const modelSettings = {
       // This is critical and requires real CPU physical core count (or performance core)
+      model: model.id,
       cpu_threads: cpuThreadCount,
       ...model.settings,
       llama_model_path: modelBinaryLocalPath,

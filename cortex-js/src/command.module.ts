@@ -11,6 +11,9 @@ import { ModelsCommand } from './infrastructure/commanders/models.command';
 import { StartCommand } from './infrastructure/commanders/start.command';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { ChatModule } from './usecases/chat/chat.module';
+import { InitCommand } from './infrastructure/commanders/init.command';
+import { HttpModule } from '@nestjs/axios';
+import { CreateInitQuestions } from './infrastructure/commanders/inquirer/init.questions';
 
 @Module({
   imports: [
@@ -24,6 +27,7 @@ import { ChatModule } from './usecases/chat/chat.module';
     CortexModule,
     ChatModule,
     ExtensionModule,
+    HttpModule,
   ],
   providers: [
     BasicCommand,
@@ -32,6 +36,8 @@ import { ChatModule } from './usecases/chat/chat.module';
     ServeCommand,
     InferenceCommand,
     StartCommand,
+    InitCommand,
+    CreateInitQuestions,
   ],
 })
 export class CommandModule {}

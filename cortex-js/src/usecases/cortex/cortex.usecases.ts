@@ -1,8 +1,6 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
-import { existsSync } from 'fs';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
 
@@ -10,10 +8,7 @@ import { HttpService } from '@nestjs/axios';
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
-  ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   async startCortex(
     host: string,
@@ -26,29 +21,27 @@ export class CortexUsecases {
       };
     }
 
-    const binaryPath = this.configService.get<string>('CORTEX_BINARY_PATH');
-    if (!binaryPath || !existsSync(binaryPath)) {
-      throw new InternalServerErrorException('Cortex binary not found');
-    }
-
     const args: string[] = ['1', host, port];
     // go up one level to get the binary folder, have to also work on windows
-    const binaryFolder = join(binaryPath, '..');
-
-    this.cortexProcess = spawn(binaryPath, args, {
-      detached: false,
-      cwd: binaryFolder,
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        // TODO: NamH need to get below information
-        // CUDA_VISIBLE_DEVICES: executableOptions.cudaVisibleDevices,
-        // // Vulkan - Support 1 device at a time for now
-        // ...(executableOptions.vkVisibleDevices?.length > 0 && {
-        //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
-        // }),
+    // const binaryFolder = join(binaryPath, '..');
+    this.cortexProcess = spawn(
+      join(__dirname, '../../../cortex-cpp/cortex-cpp'),
+      args,
+      {
+        detached: false,
+        cwd: join(__dirname, '../../../cortex-cpp'),
+        stdio: 'inherit',
+        env: {
+          ...process.env,
+          // TODO: NamH need to get below information
+          // CUDA_VISIBLE_DEVICES: executableOptions.cudaVisibleDevices,
+          // // Vulkan - Support 1 device at a time for now
+          // ...(executableOptions.vkVisibleDevices?.length > 0 && {
+          //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
+          // }),
+        },
       },
-    });
+    );
 
     this.registerCortexEvents();
 

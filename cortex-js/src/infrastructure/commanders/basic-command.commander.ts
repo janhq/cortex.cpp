@@ -5,9 +5,16 @@ import { InferenceCommand } from './inference.command';
 import { ModelsCommand } from './models.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
+import { InitCommand } from './init.command';
 
 @RootCommand({
-  subCommands: [ModelsCommand, PullCommand, ServeCommand, InferenceCommand],
+  subCommands: [
+    ModelsCommand,
+    PullCommand,
+    ServeCommand,
+    InferenceCommand,
+    InitCommand,
+  ],
 })
 export class BasicCommand extends CommandRunner {
   constructor(private readonly cortexUsecases: CortexUsecases) {
