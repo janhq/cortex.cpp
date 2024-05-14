@@ -5,15 +5,15 @@
 #include <iostream>
 
 #include "trantor/utils/Logger.h"
-#include "utils/logging_utils.h"
 #include "utils/cortex_utils.h"
+#include "utils/logging_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
 namespace inferences {
 namespace {
 constexpr static auto kLlamaEngine = "cortex.llamacpp";
-constexpr static auto kLlamaLibPath = "./engines/cortex.llamacpp";
+constexpr static auto kLlamaLibPath = "/engines/cortex.llamacpp";
 }  // namespace
 
 server::server()
@@ -57,9 +57,8 @@ void server::ChatCompletion(
   LOG_TRACE << "Done chat completion";
 }
 
-void server::Embedding(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) {
+void server::Embedding(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!IsEngineLoaded()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -130,9 +129,8 @@ void server::ModelStatus(
   LOG_TRACE << "Done get model status";
 }
 
-void server::LoadModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) {
+void server::LoadModel(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
       (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
   if (!dylib_ || engine_type != cur_engine_name_) {
@@ -146,8 +144,10 @@ void server::LoadModel(
     };
 
     try {
+      std::string abs_path = cortex_utils::GetCurrentPath() +
+                             get_engine_path(cur_engine_name_);
       dylib_ =
-          std::make_unique<dylib>(get_engine_path(cur_engine_name_), "engine");
+          std::make_unique<dylib>(abs_path, "engine");
     } catch (const dylib::load_error& e) {
       LOG_ERROR << "Could not load engine: " << e.what();
       dylib_.reset();
@@ -180,7 +180,7 @@ void server::LoadModel(
 }
 
 void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                                std::shared_ptr<SyncQueue> q) {
+                              std::shared_ptr<SyncQueue> q) {
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider =
       [q, err_or_done](char* buf, std::size_t buf_size) -> std::size_t {
@@ -209,12 +209,12 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   };
 
   auto resp = cortex_utils::nitroStreamResponse(chunked_content_provider,
-                                               "chat_completions.txt");
+                                                "chat_completions.txt");
   cb(resp);
 }
 
-void server::ProcessNonStreamRes(
-    std::function<void(const HttpResponsePtr&)> cb, SyncQueue& q) {
+void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
+                                 SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
   auto resp = cortex_utils::nitroHttpJsonResponse(res);
   resp->setStatusCode(
