@@ -1,6 +1,7 @@
 # cortex.llamacpp release version
 set(VERSION 0.1.2)
 set(ENGINE_VERSION v${VERSION})
+add_compile_definitions(CORTEX_LLAMACPP_VERSION="${VERSION}")
 
 # MESSAGE("ENGINE_VERSION=" ${ENGINE_VERSION})
 
