@@ -86,7 +86,7 @@ response2=$(
 response3=$(curl --connect-timeout 60 -o /tmp/unload-model-res.log --request POST -s -w "%{http_code}" --location "http://127.0.0.1:$PORT/inferences/server/unloadModel" \
     --header 'Content-Type: application/json' \
     --data '{
-    "llama_model_path": "/tmp/testllm"
+    "model": "testllm"
 }')
 
 # load embedding model
