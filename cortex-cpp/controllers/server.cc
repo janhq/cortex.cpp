@@ -147,8 +147,8 @@ void server::LoadModel(const HttpRequestPtr& req,
       std::string abs_path = cortex_utils::GetCurrentPath() +
                              get_engine_path(cur_engine_name_);
       dylib_ =
-          std::make_unique<dylib>(abs_path, "engine");
-    } catch (const dylib::load_error& e) {
+          std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+    } catch (const cortex_cpp::dylib::load_error& e) {
       LOG_ERROR << "Could not load engine: " << e.what();
       dylib_.reset();
       engine_ = nullptr;

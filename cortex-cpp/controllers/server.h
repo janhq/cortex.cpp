@@ -120,7 +120,7 @@ class server : public drogon::HttpController<server>,
   };
 
  private:
-  std::unique_ptr<dylib> dylib_;
+  std::unique_ptr<cortex_cpp::dylib> dylib_;
   EngineI* engine_;
   std::string cur_engine_name_;
 };
