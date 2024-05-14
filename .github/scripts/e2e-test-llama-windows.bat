@@ -62,8 +62,8 @@ if not exist "%MODEL_EMBEDDING_PATH%" (
 rem Define JSON strings for curl data
 call set "MODEL_LLM_PATH_STRING=%%MODEL_LLM_PATH:\=\\%%"
 call set "MODEL_EMBEDDING_PATH_STRING=%%MODEL_EMBEDDING_PATH:\=\\%%"
-set "curl_data1={\"llama_model_path\":\"%MODEL_LLM_PATH_STRING%\"}"
-set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":false,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":50,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.1}"
+set "curl_data1={\"llama_model_path\":\"%MODEL_LLM_PATH_STRING%\", \"model_alias\":\"gpt-3.5-turbo\"}"
+set "curl_data2={\"messages\":[{\"content\":\"Hello there\",\"role\":\"assistant\"},{\"content\":\"Write a long and sad story for me\",\"role\":\"user\"}],\"stream\":true,\"model\":\"gpt-3.5-turbo\",\"max_tokens\":50,\"stop\":[\"hello\"],\"frequency_penalty\":0,\"presence_penalty\":0,\"temperature\":0.1}"
 set "curl_data3={\"model\":\"gpt-3.5-turbo\"}"
 set "curl_data4={\"llama_model_path\":\"%MODEL_EMBEDDING_PATH_STRING%\", \"embedding\": true, \"model_type\": \"embedding\"}"
 set "curl_data5={\"input\": \"Hello\", \"model\": \"test-embedding\", \"encoding_format\": \"float\"}"
