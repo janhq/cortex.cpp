@@ -13,7 +13,7 @@ using json = nlohmann::json;
 namespace inferences {
 namespace {
 constexpr static auto kLlamaEngine = "cortex.llamacpp";
-#if defined(_WIN32)
+#if (defined(_WIN32) || defined(_WIN64))
 constexpr static auto kLlamaLibPath = ".\\engines\\cortex.llamacpp";
 #else
 constexpr static auto kLlamaLibPath = "./engines/cortex.llamacpp";
