@@ -1,4 +1,5 @@
 import { Question, QuestionSet } from 'nest-commander';
+import { platform } from 'node:process';
 
 @QuestionSet({ name: 'create-init-questions' })
 export class CreateInitQuestions {
@@ -8,7 +9,7 @@ export class CreateInitQuestions {
     name: 'runMode',
     default: 'CPU',
     choices: ['CPU', 'GPU'],
-    when: () => process.platform !== 'darwin',
+    when: () => platform !== 'darwin',
   })
   parseRunMode(val: string) {
     return val;
@@ -31,7 +32,7 @@ export class CreateInitQuestions {
     message: 'Select CPU instructions set',
     name: 'instructions',
     choices: ['AVX2', 'AVX', 'AVX-512'],
-    when: () => process.platform !== 'darwin',
+    when: () => platform !== 'darwin',
   })
   parseContent(val: string) {
     return val;

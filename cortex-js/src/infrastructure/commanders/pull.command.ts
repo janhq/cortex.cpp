@@ -34,9 +34,10 @@ export class PullCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[]): Promise<void> {
+  async run(input: string[]) {
     if (input.length < 1) {
-      return Promise.reject('Model ID is required');
+      console.error('Model ID is required');
+      exit(1);
     }
 
     const modelId = input[0];
@@ -46,7 +47,7 @@ export class PullCommand extends CommandRunner {
 
     const bar = new SingleBar({}, Presets.shades_classic);
     bar.start(100, 0);
-    await this.modelsUsecases.downloadModel({ modelId }, (progress) => {
+    await this.modelsUsecases.downloadModel(modelId, (progress) => {
       bar.update(progress);
     });
     console.log('\nDownload complete!');

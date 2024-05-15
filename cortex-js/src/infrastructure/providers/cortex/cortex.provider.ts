@@ -6,6 +6,7 @@ import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { readdirSync } from 'node:fs';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -36,13 +37,15 @@ export default class CortexProvider extends OAIEngineExtension {
       resolve('./models');
 
     const modelFolderFullPath = join(modelsContainerDir, model.id);
-    //TODO: recheck this
-    const modelBinaryLocalPath = join(
-      modelFolderFullPath,
-      basename(model.sources[0].url),
-    );
+    const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
+      return file.endsWith('.gguf');
+    });
 
-    // TODO: NamH check if the binary is there
+    if (ggufFiles.length === 0) {
+      throw new Error('Model binary not found');
+    }
+
+    const modelBinaryLocalPath = join(modelFolderFullPath, ggufFiles[0]);
 
     const cpuThreadCount = 1; // TODO: NamH Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
     const modelSettings = {
