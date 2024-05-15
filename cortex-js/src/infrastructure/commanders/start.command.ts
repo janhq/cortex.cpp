@@ -40,19 +40,7 @@ export class StartCommand extends CommandRunner {
   }
 
   private async startModel(modelId: string) {
-    // TODO: NamH remove these hardcoded value
-    const settings: ModelSettingParams = {
-      cpu_threads: 10,
-      ctx_len: 2048,
-      embedding: false,
-      prompt_template:
-        '{system_message}\n### Instruction: {prompt}\n### Response:',
-      system_prompt: '',
-      user_prompt: '\n### Instruction: ',
-      ai_prompt: '\n### Response:',
-      ngl: 100,
-    };
-    return this.modelsUsecases.startModel(modelId, settings);
+    return this.modelsUsecases.startModel(modelId);
   }
 
   private async getModelOrStop(modelId: string): Promise<Model> {

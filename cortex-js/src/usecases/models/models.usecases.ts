@@ -3,11 +3,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import {
-  Model,
-  ModelFormat,
-  ModelSettingParams,
-} from '@/domain/models/model.interface';
+import { Model, ModelFormat } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
 import {
@@ -18,7 +14,6 @@ import {
   rmdirSync,
 } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
-import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
 import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
@@ -92,7 +87,7 @@ export class ModelsUsecases {
 
   async startModel(
     modelId: string,
-    settings: ModelSettingParamsDto,
+    settings?: ModelSettingParamsDto,
   ): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
@@ -155,11 +150,8 @@ export class ModelsUsecases {
       });
   }
 
-  async downloadModel(
-    downloadModelDto: DownloadModelDto,
-    callback?: (progress: number) => void,
-  ) {
-    const model = await this.getModelOrThrow(downloadModelDto.modelId);
+  async downloadModel(modelId: string, callback?: (progress: number) => void) {
+    const model = await this.getModelOrThrow(modelId);
 
     if (model.format === ModelFormat.API) {
       throw new BadRequestException('Cannot download remote model');
