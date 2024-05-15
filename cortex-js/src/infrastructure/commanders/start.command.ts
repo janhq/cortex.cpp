@@ -2,6 +2,8 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { LoadModelDto } from '../dtos/models/load-model.dto';
+import { resolve } from 'path';
+import { existsSync } from 'fs';
 
 @SubCommand({ name: 'start', aliases: ['run'] })
 export class StartCommand extends CommandRunner {
@@ -26,6 +28,10 @@ export class StartCommand extends CommandRunner {
   }
 
   private async startCortex() {
+    if (!existsSync(resolve(this.rootDir(), 'cortex-cpp'))) {
+      console.log('Please init the cortex by running cortex init command!');
+      process.exit(0);
+    }
     const host = '127.0.0.1';
     const port = '3928';
     return this.cortexUsecases.startCortex(host, port);
@@ -45,4 +51,6 @@ export class StartCommand extends CommandRunner {
     const loadModelDto: LoadModelDto = { modelId, settings };
     return this.modelsUsecases.startModel(loadModelDto);
   }
+
+  rootDir = () => resolve(__dirname, `../../../`);
 }
