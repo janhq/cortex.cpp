@@ -7,6 +7,7 @@
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
 #include "utils/cortex_utils.h"
+#include "utils/cpuid/cpu_validation.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -146,6 +147,11 @@ void server::LoadModel(
     };
 
     try {
+      if(cur_engine_name_ == kLlamaEngine) {
+        if(auto [res, err] = cortex::cpuid::llamacpp::IsValidInstructions(); !res) {
+          LOG_WARN << err;
+        }
+      }
       dylib_ =
           std::make_unique<dylib>(get_engine_path(cur_engine_name_), "engine");
     } catch (const dylib::load_error& e) {
