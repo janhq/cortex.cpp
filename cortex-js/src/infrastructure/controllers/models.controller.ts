@@ -12,9 +12,9 @@ import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LoadModelSuccessDto } from '@/infrastructure/dtos/models/load-model-success.dto';
-import { LoadModelDto } from '@/infrastructure/dtos/models/load-model.dto';
+import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
+import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
 
 @ApiTags('Models')
 @Controller('models')
@@ -30,11 +30,14 @@ export class ModelsController {
   @ApiResponse({
     status: 200,
     description: 'The model has been loaded successfully.',
-    type: LoadModelSuccessDto,
+    type: StartModelSuccessDto,
   })
-  @Post('load')
-  load(@Body() loadModelDto: LoadModelDto) {
-    return this.modelsService.startModel(loadModelDto);
+  @Post(':modelId/start')
+  startModel(
+    @Param('modelId') modelId: string,
+    @Body() settings: ModelSettingParamsDto,
+  ) {
+    return this.modelsService.startModel(modelId, settings);
   }
 
   @Post('download')

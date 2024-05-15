@@ -1,10 +1,12 @@
-import { IsIP, IsString } from 'class-validator';
+import { IsIP, IsNumber, IsString, Max, Min } from 'class-validator';
 
 export class StartCortexDto {
   @IsString()
   @IsIP()
   host: string;
 
-  @IsString()
-  port: string;
+  @IsNumber()
+  @Min(0)
+  @Max(65535)
+  port: number;
 }

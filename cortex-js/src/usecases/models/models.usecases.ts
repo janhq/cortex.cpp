@@ -3,7 +3,11 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Model, ModelFormat } from '@/domain/models/model.interface';
+import {
+  Model,
+  ModelFormat,
+  ModelSettingParams,
+} from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
 import {
@@ -13,13 +17,13 @@ import {
   mkdirSync,
   rmdirSync,
 } from 'fs';
-import { LoadModelSuccessDto } from '@/infrastructure/dtos/models/load-model-success.dto';
-import { LoadModelDto } from '@/infrastructure/dtos/models/load-model.dto';
+import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
 import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
+import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-setting-params.dto';
 
 @Injectable()
 export class ModelsUsecases {
@@ -86,8 +90,11 @@ export class ModelsUsecases {
       });
   }
 
-  async startModel(loadModelDto: LoadModelDto): Promise<LoadModelSuccessDto> {
-    const model = await this.getModelOrThrow(loadModelDto.modelId);
+  async startModel(
+    modelId: string,
+    settings: ModelSettingParamsDto,
+  ): Promise<StartModelSuccessDto> {
+    const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
     const engine = extensions.find((e: any) => e.provider === model?.engine) as
       | EngineExtension
@@ -96,27 +103,28 @@ export class ModelsUsecases {
     if (!engine) {
       return {
         message: 'No extension handler found for model',
-        modelId: loadModelDto.modelId,
+        modelId: modelId,
       };
     }
 
     return engine
-      .loadModel(model)
+      .loadModel(model, settings)
       .then(() => {
         return {
           message: 'Model loaded successfully',
-          modelId: loadModelDto.modelId,
+          modelId: modelId,
         };
       })
       .catch((err) => {
         console.error(err);
         return {
           message: 'Model failed to load',
-          modelId: loadModelDto.modelId,
+          modelId: modelId,
         };
       });
   }
-  async stopModel(modelId: string): Promise<LoadModelSuccessDto> {
+
+  async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
     const engine = extensions.find((e: any) => e.provider === model?.engine) as
@@ -169,7 +177,7 @@ export class ModelsUsecases {
       this.configService.get<string>('CORTEX_MODELS_DIR') ?? './models';
 
     if (!existsSync(modelsContainerDir)) {
-      await mkdirSync(modelsContainerDir, { recursive: true });
+      mkdirSync(modelsContainerDir, { recursive: true });
     }
 
     const modelFolder = join(modelsContainerDir, model.id);
