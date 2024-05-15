@@ -129,7 +129,7 @@ export class InitCommand extends CommandRunner {
     const cudaVersion =
       options.runMode === 'GPU'
         ? options.gpuType === 'Nvidia'
-          ? '-cuda-' + (options.cudaVersion === '11' ? '11.7' : '12.2')
+          ? '-cuda-' + (options.cudaVersion === '11' ? '11-7' : '12-0')
           : '-vulkan'
         : '';
     const instructions = options.instructions ? `-${options.instructions}` : '';
