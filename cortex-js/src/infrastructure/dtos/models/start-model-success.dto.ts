@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator';
 
-export class LoadModelSuccessDto {
+export class StartModelSuccessDto {
   @IsString()
   message: string;
 
