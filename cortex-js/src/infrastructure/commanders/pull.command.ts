@@ -3,6 +3,7 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { CreateModelDto } from '../dtos/models/create-model.dto';
 import { ModelFormat } from '@/domain/models/model.interface';
 import { Presets, SingleBar } from 'cli-progress';
+import { exit } from 'node:process';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -49,7 +50,7 @@ export class PullCommand extends CommandRunner {
       bar.update(progress);
     });
     console.log('\nDownload complete!');
-    process.exit(0);
+    exit(0);
   }
 
   async pullHuggingFaceModel(modelId: string) {

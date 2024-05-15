@@ -2,35 +2,41 @@ import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { CreateChatCompletionDto } from '../dtos/chat/create-chat-completion.dto';
 import { ChatCompletionRole } from '@/domain/models/message.interface';
-import { stdout } from 'process';
+import { exit, stdin, stdout } from 'node:process';
 import * as readline from 'node:readline/promises';
 import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 import { ChatCompletionMessage } from '../dtos/chat/chat-completion-message.dto';
 
 @SubCommand({ name: 'chat' })
 export class InferenceCommand extends CommandRunner {
-  exitClause = 'exit()';
-  userIndicator = '>> ';
-  exitMessage = 'Bye!';
+  private exitClause = 'exit()';
+  private userIndicator = '>> ';
+  private exitMessage = 'Bye!';
 
   constructor(private readonly chatUsecases: ChatUsecases) {
     super();
   }
 
-  async run(): Promise<void> {
+  async run(input: string[]): Promise<void> {
+    if (input.length == 0) {
+      console.error('Please provide a model id.');
+      exit(1);
+    }
+
+    const modelId = input[0];
     console.log(`Inorder to exit, type '${this.exitClause}'.`);
     const messages: ChatCompletionMessage[] = [];
 
     const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
+      input: stdin,
+      output: stdout,
       prompt: this.userIndicator,
     });
     rl.prompt();
 
     rl.on('close', () => {
       console.log(this.exitMessage);
-      process.exit(0);
+      exit(0);
     });
 
     rl.on('line', (userInput: string) => {
@@ -46,7 +52,7 @@ export class InferenceCommand extends CommandRunner {
 
       const chatDto: CreateChatCompletionDto = {
         messages,
-        model: 'TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF',
+        model: modelId,
         stream: true,
         max_tokens: 2048,
         stop: [],

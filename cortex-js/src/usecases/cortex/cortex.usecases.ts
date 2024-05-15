@@ -12,7 +12,7 @@ export class CortexUsecases {
 
   async startCortex(
     host: string,
-    port: string,
+    port: number,
   ): Promise<CortexOperationSuccessfullyDto> {
     if (this.cortexProcess) {
       return {
@@ -21,9 +21,9 @@ export class CortexUsecases {
       };
     }
 
-    const args: string[] = ['1', host, port];
+    const args: string[] = ['1', host, `${port}`];
+
     // go up one level to get the binary folder, have to also work on windows
-    // const binaryFolder = join(binaryPath, '..');
     this.cortexProcess = spawn(
       join(__dirname, '../../../cortex-cpp/cortex-cpp'),
       args,

@@ -4,6 +4,7 @@ import { resolve } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
+import { exit } from 'node:process';
 
 @SubCommand({ name: 'init', aliases: ['setup'] })
 export class InitCommand extends CommandRunner {
@@ -41,7 +42,7 @@ export class InitCommand extends CommandRunner {
 
     if (!res?.data) {
       console.log('Failed to fetch releases');
-      process.exit(1);
+      exit(1);
     }
 
     let release = res?.data;
@@ -56,7 +57,7 @@ export class InitCommand extends CommandRunner {
 
     if (!toDownloadAsset) {
       console.log(`Could not find engine file ${engineFileName}`);
-      process.exit(1);
+      exit(1);
     }
 
     console.log(`Downloading engine file ${engineFileName}`);
@@ -107,9 +108,9 @@ export class InitCommand extends CommandRunner {
       );
     } catch (e) {
       console.log(e);
-      process.exit(1);
+      exit(1);
     }
-    process.exit(0);
+    exit(0);
   };
 
   parseEngineFileName = (options: {

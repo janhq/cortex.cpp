@@ -3,7 +3,11 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Model, ModelFormat } from '@/domain/models/model.interface';
+import {
+  Model,
+  ModelFormat,
+  ModelSettingParams,
+} from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
 import {
@@ -119,6 +123,7 @@ export class ModelsUsecases {
         };
       });
   }
+
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
@@ -172,7 +177,7 @@ export class ModelsUsecases {
       this.configService.get<string>('CORTEX_MODELS_DIR') ?? './models';
 
     if (!existsSync(modelsContainerDir)) {
-      await mkdirSync(modelsContainerDir, { recursive: true });
+      mkdirSync(modelsContainerDir, { recursive: true });
     }
 
     const modelFolder = join(modelsContainerDir, model.id);
