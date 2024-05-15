@@ -34,7 +34,7 @@ export class CortexUsecases {
         env: {
           ...process.env,
           // TODO: NamH need to get below information
-          // CUDA_VISIBLE_DEVICES: executableOptions.cudaVisibleDevices,
+          CUDA_VISIBLE_DEVICES: "0",
           // // Vulkan - Support 1 device at a time for now
           // ...(executableOptions.vkVisibleDevices?.length > 0 && {
           //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],

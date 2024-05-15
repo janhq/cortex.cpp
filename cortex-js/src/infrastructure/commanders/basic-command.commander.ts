@@ -26,8 +26,8 @@ export class BasicCommand extends CommandRunner {
 
     switch (command) {
       case 'start':
-        const host = options?.host || defaultCortexJsHost;
-        const port = options?.port || defaultCortexJsPort;
+        const host = options?.host || 'localhost';
+        const port = options?.port || 3928;
         return this.cortexUsecases
           .startCortex(host, port)
           .then((e) => console.log(e));
