@@ -9,6 +9,8 @@ import { PullCommand } from './infrastructure/commanders/pull.command';
 import { InferenceCommand } from './infrastructure/commanders/inference.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
 import { StartCommand } from './infrastructure/commanders/start.command';
+import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
+import { ChatModule } from './usecases/chat/chat.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { StartCommand } from './infrastructure/commanders/start.command';
     DatabaseModule,
     ModelsModule,
     CortexModule,
+    ChatModule,
+    ExtensionModule,
   ],
   providers: [
     BasicCommand,

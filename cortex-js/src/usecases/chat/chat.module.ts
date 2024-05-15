@@ -8,5 +8,6 @@ import { ExtensionModule } from '@/infrastructure/repositories/extensions/extens
   imports: [DatabaseModule, ExtensionModule],
   controllers: [ChatController],
   providers: [ChatUsecases],
+  exports: [ChatUsecases],
 })
 export class ChatModule {}

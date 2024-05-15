@@ -3,6 +3,7 @@ import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
+import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 
 @ApiTags('Inference')
 @Controller('chat')
@@ -15,6 +16,23 @@ export class ChatController {
     @Body() createChatDto: CreateChatCompletionDto,
     @Res() res: Response,
   ) {
-    this.chatService.createChatCompletions(createChatDto, headers, res);
+    const writableStream = new WritableStream<ChatStreamEvent>({
+      write(chunk) {
+        if (chunk.type === 'data') {
+          res.json(chunk.data ?? {});
+        } else if (chunk.type === 'error') {
+          res.json(chunk.error ?? {});
+        } else {
+          console.log('\n');
+        }
+      },
+    });
+
+    this.chatService.createChatCompletions(
+      createChatDto,
+      headers,
+      writableStream,
+      res,
+    );
   }
 }
