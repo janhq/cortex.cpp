@@ -20,6 +20,7 @@ import { ModelGetCommand } from './infrastructure/commanders/models/model-get.co
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 import { InitCudaQuestions } from './infrastructure/commanders/inquirer/cuda.questions';
+import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { InitCudaQuestions } from './infrastructure/commanders/inquirer/cuda.que
     ChatModule,
     ExtensionModule,
     HttpModule,
+    CliUsecasesModule
   ],
   providers: [
     CortexCommand,
