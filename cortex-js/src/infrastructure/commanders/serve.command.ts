@@ -8,7 +8,10 @@ type ServeOptions = {
   port?: number;
 };
 
-@SubCommand({ name: 'serve' })
+@SubCommand({
+  name: 'serve',
+  description: 'Providing API endpoint for Cortex backend',
+})
 export class ServeCommand extends CommandRunner {
   constructor() {
     super();

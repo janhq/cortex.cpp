@@ -31,7 +31,7 @@ export class CreateInitQuestions {
     type: 'list',
     message: 'Select CPU instructions set',
     name: 'instructions',
-    choices: ['AVX2', 'AVX', 'AVX-512'],
+    choices: ['AVX2', 'AVX', 'AVX512'],
     when: () => platform !== 'darwin',
   })
   parseContent(val: string) {

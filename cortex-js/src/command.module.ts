@@ -5,7 +5,6 @@ import { ConfigModule } from '@nestjs/config';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
-import { StartCommand } from './infrastructure/commanders/start.command';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { InitCommand } from './infrastructure/commanders/init.command';
@@ -19,6 +18,7 @@ import { ModelStartCommand } from './infrastructure/commanders/models/model-star
 import { ModelStopCommand } from './infrastructure/commanders/models/model-stop.command';
 import { ModelGetCommand } from './infrastructure/commanders/models/model-get.command';
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
+import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 
 @Module({
   imports: [
@@ -39,7 +39,6 @@ import { ModelRemoveCommand } from './infrastructure/commanders/models/model-rem
     ModelsCommand,
     ServeCommand,
     ChatCommand,
-    StartCommand,
     InitCommand,
     CreateInitQuestions,
 
@@ -50,6 +49,9 @@ import { ModelRemoveCommand } from './infrastructure/commanders/models/model-rem
     ModelGetCommand,
     ModelRemoveCommand,
     ModelPullCommand,
+
+    // Shortcuts
+    RunCommand,
   ],
 })
 export class CommandModule {}
