@@ -5,6 +5,7 @@ import * as readline from 'node:readline/promises';
 import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 // TODO: make this class injectable
 export class ChatCliUsecases {
@@ -12,15 +13,12 @@ export class ChatCliUsecases {
   private userIndicator = '>> ';
   private exitMessage = 'Bye!';
 
-  constructor(private readonly chatUsecases: ChatUsecases) {}
+  constructor(
+    private readonly chatUsecases: ChatUsecases,
+    private readonly cortexUsecases: CortexUsecases,
+  ) {}
 
-  async run(input: string[]): Promise<void> {
-    if (input.length == 0) {
-      console.error('Please provide a model id.');
-      exit(1);
-    }
-
-    const modelId = input[0];
+  async chat(modelId: string): Promise<void> {
     console.log(`Inorder to exit, type '${this.exitClause}'.`);
     const messages: ChatCompletionMessage[] = [];
 
@@ -32,8 +30,10 @@ export class ChatCliUsecases {
     rl.prompt();
 
     rl.on('close', () => {
-      console.log(this.exitMessage);
-      exit(0);
+      this.cortexUsecases.stopCortex().then(() => {
+        console.log(this.exitMessage);
+        exit(0);
+      });
     });
 
     rl.on('line', (userInput: string) => {

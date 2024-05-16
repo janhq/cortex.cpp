@@ -16,6 +16,7 @@ import { ModelRemoveCommand } from './models/model-remove.command';
     ModelGetCommand,
     ModelRemoveCommand,
   ],
+  description: 'Subcommands for managing models',
 })
 export class ModelsCommand extends CommandRunner {
   async run(): Promise<void> {}

@@ -1,11 +1,14 @@
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
-@SubCommand({ name: 'start' })
+@SubCommand({ name: 'start', description: 'Start a model by ID.' })
 export class ModelStartCommand extends CommandRunner {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {
+  constructor(
+    private readonly cortexUsecases: CortexUsecases,
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+  ) {
     super();
   }
 
@@ -15,7 +18,7 @@ export class ModelStartCommand extends CommandRunner {
       exit(1);
     }
 
-    const modelsCliUsecases = new ModelsCliUsecases(this.modelsUsecases);
-    await modelsCliUsecases.startModel(input[0]);
+    await this.cortexUsecases.startCortex();
+    await this.modelsCliUsecases.startModel(input[0]);
   }
 }

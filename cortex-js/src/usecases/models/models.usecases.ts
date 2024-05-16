@@ -5,7 +5,7 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { Model, ModelFormat } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
-import { join, basename } from 'path';
+import { join, basename, resolve } from 'path';
 import {
   promises,
   createWriteStream,
@@ -14,7 +14,6 @@ import {
   rmdirSync,
 } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
-import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
@@ -26,7 +25,6 @@ export class ModelsUsecases {
     @Inject('MODEL_REPOSITORY')
     private readonly modelRepository: Repository<ModelEntity>,
     private readonly extensionRepository: ExtensionRepository,
-    private readonly configService: ConfigService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -65,8 +63,7 @@ export class ModelsUsecases {
   }
 
   async remove(id: string) {
-    const modelsContainerDir =
-      this.configService.get<string>('CORTEX_MODELS_DIR') ?? './models';
+    const modelsContainerDir = this.modelDir();
 
     if (!existsSync(modelsContainerDir)) {
       return;
@@ -150,6 +147,8 @@ export class ModelsUsecases {
       });
   }
 
+  modelDir = () => resolve(__dirname, `../../../models`);
+
   async downloadModel(modelId: string, callback?: (progress: number) => void) {
     const model = await this.getModelOrThrow(modelId);
 
@@ -165,8 +164,7 @@ export class ModelsUsecases {
     }
 
     const fileName = basename(downloadUrl);
-    const modelsContainerDir =
-      this.configService.get<string>('CORTEX_MODELS_DIR') ?? './models';
+    const modelsContainerDir = this.modelDir();
 
     if (!existsSync(modelsContainerDir)) {
       mkdirSync(modelsContainerDir, { recursive: true });
