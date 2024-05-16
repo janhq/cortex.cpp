@@ -13,13 +13,12 @@ import {
   mkdirSync,
   rmdirSync,
 } from 'fs';
-import { LoadModelSuccessDto } from '@/infrastructure/dtos/models/load-model-success.dto';
-import { LoadModelDto } from '@/infrastructure/dtos/models/load-model.dto';
-import { DownloadModelDto } from '@/infrastructure/dtos/models/download-model.dto';
+import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ConfigService } from '@nestjs/config';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
+import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-setting-params.dto';
 
 @Injectable()
 export class ModelsUsecases {
@@ -86,8 +85,11 @@ export class ModelsUsecases {
       });
   }
 
-  async startModel(loadModelDto: LoadModelDto): Promise<LoadModelSuccessDto> {
-    const model = await this.getModelOrThrow(loadModelDto.modelId);
+  async startModel(
+    modelId: string,
+    settings?: ModelSettingParamsDto,
+  ): Promise<StartModelSuccessDto> {
+    const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
     const engine = extensions.find((e: any) => e.provider === model?.engine) as
       | EngineExtension
@@ -96,27 +98,28 @@ export class ModelsUsecases {
     if (!engine) {
       return {
         message: 'No extension handler found for model',
-        modelId: loadModelDto.modelId,
+        modelId: modelId,
       };
     }
 
     return engine
-      .loadModel(model)
+      .loadModel(model, settings)
       .then(() => {
         return {
           message: 'Model loaded successfully',
-          modelId: loadModelDto.modelId,
+          modelId: modelId,
         };
       })
       .catch((err) => {
         console.error(err);
         return {
           message: 'Model failed to load',
-          modelId: loadModelDto.modelId,
+          modelId: modelId,
         };
       });
   }
-  async stopModel(modelId: string): Promise<LoadModelSuccessDto> {
+
+  async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
     const engine = extensions.find((e: any) => e.provider === model?.engine) as
@@ -147,11 +150,8 @@ export class ModelsUsecases {
       });
   }
 
-  async downloadModel(
-    downloadModelDto: DownloadModelDto,
-    callback?: (progress: number) => void,
-  ) {
-    const model = await this.getModelOrThrow(downloadModelDto.modelId);
+  async downloadModel(modelId: string, callback?: (progress: number) => void) {
+    const model = await this.getModelOrThrow(modelId);
 
     if (model.format === ModelFormat.API) {
       throw new BadRequestException('Cannot download remote model');
@@ -169,7 +169,7 @@ export class ModelsUsecases {
       this.configService.get<string>('CORTEX_MODELS_DIR') ?? './models';
 
     if (!existsSync(modelsContainerDir)) {
-      await mkdirSync(modelsContainerDir, { recursive: true });
+      mkdirSync(modelsContainerDir, { recursive: true });
     }
 
     const modelFolder = join(modelsContainerDir, model.id);

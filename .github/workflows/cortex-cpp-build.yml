@@ -162,6 +162,11 @@ jobs:
         with:
           submodules: recursive
 
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Install choco on Windows
         if: runner.os == 'Windows'
         run: |
@@ -189,12 +194,11 @@ jobs:
         run: |
           cd cortex-cpp
           make pre-package
-  
+
       - name: Code Signing
         run: |
           cd cortex-cpp
           make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}" DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
-
 
       - name: Package
         run: |

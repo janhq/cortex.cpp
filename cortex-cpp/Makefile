@@ -62,7 +62,8 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
-	@powershell -Command "Get-ChildItem -Path .\cortex-cpp -Recurse | ForEach-Object { & 'azuresigntool.exe' sign -kvu '$(AZURE_KEY_VAULT_URI)' -kvi '$(AZURE_CLIENT_ID)' -kvt '$(AZURE_TENANT_ID)' -kvs '$(AZURE_CLIENT_SECRET)' -kvc '$(AZURE_CERT_NAME)' -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v '$_.FullName' };"
+	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex-cpp\cortex-cpp.exe";'
+	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex-cpp\engines\cortex.llamacpp\engine.dll";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
@@ -103,3 +104,4 @@ else ifeq ($(shell uname -s),Linux)
 	@rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;
 else
 	@rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;
+endif

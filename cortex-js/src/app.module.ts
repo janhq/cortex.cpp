@@ -6,20 +6,19 @@ import { DevtoolsModule } from '@nestjs/devtools-integration';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
-import { InferenceSettingsModule } from './usecases/inference-settings/inference-settings.module';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
+import { env } from 'node:process';
 
 @Module({
   imports: [
     DevtoolsModule.register({
-      http: process.env.NODE_ENV !== 'production',
+      http: env.NODE_ENV !== 'production',
     }),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath:
-        process.env.NODE_ENV === 'production' ? '.env' : '.env.development',
+      envFilePath: env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
     DatabaseModule,
     MessagesModule,
@@ -27,7 +26,6 @@ import { ConfigModule } from '@nestjs/config';
     ModelsModule,
     ChatModule,
     AssistantsModule,
-    InferenceSettingsModule,
     CortexModule,
     ExtensionModule,
   ],
