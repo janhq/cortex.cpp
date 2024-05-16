@@ -19,6 +19,7 @@ import { ModelStopCommand } from './infrastructure/commanders/models/model-stop.
 import { ModelGetCommand } from './infrastructure/commanders/models/model-get.command';
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
+import { InitCudaQuestions } from './infrastructure/commanders/inquirer/cuda.questions';
 
 @Module({
   imports: [
@@ -40,7 +41,10 @@ import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
     ServeCommand,
     ChatCommand,
     InitCommand,
+
+    // Questions
     CreateInitQuestions,
+    InitCudaQuestions,
 
     // Model commands
     ModelStartCommand,

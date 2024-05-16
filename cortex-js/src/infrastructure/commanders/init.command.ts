@@ -1,10 +1,18 @@
 import { createWriteStream, existsSync, rmSync } from 'fs';
 import { CommandRunner, SubCommand, InquirerService } from 'nest-commander';
-import { resolve } from 'path';
+import { resolve, delimiter, join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
 import { exit } from 'node:process';
+
+interface InitOptions {
+  runMode?: 'CPU' | 'GPU';
+  gpuType?: 'Nvidia' | 'Others (Vulkan)';
+  instructions?: 'AVX' | 'AVX2' | 'AVX512' | undefined;
+  cudaVersion?: '11' | '12';
+  installCuda?: 'Yes' | string
+}
 
 @SubCommand({
   name: 'init',
@@ -13,6 +21,7 @@ import { exit } from 'node:process';
 })
 export class InitCommand extends CommandRunner {
   CORTEX_RELEASES_URL = 'https://api.github.com/repos/janhq/cortex/releases';
+  CUDA_DOWNLOAD_URL = 'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz'
 
   constructor(
     private readonly httpService: HttpService,
@@ -21,14 +30,23 @@ export class InitCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[], options?: any): Promise<void> {
+  async run(input: string[], options?: InitOptions): Promise<void> {
     options = await this.inquirerService.ask('create-init-questions', options);
+
+    if (options.runMode === 'GPU' && !(await this.cudaVersion())) {
+      options = await this.inquirerService.ask('init-cuda-questions', options);
+    }
+
     const version = input[0] ?? 'latest';
 
-    await this.download(this.parseEngineFileName(options), version);
+    await this.installEngine(this.parseEngineFileName(options), version);
+
+    if (options.installCuda === 'Yes') {
+      await this.installCudaToolkitDependency(options);
+    }
   }
 
-  download = async (
+  installEngine = async (
     engineFileName: string,
     version: string = 'latest',
   ): Promise<any> => {
@@ -74,7 +92,8 @@ export class InitCommand extends CommandRunner {
       })
       .toPromise();
     if (!download) {
-      throw new Error('Failed to download model');
+      console.log('Failed to download model');
+      process.exit(1)
     }
 
     const destination = resolve(this.rootDir(), toDownloadAsset.name);
@@ -114,15 +133,9 @@ export class InitCommand extends CommandRunner {
       console.log(e);
       exit(1);
     }
-    exit(0);
   };
 
-  parseEngineFileName = (options: {
-    runMode?: 'CPU' | 'GPU';
-    gpuType?: 'Nvidia' | 'Others (Vulkan)';
-    instructions?: 'AVX' | 'AVX2' | 'AVX512' | undefined;
-    cudaVersion?: '11' | '12';
-  }) => {
+  parseEngineFileName = (options: InitOptions) => {
     const platform =
       process.platform === 'win32'
         ? 'windows'
@@ -142,4 +155,100 @@ export class InitCommand extends CommandRunner {
   };
 
   rootDir = () => resolve(__dirname, `../../../`);
+
+  cudaVersion = async () => {
+    let filesCuda12: string[]
+    let filesCuda11: string[]
+    let paths: string[]
+    let cudaVersion: string = ''
+
+    if (process.platform === 'win32') {
+      filesCuda12 = ['cublas64_12.dll', 'cudart64_12.dll', 'cublasLt64_12.dll']
+      filesCuda11 = ['cublas64_11.dll', 'cudart64_110.dll', 'cublasLt64_11.dll']
+      paths = process.env.PATH ? process.env.PATH.split(delimiter) : []
+    } else {
+      filesCuda12 = ['libcudart.so.12', 'libcublas.so.12', 'libcublasLt.so.12']
+      filesCuda11 = ['libcudart.so.11.0', 'libcublas.so.11', 'libcublasLt.so.11']
+      paths = process.env.LD_LIBRARY_PATH
+        ? process.env.LD_LIBRARY_PATH.split(delimiter)
+        : []
+      paths.push('/usr/lib/x86_64-linux-gnu/')
+    }
+
+    let cudaExists = filesCuda12.every(
+      (file) => existsSync(file) || this.checkFileExistenceInPaths(file, paths)
+    )
+
+    if (!cudaExists) {
+      cudaExists = filesCuda11.every(
+        (file) => existsSync(file) || this.checkFileExistenceInPaths(file, paths)
+      )
+      if (cudaExists) {
+        cudaVersion = '11'
+      }
+    } else {
+      cudaVersion = '12'
+    }
+    return cudaExists ? cudaVersion : undefined
+  }
+
+  checkFileExistenceInPaths = (file: string, paths: string[]): boolean => {
+    return paths.some((p) => existsSync(join(p, file)))
+  }
+
+  installCudaToolkitDependency = async (options: InitOptions) => {
+    const platform = process.platform === 'win32' ? 'windows' : 'linux'
+
+    const url = this.CUDA_DOWNLOAD_URL
+      .replace('<version>', options.cudaVersion === '11' ? '11.7' : '12.4')
+      .replace('<platform>', platform)
+    const destination = resolve(this.rootDir(), 'cuda-toolkit.tar.gz');
+
+    const download = await this.httpService
+      .get(url, {
+        responseType: 'stream',
+      })
+      .toPromise();
+
+    if (!download) {
+      console.log('Failed to download dependency');
+      process.exit(1)
+    }
+
+    await new Promise((resolve, reject) => {
+      const writer = createWriteStream(destination);
+      let receivedBytes = 0;
+      const totalBytes = download.headers['content-length'];
+
+      writer.on('finish', () => {
+        bar.stop();
+        resolve(true);
+      });
+
+      writer.on('error', (error) => {
+        bar.stop();
+        reject(error);
+      });
+
+      const bar = new SingleBar({}, Presets.shades_classic);
+      bar.start(100, 0);
+
+      download.data.on('data', (chunk: any) => {
+        receivedBytes += chunk.length;
+        bar.update(Math.floor((receivedBytes / totalBytes) * 100));
+      });
+
+      download.data.pipe(writer);
+    });
+
+    try {
+      await decompress(
+        resolve(this.rootDir(), destination),
+        resolve(this.rootDir(), 'cortex-cpp'),
+      );
+    } catch (e) {
+      console.log(e);
+      exit(1);
+    }
+  }
 }
