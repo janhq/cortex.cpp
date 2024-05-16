@@ -1,21 +1,18 @@
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
-import { CommandRunner, SubCommand } from 'nest-commander';
-import { CreateChatCompletionDto } from '../dtos/chat/create-chat-completion.dto';
 import { ChatCompletionRole } from '@/domain/models/message.interface';
 import { exit, stdin, stdout } from 'node:process';
 import * as readline from 'node:readline/promises';
 import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
-import { ChatCompletionMessage } from '../dtos/chat/chat-completion-message.dto';
+import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
+import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 
-@SubCommand({ name: 'chat' })
-export class InferenceCommand extends CommandRunner {
+// TODO: make this class injectable
+export class ChatCliUsecases {
   private exitClause = 'exit()';
   private userIndicator = '>> ';
   private exitMessage = 'Bye!';
 
-  constructor(private readonly chatUsecases: ChatUsecases) {
-    super();
-  }
+  constructor(private readonly chatUsecases: ChatUsecases) {}
 
   async run(input: string[]): Promise<void> {
     if (input.length == 0) {

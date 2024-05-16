@@ -3,6 +3,7 @@ import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
+import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
 @Injectable()
 export class CortexUsecases {
@@ -11,8 +12,8 @@ export class CortexUsecases {
   constructor(private readonly httpService: HttpService) {}
 
   async startCortex(
-    host: string,
-    port: number,
+    host: string = defaultCortexCppHost,
+    port: number = defaultCortexCppPort,
   ): Promise<CortexOperationSuccessfullyDto> {
     if (this.cortexProcess) {
       return {
@@ -34,7 +35,7 @@ export class CortexUsecases {
         env: {
           ...process.env,
           // TODO: NamH need to get below information
-          CUDA_VISIBLE_DEVICES: "0",
+          CUDA_VISIBLE_DEVICES: '0',
           // // Vulkan - Support 1 device at a time for now
           // ...(executableOptions.vkVisibleDevices?.length > 0 && {
           //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],

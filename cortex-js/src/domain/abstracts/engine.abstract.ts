@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars, @typescript-eslint/no-unused-vars */
 import { Model, ModelSettingParams } from '../models/model.interface';
 import { Extension } from './extension.abstract';
 

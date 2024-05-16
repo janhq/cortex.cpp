@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
-import { basename, join, resolve } from 'path';
+import { join, resolve } from 'path';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
