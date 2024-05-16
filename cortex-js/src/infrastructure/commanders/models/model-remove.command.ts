@@ -3,7 +3,7 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { exit } from 'node:process';
 
-@SubCommand({ name: 'remove' })
+@SubCommand({ name: 'remove', description: 'Remove a model by ID locally.' })
 export class ModelRemoveCommand extends CommandRunner {
   constructor(private readonly modelsUsecases: ModelsUsecases) {
     super();

@@ -13,6 +13,7 @@ import { RunCommand } from './shortcuts/run.command';
     InitCommand,
     RunCommand,
   ],
+  description: 'Cortex CLI',
 })
 export class CortexCommand extends CommandRunner {
   async run(): Promise<void> {}

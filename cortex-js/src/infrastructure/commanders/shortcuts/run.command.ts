@@ -23,7 +23,6 @@ export class RunCommand extends CommandRunner {
   }
 
   async run(_input: string[], option: RunOptions): Promise<void> {
-    console.log('option', option);
     const modelId = option.model;
     if (!modelId) {
       console.error('Model ID is required');

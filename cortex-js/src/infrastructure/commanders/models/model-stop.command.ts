@@ -4,7 +4,7 @@ import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
-@SubCommand({ name: 'stop' })
+@SubCommand({ name: 'stop', description: 'Stop a model by ID.' })
 export class ModelStopCommand extends CommandRunner {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,

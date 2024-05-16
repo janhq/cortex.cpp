@@ -4,7 +4,11 @@ import { Presets, SingleBar } from 'cli-progress';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 
-@SubCommand({ name: 'pull', aliases: ['download'] })
+@SubCommand({
+  name: 'pull',
+  aliases: ['download'],
+  description: 'Download a model. Working with HuggingFace model id.',
+})
 export class ModelPullCommand extends CommandRunner {
   constructor(private readonly modelsUsecases: ModelsUsecases) {
     super();

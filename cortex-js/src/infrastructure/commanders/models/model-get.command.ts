@@ -3,7 +3,7 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { exit } from 'node:process';
 
-@SubCommand({ name: 'get' })
+@SubCommand({ name: 'get', description: 'Get a model by ID.' })
 export class ModelGetCommand extends CommandRunner {
   constructor(private readonly modelsUsecases: ModelsUsecases) {
     super();

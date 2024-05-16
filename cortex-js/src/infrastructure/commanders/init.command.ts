@@ -6,7 +6,11 @@ import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
 import { exit } from 'node:process';
 
-@SubCommand({ name: 'init', aliases: ['setup'] })
+@SubCommand({
+  name: 'init',
+  aliases: ['setup'],
+  description: "Init settings and download cortex's dependencies",
+})
 export class InitCommand extends CommandRunner {
   CORTEX_RELEASES_URL = 'https://api.github.com/repos/janhq/cortex/releases';
 
