@@ -1,11 +1,10 @@
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { exit } from 'node:process';
 
 @SubCommand({ name: 'remove', description: 'Remove a model by ID locally.' })
 export class ModelRemoveCommand extends CommandRunner {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {
+  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
     super();
   }
 
@@ -15,8 +14,7 @@ export class ModelRemoveCommand extends CommandRunner {
       exit(1);
     }
 
-    const modelsCliUsecases = new ModelsCliUsecases(this.modelsUsecases);
-    const result = await modelsCliUsecases.removeModel(input[0]);
+    const result = await this.modelsCliUsecases.removeModel(input[0]);
     console.log(result);
   }
 }

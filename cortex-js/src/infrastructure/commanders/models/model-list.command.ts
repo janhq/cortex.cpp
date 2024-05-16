@@ -4,13 +4,12 @@ import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 
 @SubCommand({ name: 'list', description: 'List all models locally.' })
 export class ModelListCommand extends CommandRunner {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {
+  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
     super();
   }
 
   async run(): Promise<void> {
-    const modelsCliUsecases = new ModelsCliUsecases(this.modelsUsecases);
-    const models = await modelsCliUsecases.listAllModels();
+    const models = await this.modelsCliUsecases.listAllModels();
     console.log(models);
   }
 }

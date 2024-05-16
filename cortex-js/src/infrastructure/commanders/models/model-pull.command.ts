@@ -1,4 +1,3 @@
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { Presets, SingleBar } from 'cli-progress';
 import { exit } from 'node:process';
@@ -10,7 +9,7 @@ import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
   description: 'Download a model. Working with HuggingFace model id.',
 })
 export class ModelPullCommand extends CommandRunner {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {
+  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
     super();
   }
 
@@ -25,7 +24,7 @@ export class ModelPullCommand extends CommandRunner {
     const callback = (progress: number) => {
       bar.update(progress);
     };
-    await new ModelsCliUsecases(this.modelsUsecases).pullModel(
+    await this.modelsCliUsecases.pullModel(
       input[0],
       callback,
     );

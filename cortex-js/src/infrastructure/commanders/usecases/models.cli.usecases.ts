@@ -4,6 +4,8 @@ import { Model, ModelFormat } from '@/domain/models/model.interface';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
 import { gguf } from '@huggingface/gguf';
+import { InquirerService } from 'nest-commander';
+import { Inject, Injectable } from '@nestjs/common';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -28,9 +30,13 @@ const AllQuantizations = [
   'COPY',
 ];
 
-// TODO: make this class injectable
+@Injectable()
 export class ModelsCliUsecases {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {}
+  constructor(
+    private readonly modelsUsecases: ModelsUsecases,
+    @Inject(InquirerService)
+    private readonly inquirerService: InquirerService,
+  ) {}
 
   async startModel(modelId: string): Promise<void> {
     await this.getModelOrStop(modelId);
@@ -75,10 +81,16 @@ export class ModelsCliUsecases {
 
   private async pullHuggingFaceModel(modelId: string) {
     const data = await this.fetchHuggingFaceRepoData(modelId);
-    // TODO: add select options
-    const sibling = data.siblings.filter(
-      (e: any) => e.quantization == 'Q5_K_M',
-    )[0];
+    const { quantization } = await this.inquirerService.inquirer.prompt({
+      type: 'list',
+      name: 'quantization',
+      message: 'Select quantization',
+      choices: data.siblings.map((e) => e.quantization).filter((e) => !!e),
+    });
+
+    const sibling = data.siblings.filter((e) => !!e.quantization).find(
+      (e: any) => e.quantization === quantization,
+    );
 
     if (!sibling) throw 'No expected quantization found';
     const stopWords: string[] = [];
