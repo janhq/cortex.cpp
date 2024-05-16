@@ -1,8 +1,8 @@
-name: CI Quality Gate
+name: CI Cortex CPP
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
     paths:
       [
         "cortex-cpp/**",
@@ -14,8 +14,35 @@ env:
   EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
 
 jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    permissions:
+      contents: write
+    steps:
+      - name: Extract tag name without v prefix
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV && echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
+        env:
+          GITHUB_REF: ${{ github.ref }}
+      - name: Create Draft Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: "${{ env.VERSION }}"
+          draft: true
+          prerelease: false
+
   build-and-test:
     runs-on: ${{ matrix.runs-on }}
+    needs: [create-draft-release]
     timeout-minutes: 40
     strategy:
       fail-fast: false
@@ -65,7 +92,7 @@ jobs:
 
           - os: "mac"
             name: "arm64"
-            runs-on: "mac-silicon"
+            runs-on: "macos-latest"
             cmake-flags: "-DMAC_ARM64=ON"
             run-e2e: true
 
@@ -135,15 +162,43 @@ jobs:
         with:
           submodules: recursive
 
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Install choco on Windows
         if: runner.os == 'Windows'
         run: |
           choco install make -y
 
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        shell: bash
+        env:
+          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+  
+      - uses: apple-actions/import-codesign-certs@v2
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
       - name: Build
         run: |
           cd cortex-cpp
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}"
+
+      - name: Pre-package
+        run: |
+          cd cortex-cpp
+          make pre-package
+
+      - name: Code Signing
+        run: |
+          cd cortex-cpp
+          make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}" DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
       - name: Package
         run: |
@@ -161,3 +216,13 @@ jobs:
         with:
           name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
           path: ./cortex-cpp/cortex-cpp
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-cpp/cortex-cpp.tar.gz
+          asset_name: cortex-cpp-${{ needs.create-draft-release.outputs.version }}-${{ matrix.os }}-${{ matrix.name }}.tar.gz
+          asset_content_type: application/gzip
