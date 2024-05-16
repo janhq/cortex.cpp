@@ -19,7 +19,7 @@ export class InitCommand extends CommandRunner {
   }
 
   async run(input: string[], options?: InitOptions): Promise<void> {
-    options = await this.inquirerService.ask('create-init-questions', options);
+    options = await this.inquirerService.ask('init-run-mode-questions', options);
 
     if (options.runMode === 'GPU' && !(await this.initUsecases.cudaVersion())) {
       options = await this.inquirerService.ask('init-cuda-questions', options);
