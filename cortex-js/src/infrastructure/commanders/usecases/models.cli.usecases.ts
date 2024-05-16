@@ -2,6 +2,8 @@ import { exit } from 'node:process';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { Model, ModelFormat } from '@/domain/models/model.interface';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
+import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
+import { gguf } from '@huggingface/gguf';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -73,18 +75,21 @@ export class ModelsCliUsecases {
 
   private async pullHuggingFaceModel(modelId: string) {
     const data = await this.fetchHuggingFaceRepoData(modelId);
-
     // TODO: add select options
     const sibling = data.siblings.filter(
       (e: any) => e.quantization == 'Q5_K_M',
     )[0];
 
     if (!sibling) throw 'No expected quantization found';
+    const stopWords: string[] = [];
+    if (sibling.stopWord) {
+      stopWords.push(sibling.stopWord);
+    }
 
     const model: CreateModelDto = {
       sources: [
         {
-          url: sibling.downloadUrl,
+          url: sibling?.downloadUrl ?? '',
         },
       ],
       id: modelId,
@@ -93,10 +98,12 @@ export class ModelsCliUsecases {
       format: ModelFormat.GGUF,
       description: '',
       settings: {},
-      parameters: {},
+      parameters: {
+        stop: stopWords,
+      },
       metadata: {
         author: data.author,
-        size: sibling.fileSize,
+        size: sibling.fileSize ?? 0,
         tags: [],
       },
       engine: 'cortex',
@@ -109,10 +116,12 @@ export class ModelsCliUsecases {
     const sanitizedUrl = this.toHuggingFaceUrl(repoId);
 
     const res = await fetch(sanitizedUrl);
-    const data = await res.json();
-    if (data['error'] != null) {
-      throw new Error(data['error']);
+    const response = await res.json();
+    if (response['error'] != null) {
+      throw new Error(response['error']);
     }
+
+    const data = response as HuggingFaceRepoData;
 
     if (data.tags.indexOf('gguf') === -1) {
       throw `${repoId} is not supported. Only GGUF models are supported.`;
@@ -125,6 +134,21 @@ export class ModelsCliUsecases {
     for (let i = 0; i < data.siblings.length; i++) {
       const downloadUrl = `https://huggingface.co/${paths[2]}/${paths[3]}/resolve/main/${data.siblings[i].rfilename}`;
       data.siblings[i].downloadUrl = downloadUrl;
+
+      if (downloadUrl.endsWith('.gguf')) {
+        // getting stop word
+        let stopWord = '';
+        try {
+          const { metadata } = await gguf(downloadUrl);
+          // @ts-ignore
+          const index = metadata['tokenizer.ggml.eos_token_id'];
+          // @ts-ignore
+          stopWord = metadata['tokenizer.ggml.tokens'][index] ?? '';
+          data.siblings[i].stopWord = stopWord;
+        } catch (err) {
+          console.log('Failed to get stop word: ', err);
+        }
+      }
     }
 
     AllQuantizations.forEach((quantization) => {
