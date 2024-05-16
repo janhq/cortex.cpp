@@ -140,9 +140,9 @@ export class ModelsCliUsecases {
         let stopWord = '';
         try {
           const { metadata } = await gguf(downloadUrl);
-          // @ts-ignore
+          // @ts-expect-error "tokenizer.ggml.eos_token_id"
           const index = metadata['tokenizer.ggml.eos_token_id'];
-          // @ts-ignore
+          // @ts-expect-error "tokenizer.ggml.tokens"
           stopWord = metadata['tokenizer.ggml.tokens'][index] ?? '';
           data.siblings[i].stopWord = stopWord;
         } catch (err) {

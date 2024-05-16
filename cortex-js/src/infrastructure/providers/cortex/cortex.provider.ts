@@ -3,7 +3,6 @@ import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
 import { join, resolve } from 'path';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
-import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { readdirSync } from 'node:fs';
@@ -21,20 +20,17 @@ export default class CortexProvider extends OAIEngineExtension {
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
   private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;
 
-  constructor(
-    private readonly configService: ConfigService,
-    protected readonly httpService: HttpService,
-  ) {
+  constructor(protected readonly httpService: HttpService) {
     super(httpService);
   }
+
+  modelDir = () => resolve(__dirname, `../../../models`);
 
   override async loadModel(
     model: Model,
     settings?: ModelSettingParams,
   ): Promise<void> {
-    const modelsContainerDir =
-      this.configService.get<string>('CORTEX_MODELS_DIR') ??
-      resolve('./models');
+    const modelsContainerDir = this.modelDir();
 
     const modelFolderFullPath = join(modelsContainerDir, model.id);
     const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
@@ -47,7 +43,7 @@ export default class CortexProvider extends OAIEngineExtension {
 
     const modelBinaryLocalPath = join(modelFolderFullPath, ggufFiles[0]);
 
-    const cpuThreadCount = 1; // TODO: NamH Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
+    const cpuThreadCount = 1; // TODO: Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
     const modelSettings = {
       // This is critical and requires real CPU physical core count (or performance core)
       model: model.id,

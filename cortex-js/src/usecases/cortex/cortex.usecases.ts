@@ -10,7 +10,7 @@ import { existsSync } from 'node:fs';
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
 
-  constructor(private readonly httpService: HttpService) { }
+  constructor(private readonly httpService: HttpService) {}
 
   async startCortex(
     host: string = defaultCortexCppHost,
@@ -24,7 +24,11 @@ export class CortexUsecases {
     }
 
     const args: string[] = ['1', host, `${port}`];
-    const cortexCppPath = join(__dirname, '../../../cortex-cpp/cortex-cpp' + `${process.platform === 'win32' ? '.exe' : ''}`);
+    const cortexCppPath = join(
+      __dirname,
+      '../../../cortex-cpp/cortex-cpp' +
+        `${process.platform === 'win32' ? '.exe' : ''}`,
+    );
 
     if (!existsSync(cortexCppPath)) {
       throw new Error('Cortex binary not found');
@@ -85,7 +89,7 @@ export class CortexUsecases {
   }
 
   private registerCortexEvents() {
-    this.cortexProcess?.on('spawn', () => { });
+    this.cortexProcess?.on('spawn', () => {});
 
     this.cortexProcess?.on('message', (message) => {
       console.log('Cortex process message', message);
