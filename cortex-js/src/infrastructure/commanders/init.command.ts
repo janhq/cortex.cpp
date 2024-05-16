@@ -160,7 +160,6 @@ export class InitCommand extends CommandRunner {
     let filesCuda12: string[]
     let filesCuda11: string[]
     let paths: string[]
-    let cudaVersion: string = ''
 
     if (process.platform === 'win32') {
       filesCuda12 = ['cublas64_12.dll', 'cudart64_12.dll', 'cublasLt64_12.dll']
@@ -175,21 +174,16 @@ export class InitCommand extends CommandRunner {
       paths.push('/usr/lib/x86_64-linux-gnu/')
     }
 
-    let cudaExists = filesCuda12.every(
+    if (filesCuda12.every(
       (file) => existsSync(file) || this.checkFileExistenceInPaths(file, paths)
-    )
+    )) return '12'
 
-    if (!cudaExists) {
-      cudaExists = filesCuda11.every(
-        (file) => existsSync(file) || this.checkFileExistenceInPaths(file, paths)
-      )
-      if (cudaExists) {
-        cudaVersion = '11'
-      }
-    } else {
-      cudaVersion = '12'
-    }
-    return cudaExists ? cudaVersion : undefined
+
+    if (filesCuda11.every(
+      (file) => existsSync(file) || this.checkFileExistenceInPaths(file, paths)
+    )) return '11'
+
+    return undefined // No CUDA Toolkit found
   }
 
   checkFileExistenceInPaths = (file: string, paths: string[]): boolean => {
@@ -200,7 +194,7 @@ export class InitCommand extends CommandRunner {
     const platform = process.platform === 'win32' ? 'windows' : 'linux'
 
     const url = this.CUDA_DOWNLOAD_URL
-      .replace('<version>', options.cudaVersion === '11' ? '11.7' : '12.4')
+      .replace('<version>', options.cudaVersion === '11' ? '11.7' : '12.0')
       .replace('<platform>', platform)
     const destination = resolve(this.rootDir(), 'cuda-toolkit.tar.gz');
 
