@@ -4,6 +4,7 @@ import { join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { existsSync } from 'node:fs';
 
 @Injectable()
 export class CortexUsecases {
@@ -23,26 +24,26 @@ export class CortexUsecases {
     }
 
     const args: string[] = ['1', host, `${port}`];
+    const cortexCppPath = join(__dirname, '../../../cortex-cpp/cortex-cpp');
+
+    if (!existsSync(cortexCppPath)) {
+      throw new Error('Cortex binary not found');
+    }
 
     // go up one level to get the binary folder, have to also work on windows
-    this.cortexProcess = spawn(
-      join(__dirname, '../../../cortex-cpp/cortex-cpp'),
-      args,
-      {
-        detached: false,
-        cwd: join(__dirname, '../../../cortex-cpp'),
-        stdio: 'inherit',
-        env: {
-          ...process.env,
-          // TODO: NamH need to get below information
-          CUDA_VISIBLE_DEVICES: '0',
-          // // Vulkan - Support 1 device at a time for now
-          // ...(executableOptions.vkVisibleDevices?.length > 0 && {
-          //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
-          // }),
-        },
+    this.cortexProcess = spawn(cortexCppPath, args, {
+      detached: false,
+      cwd: join(__dirname, '../../../cortex-cpp'),
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        CUDA_VISIBLE_DEVICES: '0',
+        // // Vulkan - Support 1 device at a time for now
+        // ...(executableOptions.vkVisibleDevices?.length > 0 && {
+        //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
+        // }),
       },
-    );
+    });
 
     this.registerCortexEvents();
 
@@ -73,7 +74,7 @@ export class CortexUsecases {
         .delete(`http://${host}:${port}/processmanager/destroy`)
         .toPromise();
     } catch (err) {
-      console.error(err);
+      console.error(err.response.data);
     } finally {
       this.cortexProcess?.kill();
       return {

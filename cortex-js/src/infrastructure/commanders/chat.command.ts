@@ -9,7 +9,7 @@ export class ChatCommand extends CommandRunner {
   }
 
   async run(input: string[]): Promise<void> {
-    const chatCliService = new ChatCliUsecases(this.chatUsecases);
-    return chatCliService.run(input);
+    const chatCliUsecases = new ChatCliUsecases(this.chatUsecases);
+    return chatCliUsecases.chat(input);
   }
 }

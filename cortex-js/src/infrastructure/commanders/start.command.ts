@@ -8,7 +8,7 @@ import { exit } from 'node:process';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 
-@SubCommand({ name: 'start', aliases: ['run'] })
+@SubCommand({ name: 'run' })
 export class StartCommand extends CommandRunner {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
@@ -31,7 +31,7 @@ export class StartCommand extends CommandRunner {
       .then(() => this.startModel(model.id))
       .then(() => {
         const chatCliUsecases = new ChatCliUsecases(this.chatUsecases);
-        return chatCliUsecases.run(input);
+        return chatCliUsecases.chat(input);
       })
       .then(console.log)
       .catch(console.error);

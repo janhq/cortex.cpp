@@ -14,7 +14,7 @@ export class ChatCliUsecases {
 
   constructor(private readonly chatUsecases: ChatUsecases) {}
 
-  async run(input: string[]): Promise<void> {
+  async chat(input: string[]): Promise<void> {
     if (input.length == 0) {
       console.error('Please provide a model id.');
       exit(1);
