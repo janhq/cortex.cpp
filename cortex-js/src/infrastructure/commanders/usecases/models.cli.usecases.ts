@@ -1,9 +1,7 @@
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { CommandRunner, SubCommand } from 'nest-commander';
-import { CreateModelDto } from '../dtos/models/create-model.dto';
-import { ModelFormat } from '@/domain/models/model.interface';
-import { Presets, SingleBar } from 'cli-progress';
 import { exit } from 'node:process';
+import { ModelsUsecases } from '@/usecases/models/models.usecases';
+import { Model, ModelFormat } from '@/domain/models/model.interface';
+import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -28,33 +26,52 @@ const AllQuantizations = [
   'COPY',
 ];
 
-@SubCommand({ name: 'pull', aliases: ['download'] })
-export class PullCommand extends CommandRunner {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {
-    super();
+// TODO: make this class injectable
+export class ModelsCliUsecases {
+  constructor(private readonly modelsUsecases: ModelsUsecases) {}
+
+  async startModel(modelId: string): Promise<void> {
+    await this.getModelOrStop(modelId);
+    await this.modelsUsecases.startModel(modelId);
   }
 
-  async run(input: string[]) {
-    if (input.length < 1) {
-      console.error('Model ID is required');
+  async stopModel(modelId: string): Promise<void> {
+    await this.getModelOrStop(modelId);
+    await this.modelsUsecases.stopModel(modelId);
+  }
+
+  private async getModelOrStop(modelId: string): Promise<Model> {
+    const model = await this.modelsUsecases.findOne(modelId);
+    if (!model) {
+      console.debug('Model not found');
       exit(1);
     }
+    return model;
+  }
 
-    const modelId = input[0];
+  async listAllModels(): Promise<Model[]> {
+    return this.modelsUsecases.findAll();
+  }
+
+  async getModel(modelId: string): Promise<Model> {
+    const model = await this.getModelOrStop(modelId);
+    return model;
+  }
+
+  async removeModel(modelId: string) {
+    await this.getModelOrStop(modelId);
+    return this.modelsUsecases.remove(modelId);
+  }
+
+  async pullModel(modelId: string, callback: (progress: number) => void) {
     if (modelId.includes('/')) {
       await this.pullHuggingFaceModel(modelId);
     }
 
-    const bar = new SingleBar({}, Presets.shades_classic);
-    bar.start(100, 0);
-    await this.modelsUsecases.downloadModel(modelId, (progress) => {
-      bar.update(progress);
-    });
-    console.log('\nDownload complete!');
-    exit(0);
+    await this.modelsUsecases.downloadModel(modelId, callback);
   }
 
-  async pullHuggingFaceModel(modelId: string) {
+  private async pullHuggingFaceModel(modelId: string) {
     const data = await this.fetchHuggingFaceRepoData(modelId);
 
     // TODO: add select options

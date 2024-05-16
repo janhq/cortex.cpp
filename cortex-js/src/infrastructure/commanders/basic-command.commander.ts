@@ -1,19 +1,19 @@
 import { RootCommand, CommandRunner, Option } from 'nest-commander';
-import { PullCommand } from './pull.command';
 import { ServeCommand } from './serve.command';
-import { InferenceCommand } from './inference.command';
+import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
 import { InitCommand } from './init.command';
+import { StartCommand } from './start.command';
 
 @RootCommand({
   subCommands: [
     ModelsCommand,
-    PullCommand,
     ServeCommand,
-    InferenceCommand,
+    ChatCommand,
     InitCommand,
+    StartCommand,
   ],
 })
 export class BasicCommand extends CommandRunner {
@@ -31,10 +31,12 @@ export class BasicCommand extends CommandRunner {
         return this.cortexUsecases
           .startCortex(host, port)
           .then((e) => console.log(e));
+
       case 'stop':
         return this.cortexUsecases
           .stopCortex(defaultCortexJsHost, defaultCortexJsPort)
           .then((e) => console.log(e));
+
       default:
         console.error(`Command ${command} is not supported`);
         return;
