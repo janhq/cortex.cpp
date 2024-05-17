@@ -17,7 +17,6 @@ export interface HuggingFaceRepoData {
     downloadUrl?: string;
     fileSize?: number;
     quantization?: Quantization;
-    stopWord?: string;
   }[];
   createdAt: string;
 }

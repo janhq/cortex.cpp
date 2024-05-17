@@ -1,5 +1,4 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
-import { Presets, SingleBar } from 'cli-progress';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 
@@ -19,12 +18,7 @@ export class ModelPullCommand extends CommandRunner {
       exit(1);
     }
 
-    const bar = new SingleBar({}, Presets.shades_classic);
-    bar.start(100, 0);
-    const callback = (progress: number) => {
-      bar.update(progress);
-    };
-    await this.modelsCliUsecases.pullModel(input[0], callback);
+    await this.modelsCliUsecases.pullModel(input[0]);
     console.log('\nDownload complete!');
     exit(0);
   }

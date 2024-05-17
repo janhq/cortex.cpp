@@ -6,6 +6,7 @@ import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
 import { gguf } from '@huggingface/gguf';
 import { InquirerService } from 'nest-commander';
 import { Inject, Injectable } from '@nestjs/common';
+import { Presets, SingleBar } from 'cli-progress';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -71,11 +72,16 @@ export class ModelsCliUsecases {
     return this.modelsUsecases.remove(modelId);
   }
 
-  async pullModel(modelId: string, callback: (progress: number) => void) {
+  async pullModel(modelId: string) {
     if (modelId.includes('/')) {
       await this.pullHuggingFaceModel(modelId);
     }
 
+    const bar = new SingleBar({}, Presets.shades_classic);
+    bar.start(100, 0);
+    const callback = (progress: number) => {
+      bar.update(progress);
+    };
     await this.modelsUsecases.downloadModel(modelId, callback);
   }
 
@@ -96,9 +102,21 @@ export class ModelsCliUsecases {
       .find((e: any) => e.quantization === quantization);
 
     if (!sibling) throw 'No expected quantization found';
+
+    let stopWord = '';
+    try {
+      const { metadata } = await gguf(sibling.downloadUrl!);
+      // @ts-expect-error "tokenizer.ggml.eos_token_id"
+      const index = metadata['tokenizer.ggml.eos_token_id'];
+      // @ts-expect-error "tokenizer.ggml.tokens"
+      stopWord = metadata['tokenizer.ggml.tokens'][index] ?? '';
+    } catch (err) {
+      console.log('Failed to get stop word: ', err);
+    }
+
     const stopWords: string[] = [];
-    if (sibling.stopWord) {
-      stopWords.push(sibling.stopWord);
+    if (stopWord.length > 0) {
+      stopWords.push(stopWord);
     }
 
     const model: CreateModelDto = {
@@ -149,21 +167,6 @@ export class ModelsCliUsecases {
     for (let i = 0; i < data.siblings.length; i++) {
       const downloadUrl = `https://huggingface.co/${paths[2]}/${paths[3]}/resolve/main/${data.siblings[i].rfilename}`;
       data.siblings[i].downloadUrl = downloadUrl;
-
-      if (downloadUrl.endsWith('.gguf')) {
-        // getting stop word
-        let stopWord = '';
-        try {
-          const { metadata } = await gguf(downloadUrl);
-          // @ts-expect-error "tokenizer.ggml.eos_token_id"
-          const index = metadata['tokenizer.ggml.eos_token_id'];
-          // @ts-expect-error "tokenizer.ggml.tokens"
-          stopWord = metadata['tokenizer.ggml.tokens'][index] ?? '';
-          data.siblings[i].stopWord = stopWord;
-        } catch (err) {
-          console.log('Failed to get stop word: ', err);
-        }
-      }
     }
 
     AllQuantizations.forEach((quantization) => {
