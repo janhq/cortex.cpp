@@ -195,10 +195,20 @@ jobs:
           cd cortex-cpp
           make pre-package
 
-      - name: Code Signing
+      - name: Code Signing macOS
+        if: runner.os == 'macOS'
         run: |
           cd cortex-cpp
-          make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}" DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - name: Code Signing Windows
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          cd cortex-cpp
+          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+          make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+  
 
       - name: Package
         run: |
