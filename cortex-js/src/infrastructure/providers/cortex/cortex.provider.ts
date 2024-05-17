@@ -24,7 +24,7 @@ export default class CortexProvider extends OAIEngineExtension {
     super(httpService);
   }
 
-  modelDir = () => resolve(__dirname, `../../../models`);
+  modelDir = () => resolve(__dirname, `../../../../models`);
 
   override async loadModel(
     model: Model,

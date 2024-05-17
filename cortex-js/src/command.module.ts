@@ -35,7 +35,7 @@ import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usec
     ChatModule,
     ExtensionModule,
     HttpModule,
-    CliUsecasesModule
+    CliUsecasesModule,
   ],
   providers: [
     CortexCommand,
