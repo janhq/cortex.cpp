@@ -85,12 +85,15 @@ export class ModelsCliUsecases {
       type: 'list',
       name: 'quantization',
       message: 'Select quantization',
-      choices: data.siblings.map((e) => e.quantization).filter((e) => !!e),
+      // @ts-expect-error "quantization" won't be null
+      choices: data.siblings
+        .map((e) => e.quantization)
+        .filter((e) => e != null),
     });
 
-    const sibling = data.siblings.filter((e) => !!e.quantization).find(
-      (e: any) => e.quantization === quantization,
-    );
+    const sibling = data.siblings
+      .filter((e) => !!e.quantization)
+      .find((e: any) => e.quantization === quantization);
 
     if (!sibling) throw 'No expected quantization found';
     const stopWords: string[] = [];

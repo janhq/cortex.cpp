@@ -24,10 +24,7 @@ export class ModelPullCommand extends CommandRunner {
     const callback = (progress: number) => {
       bar.update(progress);
     };
-    await this.modelsCliUsecases.pullModel(
-      input[0],
-      callback,
-    );
+    await this.modelsCliUsecases.pullModel(input[0], callback);
     console.log('\nDownload complete!');
     exit(0);
   }

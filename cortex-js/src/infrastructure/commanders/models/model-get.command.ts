@@ -1,4 +1,3 @@
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { exit } from 'node:process';
