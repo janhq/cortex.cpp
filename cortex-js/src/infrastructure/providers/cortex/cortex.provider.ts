@@ -1,53 +1,55 @@
 import { Injectable } from '@nestjs/common';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
-import { basename, join, resolve } from 'path';
-import { Model } from '@/domain/models/model.interface';
-import { ConfigService } from '@nestjs/config';
+import { join, resolve } from 'path';
+import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
+import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { readdirSync } from 'node:fs';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
  * The class provides methods for initializing and stopping a model, and for making inference requests.
  * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
  */
-const LOCAL_HOST = '127.0.0.1';
-const NITRO_DEFAULT_PORT = 3928;
-const NITRO_HTTP_SERVER_URL = `http://${LOCAL_HOST}:${NITRO_DEFAULT_PORT}`;
-const LOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/server/loadmodel`;
-const UNLOAD_MODEL_URL = `${NITRO_HTTP_SERVER_URL}/inferences/server/unloadmodel`;
-
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
   provider: string = 'cortex';
-  apiUrl = 'http://127.0.0.1:3928/inferences/server/chat_completion';
+  apiUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/chat_completion`;
 
-  constructor(
-    private readonly configService: ConfigService,
-    protected readonly httpService: HttpService,
-  ) {
+  private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
+  private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;
+
+  constructor(protected readonly httpService: HttpService) {
     super(httpService);
   }
 
-  override async loadModel(model: Model): Promise<void> {
-    const modelsContainerDir =
-      this.configService.get<string>('CORTEX_MODELS_DIR') ??
-      resolve('./models');
+  modelDir = () => resolve(__dirname, `../../../../models`);
+
+  override async loadModel(
+    model: Model,
+    settings?: ModelSettingParams,
+  ): Promise<void> {
+    const modelsContainerDir = this.modelDir();
 
     const modelFolderFullPath = join(modelsContainerDir, model.id);
-    //TODO: recheck this
-    const modelBinaryLocalPath = join(
-      modelFolderFullPath,
-      basename(model.sources[0].url),
-    );
+    const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
+      return file.endsWith('.gguf');
+    });
 
-    // TODO: NamH check if the binary is there
+    if (ggufFiles.length === 0) {
+      throw new Error('Model binary not found');
+    }
 
-    const cpuThreadCount = 1; // TODO: NamH Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
+    const modelBinaryLocalPath = join(modelFolderFullPath, ggufFiles[0]);
+
+    const cpuThreadCount = 1; // TODO: Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
     const modelSettings = {
       // This is critical and requires real CPU physical core count (or performance core)
+      model: model.id,
       cpu_threads: cpuThreadCount,
       ...model.settings,
+      ...settings,
       llama_model_path: modelBinaryLocalPath,
       ...(model.settings.mmproj && {
         mmproj: join(modelFolderFullPath, model.settings.mmproj),
@@ -66,12 +68,12 @@ export default class CortexProvider extends OAIEngineExtension {
       modelSettings.ai_prompt = prompt.ai_prompt;
     }
 
-    await this.httpService.post(LOAD_MODEL_URL, modelSettings).toPromise();
+    await this.httpService.post(this.loadModelUrl, modelSettings).toPromise();
   }
 
   override async unloadModel(modelId: string): Promise<void> {
     await this.httpService
-      .post(UNLOAD_MODEL_URL, { model: modelId })
+      .post(this.unloadModelUrl, { model: modelId })
       .toPromise();
   }
 

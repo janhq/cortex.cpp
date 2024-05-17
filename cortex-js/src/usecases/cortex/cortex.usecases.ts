@@ -1,23 +1,20 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
-import { existsSync } from 'fs';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
+import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { existsSync } from 'node:fs';
 
 @Injectable()
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly httpService: HttpService,
-  ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   async startCortex(
-    host: string,
-    port: string,
+    host: string = defaultCortexCppHost,
+    port: number = defaultCortexCppPort,
   ): Promise<CortexOperationSuccessfullyDto> {
     if (this.cortexProcess) {
       return {
@@ -26,23 +23,25 @@ export class CortexUsecases {
       };
     }
 
-    const binaryPath = this.configService.get<string>('CORTEX_BINARY_PATH');
-    if (!binaryPath || !existsSync(binaryPath)) {
-      throw new InternalServerErrorException('Cortex binary not found');
+    const args: string[] = ['1', host, `${port}`];
+    const cortexCppPath = join(
+      __dirname,
+      '../../../cortex-cpp/cortex-cpp' +
+        `${process.platform === 'win32' ? '.exe' : ''}`,
+    );
+
+    if (!existsSync(cortexCppPath)) {
+      throw new Error('Cortex binary not found');
     }
 
-    const args: string[] = ['1', host, port];
     // go up one level to get the binary folder, have to also work on windows
-    const binaryFolder = join(binaryPath, '..');
-
-    this.cortexProcess = spawn(binaryPath, args, {
+    this.cortexProcess = spawn(cortexCppPath, args, {
       detached: false,
-      cwd: binaryFolder,
+      cwd: join(__dirname, '../../../cortex-cpp'),
       stdio: 'inherit',
       env: {
         ...process.env,
-        // TODO: NamH need to get below information
-        // CUDA_VISIBLE_DEVICES: executableOptions.cudaVisibleDevices,
+        CUDA_VISIBLE_DEVICES: '0',
         // // Vulkan - Support 1 device at a time for now
         // ...(executableOptions.vkVisibleDevices?.length > 0 && {
         //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
@@ -79,7 +78,7 @@ export class CortexUsecases {
         .delete(`http://${host}:${port}/processmanager/destroy`)
         .toPromise();
     } catch (err) {
-      console.error(err);
+      console.error(err.response.data);
     } finally {
       this.cortexProcess?.kill();
       return {

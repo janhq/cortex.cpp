@@ -1,52 +1,23 @@
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand } from 'nest-commander';
-import { PullCommand } from './pull.command';
-import { StartCommand } from './start.command';
+import { ModelStartCommand } from './models/model-start.command';
+import { ModelGetCommand } from './models/model-get.command';
+import { ModelListCommand } from './models/model-list.command';
+import { ModelStopCommand } from './models/model-stop.command';
+import { ModelPullCommand } from './models/model-pull.command';
+import { ModelRemoveCommand } from './models/model-remove.command';
 
-@SubCommand({ name: 'models', subCommands: [PullCommand, StartCommand] })
+@SubCommand({
+  name: 'models',
+  subCommands: [
+    ModelPullCommand,
+    ModelStartCommand,
+    ModelStopCommand,
+    ModelListCommand,
+    ModelGetCommand,
+    ModelRemoveCommand,
+  ],
+  description: 'Subcommands for managing models',
+})
 export class ModelsCommand extends CommandRunner {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {
-    super();
-  }
-
-  async run(input: string[]): Promise<void> {
-    const command = input[0];
-    const modelId = input[1];
-
-    if (command !== 'list') {
-      if (!modelId) {
-        console.log('Model ID is required');
-        return;
-      }
-    }
-
-    switch (command) {
-      case 'list':
-        this.modelsUsecases.findAll().then(console.log);
-        return;
-      case 'get':
-        this.modelsUsecases.findOne(modelId).then(console.log);
-        return;
-      case 'remove':
-        this.modelsUsecases.remove(modelId).then(console.log);
-        return;
-
-      case 'stop':
-        return this.modelsUsecases
-          .stopModel(modelId)
-          .then(console.log)
-          .catch(console.error);
-
-      case 'stats':
-      case 'fetch':
-      case 'build': {
-        console.log('Command is not supported yet');
-        return;
-      }
-
-      default:
-        console.error(`Command ${command} is not supported`);
-        return;
-    }
-  }
+  async run(): Promise<void> {}
 }
