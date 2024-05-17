@@ -91,7 +91,6 @@ export class ModelsCliUsecases {
       type: 'list',
       name: 'quantization',
       message: 'Select quantization',
-      // @ts-expect-error "quantization" won't be null
       choices: data.siblings
         .map((e) => e.quantization)
         .filter((e) => e != null),
