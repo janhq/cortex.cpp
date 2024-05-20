@@ -4,6 +4,7 @@ import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { exit } from 'node:process';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
+import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
 type RunOptions = {
   model?: string;
@@ -29,7 +30,11 @@ export class RunCommand extends CommandRunner {
       exit(1);
     }
 
-    await this.cortexUsecases.startCortex();
+    await this.cortexUsecases.startCortex(
+      defaultCortexCppHost,
+      defaultCortexCppPort,
+      false,
+    );
     await this.modelsUsecases.startModel(modelId);
     const chatCliUsecases = new ChatCliUsecases(
       this.chatUsecases,
@@ -39,7 +44,7 @@ export class RunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--model <model_id>',
+    flags: '-m, --model <model_id>',
     description: 'Model Id to start chat with',
   })
   parseModelId(value: string) {

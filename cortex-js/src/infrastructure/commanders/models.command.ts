@@ -5,6 +5,7 @@ import { ModelListCommand } from './models/model-list.command';
 import { ModelStopCommand } from './models/model-stop.command';
 import { ModelPullCommand } from './models/model-pull.command';
 import { ModelRemoveCommand } from './models/model-remove.command';
+import { ModelUpdateCommand } from './models/model-update.command';
 
 @SubCommand({
   name: 'models',
@@ -15,6 +16,7 @@ import { ModelRemoveCommand } from './models/model-remove.command';
     ModelListCommand,
     ModelGetCommand,
     ModelRemoveCommand,
+    ModelUpdateCommand,
   ],
   description: 'Subcommands for managing models',
 })

@@ -1,12 +1,24 @@
 import { exit } from 'node:process';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { Model, ModelFormat } from '@/domain/models/model.interface';
+import {
+  Model,
+  ModelFormat,
+  ModelRuntimeParams,
+  ModelSettingParams,
+} from '@/domain/models/model.interface';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
 import { gguf } from '@huggingface/gguf';
 import { InquirerService } from 'nest-commander';
 import { Inject, Injectable } from '@nestjs/common';
 import { Presets, SingleBar } from 'cli-progress';
+import {
+  LLAMA_2,
+  OPEN_CHAT_3_5,
+  OPEN_CHAT_3_5_JINJA,
+  ZEPHYR,
+  ZEPHYR_JINJA,
+} from '../prompt-constants';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -47,6 +59,20 @@ export class ModelsCliUsecases {
   async stopModel(modelId: string): Promise<void> {
     await this.getModelOrStop(modelId);
     await this.modelsUsecases.stopModel(modelId);
+  }
+
+  async updateModelSettingParams(
+    modelId: string,
+    settingParams: ModelSettingParams,
+  ): Promise<ModelSettingParams> {
+    return this.modelsUsecases.updateModelSettingParams(modelId, settingParams);
+  }
+
+  async updateModelRuntimeParams(
+    modelId: string,
+    runtimeParams: ModelRuntimeParams,
+  ): Promise<ModelRuntimeParams> {
+    return this.modelsUsecases.updateModelRuntimeParams(modelId, runtimeParams);
   }
 
   private async getModelOrStop(modelId: string): Promise<Model> {
@@ -103,10 +129,16 @@ export class ModelsCliUsecases {
     if (!sibling) throw 'No expected quantization found';
 
     let stopWord = '';
+    let promptTemplate = LLAMA_2;
+
     try {
       const { metadata } = await gguf(sibling.downloadUrl!);
       // @ts-expect-error "tokenizer.ggml.eos_token_id"
       const index = metadata['tokenizer.ggml.eos_token_id'];
+      // @ts-expect-error "tokenizer.ggml.eos_token_id"
+      const hfChatTemplate = metadata['tokenizer.chat_template'];
+      promptTemplate = this.guessPromptTemplateFromHuggingFace(hfChatTemplate);
+
       // @ts-expect-error "tokenizer.ggml.tokens"
       stopWord = metadata['tokenizer.ggml.tokens'][index] ?? '';
     } catch (err) {
@@ -129,7 +161,9 @@ export class ModelsCliUsecases {
       version: '',
       format: ModelFormat.GGUF,
       description: '',
-      settings: {},
+      settings: {
+        prompt_template: promptTemplate,
+      },
       parameters: {
         stop: stopWords,
       },
@@ -142,6 +176,37 @@ export class ModelsCliUsecases {
     };
     if (!(await this.modelsUsecases.findOne(modelId)))
       await this.modelsUsecases.create(model);
+  }
+
+  // TODO: move this to somewhere else, should be reused by API as well. Maybe in a separate service / provider?
+  private guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
+    if (!jinjaCode) {
+      console.log('No jinja code provided. Returning default LLAMA_2');
+      return LLAMA_2;
+    }
+
+    if (typeof jinjaCode !== 'string') {
+      console.log(
+        `Invalid jinja code provided (type is ${typeof jinjaCode}). Returning default LLAMA_2`,
+      );
+      return LLAMA_2;
+    }
+
+    switch (jinjaCode) {
+      case ZEPHYR_JINJA:
+        return ZEPHYR;
+
+      case OPEN_CHAT_3_5_JINJA:
+        return OPEN_CHAT_3_5;
+
+      default:
+        console.log(
+          'Unknown jinja code:',
+          jinjaCode,
+          'Returning default LLAMA_2',
+        );
+        return LLAMA_2;
+    }
   }
 
   private async fetchHuggingFaceRepoData(repoId: string) {
