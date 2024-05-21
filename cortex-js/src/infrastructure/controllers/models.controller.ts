@@ -65,19 +65,19 @@ export class ModelsController {
     return this.modelsUsecases.findAll();
   }
 
-  @ApiOperation({ summary: 'Retrieve Model', description: "Get a model instance, providing basic information about the model such as the owner and permissioning. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
+  @ApiOperation({ summary: 'Retrieve Model', description: "Gets a model instance, providing basic information about the model such as the owner and permissioning. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.modelsUsecases.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Update Model', description: "Update a model instance defined by a mode;'s `id`." })
+  @ApiOperation({ summary: 'Update Model', description: "Updates a model instance defined by a mode;'s `id`." })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateModelDto: UpdateModelDto) {
     return this.modelsUsecases.update(id, updateModelDto);
   }
 
-  @ApiOperation({ summary: 'Delete Model', description: "Delete a model. [Equivalent to OpenAI's delete model](https://platform.openai.com/docs/api-reference/models/delete)." })
+  @ApiOperation({ summary: 'Delete Model', description: "Deletes a model. [Equivalent to OpenAI's delete model](https://platform.openai.com/docs/api-reference/models/delete)." })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.modelsUsecases.remove(id);

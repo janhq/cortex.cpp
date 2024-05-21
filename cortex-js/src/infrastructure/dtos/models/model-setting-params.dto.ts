@@ -53,7 +53,7 @@ export class ModelSettingParamsDto implements ModelSettingParams {
   @IsString()
   llama_model_path?: string;
 
-  @ApiProperty({description: "Possibly a path or identifier for a multimedia project or specialized model setting."})
+  @ApiProperty({description: "The mmproj is a projection matrix that is used to project the embeddings from CLIP into tokens usable by llama/mistral."})
   @IsOptional()
   @IsString()
   mmproj?: string;

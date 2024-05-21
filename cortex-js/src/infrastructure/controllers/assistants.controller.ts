@@ -37,7 +37,7 @@ export class AssistantsController {
 
   @ApiOperation({
     summary: 'Delete Assistant',
-    description: "Delete a specific assistant defined by an assistant's `id`.",
+    description: "Deletes a specific assistant defined by an assistant's `id`.",
   })
   @Delete(':id')
   remove(@Param('id') id: string) {

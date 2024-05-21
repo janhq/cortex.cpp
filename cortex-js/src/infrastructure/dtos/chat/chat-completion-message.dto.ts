@@ -3,11 +3,11 @@ import { ChatCompletionRole } from '@/domain/models/message.interface';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChatCompletionMessage {
-  @ApiProperty({ description: 'Content of the chat message.' })
+  @ApiProperty({ description: 'The Content of the chat message.' })
   @IsString()
   content: string;
 
-  @ApiProperty({ description: 'Role of the entity in the chat completion.' })
+  @ApiProperty({ description: 'The role of the entity in the chat completion.' })
   @IsEnum(ChatCompletionRole)
   role: ChatCompletionRole;
 }

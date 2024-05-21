@@ -20,7 +20,7 @@ export class CreateChatCompletionDto {
   messages: ChatCompletionMessage[];
 
   @ApiProperty({
-    description: 'The model to be used for generating the chat completion.',
+    description: 'The unique identifier of the model.',
   })
   @IsString()
   model: string;

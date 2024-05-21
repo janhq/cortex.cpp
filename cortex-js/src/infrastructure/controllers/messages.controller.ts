@@ -17,7 +17,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 export class MessagesController {
   constructor(private readonly messagesService: MessagesUsecases) {}
 
-  @ApiOperation({ summary: 'Create Message', description: "Create a message in a thread." })
+  @ApiOperation({ summary: 'Create Message', description: "Creates a message in a thread." })
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
     return this.messagesService.create(createMessageDto);
