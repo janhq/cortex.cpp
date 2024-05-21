@@ -4,7 +4,8 @@ import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Repository } from 'typeorm';
 import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
-import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
+import stream from 'stream';
+import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
 @Injectable()
 export class ChatUsecases {
@@ -14,19 +15,50 @@ export class ChatUsecases {
     private readonly extensionRepository: ExtensionRepository,
   ) {}
 
-  async createChatCompletions(
+  async inference(
     createChatDto: CreateChatCompletionDto,
     headers: Record<string, string>,
-    stream: WritableStream<ChatStreamEvent>,
-    res?: any,
-  ) {
+  ): Promise<any> {
+    const { model: modelId } = createChatDto;
     const extensions = (await this.extensionRepository.findAll()) ?? [];
     const model = await this.modelRepository.findOne({
-      where: { id: createChatDto.model },
+      where: { id: modelId },
     });
+
+    if (!model) {
+      throw new ModelNotFoundException(modelId);
+    }
     const engine = extensions.find((e: any) => e.provider === model?.engine) as
       | EngineExtension
       | undefined;
-    engine?.inference(createChatDto, headers, stream, res);
+
+    if (engine == null) {
+      throw new Error(`No engine found with name: ${model.engine}`);
+    }
+    return engine.inference(createChatDto, headers);
+  }
+
+  async inferenceStream(
+    createChatDto: CreateChatCompletionDto,
+    headers: Record<string, string>,
+  ): Promise<stream.Readable> {
+    const { model: modelId } = createChatDto;
+    const extensions = (await this.extensionRepository.findAll()) ?? [];
+    const model = await this.modelRepository.findOne({
+      where: { id: modelId },
+    });
+
+    if (!model) {
+      throw new ModelNotFoundException(modelId);
+    }
+
+    const engine = extensions.find((e: any) => e.provider === model.engine) as
+      | EngineExtension
+      | undefined;
+    if (engine == null) {
+      throw new Error(`No engine found with name: ${model.engine}`);
+    }
+
+    return engine?.inferenceStream(createChatDto, headers);
   }
 }
