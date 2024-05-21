@@ -5,7 +5,7 @@ import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 export class StartCortexDto {
   @ApiProperty({
     name: 'host',
-    description: 'Cortexcpp host',
+    description: 'The Cortexcpp host.',
     default: defaultCortexCppHost,
   })
   @IsString()
@@ -14,7 +14,7 @@ export class StartCortexDto {
 
   @ApiProperty({
     name: 'port',
-    description: 'Cortexcpp port',
+    description: 'The Cortexcpp port.',
     default: defaultCortexCppPort,
   })
   @IsNumber()

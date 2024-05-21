@@ -2,7 +2,7 @@ import { Body, Controller, Post, Headers, Res } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 
 @ApiTags('Inference')
@@ -10,6 +10,11 @@ import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 export class ChatController {
   constructor(private readonly chatService: ChatUsecases) {}
 
+  @ApiOperation({
+    summary: 'Create chat completion',
+    description:
+      "Creates a model response for the given chat conversation. The API limits stop words to a maximum of 4. If more are specified, only the first 4 will be accepted. [Equivalent to OpenAI's create chat completion](https://platform.openai.com/docs/api-reference/chat/create).",
+  })
   @Post('completions')
   async create(
     @Headers() headers: Record<string, string>,
