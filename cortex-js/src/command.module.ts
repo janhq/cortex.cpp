@@ -21,6 +21,7 @@ import { ModelRemoveCommand } from './infrastructure/commanders/models/model-rem
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 import { InitCudaQuestions } from './infrastructure/commanders/questions/cuda.questions';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
+import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usec
     ModelGetCommand,
     ModelRemoveCommand,
     ModelPullCommand,
+    ModelUpdateCommand,
 
     // Shortcuts
     RunCommand,

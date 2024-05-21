@@ -3,7 +3,12 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Repository } from 'typeorm';
-import { Model, ModelFormat } from '@/domain/models/model.interface';
+import {
+  Model,
+  ModelFormat,
+  ModelRuntimeParams,
+  ModelSettingParams,
+} from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename, resolve } from 'path';
 import {
@@ -60,6 +65,38 @@ export class ModelsUsecases {
 
   update(id: string, updateModelDto: UpdateModelDto) {
     return this.modelRepository.update(id, updateModelDto);
+  }
+
+  async updateModelSettingParams(
+    id: string,
+    settingParams: ModelSettingParams,
+  ): Promise<ModelSettingParams> {
+    const model = await this.getModelOrThrow(id);
+    const currentSettingParams = model.settings;
+    const updateDto: UpdateModelDto = {
+      settings: {
+        ...currentSettingParams,
+        ...settingParams,
+      },
+    };
+    await this.update(id, updateDto);
+    return updateDto.settings ?? {};
+  }
+
+  async updateModelRuntimeParams(
+    id: string,
+    runtimeParams: ModelRuntimeParams,
+  ): Promise<ModelRuntimeParams> {
+    const model = await this.getModelOrThrow(id);
+    const currentRuntimeParams = model.parameters;
+    const updateDto: UpdateModelDto = {
+      parameters: {
+        ...currentRuntimeParams,
+        ...runtimeParams,
+      },
+    };
+    await this.update(id, updateDto);
+    return updateDto.parameters ?? {};
   }
 
   async remove(id: string) {

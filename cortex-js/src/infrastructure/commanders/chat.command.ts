@@ -32,7 +32,7 @@ export class ChatCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--model <model_id>',
+    flags: '-m, --model <model_id>',
     description: 'Model Id to start chat with',
   })
   parseModelId(value: string) {

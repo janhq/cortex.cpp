@@ -15,6 +15,7 @@ export class CortexUsecases {
   async startCortex(
     host: string = defaultCortexCppHost,
     port: number = defaultCortexCppPort,
+    verbose: boolean = false,
   ): Promise<CortexOperationSuccessfullyDto> {
     if (this.cortexProcess) {
       return {
@@ -38,7 +39,7 @@ export class CortexUsecases {
     this.cortexProcess = spawn(cortexCppPath, args, {
       detached: false,
       cwd: join(__dirname, '../../../cortex-cpp'),
-      stdio: 'inherit',
+      stdio: verbose ? 'inherit' : undefined,
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
