@@ -43,7 +43,7 @@ export class MessagesController {
     return this.messagesService.findAll();
   }
 
-  @ApiOperation({ summary: 'Retrieve message', description: "Retrieves a specific message defined by a message's `id` ." })
+  @ApiOperation({ summary: 'Retrieve message', description: "Retrieves a specific message defined by a message's `id`." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -56,7 +56,7 @@ export class MessagesController {
     description: 'Successfully updated the message.',
     type: UpdateMessageDto,
   })
-  @ApiOperation({ summary: 'Update message', description: "Updates a specific message defined by a message's `id` ." })
+  @ApiOperation({ summary: 'Update message', description: "Updates a specific message defined by a message's `id`." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
@@ -68,7 +68,7 @@ export class MessagesController {
     status: 200,
     description: 'Successfully deleted the message.'
   })
-  @ApiOperation({ summary: 'Delete message', description: "Deletes a specific message defined by a message's `id` ." })
+  @ApiOperation({ summary: 'Delete message', description: "Deletes a specific message defined by a message's `id`." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Delete(':id')
   remove(@Param('id') id: string) {

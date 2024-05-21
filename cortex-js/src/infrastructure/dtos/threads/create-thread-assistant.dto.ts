@@ -6,7 +6,7 @@ import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateThreadAssistantDto implements ThreadAssistantInfo {
-  @ApiProperty({description: "The unique identifier of the assitant."})
+  @ApiProperty({description: "The unique identifier of the assistant."})
   @IsString()
   assistant_id: string;
 

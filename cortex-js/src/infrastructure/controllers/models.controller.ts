@@ -80,7 +80,7 @@ export class ModelsController {
     return this.modelsUsecases.findAll();
   }
 
-  @ApiOperation({ summary: 'Retrieve model', description: "Gets a model instance, providing basic information about the model such as the owner and permissioning. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
+  @ApiOperation({ summary: 'Retrieve model', description: "Gets a model instance, providing basic information about the model such as the owner and permissions. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Get(':id')
   findOne(@Param('id') id: string) {

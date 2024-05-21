@@ -19,7 +19,7 @@ export class ChatController {
   @ApiOperation({
     summary: 'Create chat completion',
     description:
-      "Creates a model response for the given chat conversation. The API limits stop words to a maximum of 4. If more are specified, only the first 4 will be accepted. [Equivalent to OpenAI's create chat completion](https://platform.openai.com/docs/api-reference/chat/create).",
+      "Creates a model response for the given chat conversation. The API limits stop words to a maximum of 4. If more are specified, only the first four will be accepted. [Equivalent to OpenAI's create chat completion](https://platform.openai.com/docs/api-reference/chat/create).",
   })
   @Post('completions')
   async create(
