@@ -2,12 +2,12 @@ import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { ChatCompletionRole } from '@/domain/models/message.interface';
 import { exit, stdin, stdout } from 'node:process';
 import * as readline from 'node:readline/promises';
-import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { Injectable } from '@nestjs/common';
 
-// TODO: make this class injectable
+@Injectable()
 export class ChatCliUsecases {
   private exitClause = 'exit()';
   private userIndicator = '>> ';
@@ -59,26 +59,44 @@ export class ChatCliUsecases {
         top_p: 0.7,
       };
 
-      let llmFullResponse = '';
-      const writableStream = new WritableStream<ChatStreamEvent>({
-        write(chunk) {
-          if (chunk.type === 'data') {
-            stdout.write(chunk.data ?? '');
-            llmFullResponse += chunk.data ?? '';
-          } else if (chunk.type === 'error') {
-            console.log('Error!!');
-          } else {
-            messages.push({
-              content: llmFullResponse,
-              role: ChatCompletionRole.Assistant,
-            });
-            llmFullResponse = '';
-            console.log('\n');
-          }
-        },
-      });
+      const decoder = new TextDecoder('utf-8');
+      this.chatUsecases.inferenceStream(chatDto, {}).then((response) => {
+        response.on('error', (error) => {
+          console.error(error);
+          rl.prompt();
+        });
 
-      this.chatUsecases.createChatCompletions(chatDto, {}, writableStream);
+        response.on('end', () => {
+          console.log('\n');
+          rl.prompt();
+        });
+
+        response.on('data', (chunk) => {
+          let content = '';
+          const text = decoder.decode(chunk);
+          const lines = text.trim().split('\n');
+          let cachedLines = '';
+          for (const line of lines) {
+            try {
+              const toParse = cachedLines + line;
+              if (!line.includes('data: [DONE]')) {
+                const data = JSON.parse(toParse.replace('data: ', ''));
+                content += data.choices[0]?.delta?.content ?? '';
+
+                if (content.startsWith('assistant: ')) {
+                  content = content.replace('assistant: ', '');
+                }
+
+                if (content.trim().length > 0) {
+                  stdout.write(content);
+                }
+              }
+            } catch {
+              cachedLines = line;
+            }
+          }
+        });
+      });
     });
   }
 }

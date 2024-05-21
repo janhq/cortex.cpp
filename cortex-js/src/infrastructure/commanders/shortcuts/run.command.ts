@@ -2,7 +2,6 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { exit } from 'node:process';
-import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
@@ -18,7 +17,7 @@ export class RunCommand extends CommandRunner {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
     private readonly cortexUsecases: CortexUsecases,
-    private readonly chatUsecases: ChatUsecases,
+    private readonly chatCliUsecases: ChatCliUsecases,
   ) {
     super();
   }
@@ -36,11 +35,7 @@ export class RunCommand extends CommandRunner {
       false,
     );
     await this.modelsUsecases.startModel(modelId);
-    const chatCliUsecases = new ChatCliUsecases(
-      this.chatUsecases,
-      this.cortexUsecases,
-    );
-    await chatCliUsecases.chat(modelId);
+    await this.chatCliUsecases.chat(modelId);
   }
 
   @Option({

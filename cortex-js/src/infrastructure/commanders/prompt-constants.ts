@@ -1,5 +1,5 @@
 //// HF Chat template
-export const OPEN_CHAT_3_5_JINJA = ``;
+export const OPEN_CHAT_3_5_JINJA = `{{ bos_token }}{% for message in messages %}{{ 'GPT4 Correct ' + message['role'].title() + ': ' + message['content'] + '<|end_of_turn|>'}}{% endfor %}{% if add_generation_prompt %}{{ 'GPT4 Correct Assistant:' }}{% endif %}`;
 
 export const ZEPHYR_JINJA = `{% for message in messages %}
 {% if message['role'] == 'user' %}
