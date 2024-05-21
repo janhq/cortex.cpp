@@ -6,42 +6,62 @@ import {
   Patch,
   Param,
   Delete,
+  HttpCode
 } from '@nestjs/common';
 import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse
+} from '@nestjs/swagger';
 
 @ApiTags('Threads')
 @Controller('threads')
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsUsecases) {}
 
-  @ApiOperation({ summary: 'Create Thread', description: "This endpoint creates a new thread." })
+  @ApiOperation({ summary: 'Create thread', description: "This endpoint creates a new thread." })
   @Post()
   create(@Body() createThreadDto: CreateThreadDto) {
     return this.threadsService.create(createThreadDto);
   }
 
-  @ApiOperation({ summary: 'List Threads', description: "Lists all the available threads along with its configurations." })
+  @ApiOperation({ summary: 'List threads', description: "Lists all the available threads along with its configurations." })
   @Get()
   findAll() {
     return this.threadsService.findAll();
   }
 
-  @ApiOperation({ summary: 'Get Thread', description: "Retrieves a thread along with its configurations." })
+  @ApiOperation({ summary: 'Get thread', description: "Retrieves a thread along with its configurations." })
+  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the thread." })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.threadsService.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Update Thread', description: "Updates a thread's configurations." })
+  @ApiResponse({
+    status: 200,
+    description: 'The thread has been successfully updated.',
+    type: UpdateThreadDto,
+  })
+  @ApiOperation({ summary: 'Update thread', description: "Updates a thread's configurations." })
+  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the thread." })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateThreadDto: UpdateThreadDto) {
     return this.threadsService.update(id, updateThreadDto);
   }
 
-  @ApiOperation({ summary: 'Delete Thread', description: "Deletes a specific thread defined by a thread `id` ." })
+  @ApiResponse({
+    status: 200,
+    description: 'The thread has been successfully deleted.'
+  })
+  @ApiOperation({ summary: 'Delete thread', description: "Deletes a specific thread defined by a thread `id` ." })
+  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the thread." })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.threadsService.remove(id);

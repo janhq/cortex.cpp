@@ -2,7 +2,13 @@ import { Body, Controller, Post, Headers, Res } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiExtraModels,
+  ApiOperation,
+  ApiTags,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
 
 @ApiTags('Inference')

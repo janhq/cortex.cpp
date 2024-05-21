@@ -34,7 +34,7 @@ export class CortexController {
     type: CortexOperationSuccessfullyDto,
   })
   @ApiOperation({
-    summary: 'Start cortex',
+    summary: 'Stop cortex',
     description: 'Stops the cortex operation.',
   })
   @Post('stop')

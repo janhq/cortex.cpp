@@ -6,12 +6,19 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
+  HttpCode
 } from '@nestjs/common';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
-import { ApiResponse, ApiTags, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiResponse
+} from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
 
@@ -20,7 +27,12 @@ import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
 export class ModelsController {
   constructor(private readonly modelsUsecases: ModelsUsecases) {}
 
-  @ApiOperation({ summary: 'Create Model', description: "Creates a model `.json` instance file manually." })
+  @ApiOperation({ summary: 'Create model', description: "Creates a model `.json` instance file manually." })
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'The model has been successfully created.'
+  })
   @Post()
   create(@Body() createModelDto: CreateModelDto) {
     return this.modelsUsecases.create(createModelDto);
@@ -29,10 +41,11 @@ export class ModelsController {
   @HttpCode(200)
   @ApiResponse({
     status: 200,
-    description: 'The model has been started successfully.',
+    description: 'The model has been successfully started.',
     type: StartModelSuccessDto,
   })
-  @ApiOperation({ summary: 'Start Model', description: "Start a model defined by a model `id`." })
+  @ApiOperation({ summary: 'Start model', description: "Start a model defined by a model `id`." })
+  @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Post(':modelId/start')
   startModel(
     @Param('modelId') modelId: string,
@@ -44,40 +57,55 @@ export class ModelsController {
   @HttpCode(200)
   @ApiResponse({
     status: 200,
-    description: 'The model has been stopped successfully.',
+    description: 'The model has been successfully stopped.',
     type: StartModelSuccessDto,
   })
-  @ApiOperation({ summary: 'Stop Model', description: "Stop a model defined by a model `id`." })
+  @ApiOperation({ summary: 'Stop model', description: "Stop a model defined by a model `id`." })
+  @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Post(':modelId/stop')
   stopModel(@Param('modelId') modelId: string) {
     return this.modelsUsecases.stopModel(modelId);
   }
 
-  @ApiOperation({ summary: 'Download Model', description: "Download a specific model instance." })
+  @ApiOperation({ summary: 'Download model', description: "Download a specific model instance." })
+  @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Get('download/:modelId')
   downloadModel(@Param('modelId') modelId: string) {
     return this.modelsUsecases.downloadModel(modelId);
   }
 
-  @ApiOperation({ summary: 'List Models', description: "Lists the currently available models, and provides basic information about each one such as the owner and availability. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/list)." })
+  @ApiOperation({ summary: 'List models', description: "Lists the currently available models, and provides basic information about each one such as the owner and availability. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/list)." })
   @Get()
   findAll() {
     return this.modelsUsecases.findAll();
   }
 
-  @ApiOperation({ summary: 'Retrieve Model', description: "Gets a model instance, providing basic information about the model such as the owner and permissioning. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
+  @ApiOperation({ summary: 'Retrieve model', description: "Gets a model instance, providing basic information about the model such as the owner and permissioning. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
+  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.modelsUsecases.findOne(id);
   }
 
-  @ApiOperation({ summary: 'Update Model', description: "Updates a model instance defined by a mode;'s `id`." })
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'The model has been successfully updated.',
+    type: UpdateModelDto,
+  })
+  @ApiOperation({ summary: 'Update model', description: "Updates a model instance defined by a mode;'s `id`." })
+  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateModelDto: UpdateModelDto) {
     return this.modelsUsecases.update(id, updateModelDto);
   }
 
-  @ApiOperation({ summary: 'Delete Model', description: "Deletes a model. [Equivalent to OpenAI's delete model](https://platform.openai.com/docs/api-reference/models/delete)." })
+  @ApiResponse({
+    status: 200,
+    description: 'The model has been successfully deleted.'
+  })
+  @ApiOperation({ summary: 'Delete model', description: "Deletes a model. [Equivalent to OpenAI's delete model](https://platform.openai.com/docs/api-reference/models/delete)." })
+  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.modelsUsecases.remove(id);
