@@ -113,13 +113,19 @@ export class ModelsCliUsecases {
 
   private async pullHuggingFaceModel(modelId: string) {
     const data = await this.fetchHuggingFaceRepoData(modelId);
+    const listChoices = data.siblings
+      .filter((e) => e.quantization != null)
+      .map((e) => {
+        return {
+          name: e.quantization,
+          value: e.quantization,
+        };
+      });
     const { quantization } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'quantization',
       message: 'Select quantization',
-      choices: data.siblings
-        .map((e) => e.quantization)
-        .filter((e) => e != null),
+      choices: listChoices,
     });
 
     const sibling = data.siblings
