@@ -1,7 +1,5 @@
-import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
-import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { exit } from 'node:process';
 
 type ChatOptions = {
@@ -10,10 +8,7 @@ type ChatOptions = {
 
 @SubCommand({ name: 'chat', description: 'Start a chat with a model' })
 export class ChatCommand extends CommandRunner {
-  constructor(
-    private readonly chatUsecases: ChatUsecases,
-    private readonly cortexUsecases: CortexUsecases,
-  ) {
+  constructor(private readonly chatCliUsecases: ChatCliUsecases) {
     super();
   }
 
@@ -24,11 +19,7 @@ export class ChatCommand extends CommandRunner {
       exit(1);
     }
 
-    const chatCliUsecases = new ChatCliUsecases(
-      this.chatUsecases,
-      this.cortexUsecases,
-    );
-    return chatCliUsecases.chat(modelId);
+    return this.chatCliUsecases.chat(modelId);
   }
 
   @Option({

@@ -1,12 +1,14 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
 import { AssistantsUsecases } from '@/usecases/assistants/assistants.usecases';
 import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
+import { DeleteAssistantResponseDto } from '@/infrastructure/dtos/assistants/delete-assistant.dto';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiResponse
 } from '@nestjs/swagger';
 import { AssistantEntity } from '../entities/assistant.entity';
 
@@ -58,8 +60,10 @@ export class AssistantsController {
     summary: 'Delete assistant',
     description: "Deletes a specific assistant defined by an assistant's `id`.",
   })
-  @ApiOkResponse({
+  @ApiResponse({
+    status: 200,
     description: 'The assistant has been successfully deleted.',
+    type: DeleteAssistantResponseDto,
   })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the assistant." })
   @Delete(':id')

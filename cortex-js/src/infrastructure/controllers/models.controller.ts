@@ -14,6 +14,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelDto } from '@/infrastructure/dtos/models/model-successfully-created.dto';
 import { ListModelsResponseDto } from '@/infrastructure/dtos/models/list-model-response.dto';
 import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-model.dto';
+import { DownloadModelResponseDto } from '@/infrastructure/dtos/models/download-model.dto';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -65,6 +66,12 @@ export class ModelsController {
     return this.modelsUsecases.stopModel(modelId);
   }
 
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: DownloadModelResponseDto,
+  })
   @ApiOperation({ summary: 'Download model', description: "Downloads a specific model instance." })
   @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Get('download/:modelId')

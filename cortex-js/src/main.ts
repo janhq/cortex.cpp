@@ -18,7 +18,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
-    .setDescription('Cortex API is compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference)')
+    .setDescription('Cortex API provides a command-line interface (CLI) for seamless interaction with large language models (LLMs). Fully compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference), it enables straightforward command execution and management of LLM interactions.')
     .setVersion('1.0')
     .addTag('Cortex', 'These endpoints control the start and stop operations of the Cortex system.')
     .addTag('Inference', 'This endpoint initiates interaction with a Language Learning Model (LLM).')

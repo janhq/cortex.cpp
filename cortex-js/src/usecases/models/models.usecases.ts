@@ -193,8 +193,6 @@ export class ModelsUsecases {
       throw new BadRequestException('Cannot download remote model');
     }
 
-    // TODO: NamH download multiple files
-
     const downloadUrl = model.sources[0].url;
     if (!this.isValidUrl(downloadUrl)) {
       throw new BadRequestException(`Invalid download URL: ${downloadUrl}`);

@@ -11,6 +11,7 @@ import {
 import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
+import { DeleteThreadResponseDto } from '@/infrastructure/dtos/threads/delete-thread.dto';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -58,7 +59,8 @@ export class ThreadsController {
 
   @ApiResponse({
     status: 200,
-    description: 'The thread has been successfully deleted.'
+    description: 'The thread has been successfully deleted.',
+    type: DeleteThreadResponseDto,
   })
   @ApiOperation({ summary: 'Delete thread', description: "Deletes a specific thread defined by a thread `id` ." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the thread." })

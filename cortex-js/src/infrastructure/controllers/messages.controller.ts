@@ -11,6 +11,9 @@ import {
 import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.dto';
+import { ListMessagesResponseDto } from '@/infrastructure/dtos/messages/list-message.dto';
+import { GetMessageResponseDto } from '@/infrastructure/dtos/messages/get-message.dto';
+import { DeleteMessageResponseDto } from '@/infrastructure/dtos/messages/delete-message.dto';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -25,10 +28,10 @@ import {
 export class MessagesController {
   constructor(private readonly messagesService: MessagesUsecases) {}
 
-  @HttpCode(200)
+  @HttpCode(201)
   @ApiResponse({
-    status: 200,
-    description: 'Successfully created the message.',
+    status: 201,
+    description: 'The message has been successfully created.',
     type: CreateMessageDto,
   })
   @ApiOperation({ summary: 'Create message', description: "Creates a message in a thread." })
@@ -37,12 +40,24 @@ export class MessagesController {
     return this.messagesService.create(createMessageDto);
   }
 
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: ListMessagesResponseDto,
+  })
   @ApiOperation({ summary: 'List messages', description: "Retrieves all the messages in a thread." })
   @Get()
   findAll() {
     return this.messagesService.findAll();
   }
 
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: GetMessageResponseDto,
+  })
   @ApiOperation({ summary: 'Retrieve message', description: "Retrieves a specific message defined by a message's `id`." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Get(':id')
@@ -53,7 +68,7 @@ export class MessagesController {
   @HttpCode(200)
   @ApiResponse({
     status: 200,
-    description: 'Successfully updated the message.',
+    description: 'The message has been successfully updated.',
     type: UpdateMessageDto,
   })
   @ApiOperation({ summary: 'Update message', description: "Updates a specific message defined by a message's `id`." })
@@ -66,7 +81,8 @@ export class MessagesController {
   @HttpCode(200)
   @ApiResponse({
     status: 200,
-    description: 'Successfully deleted the message.'
+    description: 'Successfully deleted the message.',
+    type: DeleteMessageResponseDto,
   })
   @ApiOperation({ summary: 'Delete message', description: "Deletes a specific message defined by a message's `id`." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
