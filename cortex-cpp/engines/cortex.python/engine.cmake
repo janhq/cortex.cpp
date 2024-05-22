@@ -1,5 +1,5 @@
 # cortex.python release version
-set(VERSION 0.1.1)
+set(VERSION 0.1.2)
 set(ENGINE_VERSION v${VERSION})
 set(ENGINE_NAME cortex.python)
 
