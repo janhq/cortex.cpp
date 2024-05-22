@@ -24,6 +24,7 @@ PORT=$((RANDOM % range + min))
 export PYTHONHOME=$(pwd)/engines/cortex.python/python/
 export LD_LIBRARY_PATH="$PYTHONHOME:$LD_LIBRARY_PATH"
 echo "Set Python HOME to $PYTHONHOME"
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 ./engines/cortex.python/python/bin/python3 -m ensurepip
 ./engines/cortex.python/python/bin/python3 -m pip install --upgrade pip
 ./engines/cortex.python/python/bin/python3 -m pip install numpy --target=$PYTHONHOME/lib/python/site-packages/
