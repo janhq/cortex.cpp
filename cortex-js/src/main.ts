@@ -26,7 +26,7 @@ async function bootstrap() {
     .addTag('Models', 'These endpoints provide a list and descriptions of all available models within the Cortex framework.')
     .addTag('Messages', "These endpoints manage the retrieval and storage of conversation content, including responses from LLMs and other metadata related to chat interactions.")
     .addTag('Threads', 'These endpoints handle the creation, retrieval, updating, and deletion of conversation threads.')
-    .addServer('http://localhost:7331/')
+    .addServer('http://localhost:1337/')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
