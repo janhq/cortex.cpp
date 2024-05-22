@@ -60,8 +60,8 @@ export class ChatCliUsecases {
       };
 
       const decoder = new TextDecoder('utf-8');
-      this.chatUsecases.inferenceStream(chatDto, {}).then((response) => {
-        response.on('error', (error) => {
+      this.chatUsecases.inference(chatDto, {}).then((response) => {
+        response.on('error', (error: any) => {
           console.error(error);
           rl.prompt();
         });
@@ -71,7 +71,7 @@ export class ChatCliUsecases {
           rl.prompt();
         });
 
-        response.on('data', (chunk) => {
+        response.on('data', (chunk: any) => {
           let content = '';
           const text = decoder.decode(chunk);
           const lines = text.trim().split('\n');

@@ -26,7 +26,7 @@ export class ChatController {
 
     if (stream) {
       this.chatService
-        .inferenceStream(createChatDto, headers)
+        .inference(createChatDto, headers)
         .then((stream) => stream.pipe(res));
     } else {
       res.json(await this.chatService.inference(createChatDto, headers));
