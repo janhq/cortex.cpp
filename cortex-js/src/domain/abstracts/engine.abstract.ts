@@ -6,9 +6,10 @@ import { Extension } from './extension.abstract';
 export abstract class EngineExtension extends Extension {
   abstract provider: string;
 
-  abstract inference(dto: any, headers: Record<string, string>): Promise<any>;
-
-  abstract inferenceStream(dto: any, headers: any): Promise<stream.Readable>;
+  abstract inference(
+    dto: any,
+    headers: Record<string, string>,
+  ): Promise<stream.Readable | any>;
 
   async loadModel(
     model: Model,
