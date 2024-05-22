@@ -12,6 +12,7 @@ import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
 import { DeleteThreadResponseDto } from '@/infrastructure/dtos/threads/delete-thread.dto';
+import { GetThreadResponseDto } from '@/infrastructure/dtos/threads/get-thread.dto';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -38,6 +39,11 @@ export class ThreadsController {
     return this.threadsService.findAll();
   }
 
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: GetThreadResponseDto,
+  })
   @ApiOperation({ summary: 'Get thread', description: "Retrieves a thread along with its configurations." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the thread." })
   @Get(':id')
