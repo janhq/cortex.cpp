@@ -31,6 +31,12 @@ import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
 export class ModelsController {
   constructor(private readonly modelsUsecases: ModelsUsecases) {}
 
+  @HttpCode(201)
+  @ApiResponse({
+    status: 201,
+    description: 'The model has been successfully created.',
+    type: StartModelSuccessDto,
+  })
   @ApiOperation({ summary: 'Create model', description: "Creates a model `.json` instance file manually." })
   @Post()
   create(@Body() createModelDto: CreateModelDto) {
