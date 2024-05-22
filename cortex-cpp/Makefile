@@ -6,6 +6,7 @@ CMAKE_EXTRA_FLAGS ?= ""
 RUN_TESTS ?= false
 LLM_MODEL_URL ?= "https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
 EMBEDDING_MODEL_URL ?= "https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf"
+PYTHON_FILE_EXECUTION_PATH ?= "python-file-to-test.py"
 CODE_SIGN ?= false
 AZURE_KEY_VAULT_URI ?= xxxx
 AZURE_CLIENT_ID ?= xxxx
@@ -95,6 +96,29 @@ else
 	@cd cortex-cpp; \
 	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./cortex-cpp $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
 	rm -rf uploads/;
+endif
+
+run-python-e2e-test:
+ifeq ($(RUN_TESTS),false)
+	@echo "Skipping tests"
+	@exit 0
+endif
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "cp -r build\engines\cortex.python cortex-cpp\engines\;"
+	@powershell -Command "cd cortex-cpp;..\..\.github\scripts\e2e-test-python-windows.bat cortex-cpp.exe ..\..\.github\scripts\$(PYTHON_FILE_EXECUTION_PATH);"
+	@powershell -Command "rm -r .\engines\cortex.python;"
+else ifeq ($(shell uname -s),Linux)
+	@cp -rf build/engines/cortex.python cortex-cpp/engines/; \
+	cd cortex-cpp; \
+	chmod +x ../../.github/scripts/e2e-test-python-linux-and-mac.sh && ../../.github/scripts/e2e-test-python-linux-and-mac.sh ./cortex-cpp ../../.github/scripts/$(PYTHON_FILE_EXECUTION_PATH); \
+	rm -rf uploads/; \
+	rm -rf ./engines/cortex.python;
+else
+	@cp -rf build/engines/cortex.python cortex-cpp/engines/; \
+	cd cortex-cpp; \
+	chmod +x ../../.github/scripts/e2e-test-python-linux-and-mac.sh && ../../.github/scripts/e2e-test-python-linux-and-mac.sh ./cortex-cpp ../../.github/scripts/$(PYTHON_FILE_EXECUTION_PATH); \
+	rm -rf uploads/; \
+	rm -rf ./engines/cortex.python;
 endif
 
 clean:
