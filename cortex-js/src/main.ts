@@ -18,8 +18,15 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
-    .setDescription('The Cortex API description')
+    .setDescription('Cortex API is compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference)')
     .setVersion('1.0')
+    .addTag('Cortex', 'These endpoints control the start and stop operations of the Cortex system.')
+    .addTag('Inference', 'This endpoint initiates interaction with a Language Learning Model (LLM).')
+    .addTag('Assistants', 'These endpoints manage the lifecycle of an Assistant within a conversation thread.')
+    .addTag('Models', 'These endpoints provide a list and descriptions of all available models within the Cortex framework.')
+    .addTag('Messages', "These endpoints manage the retrieval and storage of conversation content, including responses from LLMs and other metadata related to chat interactions.")
+    .addTag('Threads', 'These endpoints handle the creation, retrieval, updating, and deletion of conversation threads.')
+    .addServer('http://localhost:7331/')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 

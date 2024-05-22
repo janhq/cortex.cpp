@@ -44,7 +44,7 @@ export class ModelsController {
     description: 'The model has been successfully started.',
     type: StartModelSuccessDto,
   })
-  @ApiOperation({ summary: 'Start model', description: "Start a model defined by a model `id`." })
+  @ApiOperation({ summary: 'Start model', description: "Starts a model operation defined by a model `id`." })
   @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Post(':modelId/start')
   startModel(
@@ -60,14 +60,14 @@ export class ModelsController {
     description: 'The model has been successfully stopped.',
     type: StartModelSuccessDto,
   })
-  @ApiOperation({ summary: 'Stop model', description: "Stop a model defined by a model `id`." })
+  @ApiOperation({ summary: 'Stop model', description: "Stops a model operation defined by a model `id`." })
   @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Post(':modelId/stop')
   stopModel(@Param('modelId') modelId: string) {
     return this.modelsUsecases.stopModel(modelId);
   }
 
-  @ApiOperation({ summary: 'Download model', description: "Download a specific model instance." })
+  @ApiOperation({ summary: 'Download model', description: "Downloads a specific model instance." })
   @ApiParam({ name: 'modelId', required: true, description: "The unique identifier of the model." })
   @Get('download/:modelId')
   downloadModel(@Param('modelId') modelId: string) {
@@ -80,7 +80,7 @@ export class ModelsController {
     return this.modelsUsecases.findAll();
   }
 
-  @ApiOperation({ summary: 'Retrieve model', description: "Gets a model instance, providing basic information about the model such as the owner and permissions. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
+  @ApiOperation({ summary: 'Get model', description: "Retrieves a model instance, providing basic information about the model such as the owner and permissions. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Get(':id')
   findOne(@Param('id') id: string) {

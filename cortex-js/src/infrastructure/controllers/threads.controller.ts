@@ -25,7 +25,7 @@ import {
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsUsecases) {}
 
-  @ApiOperation({ summary: 'Create thread', description: "This endpoint creates a new thread." })
+  @ApiOperation({ summary: 'Create thread', description: "Creates a new thread." })
   @Post()
   create(@Body() createThreadDto: CreateThreadDto) {
     return this.threadsService.create(createThreadDto);
