@@ -10,9 +10,6 @@ class EngineI {
  public:
   virtual ~EngineI() {}
 
-  // For backward compatible checking
-  virtual bool IsSupported(const std::string& f) = 0;
-
   virtual void HandleChatCompletion(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
@@ -28,6 +25,9 @@ class EngineI {
   virtual void GetModelStatus(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  // For backward compatible checking
+  virtual bool IsSupported(const std::string& f) = 0;
 
   // Get list of running models
   virtual void GetModels(
