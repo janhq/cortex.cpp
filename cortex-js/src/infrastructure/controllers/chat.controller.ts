@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Headers, Res } from '@nestjs/common';
+import { Body, Controller, Post, Headers, Res, HttpCode } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
@@ -8,8 +8,13 @@ import {
   ApiOperation,
   ApiTags,
   getSchemaPath,
+  ApiResponse
 } from '@nestjs/swagger';
 import { ChatStreamEvent } from '@/domain/abstracts/oai.abstract';
+import {
+  ChatCompletionChunkedResponse,
+  ChatCompletionResponse,
+} from '../dtos/chat/chat-completion-response.dto';
 
 @ApiTags('Inference')
 @Controller('chat')
@@ -20,6 +25,12 @@ export class ChatController {
     summary: 'Create chat completion',
     description:
       "Creates a model response for the given chat conversation. The API limits stop words to a maximum of 4. If more are specified, only the first four will be accepted. [Equivalent to OpenAI's create chat completion](https://platform.openai.com/docs/api-reference/chat/create).",
+  })
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: ChatCompletionChunkedResponse,
   })
   @Post('completions')
   async create(

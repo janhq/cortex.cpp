@@ -11,6 +11,9 @@ import {
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
+import { ModelDto } from '@/infrastructure/dtos/models/model-successfully-created.dto';
+import { ListModelsResponseDto } from '@/infrastructure/dtos/models/list-model-response.dto';
+import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-model.dto';
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -28,11 +31,6 @@ export class ModelsController {
   constructor(private readonly modelsUsecases: ModelsUsecases) {}
 
   @ApiOperation({ summary: 'Create model', description: "Creates a model `.json` instance file manually." })
-  @HttpCode(200)
-  @ApiResponse({
-    status: 200,
-    description: 'The model has been successfully created.'
-  })
   @Post()
   create(@Body() createModelDto: CreateModelDto) {
     return this.modelsUsecases.create(createModelDto);
@@ -74,12 +72,24 @@ export class ModelsController {
     return this.modelsUsecases.downloadModel(modelId);
   }
 
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: ListModelsResponseDto,
+  })
   @ApiOperation({ summary: 'List models', description: "Lists the currently available models, and provides basic information about each one such as the owner and availability. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/list)." })
   @Get()
   findAll() {
     return this.modelsUsecases.findAll();
   }
 
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: ModelDto,
+  })
   @ApiOperation({ summary: 'Get model', description: "Retrieves a model instance, providing basic information about the model such as the owner and permissions. [Equivalent to OpenAI's list model](https://platform.openai.com/docs/api-reference/models/retrieve)." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Get(':id')
@@ -93,7 +103,7 @@ export class ModelsController {
     description: 'The model has been successfully updated.',
     type: UpdateModelDto,
   })
-  @ApiOperation({ summary: 'Update model', description: "Updates a model instance defined by a mode;'s `id`." })
+  @ApiOperation({ summary: 'Update model', description: "Updates a model instance defined by a model's `id`." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateModelDto: UpdateModelDto) {
@@ -102,7 +112,8 @@ export class ModelsController {
 
   @ApiResponse({
     status: 200,
-    description: 'The model has been successfully deleted.'
+    description: 'The model has been successfully deleted.',
+    type: DeleteModelResponseDto,
   })
   @ApiOperation({ summary: 'Delete model', description: "Deletes a model. [Equivalent to OpenAI's delete model](https://platform.openai.com/docs/api-reference/models/delete)." })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the model." })

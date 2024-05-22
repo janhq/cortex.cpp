@@ -20,7 +20,7 @@ export class AssistantsController {
     description: 'Creates a new assistant.',
   })
   @ApiCreatedResponse({
-    description: 'Assistant created successfully.',
+    description: 'The assistant has been successfully created.',
   })
   @Post()
   create(@Body() createAssistantDto: CreateAssistantDto) {
@@ -32,7 +32,7 @@ export class AssistantsController {
     description: 'Retrieves all the available assistants along with their settings.',
   })
   @ApiOkResponse({
-    description: 'Return an array of assistants',
+    description: 'Ok',
     type: [AssistantEntity],
   })
   @Get()
@@ -45,7 +45,7 @@ export class AssistantsController {
     description: "Retrieves a specific assistant defined by an assistant's `id`.",
   })
   @ApiOkResponse({
-    description: 'Return an assistant object',
+    description: 'Ok',
     type: AssistantEntity,
   })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the assistant." })
@@ -59,7 +59,7 @@ export class AssistantsController {
     description: "Deletes a specific assistant defined by an assistant's `id`.",
   })
   @ApiOkResponse({
-    description: 'Successfully deleted the assistant.',
+    description: 'The assistant has been successfully deleted.',
   })
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the assistant." })
   @Delete(':id')
