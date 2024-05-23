@@ -14,6 +14,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Presets, SingleBar } from 'cli-progress';
 import {
   LLAMA_2,
+  LLAMA_3,
+  LLAMA_3_JINJA,
   OPEN_CHAT_3_5,
   OPEN_CHAT_3_5_JINJA,
   ZEPHYR,
@@ -261,6 +263,9 @@ export class ModelsCliUsecases {
 
       case OPEN_CHAT_3_5_JINJA:
         return OPEN_CHAT_3_5;
+
+      case LLAMA_3_JINJA:
+        return LLAMA_3;
 
       default:
         // console.log(
