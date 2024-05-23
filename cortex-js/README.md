@@ -1,4 +1,5 @@
-# Install
+# Installation
+
 ## Prerequisites
 
 ### **Dependencies**
@@ -19,17 +20,18 @@ Before installation, ensure that you have installed the following:
 Ensure that your system meets the following requirements to run Cortex:
 
 - **OS**:
-    - MacOSX 13.6 or higher.
-    - Windows 10 or higher.
-    - Ubuntu 12.04 and later.
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 12.04 and later.
 - **RAM (CPU Mode):**
-    - 8GB for running up to 3B models.
-    - 16GB for running up to 7B models.
-    - 32GB for running up to 13B models.
+  - 8GB for running up to 3B models.
+  - 16GB for running up to 7B models.
+  - 32GB for running up to 13B models.
 - **VRAM (GPU Mode):**
-    - 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
-    - 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
-    - 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+
+  - 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
 
 - **Disk**: At least 10GB for app and model download.
 
@@ -80,6 +82,7 @@ cortex init
 > Nvidia
   Others (Vulkan)
 ```
+
 3. Select CPU instructions (will be deprecated soon).
 
 ```bash
@@ -93,22 +96,27 @@ cortex init
 2. Once downloaded, Cortex is ready to use!
 
 ### Step 4: Pull a model
+
 From HuggingFace
+
 ```bash
 cortex pull janhq/phi-3-medium-128k-instruct-GGUF
 ```
 
 From Jan Hub (TBD)
+
 ```bash
 cortex pull llama3
 ```
 
 ### Step 5: Chat
+
 ```bash
 cortex run janhq/phi-3-medium-128k-instruct-GGUF
 ```
 
 ## Run as an API server
+
 ```bash
 cortex serve
 ```
