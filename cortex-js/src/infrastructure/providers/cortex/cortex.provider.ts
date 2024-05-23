@@ -6,6 +6,7 @@ import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { readdirSync } from 'node:fs';
+import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -32,7 +33,10 @@ export default class CortexProvider extends OAIEngineExtension {
   ): Promise<void> {
     const modelsContainerDir = this.modelDir();
 
-    const modelFolderFullPath = join(modelsContainerDir, model.id);
+    const modelFolderFullPath = join(
+      modelsContainerDir,
+      normalizeModelId(model.id),
+    );
     const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
       return file.endsWith('.gguf');
     });

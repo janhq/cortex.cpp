@@ -23,6 +23,7 @@ import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
 import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-setting-params.dto';
+import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 
 @Injectable()
 export class ModelsUsecases {
@@ -106,7 +107,7 @@ export class ModelsUsecases {
       return;
     }
 
-    const modelFolder = join(modelsContainerDir, id);
+    const modelFolder = join(modelsContainerDir, normalizeModelId(id));
 
     return this.modelRepository
       .delete(id)
@@ -205,7 +206,7 @@ export class ModelsUsecases {
       mkdirSync(modelsContainerDir, { recursive: true });
     }
 
-    const modelFolder = join(modelsContainerDir, model.id);
+    const modelFolder = join(modelsContainerDir, normalizeModelId(model.id));
     await promises.mkdir(modelFolder, { recursive: true });
     const destination = join(modelFolder, fileName);
 

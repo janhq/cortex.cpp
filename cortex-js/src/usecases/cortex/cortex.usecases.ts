@@ -32,7 +32,7 @@ export class CortexUsecases {
     );
 
     if (!existsSync(cortexCppPath)) {
-      throw new Error('Cortex binary not found');
+      throw new Error('The engine is not available, please run "cortex init".');
     }
 
     // go up one level to get the binary folder, have to also work on windows
