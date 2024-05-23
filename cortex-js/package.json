@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@huggingface/gguf": "^0.1.5",
+    "@huggingface/hub": "^0.15.1",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
@@ -47,7 +48,8 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "typeorm": "^0.3.20",
-    "ulid": "^2.3.0"
+    "ulid": "^2.3.0",
+    "yaml": "^2.4.2"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

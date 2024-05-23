@@ -21,6 +21,9 @@ import {
   ZEPHYR,
   ZEPHYR_JINJA,
 } from '../prompt-constants';
+import { ModelTokenizer } from '../types/model-tokenizer.interface';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -51,6 +54,7 @@ export class ModelsCliUsecases {
     private readonly modelsUsecases: ModelsUsecases,
     @Inject(InquirerService)
     private readonly inquirerService: InquirerService,
+    private readonly httpService: HttpService,
   ) {}
 
   /**
@@ -139,6 +143,47 @@ export class ModelsCliUsecases {
     return this.modelsUsecases.remove(modelId);
   }
 
+  async pullModelWithExactUrl(modelId: string, url: string, fileSize: number) {
+    const tokenizer = await this.getHFModelTokenizer(url);
+    const promptTemplate = tokenizer?.promptTemplate ?? LLAMA_2;
+    const stopWords: string[] = [tokenizer?.stopWord ?? ''];
+
+    const model: CreateModelDto = {
+      sources: [
+        {
+          url: url,
+        },
+      ],
+      id: modelId,
+      name: modelId,
+      version: '',
+      format: ModelFormat.GGUF,
+      description: '',
+      settings: {
+        prompt_template: promptTemplate,
+      },
+      parameters: {
+        stop: stopWords,
+      },
+      metadata: {
+        author: 'janhq',
+        size: fileSize,
+        tags: [],
+      },
+      engine: 'cortex',
+    };
+    if (!(await this.modelsUsecases.findOne(modelId))) {
+      await this.modelsUsecases.create(model);
+    }
+
+    const bar = new SingleBar({}, Presets.shades_classic);
+    bar.start(100, 0);
+    const callback = (progress: number) => {
+      bar.update(progress);
+    };
+    await this.modelsUsecases.downloadModel(modelId, callback);
+  }
+
   /**
    * Pull model from Model repository (HF, Jan...)
    * @param modelId
@@ -153,6 +198,30 @@ export class ModelsCliUsecases {
       bar.update(progress);
     };
     await this.modelsUsecases.downloadModel(modelId, callback);
+  }
+
+  private async getHFModelTokenizer(
+    ggufUrl: string,
+  ): Promise<ModelTokenizer | undefined> {
+    try {
+      const { metadata } = await gguf(ggufUrl);
+      // @ts-expect-error "tokenizer.ggml.eos_token_id"
+      const index = metadata['tokenizer.ggml.eos_token_id'];
+      // @ts-expect-error "tokenizer.ggml.eos_token_id"
+      const hfChatTemplate = metadata['tokenizer.chat_template'];
+      const promptTemplate =
+        this.guessPromptTemplateFromHuggingFace(hfChatTemplate);
+      // @ts-expect-error "tokenizer.ggml.tokens"
+      const stopWord: string = metadata['tokenizer.ggml.tokens'][index] ?? '';
+
+      return {
+        stopWord,
+        promptTemplate,
+      };
+    } catch (err) {
+      console.log('Failed to get model metadata:', err);
+      return undefined;
+    }
   }
 
   //// PRIVATE METHODS ////
@@ -193,26 +262,10 @@ export class ModelsCliUsecases {
       sibling = data.siblings.find((e) => e.rfilename.includes('.gguf'));
     }
     if (!sibling) throw 'No expected quantization found';
+    const tokenizer = await this.getHFModelTokenizer(sibling.downloadUrl!);
 
-    let stopWord = '';
-    let promptTemplate = LLAMA_2;
-
-    try {
-      const { metadata } = await gguf(sibling.downloadUrl!);
-      // @ts-expect-error "tokenizer.ggml.eos_token_id"
-      const index = metadata['tokenizer.ggml.eos_token_id'];
-      // @ts-expect-error "tokenizer.ggml.eos_token_id"
-      const hfChatTemplate = metadata['tokenizer.chat_template'];
-      promptTemplate = this.guessPromptTemplateFromHuggingFace(hfChatTemplate);
-
-      // @ts-expect-error "tokenizer.ggml.tokens"
-      stopWord = metadata['tokenizer.ggml.tokens'][index] ?? '';
-    } catch (err) {}
-
-    const stopWords: string[] = [];
-    if (stopWord.length > 0) {
-      stopWords.push(stopWord);
-    }
+    const promptTemplate = tokenizer?.promptTemplate ?? LLAMA_2;
+    const stopWords: string[] = [tokenizer?.stopWord ?? ''];
 
     const model: CreateModelDto = {
       sources: [
@@ -343,8 +396,8 @@ export class ModelsCliUsecases {
   private async fetchHuggingFaceRepoData(repoId: string) {
     const sanitizedUrl = this.getRepoModelsUrl(repoId);
 
-    const res = await fetch(sanitizedUrl);
-    const response = await res.json();
+    const res = await firstValueFrom(this.httpService.get(sanitizedUrl));
+    const response = res.data;
     if (response['error'] != null) {
       throw new Error(response['error']);
     }
