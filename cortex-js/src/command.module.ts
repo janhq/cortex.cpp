@@ -33,7 +33,6 @@ import { ModelUpdateCommand } from './infrastructure/commanders/models/model-upd
     DatabaseModule,
     ModelsModule,
     CortexModule,
-    ChatModule,
     ExtensionModule,
     HttpModule,
     CliUsecasesModule,
