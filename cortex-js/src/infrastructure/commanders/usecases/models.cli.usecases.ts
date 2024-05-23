@@ -263,11 +263,11 @@ export class ModelsCliUsecases {
         return OPEN_CHAT_3_5;
 
       default:
-        console.log(
-          'Unknown jinja code:',
-          jinjaCode,
-          'Returning default LLAMA_2',
-        );
+        // console.log(
+        //   'Unknown jinja code:',
+        //   jinjaCode,
+        //   'Returning default LLAMA_2',
+        // );
         return LLAMA_2;
     }
   }
