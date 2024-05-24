@@ -107,7 +107,9 @@ ifeq ($(OS),Windows_NT)
 	@powershell -Command "cp -r build\engines\cortex.python cortex-cpp\engines\;"
 	@powershell -Command "cd cortex-cpp;..\..\.github\scripts\e2e-test-python-windows.bat cortex-cpp.exe ..\..\.github\scripts\$(PYTHON_FILE_EXECUTION_PATH);"
 	@powershell -Command "rm *.txt;"
+	@powershell -Command "ls .\engines;"
 	@powershell -Command "cd engines; rm -r cortex.python;"
+	@powershell -Command "ls;"
 else ifeq ($(shell uname -s),Linux)
 	@cp -rf build/engines/cortex.python cortex-cpp/engines/; \
 	cd cortex-cpp; \
