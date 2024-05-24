@@ -23,6 +23,7 @@ import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
 import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-setting-params.dto';
+import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 
 @Injectable()
 export class ModelsUsecases {
@@ -106,7 +107,7 @@ export class ModelsUsecases {
       return;
     }
 
-    const modelFolder = join(modelsContainerDir, id);
+    const modelFolder = join(modelsContainerDir, normalizeModelId(id));
 
     return this.modelRepository
       .delete(id)
@@ -193,8 +194,6 @@ export class ModelsUsecases {
       throw new BadRequestException('Cannot download remote model');
     }
 
-    // TODO: NamH download multiple files
-
     const downloadUrl = model.sources[0].url;
     if (!this.isValidUrl(downloadUrl)) {
       throw new BadRequestException(`Invalid download URL: ${downloadUrl}`);
@@ -207,7 +206,7 @@ export class ModelsUsecases {
       mkdirSync(modelsContainerDir, { recursive: true });
     }
 
-    const modelFolder = join(modelsContainerDir, model.id);
+    const modelFolder = join(modelsContainerDir, normalizeModelId(model.id));
     await promises.mkdir(modelFolder, { recursive: true });
     const destination = join(modelFolder, fileName);
 

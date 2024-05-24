@@ -2,13 +2,8 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { exit } from 'node:process';
-import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
-
-type RunOptions = {
-  model?: string;
-};
 
 @SubCommand({
   name: 'run',
@@ -18,17 +13,17 @@ export class RunCommand extends CommandRunner {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
     private readonly cortexUsecases: CortexUsecases,
-    private readonly chatUsecases: ChatUsecases,
+    private readonly chatCliUsecases: ChatCliUsecases,
   ) {
     super();
   }
 
-  async run(_input: string[], option: RunOptions): Promise<void> {
-    const modelId = option.model;
-    if (!modelId) {
-      console.error('Model ID is required');
+  async run(input: string[]): Promise<void> {
+    if (input.length === 0) {
+      console.error('Model Id is required');
       exit(1);
     }
+    const modelId = input[0];
 
     await this.cortexUsecases.startCortex(
       defaultCortexCppHost,
@@ -36,11 +31,7 @@ export class RunCommand extends CommandRunner {
       false,
     );
     await this.modelsUsecases.startModel(modelId);
-    const chatCliUsecases = new ChatCliUsecases(
-      this.chatUsecases,
-      this.cortexUsecases,
-    );
-    await chatCliUsecases.chat(modelId);
+    await this.chatCliUsecases.chat(modelId);
   }
 
   @Option({

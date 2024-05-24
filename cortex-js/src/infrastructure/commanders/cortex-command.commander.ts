@@ -4,6 +4,7 @@ import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
 import { InitCommand } from './init.command';
 import { RunCommand } from './shortcuts/run.command';
+import { ModelPullCommand } from './models/model-pull.command';
 
 @RootCommand({
   subCommands: [
@@ -12,6 +13,7 @@ import { RunCommand } from './shortcuts/run.command';
     ChatCommand,
     InitCommand,
     RunCommand,
+    ModelPullCommand,
   ],
   description: 'Cortex CLI',
 })
