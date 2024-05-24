@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "nest dev",
-    "build": "yarn build:extensions && nest build",
+    "build": "yarn build:extensions && nest build && cp -r cpuinfo/bin ./dist/",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "build:extensions": "for dir in ./src/extensions/*/; do (cd \"$dir\" && yarn && yarn build); done",
     "start": "nest start",
