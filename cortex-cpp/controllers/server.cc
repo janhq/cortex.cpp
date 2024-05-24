@@ -129,6 +129,40 @@ void server::ModelStatus(
   LOG_TRACE << "Done get model status";
 }
 
+void server::GetModels(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!IsEngineLoaded()) {
+    Json::Value res;
+    res["message"] = "Engine is not loaded yet";
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    resp->setStatusCode(k409Conflict);
+    callback(resp);
+    LOG_WARN << "Engine is not loaded yet";
+    return;
+  }
+
+  LOG_TRACE << "Start to get models";
+  if (engine_->IsSupported("GetModels")) {
+    engine_->GetModels(
+        req->getJsonObject(),
+        [cb = std::move(callback)](Json::Value status, Json::Value res) {
+          auto resp = cortex_utils::nitroHttpJsonResponse(res);
+          resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
+              status["status_code"].asInt()));
+          cb(resp);
+        });
+  } else {
+    Json::Value res;
+    res["message"] = "Method is not supported yet";
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    resp->setStatusCode(k500InternalServerError);
+    callback(resp);
+    LOG_WARN << "Method is not supported yet";
+  }
+
+  LOG_TRACE << "Done get models";
+}
+
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
@@ -144,10 +178,9 @@ void server::LoadModel(const HttpRequestPtr& req,
     };
 
     try {
-      std::string abs_path = cortex_utils::GetCurrentPath() +
-                             get_engine_path(cur_engine_name_);
-      dylib_ =
-          std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+      std::string abs_path =
+          cortex_utils::GetCurrentPath() + get_engine_path(cur_engine_name_);
+      dylib_ = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
     } catch (const cortex_cpp::dylib::load_error& e) {
       LOG_ERROR << "Could not load engine: " << e.what();
       dylib_.reset();
