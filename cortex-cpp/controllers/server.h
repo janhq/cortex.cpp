@@ -48,6 +48,7 @@ class server : public drogon::HttpController<server>,
   METHOD_ADD(server::LoadModel, "loadmodel", Post);
   METHOD_ADD(server::UnloadModel, "unloadmodel", Post);
   METHOD_ADD(server::ModelStatus, "modelstatus", Post);
+  METHOD_ADD(server::GetModels, "models", Get);
   METHOD_ADD(server::GetEngines, "engines", Get);
 
   // cortex.python API
@@ -55,7 +56,9 @@ class server : public drogon::HttpController<server>,
 
   // Openai compatible path
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
+  ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
   ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Post);
+
   // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
   // NOTE: prelight will be added back when browser support is properly planned
 
@@ -79,10 +82,12 @@ class server : public drogon::HttpController<server>,
   void ModelStatus(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void GetModels(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
   void GetEngines(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-
   void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;

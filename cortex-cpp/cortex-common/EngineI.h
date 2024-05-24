@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <iostream>
 #include <memory>
 
 #include "json/value.h"
@@ -24,5 +25,13 @@ class EngineI {
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
   virtual void GetModelStatus(
       std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  // For backward compatible checking
+  virtual bool IsSupported(const std::string& f) = 0;
+
+  // Get list of running models
+  virtual void GetModels(
+      std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };

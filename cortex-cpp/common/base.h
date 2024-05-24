@@ -17,6 +17,9 @@ class BaseModel {
   virtual void ModelStatus(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void GetModels(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
   virtual void GetEngines(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
