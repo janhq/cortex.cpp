@@ -5,10 +5,6 @@ import { exit } from 'node:process';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
-type RunOptions = {
-  model?: string;
-};
-
 @SubCommand({
   name: 'run',
   description: 'EXPERIMENTAL: Shortcut to start a model and chat',
@@ -22,12 +18,12 @@ export class RunCommand extends CommandRunner {
     super();
   }
 
-  async run(_input: string[], option: RunOptions): Promise<void> {
-    const modelId = option.model;
-    if (!modelId) {
-      console.error('Model ID is required');
+  async run(input: string[]): Promise<void> {
+    if (input.length === 0) {
+      console.error('Model Id is required');
       exit(1);
     }
+    const modelId = input[0];
 
     await this.cortexUsecases.startCortex(
       defaultCortexCppHost,
