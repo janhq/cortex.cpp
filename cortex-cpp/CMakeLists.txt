@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 project(cortex-cpp C CXX)
 
 include(engines/cortex.llamacpp/engine.cmake)
-include(engines/cortex.python/engine.cmake)
+if(NOT LLAMA_CUDA)
+  include(engines/cortex.python/engine.cmake)
+endif()
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
