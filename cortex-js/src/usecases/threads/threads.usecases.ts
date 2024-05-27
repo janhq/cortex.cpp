@@ -3,6 +3,7 @@ import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto
 import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
 import { ThreadEntity } from '@/infrastructure/entities/thread.entity';
 import { Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class ThreadsUsecases {
@@ -12,7 +13,7 @@ export class ThreadsUsecases {
   ) {}
 
   async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
-    const id = `jan_${(Date.now() / 1000).toFixed(0)}`;
+    const id = uuidv4();
 
     const thread: ThreadEntity = {
       ...createThreadDto,

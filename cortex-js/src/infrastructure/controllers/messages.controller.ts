@@ -15,30 +15,30 @@ import { ApiTags } from '@nestjs/swagger';
 @ApiTags('Messages')
 @Controller('messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesUsecases) {}
+  constructor(private readonly messagesUsecases: MessagesUsecases) {}
 
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messagesService.create(createMessageDto);
+    return this.messagesUsecases.create(createMessageDto);
   }
 
   @Get()
   findAll() {
-    return this.messagesService.findAll();
+    return this.messagesUsecases.findAll();
   }
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(id);
+    return this.messagesUsecases.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-    return this.messagesService.update(id, updateMessageDto);
+    return this.messagesUsecases.update(id, updateMessageDto);
   }
 
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.messagesService.remove(id);
+    return this.messagesUsecases.remove(id);
   }
 }

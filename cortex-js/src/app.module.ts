@@ -10,6 +10,7 @@ import { ExtensionModule } from './infrastructure/repositories/extensions/extens
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
+import { SeedService } from './usecases/seed/seed.service';
 
 @Module({
   imports: [
@@ -29,5 +30,6 @@ import { env } from 'node:process';
     CortexModule,
     ExtensionModule,
   ],
+  providers: [SeedService],
 })
 export class AppModule {}
