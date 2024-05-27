@@ -6,6 +6,8 @@ import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { readdirSync } from 'node:fs';
+import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
+import { firstValueFrom } from 'rxjs';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -32,7 +34,10 @@ export default class CortexProvider extends OAIEngineExtension {
   ): Promise<void> {
     const modelsContainerDir = this.modelDir();
 
-    const modelFolderFullPath = join(modelsContainerDir, model.id);
+    const modelFolderFullPath = join(
+      modelsContainerDir,
+      normalizeModelId(model.id),
+    );
     const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
       return file.endsWith('.gguf');
     });
@@ -68,13 +73,15 @@ export default class CortexProvider extends OAIEngineExtension {
       modelSettings.ai_prompt = prompt.ai_prompt;
     }
 
-    await this.httpService.post(this.loadModelUrl, modelSettings).toPromise();
+    await firstValueFrom(
+      this.httpService.post(this.loadModelUrl, modelSettings),
+    );
   }
 
   override async unloadModel(modelId: string): Promise<void> {
-    await this.httpService
-      .post(this.unloadModelUrl, { model: modelId })
-      .toPromise();
+    await firstValueFrom(
+      this.httpService.post(this.unloadModelUrl, { model: modelId }),
+    );
   }
 
   private readonly promptTemplateConverter = (

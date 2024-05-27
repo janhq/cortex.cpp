@@ -16,7 +16,7 @@ export class ThreadEntity implements Thread {
   @Column({ name: 'title' })
   title: string;
 
-  @Column({ type: 'simple-array' })
+  @Column({ type: 'simple-json' })
   assistants: ThreadAssistantInfo[];
 
   @Column()

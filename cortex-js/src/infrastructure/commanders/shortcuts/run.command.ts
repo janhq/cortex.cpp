@@ -6,7 +6,7 @@ import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
 type RunOptions = {
-  model?: string;
+  threadId?: string;
 };
 
 @SubCommand({
@@ -22,12 +22,12 @@ export class RunCommand extends CommandRunner {
     super();
   }
 
-  async run(_input: string[], option: RunOptions): Promise<void> {
-    const modelId = option.model;
-    if (!modelId) {
-      console.error('Model ID is required');
+  async run(input: string[], option?: RunOptions): Promise<void> {
+    if (input.length === 0) {
+      console.error('Model Id is required');
       exit(1);
     }
+    const modelId = input[0];
 
     await this.cortexUsecases.startCortex(
       defaultCortexCppHost,
@@ -35,14 +35,14 @@ export class RunCommand extends CommandRunner {
       false,
     );
     await this.modelsUsecases.startModel(modelId);
-    await this.chatCliUsecases.chat(modelId);
+    await this.chatCliUsecases.chat(modelId, option?.threadId);
   }
 
   @Option({
-    flags: '-m, --model <model_id>',
-    description: 'Model Id to start chat with',
+    flags: '-t, --thread <thread_id>',
+    description: 'Thread Id. If not provided, will create new thread',
   })
-  parseModelId(value: string) {
+  parseThreadId(value: string) {
     return value;
   }
 }

@@ -6,9 +6,20 @@ import { ModelsModule } from '@/usecases/models/models.module';
 import { ChatCliUsecases } from './chat.cli.usecases';
 import { ChatModule } from '@/usecases/chat/chat.module';
 import { CortexModule } from '@/usecases/cortex/cortex.module';
+import { ThreadsModule } from '@/usecases/threads/threads.module';
+import { AssistantsModule } from '@/usecases/assistants/assistants.module';
+import { MessagesModule } from '@/usecases/messages/messages.module';
 
 @Module({
-  imports: [HttpModule, ModelsModule, ChatModule, CortexModule],
+  imports: [
+    HttpModule,
+    ModelsModule,
+    ChatModule,
+    CortexModule,
+    ThreadsModule,
+    AssistantsModule,
+    MessagesModule,
+  ],
   providers: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases],
   exports: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases],
 })

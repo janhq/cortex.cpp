@@ -26,7 +26,7 @@ import {
 @ApiTags('Messages')
 @Controller('messages')
 export class MessagesController {
-  constructor(private readonly messagesService: MessagesUsecases) {}
+  constructor(private readonly messagesUsecases: MessagesUsecases) {}
 
   @HttpCode(201)
   @ApiResponse({
@@ -37,7 +37,7 @@ export class MessagesController {
   @ApiOperation({ summary: 'Create message', description: "Creates a message in a thread." })
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
-    return this.messagesService.create(createMessageDto);
+    return this.messagesUsecases.create(createMessageDto);
   }
 
   @HttpCode(200)
@@ -49,7 +49,7 @@ export class MessagesController {
   @ApiOperation({ summary: 'List messages', description: "Retrieves all the messages in a thread." })
   @Get()
   findAll() {
-    return this.messagesService.findAll();
+    return this.messagesUsecases.findAll();
   }
 
   @HttpCode(200)
@@ -62,7 +62,7 @@ export class MessagesController {
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.messagesService.findOne(id);
+    return this.messagesUsecases.findOne(id);
   }
 
   @HttpCode(200)
@@ -75,7 +75,7 @@ export class MessagesController {
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
-    return this.messagesService.update(id, updateMessageDto);
+    return this.messagesUsecases.update(id, updateMessageDto);
   }
 
   @HttpCode(200)
@@ -88,6 +88,6 @@ export class MessagesController {
   @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.messagesService.remove(id);
+    return this.messagesUsecases.remove(id);
   }
 }

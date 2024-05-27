@@ -1,0 +1,18 @@
+{
+    "vendor": "GenuineIntel",
+    "brand": "12th Gen Intel(R) Core(TM) i5-12400F",
+    "cores": 6,
+    "threads": 12,
+    "is_hyperthreading": true,
+    "instructions":
+    {
+        "SSE": true,
+        "SSE2": true,
+        "SSE3": true,
+        "SSE41": true,
+        "SSE42": true,
+        "AVX": true,
+        "AVX2": true,
+        "AVX512": true
+    }
+}

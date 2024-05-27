@@ -5,6 +5,7 @@ import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cor
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { existsSync } from 'node:fs';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CortexUsecases {
@@ -32,7 +33,7 @@ export class CortexUsecases {
     );
 
     if (!existsSync(cortexCppPath)) {
-      throw new Error('Cortex binary not found');
+      throw new Error('The engine is not available, please run "cortex init".');
     }
 
     // go up one level to get the binary folder, have to also work on windows
@@ -75,9 +76,11 @@ export class CortexUsecases {
     port?: number,
   ): Promise<CortexOperationSuccessfullyDto> {
     try {
-      await this.httpService
-        .delete(`http://${host}:${port}/processmanager/destroy`)
-        .toPromise();
+      await firstValueFrom(
+        this.httpService.delete(
+          `http://${host}:${port}/processmanager/destroy`,
+        ),
+      );
     } catch (err) {
       console.error(err.response.data);
     } finally {

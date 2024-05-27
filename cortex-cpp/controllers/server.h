@@ -46,9 +46,12 @@ class server : public drogon::HttpController<server>,
   METHOD_ADD(server::LoadModel, "loadmodel", Post);
   METHOD_ADD(server::UnloadModel, "unloadmodel", Post);
   METHOD_ADD(server::ModelStatus, "modelstatus", Post);
+  METHOD_ADD(server::GetModels, "models", Get);
+  
 
   // Openai compatible path
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
+  ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
   // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
   // NOTE: prelight will be added back when browser support is properly planned
 
@@ -70,6 +73,9 @@ class server : public drogon::HttpController<server>,
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
   void ModelStatus(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void GetModels(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
 
