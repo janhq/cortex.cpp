@@ -61,6 +61,6 @@ export class ModelDto {
     @ApiProperty({ example: 'https://raw.githubusercontent.com/janhq/jan/main/models/trinity-v1.2-7b/cover.png' })
     cover: string;
 
-    @ApiProperty({ example: 'nitro' })
+    @ApiProperty({ example: 'cortex' })
     engine: string;
 }
