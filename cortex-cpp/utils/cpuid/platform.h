@@ -1,3 +1,6 @@
+// Copyright (c) 2013 Steinwurf ApS
+// All Rights Reserved
+// Inspired by https://github.com/steinwurf/cpuid
 #pragma once
 
 // Here we create a number of defines to make it easy to choose between

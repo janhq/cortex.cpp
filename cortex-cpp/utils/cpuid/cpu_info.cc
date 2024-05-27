@@ -1,8 +1,6 @@
 // Copyright (c) 2013 Steinwurf ApS
 // All Rights Reserved
-//
-// Distributed under the "BSD License". See the accompanying LICENSE.rst file.
-
+// Inspired by https://github.com/steinwurf/cpuid
 #include "platform.h"
 
 #include "cpu_info.h"

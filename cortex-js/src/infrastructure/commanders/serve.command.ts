@@ -8,12 +8,11 @@ type ServeOptions = {
   port?: number;
 };
 
-@SubCommand({ name: 'serve' })
+@SubCommand({
+  name: 'serve',
+  description: 'Providing API endpoint for Cortex backend',
+})
 export class ServeCommand extends CommandRunner {
-  constructor() {
-    super();
-  }
-
   async run(_input: string[], options?: ServeOptions): Promise<void> {
     const host = options?.host || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
@@ -31,7 +30,7 @@ export class ServeCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--host <host>',
+    flags: '-h, --host <host>',
     description: 'Host to serve the application',
   })
   parseHost(value: string) {
@@ -39,7 +38,7 @@ export class ServeCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--port <port>',
+    flags: '-p, --port <port>',
     description: 'Port to serve the application',
   })
   parsePort(value: string) {

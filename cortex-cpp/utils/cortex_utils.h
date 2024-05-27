@@ -1,28 +1,34 @@
 #pragma once
-#include "cstdio"
-#include "random"
-#include "string"
-#include <algorithm>
 #include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <ostream>
 #include <regex>
 #include <vector>
+#include "cstdio"
+#include "random"
+#include "string"
 // Include platform-specific headers
 #ifdef _WIN32
-#include <winsock2.h>
 #include <windows.h>
+#include <winsock2.h>
 #else
 #include <dirent.h>
+#include <unistd.h>
+#endif
+
+#if __APPLE__
+#include <limits.h>
+#include <mach-o/dyld.h>
 #endif
 
 namespace cortex_utils {
 
 inline std::string models_folder = "./models";
 
-inline std::string extractBase64(const std::string &input) {
+inline std::string extractBase64(const std::string& input) {
   std::regex pattern("base64,(.*)");
   std::smatch match;
 
@@ -36,7 +42,7 @@ inline std::string extractBase64(const std::string &input) {
 }
 
 // Helper function to encode data to Base64
-inline std::string base64Encode(const std::vector<unsigned char> &data) {
+inline std::string base64Encode(const std::vector<unsigned char>& data) {
   static const char encodingTable[] =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   std::string encodedData;
@@ -78,7 +84,7 @@ inline std::string base64Encode(const std::vector<unsigned char> &data) {
 }
 
 // Function to load an image and convert it to Base64
-inline std::string imageToBase64(const std::string &imagePath) {
+inline std::string imageToBase64(const std::string& imagePath) {
   std::ifstream imageFile(imagePath, std::ios::binary);
   if (!imageFile.is_open()) {
     throw std::runtime_error("Could not open the image file.");
@@ -90,8 +96,8 @@ inline std::string imageToBase64(const std::string &imagePath) {
 }
 
 // Helper function to generate a unique filename
-inline std::string generateUniqueFilename(const std::string &prefix,
-                                          const std::string &extension) {
+inline std::string generateUniqueFilename(const std::string& prefix,
+                                          const std::string& extension) {
   // Get current time as a timestamp
   auto now = std::chrono::system_clock::now();
   auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
@@ -108,18 +114,18 @@ inline std::string generateUniqueFilename(const std::string &prefix,
   return ss.str();
 }
 
-inline void
-processLocalImage(const std::string &localPath,
-                  std::function<void(const std::string &)> callback) {
+inline void processLocalImage(
+    const std::string& localPath,
+    std::function<void(const std::string&)> callback) {
   try {
     std::string base64Image = imageToBase64(localPath);
-    callback(base64Image); // Invoke the callback with the Base64 string
-  } catch (const std::exception &e) {
+    callback(base64Image);  // Invoke the callback with the Base64 string
+  } catch (const std::exception& e) {
     std::cerr << "Error during processing: " << e.what() << std::endl;
   }
 }
 
-inline std::vector<std::string> listFilesInDir(const std::string &path) {
+inline std::vector<std::string> listFilesInDir(const std::string& path) {
   std::vector<std::string> files;
 
 #ifdef _WIN32
@@ -137,12 +143,12 @@ inline std::vector<std::string> listFilesInDir(const std::string &path) {
   }
 #else
   // POSIX-specific code (Linux, Unix, MacOS)
-  DIR *dir;
-  struct dirent *ent;
+  DIR* dir;
+  struct dirent* ent;
 
   if ((dir = opendir(path.c_str())) != NULL) {
     while ((ent = readdir(dir)) != NULL) {
-      if (ent->d_type == DT_REG) { // Check if it's a regular file
+      if (ent->d_type == DT_REG) {  // Check if it's a regular file
         files.push_back(ent->d_name);
       }
     }
@@ -153,7 +159,7 @@ inline std::vector<std::string> listFilesInDir(const std::string &path) {
   return files;
 }
 
-inline std::string rtrim(const std::string &str) {
+inline std::string rtrim(const std::string& str) {
   size_t end = str.find_last_not_of("\n\t ");
   return (end == std::string::npos) ? "" : str.substr(0, end + 1);
 }
@@ -165,7 +171,8 @@ inline std::string generate_random_string(std::size_t length) {
   std::random_device rd;
   std::mt19937 generator(rd());
 
-  std::uniform_int_distribution<> distribution(0, static_cast<int>(characters.size()) - 1);
+  std::uniform_int_distribution<> distribution(
+      0, static_cast<int>(characters.size()) - 1);
 
   std::string random_string(length, '\0');
   std::generate_n(random_string.begin(), length,
@@ -174,37 +181,39 @@ inline std::string generate_random_string(std::size_t length) {
   return random_string;
 }
 
-#if (defined(__GNUC__) || defined(__clang__)) && (defined(__x86_64__) || defined(__i386__))
+#if (defined(__GNUC__) || defined(__clang__)) && \
+    (defined(__x86_64__) || defined(__i386__))
 #include <cpuid.h>
-  inline bool isAVX2Supported() {
-    unsigned eax, ebx, ecx, edx;
-    if (__get_cpuid_max(0, nullptr) < 7) return false;
+inline bool isAVX2Supported() {
+  unsigned eax, ebx, ecx, edx;
+  if (__get_cpuid_max(0, nullptr) < 7)
+    return false;
 
-    __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
-    return (ebx & (1 << 5)) != 0;
-  }
+  __get_cpuid_count(7, 0, &eax, &ebx, &ecx, &edx);
+  return (ebx & (1 << 5)) != 0;
+}
 #elif defined(_MSC_VER) && defined(_M_X64) || defined(_M_IX86)
 #include <intrin.h>
-  inline bool isAVX2Supported() {
-    int cpuInfo[4];
-    __cpuid(cpuInfo, 0);
-    int nIds = cpuInfo[0];
-    if (nIds >= 7) {
-        __cpuidex(cpuInfo, 7, 0);
-        return (cpuInfo[1] & (1 << 5)) != 0;
-    }
-    return false;
+inline bool isAVX2Supported() {
+  int cpuInfo[4];
+  __cpuid(cpuInfo, 0);
+  int nIds = cpuInfo[0];
+  if (nIds >= 7) {
+    __cpuidex(cpuInfo, 7, 0);
+    return (cpuInfo[1] & (1 << 5)) != 0;
   }
+  return false;
+}
 #else
-  inline bool isAVX2Supported() {
-    return false;
-  }
+inline bool isAVX2Supported() {
+  return false;
+}
 #endif
 
 inline void nitro_logo() {
   std::string rainbowColors[] = {
-      "\033[93m", // Yellow
-      "\033[94m", // Blue
+      "\033[93m",  // Yellow
+      "\033[94m",  // Blue
   };
 
   std::string resetColor = "\033[0m";
@@ -242,7 +251,7 @@ inline void nitro_logo() {
     }
   }
 
-  std::cout << resetColor; // Reset color at the endreturn;
+  std::cout << resetColor;  // Reset color at the endreturn;
 }
 
 inline drogon::HttpResponsePtr nitroHttpResponse() {
@@ -254,7 +263,7 @@ inline drogon::HttpResponsePtr nitroHttpResponse() {
   return resp;
 }
 
-inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value &data) {
+inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value& data) {
   auto resp = drogon::HttpResponse::newHttpJsonResponse(data);
 #ifdef ALLOW_ALL_CORS
   LOG_INFO << "Respond for all cors!";
@@ -265,8 +274,8 @@ inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value &data) {
 };
 
 inline drogon::HttpResponsePtr nitroStreamResponse(
-    const std::function<std::size_t(char *, std::size_t)> &callback,
-    const std::string &attachmentFileName = "") {
+    const std::function<std::size_t(char*, std::size_t)>& callback,
+    const std::string& attachmentFileName = "") {
   auto resp = drogon::HttpResponse::newStreamResponse(
       callback, attachmentFileName, drogon::CT_NONE, "text/event-stream");
 #ifdef ALLOW_ALL_CORS
@@ -282,4 +291,45 @@ inline void ltrim(std::string& s) {
           }));
 };
 
-} // namespace cortex_utils
+#if defined(_WIN32)
+inline std::string GetCurrentPath() {
+  wchar_t path[MAX_PATH];
+  DWORD result = GetModuleFileNameW(NULL, path, MAX_PATH);
+  if (result == 0) {
+    std::wcerr << L"Error getting module file name." << std::endl;
+    return "";
+  }
+  std::wstring::size_type pos = std::wstring(path).find_last_of(L"\\/");
+  auto ws = std::wstring(path).substr(0, pos);
+  std::string res;
+  std::transform(ws.begin(), ws.end(), std::back_inserter(res),
+                 [](wchar_t c) { return (char)c; });
+  return res;
+}
+#else
+inline std::string GetCurrentPath() {
+#ifdef __APPLE__
+  char buf[PATH_MAX];
+  uint32_t bufsize = PATH_MAX;
+
+  if (_NSGetExecutablePath(buf, &bufsize) == 0) {
+    auto s = std::string(buf);
+    auto const pos = s.find_last_of('/');
+    return s.substr(0, pos);
+  }
+  return "";
+#else
+  std::vector<char> buf(PATH_MAX);
+  ssize_t len = readlink("/proc/self/exe", &buf[0], buf.size());
+  if (len == -1 || len == buf.size()) {
+    std::cerr << "Error reading symlink /proc/self/exe." << std::endl;
+    return "";
+  }
+  auto s = std::string(&buf[0], len);
+  auto const pos = s.find_last_of('/');
+  return s.substr(0, pos);
+#endif
+}
+#endif
+
+}  // namespace cortex_utils

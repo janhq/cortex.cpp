@@ -1,3 +1,4 @@
+// Inspired by https://github.com/steinwurf/cpuid
 #pragma once
 #include <string>
 #include <utility>

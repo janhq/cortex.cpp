@@ -58,6 +58,7 @@
  *  The `dylib` class represents a single dynamic library instance,
  *  allowing the access of symbols like functions or global variables
  */
+namespace cortex_cpp {
 class dylib {
 public:
     struct filename_components {
@@ -311,6 +312,7 @@ protected:
     }
 };
 
+}
 #undef DYLIB_WIN_MAC_OTHER
 #undef DYLIB_WIN_OTHER
 #undef DYLIB_CPP17

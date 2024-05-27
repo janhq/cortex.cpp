@@ -1,73 +1,155 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Installation
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Prerequisites
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### **Dependencies**
 
-## Description
+Before installation, ensure that you have installed the following:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Node.js**: Required for running the installation.
+- **NPM**: Needed to manage packages.
+- **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
 
-## Installation
+<aside>
+💡 The **CPU instruction sets** are not required for the initial installation of Cortex. This dependency will be automatically installed during the Cortex initialization if they are not already on your system.
 
-```bash
-$ yarn install
-```
+</aside>
 
-## Running the app
+### **Hardware**
 
-```bash
-# development
-$ yarn run start
+Ensure that your system meets the following requirements to run Cortex:
 
-# watch mode
-$ yarn run start:dev
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 12.04 and later.
+- **RAM (CPU Mode):**
+  - 8GB for running up to 3B models.
+  - 16GB for running up to 7B models.
+  - 32GB for running up to 13B models.
+- **VRAM (GPU Mode):**
 
-# production mode
-$ yarn run start:prod
-```
+  - 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
 
-## Test
+- **Disk**: At least 10GB for app and model download.
+
+## Cortex Installation
+
+To install Cortex, follow the steps below:
+
+### Step 1: Install Cortex
+
+Run the following command to install Cortex globally on your machine:
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+# Install using NPM globally
+npm i -g @janhq/cortex
 ```
 
-## Support
+### Step 2: Verify the Installation
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+After installation, you can verify that Cortex is installed correctly by getting help information.
 
-## Stay in touch
+```bash
+# Get the help information
+cortex -h
+```
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### Step 3: Initialize Cortex
 
-## License
+Once verified, you need to initialize the Cortex engine.
 
-Nest is [MIT licensed](LICENSE).
+1. Initialize the Cortex engine:
+
+```
+cortex init
+```
+
+1. Select between `CPU` and `GPU` modes.
+
+```bash
+? Select run mode (Use arrow keys)
+> CPU
+  GPU
+```
+
+2. Select between GPU types.
+
+```bash
+? Select GPU types (Use arrow keys)
+> Nvidia
+  Others (Vulkan)
+```
+
+3. Select CPU instructions (will be deprecated soon).
+
+```bash
+? Select CPU instructions (Use arrow keys)
+> AVX2
+  AVX
+  AVX-512
+```
+
+1. Cortex will download the required CPU instruction sets if you choose `CPU` mode. If you choose `GPU` mode, Cortex will download the necessary dependencies to use your GPU.
+2. Once downloaded, Cortex is ready to use!
+
+### Step 4: Pull a model
+
+From HuggingFace
+
+```bash
+cortex pull janhq/phi-3-medium-128k-instruct-GGUF
+```
+
+From Jan Hub (TBD)
+
+```bash
+cortex pull llama3
+```
+
+### Step 5: Chat
+
+```bash
+cortex run janhq/phi-3-medium-128k-instruct-GGUF
+```
+
+## Run as an API server
+
+```bash
+cortex serve
+```
+
+## Build from Source
+
+To install Cortex from the source, follow the steps below:
+
+1. Clone the Cortex repository [here](https://github.com/janhq/cortex/tree/dev).
+2. Navigate to the `cortex-js` folder.
+3. Open the terminal and run the following command to build the Cortex project:
+
+```bash
+npx nest build
+```
+
+1. Make the `command.js` executable:
+
+```bash
+chmod +x '[path-to]/cortex/cortex-js/dist/src/command.js'
+```
+
+1. Link the package globally:
+
+```bash
+npm link
+```
+
+## Uninstall Cortex
+
+Run the following command to uninstall Cortex globally on your machine:
+
+```
+# Uninstall globally using NPM
+npm uninstall -g @janhq/cortex
+```
