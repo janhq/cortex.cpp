@@ -9,6 +9,7 @@ import { CortexModule } from '@/usecases/cortex/cortex.module';
 import { ThreadsModule } from '@/usecases/threads/threads.module';
 import { AssistantsModule } from '@/usecases/assistants/assistants.module';
 import { MessagesModule } from '@/usecases/messages/messages.module';
+import { FileManagerModule } from '@/file-manager/file-manager.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { MessagesModule } from '@/usecases/messages/messages.module';
     ThreadsModule,
     AssistantsModule,
     MessagesModule,
+    FileManagerModule,
   ],
   providers: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases],
   exports: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases],

@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
 import { SeedService } from './usecases/seed/seed.service';
+import { FileManagerService } from './file-manager/file-manager.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -12,6 +13,9 @@ async function bootstrap() {
   });
   const seedService = app.get(SeedService);
   await seedService.seed();
+
+  const fileService = app.get(FileManagerService);
+  await fileService.getConfig();
 
   app.useGlobalPipes(
     new ValidationPipe({

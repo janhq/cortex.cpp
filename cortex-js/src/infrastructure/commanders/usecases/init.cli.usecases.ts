@@ -1,5 +1,5 @@
 import { createWriteStream, existsSync, rmSync } from 'fs';
-import { resolve, delimiter, join } from 'path';
+import { delimiter, join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
@@ -7,6 +7,7 @@ import { exit } from 'node:process';
 import { InitOptions } from '../types/init-options.interface';
 import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
+import { FileManagerService } from '@/file-manager/file-manager.service';
 
 @Injectable()
 export class InitCliUsecases {
@@ -14,7 +15,10 @@ export class InitCliUsecases {
   CUDA_DOWNLOAD_URL =
     'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly fileManagerService: FileManagerService,
+  ) {}
 
   installEngine = async (
     engineFileName: string,
@@ -53,7 +57,8 @@ export class InitCliUsecases {
     }
 
     console.log(`Downloading engine file ${engineFileName}`);
-    const engineDir = resolve(this.rootDir(), 'cortex-cpp');
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    const engineDir = join(dataFolderPath, 'cortex-cpp');
     if (existsSync(engineDir)) rmSync(engineDir, { recursive: true });
 
     const download = await firstValueFrom(
@@ -66,7 +71,7 @@ export class InitCliUsecases {
       process.exit(1);
     }
 
-    const destination = resolve(this.rootDir(), toDownloadAsset.name);
+    const destination = join(dataFolderPath, toDownloadAsset.name);
 
     await new Promise((resolve, reject) => {
       const writer = createWriteStream(destination);
@@ -95,10 +100,7 @@ export class InitCliUsecases {
     });
 
     try {
-      await decompress(
-        resolve(this.rootDir(), destination),
-        resolve(this.rootDir()),
-      );
+      await decompress(destination, join(dataFolderPath));
     } catch (e) {
       console.error('Error decompressing file', e);
       exit(1);
@@ -123,8 +125,6 @@ export class InitCliUsecases {
     const engineName = `${platform}-${arch}${instructions.toLowerCase()}${cudaVersion}`;
     return `${engineName}.tar.gz`;
   };
-
-  rootDir = () => resolve(__dirname, `../../../../`);
 
   cudaVersion = async () => {
     let filesCuda12: string[];
@@ -178,11 +178,12 @@ export class InitCliUsecases {
   installCudaToolkitDependency = async (options: InitOptions) => {
     const platform = process.platform === 'win32' ? 'windows' : 'linux';
 
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const url = this.CUDA_DOWNLOAD_URL.replace(
       '<version>',
       options.cudaVersion === '11' ? '11.7' : '12.0',
     ).replace('<platform>', platform);
-    const destination = resolve(this.rootDir(), 'cuda-toolkit.tar.gz');
+    const destination = join(dataFolderPath, 'cuda-toolkit.tar.gz');
 
     const download = await firstValueFrom(
       this.httpService.get(url, {
@@ -222,10 +223,7 @@ export class InitCliUsecases {
     });
 
     try {
-      await decompress(
-        resolve(this.rootDir(), destination),
-        resolve(this.rootDir(), 'cortex-cpp'),
-      );
+      await decompress(destination, join(dataFolderPath, 'cortex-cpp'));
     } catch (e) {
       console.log(e);
       exit(1);

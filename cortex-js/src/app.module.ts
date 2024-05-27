@@ -11,6 +11,7 @@ import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
 import { SeedService } from './usecases/seed/seed.service';
+import { FileManagerModule } from './file-manager/file-manager.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SeedService } from './usecases/seed/seed.service';
     AssistantsModule,
     CortexModule,
     ExtensionModule,
+    FileManagerModule,
   ],
   providers: [SeedService],
 })
