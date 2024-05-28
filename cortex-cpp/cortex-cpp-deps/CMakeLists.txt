@@ -66,7 +66,7 @@ ExternalProject_Add(
 ExternalProject_Add(
     drogon
     GIT_REPOSITORY https://github.com/drogonframework/drogon
-    GIT_TAG v1.9.2
+    GIT_TAG v1.9.4
     CMAKE_ARGS
     -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
 	-DOPENSSL_USE_STATIC_LIBS=TRUE

@@ -2,7 +2,9 @@
 #include <drogon/drogon.h>
 #include <climits>  // for PATH_MAX
 #include <iostream>
+#include "cortex-common/cortexpythoni.h"
 #include "utils/cortex_utils.h"
+#include "utils/dylib.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -18,6 +20,27 @@
 #endif
 
 int main(int argc, char* argv[]) {
+  // Check if this process is for python execution
+  if (argc > 1) {
+    if (strcmp(argv[1], "--run_python_file") == 0) {
+      std::string py_home_path = (argc > 3) ? argv[3] : "";
+      std::unique_ptr<cortex_cpp::dylib> dl;
+      try {
+        std::string abs_path = cortex_utils::GetCurrentPath() +
+                               cortex_utils::kPythonRuntimeLibPath;
+        dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+      } catch (const cortex_cpp::dylib::load_error& e) {
+        LOG_ERROR << "Could not load engine: " << e.what();
+        return 1;
+      }
+
+      auto func = dl->get_function<CortexPythonEngineI*()>("get_engine");
+      auto e = func();
+      e->ExecutePythonFile(argv[0], argv[2], py_home_path);
+      return 0;
+    }
+  }
+
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
