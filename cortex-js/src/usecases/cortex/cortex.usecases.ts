@@ -5,6 +5,7 @@ import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cor
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { existsSync } from 'node:fs';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class CortexUsecases {
@@ -75,9 +76,11 @@ export class CortexUsecases {
     port?: number,
   ): Promise<CortexOperationSuccessfullyDto> {
     try {
-      await this.httpService
-        .delete(`http://${host}:${port}/processmanager/destroy`)
-        .toPromise();
+      await firstValueFrom(
+        this.httpService.delete(
+          `http://${host}:${port}/processmanager/destroy`,
+        ),
+      );
     } catch (err) {
       console.error(err.response.data);
     } finally {
