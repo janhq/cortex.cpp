@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
-import { join, resolve } from 'path';
+import { join } from 'path';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { readdirSync } from 'node:fs';
 import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
+import { FileManagerService } from '@/file-manager/file-manager.service';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -22,17 +23,23 @@ export default class CortexProvider extends OAIEngineExtension {
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
   private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;
 
-  constructor(protected readonly httpService: HttpService) {
+  constructor(
+    protected readonly httpService: HttpService,
+    private readonly fileManagerService: FileManagerService,
+  ) {
     super(httpService);
   }
 
-  modelDir = () => resolve(__dirname, `../../../../models`);
+  private async getModelDirectory(): Promise<string> {
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    return join(dataFolderPath, 'models');
+  }
 
   override async loadModel(
     model: Model,
     settings?: ModelSettingParams,
   ): Promise<void> {
-    const modelsContainerDir = this.modelDir();
+    const modelsContainerDir = await this.getModelDirectory();
 
     const modelFolderFullPath = join(
       modelsContainerDir,

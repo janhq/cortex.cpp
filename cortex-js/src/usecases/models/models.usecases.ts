@@ -10,7 +10,7 @@ import {
   ModelSettingParams,
 } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
-import { join, basename, resolve } from 'path';
+import { join, basename } from 'path';
 import {
   promises,
   createWriteStream,
@@ -25,6 +25,7 @@ import { HttpService } from '@nestjs/axios';
 import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-setting-params.dto';
 import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
+import { FileManagerService } from '@/file-manager/file-manager.service';
 
 @Injectable()
 export class ModelsUsecases {
@@ -32,6 +33,7 @@ export class ModelsUsecases {
     @Inject('MODEL_REPOSITORY')
     private readonly modelRepository: Repository<ModelEntity>,
     private readonly extensionRepository: ExtensionRepository,
+    private readonly fileManagerService: FileManagerService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -101,9 +103,13 @@ export class ModelsUsecases {
     return updateDto.parameters ?? {};
   }
 
-  async remove(id: string) {
-    const modelsContainerDir = this.modelDir();
+  private async getModelDirectory(): Promise<string> {
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    return join(dataFolderPath, 'models');
+  }
 
+  async remove(id: string) {
+    const modelsContainerDir = await this.getModelDirectory();
     if (!existsSync(modelsContainerDir)) {
       return;
     }
@@ -186,8 +192,6 @@ export class ModelsUsecases {
       });
   }
 
-  modelDir = () => resolve(__dirname, `../../../models`);
-
   async downloadModel(modelId: string, callback?: (progress: number) => void) {
     const model = await this.getModelOrThrow(modelId);
 
@@ -201,7 +205,7 @@ export class ModelsUsecases {
     }
 
     const fileName = basename(downloadUrl);
-    const modelsContainerDir = this.modelDir();
+    const modelsContainerDir = await this.getModelDirectory();
 
     if (!existsSync(modelsContainerDir)) {
       mkdirSync(modelsContainerDir, { recursive: true });

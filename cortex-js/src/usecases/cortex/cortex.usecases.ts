@@ -6,12 +6,17 @@ import { HttpService } from '@nestjs/axios';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { existsSync } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
+import { FileManagerService } from '@/file-manager/file-manager.service';
 
 @Injectable()
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
+  private cortexBinaryName: string = `cortex-cpp${process.platform === 'win32' ? '.exe' : ''}`;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly fileManagerService: FileManagerService,
+  ) {}
 
   async startCortex(
     host: string = defaultCortexCppHost,
@@ -26,11 +31,9 @@ export class CortexUsecases {
     }
 
     const args: string[] = ['1', host, `${port}`];
-    const cortexCppPath = join(
-      __dirname,
-      '../../../cortex-cpp/cortex-cpp' +
-        `${process.platform === 'win32' ? '.exe' : ''}`,
-    );
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    const cortexCppFolderPath = join(dataFolderPath, 'cortex-cpp');
+    const cortexCppPath = join(cortexCppFolderPath, this.cortexBinaryName);
 
     if (!existsSync(cortexCppPath)) {
       throw new Error('The engine is not available, please run "cortex init".');
@@ -39,7 +42,7 @@ export class CortexUsecases {
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
       detached: false,
-      cwd: join(__dirname, '../../../cortex-cpp'),
+      cwd: cortexCppFolderPath,
       stdio: verbose ? 'inherit' : undefined,
       env: {
         ...process.env,

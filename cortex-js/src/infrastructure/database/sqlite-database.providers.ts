@@ -1,12 +1,15 @@
+import { FileManagerService } from '@/file-manager/file-manager.service';
 import { databaseFile } from 'constant';
-import { resolve } from 'path';
+import { join } from 'path';
 import { DataSource } from 'typeorm';
 
 export const sqliteDatabaseProviders = [
   {
     provide: 'DATA_SOURCE',
-    useFactory: async () => {
-      const sqlitePath = resolve(__dirname, `../../../${databaseFile}`);
+    inject: [FileManagerService],
+    useFactory: async (fileManagerService: FileManagerService) => {
+      const dataFolderPath = await fileManagerService.getDataFolderPath();
+      const sqlitePath = join(dataFolderPath, databaseFile);
       const dataSource = new DataSource({
         type: 'sqlite',
         database: sqlitePath,

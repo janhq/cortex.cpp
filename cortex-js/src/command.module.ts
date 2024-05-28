@@ -23,6 +23,7 @@ import { ModelUpdateCommand } from './infrastructure/commanders/models/model-upd
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { MessagesModule } from './usecases/messages/messages.module';
+import { FileManagerModule } from './file-manager/file-manager.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { MessagesModule } from './usecases/messages/messages.module';
     CliUsecasesModule,
     AssistantsModule,
     MessagesModule,
+    FileManagerModule,
   ],
   providers: [
     CortexCommand,

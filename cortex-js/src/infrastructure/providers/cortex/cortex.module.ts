@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 import CortexProvider from './cortex.provider';
 import { HttpModule } from '@nestjs/axios';
+import { FileManagerModule } from '@/file-manager/file-manager.module';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, FileManagerModule],
   providers: [
     {
       provide: 'CORTEX_PROVIDER',
