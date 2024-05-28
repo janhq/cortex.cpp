@@ -3,33 +3,30 @@ import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
 
 type ChatOptions = {
-  model?: string;
   threadId?: string;
+  message?: string;
+  attach: boolean;
 };
 
-@SubCommand({ name: 'chat', description: 'Start a chat with a model' })
+@SubCommand({ name: 'chat', description: 'Send a chat request to a model' })
 export class ChatCommand extends CommandRunner {
   constructor(private readonly chatCliUsecases: ChatCliUsecases) {
     super();
   }
 
-  async run(_input: string[], option: ChatOptions): Promise<void> {
-    const modelId = option.model;
+  async run(_input: string[], options: ChatOptions): Promise<void> {
+    const modelId = _input[0];
     if (!modelId) {
       console.error('Model ID is required');
       exit(1);
     }
 
-    return this.chatCliUsecases.chat(modelId, option.threadId);
-  }
-
-  @Option({
-    flags: '-m, --model <model_id>',
-    description: 'Model Id to start chat with',
-    required: true,
-  })
-  parseModelId(value: string) {
-    return value;
+    return this.chatCliUsecases.chat(
+      modelId,
+      options.threadId,
+      options.message,
+      options.attach,
+    );
   }
 
   @Option({
@@ -38,5 +35,24 @@ export class ChatCommand extends CommandRunner {
   })
   parseThreadId(value: string) {
     return value;
+  }
+
+  @Option({
+    flags: '-m, --message <message>',
+    description: 'Message to send to the model',
+    required: true,
+  })
+  parseModelId(value: string) {
+    return value;
+  }
+
+  @Option({
+    flags: '-a, --attach',
+    description: 'Attach to interactive chat session',
+    defaultValue: false,
+    name: 'attach',
+  })
+  parseAttach() {
+    return true;
   }
 }
