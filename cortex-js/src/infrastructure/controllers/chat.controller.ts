@@ -2,7 +2,14 @@ import { Body, Controller, Post, Headers, Res, HttpCode } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCreatedResponse,
+  ApiExtraModels,
+  ApiOperation,
+  ApiTags,
+  getSchemaPath,
+  ApiResponse
+} from '@nestjs/swagger';
 import { ChatCompletionResponseDto } from '../dtos/chat/chat-completion-response.dto';
 
 @ApiTags('Inference')
@@ -13,7 +20,7 @@ export class ChatController {
   @HttpCode(200)
   @ApiResponse({
     status: 200,
-    description: 'Chat completion response successfully',
+    description: 'Ok',
     type: ChatCompletionResponseDto,
   })
   @Post('completions')

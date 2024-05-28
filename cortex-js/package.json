@@ -9,9 +9,12 @@
   },
   "scripts": {
     "dev": "nest dev",
-    "build": "yarn build:extensions && nest build",
+    "build": "yarn build:extensions && nest build && cpx \"cpuinfo/bin/**\" dist/bin",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "build:extensions": "for dir in ./src/extensions/*/; do (cd \"$dir\" && yarn && yarn build); done",
+    "build:extensions": "run-script-os",
+    "build:extensions:windows": "powershell -command \"$jobs = Get-ChildItem -Path './src/extensions' -Directory | ForEach-Object { Start-Job -Name ($_.Name) -ScriptBlock { param($_dir); try { Set-Location $_dir; yarn; yarn build; Write-Output 'Build successful in ' + $_dir } catch { Write-Error 'Error in ' + $_dir; throw } } -ArgumentList $_.FullName }; $jobs | Wait-Job; $jobs | ForEach-Object { Receive-Job -Job $_ -Keep } | ForEach-Object { Write-Host $_ }; $failed = $jobs | Where-Object { $_.State -ne 'Completed' -or $_.ChildJobs[0].JobStateInfo.State -ne 'Completed' }; if ($failed) { Exit 1 }\"",
+    "build:extensions:linux": "for dir in ./src/extensions/*/; do (cd \"$dir\" && yarn && yarn build); done",
+    "build:extensions:macos": "for dir in ./src/extensions/*/; do (cd \"$dir\" && yarn && yarn build); done",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
@@ -26,6 +29,7 @@
   },
   "dependencies": {
     "@huggingface/gguf": "^0.1.5",
+    "@huggingface/hub": "^0.15.1",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
@@ -47,9 +51,12 @@
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "typeorm": "^0.3.20",
-    "ulid": "^2.3.0"
+    "ulid": "^2.3.0",
+    "yaml": "^2.4.2",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "cpx": "^1.5.0",
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
@@ -60,6 +67,7 @@
     "@types/jest": "^29.5.2",
     "@types/node": "^20.12.9",
     "@types/supertest": "^6.0.0",
+    "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.42.0",
@@ -72,7 +80,8 @@
     "ts-jest": "^29.1.0",
     "ts-loader": "^9.4.3",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.1.3"
+    "typescript": "^5.1.3",
+    "run-script-os": "^1.1.6"
   },
   "files": [
     "dist"

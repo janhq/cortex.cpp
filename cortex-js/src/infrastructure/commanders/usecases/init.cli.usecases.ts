@@ -6,6 +6,7 @@ import decompress from 'decompress';
 import { exit } from 'node:process';
 import { InitOptions } from '../types/init-options.interface';
 import { Injectable } from '@nestjs/common';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class InitCliUsecases {
@@ -19,8 +20,8 @@ export class InitCliUsecases {
     engineFileName: string,
     version: string = 'latest',
   ): Promise<any> => {
-    const res = await this.httpService
-      .get(
+    const res = await firstValueFrom(
+      this.httpService.get(
         this.CORTEX_RELEASES_URL + `${version === 'latest' ? '/latest' : ''}`,
         {
           headers: {
@@ -28,8 +29,8 @@ export class InitCliUsecases {
             Accept: 'application/vnd.github+json',
           },
         },
-      )
-      .toPromise();
+      ),
+    );
 
     if (!res?.data) {
       console.log('Failed to fetch releases');
@@ -55,11 +56,11 @@ export class InitCliUsecases {
     const engineDir = resolve(this.rootDir(), 'cortex-cpp');
     if (existsSync(engineDir)) rmSync(engineDir, { recursive: true });
 
-    const download = await this.httpService
-      .get(toDownloadAsset.browser_download_url, {
+    const download = await firstValueFrom(
+      this.httpService.get(toDownloadAsset.browser_download_url, {
         responseType: 'stream',
-      })
-      .toPromise();
+      }),
+    );
     if (!download) {
       console.log('Failed to download model');
       process.exit(1);
@@ -183,11 +184,11 @@ export class InitCliUsecases {
     ).replace('<platform>', platform);
     const destination = resolve(this.rootDir(), 'cuda-toolkit.tar.gz');
 
-    const download = await this.httpService
-      .get(url, {
+    const download = await firstValueFrom(
+      this.httpService.get(url, {
         responseType: 'stream',
-      })
-      .toPromise();
+      }),
+    );
 
     if (!download) {
       console.log('Failed to download dependency');

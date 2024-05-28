@@ -19,7 +19,7 @@ export class MessageEntity implements Message {
   @Column()
   thread_id: string;
 
-  @Column()
+  @Column({ nullable: true })
   assistant_id?: string;
 
   @Column()
@@ -40,9 +40,9 @@ export class MessageEntity implements Message {
   @Column({ type: 'simple-json', nullable: true })
   metadata?: MessageMetadata;
 
-  @Column()
+  @Column({ nullable: true })
   type?: string;
 
-  @Column()
+  @Column({ nullable: true })
   error_code?: ErrorCode;
 }

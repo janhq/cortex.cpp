@@ -6,7 +6,6 @@ import { CortexModule } from './usecases/cortex/cortex.module';
 import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
-import { ChatModule } from './usecases/chat/chat.module';
 import { InitCommand } from './infrastructure/commanders/init.command';
 import { HttpModule } from '@nestjs/axios';
 import { InitRunModeQuestions } from './infrastructure/commanders/questions/init.questions';
@@ -20,8 +19,10 @@ import { ModelGetCommand } from './infrastructure/commanders/models/model-get.co
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 import { InitCudaQuestions } from './infrastructure/commanders/questions/cuda.questions';
-import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
+import { AssistantsModule } from './usecases/assistants/assistants.module';
+import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
+import { MessagesModule } from './usecases/messages/messages.module';
 
 @Module({
   imports: [
@@ -36,6 +37,8 @@ import { ModelUpdateCommand } from './infrastructure/commanders/models/model-upd
     ExtensionModule,
     HttpModule,
     CliUsecasesModule,
+    AssistantsModule,
+    MessagesModule,
   ],
   providers: [
     CortexCommand,

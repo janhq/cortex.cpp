@@ -4,6 +4,7 @@ import { exit } from 'node:process';
 
 type ChatOptions = {
   model?: string;
+  threadId?: string;
 };
 
 @SubCommand({ name: 'chat', description: 'Start a chat with a model' })
@@ -19,14 +20,23 @@ export class ChatCommand extends CommandRunner {
       exit(1);
     }
 
-    return this.chatCliUsecases.chat(modelId);
+    return this.chatCliUsecases.chat(modelId, option.threadId);
   }
 
   @Option({
     flags: '-m, --model <model_id>',
     description: 'Model Id to start chat with',
+    required: true,
   })
   parseModelId(value: string) {
+    return value;
+  }
+
+  @Option({
+    flags: '-t, --thread <thread_id>',
+    description: 'Thread Id. If not provided, will create new thread',
+  })
+  parseThreadId(value: string) {
     return value;
   }
 }

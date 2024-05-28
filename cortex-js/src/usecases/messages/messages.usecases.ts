@@ -12,7 +12,7 @@ export class MessagesUsecases {
     private messageRepository: Repository<MessageEntity>,
   ) {}
 
-  create(createMessageDto: CreateMessageDto) {
+  async create(createMessageDto: CreateMessageDto) {
     const message: MessageEntity = {
       ...createMessageDto,
       id: ulid(),
@@ -40,5 +40,17 @@ export class MessagesUsecases {
 
   remove(id: string) {
     return this.messageRepository.delete(id);
+  }
+
+  async getLastMessagesByThread(threadId: string, limit: number) {
+    return this.messageRepository.find({
+      where: {
+        thread_id: threadId,
+      },
+      order: {
+        created: 'DESC',
+      },
+      take: limit,
+    });
   }
 }

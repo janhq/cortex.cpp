@@ -1,9 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CortexOperationSuccessfullyDto {
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The cortex operation status message.',
+  })
   message: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'The cortex operation status code.',
+  })
   status: string;
 }
