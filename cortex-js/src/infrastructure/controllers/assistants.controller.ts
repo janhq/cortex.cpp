@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { AssistantsUsecases } from '@/usecases/assistants/assistants.usecases';
 import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
 import { DeleteAssistantResponseDto } from '@/infrastructure/dtos/assistants/delete-assistant.dto';
@@ -11,9 +19,11 @@ import {
   ApiResponse
 } from '@nestjs/swagger';
 import { AssistantEntity } from '../entities/assistant.entity';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @ApiTags('Assistants')
 @Controller('assistants')
+@UseInterceptors(TransformInterceptor)
 export class AssistantsController {
   constructor(private readonly assistantsService: AssistantsUsecases) {}
 

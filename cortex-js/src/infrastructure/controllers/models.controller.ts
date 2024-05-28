@@ -6,7 +6,8 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode
+  HttpCode,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
@@ -25,9 +26,11 @@ import {
 } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @ApiTags('Models')
 @Controller('models')
+@UseInterceptors(TransformInterceptor)
 export class ModelsController {
   constructor(private readonly modelsUsecases: ModelsUsecases) {}
 

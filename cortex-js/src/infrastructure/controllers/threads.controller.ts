@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   HttpCode
+  UseInterceptors,
 } from '@nestjs/common';
 import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
@@ -21,9 +22,11 @@ import {
   ApiTags,
   ApiResponse
 } from '@nestjs/swagger';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @ApiTags('Threads')
 @Controller('threads')
+@UseInterceptors(TransformInterceptor)
 export class ThreadsController {
   constructor(private readonly threadsService: ThreadsUsecases) {}
 
