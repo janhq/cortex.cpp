@@ -6,14 +6,17 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
 } from '@nestjs/common';
 import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.dto';
 import { ApiTags } from '@nestjs/swagger';
+import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @ApiTags('Messages')
 @Controller('messages')
+@UseInterceptors(TransformInterceptor)
 export class MessagesController {
   constructor(private readonly messagesUsecases: MessagesUsecases) {}
 
