@@ -2,17 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
 interface ModelStat {
-  id: number;
   modelId: string;
   engine?: string;
-  start_time?: string;
+  duration?: string;
   status: string;
   vram?: string;
   ram?: string;
 }
 interface ModelStatResponse {
   object: string;
-  data: ModelStat[];
+  data: any;
 }
 @Injectable()
 export class PSCliUsecases {
@@ -33,7 +32,22 @@ export class PSCliUsecases {
               .json()
               .then(({ data }: ModelStatResponse) => {
                 if (data && Array.isArray(data) && data.length > 0) {
-                  resolve(data);
+                  resolve(
+                    data.map((e) => {
+                      const startTime = e.start_time ?? new Date();
+                      const currentTime = new Date();
+                      const duration =
+                        currentTime.getTime() - new Date(startTime).getTime();
+                      return {
+                        modelId: e.id,
+                        engine: e.engine ?? 'llama.cpp', // TODO: get engine from model when it's ready
+                        status: 'running',
+                        duration: this.formatDuration(duration),
+                        ram: e.ram ?? '-',
+                        vram: e.vram ?? '-',
+                      };
+                    }),
+                  );
                 } else reject();
               })
               .catch(reject);
@@ -41,5 +55,31 @@ export class PSCliUsecases {
         })
         .catch(reject),
     ).catch(() => []);
+  }
+
+  private formatDuration(milliseconds: number): string {
+    const days = Math.floor(milliseconds / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(
+      (milliseconds % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+    );
+    const minutes = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((milliseconds % (1000 * 60)) / 1000);
+
+    let formattedDuration = '';
+
+    if (days > 0) {
+      formattedDuration += `${days}d `;
+    }
+    if (hours > 0) {
+      formattedDuration += `${hours}h `;
+    }
+    if (minutes > 0) {
+      formattedDuration += `${minutes}m `;
+    }
+    if (seconds > 0) {
+      formattedDuration += `${seconds}s `;
+    }
+
+    return formattedDuration.trim();
   }
 }

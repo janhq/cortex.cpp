@@ -10,28 +10,6 @@ export class PSCommand extends CommandRunner {
     super();
   }
   async run(): Promise<void> {
-    this.usecases
-      .getModels()
-      .then((data) => {
-        if (data.length === 0) {
-          console.log('No running models');
-          return;
-        }
-        console.table(
-          data.map((e) => {
-            return {
-              modelId: e.id,
-              engine: e.engine ?? 'llama.cpp', // TODO: get engine from model when it's ready
-              status: 'running',
-              startTime: e.start_time ?? new Date(),
-              ram: e.ram ?? '-',
-              vram: e.vram ?? '-',
-            };
-          }),
-        );
-      })
-      .catch(() => {
-        console.log('No running models');
-      });
+    return this.usecases.getModels().then(console.table);
   }
 }
