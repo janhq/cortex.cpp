@@ -78,8 +78,9 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async stopModel(modelId: string): Promise<void> {
-    await this.getModelOrStop(modelId);
-    await this.modelsUsecases.stopModel(modelId);
+    return this.getModelOrStop(modelId)
+      .then(() => this.modelsUsecases.stopModel(modelId))
+      .then();
   }
 
   /**

@@ -82,13 +82,13 @@ export default class CortexProvider extends OAIEngineExtension {
 
     return firstValueFrom(
       this.httpService.post(this.loadModelUrl, modelSettings),
-    ).then(() => {}); // pipe error or void instead of throwing
+    ).then();
   }
 
   override async unloadModel(modelId: string): Promise<void> {
     return firstValueFrom(
       this.httpService.post(this.unloadModelUrl, { model: modelId }),
-    ).then(() => {}); // pipe error or void instead of throwing
+    ).then(); // pipe error or void instead of throwing
   }
 
   private readonly promptTemplateConverter = (

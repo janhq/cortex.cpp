@@ -11,6 +11,10 @@ export class PSCommand extends CommandRunner {
   }
   async run(): Promise<void> {
     this.usecases.getModels().then((data) => {
+      if (data.length === 0) {
+        console.log('No running models');
+        return;
+      }
       console.table(
         data.map((e) => {
           return {

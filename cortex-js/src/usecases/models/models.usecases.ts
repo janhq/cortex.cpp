@@ -26,6 +26,7 @@ import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-settin
 import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
+import { AxiosError } from 'axios';
 
 @Injectable()
 export class ModelsUsecases {
@@ -152,7 +153,13 @@ export class ModelsUsecases {
           modelId: modelId,
         };
       })
-      .catch(() => {
+      .catch((e) => {
+        if (e.code === AxiosError.ERR_BAD_REQUEST) {
+          return {
+            message: 'Model already loaded',
+            modelId: modelId,
+          };
+        }
         return {
           message: 'Model failed to load',
           modelId: modelId,
