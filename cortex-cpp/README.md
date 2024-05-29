@@ -23,8 +23,6 @@ cortex-cpp is a high-efficiency C++ inference engine for edge computing, powerin
 
 The binary of cortex-cpp after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
 
-> Read more about Nitro at https://nitro.jan.ai/
-
 ### Repo Structure
 
 ```
@@ -40,17 +38,7 @@ The binary of cortex-cpp after zipped is only ~3mb in size with none to minimal 
 
 **Step 1: Install cortex-cpp**
 
-- For Linux and MacOS
-
-  ```bash
-  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -
-  ```
-
-- For Windows
-
-  ```bash
-  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"
-  ```
+- Download cortex-cpp binary from https://github.com/janhq/cortex/releases
 
 **Step 2: Downloading a Model**
 
@@ -72,8 +60,10 @@ curl http://localhost:3928/inferences/server/loadmodel \
   -H 'Content-Type: application/json' \
   -d '{
     "llama_model_path": "/model/llama-2-7b-model.gguf",
+    "model_alias": "llama-2-7b-model",
     "ctx_len": 512,
     "ngl": 100,
+    "model_type": "llm"
   }'
 ```
 
@@ -88,7 +78,8 @@ curl http://localhost:3928/v1/chat/completions \
         "role": "user",
         "content": "Who won the world series in 2020?"
       },
-    ]
+    ],
+    "model": "llama-2-7b-model"
   }'
 ```
 
@@ -115,6 +106,9 @@ Table of parameters
 |`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
 |`grammar_file`| String |You can constrain the sampling using GBNF grammars by providing path to a grammar file|
 |`model_type` | String | Model type we want to use: llm or embedding, default value is llm|
+|`model_alias`| String | Used as model_id if specified in request, mandatory in loadmodel|
+|`model`      | String | Used as model_id if specified in request, mandatory in chat/embedding request|
+|`flash_attn` | Boolean| To enable Flash Attention, default is false|
 
 ***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
 ```zsh
