@@ -152,8 +152,7 @@ export class ModelsUsecases {
           modelId: modelId,
         };
       })
-      .catch((err) => {
-        console.error(err);
+      .catch(() => {
         return {
           message: 'Model failed to load',
           modelId: modelId,
@@ -183,8 +182,7 @@ export class ModelsUsecases {
           modelId,
         };
       })
-      .catch((err) => {
-        console.error(err);
+      .catch(() => {
         return {
           message: 'Failed to stop model',
           modelId,

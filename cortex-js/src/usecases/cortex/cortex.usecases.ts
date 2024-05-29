@@ -19,9 +19,9 @@ export class CortexUsecases {
   ) {}
 
   async startCortex(
+    attach: boolean = false,
     host: string = defaultCortexCppHost,
     port: number = defaultCortexCppPort,
-    verbose: boolean = false,
   ): Promise<CortexOperationSuccessfullyDto> {
     if (this.cortexProcess) {
       return {
@@ -41,9 +41,9 @@ export class CortexUsecases {
 
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
-      detached: false,
+      detached: !attach,
       cwd: cortexCppFolderPath,
-      stdio: verbose ? 'inherit' : undefined,
+      stdio: attach ? 'inherit' : undefined,
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
@@ -53,8 +53,6 @@ export class CortexUsecases {
         // }),
       },
     });
-
-    this.registerCortexEvents();
 
     // Await for the /healthz status ok
     return new Promise<CortexOperationSuccessfullyDto>((resolve, reject) => {
@@ -93,32 +91,5 @@ export class CortexUsecases {
         status: 'success',
       };
     }
-  }
-
-  private registerCortexEvents() {
-    this.cortexProcess?.on('spawn', () => {});
-
-    this.cortexProcess?.on('message', (message) => {
-      console.log('Cortex process message', message);
-    });
-
-    this.cortexProcess?.on('close', (code, signal) => {
-      console.log('Cortex process closed', code, signal);
-      console.debug('Cleaning up..');
-      this.unregisterCortexEvent();
-      this.cortexProcess = undefined;
-    });
-
-    this.cortexProcess?.on('error', (err: Error) => {
-      console.log('Cortex process error', err);
-    });
-
-    this.cortexProcess?.on('exit', (code, signal) => {
-      console.log('Cortex process exited', code, signal);
-    });
-  }
-
-  private unregisterCortexEvent() {
-    this.cortexProcess?.removeAllListeners();
   }
 }

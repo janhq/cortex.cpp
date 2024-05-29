@@ -30,9 +30,9 @@ export class RunCommand extends CommandRunner {
     const modelId = input[0];
 
     await this.cortexUsecases.startCortex(
+      false,
       defaultCortexCppHost,
       defaultCortexCppPort,
-      false,
     );
     await this.modelsUsecases.startModel(modelId);
     await this.chatCliUsecases.chat(modelId, option?.threadId);
