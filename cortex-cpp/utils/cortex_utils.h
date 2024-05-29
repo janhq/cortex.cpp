@@ -25,6 +25,8 @@
 #endif
 
 namespace cortex_utils {
+constexpr static auto kLlamaLibPath = "/engines/cortex.llamacpp";
+constexpr static auto kPythonRuntimeLibPath = "/engines/cortex.python";
 
 inline std::string models_folder = "./models";
 

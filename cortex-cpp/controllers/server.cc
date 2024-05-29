@@ -15,24 +15,25 @@ using json = nlohmann::json;
 namespace inferences {
 namespace {
 constexpr static auto kLlamaEngine = "cortex.llamacpp";
-constexpr static auto kLlamaLibPath = "/engines/cortex.llamacpp";
+constexpr static auto kPythonRuntimeEngine = "cortex.python";
 }  // namespace
 
-server::server()
-    : engine_{nullptr} {
+server::server(){
 
-          // Some default values for now below
-          // log_disable();  // Disable the log to file feature, reduce bloat for
-          // target
-          // system ()
-      };
+    // Some default values for now below
+    // log_disable();  // Disable the log to file feature, reduce bloat for
+    // target
+    // system ()
+};
 
 server::~server() {}
 
 void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded()) {
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+  if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -46,10 +47,11 @@ void server::ChatCompletion(
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
   auto q = std::make_shared<SyncQueue>();
-  engine_->HandleChatCompletion(json_body,
-                                [q](Json::Value status, Json::Value res) {
-                                  q->push(std::make_pair(status, res));
-                                });
+  std::get<EngineI*>(engines_[engine_type].engine)
+      ->HandleChatCompletion(json_body,
+                             [q](Json::Value status, Json::Value res) {
+                               q->push(std::make_pair(status, res));
+                             });
   LOG_TRACE << "Wait to chat completion responses";
   if (is_stream) {
     ProcessStreamRes(std::move(callback), q);
@@ -61,7 +63,9 @@ void server::ChatCompletion(
 
 void server::Embedding(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded()) {
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+  if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -73,10 +77,11 @@ void server::Embedding(const HttpRequestPtr& req,
 
   LOG_TRACE << "Start embedding";
   SyncQueue q;
-  engine_->HandleEmbedding(req->getJsonObject(),
-                           [&q](Json::Value status, Json::Value res) {
-                             q.push(std::make_pair(status, res));
-                           });
+  std::get<EngineI*>(engines_[engine_type].engine)
+      ->HandleEmbedding(req->getJsonObject(),
+                        [&q](Json::Value status, Json::Value res) {
+                          q.push(std::make_pair(status, res));
+                        });
   LOG_TRACE << "Wait to embedding";
   ProcessNonStreamRes(std::move(callback), q);
   LOG_TRACE << "Done embedding";
@@ -85,7 +90,9 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded()) {
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+  if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -95,21 +102,24 @@ void server::UnloadModel(
     return;
   }
   LOG_TRACE << "Start unload model";
-  engine_->UnloadModel(
-      req->getJsonObject(),
-      [cb = std::move(callback)](Json::Value status, Json::Value res) {
-        auto resp = cortex_utils::nitroHttpJsonResponse(res);
-        resp->setStatusCode(
-            static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-        cb(resp);
-      });
+  std::get<EngineI*>(engines_[engine_type].engine)
+      ->UnloadModel(
+          req->getJsonObject(),
+          [cb = std::move(callback)](Json::Value status, Json::Value res) {
+            auto resp = cortex_utils::nitroHttpJsonResponse(res);
+            resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
+                status["status_code"].asInt()));
+            cb(resp);
+          });
   LOG_TRACE << "Done unload model";
 }
 
 void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded()) {
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+  if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -120,20 +130,22 @@ void server::ModelStatus(
   }
 
   LOG_TRACE << "Start to get model status";
-  engine_->GetModelStatus(
-      req->getJsonObject(),
-      [cb = std::move(callback)](Json::Value status, Json::Value res) {
-        auto resp = cortex_utils::nitroHttpJsonResponse(res);
-        resp->setStatusCode(
-            static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-        cb(resp);
-      });
+  std::get<EngineI*>(engines_[engine_type].engine)
+      ->GetModelStatus(
+          req->getJsonObject(),
+          [cb = std::move(callback)](Json::Value status, Json::Value res) {
+            auto resp = cortex_utils::nitroHttpJsonResponse(res);
+            resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
+                status["status_code"].asInt()));
+            cb(resp);
+          });
   LOG_TRACE << "Done get model status";
 }
 
 void server::GetModels(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded()) {
+  // TODO(sang) need to change this when we support Tensorrt-llm
+  if (!IsEngineLoaded(kLlamaEngine)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -144,8 +156,9 @@ void server::GetModels(const HttpRequestPtr& req,
   }
 
   LOG_TRACE << "Start to get models";
-  if (engine_->IsSupported("GetModels")) {
-    engine_->GetModels(
+  auto& en = std::get<EngineI*>(engines_[kLlamaEngine].engine);
+  if (en->IsSupported("GetModels")) {
+    en->GetModels(
         req->getJsonObject(),
         [cb = std::move(callback)](Json::Value status, Json::Value res) {
           auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -165,20 +178,32 @@ void server::GetModels(const HttpRequestPtr& req,
   LOG_TRACE << "Done get models";
 }
 
-void server::LoadModel(const HttpRequestPtr& req,
-                       std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
-  if (!dylib_ || engine_type != cur_engine_name_) {
-    cur_engine_name_ = engine_type;
-    // TODO: change this when we get more engines
-    auto get_engine_path = [](std::string_view e) {
-      if (e == kLlamaEngine) {
-        return kLlamaLibPath;
-      }
-      return kLlamaLibPath;
-    };
+void server::GetEngines(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  Json::Value res;
+  Json::Value engine_array(Json::arrayValue);
+  for (const auto& [s, _] : engines_) {
+    Json::Value val;
+    val["id"] = s;
+    val["object"] = "engine";
+    engine_array.append(val);
+  }
 
+  res["object"] = "list";
+  res["data"] = engine_array;
+
+  auto resp = cortex_utils::nitroHttpJsonResponse(res);
+  callback(resp);
+}
+
+void server::FineTuning(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", kPythonRuntimeEngine).asString();
+
+  if (engines_.find(engine_type) == engines_.end()) {
     try {
       if (cur_engine_name_ == kLlamaEngine) {
         cortex::cpuid::CpuInfo cpu_info;
@@ -189,36 +214,99 @@ void server::LoadModel(const HttpRequestPtr& req,
         }
       }
       std::string abs_path =
-          cortex_utils::GetCurrentPath() + get_engine_path(cur_engine_name_);
-      dylib_ = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+          cortex_utils::GetCurrentPath() + cortex_utils::kPythonRuntimeLibPath;
+      engines_[engine_type].dl =
+          std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
     } catch (const cortex_cpp::dylib::load_error& e) {
-      LOG_ERROR << "Could not load engine: " << e.what();
-      dylib_.reset();
-      engine_ = nullptr;
-    }
 
-    if (!dylib_) {
+      LOG_ERROR << "Could not load engine: " << e.what();
+      engines_.erase(engine_type);
+
       Json::Value res;
-      res["message"] = "Could not load engine " + cur_engine_name_;
+      res["message"] = "Could not load engine " + engine_type;
       auto resp = cortex_utils::nitroHttpJsonResponse(res);
       resp->setStatusCode(k500InternalServerError);
       callback(resp);
       return;
     }
-    auto func = dylib_->get_function<EngineI*()>("get_engine");
-    engine_ = func();
-    LOG_INFO << "Loaded engine: " << cur_engine_name_;
+
+    auto func = engines_[engine_type].dl->get_function<CortexPythonEngineI*()>(
+        "get_engine");
+    engines_[engine_type].engine = func();
+    LOG_INFO << "Loaded engine: " << engine_type;
+  }
+
+  LOG_TRACE << "Start to fine-tuning";
+  auto& en = std::get<CortexPythonEngineI*>(engines_[engine_type].engine);
+  if (en->IsSupported("HandlePythonFileExecutionRequest")) {
+    en->HandlePythonFileExecutionRequest(
+        req->getJsonObject(),
+        [cb = std::move(callback)](Json::Value status, Json::Value res) {
+          auto resp = cortex_utils::nitroHttpJsonResponse(res);
+          resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
+              status["status_code"].asInt()));
+          cb(resp);
+        });
+  } else {
+    Json::Value res;
+    res["message"] = "Method is not supported yet";
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    resp->setStatusCode(k500InternalServerError);
+    callback(resp);
+    LOG_WARN << "Method is not supported yet";
+  }
+  LOG_TRACE << "Done fine-tuning";
+}
+
+void server::LoadModel(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+
+  // We have not loaded engine yet, should load it before using it
+  if (engines_.find(engine_type) == engines_.end()) {
+    // TODO(sang) we cannot run cortex.llamacpp and cortex.tensorrt-llm at the same time.
+    // So need an unload engine machanism to handle.
+    auto get_engine_path = [](std::string_view e) {
+      if (e == kLlamaEngine) {
+        return cortex_utils::kLlamaLibPath;
+      }
+      return cortex_utils::kLlamaLibPath;
+    };
+
+    try {
+      std::string abs_path =
+          cortex_utils::GetCurrentPath() + get_engine_path(engine_type);
+      engines_[engine_type].dl =
+          std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+
+    } catch (const cortex_cpp::dylib::load_error& e) {
+      LOG_ERROR << "Could not load engine: " << e.what();
+      engines_.erase(engine_type);
+
+      Json::Value res;
+      res["message"] = "Could not load engine " + engine_type;
+      auto resp = cortex_utils::nitroHttpJsonResponse(res);
+      resp->setStatusCode(k500InternalServerError);
+      callback(resp);
+      return;
+    }
+
+    auto func =
+        engines_[engine_type].dl->get_function<EngineI*()>("get_engine");
+    engines_[engine_type].engine = func();
+    LOG_INFO << "Loaded engine: " << engine_type;
   }
 
   LOG_TRACE << "Load model";
-  engine_->LoadModel(
-      req->getJsonObject(),
-      [cb = std::move(callback)](Json::Value status, Json::Value res) {
-        auto resp = cortex_utils::nitroHttpJsonResponse(res);
-        resp->setStatusCode(
-            static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-        cb(resp);
-      });
+  auto& en = std::get<EngineI*>(engines_[engine_type].engine);
+  en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
+                                          Json::Value status, Json::Value res) {
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    resp->setStatusCode(
+        static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
+    cb(resp);
+  });
   LOG_TRACE << "Done load model";
 }
 
@@ -265,8 +353,8 @@ void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   cb(resp);
 }
 
-bool server::IsEngineLoaded() {
-  return !!engine_;
+bool server::IsEngineLoaded(const std::string& e) {
+  return engines_.find(e) != engines_.end();
 }
 
 }  // namespace inferences

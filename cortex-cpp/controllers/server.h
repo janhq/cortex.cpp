@@ -14,9 +14,11 @@
 #include <condition_variable>
 #include <cstddef>
 #include <string>
+#include <variant>
 
 #include "common/base.h"
 #include "cortex-common/EngineI.h"
+#include "cortex-common/cortexpythoni.h"
 #include "trantor/utils/SerialTaskQueue.h"
 #include "utils/dylib.h"
 #include "utils/json.hpp"
@@ -31,9 +33,9 @@ using namespace drogon;
 namespace inferences {
 
 class server : public drogon::HttpController<server>,
-                 public BaseModel,
-                 public BaseChatCompletion,
-                 public BaseEmbedding {
+               public BaseModel,
+               public BaseChatCompletion,
+               public BaseEmbedding {
   struct SyncQueue;
 
  public:
@@ -47,11 +49,16 @@ class server : public drogon::HttpController<server>,
   METHOD_ADD(server::UnloadModel, "unloadmodel", Post);
   METHOD_ADD(server::ModelStatus, "modelstatus", Post);
   METHOD_ADD(server::GetModels, "models", Get);
-  
+  METHOD_ADD(server::GetEngines, "engines", Get);
+
+  // cortex.python API
+  METHOD_ADD(server::FineTuning, "finetuning", Post);
 
   // Openai compatible path
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
   ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
+  ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Post);
+
   // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
   // NOTE: prelight will be added back when browser support is properly planned
 
@@ -78,13 +85,19 @@ class server : public drogon::HttpController<server>,
   void GetModels(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void GetEngines(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void FineTuning(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                         std::shared_ptr<SyncQueue> q);
   void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                            SyncQueue& q);
-  bool IsEngineLoaded();
+  bool IsEngineLoaded(const std::string& e);
 
  private:
   struct SyncQueue {
@@ -126,8 +139,11 @@ class server : public drogon::HttpController<server>,
   };
 
  private:
-  std::unique_ptr<cortex_cpp::dylib> dylib_;
-  EngineI* engine_;
-  std::string cur_engine_name_;
+  using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
+  struct EngineInfo {
+    std::unique_ptr<cortex_cpp::dylib> dl;
+    EngineV engine;
+  };
+  std::unordered_map<std::string, EngineInfo> engines_;
 };
 };  // namespace inferences

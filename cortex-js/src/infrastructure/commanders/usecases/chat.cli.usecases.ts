@@ -72,8 +72,13 @@ export class ChatCliUsecases {
     return this.threadUsecases.create(createThreadDto);
   }
 
-  async chat(modelId: string, threadId?: string): Promise<void> {
-    console.log(`Inorder to exit, type '${this.exitClause}'.`);
+  async chat(
+    modelId: string,
+    threadId?: string,
+    message?: string,
+    attach: boolean = true,
+  ): Promise<void> {
+    if (attach) console.log(`Inorder to exit, type '${this.exitClause}'.`);
     const thread = await this.getOrCreateNewThread(modelId, threadId);
     const messages: ChatCompletionMessage[] = (
       await this.messagesUsecases.getLastMessagesByThread(thread.id, 10)
@@ -87,18 +92,19 @@ export class ChatCliUsecases {
       output: stdout,
       prompt: this.userIndicator,
     });
-    rl.prompt();
+    if (message) sendCompletionMessage.bind(this)(message);
+    if (attach) rl.prompt();
 
     rl.on('close', () => {
       this.cortexUsecases.stopCortex().then(() => {
-        console.log(this.exitMessage);
+        if (attach) console.log(this.exitMessage);
         exit(0);
       });
     });
 
-    const decoder = new TextDecoder('utf-8');
+    rl.on('line', sendCompletionMessage.bind(this));
 
-    rl.on('line', (userInput: string) => {
+    function sendCompletionMessage(userInput: string) {
       if (userInput.trim() === this.exitClause) {
         rl.close();
         return;
@@ -137,6 +143,8 @@ export class ChatCliUsecases {
         top_p: 0.7,
       };
 
+      const decoder = new TextDecoder('utf-8');
+
       this.chatUsecases
         .inference(chatDto, {})
         .then((response: stream.Readable) => {
@@ -144,7 +152,8 @@ export class ChatCliUsecases {
 
           response.on('error', (error: any) => {
             console.error(error);
-            rl.prompt();
+            if (attach) rl.prompt();
+            else rl.close();
           });
 
           response.on('end', () => {
@@ -170,7 +179,8 @@ export class ChatCliUsecases {
             this.messagesUsecases.create(createMessageDto).then(() => {
               assistantResponse = '';
               console.log('\n');
-              rl.prompt();
+              if (attach) rl.prompt();
+              else rl.close();
             });
           });
 
@@ -201,6 +211,6 @@ export class ChatCliUsecases {
             }
           });
         });
-    });
+    }
   }
 }
