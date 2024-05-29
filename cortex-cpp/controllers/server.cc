@@ -142,9 +142,8 @@ void server::ModelStatus(
 
 void server::GetModels(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
-  if (!IsEngineLoaded(engine_type)) {
+  // TODO(sang) need to change this when we support Tensorrt-llm
+  if (!IsEngineLoaded(kLlamaEngine)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -155,7 +154,7 @@ void server::GetModels(const HttpRequestPtr& req,
   }
 
   LOG_TRACE << "Start to get models";
-  auto& en = std::get<EngineI*>(engines_[engine_type].engine);
+  auto& en = std::get<EngineI*>(engines_[kLlamaEngine].engine);
   if (en->IsSupported("GetModels")) {
     en->GetModels(
         req->getJsonObject(),
