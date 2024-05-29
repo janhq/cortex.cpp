@@ -25,6 +25,7 @@ import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usec
 import { MessagesModule } from './usecases/messages/messages.module';
 import { FileManagerModule } from './file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
+import { KillCommand } from './infrastructure/commanders/kill.command';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { PSCommand } from './infrastructure/commanders/ps.command';
     ChatCommand,
     InitCommand,
     PSCommand,
+    KillCommand,
 
     // Questions
     InitRunModeQuestions,

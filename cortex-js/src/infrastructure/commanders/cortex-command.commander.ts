@@ -6,6 +6,7 @@ import { InitCommand } from './init.command';
 import { RunCommand } from './shortcuts/run.command';
 import { ModelPullCommand } from './models/model-pull.command';
 import { PSCommand } from './ps.command';
+import { KillCommand } from './kill.command';
 
 @RootCommand({
   subCommands: [
@@ -16,6 +17,7 @@ import { PSCommand } from './ps.command';
     RunCommand,
     ModelPullCommand,
     PSCommand,
+    KillCommand,
   ],
   description: 'Cortex CLI',
 })

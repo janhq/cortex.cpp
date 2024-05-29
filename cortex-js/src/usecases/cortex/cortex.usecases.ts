@@ -71,8 +71,8 @@ export class CortexUsecases {
   }
 
   async stopCortex(
-    host?: string,
-    port?: number,
+    host: string = defaultCortexCppHost,
+    port: number = defaultCortexCppPort,
   ): Promise<CortexOperationSuccessfullyDto> {
     try {
       await firstValueFrom(

@@ -26,18 +26,20 @@ export class PSCliUsecases {
     port: number = defaultCortexCppPort,
   ): Promise<ModelStat[]> {
     return new Promise<ModelStat[]>((resolve, reject) =>
-      fetch(`http://${host}:${port}/inferences/server/models`).then((res) => {
-        if (res.ok) {
-          res
-            .json()
-            .then(({ data }: ModelStatResponse) => {
-              if (data && Array.isArray(data) && data.length > 0) {
-                resolve(data);
-              } else reject();
-            })
-            .catch(reject);
-        } else reject();
-      }),
+      fetch(`http://${host}:${port}/inferences/server/models`)
+        .then((res) => {
+          if (res.ok) {
+            res
+              .json()
+              .then(({ data }: ModelStatResponse) => {
+                if (data && Array.isArray(data) && data.length > 0) {
+                  resolve(data);
+                } else reject();
+              })
+              .catch(reject);
+          } else reject();
+        })
+        .catch(reject),
     ).catch(() => []);
   }
 }
