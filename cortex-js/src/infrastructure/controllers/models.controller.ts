@@ -57,7 +57,7 @@ export class ModelsController {
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Post(':modelId/start')
+  @Post(':modelId(*)/start')
   startModel(
     @Param('modelId') modelId: string,
     @Body() settings: ModelSettingParamsDto,
@@ -80,7 +80,7 @@ export class ModelsController {
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Post(':modelId/stop')
+  @Post(':modelId(*)/stop')
   stopModel(@Param('modelId') modelId: string) {
     return this.modelsUsecases.stopModel(modelId);
   }
@@ -100,7 +100,7 @@ export class ModelsController {
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Get('download/:modelId')
+  @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string) {
     return this.modelsUsecases.downloadModel(modelId);
   }
@@ -137,7 +137,7 @@ export class ModelsController {
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Get(':id')
+  @Get(':id(*)')
   findOne(@Param('id') id: string) {
     return this.modelsUsecases.findOne(id);
   }
@@ -157,7 +157,7 @@ export class ModelsController {
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Patch(':id')
+  @Patch(':id(*)')
   update(@Param('id') id: string, @Body() updateModelDto: UpdateModelDto) {
     return this.modelsUsecases.update(id, updateModelDto);
   }
@@ -177,7 +177,7 @@ export class ModelsController {
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Delete(':id')
+  @Delete(':id(*)')
   remove(@Param('id') id: string) {
     return this.modelsUsecases.remove(id);
   }
