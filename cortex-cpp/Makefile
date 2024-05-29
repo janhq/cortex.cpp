@@ -39,12 +39,12 @@ endif
 
 pre-package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "mkdir -p cortex-cpp\engines\cortex.llamacpp\; cp -r build\engines\cortex.llamacpp\engine.dll cortex-cpp\engines\cortex.llamacpp\;"
-	@powershell -Command "cp -r build\Release\cortex-cpp.exe .\cortex-cpp\;"
-	@powershell -Command "cp -r build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
-	@powershell -Command "cp -r ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
-	@powershell -Command "cp -r ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
-	@powershell -Command "cp -r ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
+	@powershell -Command "mkdir -p cortex-cpp\engines\cortex.llamacpp\; cp build\engines\cortex.llamacpp\engine.dll cortex-cpp\engines\cortex.llamacpp\;"
+	@powershell -Command "cp build\Release\cortex-cpp.exe .\cortex-cpp\;"
+	@powershell -Command "cp build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
 else ifeq ($(shell uname -s),Linux)
 	@mkdir -p cortex-cpp/engines/cortex.llamacpp; \
 	cp build/engines/cortex.llamacpp/libengine.so cortex-cpp/engines/cortex.llamacpp/; \
