@@ -10,6 +10,17 @@ export class PSCommand extends CommandRunner {
     super();
   }
   async run(): Promise<void> {
-    this.usecases.getModels();
+    this.usecases.getModels().then((data) => {
+      console.table(
+        data.map((e) => {
+          return {
+            modelId: e.id,
+            engine: e.engine ?? 'llama.cpp', // TODO: get engine from model when it's ready
+            status: 'running',
+            created: e.created ?? new Date(),
+          };
+        }),
+      );
+    });
   }
 }

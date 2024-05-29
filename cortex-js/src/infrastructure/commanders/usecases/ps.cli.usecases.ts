@@ -24,30 +24,20 @@ export class PSCliUsecases {
   async getModels(
     host: string = defaultCortexCppHost,
     port: number = defaultCortexCppPort,
-  ): Promise<void> {
-    new Promise<void>((resolve, reject) =>
+  ): Promise<ModelStat[]> {
+    return new Promise<ModelStat[]>((resolve, reject) =>
       fetch(`http://${host}:${port}/inferences/server/models`).then((res) => {
         if (res.ok) {
           res
             .json()
             .then(({ data }: ModelStatResponse) => {
               if (data && Array.isArray(data) && data.length > 0) {
-                console.table(
-                  data.map((e) => {
-                    return {
-                      modelId: e.id,
-                      engine: e.engine ?? 'llama.cpp', // TODO: get engine from model when it's ready
-                      status: 'running',
-                      created: e.created ?? new Date(),
-                    };
-                  }),
-                );
-                resolve();
+                resolve(data);
               } else reject();
             })
             .catch(reject);
         } else reject();
       }),
-    ).catch(() => console.log('No models running.'));
+    ).catch(() => []);
   }
 }

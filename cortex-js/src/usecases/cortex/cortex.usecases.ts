@@ -23,7 +23,7 @@ export class CortexUsecases {
     host: string = defaultCortexCppHost,
     port: number = defaultCortexCppPort,
   ): Promise<CortexOperationSuccessfullyDto> {
-    if (this.cortexProcess) {
+    if (this.cortexProcess || (await this.healthCheck(host, port))) {
       return {
         message: 'Cortex is already running',
         status: 'success',
@@ -57,15 +57,13 @@ export class CortexUsecases {
     // Await for the /healthz status ok
     return new Promise<CortexOperationSuccessfullyDto>((resolve, reject) => {
       const interval = setInterval(() => {
-        fetch(`http://${host}:${port}/healthz`)
-          .then((res) => {
-            if (res.ok) {
-              clearInterval(interval);
-              resolve({
-                message: 'Cortex started successfully',
-                status: 'success',
-              });
-            }
+        this.healthCheck(host, port)
+          .then(() => {
+            clearInterval(interval);
+            resolve({
+              message: 'Cortex started successfully',
+              status: 'success',
+            });
           })
           .catch(reject);
       }, 1000);
@@ -91,5 +89,16 @@ export class CortexUsecases {
         status: 'success',
       };
     }
+  }
+
+  private healthCheck(host: string, port: number): Promise<boolean> {
+    return fetch(`http://${host}:${port}/healthz`)
+      .then((res) => {
+        if (res.ok) {
+          return true;
+        }
+        return false;
+      })
+      .catch(() => false);
   }
 }
