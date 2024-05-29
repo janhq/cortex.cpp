@@ -5,7 +5,7 @@ interface ModelStat {
   id: number;
   modelId: string;
   engine?: string;
-  created?: string;
+  start_time?: string;
   status: string;
   vram?: string;
   ram?: string;

@@ -23,7 +23,9 @@ export class PSCommand extends CommandRunner {
               modelId: e.id,
               engine: e.engine ?? 'llama.cpp', // TODO: get engine from model when it's ready
               status: 'running',
-              created: e.created ?? new Date(),
+              startTime: e.start_time ?? new Date(),
+              ram: e.ram ?? '-',
+              vram: e.vram ?? '-',
             };
           }),
         );
