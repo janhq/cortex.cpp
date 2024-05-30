@@ -36,47 +36,12 @@ export class ChatCliUsecases {
     private readonly messagesUsecases: MessagesUsecases,
   ) {}
 
-  private async getOrCreateNewThread(
-    modelId: string,
-    threadId?: string,
-  ): Promise<Thread> {
-    if (threadId) {
-      const thread = await this.threadUsecases.findOne(threadId);
-      if (!thread) throw new Error(`Cannot find thread with id: ${threadId}`);
-      return thread;
-    }
-
-    const model = await this.modelsUsecases.findOne(modelId);
-    if (!model) throw new Error(`Cannot find model with id: ${modelId}`);
-
-    const assistant = await this.assistantUsecases.findOne('jan');
-    if (!assistant) throw new Error('No assistant available');
-
-    const createThreadModel: CreateThreadModelInfoDto = {
-      id: modelId,
-      settings: model.settings,
-      parameters: model.parameters,
-    };
-
-    const assistantDto: CreateThreadAssistantDto = {
-      assistant_id: assistant.id,
-      assistant_name: assistant.name,
-      model: createThreadModel,
-    };
-
-    const createThreadDto: CreateThreadDto = {
-      title: 'New Thread',
-      assistants: [assistantDto],
-    };
-
-    return this.threadUsecases.create(createThreadDto);
-  }
-
   async chat(
     modelId: string,
     threadId?: string,
     message?: string,
     attach: boolean = true,
+    stopModel: boolean = true,
   ): Promise<void> {
     if (attach) console.log(`Inorder to exit, type '${this.exitClause}'.`);
     const thread = await this.getOrCreateNewThread(modelId, threadId);
@@ -95,11 +60,10 @@ export class ChatCliUsecases {
     if (message) sendCompletionMessage.bind(this)(message);
     if (attach) rl.prompt();
 
-    rl.on('close', () => {
-      this.cortexUsecases.stopCortex().then(() => {
-        if (attach) console.log(this.exitMessage);
-        exit(0);
-      });
+    rl.on('close', async () => {
+      if (stopModel) await this.modelsUsecases.stopModel(modelId);
+      if (attach) console.log(this.exitMessage);
+      exit(0);
     });
 
     rl.on('line', sendCompletionMessage.bind(this));
@@ -212,5 +176,41 @@ export class ChatCliUsecases {
           });
         });
     }
+  }
+
+  private async getOrCreateNewThread(
+    modelId: string,
+    threadId?: string,
+  ): Promise<Thread> {
+    if (threadId) {
+      const thread = await this.threadUsecases.findOne(threadId);
+      if (!thread) throw new Error(`Cannot find thread with id: ${threadId}`);
+      return thread;
+    }
+
+    const model = await this.modelsUsecases.findOne(modelId);
+    if (!model) throw new Error(`Cannot find model with id: ${modelId}`);
+
+    const assistant = await this.assistantUsecases.findOne('jan');
+    if (!assistant) throw new Error('No assistant available');
+
+    const createThreadModel: CreateThreadModelInfoDto = {
+      id: modelId,
+      settings: model.settings,
+      parameters: model.parameters,
+    };
+
+    const assistantDto: CreateThreadAssistantDto = {
+      assistant_id: assistant.id,
+      assistant_name: assistant.name,
+      model: createThreadModel,
+    };
+
+    const createThreadDto: CreateThreadDto = {
+      title: 'New Thread',
+      assistants: [assistantDto],
+    };
+
+    return this.threadUsecases.create(createThreadDto);
   }
 }

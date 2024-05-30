@@ -20,7 +20,7 @@ export class ModelStopCommand extends CommandRunner {
 
     await this.modelsCliUsecases
       .stopModel(input[0])
-      .then(() => this.cortexUsecases.stopCortex())
+      .then(() => this.modelsCliUsecases.stopModel(input[0]))
       .then(console.log);
   }
 }
