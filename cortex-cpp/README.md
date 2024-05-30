@@ -136,47 +136,39 @@ To compile cortex-cpp please visit [Compile from source](docs/docs/new/build-sou
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex-cpp/releases/download/v0.3.22/cortex-cpp-0.3.22-win-amd64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex-cpp/releases/download/v0.3.22/cortex-cpp-0.3.22-win-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2-cuda-12-0.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex-cpp/releases/download/v0.3.22/cortex-cpp-0.3.22-mac-amd64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex-cpp/releases/download/v0.3.22/cortex-cpp-0.3.22-mac-arm64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex-cpp/releases/download/v0.3.22/cortex-cpp-0.3.22-linux-amd64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-avx2.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex-cpp/releases/download/v0.3.22/cortex-cpp-0.3.22-linux-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-cuda-12-0.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
-      </a>
-    </td>
-  </tr>
-  <tr style="text-align: center">
-    <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
-    <td style="text-align:center" colspan="6">
-      <a href='https://github.com/janhq/cortex-cpp/actions/runs/8146271749'>
-        <b>GitHub action artifactory</b>
       </a>
     </td>
   </tr>
