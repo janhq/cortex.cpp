@@ -50,6 +50,7 @@ export class ModelPullCommand extends CommandRunner {
         name: sanitizedInput,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       for await (const _fileInfo of listFiles({ repo })) {
         break;
       }
