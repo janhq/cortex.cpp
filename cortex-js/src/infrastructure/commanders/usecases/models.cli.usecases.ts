@@ -24,6 +24,7 @@ import {
 import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -61,9 +62,15 @@ export class ModelsCliUsecases {
    * Start a model by ID
    * @param modelId
    */
-  async startModel(modelId: string): Promise<void> {
-    await this.getModelOrStop(modelId);
-    await this.modelsUsecases.startModel(modelId);
+  async startModel(modelId: string): Promise<StartModelSuccessDto> {
+    return this.getModelOrStop(modelId)
+      .then(() => this.modelsUsecases.startModel(modelId))
+      .catch(() => {
+        return {
+          modelId: modelId,
+          message: 'Model not found',
+        };
+      });
   }
 
   /**
@@ -71,8 +78,9 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async stopModel(modelId: string): Promise<void> {
-    await this.getModelOrStop(modelId);
-    await this.modelsUsecases.stopModel(modelId);
+    return this.getModelOrStop(modelId)
+      .then(() => this.modelsUsecases.stopModel(modelId))
+      .then();
   }
 
   /**

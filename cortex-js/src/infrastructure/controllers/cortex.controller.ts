@@ -22,6 +22,7 @@ export class CortexController {
   @Post('start')
   startCortex(@Body() startCortexDto: StartCortexDto) {
     return this.cortexUsecases.startCortex(
+      false,
       startCortexDto.host,
       startCortexDto.port,
     );
