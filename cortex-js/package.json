@@ -71,7 +71,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.12.9",
     "@types/supertest": "^6.0.2",
-    "@types/update-notifier": "^5.0.8",
+    "@types/update-notifier": "^6.0.8",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
