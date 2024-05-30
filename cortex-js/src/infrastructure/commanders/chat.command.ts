@@ -1,6 +1,13 @@
-import { CommandRunner, SubCommand, Option } from 'nest-commander';
+import {
+  CommandRunner,
+  SubCommand,
+  Option,
+  InquirerService,
+} from 'nest-commander';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
+import { PSCliUsecases } from './usecases/ps.cli.usecases';
+import { ModelsUsecases } from '@/usecases/models/models.usecases';
 
 type ChatOptions = {
   threadId?: string;
@@ -10,22 +17,52 @@ type ChatOptions = {
 
 @SubCommand({ name: 'chat', description: 'Send a chat request to a model' })
 export class ChatCommand extends CommandRunner {
-  constructor(private readonly chatCliUsecases: ChatCliUsecases) {
+  constructor(
+    private readonly inquirerService: InquirerService,
+    private readonly chatCliUsecases: ChatCliUsecases,
+    private readonly modelsUsecases: ModelsUsecases,
+    private readonly psCliUsecases: PSCliUsecases,
+  ) {
     super();
   }
 
   async run(_input: string[], options: ChatOptions): Promise<void> {
-    const modelId = _input[0];
-    if (!modelId) {
-      console.error('Model ID is required');
-      exit(1);
+    let modelId = _input[0];
+    // First attempt to get message from input or options
+    let message = _input[1] ?? options.message;
+
+    // Check for model existing
+    if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
+      // Model ID is not provided
+      // first input might be message input
+      message = _input[0] ?? options.message;
+      // If model ID is not provided, prompt user to select from running models
+      const models = await this.psCliUsecases.getModels();
+      if (models.length === 1) {
+        modelId = models[0].modelId;
+      } else if (models.length > 0) {
+        const { model } = await this.inquirerService.inquirer.prompt({
+          type: 'list',
+          name: 'model',
+          message: 'Select running model to chat with:',
+          choices: models.map((e) => ({
+            name: e.modelId,
+            value: e.modelId,
+          })),
+        });
+        modelId = model;
+      } else {
+        console.error('Model ID is required');
+        exit(1);
+      }
     }
 
     return this.chatCliUsecases.chat(
       modelId,
       options.threadId,
-      options.message,
+      message, // Accept both message from inputs or arguments
       options.attach,
+      false, // Do not stop cortex session or loaded model
     );
   }
 
@@ -40,7 +77,6 @@ export class ChatCommand extends CommandRunner {
   @Option({
     flags: '-m, --message <message>',
     description: 'Message to send to the model',
-    required: true,
   })
   parseModelId(value: string) {
     return value;
