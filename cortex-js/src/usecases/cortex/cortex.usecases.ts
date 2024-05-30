@@ -19,11 +19,11 @@ export class CortexUsecases {
   ) {}
 
   async startCortex(
+    attach: boolean = false,
     host: string = defaultCortexCppHost,
     port: number = defaultCortexCppPort,
-    verbose: boolean = false,
   ): Promise<CortexOperationSuccessfullyDto> {
-    if (this.cortexProcess) {
+    if (this.cortexProcess || (await this.healthCheck(host, port))) {
       return {
         message: 'Cortex is already running',
         status: 'success',
@@ -41,9 +41,9 @@ export class CortexUsecases {
 
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
-      detached: false,
+      detached: !attach,
       cwd: cortexCppFolderPath,
-      stdio: verbose ? 'inherit' : undefined,
+      stdio: attach ? 'inherit' : undefined,
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
@@ -54,20 +54,16 @@ export class CortexUsecases {
       },
     });
 
-    this.registerCortexEvents();
-
     // Await for the /healthz status ok
     return new Promise<CortexOperationSuccessfullyDto>((resolve, reject) => {
       const interval = setInterval(() => {
-        fetch(`http://${host}:${port}/healthz`)
-          .then((res) => {
-            if (res.ok) {
-              clearInterval(interval);
-              resolve({
-                message: 'Cortex started successfully',
-                status: 'success',
-              });
-            }
+        this.healthCheck(host, port)
+          .then(() => {
+            clearInterval(interval);
+            resolve({
+              message: 'Cortex started successfully',
+              status: 'success',
+            });
           })
           .catch(reject);
       }, 1000);
@@ -75,8 +71,8 @@ export class CortexUsecases {
   }
 
   async stopCortex(
-    host?: string,
-    port?: number,
+    host: string = defaultCortexCppHost,
+    port: number = defaultCortexCppPort,
   ): Promise<CortexOperationSuccessfullyDto> {
     try {
       await firstValueFrom(
@@ -95,30 +91,14 @@ export class CortexUsecases {
     }
   }
 
-  private registerCortexEvents() {
-    this.cortexProcess?.on('spawn', () => {});
-
-    this.cortexProcess?.on('message', (message) => {
-      console.log('Cortex process message', message);
-    });
-
-    this.cortexProcess?.on('close', (code, signal) => {
-      console.log('Cortex process closed', code, signal);
-      console.debug('Cleaning up..');
-      this.unregisterCortexEvent();
-      this.cortexProcess = undefined;
-    });
-
-    this.cortexProcess?.on('error', (err: Error) => {
-      console.log('Cortex process error', err);
-    });
-
-    this.cortexProcess?.on('exit', (code, signal) => {
-      console.log('Cortex process exited', code, signal);
-    });
-  }
-
-  private unregisterCortexEvent() {
-    this.cortexProcess?.removeAllListeners();
+  private healthCheck(host: string, port: number): Promise<boolean> {
+    return fetch(`http://${host}:${port}/healthz`)
+      .then((res) => {
+        if (res.ok) {
+          return true;
+        }
+        return false;
+      })
+      .catch(() => false);
   }
 }

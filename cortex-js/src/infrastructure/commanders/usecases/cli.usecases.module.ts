@@ -10,6 +10,7 @@ import { ThreadsModule } from '@/usecases/threads/threads.module';
 import { AssistantsModule } from '@/usecases/assistants/assistants.module';
 import { MessagesModule } from '@/usecases/messages/messages.module';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { PSCliUsecases } from './ps.cli.usecases';
 
 @Module({
   imports: [
@@ -22,7 +23,12 @@ import { FileManagerModule } from '@/file-manager/file-manager.module';
     MessagesModule,
     FileManagerModule,
   ],
-  providers: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases],
-  exports: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases],
+  providers: [
+    InitCliUsecases,
+    ModelsCliUsecases,
+    ChatCliUsecases,
+    PSCliUsecases,
+  ],
+  exports: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases, PSCliUsecases],
 })
 export class CliUsecasesModule {}

@@ -24,6 +24,8 @@ import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { MessagesModule } from './usecases/messages/messages.module';
 import { FileManagerModule } from './file-manager/file-manager.module';
+import { PSCommand } from './infrastructure/commanders/ps.command';
+import { KillCommand } from './infrastructure/commanders/kill.command';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { FileManagerModule } from './file-manager/file-manager.module';
     ServeCommand,
     ChatCommand,
     InitCommand,
+    PSCommand,
+    KillCommand,
 
     // Questions
     InitRunModeQuestions,
