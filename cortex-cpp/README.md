@@ -12,14 +12,14 @@
 
 ## About cortex-cpp
 
-Cortex.cpp is a stateless, C++ server that is 100% compatible with OpenAI API (stateless endpoints). It includes a Drogon server, with request queues, model orchestration logic, and hardware telemetry, and more, for prod environments.
+Cortex-cpp is a streamlined, stateless C++ server engineered to be fully compatible with OpenAI's API, particularly its stateless functionalities. It integrates a Drogon server framework to manage request handling and includes features like model orchestration and hardware telemetry, which are essential for production environments.
 
-The binary of cortex-cpp after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
+Remarkably compact, the binary size of cortex-cpp is around 3 MB when compressed, with minimal dependencies. This lightweight and efficient design makes cortex-cpp an excellent choice for deployments in both edge computing and server contexts.
 
-> Read more about Cortex-cpp at https://jan.ai/cortex
+> Utilizing GPU capabilities does require CUDA.
 
 ### Features
-- Fast Inference: Built on top of the cutting-edge inference library llama.cpp, modified to be production ready.
+- Fast Inference: Built on top of the cutting-edge inference library llama.cpp, modified to be production-ready.
 - Lightweight: Only 3MB, ideal for resource-sensitive environments.
 - Easily Embeddable: Simple integration into existing applications, offering flexibility.
 - Quick Setup: Approximately 10-second initialization for swift deployment.
@@ -44,17 +44,7 @@ The binary of cortex-cpp after zipped is only ~3mb in size with none to minimal 
 
 **Step 1: Install cortex-cpp**
 
-- For Linux and MacOS
-
-  ```bash
-  curl -sfL https://raw.githubusercontent.com/janhq/cortex-cpp/main/install.sh | sudo /bin/bash -
-  ```
-
-- For Windows
-
-  ```bash
-  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/cortex-cpp/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"
-  ```
+Download cortex-cpp here: https://github.com/janhq/cortex/releases
 
 **Step 2: Downloading a Model**
 
@@ -205,7 +195,7 @@ The nightly build is triggered at 2:00 AM UTC every day.
 The nightly build can be downloaded from the URL notified in the Discord channel. Please access the URL from the browser and download the build artifacts from there.
 
 ## Manual Build
-Manual build is a process in which the developers build the software manually. This is usually done when a new feature is implemented or a bug is fixed. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
+Manual build is a process in which the developers build the software manually. This is usually done when a new feature is implemented, or a bug is fixed. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
 
 It is similar to the nightly build process, except that it is triggered manually by the developers.
 
