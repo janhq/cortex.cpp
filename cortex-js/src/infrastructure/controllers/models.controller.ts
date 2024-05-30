@@ -20,12 +20,16 @@ import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @ApiTags('Models')
 @Controller('models')
 @UseInterceptors(TransformInterceptor)
 export class ModelsController {
-  constructor(private readonly modelsUsecases: ModelsUsecases) {}
+  constructor(
+    private readonly modelsUsecases: ModelsUsecases,
+    private readonly cortexUsecases: CortexUsecases,
+  ) {}
 
   @HttpCode(201)
   @ApiResponse({
@@ -62,7 +66,9 @@ export class ModelsController {
     @Param('modelId') modelId: string,
     @Body() settings: ModelSettingParamsDto,
   ) {
-    return this.modelsUsecases.startModel(modelId, settings);
+    return this.cortexUsecases
+      .startCortex()
+      .then(() => this.modelsUsecases.startModel(modelId, settings));
   }
 
   @HttpCode(200)
