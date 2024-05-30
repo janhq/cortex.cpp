@@ -59,11 +59,16 @@ extensions/                # External extensions
 command.module.ts          # CLI Commands List
 main.ts                    # Entrypoint
 ```
-## Installation
+## Quicklinks
+Cortex
+- [Website](https://jan.ai/)
+- [GitHub](https://github.com/janhq/cortex)
+- [User Guides](https://jan.ai/cortex)
+- [API reference](https://jan.ai/api-reference)
 
-### Prerequisites
+## Prerequisites
 
-#### **Dependencies**
+### **Dependencies**
 
 Before installation, ensure that you have installed the following:
 
@@ -71,12 +76,11 @@ Before installation, ensure that you have installed the following:
 - **NPM**: Needed to manage packages.
 - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
 
-<aside>
-💡 The **CPU instruction sets** are not required for the initial installation of Cortex. This dependency will be automatically installed during the Cortex initialization if they are not already on your system.
 
-</aside>
+>💡 The **CPU instruction sets** are not required for the initial installation of Cortex. This dependency will be automatically installed during the Cortex initialization if they are not already on your system.
 
-#### **Hardware**
+
+### **Hardware**
 
 Ensure that your system meets the following requirements to run Cortex:
 
@@ -96,85 +100,31 @@ Ensure that your system meets the following requirements to run Cortex:
 
 - **Disk**: At least 10GB for app and model download.
 
-### Cortex Installation
-
-To install Cortex, follow the steps below:
-
-#### Step 1: Install Cortex
-
-Run the following command to install Cortex globally on your machine:
-
-```bash
-# Install using NPM globally
+## Quickstart
+1. Install the NPM package:
+``` bash
 npm i -g @janhq/cortex
 ```
 
-#### Step 2: Verify the Installation
-
-After installation, you can verify that Cortex is installed correctly by getting help information.
-
-```bash
-# Get the help information
-cortex -h
-```
-
-#### Step 3: Initialize Cortex
-
-Once verified, you need to initialize the Cortex engine.
-
-1. Initialize the Cortex engine:
-
-```
+2. Initialize a compatible engine:
+``` bash
 cortex init
 ```
 
-2. Select between `CPU` and `GPU` modes.
-
-```bash
-? Select run mode (Use arrow keys)
-> CPU
-  GPU
+3. Download a GGUF model from Hugging Face
+``` bash
+cortex models pull janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
+```
+4. Load the model
+``` bash
+cortex models start janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
 ```
 
-3. Select between GPU types.
-
-```bash
-? Select GPU types (Use arrow keys)
-> Nvidia
-  Others (Vulkan)
+5. Start chatting with the model
+``` bash
+cortex chat tell me a joke
 ```
 
-4. Select CPU instructions (will be deprecated soon).
-
-```bash
-? Select CPU instructions (Use arrow keys)
-> AVX2
-  AVX
-  AVX-512
-```
-
-5. Cortex will download the required CPU instruction sets if you choose `CPU` mode. If you choose `GPU` mode, Cortex will download the necessary dependencies to use your GPU.
-6. Once downloaded, Cortex is ready to use!
-
-#### Step 4: Pull a model
-
-From HuggingFace
-
-```bash
-cortex pull janhq/phi-3-medium-128k-instruct-GGUF
-```
-
-From Jan Hub (TBD)
-
-```bash
-cortex pull llama3
-```
-
-#### Step 5: Chat
-
-```bash
-cortex run janhq/phi-3-medium-128k-instruct-GGUF
-```
 
 ## Run as an API server
 To run Cortex as an API server:
@@ -211,44 +161,24 @@ The following CLI commands are currently available:
 > ⚠️ **Cortex is currently in Development**: More commands will be added soon!
 
 ```bash
-cortex --help
-Usage: cortex <command>
 
-Commands:
-  chat                Send a query to the chat service.
-                      Example: cortex chat "tell me a joke" --stream
-
+  serve               Providing API endpoint for Cortex backend
+  chat                Send a chat request to a model
+  init|setup          Init settings and download cortex's dependencies
+  ps                  Show running models and their status
+  kill                Kill running cortex processes
+  pull|download       Download a model. Working with HuggingFace model id.
+  run [options]       EXPERIMENTAL: Shortcut to start a model and chat
+  models              Subcommands for managing models
   models list         List all available models.
-                      Example: cortex models list
-
   models pull         Download a specified model.
-                      Example: cortex models pull llama3:8b
-
   models remove       Delete a specified model.
-                      Example: cortex models remove llama3:8b
-
   models get          Retrieve the configuration of a specified model.
-                      Example: cortex models config llama3:8b
-
   models start        Start a specified model.
-                      Example: cortex models start llama3:8b
-
   models stop         Stop a specified model.
-                      Example: cortex models stop llama3:8b
-
   models update       Update the configuration of a specified model.
-                      Example: cortex models update llama3:8b --ngl 32
-
   engines             Execute a specified command related to engines.
-                      Example: cortex engines llamacpp
-
   engines list        List all available engines.
-                      Example: cortex engines list
-
-Options:
-  -h, --help          Show this help message and exit.
-
-
 ```
 ## Uninstall Cortex
 
