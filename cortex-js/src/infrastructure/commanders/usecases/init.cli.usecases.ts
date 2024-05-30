@@ -8,6 +8,7 @@ import { InitOptions } from '../types/init-options.interface';
 import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
+import { rm } from 'fs/promises';
 
 @Injectable()
 export class InitCliUsecases {
@@ -105,6 +106,7 @@ export class InitCliUsecases {
       console.error('Error decompressing file', e);
       exit(1);
     }
+    await rm(destination, { force: true });
   };
 
   parseEngineFileName = (options: InitOptions) => {
@@ -228,5 +230,6 @@ export class InitCliUsecases {
       console.log(e);
       exit(1);
     }
+    await rm(destination, { force: true });
   };
 }

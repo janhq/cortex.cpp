@@ -14,7 +14,6 @@ export class ModelRemoveCommand extends CommandRunner {
       exit(1);
     }
 
-    const result = await this.modelsCliUsecases.removeModel(input[0]);
-    console.log(result);
+    await this.modelsCliUsecases.removeModel(input[0]).then(console.log);
   }
 }
