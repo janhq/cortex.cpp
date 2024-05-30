@@ -1,4 +1,70 @@
-# Installation
+# Cortex - CLI
+
+<p align="center">
+  <a href="https://jan.ai/cortex">Documentation</a> - <a href="https://jan.ai/api-reference">API Reference</a> 
+  - <a href="https://github.com/janhq/cortex/releases">Changelog</a> - <a href="https://github.com/janhq/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+</p>
+
+> ⚠️ **Cortex is currently in Development**: Expect breaking changes and bugs!
+
+## About
+Cortex is an openAI-compatible local AI server that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and a Typescript client library. It can be used as a standalone server, or imported as a library. 
+
+Cortex currently supports two inference engines:
+
+- Llama.cpp
+- TensorRT-LLM
+
+> Read more about Cortex at https://jan.ai/cortex
+
+### Repo Structure
+```
+# Entity Definitions
+domain/                    # This is the core directory where the domains are defined.
+  abstracts/               # Abstract base classes for common attributes and methods.
+  models/                  # Domain interface definitions, e.g. model, assistant.
+  repositories/            # Extensions abstract and interface
+
+# Business Rules
+usecases/                  # Application logic 
+	assistants/              # CRUD logic (invokes dtos, entities).
+	chat/                    # Logic for chat functionalities.
+	models/                  # Logic for model operations.
+
+# Adapters & Implementations
+infrastructure/            # Implementations for Cortex interactions
+  commanders/              # CLI handlers
+    models/
+    questions/             # CLI installation UX
+    shortcuts/             # CLI chained syntax
+    types/
+    usecases/              # Invokes UseCases
+
+  controllers/             # Nest controllers and HTTP routes
+		assistants/						 # Invokes UseCases
+	  chat/     						 # Invokes UseCases
+		models/                # Invokes UseCases
+	
+  database/                # Database providers (mysql, sqlite)
+	
+	# Framework specific object definitions
+  dtos/                    # DTO definitions (data transfer & validation)
+  entities/                # TypeORM entity definitions (db schema)
+  
+	# Providers
+  providers/cortex         # Cortex [server] provider (a core extension)
+  repositories/extensions  # Extension provider (core & external extensions)
+
+extensions/                # External extensions
+command.module.ts          # CLI Commands List
+main.ts                    # Entrypoint
+```
+## Quicklinks
+Cortex
+- [Website](https://jan.ai/)
+- [GitHub](https://github.com/janhq/cortex)
+- [User Guides](https://jan.ai/cortex)
+- [API reference](https://jan.ai/api-reference)
 
 ## Prerequisites
 
@@ -10,10 +76,9 @@ Before installation, ensure that you have installed the following:
 - **NPM**: Needed to manage packages.
 - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
 
-<aside>
-💡 The **CPU instruction sets** are not required for the initial installation of Cortex. This dependency will be automatically installed during the Cortex initialization if they are not already on your system.
 
-</aside>
+>💡 The **CPU instruction sets** are not required for the initial installation of Cortex. This dependency will be automatically installed during the Cortex initialization if they are not already on your system.
+
 
 ### **Hardware**
 
@@ -35,88 +100,34 @@ Ensure that your system meets the following requirements to run Cortex:
 
 - **Disk**: At least 10GB for app and model download.
 
-## Cortex Installation
-
-To install Cortex, follow the steps below:
-
-### Step 1: Install Cortex
-
-Run the following command to install Cortex globally on your machine:
-
-```bash
-# Install using NPM globally
+## Quickstart
+1. Install the NPM package:
+``` bash
 npm i -g @janhq/cortex
 ```
 
-### Step 2: Verify the Installation
-
-After installation, you can verify that Cortex is installed correctly by getting help information.
-
-```bash
-# Get the help information
-cortex -h
-```
-
-### Step 3: Initialize Cortex
-
-Once verified, you need to initialize the Cortex engine.
-
-1. Initialize the Cortex engine:
-
-```
+2. Initialize a compatible engine:
+``` bash
 cortex init
 ```
 
-1. Select between `CPU` and `GPU` modes.
-
-```bash
-? Select run mode (Use arrow keys)
-> CPU
-  GPU
+3. Download a GGUF model from Hugging Face
+``` bash
+cortex models pull janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
+```
+4. Load the model
+``` bash
+cortex models start janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
 ```
 
-2. Select between GPU types.
-
-```bash
-? Select GPU types (Use arrow keys)
-> Nvidia
-  Others (Vulkan)
+5. Start chatting with the model
+``` bash
+cortex chat tell me a joke
 ```
 
-3. Select CPU instructions (will be deprecated soon).
-
-```bash
-? Select CPU instructions (Use arrow keys)
-> AVX2
-  AVX
-  AVX-512
-```
-
-1. Cortex will download the required CPU instruction sets if you choose `CPU` mode. If you choose `GPU` mode, Cortex will download the necessary dependencies to use your GPU.
-2. Once downloaded, Cortex is ready to use!
-
-### Step 4: Pull a model
-
-From HuggingFace
-
-```bash
-cortex pull janhq/phi-3-medium-128k-instruct-GGUF
-```
-
-From Jan Hub (TBD)
-
-```bash
-cortex pull llama3
-```
-
-### Step 5: Chat
-
-```bash
-cortex run janhq/phi-3-medium-128k-instruct-GGUF
-```
 
 ## Run as an API server
-
+To run Cortex as an API server:
 ```bash
 cortex serve
 ```
@@ -133,18 +144,42 @@ To install Cortex from the source, follow the steps below:
 npx nest build
 ```
 
-1. Make the `command.js` executable:
+4. Make the `command.js` executable:
 
 ```bash
 chmod +x '[path-to]/cortex/cortex-js/dist/src/command.js'
 ```
 
-1. Link the package globally:
+5. Link the package globally:
 
 ```bash
 npm link
 ```
 
+## Cortex CLI Command
+The following CLI commands are currently available:
+> ⚠️ **Cortex is currently in Development**: More commands will be added soon!
+
+```bash
+
+  serve               Providing API endpoint for Cortex backend
+  chat                Send a chat request to a model
+  init|setup          Init settings and download cortex's dependencies
+  ps                  Show running models and their status
+  kill                Kill running cortex processes
+  pull|download       Download a model. Working with HuggingFace model id.
+  run [options]       EXPERIMENTAL: Shortcut to start a model and chat
+  models              Subcommands for managing models
+  models list         List all available models.
+  models pull         Download a specified model.
+  models remove       Delete a specified model.
+  models get          Retrieve the configuration of a specified model.
+  models start        Start a specified model.
+  models stop         Stop a specified model.
+  models update       Update the configuration of a specified model.
+  engines             Execute a specified command related to engines.
+  engines list        List all available engines.
+```
 ## Uninstall Cortex
 
 Run the following command to uninstall Cortex globally on your machine:
@@ -153,3 +188,7 @@ Run the following command to uninstall Cortex globally on your machine:
 # Uninstall globally using NPM
 npm uninstall -g @janhq/cortex
 ```
+## Contact Support
+- For support, please file a GitHub ticket.
+- For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
+- For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
