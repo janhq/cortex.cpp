@@ -75,11 +75,18 @@ cortex init
 
 3. Download a GGUF model from Hugging Face:
 ``` bash
-cortex pull tinyllama:1b
+# Pull a model most compatible with your hardware
+cortex pull llama3
+
+# Pull a specific variant with `repo_name:branch`
+cortex pull llama3:7b
+
+# Pull a model with the HuggingFace `model_id`
+cortex pull microsoft/Phi-3-mini-4k-instruct-gguf
 ```
 4. Load the model:
 ``` bash
-cortex models start tinyllama:1b
+cortex models start llama3:7b
 ```
 
 5. Start chatting with the model:
