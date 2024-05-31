@@ -63,7 +63,7 @@ Ensure that your system meets the following requirements to run Cortex:
 
 ## Quickstart
 To install Cortex CLI, follow the steps below:
-1. Install the Cortex NPM package:
+1. Install the Cortex NPM package globally:
 ``` bash
 npm i -g @janhq/cortex
 ```
@@ -75,11 +75,11 @@ cortex init
 
 3. Download a GGUF model from Hugging Face:
 ``` bash
-cortex models pull janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
+cortex pull tinyllama:1b
 ```
 4. Load the model:
 ``` bash
-cortex models start janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
+cortex models start tinyllama:1b
 ```
 
 5. Start chatting with the model:
