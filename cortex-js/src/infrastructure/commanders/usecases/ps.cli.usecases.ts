@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 
-interface ModelStat {
+export interface ModelStat {
   modelId: string;
   engine?: string;
   duration?: string;
