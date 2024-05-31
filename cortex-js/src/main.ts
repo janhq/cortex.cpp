@@ -27,7 +27,6 @@ async function bootstrap() {
     .setTitle('Cortex API')
     .setDescription('Cortex API provides a command-line interface (CLI) for seamless interaction with large language models (LLMs). Fully compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference), it enables straightforward command execution and management of LLM interactions.')
     .setVersion('1.0')
-    .addTag('Cortex', 'These endpoints control the start and stop operations of the Cortex system.')
     .addTag('Inference', 'This endpoint initiates interaction with a Language Learning Model (LLM).')
     .addTag('Assistants', 'These endpoints manage the lifecycle of an Assistant within a conversation thread.')
     .addTag('Models', 'These endpoints provide a list and descriptions of all available models within the Cortex framework.')
