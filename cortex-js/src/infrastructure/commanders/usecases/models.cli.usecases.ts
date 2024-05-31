@@ -25,6 +25,10 @@ import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
+import { FileManagerService } from '@/file-manager/file-manager.service';
+import { join } from 'path';
+import { load } from 'js-yaml';
+import { readFileSync } from 'node:fs';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -56,15 +60,33 @@ export class ModelsCliUsecases {
     @Inject(InquirerService)
     private readonly inquirerService: InquirerService,
     private readonly httpService: HttpService,
+    private readonly fileManagerService: FileManagerService,
   ) {}
 
   /**
    * Start a model by ID
    * @param modelId
    */
-  async startModel(modelId: string): Promise<StartModelSuccessDto> {
+  async startModel(
+    modelId: string,
+    template?: string,
+  ): Promise<StartModelSuccessDto> {
+    const settings: any = template
+      ? load(
+          readFileSync(
+            join(
+              await this.fileManagerService.getDataFolderPath(),
+              'templates',
+              `${template}.yaml`,
+            ),
+            'utf-8',
+          ),
+        )
+      : {};
+
     return this.getModelOrStop(modelId)
-      .then(() => this.modelsUsecases.startModel(modelId))
+      .then((model) => ({ ...model.settings, ...settings }))
+      .then((settings) => this.modelsUsecases.startModel(modelId, settings))
       .catch(() => {
         return {
           modelId: modelId,
