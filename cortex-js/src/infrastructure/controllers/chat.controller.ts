@@ -17,6 +17,10 @@ import { ChatCompletionResponseDto } from '../dtos/chat/chat-completion-response
 export class ChatController {
   constructor(private readonly chatService: ChatUsecases) {}
 
+  @ApiOperation({
+    summary: 'Create chat completion',
+    description: "Creates a model response for the given conversation.",
+  })
   @HttpCode(200)
   @ApiResponse({
     status: 200,
