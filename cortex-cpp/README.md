@@ -1,71 +1,63 @@
 # cortex-cpp - Embeddable AI
 <p align="center">
-  <img alt="nitrologo" src="https://raw.githubusercontent.com/janhq/nitro/main/assets/Nitro%20README%20banner.png">
+  <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex/dev/assets/cortex-banner.png">
 </p>
 
 <p align="center">
-  <a href="https://nitro.jan.ai/docs">Documentation</a> - <a href="https://nitro.jan.ai/api-reference">API Reference</a> 
-  - <a href="https://github.com/janhq/cortex/releases/">Changelog</a> - <a href="https://github.com/janhq/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+  <a href="https://jan.ai/cortex">Documentation</a> - <a href="https://jan.ai/api-reference">API Reference</a> 
+  - <a href="https://github.com/janhq/cortex/releases">Changelog</a> - <a href="https://github.com/janhq/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
 > ⚠️ **cortex-cpp is currently in Development**: Expect breaking changes and bugs!
 
-## Features
-- Fast Inference: Built on top of the cutting-edge inference library llama.cpp, modified to be production ready.
-- Lightweight: Only 3MB, ideal for resource-sensitive environments.
-- Easily Embeddable: Simple integration into existing applications, offering flexibility.
-- Quick Setup: Approximately 10-second initialization for swift deployment.
-- Enhanced Web Framework: Incorporates drogon cpp to boost web service efficiency.
-
 ## About cortex-cpp
 
-cortex-cpp is a high-efficiency C++ inference engine for edge computing, powering [Jan](https://jan.ai/). It is lightweight and embeddable, ideal for product integration.
+Cortex-cpp is a streamlined, stateless C++ server engineered to be fully compatible with OpenAI's API, particularly its stateless functionalities. It integrates a Drogon server framework to manage request handling and includes features like model orchestration and hardware telemetry, which are essential for production environments.
 
-The binary of cortex-cpp after zipped is only ~3mb in size with none to minimal dependencies (if you use a GPU need CUDA for example) make it desirable for any edge/server deployment 👍.
+Remarkably compact, the binary size of cortex-cpp is around 3 MB when compressed, with minimal dependencies. This lightweight and efficient design makes cortex-cpp an excellent choice for deployments in both edge computing and server contexts.
 
-> Read more about Nitro at https://nitro.jan.ai/
+> Utilizing GPU capabilities does require CUDA.
 
-### Repo Structure
+## Prerequisites
+### **Hardware**
 
-```
-.
-├── controllers
-├── docs 
-├── llama.cpp -> Upstream llama C++
-├── cortex-cpp-deps -> Dependencies of the cortex-cpp project as a sub-project
-└── utils
-```
+Ensure that your system meets the following requirements to run Cortex:
+
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 18.04 and later.
+- **RAM (CPU Mode):**
+  - 8GB for running up to 3B models.
+  - 16GB for running up to 7B models.
+  - 32GB for running up to 13B models.
+- **VRAM (GPU Mode):**
+
+  - 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+
+- **Disk**: At least 10GB for app and model download.
 
 ## Quickstart
+To install Cortex CLI, follow the steps below:
+1. Download cortex-cpp here: https://github.com/janhq/cortex/releases
+2. Install cortex-cpp by running the downloaded file.
 
-**Step 1: Install cortex-cpp**
-
-- For Linux and MacOS
-
-  ```bash
-  curl -sfL https://raw.githubusercontent.com/janhq/nitro/main/install.sh | sudo /bin/bash -
-  ```
-
-- For Windows
-
-  ```bash
-  powershell -Command "& { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/janhq/nitro/main/install.bat' -OutFile 'install.bat'; .\install.bat; Remove-Item -Path 'install.bat' }"
-  ```
-
-**Step 2: Downloading a Model**
+3. Download a Model:
 
 ```bash
 mkdir model && cd model
 wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
 ```
 
-**Step 3: Run cortex-cpp server**
+4. Run cortex-cpp server:
 
 ```bash title="Run cortex-cpp server"
 cortex-cpp
 ```
 
-**Step 4: Load model** 
+5. Load a model:
 
 ```bash title="Load model"
 curl http://localhost:3928/inferences/server/loadmodel \
@@ -77,7 +69,7 @@ curl http://localhost:3928/inferences/server/loadmodel \
   }'
 ```
 
-**Step 5: Making an Inference**
+6. Make an Inference:
 
 ```bash title="cortex-cpp Inference"
 curl http://localhost:3928/v1/chat/completions \
@@ -92,7 +84,8 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 ```
 
-Table of parameters
+## Table of parameters
+Below is the available list of the model parameters you can set when loading a model in cortex-cpp:
 
 | Parameter        | Type    | Description                                                  |
 |------------------|---------|--------------------------------------------------------------|
@@ -116,20 +109,6 @@ Table of parameters
 |`grammar_file`| String |You can constrain the sampling using GBNF grammars by providing path to a grammar file|
 |`model_type` | String | Model type we want to use: llm or embedding, default value is llm|
 
-***OPTIONAL***: You can run Nitro on a different port like 5000 instead of 3928 by running it manually in terminal
-```zsh
-./cortex-cpp 1 127.0.0.1 5000 ([thread_num] [host] [port] [uploads_folder_path])
-```
-- thread_num : the number of thread that cortex-cpp webserver needs to have
-- host : host value normally 127.0.0.1 or 0.0.0.0
-- port : the port that cortex-cpp got deployed onto
-- uploads_folder_path: custom path for file uploads in Drogon.
-
-cortex-cpp server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
-
-## Compile from source
-To compile cortex-cpp please visit [Compile from source](docs/docs/new/build-source.md)
-
 ## Download
 
 <table>
@@ -142,71 +121,51 @@ To compile cortex-cpp please visit [Compile from source](docs/docs/new/build-sou
   <tr>
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.22/nitro-0.3.22-win-amd64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.22/nitro-0.3.22-win-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-windows-amd64-avx2-cuda-12-0.tar.gz'>
         <img src='./docs/static/img/windows.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.22/nitro-0.3.22-mac-amd64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-amd64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>Intel</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.22/nitro-0.3.22-mac-arm64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-mac-arm64.tar.gz'>
         <img src='./docs/static/img/mac.png' style="height:15px; width: 15px" />
         <b>M1/M2</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.22/nitro-0.3.22-linux-amd64.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-avx2.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CPU</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/nitro/releases/download/v0.3.22/nitro-0.3.22-linux-amd64-cuda.tar.gz'>
+      <a href='https://github.com/janhq/cortex/releases/download/v0.4.12/cortex-cpp-0.4.12-linux-amd64-cuda-12-0.tar.gz'>
         <img src='./docs/static/img/linux.png' style="height:15px; width: 15px" />
         <b>CUDA</b>
       </a>
     </td>
   </tr>
-  <tr style="text-align: center">
-    <td style="text-align:center"><b>Experimental (Nighlty Build)</b></td>
-    <td style="text-align:center" colspan="6">
-      <a href='https://github.com/janhq/nitro/actions/runs/8146271749'>
-        <b>GitHub action artifactory</b>
-      </a>
-    </td>
-  </tr>
 </table>
 
-Download the latest version of Nitro at https://nitro.jan.ai/ or visit the **[GitHub Releases](https://github.com/janhq/cortex/releases)** to download any previous release.
+> Download the latest or older versions of Cortex-cpp at the **[GitHub Releases](https://github.com/janhq/cortex/releases)**.
 
-## Nightly Build
-
-Nightly build is a process where the software is built automatically every night. This helps in detecting and fixing bugs early in the development cycle. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
-
-You can join our Discord server [here](https://discord.gg/FTk2MvZwJH) and go to channel [github-nitro](https://discordapp.com/channels/1107178041848909847/1151022176019939328) to monitor the build process.
-
-The nightly build is triggered at 2:00 AM UTC every day.
-
-The nightly build can be downloaded from the url notified in the Discord channel. Please access the url from the browser and download the build artifacts from there.
 
 ## Manual Build
+Manual build is a process in which the developers build the software manually. This is usually done when a new feature is implemented, or a bug is fixed. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
 
-Manual build is a process where the software is built manually by the developers. This is usually done when a new feature is implemented or a bug is fixed. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
-
-It is similar to the nightly build process, except that it is triggered manually by the developers.
-
-### Contact
+## Contact Support
 
 - For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
@@ -214,4 +173,4 @@ It is similar to the nightly build process, except that it is triggered manually
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=janhq/nitro&type=Date)](https://star-history.com/#janhq/nitro&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=janhq/cortex-cpp&type=Date)](https://star-history.com/#janhq/cortex-cpp&Date)
