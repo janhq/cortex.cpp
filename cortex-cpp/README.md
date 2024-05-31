@@ -1,6 +1,6 @@
 # cortex-cpp - Embeddable AI
 <p align="center">
-  <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex-cpp/main/assets/Cortex-cpp%20README%20banner.png">
+  <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex/dev/assets/cortex-banner.png">
 </p>
 
 <p align="center">
