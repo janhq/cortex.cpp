@@ -8,9 +8,9 @@ domain/                    # This is the core directory where the domains are de
 
 # Business Rules
 usecases/                  # Application logic 
-	assistants/              # CRUD logic (invokes dtos, entities).
-	chat/                    # Logic for chat functionalities.
-	models/                  # Logic for model operations.
+	assistants/        # CRUD logic (invokes dtos, entities).
+	chat/              # Logic for chat functionalities.
+	models/            # Logic for model operations.
 
 # Adapters & Implementations
 infrastructure/            # Implementations for Cortex interactions
@@ -22,17 +22,17 @@ infrastructure/            # Implementations for Cortex interactions
     usecases/              # Invokes UseCases
 
   controllers/             # Nest controllers and HTTP routes
-		assistants/						 # Invokes UseCases
-	  chat/     						 # Invokes UseCases
-		models/                # Invokes UseCases
+    assistants/		   # Invokes UseCases
+    chat/     		   # Invokes UseCases
+    models/                # Invokes UseCases
 	
   database/                # Database providers (mysql, sqlite)
 	
-	# Framework specific object definitions
+# Framework specific object definitions
   dtos/                    # DTO definitions (data transfer & validation)
   entities/                # TypeORM entity definitions (db schema)
   
-	# Providers
+# Providers
   providers/cortex         # Cortex [server] provider (a core extension)
   repositories/extensions  # Extension provider (core & external extensions)
 
