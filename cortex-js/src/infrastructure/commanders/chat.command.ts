@@ -6,7 +6,7 @@ import {
 } from 'nest-commander';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
-import { PSCliUsecases } from './usecases/ps.cli.usecases';
+import { ModelStat, PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 
 type ChatOptions = {
@@ -41,16 +41,7 @@ export class ChatCommand extends CommandRunner {
       if (models.length === 1) {
         modelId = models[0].modelId;
       } else if (models.length > 0) {
-        const { model } = await this.inquirerService.inquirer.prompt({
-          type: 'list',
-          name: 'model',
-          message: 'Select running model to chat with:',
-          choices: models.map((e) => ({
-            name: e.modelId,
-            value: e.modelId,
-          })),
-        });
-        modelId = model;
+        modelId = await this.modelInquiry(models);
       } else {
         console.error('Model ID is required');
         exit(1);
@@ -65,6 +56,19 @@ export class ChatCommand extends CommandRunner {
       false, // Do not stop cortex session or loaded model
     );
   }
+
+  modelInquiry = async (models: ModelStat[]) => {
+    const { model } = await this.inquirerService.inquirer.prompt({
+      type: 'list',
+      name: 'model',
+      message: 'Select running model to chat with:',
+      choices: models.map((e) => ({
+        name: e.modelId,
+        value: e.modelId,
+      })),
+    });
+    return model;
+  };
 
   @Option({
     flags: '-t, --thread <thread_id>',
