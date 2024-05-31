@@ -141,30 +141,27 @@ export class ModelsUsecases {
     if (!engine) {
       return {
         message: 'No extension handler found for model',
-        modelId: modelId,
+        modelId,
       };
     }
 
     return engine
       .loadModel(model, settings)
-      .then(() => {
-        return {
-          message: 'Model loaded successfully',
-          modelId: modelId,
-        };
-      })
-      .catch((e) => {
-        if (e.code === AxiosError.ERR_BAD_REQUEST) {
-          return {
-            message: 'Model already loaded',
-            modelId: modelId,
-          };
-        }
-        return {
-          message: 'Model failed to load',
-          modelId: modelId,
-        };
-      });
+      .then(() => ({
+        message: 'Model loaded successfully',
+        modelId,
+      }))
+      .catch((e) =>
+        e.code === AxiosError.ERR_BAD_REQUEST
+          ? {
+              message: 'Model already loaded',
+              modelId,
+            }
+          : {
+              message: 'Model failed to load',
+              modelId,
+            },
+      );
   }
 
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
@@ -183,18 +180,14 @@ export class ModelsUsecases {
 
     return engine
       .unloadModel(modelId)
-      .then(() => {
-        return {
-          message: 'Model is stopped',
-          modelId,
-        };
-      })
-      .catch(() => {
-        return {
-          message: 'Failed to stop model',
-          modelId,
-        };
-      });
+      .then(() => ({
+        message: 'Model is stopped',
+        modelId,
+      }))
+      .catch(() => ({
+        message: 'Failed to stop model',
+        modelId,
+      }));
   }
 
   async downloadModel(modelId: string, callback?: (progress: number) => void) {

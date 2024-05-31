@@ -1,9 +1,14 @@
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { CommandRunner, SubCommand, Option } from 'nest-commander';
+import {
+  CommandRunner,
+  SubCommand,
+  Option,
+  InquirerService,
+} from 'nest-commander';
 import { exit } from 'node:process';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 
 type RunOptions = {
   threadId?: string;
@@ -15,27 +20,29 @@ type RunOptions = {
 })
 export class RunCommand extends CommandRunner {
   constructor(
-    private readonly modelsUsecases: ModelsUsecases,
+    private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly cortexUsecases: CortexUsecases,
     private readonly chatCliUsecases: ChatCliUsecases,
+    private readonly inquirerService: InquirerService,
   ) {
     super();
   }
 
   async run(input: string[], option?: RunOptions): Promise<void> {
-    if (input.length === 0) {
-      console.error('Model Id is required');
-      exit(1);
+    let modelId = input[0];
+    if (!modelId) {
+      try {
+        modelId = await this.modelInquiry();
+      } catch {
+        console.error('Model ID is required');
+        exit(1);
+      }
     }
-    const modelId = input[0];
 
-    await this.cortexUsecases.startCortex(
-      false,
-      defaultCortexCppHost,
-      defaultCortexCppPort,
-    );
-    await this.modelsUsecases.startModel(modelId);
-    await this.chatCliUsecases.chat(modelId, option?.threadId);
+    return this.cortexUsecases
+      .startCortex(false, defaultCortexCppHost, defaultCortexCppPort)
+      .then(() => this.modelsCliUsecases.startModel(modelId))
+      .then(() => this.chatCliUsecases.chat(modelId, option?.threadId));
   }
 
   @Option({
@@ -45,4 +52,19 @@ export class RunCommand extends CommandRunner {
   parseThreadId(value: string) {
     return value;
   }
+
+  modelInquiry = async () => {
+    const models = await this.modelsCliUsecases.listAllModels();
+    if (!models.length) throw 'No models found';
+    const { model } = await this.inquirerService.inquirer.prompt({
+      type: 'list',
+      name: 'model',
+      message: 'Select a model to start:',
+      choices: models.map((e) => ({
+        name: e.name,
+        value: e.id,
+      })),
+    });
+    return model;
+  };
 }

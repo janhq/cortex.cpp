@@ -34,7 +34,7 @@ export class ModelStartCommand extends CommandRunner {
 
     await this.cortexUsecases
       .startCortex(options.attach)
-      .then(() => this.modelsCliUsecases.startModel(input[0]))
+      .then(() => this.modelsCliUsecases.startModel(modelId))
       .then(console.log)
       .then(() => !options.attach && process.exit(0));
   }
