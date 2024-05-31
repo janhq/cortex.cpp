@@ -12,12 +12,21 @@ export class ModelListCommand extends CommandRunner {
 
   async run(_input: string[], option: ModelListOptions): Promise<void> {
     const models = await this.modelsCliUsecases.listAllModels();
-    option.format === 'table' ? console.table(models) : console.log(models);
+    option.format === 'table'
+      ? console.table(
+          models.map((e) => ({
+            id: e.id,
+            engine: e.engine,
+            format: e.format,
+            created: e.created,
+          })),
+        )
+      : console.log(models);
   }
 
   @Option({
     flags: '-f, --format <format>',
-    defaultValue: 'json',
+    defaultValue: 'table',
     description: 'Print models list in table or json format',
   })
   parseModelId(value: string) {
