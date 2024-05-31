@@ -17,50 +17,8 @@ Cortex currently supports two inference engines:
 
 > Read more about Cortex at https://jan.ai/cortex
 
-### Repo Structure
-```
-# Entity Definitions
-domain/                    # This is the core directory where the domains are defined.
-  abstracts/               # Abstract base classes for common attributes and methods.
-  models/                  # Domain interface definitions, e.g. model, assistant.
-  repositories/            # Extensions abstract and interface
-
-# Business Rules
-usecases/                  # Application logic 
-	assistants/              # CRUD logic (invokes dtos, entities).
-	chat/                    # Logic for chat functionalities.
-	models/                  # Logic for model operations.
-
-# Adapters & Implementations
-infrastructure/            # Implementations for Cortex interactions
-  commanders/              # CLI handlers
-    models/
-    questions/             # CLI installation UX
-    shortcuts/             # CLI chained syntax
-    types/
-    usecases/              # Invokes UseCases
-
-  controllers/             # Nest controllers and HTTP routes
-		assistants/						 # Invokes UseCases
-	  chat/     						 # Invokes UseCases
-		models/                # Invokes UseCases
-	
-  database/                # Database providers (mysql, sqlite)
-	
-	# Framework specific object definitions
-  dtos/                    # DTO definitions (data transfer & validation)
-  entities/                # TypeORM entity definitions (db schema)
-  
-	# Providers
-  providers/cortex         # Cortex [server] provider (a core extension)
-  repositories/extensions  # Extension provider (core & external extensions)
-
-extensions/                # External extensions
-command.module.ts          # CLI Commands List
-main.ts                    # Entrypoint
-```
 ## Quicklinks
-Cortex
+**Cortex**:
 - [Website](https://jan.ai/)
 - [GitHub](https://github.com/janhq/cortex)
 - [User Guides](https://jan.ai/cortex)
@@ -101,7 +59,8 @@ Ensure that your system meets the following requirements to run Cortex:
 - **Disk**: At least 10GB for app and model download.
 
 ## Quickstart
-1. Install the NPM package:
+To install Cortex CLI, follow the steps below:
+1. Install the Cortex NPM package:
 ``` bash
 npm i -g @janhq/cortex
 ```
@@ -111,16 +70,16 @@ npm i -g @janhq/cortex
 cortex init
 ```
 
-3. Download a GGUF model from Hugging Face
+3. Download a GGUF model from Hugging Face:
 ``` bash
 cortex models pull janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
 ```
-4. Load the model
+4. Load the model:
 ``` bash
 cortex models start janhq/TinyLlama-1.1B-Chat-v1.0-GGUF
 ```
 
-5. Start chatting with the model
+5. Start chatting with the model:
 ``` bash
 cortex chat tell me a joke
 ```
@@ -177,8 +136,6 @@ The following CLI commands are currently available:
   models start        Start a specified model.
   models stop         Stop a specified model.
   models update       Update the configuration of a specified model.
-  engines             Execute a specified command related to engines.
-  engines list        List all available engines.
 ```
 ## Uninstall Cortex
 

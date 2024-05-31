@@ -18,48 +18,46 @@ Remarkably compact, the binary size of cortex-cpp is around 3 MB when compressed
 
 > Utilizing GPU capabilities does require CUDA.
 
-### Features
-- Fast Inference: Built on top of the cutting-edge inference library llama.cpp, modified to be production-ready.
-- Lightweight: Only 3MB, ideal for resource-sensitive environments.
-- Easily Embeddable: Simple integration into existing applications, offering flexibility.
-- Quick Setup: Approximately 10-second initialization for swift deployment.
-- Enhanced Web Framework: Incorporates drogon cpp to boost web service efficiency.
+## Prerequisites
+### **Hardware**
 
-### Repo Structure
+Ensure that your system meets the following requirements to run Cortex:
 
-```
-.
-├── common          # Common libraries or shared resources
-├── controllers     # Controller scripts or modules for managing interactions
-├── cortex-common   # Shared components across different cortex modules
-├── cortex-cpp-deps # Dependencies specific to the cortex-cpp module
-├── engines         # Different processing or computational engines
-├── examples        # Example scripts or applications demonstrating usage
-├── test            # Test scripts and testing frameworks
-└── utils           # Utility scripts and helper functions
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 18.04 and later.
+- **RAM (CPU Mode):**
+  - 8GB for running up to 3B models.
+  - 16GB for running up to 7B models.
+  - 32GB for running up to 13B models.
+- **VRAM (GPU Mode):**
 
-```
+  - 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+  - 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+
+- **Disk**: At least 10GB for app and model download.
 
 ## Quickstart
+To install Cortex CLI, follow the steps below:
+1. Download cortex-cpp here: https://github.com/janhq/cortex/releases
+2. Install cortex-cpp by running the downloaded file.
 
-**Step 1: Install cortex-cpp**
-
-Download cortex-cpp here: https://github.com/janhq/cortex/releases
-
-**Step 2: Downloading a Model**
+3. Download a Model:
 
 ```bash
 mkdir model && cd model
 wget -O llama-2-7b-model.gguf https://huggingface.co/TheBloke/Llama-2-7B-Chat-GGUF/resolve/main/llama-2-7b-chat.Q5_K_M.gguf?download=true
 ```
 
-**Step 3: Run cortex-cpp server**
+4. Run cortex-cpp server:
 
 ```bash title="Run cortex-cpp server"
 cortex-cpp
 ```
 
-**Step 4: Load model** 
+5. Load a model:
 
 ```bash title="Load model"
 curl http://localhost:3928/inferences/server/loadmodel \
@@ -71,7 +69,7 @@ curl http://localhost:3928/inferences/server/loadmodel \
   }'
 ```
 
-**Step 5: Making an Inference**
+6. Make an Inference:
 
 ```bash title="cortex-cpp Inference"
 curl http://localhost:3928/v1/chat/completions \
@@ -86,7 +84,8 @@ curl http://localhost:3928/v1/chat/completions \
   }'
 ```
 
-Table of parameters
+## Table of parameters
+Below is the available list of the model parameters you can set when loading a model in cortex-cpp:
 
 | Parameter        | Type    | Description                                                  |
 |------------------|---------|--------------------------------------------------------------|
@@ -109,17 +108,6 @@ Table of parameters
 |`mlock`|Boolean|Prevent system swapping of the model to disk in macOS|
 |`grammar_file`| String |You can constrain the sampling using GBNF grammars by providing path to a grammar file|
 |`model_type` | String | Model type we want to use: llm or embedding, default value is llm|
-
-***OPTIONAL***: You can run Cortex-cpp on a different port like 5000 instead of 3928 by running it manually in terminal
-```zsh
-./cortex-cpp 1 127.0.0.1 5000 ([thread_num] [host] [port] [uploads_folder_path])
-```
-- thread_num : the number of thread that cortex-cpp webserver needs to have
-- host : host value normally 127.0.0.1 or 0.0.0.0
-- port : the port that cortex-cpp got deployed onto
-- uploads_folder_path: custom path for file uploads in Drogon.
-
-cortex-cpp server is compatible with the OpenAI format, so you can expect the same output as the OpenAI ChatGPT API.
 
 ## Download
 
@@ -171,7 +159,7 @@ cortex-cpp server is compatible with the OpenAI format, so you can expect the sa
   </tr>
 </table>
 
-Download the latest version of Cortex-cpp at https://jan.ai/ or visit the **[GitHub Releases](https://github.com/janhq/cortex/releases)** to download any previous release.
+> Download the latest or older versions of Cortex-cpp at the **[GitHub Releases](https://github.com/janhq/cortex/releases)**.
 
 
 ## Manual Build
