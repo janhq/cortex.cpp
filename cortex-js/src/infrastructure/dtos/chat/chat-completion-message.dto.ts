@@ -7,7 +7,9 @@ export class ChatCompletionMessage {
   @IsString()
   content: string;
 
-  @ApiProperty({ description: 'The role of the entity in the chat completion.' })
+  @ApiProperty({
+    description: 'The role of the entity in the chat completion.',
+  })
   @IsEnum(ChatCompletionRole)
   role: ChatCompletionRole;
 }

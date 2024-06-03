@@ -2,14 +2,7 @@ import { Body, Controller, Post, Headers, Res, HttpCode } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
-import {
-  ApiCreatedResponse,
-  ApiExtraModels,
-  ApiOperation,
-  ApiTags,
-  getSchemaPath,
-  ApiResponse
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { ChatCompletionResponseDto } from '../dtos/chat/chat-completion-response.dto';
 
 @ApiTags('Inference')
@@ -19,7 +12,7 @@ export class ChatController {
 
   @ApiOperation({
     summary: 'Create chat completion',
-    description: "Creates a model response for the given conversation.",
+    description: 'Creates a model response for the given conversation.',
   })
   @HttpCode(200)
   @ApiResponse({
