@@ -10,6 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { rm } from 'fs/promises';
 import { exec } from 'child_process';
+import { appPath } from '../utils/app-path';
 
 @Injectable()
 export class InitCliUsecases {
@@ -257,8 +258,8 @@ export class InitCliUsecases {
 
       exec(
         join(
-          __dirname,
-          `../../../../bin/cpuinfo${process.platform !== 'linux' ? '.exe' : ''}`,
+          appPath,
+          `bin/cpuinfo${process.platform !== 'linux' ? '.exe' : ''}`,
         ),
         (error, stdout) => {
           if (error) {

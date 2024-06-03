@@ -10,11 +10,6 @@ import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-mo
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 
-/**
- * A class that implements the InferenceExtension interface from the @janhq/core package.
- * The class provides methods for initializing and stopping a model, and for making inference requests.
- * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
- */
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
   provider: string = 'cortex';

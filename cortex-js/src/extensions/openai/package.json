@@ -2,7 +2,7 @@
   "name": "@janhq/openai-inference-engine",
   "productName": "OpenAI Inference Engine",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/extensions/openai/index.js",
   "type": "commonjs",
   "description": "This extension enables OpenAI chat completion API calls",
   "author": "Jan <service@jan.ai>",

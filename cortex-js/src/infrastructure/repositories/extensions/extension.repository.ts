@@ -4,6 +4,7 @@ import { Extension } from '@/domain/abstracts/extension.abstract';
 import { readdir, lstat, access } from 'fs/promises';
 import { join } from 'path';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
+import { appPath } from '@/infrastructure/commanders/utils/app-path';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -36,12 +37,13 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   loadCoreExtensions(): void {
-    const extensionsPath = join(__dirname, './../../../extensions');
+    const extensionsPath = join(appPath, 'src', 'extensions');
     this.loadExtensions(extensionsPath);
   }
 
   loadExternalExtensions(): void {
-    const extensionsPath = process.env.EXTENSIONS_PATH ?? 'extensions';
+    const extensionsPath =
+      process.env.EXTENSIONS_PATH ?? join(appPath, 'extensions');
     this.loadExtensions(extensionsPath);
   }
 

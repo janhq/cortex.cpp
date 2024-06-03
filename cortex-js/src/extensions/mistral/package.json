@@ -2,7 +2,7 @@
   "name": "@janhq/mistral-inference-engine",
   "productName": "Mistral Inference Engine",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/extensions/mistral/index.js",
   "type": "commonjs",
   "description": "This extension enables Mistral chat completion API calls",
   "author": "Jan <service@jan.ai>",

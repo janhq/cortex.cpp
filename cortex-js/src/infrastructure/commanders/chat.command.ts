@@ -48,6 +48,8 @@ export class ChatCommand extends CommandRunner {
       }
     }
 
+    if (!message) options.attach = true;
+
     return this.chatCliUsecases.chat(
       modelId,
       options.threadId,
