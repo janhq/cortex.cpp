@@ -26,7 +26,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-esm",
-    "build:dev": "npx nest build && chmod +x ./dist/src/command.js && npm link"
+    "build:dev": "npx nest build && chmod +x ./dist/src/command.js && npm link",
+    "postinstall": "cortex init -s"
   },
   "dependencies": {
     "@huggingface/gguf": "^0.1.5",

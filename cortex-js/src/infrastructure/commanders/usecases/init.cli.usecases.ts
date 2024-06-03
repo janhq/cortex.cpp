@@ -9,11 +9,13 @@ import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { rm } from 'fs/promises';
+import { exec } from 'child_process';
 
 @Injectable()
 export class InitCliUsecases {
-  CORTEX_RELEASES_URL = 'https://api.github.com/repos/janhq/cortex/releases';
-  CUDA_DOWNLOAD_URL =
+  private readonly CORTEX_RELEASES_URL =
+    'https://api.github.com/repos/janhq/cortex/releases';
+  private readonly CUDA_DOWNLOAD_URL =
     'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
 
   constructor(
@@ -109,7 +111,7 @@ export class InitCliUsecases {
     await rm(destination, { force: true });
   };
 
-  parseEngineFileName = (options: InitOptions) => {
+  parseEngineFileName = (options?: InitOptions) => {
     const platform =
       process.platform === 'win32'
         ? 'windows'
@@ -118,12 +120,14 @@ export class InitCliUsecases {
           : process.platform;
     const arch = process.arch === 'arm64' ? process.arch : 'amd64';
     const cudaVersion =
-      options.runMode === 'GPU'
+      options?.runMode === 'GPU'
         ? options.gpuType === 'Nvidia'
           ? '-cuda-' + (options.cudaVersion === '11' ? '11-7' : '12-0')
           : '-vulkan'
         : '';
-    const instructions = options.instructions ? `-${options.instructions}` : '';
+    const instructions = options?.instructions
+      ? `-${options.instructions}`
+      : '';
     const engineName = `${platform}-${arch}${instructions.toLowerCase()}${cudaVersion}`;
     return `${engineName}.tar.gz`;
   };
@@ -171,10 +175,6 @@ export class InitCliUsecases {
       return '11';
 
     return undefined; // No CUDA Toolkit found
-  };
-
-  checkFileExistenceInPaths = (file: string, paths: string[]): boolean => {
-    return paths.some((p) => existsSync(join(p, file)));
   };
 
   installCudaToolkitDependency = async (options: InitOptions) => {
@@ -231,5 +231,62 @@ export class InitCliUsecases {
       exit(1);
     }
     await rm(destination, { force: true });
+  };
+
+  // Function to check for NVIDIA GPU
+  checkNvidiaGPUExist = (): Promise<boolean> => {
+    return new Promise<boolean>((resolve) => {
+      // Execute the nvidia-smi command
+      exec('nvidia-smi', (error) => {
+        if (error) {
+          // If there's an error, it means nvidia-smi is not installed or there's no NVIDIA GPU
+          console.log('NVIDIA GPU not detected or nvidia-smi not installed.');
+          resolve(false);
+        } else {
+          // If the command executes successfully, NVIDIA GPU is present
+          console.log('NVIDIA GPU detected.');
+          resolve(true);
+        }
+      });
+    });
+  };
+
+  detectInstructions = (): Promise<'AVX' | 'AVX2' | 'AVX512' | undefined> => {
+    return new Promise<'AVX' | 'AVX2' | 'AVX512' | undefined>((res) => {
+      // Execute the cpuinfo command
+
+      exec(
+        join(
+          __dirname,
+          `../../../../bin/cpuinfo${process.platform !== 'linux' ? '.exe' : ''}`,
+        ),
+        (error, stdout) => {
+          if (error) {
+            // If there's an error, it means lscpu is not installed
+            console.log('CPUInfo is not installed.');
+            res('AVX');
+          } else {
+            // If the command executes successfully, parse the output to detect CPU instructions
+            if (stdout.includes('"AVX512": "true"')) {
+              console.log('AVX-512 instructions detected.');
+              res('AVX512');
+            } else if ('"AVX2": "true"') {
+              console.log('AVX2 instructions detected.');
+              res('AVX2');
+            } else {
+              console.log('AVXs instructions detected.');
+              res('AVX');
+            }
+          }
+        },
+      );
+    });
+  };
+
+  private checkFileExistenceInPaths = (
+    file: string,
+    paths: string[],
+  ): boolean => {
+    return paths.some((p) => existsSync(join(p, file)));
   };
 }

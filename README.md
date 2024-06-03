@@ -68,12 +68,7 @@ To install Cortex CLI, follow the steps below:
 npm i -g @janhq/cortex
 ```
 
-2. Initialize a compatible engine:
-``` bash
-cortex init
-```
-
-3. Download a GGUF model from Hugging Face:
+2. Download a GGUF model from Hugging Face:
 ``` bash
 # Pull a model most compatible with your hardware
 cortex pull llama3
@@ -84,12 +79,12 @@ cortex pull llama3:7b
 # Pull a model with the HuggingFace `model_id`
 cortex pull microsoft/Phi-3-mini-4k-instruct-gguf
 ```
-4. Load the model:
+3. Load the model:
 ``` bash
 cortex models start llama3:7b
 ```
 
-5. Start chatting with the model:
+4. Start chatting with the model:
 ``` bash
 cortex chat tell me a joke
 ```
