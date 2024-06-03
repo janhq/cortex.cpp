@@ -25,7 +25,9 @@ export class ModelPullCommand extends CommandRunner {
       exit(1);
     }
 
-    const branches = await this.tryToGetBranches(input[0]);
+    const branches = /[:/]/.test(input[0])
+      ? undefined
+      : await this.tryToGetBranches(input[0]);
 
     if (!branches) {
       await this.modelsCliUsecases.pullModel(input[0]);

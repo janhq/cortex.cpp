@@ -2,7 +2,7 @@
   "name": "@janhq/groq-inference-engine",
   "productName": "Groq Inference Engine",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/extensions/groq/index.js",
   "type": "commonjs",
   "description": "This extension enables Groq chat completion API calls",
   "author": "Jan <service@jan.ai>",

@@ -14,9 +14,6 @@ export class ModelStopCommand extends CommandRunner {
       exit(1);
     }
 
-    await this.modelsCliUsecases
-      .stopModel(input[0])
-      .then(() => this.modelsCliUsecases.stopModel(input[0]))
-      .then(console.log);
+    await this.modelsCliUsecases.stopModel(input[0]).then(console.log);
   }
 }
