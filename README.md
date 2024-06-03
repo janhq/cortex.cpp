@@ -67,7 +67,7 @@ To install Cortex CLI, follow the steps below:
 ``` bash
 npm i -g @janhq/cortex
 ```
-
+> Cortex automatically detects your CPU and GPU, downloading the appropriate CPU instruction sets and required dependencies to optimize GPU performance.
 2. Download a GGUF model from Hugging Face:
 ``` bash
 # Pull a model most compatible with your hardware
