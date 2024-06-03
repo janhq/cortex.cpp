@@ -1,14 +1,7 @@
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
-import { ModelEntity } from '@/infrastructure/entities/model.entity';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import {
-  Model,
-  ModelFormat,
-  ModelRuntimeParams,
-  ModelSettingParams,
-} from '@/domain/models/model.interface';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { join, basename } from 'path';
 import {
@@ -22,17 +15,18 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
-import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-setting-params.dto';
 import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { AxiosError } from 'axios';
+import { ModelRepository } from '@/domain/repositories/model.interface';
+import { ModelDto } from '@/infrastructure/dtos/models/model-successfully-created.dto';
+import { ModelParameterParser } from '@/infrastructure/commanders/utils/model-parameter.parser';
 
 @Injectable()
 export class ModelsUsecases {
   constructor(
-    @Inject('MODEL_REPOSITORY')
-    private readonly modelRepository: Repository<ModelEntity>,
+    private readonly modelRepository: ModelRepository,
     private readonly extensionRepository: ExtensionRepository,
     private readonly fileManagerService: FileManagerService,
     private readonly httpService: HttpService,
@@ -41,23 +35,17 @@ export class ModelsUsecases {
   async create(createModelDto: CreateModelDto) {
     const model: Model = {
       ...createModelDto,
-      object: 'model',
-      created: Date.now(),
     };
 
-    await this.modelRepository.insert(model);
+    await this.modelRepository.create(model);
   }
 
   async findAll(): Promise<Model[]> {
-    return this.modelRepository.find();
+    return this.modelRepository.findAll();
   }
 
-  async findOne(id: string) {
-    return this.modelRepository.findOne({
-      where: {
-        id,
-      },
-    });
+  async findOne(model: string) {
+    return this.modelRepository.findOne(model);
   }
 
   async getModelOrThrow(id: string): Promise<Model> {
@@ -72,45 +60,8 @@ export class ModelsUsecases {
     return this.modelRepository.update(id, updateModelDto);
   }
 
-  async updateModelSettingParams(
-    id: string,
-    settingParams: ModelSettingParams,
-  ): Promise<ModelSettingParams> {
-    const model = await this.getModelOrThrow(id);
-    const currentSettingParams = model.settings;
-    const updateDto: UpdateModelDto = {
-      settings: {
-        ...currentSettingParams,
-        ...settingParams,
-      },
-    };
-    await this.update(id, updateDto);
-    return updateDto.settings ?? {};
-  }
-
-  async updateModelRuntimeParams(
-    id: string,
-    runtimeParams: ModelRuntimeParams,
-  ): Promise<ModelRuntimeParams> {
-    const model = await this.getModelOrThrow(id);
-    const currentRuntimeParams = model.parameters;
-    const updateDto: UpdateModelDto = {
-      parameters: {
-        ...currentRuntimeParams,
-        ...runtimeParams,
-      },
-    };
-    await this.update(id, updateDto);
-    return updateDto.parameters ?? {};
-  }
-
-  private async getModelDirectory(): Promise<string> {
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    return join(dataFolderPath, 'models');
-  }
-
   async remove(id: string) {
-    const modelsContainerDir = await this.getModelDirectory();
+    const modelsContainerDir = await this.fileManagerService.getModelsPath();
     if (!existsSync(modelsContainerDir)) {
       return;
     }
@@ -118,7 +69,7 @@ export class ModelsUsecases {
     const modelFolder = join(modelsContainerDir, normalizeModelId(id));
 
     return this.modelRepository
-      .delete(id)
+      .remove(id)
       .then(() => rmdirSync(modelFolder, { recursive: true }))
       .then(() => {
         return {
@@ -130,7 +81,7 @@ export class ModelsUsecases {
 
   async startModel(
     modelId: string,
-    settings?: ModelSettingParamsDto,
+    settings?: ModelDto,
   ): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];
@@ -145,23 +96,34 @@ export class ModelsUsecases {
       };
     }
 
+    const parser = new ModelParameterParser();
+    const loadModelSettings: ModelSettingParams = {
+      // Default settings
+      ctx_len: 4096,
+      ngl: 100,
+      ...(Array.isArray(model?.files) &&
+        !('llama_model_path' in model) && {
+          llama_model_path: (model.files as string[])[0],
+        }),
+      engine: 'cortex.llamacpp',
+      // User / Model settings
+      ...parser.parseModelEngineSettings(model),
+      ...parser.parseModelEngineSettings(settings ?? {}),
+    };
+
     return engine
-      .loadModel(model, settings)
+      .loadModel(model, loadModelSettings)
       .then(() => ({
         message: 'Model loaded successfully',
         modelId,
       }))
-      .catch((e) =>
-        e.code === AxiosError.ERR_BAD_REQUEST
-          ? {
-              message: 'Model already loaded',
-              modelId,
-            }
-          : {
-              message: 'Model failed to load',
-              modelId,
-            },
-      );
+      .catch((e) => ({
+        message:
+          e.code === AxiosError.ERR_BAD_REQUEST
+            ? 'Model already loaded'
+            : 'Model failed to load',
+        modelId,
+      }));
   }
 
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
@@ -193,23 +155,27 @@ export class ModelsUsecases {
   async downloadModel(modelId: string, callback?: (progress: number) => void) {
     const model = await this.getModelOrThrow(modelId);
 
-    if (model.format === ModelFormat.API) {
-      throw new BadRequestException('Cannot download remote model');
-    }
+    // TODO: We will support splited gguf files in the future
+    // Leave it as is for now (first element of the array)
+    const downloadUrl = Array.isArray(model.files)
+      ? model.files[0]
+      : model.files.llama_model_path;
 
-    const downloadUrl = model.sources[0].url;
+    if (!downloadUrl) {
+      throw new BadRequestException('No model URL provided');
+    }
     if (!this.isValidUrl(downloadUrl)) {
       throw new BadRequestException(`Invalid download URL: ${downloadUrl}`);
     }
 
     const fileName = basename(downloadUrl);
-    const modelsContainerDir = await this.getModelDirectory();
+    const modelsContainerDir = await this.fileManagerService.getModelsPath();
 
     if (!existsSync(modelsContainerDir)) {
       mkdirSync(modelsContainerDir, { recursive: true });
     }
 
-    const modelFolder = join(modelsContainerDir, normalizeModelId(model.id));
+    const modelFolder = join(modelsContainerDir, normalizeModelId(model.model));
     await promises.mkdir(modelFolder, { recursive: true });
     const destination = join(modelFolder, fileName);
 

@@ -1,11 +1,6 @@
 import { exit } from 'node:process';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import {
-  Model,
-  ModelFormat,
-  ModelRuntimeParams,
-  ModelSettingParams,
-} from '@/domain/models/model.interface';
+import { Model } from '@/domain/models/model.interface';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
 import { gguf } from '@huggingface/gguf';
@@ -25,10 +20,12 @@ import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
+import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { FileManagerService } from '@/file-manager/file-manager.service';
-import { join } from 'path';
+import { join, basename } from 'path';
 import { load } from 'js-yaml';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'fs';
+import { normalizeModelId } from '../utils/normalize-model-id';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -60,7 +57,7 @@ export class ModelsCliUsecases {
     @Inject(InquirerService)
     private readonly inquirerService: InquirerService,
     private readonly httpService: HttpService,
-    private readonly fileManagerService: FileManagerService,
+    private readonly fileService: FileManagerService,
   ) {}
 
   /**
@@ -74,7 +71,7 @@ export class ModelsCliUsecases {
     const parsedPreset = await this.parsePreset(preset);
     return this.getModelOrStop(modelId)
       .then((model) => ({
-        ...model.settings,
+        ...model,
         ...parsedPreset,
       }))
       .then((settings) => this.modelsUsecases.startModel(modelId, settings))
@@ -97,29 +94,10 @@ export class ModelsCliUsecases {
   }
 
   /**
-   * Update model's settings. E.g. ngl, prompt_template, etc.
-   * @param modelId
-   * @param settingParams
-   * @returns
+   * Update a model by ID with new data
    */
-  async updateModelSettingParams(
-    modelId: string,
-    settingParams: ModelSettingParams,
-  ): Promise<ModelSettingParams> {
-    return this.modelsUsecases.updateModelSettingParams(modelId, settingParams);
-  }
-
-  /**
-   * Update model's runtime parameters. E.g. max_tokens, temperature, etc.
-   * @param modelId
-   * @param runtimeParams
-   * @returns
-   */
-  async updateModelRuntimeParams(
-    modelId: string,
-    runtimeParams: ModelRuntimeParams,
-  ): Promise<ModelRuntimeParams> {
-    return this.modelsUsecases.updateModelRuntimeParams(modelId, runtimeParams);
+  async updateModel(modelId: string, toUpdate: UpdateModelDto) {
+    return this.modelsUsecases.update(modelId, toUpdate);
   }
 
   /**
@@ -164,34 +142,20 @@ export class ModelsCliUsecases {
     return this.modelsUsecases.remove(modelId);
   }
 
-  async pullModelWithExactUrl(modelId: string, url: string, fileSize: number) {
+  async pullModelWithExactUrl(modelId: string, url: string) {
     const tokenizer = await this.getHFModelTokenizer(url);
     const promptTemplate = tokenizer?.promptTemplate ?? LLAMA_2;
     const stopWords: string[] = [tokenizer?.stopWord ?? ''];
 
     const model: CreateModelDto = {
-      sources: [
-        {
-          url: url,
-        },
-      ],
-      id: modelId,
+      files: [url],
+      model: modelId,
       name: modelId,
-      version: '1.0.0',
-      format: ModelFormat.GGUF,
-      description: '',
-      settings: {
-        prompt_template: promptTemplate,
-      },
-      parameters: {
-        stop: stopWords,
-      },
-      metadata: {
-        author: 'janhq',
-        size: fileSize,
-        tags: [],
-      },
-      engine: 'cortex',
+      prompt_template: promptTemplate,
+
+      stop: stopWords,
+
+      engine: 'cortex.llamacpp',
     };
     if (!(await this.modelsUsecases.findOne(modelId))) {
       await this.modelsUsecases.create(model);
@@ -203,6 +167,12 @@ export class ModelsCliUsecases {
       bar.update(progress);
     };
     await this.modelsUsecases.downloadModel(modelId, callback);
+    const fileUrl = join(
+      await this.fileService.getModelsPath(),
+      normalizeModelId(modelId),
+      basename(url),
+    );
+    await this.modelsUsecases.update(modelId, { files: [fileUrl] });
   }
 
   /**
@@ -218,7 +188,16 @@ export class ModelsCliUsecases {
     const callback = (progress: number) => {
       bar.update(progress);
     };
+
     await this.modelsUsecases.downloadModel(modelId, callback);
+
+    const model = await this.modelsUsecases.findOne(modelId);
+    const fileUrl = join(
+      await this.fileService.getModelsPath(),
+      normalizeModelId(modelId),
+      basename((model?.files as string[])[0]),
+    );
+    await this.modelsUsecases.update(modelId, { files: [fileUrl] });
   }
 
   private async getHFModelTokenizer(
@@ -289,29 +268,24 @@ export class ModelsCliUsecases {
     const stopWords: string[] = [tokenizer?.stopWord ?? ''];
 
     const model: CreateModelDto = {
-      sources: [
-        {
-          url: sibling?.downloadUrl ?? '',
-        },
-      ],
-      id: modelId,
+      files: [sibling.downloadUrl ?? ''],
+      model: modelId,
       name: modelId,
-      version: '',
-      format: ModelFormat.GGUF,
-      description: '',
-      settings: {
-        prompt_template: promptTemplate,
-        llama_model_path: sibling.rfilename,
-      },
-      parameters: {
-        stop: stopWords,
-      },
-      metadata: {
-        author: data.author,
-        size: sibling.fileSize ?? 0,
-        tags: [],
-      },
-      engine: 'cortex',
+      prompt_template: promptTemplate,
+      stop: stopWords,
+
+      // Default Inference Params
+      stream: true,
+      max_tokens: 4098,
+      frequency_penalty: 0.7,
+      presence_penalty: 0.7,
+      temperature: 0.7,
+      top_p: 0.7,
+
+      // Default Model Settings
+      ctx_len: 4096,
+      ngl: 100,
+      engine: 'cortex.llamacpp',
     };
     if (!(await this.modelsUsecases.findOne(modelId)))
       await this.modelsUsecases.create(model);
@@ -456,7 +430,7 @@ export class ModelsCliUsecases {
 
   private async parsePreset(preset?: string): Promise<object> {
     const presetPath = join(
-      await this.fileManagerService.getDataFolderPath(),
+      await this.fileService.getDataFolderPath(),
       'presets',
       `${preset}.yaml`,
     );

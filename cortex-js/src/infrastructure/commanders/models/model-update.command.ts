@@ -1,11 +1,7 @@
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { exit } from 'node:process';
-import { ModelParameterParser } from '../utils/model-parameter.parser';
-import {
-  ModelRuntimeParams,
-  ModelSettingParams,
-} from '@/domain/models/model.interface';
+import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 
 type UpdateOptions = {
   model?: string;
@@ -31,42 +27,13 @@ export class ModelUpdateCommand extends CommandRunner {
       exit(0);
     }
 
-    const parser = new ModelParameterParser();
-    const settingParams: ModelSettingParams = {};
-    const runtimeParams: ModelRuntimeParams = {};
+    const toUpdate: UpdateModelDto = {};
 
     options.forEach((option) => {
       const [key, stringValue] = option.split('=');
-      if (parser.isModelSettingParam(key)) {
-        const value = parser.parse(key, stringValue);
-        // @ts-expect-error did the check so it's safe
-        settingParams[key] = value;
-      } else if (parser.isModelRuntimeParam(key)) {
-        const value = parser.parse(key, stringValue);
-        // @ts-expect-error did the check so it's safe
-        runtimeParams[key] = value;
-      }
+      Object.assign(toUpdate, { key, stringValue });
     });
-
-    if (Object.keys(settingParams).length > 0) {
-      const updatedSettingParams =
-        await this.modelsCliUsecases.updateModelSettingParams(
-          modelId,
-          settingParams,
-        );
-      console.log(
-        'Updated setting params! New setting params:',
-        updatedSettingParams,
-      );
-    }
-
-    if (Object.keys(runtimeParams).length > 0) {
-      await this.modelsCliUsecases.updateModelRuntimeParams(
-        modelId,
-        runtimeParams,
-      );
-      console.log('Updated runtime params! New runtime params:', runtimeParams);
-    }
+    this.modelsCliUsecases.updateModel(modelId, toUpdate);
   }
 
   @Option({

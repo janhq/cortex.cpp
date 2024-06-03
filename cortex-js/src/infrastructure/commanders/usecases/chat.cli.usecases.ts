@@ -15,11 +15,11 @@ import { Thread } from '@/domain/models/thread.interface';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { AssistantsUsecases } from '@/usecases/assistants/assistants.usecases';
 import { CreateThreadAssistantDto } from '@/infrastructure/dtos/threads/create-thread-assistant.dto';
-import { CreateThreadModelInfoDto } from '@/infrastructure/dtos/threads/create-thread-model-info.dto';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import stream from 'stream';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
+import { ModelParameterParser } from '../utils/model-parameter.parser';
 
 @Injectable()
 export class ChatCliUsecases {
@@ -68,11 +68,13 @@ export class ChatCliUsecases {
 
     rl.on('line', sendCompletionMessage.bind(this));
 
-    function sendCompletionMessage(userInput: string) {
+    async function sendCompletionMessage(userInput: string) {
       if (userInput.trim() === this.exitClause) {
         rl.close();
         return;
       }
+
+      const model = await this.modelsUsecases.findOne(modelId);
 
       messages.push({
         content: userInput,
@@ -95,23 +97,64 @@ export class ChatCliUsecases {
       };
       this.messagesUsecases.create(createMessageDto);
 
+      const parser = new ModelParameterParser();
       const chatDto: CreateChatCompletionDto = {
+        // Default results params
         messages,
         model: modelId,
         stream: true,
-        max_tokens: 2048,
+        max_tokens: 4098,
         stop: [],
         frequency_penalty: 0.7,
         presence_penalty: 0.7,
         temperature: 0.7,
         top_p: 0.7,
+
+        // Override with model settings
+        ...parser.parseModelInferenceParams(model),
       };
 
       const decoder = new TextDecoder('utf-8');
 
       this.chatUsecases
         .inference(chatDto, {})
+
         .then((response: stream.Readable) => {
+          // None streaming - json object response
+          if (!chatDto.stream) {
+            const objectData = response as any;
+            const assistantResponse =
+              objectData.choices[0]?.message?.content ?? '';
+
+            stdout.write(assistantResponse);
+            messages.push({
+              content: assistantResponse,
+              role: ChatCompletionRole.Assistant,
+            });
+
+            const createMessageDto: CreateMessageDto = {
+              thread_id: thread.id,
+              role: ChatCompletionRole.Assistant,
+              content: [
+                {
+                  type: ContentType.Text,
+                  text: {
+                    value: assistantResponse,
+                    annotations: [],
+                  },
+                },
+              ],
+              status: MessageStatus.Ready,
+            };
+
+            this.messagesUsecases.create(createMessageDto).then(() => {
+              console.log('\n');
+              if (attach) rl.prompt();
+              else rl.close();
+            });
+            return;
+          }
+          // Streaming
           let assistantResponse: string = '';
 
           response.on('error', (error: any) => {
@@ -194,16 +237,10 @@ export class ChatCliUsecases {
     const assistant = await this.assistantUsecases.findOne('jan');
     if (!assistant) throw new Error('No assistant available');
 
-    const createThreadModel: CreateThreadModelInfoDto = {
-      id: modelId,
-      settings: model.settings,
-      parameters: model.parameters,
-    };
-
     const assistantDto: CreateThreadAssistantDto = {
       assistant_id: assistant.id,
       assistant_name: assistant.name,
-      model: createThreadModel,
+      model: model,
     };
 
     const createThreadDto: CreateThreadDto = {

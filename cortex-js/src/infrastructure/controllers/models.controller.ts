@@ -18,7 +18,6 @@ import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-mode
 import { DownloadModelResponseDto } from '@/infrastructure/dtos/models/download-model.dto';
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
-import { ModelSettingParamsDto } from '../dtos/models/model-setting-params.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
@@ -62,13 +61,10 @@ export class ModelsController {
     description: 'The unique identifier of the model.',
   })
   @Post(':modelId(*)/start')
-  startModel(
-    @Param('modelId') modelId: string,
-    @Body() settings: ModelSettingParamsDto,
-  ) {
+  startModel(@Param('modelId') modelId: string, @Body() model: ModelDto) {
     return this.cortexUsecases
       .startCortex()
-      .then(() => this.modelsUsecases.startModel(modelId, settings));
+      .then(() => this.modelsUsecases.startModel(modelId, model));
   }
 
   @HttpCode(200)

@@ -15,10 +15,9 @@ export class ModelListCommand extends CommandRunner {
     option.format === 'table'
       ? console.table(
           models.map((e) => ({
-            id: e.id,
+            id: e.model,
             engine: e.engine,
-            format: e.format,
-            created: e.created,
+            version: e.version,
           })),
         )
       : console.log(models);

@@ -7,6 +7,7 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
+import { ModelRepositoryModule } from './infrastructure/repositories/model/model.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
@@ -31,6 +32,7 @@ import { FileManagerModule } from './file-manager/file-manager.module';
     CortexModule,
     ExtensionModule,
     FileManagerModule,
+    ModelRepositoryModule,
   ],
   providers: [SeedService],
 })

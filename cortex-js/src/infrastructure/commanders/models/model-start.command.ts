@@ -49,7 +49,7 @@ export class ModelStartCommand extends CommandRunner {
       message: 'Select a model to start:',
       choices: models.map((e) => ({
         name: e.name,
-        value: e.id,
+        value: e.model,
       })),
     });
     return model;

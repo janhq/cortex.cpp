@@ -40,7 +40,7 @@ export class PSCliUsecases {
                         currentTime.getTime() - new Date(startTime).getTime();
                       return {
                         modelId: e.id,
-                        engine: e.engine ?? 'llama.cpp', // TODO: get engine from model when it's ready
+                        engine: e.engine ?? 'cortex.llamacpp',
                         status: 'running',
                         duration: this.formatDuration(duration),
                         ram: e.ram ?? '-',

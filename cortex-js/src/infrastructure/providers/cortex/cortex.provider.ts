@@ -25,47 +25,46 @@ export default class CortexProvider extends OAIEngineExtension {
     super(httpService);
   }
 
-  private async getModelDirectory(): Promise<string> {
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    return join(dataFolderPath, 'models');
-  }
-
   override async loadModel(
     model: Model,
     settings?: ModelSettingParams,
   ): Promise<void> {
-    const modelsContainerDir = await this.getModelDirectory();
+    const modelsContainerDir = await this.fileManagerService.getModelsPath();
 
-    const modelFolderFullPath = join(
-      modelsContainerDir,
-      normalizeModelId(model.id),
-    );
-    const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
-      return file.endsWith('.gguf');
-    });
+    let llama_model_path = settings?.llama_model_path;
+    if (!llama_model_path) {
+      const modelFolderFullPath = join(
+        modelsContainerDir,
+        normalizeModelId(model.model),
+      );
+      const ggufFiles = readdirSync(modelFolderFullPath).filter((file) => {
+        return file.endsWith('.gguf');
+      });
 
-    if (ggufFiles.length === 0) {
-      throw new Error('Model binary not found');
+      if (ggufFiles.length === 0) {
+        throw new Error('Model binary not found');
+      }
+
+      const modelBinaryLocalPath = join(modelFolderFullPath, ggufFiles[0]);
+      llama_model_path = modelBinaryLocalPath;
     }
-
-    const modelBinaryLocalPath = join(modelFolderFullPath, ggufFiles[0]);
 
     const cpuThreadCount = 1; // TODO: Math.max(1, nitroResourceProbe.numCpuPhysicalCore);
     const modelSettings = {
       // This is critical and requires real CPU physical core count (or performance core)
-      model: model.id,
       cpu_threads: cpuThreadCount,
-      ...model.settings,
+      ...model,
       ...settings,
-      llama_model_path: modelBinaryLocalPath,
-      ...(model.settings.mmproj && {
-        mmproj: join(modelFolderFullPath, model.settings.mmproj),
-      }),
+      llama_model_path,
+      ...('mmproj' in model.files &&
+        model.files.mmproj && {
+          mmproj: settings?.mmproj,
+        }),
     };
 
     // Convert settings.prompt_template to system_prompt, user_prompt, ai_prompt
-    if (model.settings.prompt_template) {
-      const promptTemplate = model.settings.prompt_template;
+    if (model.prompt_template) {
+      const promptTemplate = model.prompt_template;
       const prompt = this.promptTemplateConverter(promptTemplate);
       if (prompt?.error) {
         throw new Error(prompt.error);

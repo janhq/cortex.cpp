@@ -1,92 +1,108 @@
+import { Model } from '@/domain/models/model.interface';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsBoolean, IsNumber, IsOptional } from 'class-validator';
 
-export class ModelDto {
-  @ApiProperty({
-    example:
-      'https://huggingface.co/janhq/trinity-v1.2-GGUF/resolve/main/trinity-v1.2.Q4_K_M.gguf',
-    description: 'URL to the source of the model.',
-  })
-  source_url: string;
-
-  @ApiProperty({
-    example: 'trinity-v1.2-7b',
-    description:
-      'Unique identifier used in chat-completions model_name, matches folder name.',
-  })
-  id: string;
-
-  @ApiProperty({ example: 'model' })
-  object: string;
-
-  @ApiProperty({
-    example: 'Trinity-v1.2 7B Q4',
-    description: 'Name of the model.',
-  })
-  name: string;
-
-  @ApiProperty({
-    default: '1.0',
-    description: 'The version number of the model.',
-  })
-  version: string;
-
-  @ApiProperty({
-    example:
-      'Trinity is an experimental model merge using the Slerp method. Recommended for daily assistance purposes.',
-    description: 'Description of the model.',
-  })
-  description: string;
-
-  @ApiProperty({
-    example: 'gguf',
-    description: 'State format of the model, distinct from the engine.',
-  })
-  format: string;
-
-  @ApiProperty({ description: 'Context length.', example: 4096 })
-  ctx_len: number;
-
+export class ModelDto implements Partial<Model> {
+  // Prompt Settings
   @ApiProperty({
     example: 'system\n{system_message}\nuser\n{prompt}\nassistant',
+    description:
+      "A predefined text or framework that guides the AI model's response generation.",
   })
-  prompt_template: string;
-
-  @ApiProperty({ example: 0.7 })
-  temperature: number;
-
-  @ApiProperty({ example: 0.95 })
-  top_p: number;
-
-  @ApiProperty({ example: true })
-  stream: boolean;
-
-  @ApiProperty({ example: 4096 })
-  max_tokens: number;
-
-  @ApiProperty({ type: [String], example: [] })
-  stop: string[];
-
-  @ApiProperty({ example: 0 })
-  frequency_penalty: number;
-
-  @ApiProperty({ example: 0 })
-  presence_penalty: number;
-
-  @ApiProperty({ example: 'Jan' })
-  author: string;
-
-  @ApiProperty({ type: [String], example: ['7B', 'Merged', 'Featured'] })
-  tags: string[];
-
-  @ApiProperty({ example: 4370000000 })
-  size: number;
+  @IsOptional()
+  prompt_template?: string;
 
   @ApiProperty({
-    example:
-      'https://raw.githubusercontent.com/janhq/jan/main/models/trinity-v1.2-7b/cover.png',
+    type: [String],
+    example: [],
+    description:
+      'Defines specific tokens or phrases that signal the model to stop producing further output.',
   })
-  cover: string;
+  @IsArray()
+  @IsOptional()
+  stop?: string[];
 
-  @ApiProperty({ example: 'cortex' })
-  engine: string;
+  // Results Preferences
+
+  @ApiProperty({
+    example: 4096,
+    description:
+      'Sets the upper limit on the number of tokens the model can generate in a single output.',
+  })
+  @IsOptional()
+  @IsNumber()
+  max_tokens?: number;
+
+  @ApiProperty({
+    example: 0.7,
+    description: "Influences the randomness of the model's output.",
+  })
+  @IsOptional()
+  @IsNumber()
+  temperature?: number;
+
+  @ApiProperty({
+    example: 0.95,
+    description: 'Sets probability threshold for more relevant outputs',
+  })
+  @IsOptional()
+  @IsNumber()
+  top_p?: number;
+
+  @ApiProperty({
+    example: true,
+    description:
+      'Determines the format for output generation. If set to `true`, the output is generated continuously, allowing for real-time streaming of responses. If set to `false`, the output is delivered in a single JSON file.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  stream?: boolean;
+
+  @ApiProperty({
+    example: 0,
+    description:
+      'Modifies the likelihood of the model repeating the same words or phrases within a single output.',
+  })
+  @IsOptional()
+  @IsNumber()
+  frequency_penalty?: number;
+
+  @ApiProperty({
+    example: 0,
+    description:
+      'Reduces the likelihood of repeating tokens, promoting novelty in the output.',
+  })
+  @IsOptional()
+  @IsNumber()
+  presence_penalty?: number;
+
+  // Engine Settings
+  @ApiProperty({ description: 'Determines GPU layer usage.', example: 4096 })
+  @IsOptional()
+  @IsNumber()
+  ngl?: number;
+
+  @ApiProperty({
+    description:
+      'The context length for model operations varies; the maximum depends on the specific model used.',
+    example: 4096,
+  })
+  @IsOptional()
+  @IsNumber()
+  ctx_len?: number;
+
+  @ApiProperty({
+    description:
+      'Determines CPU inference threads, limited by hardware and OS. ',
+  })
+  @IsOptional()
+  @IsNumber()
+  cpu_threads?: number;
+
+  @ApiProperty({
+    example: 'cortex.llamacpp',
+    description: 'The engine to use.',
+  })
+  @IsOptional()
+  engine?: string;
 }

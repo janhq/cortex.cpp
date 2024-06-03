@@ -101,14 +101,12 @@ export class ModelPullCommand extends CommandRunner {
 
     const repo: RepoDesignation = { type: 'model', name: sanitizedRepoName };
     let ggufUrl: string | undefined = undefined;
-    let fileSize = 0;
     for await (const fileInfo of listFiles({
       repo: repo,
       revision: revision,
     })) {
       if (fileInfo.path.endsWith('.gguf')) {
         ggufUrl = `https://huggingface.co/${sanitizedRepoName}/resolve/${revision}/${fileInfo.path}`;
-        fileSize = fileInfo.size;
         break;
       }
     }
@@ -121,7 +119,6 @@ export class ModelPullCommand extends CommandRunner {
     await this.modelsCliUsecases.pullModelWithExactUrl(
       `${sanitizedRepoName}/${revision}`,
       ggufUrl,
-      fileSize,
     );
   }
 }

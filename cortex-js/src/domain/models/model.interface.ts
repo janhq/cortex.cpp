@@ -1,21 +1,6 @@
-/**
- * Represents the information about a model.
- * @stored
- */
-export interface ModelInfo {
-  id: string;
-  settings: ModelSettingParams;
-  parameters: ModelRuntimeParams;
-  engine?: string;
-}
-
 export interface ModelArtifact {
-  url: string;
-}
-
-export enum ModelFormat {
-  GGUF = 'gguf',
-  API = 'api',
+  mmproj?: string;
+  llama_model_path?: string;
 }
 
 /**
@@ -24,64 +9,91 @@ export enum ModelFormat {
  */
 export interface Model {
   /**
-   * The type of the object.
-   * Default: "model"
+   * Model identifier.
    */
-  object: string;
+  model: string;
 
   /**
-   * The version of the model.
+   * GGUF metadata: general.name
    */
-  version: string;
+  name?: string;
 
   /**
-   * The format of the model.
+   * GGUF metadata: version
    */
-  format: ModelFormat;
+  version?: string;
 
   /**
    * The model download source. It can be an external url or a local filepath.
    */
-  sources: ModelArtifact[];
+  files: string[] | ModelArtifact;
 
   /**
-   * The model identifier, which can be referenced in the API endpoints.
+   * GGUF metadata: tokenizer.chat_template
    */
-  id: string;
+  prompt_template?: string;
 
   /**
-   * Human-readable name that is used for UI.
+   * Defines specific tokens or phrases at which the model will stop generating further output.
    */
-  name: string;
+  stop?: string[];
+
+  /// Inferencing
+  /**
+   * Set probability threshold for more relevant outputs.
+   */
+  top_p?: number;
 
   /**
-   * The Unix timestamp (in seconds) for when the model was created
+   * Controls the randomness of the model’s output.
    */
-  created: number;
+  temperature?: number;
 
   /**
-   * Default: "A cool model from Huggingface"
+   * Adjusts the likelihood of the model repeating words or phrases in its output.
    */
-  description: string;
+  frequency_penalty?: number;
 
   /**
-   * The model settings.
+   * Influences the generation of new and varied concepts in the model’s output.
    */
-  settings: ModelSettingParams;
+  presence_penalty?: number;
+
+  /// Engines
+  /**
+   * The context length for model operations varies; the maximum depends on the specific model used.
+   */
+  ctx_len?: number;
 
   /**
-   * The model runtime parameters.
+   * Enable real-time data processing for faster predictions.
    */
-  parameters: ModelRuntimeParams;
+  stream?: boolean;
+
+  /*
+   * The maximum number of tokens the model will generate in a single response.
+   */
+  max_tokens?: number;
 
   /**
-   * Metadata of the model.
+   * The number of layers to load onto the GPU for acceleration.
    */
-  metadata: ModelMetadata;
+  ngl?: number;
+
+  /**
+   * The number of parallel operations. Only set when enable continuous batching.
+   */
+  n_parallel?: number;
+
+  /**
+   * Determines CPU inference threads, limited by hardware and OS. (Maximum determined by system)
+   */
+  cpu_threads?: number;
+
   /**
    * The model engine.
    */
-  engine: string;
+  engine?: string;
 }
 
 export interface ModelMetadata {
@@ -109,6 +121,8 @@ export interface ModelSettingParams {
   cont_batching?: boolean;
   vision_model?: boolean;
   text_model?: boolean;
+  engine?: string;
+  stop?: string[];
 }
 
 /**
@@ -133,8 +147,3 @@ export interface ModelRuntimeParams {
 export type ModelInitFailed = Model & {
   error: Error;
 };
-
-export interface NitroModelSettings extends ModelSettingParams {
-  llama_model_path: string;
-  cpu_threads: number;
-}
