@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { MessagesModule } from './usecases/messages/messages.module';
 import { ThreadsModule } from './usecases/threads/threads.module';
 import { ModelsModule } from './usecases/models/models.module';
@@ -12,6 +12,7 @@ import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
 import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './file-manager/file-manager.module';
+import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
 
 @Module({
   imports: [
@@ -34,4 +35,8 @@ import { FileManagerModule } from './file-manager/file-manager.module';
   ],
   providers: [SeedService],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(AppLoggerMiddleware).forRoutes('*');
+  }
+}
