@@ -1,5 +1,5 @@
 import { FileManagerService } from '@/file-manager/file-manager.service';
-import { databaseFile } from 'constant';
+import { databaseFile } from '@/../constant';
 import { join } from 'path';
 import { DataSource } from 'typeorm';
 

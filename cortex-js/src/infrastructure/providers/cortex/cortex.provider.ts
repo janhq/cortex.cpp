@@ -4,7 +4,7 @@ import { PromptTemplate } from '@/domain/models/prompt-template.interface';
 import { join } from 'path';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
-import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { defaultCortexCppHost, defaultCortexCppPort } from '@/../constant';
 import { readdirSync } from 'node:fs';
 import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
