@@ -15,14 +15,7 @@ import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.
 import { ListMessagesResponseDto } from '@/infrastructure/dtos/messages/list-message.dto';
 import { GetMessageResponseDto } from '@/infrastructure/dtos/messages/get-message.dto';
 import { DeleteMessageResponseDto } from '@/infrastructure/dtos/messages/delete-message.dto';
-import {
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiParam,
-  ApiTags,
-  ApiResponse
-} from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 
 @ApiTags('Messages')
@@ -37,7 +30,10 @@ export class MessagesController {
     description: 'The message has been successfully created.',
     type: CreateMessageDto,
   })
-  @ApiOperation({ summary: 'Create message', description: "Creates a message in a thread." })
+  @ApiOperation({
+    summary: 'Create message',
+    description: 'Creates a message in a thread.',
+  })
   @Post()
   create(@Body() createMessageDto: CreateMessageDto) {
     return this.messagesUsecases.create(createMessageDto);
@@ -49,7 +45,10 @@ export class MessagesController {
     description: 'Ok',
     type: ListMessagesResponseDto,
   })
-  @ApiOperation({ summary: 'List messages', description: "Retrieves all the messages in a thread." })
+  @ApiOperation({
+    summary: 'List messages',
+    description: 'Retrieves all the messages in a thread.',
+  })
   @Get()
   findAll() {
     return this.messagesUsecases.findAll();
@@ -61,8 +60,15 @@ export class MessagesController {
     description: 'Ok',
     type: GetMessageResponseDto,
   })
-  @ApiOperation({ summary: 'Retrieve message', description: "Retrieves a specific message defined by a message's `id`." })
-  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
+  @ApiOperation({
+    summary: 'Retrieve message',
+    description: "Retrieves a specific message defined by a message's `id`.",
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The unique identifier of the message.',
+  })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.messagesUsecases.findOne(id);
@@ -74,8 +80,15 @@ export class MessagesController {
     description: 'The message has been successfully updated.',
     type: UpdateMessageDto,
   })
-  @ApiOperation({ summary: 'Update message', description: "Updates a specific message defined by a message's `id`." })
-  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
+  @ApiOperation({
+    summary: 'Update message',
+    description: "Updates a specific message defined by a message's `id`.",
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The unique identifier of the message.',
+  })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateMessageDto: UpdateMessageDto) {
     return this.messagesUsecases.update(id, updateMessageDto);
@@ -87,8 +100,15 @@ export class MessagesController {
     description: 'Successfully deleted the message.',
     type: DeleteMessageResponseDto,
   })
-  @ApiOperation({ summary: 'Delete message', description: "Deletes a specific message defined by a message's `id`." })
-  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the message." })
+  @ApiOperation({
+    summary: 'Delete message',
+    description: "Deletes a specific message defined by a message's `id`.",
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The unique identifier of the message.',
+  })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.messagesUsecases.remove(id);

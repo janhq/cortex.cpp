@@ -16,7 +16,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
-  ApiResponse
+  ApiResponse,
 } from '@nestjs/swagger';
 import { AssistantEntity } from '../entities/assistant.entity';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
@@ -41,7 +41,8 @@ export class AssistantsController {
 
   @ApiOperation({
     summary: 'List assistants',
-    description: 'Retrieves all the available assistants along with their settings.',
+    description:
+      'Retrieves all the available assistants along with their settings.',
   })
   @ApiOkResponse({
     description: 'Ok',
@@ -54,13 +55,18 @@ export class AssistantsController {
 
   @ApiOperation({
     summary: 'Get assistant',
-    description: "Retrieves a specific assistant defined by an assistant's `id`.",
+    description:
+      "Retrieves a specific assistant defined by an assistant's `id`.",
   })
   @ApiOkResponse({
     description: 'Ok',
     type: AssistantEntity,
   })
-  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the assistant." })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The unique identifier of the assistant.',
+  })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.assistantsService.findOne(id);
@@ -75,7 +81,11 @@ export class AssistantsController {
     description: 'The assistant has been successfully deleted.',
     type: DeleteAssistantResponseDto,
   })
-  @ApiParam({ name: 'id', required: true, description: "The unique identifier of the assistant." })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The unique identifier of the assistant.',
+  })
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.assistantsService.remove(id);
