@@ -5,19 +5,21 @@ import { ModelSettingParamsDto } from '@/infrastructure/dtos/models/model-settin
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateThreadModelInfoDto implements ModelInfo {
-  @ApiProperty({description: "The unique identifier of the thread."})
+  @ApiProperty({ description: 'The unique identifier of the thread.' })
   @IsString()
   id: string;
 
-  @ApiProperty({description: "The settings of the thread."})
+  @ApiProperty({ description: 'The settings of the thread.' })
   @ValidateNested()
   settings: ModelSettingParamsDto;
 
-  @ApiProperty({description: "The parameters of the thread."})
+  @ApiProperty({ description: 'The parameters of the thread.' })
   @ValidateNested()
   parameters: ModelRuntimeParamsDto;
 
-  @ApiProperty({description: "The engine used in the thread to operate the model."})
+  @ApiProperty({
+    description: 'The engine used in the thread to operate the model.',
+  })
   @IsOptional()
   @IsString()
   engine?: string;

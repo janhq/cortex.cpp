@@ -25,6 +25,10 @@ import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
+import { FileManagerService } from '@/file-manager/file-manager.service';
+import { join } from 'path';
+import { load } from 'js-yaml';
+import { existsSync, readFileSync } from 'node:fs';
 
 const AllQuantizations = [
   'Q3_K_S',
@@ -56,15 +60,24 @@ export class ModelsCliUsecases {
     @Inject(InquirerService)
     private readonly inquirerService: InquirerService,
     private readonly httpService: HttpService,
+    private readonly fileManagerService: FileManagerService,
   ) {}
 
   /**
    * Start a model by ID
    * @param modelId
    */
-  async startModel(modelId: string): Promise<StartModelSuccessDto> {
+  async startModel(
+    modelId: string,
+    preset?: string,
+  ): Promise<StartModelSuccessDto> {
+    const parsedPreset = await this.parsePreset(preset);
     return this.getModelOrStop(modelId)
-      .then(() => this.modelsUsecases.startModel(modelId))
+      .then((model) => ({
+        ...model.settings,
+        ...parsedPreset,
+      }))
+      .then((settings) => this.modelsUsecases.startModel(modelId, settings))
       .catch(() => {
         return {
           modelId: modelId,
@@ -164,7 +177,7 @@ export class ModelsCliUsecases {
       ],
       id: modelId,
       name: modelId,
-      version: '',
+      version: '1.0.0',
       format: ModelFormat.GGUF,
       description: '',
       settings: {
@@ -439,5 +452,17 @@ export class ModelsCliUsecases {
 
   private getRepoModelsUrl(repoId: string, tree?: string): string {
     return `https://huggingface.co/api/models/${repoId}${tree ? `/tree/${tree}` : ''}`;
+  }
+
+  private async parsePreset(preset?: string): Promise<object> {
+    const presetPath = join(
+      await this.fileManagerService.getDataFolderPath(),
+      'presets',
+      `${preset}.yaml`,
+    );
+    if (!preset || !existsSync(presetPath)) return {};
+    return preset
+      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
+      : {};
   }
 }

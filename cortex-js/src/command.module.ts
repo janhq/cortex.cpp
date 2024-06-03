@@ -26,6 +26,7 @@ import { MessagesModule } from './usecases/messages/messages.module';
 import { FileManagerModule } from './file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
+import { PresetCommand } from './infrastructure/commanders/presets.command';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { KillCommand } from './infrastructure/commanders/kill.command';
     InitCommand,
     PSCommand,
     KillCommand,
+    PresetCommand,
 
     // Questions
     InitRunModeQuestions,

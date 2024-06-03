@@ -8,6 +8,7 @@ import { ModelPullCommand } from './models/model-pull.command';
 import { PSCommand } from './ps.command';
 import { KillCommand } from './kill.command';
 import pkg from '@/../package.json';
+import { PresetCommand } from './presets.command';
 
 interface CortexCommandOptions {
   version: boolean;
@@ -22,6 +23,7 @@ interface CortexCommandOptions {
     ModelPullCommand,
     PSCommand,
     KillCommand,
+    PresetCommand,
   ],
   description: 'Cortex CLI',
 })

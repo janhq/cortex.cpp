@@ -12,6 +12,7 @@ import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 
 type RunOptions = {
   threadId?: string;
+  preset?: string;
 };
 
 @SubCommand({
@@ -28,7 +29,7 @@ export class RunCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[], option?: RunOptions): Promise<void> {
+  async run(input: string[], options: RunOptions): Promise<void> {
     let modelId = input[0];
     if (!modelId) {
       try {
@@ -41,8 +42,8 @@ export class RunCommand extends CommandRunner {
 
     return this.cortexUsecases
       .startCortex(false, defaultCortexCppHost, defaultCortexCppPort)
-      .then(() => this.modelsCliUsecases.startModel(modelId))
-      .then(() => this.chatCliUsecases.chat(modelId, option?.threadId));
+      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
+      .then(() => this.chatCliUsecases.chat(modelId, options.threadId));
   }
 
   @Option({
@@ -50,6 +51,14 @@ export class RunCommand extends CommandRunner {
     description: 'Thread Id. If not provided, will create new thread',
   })
   parseThreadId(value: string) {
+    return value;
+  }
+
+  @Option({
+    flags: '-p, --preset <preset>',
+    description: 'Apply a chat preset to the chat session',
+  })
+  parseTemplate(value: string) {
     return value;
   }
 

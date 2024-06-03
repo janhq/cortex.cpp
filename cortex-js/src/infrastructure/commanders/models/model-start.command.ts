@@ -10,6 +10,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 type ModelStartOptions = {
   attach: boolean;
+  preset?: string;
 };
 @SubCommand({ name: 'start', description: 'Start a model by ID.' })
 export class ModelStartCommand extends CommandRunner {
@@ -34,7 +35,7 @@ export class ModelStartCommand extends CommandRunner {
 
     await this.cortexUsecases
       .startCortex(options.attach)
-      .then(() => this.modelsCliUsecases.startModel(modelId))
+      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
       .then(console.log)
       .then(() => !options.attach && process.exit(0));
   }
@@ -62,5 +63,13 @@ export class ModelStartCommand extends CommandRunner {
   })
   parseAttach() {
     return true;
+  }
+
+  @Option({
+    flags: '-p, --preset <preset>',
+    description: 'Apply a chat preset to the chat session',
+  })
+  parseTemplate(value: string) {
+    return value;
   }
 }
