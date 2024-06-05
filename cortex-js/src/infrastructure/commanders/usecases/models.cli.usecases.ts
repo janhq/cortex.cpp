@@ -146,6 +146,8 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async pullModel(modelId: string) {
+    modelId = /[:/]/.test(modelId) ? modelId : `${modelId}:default`;
+
     const existingModel = await this.modelsUsecases.findOne(modelId);
     if (
       existingModel &&
@@ -156,7 +158,7 @@ export class ModelsCliUsecases {
       process.exit(1);
     }
 
-    if (modelId.includes('/') || modelId.includes(':')) {
+    if (/[:/]/.test(modelId)) {
       await this.pullHuggingFaceModel(modelId);
     }
     const bar = new SingleBar({}, Presets.shades_classic);
