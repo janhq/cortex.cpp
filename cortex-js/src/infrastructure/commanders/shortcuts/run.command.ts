@@ -9,6 +9,7 @@ import { exit } from 'node:process';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
 import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { isLocalModel } from '../utils/normalize-model-id';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
 type RunOptions = {
@@ -77,9 +78,7 @@ export class RunCommand extends CommandRunner {
 
   modelInquiry = async () => {
     const models = (await this.modelsCliUsecases.listAllModels()).filter(
-      (model) =>
-        Array.isArray(model.files) &&
-        !/^(http|https):\/\/[^/]+\/.*/.test(model.files[0]),
+      (model) => isLocalModel(model.files),
     );
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({

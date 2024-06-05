@@ -2,7 +2,10 @@ import { exit } from 'node:process';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { Model } from '@/domain/models/model.interface';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
-import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
+import {
+  AllQuantizations,
+  HuggingFaceRepoData,
+} from '@/domain/models/huggingface.interface';
 import { gguf } from '@huggingface/gguf';
 import { InquirerService } from 'nest-commander';
 import { Inject, Injectable } from '@nestjs/common';
@@ -15,7 +18,7 @@ import {
   OPEN_CHAT_3_5_JINJA,
   ZEPHYR,
   ZEPHYR_JINJA,
-} from '../prompt-constants';
+} from '../constants/prompt-constants';
 import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -25,30 +28,7 @@ import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join, basename } from 'path';
 import { load } from 'js-yaml';
 import { existsSync, readFileSync } from 'fs';
-import { normalizeModelId } from '../utils/normalize-model-id';
-
-const AllQuantizations = [
-  'Q3_K_S',
-  'Q3_K_M',
-  'Q3_K_L',
-  'Q4_K_S',
-  'Q4_K_M',
-  'Q5_K_S',
-  'Q5_K_M',
-  'Q4_0',
-  'Q4_1',
-  'Q5_0',
-  'Q5_1',
-  'IQ2_XXS',
-  'IQ2_XS',
-  'Q2_K',
-  'Q2_K_S',
-  'Q6_K',
-  'Q8_0',
-  'F16',
-  'F32',
-  'COPY',
-];
+import { isLocalModel, normalizeModelId } from '../utils/normalize-model-id';
 
 @Injectable()
 export class ModelsCliUsecases {
@@ -149,11 +129,7 @@ export class ModelsCliUsecases {
     modelId = /[:/]/.test(modelId) ? modelId : `${modelId}:default`;
 
     const existingModel = await this.modelsUsecases.findOne(modelId);
-    if (
-      existingModel &&
-      Array.isArray(existingModel.files) &&
-      !/^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
-    ) {
+    if (isLocalModel(existingModel?.files)) {
       console.error('Model already exists');
       process.exit(1);
     }
