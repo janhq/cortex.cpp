@@ -33,6 +33,16 @@ export class ModelStartCommand extends CommandRunner {
       }
     }
 
+    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    if (
+      !existingModel ||
+      !Array.isArray(existingModel.files) ||
+      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
+    ) {
+      console.error('Model is not available. Please pull the model first.');
+      process.exit(1);
+    }
+
     await this.cortexUsecases
       .startCortex(options.attach)
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
@@ -41,7 +51,11 @@ export class ModelStartCommand extends CommandRunner {
   }
 
   modelInquiry = async () => {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const models = (await this.modelsCliUsecases.listAllModels()).filter(
+      (model) =>
+        Array.isArray(model.files) &&
+        !/^(http|https):\/\/[^/]+\/.*/.test(model.files[0]),
+    );
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',

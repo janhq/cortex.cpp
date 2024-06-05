@@ -105,7 +105,7 @@ export class ModelsCliUsecases {
    * @param modelId
    * @returns
    */
-  private async getModelOrStop(modelId: string): Promise<Model> {
+  async getModelOrStop(modelId: string): Promise<Model> {
     const model = await this.modelsUsecases.findOne(modelId);
     if (!model) {
       console.debug('Model not found');
@@ -127,9 +127,8 @@ export class ModelsCliUsecases {
    * @param modelId
    * @returns
    */
-  async getModel(modelId: string): Promise<Model> {
-    const model = await this.getModelOrStop(modelId);
-    return model;
+  async getModel(modelId: string): Promise<Model | null> {
+    return this.modelsUsecases.findOne(modelId);
   }
 
   /**
@@ -147,7 +146,12 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async pullModel(modelId: string) {
-    if (await this.modelsUsecases.findOne(modelId)) {
+    const existingModel = await this.modelsUsecases.findOne(modelId);
+    if (
+      existingModel &&
+      Array.isArray(existingModel.files) &&
+      !/^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
+    ) {
       console.error('Model already exists');
       process.exit(1);
     }
@@ -161,15 +165,20 @@ export class ModelsCliUsecases {
       bar.update(progress);
     };
 
-    await this.modelsUsecases.downloadModel(modelId, callback);
+    try {
+      await this.modelsUsecases.downloadModel(modelId, callback);
 
-    const model = await this.modelsUsecases.findOne(modelId);
-    const fileUrl = join(
-      await this.fileService.getModelsPath(),
-      normalizeModelId(modelId),
-      basename((model?.files as string[])[0]),
-    );
-    await this.modelsUsecases.update(modelId, { files: [fileUrl] });
+      const model = await this.modelsUsecases.findOne(modelId);
+      const fileUrl = join(
+        await this.fileService.getModelsPath(),
+        normalizeModelId(modelId),
+        basename((model?.files as string[])[0]),
+      );
+      await this.modelsUsecases.update(modelId, { files: [fileUrl] });
+    } catch (err) {
+      bar.stop();
+      throw err;
+    }
   }
 
   private async getHFModelTokenizer(

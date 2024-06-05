@@ -2,6 +2,7 @@ import { CommandRunner, InquirerService, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { RepoDesignation, listFiles } from '@huggingface/hub';
+import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
 @SubCommand({
   name: 'pull',
@@ -28,9 +29,16 @@ export class ModelPullCommand extends CommandRunner {
       ? undefined
       : await this.tryToGetBranches(input[0]);
 
-    await this.modelsCliUsecases.pullModel(
-      !branches ? input[0] : await this.handleJanHqModel(input[0], branches),
-    );
+    await this.modelsCliUsecases
+      .pullModel(
+        !branches ? input[0] : await this.handleJanHqModel(input[0], branches),
+      )
+      .catch((e: Error) => {
+        if (e instanceof ModelNotFoundException)
+          console.error('Model does not exist.');
+        else console.error(e);
+        exit(1);
+      });
 
     console.log('\nDownload complete!');
     exit(0);
