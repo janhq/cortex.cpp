@@ -142,39 +142,6 @@ export class ModelsCliUsecases {
     return this.modelsUsecases.remove(modelId);
   }
 
-  async pullModelWithExactUrl(modelId: string, url: string) {
-    const tokenizer = await this.getHFModelTokenizer(url);
-    const promptTemplate = tokenizer?.promptTemplate ?? LLAMA_2;
-    const stopWords: string[] = [tokenizer?.stopWord ?? ''];
-
-    const model: CreateModelDto = {
-      files: [url],
-      model: modelId,
-      name: modelId,
-      prompt_template: promptTemplate,
-
-      stop: stopWords,
-
-      engine: 'cortex.llamacpp',
-    };
-    if (!(await this.modelsUsecases.findOne(modelId))) {
-      await this.modelsUsecases.create(model);
-    }
-
-    const bar = new SingleBar({}, Presets.shades_classic);
-    bar.start(100, 0);
-    const callback = (progress: number) => {
-      bar.update(progress);
-    };
-    await this.modelsUsecases.downloadModel(modelId, callback);
-    const fileUrl = join(
-      await this.fileService.getModelsPath(),
-      normalizeModelId(modelId),
-      basename(url),
-    );
-    await this.modelsUsecases.update(modelId, { files: [fileUrl] });
-  }
-
   /**
    * Pull model from Model repository (HF, Jan...)
    * @param modelId

@@ -2,7 +2,6 @@ import { CommandRunner, InquirerService, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { RepoDesignation, listFiles } from '@huggingface/hub';
-import { basename } from 'node:path';
 
 @SubCommand({
   name: 'pull',
@@ -29,12 +28,9 @@ export class ModelPullCommand extends CommandRunner {
       ? undefined
       : await this.tryToGetBranches(input[0]);
 
-    if (!branches) {
-      await this.modelsCliUsecases.pullModel(input[0]);
-    } else {
-      // if there's metadata.yaml file, we assumed it's a JanHQ model
-      await this.handleJanHqModel(input[0], branches);
-    }
+    await this.modelsCliUsecases.pullModel(
+      !branches ? input[0] : await this.handleJanHqModel(input[0], branches),
+    );
 
     console.log('\nDownload complete!');
     exit(0);
@@ -83,10 +79,6 @@ export class ModelPullCommand extends CommandRunner {
   }
 
   private async handleJanHqModel(repoName: string, branches: string[]) {
-    const sanitizedRepoName = repoName.trim().startsWith(this.janHqModelPrefix)
-      ? repoName
-      : `${this.janHqModelPrefix}/${repoName}`;
-
     let selectedTag = branches[0];
 
     if (branches.length > 1) {
@@ -98,27 +90,7 @@ export class ModelPullCommand extends CommandRunner {
       console.error("Can't find model revision.");
       exit(1);
     }
-
-    const repo: RepoDesignation = { type: 'model', name: sanitizedRepoName };
-    let ggufUrl: string | undefined = undefined;
-    for await (const fileInfo of listFiles({
-      repo: repo,
-      revision: revision,
-    })) {
-      if (fileInfo.path.endsWith('.gguf')) {
-        ggufUrl = `https://huggingface.co/${sanitizedRepoName}/resolve/${revision}/${fileInfo.path}`;
-        break;
-      }
-    }
-
-    if (!ggufUrl) {
-      console.error("Can't find model file.");
-      exit(1);
-    }
-    console.log('Downloading', basename(ggufUrl));
-    await this.modelsCliUsecases.pullModelWithExactUrl(
-      `${sanitizedRepoName}/${revision}`,
-      ggufUrl,
-    );
+    // Return parsed model Id
+    return `${repoName}:${revision}`;
   }
 }
