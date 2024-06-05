@@ -63,7 +63,11 @@ export class RunCommand extends CommandRunner {
   }
 
   modelInquiry = async () => {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const models = (await this.modelsCliUsecases.listAllModels()).filter(
+      (model) =>
+        Array.isArray(model.files) &&
+        !/^(http|https):\/\/[^/]+\/.*/.test(model.files[0]),
+    );
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
@@ -71,7 +75,7 @@ export class RunCommand extends CommandRunner {
       message: 'Select a model to start:',
       choices: models.map((e) => ({
         name: e.name,
-        value: e.id,
+        value: e.model,
       })),
     });
     return model;

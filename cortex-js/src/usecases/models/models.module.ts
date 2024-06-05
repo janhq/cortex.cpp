@@ -6,6 +6,7 @@ import { CortexModule } from '@/usecases/cortex/cortex.module';
 import { ExtensionModule } from '@/infrastructure/repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { ModelRepositoryModule } from '@/infrastructure/repositories/model/model.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FileManagerModule } from '@/file-manager/file-manager.module';
     ExtensionModule,
     HttpModule,
     FileManagerModule,
+    ModelRepositoryModule,
   ],
   controllers: [ModelsController],
   providers: [ModelsUsecases],

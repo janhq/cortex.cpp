@@ -14,7 +14,8 @@ export class ModelGetCommand extends CommandRunner {
       exit(1);
     }
 
-    const models = await this.modelsCliUsecases.getModel(input[0]);
-    console.log(models);
+    const model = await this.modelsCliUsecases.getModel(input[0]);
+    if (!model) console.error('Model not found');
+    else console.log(model);
   }
 }

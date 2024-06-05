@@ -1,47 +1,59 @@
-import {
-  Model,
-  ModelArtifact,
-  ModelFormat,
-  ModelMetadata,
-  ModelRuntimeParams,
-  ModelSettingParams,
-} from '@/domain/models/model.interface';
+import { Model, ModelArtifact } from '@/domain/models/model.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('models')
 export class ModelEntity implements Model {
+  // Cortex Meta
   @PrimaryColumn()
-  id: string;
-
-  @Column()
-  object: string;
-
-  @Column()
-  version: string;
-
-  @Column()
-  format: ModelFormat;
-
-  @Column({ type: 'simple-json' })
-  sources: ModelArtifact[];
+  model: string;
 
   @Column()
   name: string;
 
   @Column()
-  created: number;
+  version: string;
+
+  @Column({ type: 'simple-json' })
+  files: string[] | ModelArtifact;
+
+  // Model Input / Output Syntax
+  @Column()
+  prompt_template: string;
+
+  @Column({ type: 'simple-json' })
+  stop: string[];
 
   @Column()
-  description: string;
+  max_tokens: number;
 
-  @Column({ type: 'simple-json' })
-  settings: ModelSettingParams;
+  // Results Preferences
+  @Column()
+  top_p: number;
 
-  @Column({ type: 'simple-json' })
-  parameters: ModelRuntimeParams;
+  @Column()
+  temperature: number;
 
-  @Column({ type: 'simple-json' })
-  metadata: ModelMetadata;
+  @Column()
+  frequency_penalty: number;
+
+  @Column()
+  presence_penalty: number;
+
+  @Column()
+  stream: boolean;
+
+  // Engine Settings
+  @Column()
+  ctx_len: number;
+
+  @Column()
+  ngl: number;
+
+  @Column()
+  n_parallel: number;
+
+  @Column()
+  cpu_threads: number;
 
   @Column()
   engine: string;

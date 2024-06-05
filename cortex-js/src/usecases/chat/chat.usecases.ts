@@ -1,16 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
-import { ExtensionRepository } from '@/domain/repositories/extension.interface';
-import { Repository } from 'typeorm';
-import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { ModelRepository } from '@/domain/repositories/model.interface';
+import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 
 @Injectable()
 export class ChatUsecases {
   constructor(
-    @Inject('MODEL_REPOSITORY')
-    private readonly modelRepository: Repository<ModelEntity>,
+    private readonly modelRepository: ModelRepository,
     private readonly extensionRepository: ExtensionRepository,
   ) {}
 
@@ -20,9 +18,7 @@ export class ChatUsecases {
   ): Promise<any> {
     const { model: modelId } = createChatDto;
     const extensions = (await this.extensionRepository.findAll()) ?? [];
-    const model = await this.modelRepository.findOne({
-      where: { id: modelId },
-    });
+    const model = await this.modelRepository.findOne(modelId);
 
     if (!model) {
       throw new ModelNotFoundException(modelId);

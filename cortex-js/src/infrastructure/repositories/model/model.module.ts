@@ -1,18 +1,18 @@
 import { Module } from '@nestjs/common';
-import { ExtensionRepositoryImpl } from './extension.repository';
-import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { CortexProviderModule } from '@/infrastructure/providers/cortex/cortex.module';
 import { HttpModule } from '@nestjs/axios';
+import { ModelRepository } from '@/domain/repositories/model.interface';
+import { ModelRepositoryImpl } from './model.repository';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
 
 @Module({
   imports: [CortexProviderModule, HttpModule, FileManagerModule],
   providers: [
     {
-      provide: ExtensionRepository,
-      useClass: ExtensionRepositoryImpl,
+      provide: ModelRepository,
+      useClass: ModelRepositoryImpl,
     },
   ],
-  exports: [ExtensionRepository],
+  exports: [ModelRepository],
 })
-export class ExtensionModule {}
+export class ModelRepositoryModule {}
