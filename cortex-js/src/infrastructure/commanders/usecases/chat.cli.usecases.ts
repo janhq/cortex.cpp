@@ -221,6 +221,30 @@ export class ChatCliUsecases {
     }
   }
 
+  /**
+   * Creates an embedding vector representing the input text.
+   * @param model Embedding model ID.
+   * @param input Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays.
+   * @param encoding_format Encoding format for the embeddings. Supported formats are 'float' and 'int'.
+   * @param dimensions The number of dimensions the resulting output embeddings should have. Only supported in some models.
+   * @param host Cortex CPP host.
+   * @param port Cortex CPP port.
+   * @returns Embedding vector.
+   */
+  embeddings(
+    model: string,
+    input: string | string[],
+    encoding_format: string = 'float',
+    dimensions?: number,
+  ) {
+    return this.chatUsecases.embeddings(
+      model,
+      input,
+      encoding_format,
+      dimensions,
+    );
+  }
+
   private async getOrCreateNewThread(
     modelId: string,
     threadId?: string,

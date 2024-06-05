@@ -27,6 +27,7 @@ import { FileManagerModule } from './file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
+import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 
 @Module({
   imports: [
@@ -54,6 +55,7 @@ import { PresetCommand } from './infrastructure/commanders/presets.command';
     PSCommand,
     KillCommand,
     PresetCommand,
+    EmbeddingCommand,
 
     // Questions
     InitRunModeQuestions,
