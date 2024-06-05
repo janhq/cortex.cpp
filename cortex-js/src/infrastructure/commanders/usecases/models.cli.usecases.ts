@@ -180,6 +180,11 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async pullModel(modelId: string) {
+    if (await this.modelsUsecases.findOne(modelId)) {
+      console.error('Model already exists');
+      process.exit(1);
+    }
+
     if (modelId.includes('/') || modelId.includes(':')) {
       await this.pullHuggingFaceModel(modelId);
     }

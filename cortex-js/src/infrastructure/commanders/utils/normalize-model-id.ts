@@ -1,3 +1,3 @@
 export const normalizeModelId = (modelId: string): string => {
-  return modelId.replace(':', '-');
+  return modelId.replace(':', '-').replace('/', '-');
 };

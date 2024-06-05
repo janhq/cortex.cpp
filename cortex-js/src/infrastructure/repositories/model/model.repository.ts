@@ -8,6 +8,7 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  rmSync,
   writeFileSync,
 } from 'fs';
 import { load, dump } from 'js-yaml';
@@ -103,8 +104,13 @@ export class ModelRepositoryImpl implements ModelRepository {
    * This would remove the model yaml file from the models folder
    * @param id model id
    */
-  remove(id: string): Promise<void> {
+  async remove(id: string): Promise<void> {
     this.models.delete(id);
+    const yamlFilePath = join(
+      await this.fileService.getModelsPath(),
+      this.fileModel.get(id) ?? id,
+    );
+    if (existsSync(yamlFilePath)) rmSync(yamlFilePath);
     return Promise.resolve();
   }
 
