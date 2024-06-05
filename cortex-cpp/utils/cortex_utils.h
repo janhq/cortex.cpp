@@ -27,6 +27,7 @@
 namespace cortex_utils {
 constexpr static auto kLlamaLibPath = "/engines/cortex.llamacpp";
 constexpr static auto kPythonRuntimeLibPath = "/engines/cortex.python";
+constexpr static auto kOnnxLibPath = "/engines/cortex.onnx";
 
 inline std::string models_folder = "./models";
 

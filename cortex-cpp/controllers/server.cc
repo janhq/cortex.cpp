@@ -16,6 +16,7 @@ namespace inferences {
 namespace {
 constexpr static auto kLlamaEngine = "cortex.llamacpp";
 constexpr static auto kPythonRuntimeEngine = "cortex.python";
+constexpr static auto kOnnxEngine = "cortex.onnx";
 }  // namespace
 
 server::server(){
@@ -144,8 +145,7 @@ void server::ModelStatus(
 
 void server::GetModels(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  // TODO(sang) need to change this when we support Tensorrt-llm
-  if (!IsEngineLoaded(kLlamaEngine)) {
+  if (!IsEngineLoaded(cur_engine_type_)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -156,7 +156,7 @@ void server::GetModels(const HttpRequestPtr& req,
   }
 
   LOG_TRACE << "Start to get models";
-  auto& en = std::get<EngineI*>(engines_[kLlamaEngine].engine);
+  auto& en = std::get<EngineI*>(engines_[cur_engine_type_].engine);
   if (en->IsSupported("GetModels")) {
     en->GetModels(
         req->getJsonObject(),
@@ -257,8 +257,8 @@ void server::LoadModel(const HttpRequestPtr& req,
 
   // We have not loaded engine yet, should load it before using it
   if (engines_.find(engine_type) == engines_.end()) {
-    // TODO(sang) we cannot run cortex.llamacpp and cortex.tensorrt-llm at the same time.
-    // So need an unload engine machanism to handle.
+    // We only use single engine so unload all engines before load new engine
+    UnloadEngines();
     auto get_engine_path = [](std::string_view e) {
       if (e == kLlamaEngine) {
         return cortex_utils::kLlamaLibPath;
@@ -292,6 +292,7 @@ void server::LoadModel(const HttpRequestPtr& req,
       callback(resp);
       return;
     }
+    cur_engine_type_ = engine_type;
 
     auto func =
         engines_[engine_type].dl->get_function<EngineI*()>("get_engine");
@@ -356,6 +357,16 @@ void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
 
 bool server::IsEngineLoaded(const std::string& e) {
   return engines_.find(e) != engines_.end();
+}
+
+void server::UnloadEngines() {
+  // We unload all engines except python engine
+  for (auto it = engines_.begin(); it != engines_.end();) {
+    if (it->first != kPythonRuntimeEngine) {
+      it = engines_.erase(it);
+    } else
+      it++;
+  }
 }
 
 }  // namespace inferences
