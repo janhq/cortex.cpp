@@ -33,7 +33,7 @@ void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -92,7 +92,7 @@ void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -119,7 +119,7 @@ void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -262,6 +262,8 @@ void server::LoadModel(const HttpRequestPtr& req,
     auto get_engine_path = [](std::string_view e) {
       if (e == kLlamaEngine) {
         return cortex_utils::kLlamaLibPath;
+      } else if(e == kOnnxEngine) {
+        return cortex_utils::kOnnxLibPath;
       }
       return cortex_utils::kLlamaLibPath;
     };
