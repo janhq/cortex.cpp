@@ -62,7 +62,7 @@ async function bootstrap() {
   const port = process.env.CORTEX_JS_PORT || defaultCortexJsPort;
 
   await app.listen(port, host);
-  console.log(`Server running on ${host}:${port}`);
+  console.log(`Server running on http://${host}:${port}`);
 }
 
 const buildSwagger = (app: INestApplication<any>) => {
