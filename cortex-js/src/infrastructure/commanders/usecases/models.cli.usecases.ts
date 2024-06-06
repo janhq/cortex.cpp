@@ -397,12 +397,14 @@ export class ModelsCliUsecases {
   private async parsePreset(preset?: string): Promise<object> {
     const presetsFolder = await this.fileService.getPresetsPath();
 
+    if (!existsSync(presetsFolder)) return {};
+
     const presetFile = readdirSync(presetsFolder).find(
       (file) =>
         file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
         file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
     );
-    if (!presetFile) throw new Error(`Preset ${preset} not found`);
+    if (!presetFile) return {};
     const presetPath = join(presetsFolder, presetFile);
 
     if (!preset || !existsSync(presetPath)) return {};

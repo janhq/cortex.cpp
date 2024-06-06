@@ -43,7 +43,7 @@ export class FileManagerService {
     }
   }
 
-  private async writeConfigFile(config: Config): Promise<void> {
+  async writeConfigFile(config: Config): Promise<void> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
