@@ -1,4 +1,4 @@
-import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { defaultCortexCppHost, defaultCortexCppPort } from '@/../constant';
 
 // CORTEX CPP
 export const CORTEX_CPP_EMBEDDINGS_URL = (

@@ -6,7 +6,7 @@ import { EmbeddingsResponseDto } from '../dtos/chat/embeddings-response.dto';
 
 @ApiTags('Embeddings')
 @Controller('embeddings')
-export class EmbeddingController {
+export class EmbeddingsController {
   constructor(private readonly chatService: ChatUsecases) {}
 
   @ApiOperation({

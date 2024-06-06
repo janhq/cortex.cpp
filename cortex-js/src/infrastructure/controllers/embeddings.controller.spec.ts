@@ -1,27 +1,28 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ChatController } from './chat.controller';
+import { EmbeddingsController } from './embeddings.controller';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { DatabaseModule } from '../database/database.module';
-import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { ModelRepositoryModule } from '../repositories/model/model.module';
+import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
 
-describe('ChatController', () => {
-  let controller: ChatController;
+describe('EmbeddingsController', () => {
+  let controller: EmbeddingsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
         DatabaseModule,
-        ExtensionModule,
         ModelRepositoryModule,
+        ExtensionModule,
         HttpModule,
       ],
-      controllers: [ChatController],
+      controllers: [EmbeddingsController],
       providers: [ChatUsecases],
+      exports: [ChatUsecases],
     }).compile();
 
-    controller = module.get<ChatController>(ChatController);
+    controller = module.get<EmbeddingsController>(EmbeddingsController);
   });
 
   it('should be defined', () => {
