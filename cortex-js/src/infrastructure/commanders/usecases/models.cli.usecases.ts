@@ -27,7 +27,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join, basename } from 'path';
 import { load } from 'js-yaml';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { isLocalModel, normalizeModelId } from '../utils/normalize-model-id';
 import {
   HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL,
@@ -395,11 +395,16 @@ export class ModelsCliUsecases {
   }
 
   private async parsePreset(preset?: string): Promise<object> {
-    const presetPath = join(
-      await this.fileService.getDataFolderPath(),
-      'presets',
-      `${preset}.yaml`,
+    const presetsFolder = await this.fileService.getPresetsPath();
+
+    const presetFile = readdirSync(presetsFolder).find(
+      (file) =>
+        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
+        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
     );
+    if (!presetFile) throw new Error(`Preset ${preset} not found`);
+    const presetPath = join(presetsFolder, presetFile);
+
     if (!preset || !existsSync(presetPath)) return {};
     return preset
       ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
