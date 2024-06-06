@@ -5,6 +5,7 @@ import { CommandModule } from '@/command.module';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join } from 'path';
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { stdout } from 'node:process';
 
 let commandInstance: TestingModule;
 
@@ -63,5 +64,33 @@ describe('models list returns array of models', () => {
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
     expect(logMock.firstCall?.args[0].length).toBe(1);
     expect(logMock.firstCall?.args[0][0].id).toBe('test');
+  });
+
+  test('run model', async () => {
+    const logMock = stubMethod(console, 'table');
+
+    await CommandTestFactory.run(commandInstance, ['run', 'llama3']);
+    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
+    expect(logMock.firstCall?.args[0].length).toBe(0);
+  });
+
+  test('get model', async () => {
+    const logMock = stubMethod(console, 'log');
+
+    await CommandTestFactory.run(commandInstance, ['models', 'get', 'llama3']);
+    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
+    expect(logMock.firstCall?.args[0].length).toBe(0);
+  });
+
+  test('hello world', async () => {
+    const logMock = stubMethod(stdout, 'write');
+
+    await CommandTestFactory.run(commandInstance, [
+      'chat',
+      '-m',
+      'hello world',
+    ]);
+    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
+    expect(logMock.firstCall?.args[0].length).toBe(0);
   });
 });
