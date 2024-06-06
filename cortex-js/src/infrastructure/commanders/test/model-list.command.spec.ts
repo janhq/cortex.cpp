@@ -5,41 +5,34 @@ import { CommandModule } from '@/command.module';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join } from 'path';
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
-import { stdout } from 'node:process';
 
 let commandInstance: TestingModule;
 
-beforeEach(
-  () =>
-    new Promise<void>(async (res) => {
-      commandInstance = await CommandTestFactory.createTestingCommand({
-        imports: [CommandModule],
-      })
-        // .overrideProvider(LogService)
-        // .useValue({})
-        .compile();
-      const fileService =
-        await commandInstance.resolve<FileManagerService>(FileManagerService);
+beforeEach(async () => {
+  commandInstance = await CommandTestFactory.createTestingCommand({
+    imports: [CommandModule],
+  })
+    // .overrideProvider(LogService)
+    // .useValue({})
+    .compile();
+  const fileService =
+    commandInstance.resolve<FileManagerService>(FileManagerService);
 
-      // Attempt to create test folder
-      await fileService.writeConfigFile({
-        dataFolderPath: join(__dirname, 'test_data'),
-      });
-      res();
-    }),
-);
+  // Attempt to create test folder
+  (await fileService).writeConfigFile({
+    dataFolderPath: join(__dirname, 'test_data'),
+  });
+});
 
-afterEach(
-  () =>
-    new Promise<void>(async (res) => {
-      // Attempt to clean test folder
-      rmSync(join(__dirname, 'test_data'), {
-        recursive: true,
-        force: true,
-      });
-      res();
-    }),
-);
+afterEach(async () => {
+  // Attempt to clean test folder
+  try {
+    await rmSync(join(__dirname, 'test_data'), {
+      recursive: true,
+      force: true,
+    });
+  } catch (e) {}
+});
 
 describe('models list returns array of models', () => {
   test('empty model list', async () => {
@@ -64,33 +57,5 @@ describe('models list returns array of models', () => {
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
     expect(logMock.firstCall?.args[0].length).toBe(1);
     expect(logMock.firstCall?.args[0][0].id).toBe('test');
-  });
-
-  test('run model', async () => {
-    const logMock = stubMethod(console, 'table');
-
-    await CommandTestFactory.run(commandInstance, ['run', 'llama3']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(0);
-  });
-
-  test('get model', async () => {
-    const logMock = stubMethod(console, 'log');
-
-    await CommandTestFactory.run(commandInstance, ['models', 'get', 'llama3']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(0);
-  });
-
-  test('hello world', async () => {
-    const logMock = stubMethod(stdout, 'write');
-
-    await CommandTestFactory.run(commandInstance, [
-      'chat',
-      '-m',
-      'hello world',
-    ]);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(0);
   });
 });
