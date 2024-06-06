@@ -237,12 +237,12 @@ export class ChatCliUsecases {
     encoding_format: string = 'float',
     dimensions?: number,
   ) {
-    return this.chatUsecases.embeddings(
+    return this.chatUsecases.embeddings({
       model,
       input,
       encoding_format,
       dimensions,
-    );
+    });
   }
 
   private async getOrCreateNewThread(

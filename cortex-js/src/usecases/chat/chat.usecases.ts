@@ -7,6 +7,7 @@ import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { CORTEX_CPP_EMBEDDINGS_URL } from '@/infrastructure/constants/cortex';
+import { CreateEmbeddingsDto } from '@/infrastructure/dtos/embeddings/embeddings-request.dto';
 
 @Injectable()
 export class ChatUsecases {
@@ -46,28 +47,14 @@ export class ChatUsecases {
    * @param port Cortex CPP port.
    * @returns Embedding vector.
    */
-  embeddings(
-    model: string,
-    input: string | string[],
-    encoding_format: string = 'float',
-    dimensions?: number,
-  ) {
+  embeddings(dto: CreateEmbeddingsDto) {
     return firstValueFrom(
-      this.httpService.post(
-        CORTEX_CPP_EMBEDDINGS_URL(),
-        {
-          input,
-          model,
-          encoding_format,
-          dimensions,
+      this.httpService.post(CORTEX_CPP_EMBEDDINGS_URL(), dto, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept-Encoding': 'gzip',
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept-Encoding': 'gzip',
-          },
-        },
-      ),
+      }),
     ).then((res) => res.data);
   }
 }
