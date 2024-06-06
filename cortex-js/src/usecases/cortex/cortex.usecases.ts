@@ -3,7 +3,7 @@ import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
-import { defaultCortexCppHost, defaultCortexCppPort } from '@/../constant';
+import { defaultCortexCppHost, defaultCortexCppPort } from '@/infrastructure/constants/cortex';
 import { existsSync } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';

@@ -1,5 +1,8 @@
 import { spawn } from 'child_process';
-import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
+import {
+  defaultCortexJsHost,
+  defaultCortexJsPort,
+} from '@/infrastructure/constants/cortex';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { join } from 'path';
 

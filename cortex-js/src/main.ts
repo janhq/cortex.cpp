@@ -2,7 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
+import {
+  defaultCortexJsHost,
+  defaultCortexJsPort,
+} from '@/infrastructure/constants/cortex';
 import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerService } from './file-manager/file-manager.service';
 

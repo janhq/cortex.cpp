@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { defaultCortexCppHost, defaultCortexCppPort } from '@/infrastructure/constants/cortex';
 
 export interface ModelStat {
   modelId: string;

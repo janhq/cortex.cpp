@@ -7,7 +7,7 @@ import {
 } from 'nest-commander';
 import { exit } from 'node:process';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
-import { defaultCortexCppHost, defaultCortexCppPort } from 'constant';
+import { defaultCortexCppHost, defaultCortexCppPort } from '@/infrastructure/constants/cortex';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { isLocalModel } from '../utils/normalize-model-id';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
