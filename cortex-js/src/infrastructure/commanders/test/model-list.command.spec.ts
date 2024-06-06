@@ -8,31 +8,37 @@ import { mkdirSync, rmSync, writeFileSync } from 'fs';
 
 let commandInstance: TestingModule;
 
-beforeEach(async () => {
-  commandInstance = await CommandTestFactory.createTestingCommand({
-    imports: [CommandModule],
-  })
-    // .overrideProvider(LogService)
-    // .useValue({})
-    .compile();
-  const fileService =
-    commandInstance.resolve<FileManagerService>(FileManagerService);
+beforeEach(
+  () =>
+    new Promise<void>(async (res) => {
+      commandInstance = await CommandTestFactory.createTestingCommand({
+        imports: [CommandModule],
+      })
+        // .overrideProvider(LogService)
+        // .useValue({})
+        .compile();
+      const fileService =
+        await commandInstance.resolve<FileManagerService>(FileManagerService);
 
-  // Attempt to create test folder
-  (await fileService).writeConfigFile({
-    dataFolderPath: join(__dirname, 'test_data'),
-  });
-});
+      // Attempt to create test folder
+      await fileService.writeConfigFile({
+        dataFolderPath: join(__dirname, 'test_data'),
+      });
+      res();
+    }),
+);
 
-afterEach(async () => {
-  // Attempt to clean test folder
-  try {
-    await rmSync(join(__dirname, 'test_data'), {
-      recursive: true,
-      force: true,
-    });
-  } catch (e) {}
-});
+afterEach(
+  () =>
+    new Promise<void>(async (res) => {
+      // Attempt to clean test folder
+      rmSync(join(__dirname, 'test_data'), {
+        recursive: true,
+        force: true,
+      });
+      res();
+    }),
+);
 
 describe('models list returns array of models', () => {
   test('empty model list', async () => {
