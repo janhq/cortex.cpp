@@ -20,7 +20,6 @@ import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { AxiosError } from 'axios';
 import { ModelRepository } from '@/domain/repositories/model.interface';
-import { ModelDto } from '@/infrastructure/dtos/models/model-successfully-created.dto';
 import { ModelParameterParser } from '@/infrastructure/commanders/utils/model-parameter.parser';
 
 @Injectable()
@@ -81,7 +80,7 @@ export class ModelsUsecases {
 
   async startModel(
     modelId: string,
-    settings?: ModelDto,
+    settings?: ModelSettingParams,
   ): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const extensions = (await this.extensionRepository.findAll()) ?? [];

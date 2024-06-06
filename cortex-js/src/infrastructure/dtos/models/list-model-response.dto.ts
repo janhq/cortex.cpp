@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ModelDto } from './model-successfully-created.dto'; // Import the ModelDto class
+import { ModelDto } from './model.dto'; // Import the ModelDto class
 
 export class ListModelsResponseDto {
   @ApiProperty({ example: 'list', enum: ['list'] })
