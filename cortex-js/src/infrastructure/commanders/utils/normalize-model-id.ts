@@ -1,7 +1,7 @@
 import { ModelArtifact } from '@/domain/models/model.interface';
 
 export const normalizeModelId = (modelId: string): string => {
-  return modelId.replace(/[:/]/g, '-');
+  return modelId.replace(':default', '').replace(/[:/]/g, '-');
 };
 
 export const isLocalModel = (

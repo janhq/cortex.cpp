@@ -18,7 +18,7 @@ import {
   OPEN_CHAT_3_5_JINJA,
   ZEPHYR,
   ZEPHYR_JINJA,
-} from '../constants/prompt-constants';
+} from '../../constants/prompt-constants';
 import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -29,6 +29,12 @@ import { join, basename } from 'path';
 import { load } from 'js-yaml';
 import { existsSync, readFileSync } from 'fs';
 import { isLocalModel, normalizeModelId } from '../utils/normalize-model-id';
+import {
+  HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL,
+  HUGGING_FACE_REPO_MODEL_API_URL,
+  HUGGING_FACE_REPO_URL,
+  HUGGING_FACE_TREE_REF_URL,
+} from '../../constants/huggingface';
 
 @Injectable()
 export class ModelsCliUsecases {
@@ -68,9 +74,7 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async stopModel(modelId: string): Promise<void> {
-    return this.getModelOrStop(modelId)
-      .then(() => this.modelsUsecases.stopModel(modelId))
-      .then();
+    return this.modelsUsecases.stopModel(modelId).then();
   }
 
   /**
@@ -126,17 +130,13 @@ export class ModelsCliUsecases {
    * @param modelId
    */
   async pullModel(modelId: string) {
-    modelId = /[:/]/.test(modelId) ? modelId : `${modelId}:default`;
-
     const existingModel = await this.modelsUsecases.findOne(modelId);
     if (isLocalModel(existingModel?.files)) {
       console.error('Model already exists');
       process.exit(1);
     }
 
-    if (/[:/]/.test(modelId)) {
-      await this.pullHuggingFaceModel(modelId);
-    }
+    await this.pullHuggingFaceModel(modelId);
     const bar = new SingleBar({}, Presets.shades_classic);
     bar.start(100, 0);
     const callback = (progress: number) => {
@@ -152,7 +152,10 @@ export class ModelsCliUsecases {
         normalizeModelId(modelId),
         basename((model?.files as string[])[0]),
       );
-      await this.modelsUsecases.update(modelId, { files: [fileUrl] });
+      await this.modelsUsecases.update(modelId, {
+        files: [fileUrl],
+        name: modelId.replace(':default', ''),
+      });
     } catch (err) {
       bar.stop();
       throw err;
@@ -291,7 +294,7 @@ export class ModelsCliUsecases {
    */
   private async fetchJanRepoData(modelId: string) {
     const repo = modelId.split(':')[0];
-    const tree = modelId.split(':')[1];
+    const tree = modelId.split(':')[1] ?? 'default';
     const url = this.getRepoModelsUrl(`janhq/${repo}`, tree);
     const res = await fetch(url);
     const response:
@@ -310,7 +313,7 @@ export class ModelsCliUsecases {
         ? response.map((e) => {
             return {
               rfilename: e.path,
-              downloadUrl: `https://huggingface.co/janhq/${repo}/resolve/${tree}/${e.path}`,
+              downloadUrl: HUGGING_FACE_TREE_REF_URL(repo, tree, e.path),
               fileSize: e.size ?? 0,
             };
           })
@@ -367,7 +370,11 @@ export class ModelsCliUsecases {
     const paths = url.pathname.split('/').filter((e) => e.trim().length > 0);
 
     for (let i = 0; i < data.siblings.length; i++) {
-      const downloadUrl = `https://huggingface.co/${paths[2]}/${paths[3]}/resolve/main/${data.siblings[i].rfilename}`;
+      const downloadUrl = HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL(
+        paths[2],
+        paths[3],
+        data.siblings[i].rfilename,
+      );
       data.siblings[i].downloadUrl = downloadUrl;
     }
 
@@ -379,12 +386,12 @@ export class ModelsCliUsecases {
       });
     });
 
-    data.modelUrl = `https://huggingface.co/${paths[2]}/${paths[3]}`;
+    data.modelUrl = HUGGING_FACE_REPO_URL(paths[2], paths[3]);
     return data;
   }
 
   private getRepoModelsUrl(repoId: string, tree?: string): string {
-    return `https://huggingface.co/api/models/${repoId}${tree ? `/tree/${tree}` : ''}`;
+    return `${HUGGING_FACE_REPO_MODEL_API_URL(repoId)}${tree ? `/tree/${tree}` : ''}`;
   }
 
   private async parsePreset(preset?: string): Promise<object> {

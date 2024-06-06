@@ -11,14 +11,10 @@ import { FileManagerService } from '@/file-manager/file-manager.service';
 import { rm } from 'fs/promises';
 import { exec } from 'child_process';
 import { appPath } from '../utils/app-path';
+import { CORTEX_RELEASES_URL, CUDA_DOWNLOAD_URL } from '../../constants/cortex';
 
 @Injectable()
 export class InitCliUsecases {
-  private readonly CORTEX_RELEASES_URL =
-    'https://api.github.com/repos/janhq/cortex/releases';
-  private readonly CUDA_DOWNLOAD_URL =
-    'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
-
   constructor(
     private readonly httpService: HttpService,
     private readonly fileManagerService: FileManagerService,
@@ -30,7 +26,7 @@ export class InitCliUsecases {
   ): Promise<any> => {
     const res = await firstValueFrom(
       this.httpService.get(
-        this.CORTEX_RELEASES_URL + `${version === 'latest' ? '/latest' : ''}`,
+        CORTEX_RELEASES_URL + `${version === 'latest' ? '/latest' : ''}`,
         {
           headers: {
             'X-GitHub-Api-Version': '2022-11-28',
@@ -182,7 +178,7 @@ export class InitCliUsecases {
     const platform = process.platform === 'win32' ? 'windows' : 'linux';
 
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    const url = this.CUDA_DOWNLOAD_URL.replace(
+    const url = CUDA_DOWNLOAD_URL.replace(
       '<version>',
       options.cudaVersion === '11' ? '11.7' : '12.0',
     ).replace('<platform>', platform);
