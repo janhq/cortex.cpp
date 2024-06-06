@@ -6,13 +6,20 @@ import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
 import { HttpModule } from '@nestjs/axios';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { ModelRepositoryModule } from '../repositories/model/model.module';
 
 describe('ModelsController', () => {
   let controller: ModelsController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [DatabaseModule, ExtensionModule, FileManagerModule, HttpModule],
+      imports: [
+        DatabaseModule,
+        ExtensionModule,
+        FileManagerModule,
+        HttpModule,
+        ModelRepositoryModule,
+      ],
       controllers: [ModelsController],
       providers: [ModelsUsecases, CortexUsecases],
       exports: [ModelsUsecases],

@@ -5,6 +5,7 @@ import { ModelsModule } from './models.module';
 import { ExtensionModule } from '@/infrastructure/repositories/extensions/extension.module';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
 import { HttpModule } from '@nestjs/axios';
+import { ModelRepositoryModule } from '@/infrastructure/repositories/model/model.module';
 
 describe('ModelsService', () => {
   let service: ModelsUsecases;
@@ -17,6 +18,7 @@ describe('ModelsService', () => {
         ExtensionModule,
         FileManagerModule,
         HttpModule,
+        ModelRepositoryModule,
       ],
       providers: [ModelsUsecases],
       exports: [ModelsUsecases],

@@ -29,13 +29,14 @@ export class ChatCommand extends CommandRunner {
   async run(_input: string[], options: ChatOptions): Promise<void> {
     let modelId = _input[0];
     // First attempt to get message from input or options
-    let message = _input[1] ?? options.message;
+    // Extract input from 1 to end of array
+    let message = options.message ?? _input.slice(1).join(' ');
 
     // Check for model existing
     if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
       // Model ID is not provided
       // first input might be message input
-      message = _input[0] ?? options.message;
+      message = _input.length ? _input.join(' ') : options.message ?? '';
       // If model ID is not provided, prompt user to select from running models
       const models = await this.psCliUsecases.getModels();
       if (models.length === 1) {
