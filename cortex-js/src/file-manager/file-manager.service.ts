@@ -10,6 +10,7 @@ export class FileManagerService {
   private configFile = '.cortexrc';
   private cortexDirectoryName = 'cortex';
   private modelFolderName = 'models';
+  private presetFolderName = 'presets';
   private extensionFoldername = 'extensions';
   private cortexCppFolderName = 'cortex-cpp';
 
@@ -94,6 +95,16 @@ export class FileManagerService {
   async getModelsPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.modelFolderName);
+  }
+
+  /**
+   * Get the presets data folder path
+   * Usually it is located at the home directory > cortex > presets
+   * @returns the path to the presets folder
+   */
+  async getPresetsPath(): Promise<string> {
+    const dataFolderPath = await this.getDataFolderPath();
+    return join(dataFolderPath, this.presetFolderName);
   }
 
   /**

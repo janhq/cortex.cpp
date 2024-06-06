@@ -15,6 +15,7 @@ export class ModelParameterParser {
     llama_model_path: 'string',
     mmproj: 'string',
     cont_batching: 'boolean',
+    pre_prompt: 'string',
   };
 
   private modelRuntimeParamTypes: { [key: string]: string } = {
