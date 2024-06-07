@@ -5,7 +5,7 @@ import { CommandModule } from '@/command.module';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join } from 'path';
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
-import { stdout } from 'node:process';
+import * as process from 'node:process';
 
 let commandInstance: TestingModule;
 
@@ -66,30 +66,39 @@ describe('models list returns array of models', () => {
     expect(logMock.firstCall?.args[0][0].id).toBe('test');
   });
 
+  test('pull existing model', async () => {
+    const logMock = stubMethod(console, 'error');
+
+    await CommandTestFactory.run(commandInstance, ['pull', 'test']);
+    expect(logMock.firstCall?.args[0]).toBe('Model already exists');
+  });
+
   test('run model', async () => {
-    const logMock = stubMethod(console, 'table');
+    const logMock = stubMethod(console, 'log');
 
     await CommandTestFactory.run(commandInstance, ['run', 'llama3']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(0);
+    expect(logMock.firstCall?.args[0]).toBe("Inorder to exit, type 'exit()'.");
   });
 
   test('get model', async () => {
     const logMock = stubMethod(console, 'log');
 
     await CommandTestFactory.run(commandInstance, ['models', 'get', 'llama3']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(0);
+    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Object);
+    expect(logMock.firstCall?.args[0].files.length).toBe(1);
   });
 
   test('hello world', async () => {
-    const logMock = stubMethod(stdout, 'write');
+    const logMock = stubMethod(process.stdout, 'write');
 
-    await CommandTestFactory.run(commandInstance, [
-      'chat',
-      '-m',
-      'hello world',
-    ]);
+    await CommandTestFactory.run(commandInstance, ['chat', '-m', 'hello']);
+    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
+  });
+
+  test('local API server via localhost:1337/api', async () => {
+    const logMock = stubMethod(console, 'log');
+
+    await CommandTestFactory.run(commandInstance, ['serve']);
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
     expect(logMock.firstCall?.args[0].length).toBe(0);
   });
