@@ -28,11 +28,9 @@ beforeEach(
 
 describe('Help command return guideline to users ', () => {
   test('should return guideline', async () => {
-    const stdoutSpy = stubMethod(process.stdout, 'write');
-
     await CommandTestFactory.run(commandInstance, ['-h']);
     expect(stdoutSpy.firstCall?.args).toBeInstanceOf(Array);
-    expect(stdoutSpy.firstCall?.args[0]).toContain('display help for command');
     expect(stdoutSpy.firstCall?.args.length).toBe(1);
+    expect(stdoutSpy.firstCall?.args[0]).toContain('display help for command');
   });
 });
