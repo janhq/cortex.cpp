@@ -59,6 +59,7 @@ void server::ChatCompletion(
     ProcessNonStreamRes(std::move(callback), *q);
   }
   LOG_TRACE << "Done chat completion";
+  LOG_DEBUG << "Test";
 }
 
 void server::Embedding(const HttpRequestPtr& req,
