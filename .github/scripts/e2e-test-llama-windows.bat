@@ -31,7 +31,7 @@ set /a range=max-min+1
 set /a PORT=%min% + %RANDOM% %% %range%
 
 rem Start the binary file
-start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT% > %TEMP%\cortex-cpp.log 2>&1
+start /B "" "%BINARY_PATH%" 1 "127.0.0.1" %PORT%
 
 ping -n 6 127.0.0.1 %PORT% > nul
 
