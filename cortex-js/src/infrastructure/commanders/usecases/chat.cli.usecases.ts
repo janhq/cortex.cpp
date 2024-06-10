@@ -1,4 +1,3 @@
-import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import {
   ChatCompletionRole,
   ContentType,
@@ -8,7 +7,6 @@ import { exit, stdin, stdout } from 'node:process';
 import * as readline from 'node:readline/promises';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
-import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { Injectable } from '@nestjs/common';
 import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
 import { Thread } from '@/domain/models/thread.interface';
@@ -20,6 +18,7 @@ import stream from 'stream';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
 import { ModelParameterParser } from '../utils/model-parameter.parser';
+import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 
 @Injectable()
 export class ChatCliUsecases {
@@ -31,7 +30,6 @@ export class ChatCliUsecases {
     private readonly assistantUsecases: AssistantsUsecases,
     private readonly threadUsecases: ThreadsUsecases,
     private readonly chatUsecases: ChatUsecases,
-    private readonly cortexUsecases: CortexUsecases,
     private readonly modelsUsecases: ModelsUsecases,
     private readonly messagesUsecases: MessagesUsecases,
   ) {}
@@ -268,7 +266,6 @@ export class ChatCliUsecases {
     };
 
     const createThreadDto: CreateThreadDto = {
-      title: 'New Thread',
       assistants: [assistantDto],
     };
 

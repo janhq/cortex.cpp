@@ -45,4 +45,7 @@ export class MessageEntity implements Message {
 
   @Column({ nullable: true })
   error_code?: ErrorCode;
+
+  @Column({ type: 'simple-json', nullable: true })
+  attachments?: any[];
 }

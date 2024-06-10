@@ -210,7 +210,6 @@ export class ModelsUsecases {
     });
   }
 
-  // TODO: NamH move to a helper or utils
   private isValidUrl(input: string | undefined): boolean {
     if (!input) return false;
     try {

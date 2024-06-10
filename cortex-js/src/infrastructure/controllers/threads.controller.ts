@@ -25,12 +25,14 @@ import {
 } from '@nestjs/swagger';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { ListMessagesResponseDto } from '../dtos/messages/list-message.dto';
+import { CreateMessageDto } from '../dtos/threads/create-message.dto';
+import { UpdateMessageDto } from '../dtos/threads/update-message.dto';
 
 @ApiTags('Threads')
 @Controller('threads')
 @UseInterceptors(TransformInterceptor)
 export class ThreadsController {
-  constructor(private readonly threadsService: ThreadsUsecases) {}
+  constructor(private readonly threadsUsecases: ThreadsUsecases) {}
 
   @ApiOperation({
     summary: 'Create thread',
@@ -38,7 +40,7 @@ export class ThreadsController {
   })
   @Post()
   create(@Body() createThreadDto: CreateThreadDto) {
-    return this.threadsService.create(createThreadDto);
+    return this.threadsUsecases.create(createThreadDto);
   }
 
   @ApiOperation({
@@ -48,7 +50,7 @@ export class ThreadsController {
   })
   @Get()
   findAll() {
-    return this.threadsService.findAll();
+    return this.threadsUsecases.findAll();
   }
 
   @HttpCode(200)
@@ -109,13 +111,65 @@ export class ThreadsController {
     @Query('before') before?: string,
     @Query('run_id') runId?: string,
   ) {
-    return this.threadsService.getMessagesOfThread(
+    return this.threadsUsecases.getMessagesOfThread(
       id,
       limit,
       order,
       after,
       before,
       runId,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Modifies a message.',
+    description: 'Modifies a message.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'A message object.',
+  })
+  @ApiOperation({
+    summary: 'Create a message',
+    description: 'Create a message.',
+  })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'The ID of the thread to create a message for.',
+  })
+  @Post(':id/messages')
+  createMessageInThread(
+    @Param('id') id: string,
+    @Body() createMessageDto: CreateMessageDto,
+  ) {
+    return this.threadsUsecases.createMessageInThread(id, createMessageDto);
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'The modified message object.',
+  })
+  @ApiParam({
+    name: 'thread_id',
+    required: true,
+    description: 'The ID of the thread to which this message belongs.',
+  })
+  @ApiParam({
+    name: 'message_id',
+    required: true,
+    description: 'The ID of the message to modify.',
+  })
+  @Post(':thread_id/messages/:message_id')
+  updateMessage(
+    @Param('thread_id') threadId: string,
+    @Param('message_id') messageId: string,
+    @Body() updateMessageDto: UpdateMessageDto,
+  ) {
+    return this.threadsUsecases.updateMessage(
+      threadId,
+      messageId,
+      updateMessageDto,
     );
   }
 
@@ -135,7 +189,7 @@ export class ThreadsController {
   })
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.threadsService.findOne(id);
+    return this.threadsUsecases.findOne(id);
   }
 
   @ApiResponse({
@@ -154,7 +208,7 @@ export class ThreadsController {
   })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateThreadDto: UpdateThreadDto) {
-    return this.threadsService.update(id, updateThreadDto);
+    return this.threadsUsecases.update(id, updateThreadDto);
   }
 
   @ApiResponse({
@@ -173,6 +227,6 @@ export class ThreadsController {
   })
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.threadsService.remove(id);
+    return this.threadsUsecases.remove(id);
   }
 }
