@@ -20,6 +20,7 @@ import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
 
 @ApiTags('Models')
 @Controller('models')
@@ -61,10 +62,13 @@ export class ModelsController {
     description: 'The unique identifier of the model.',
   })
   @Post(':modelId(*)/start')
-  startModel(@Param('modelId') modelId: string, @Body() model: ModelDto) {
+  startModel(
+    @Param('modelId') modelId: string,
+    @Body() params: ModelSettingsDto,
+  ) {
     return this.cortexUsecases
       .startCortex()
-      .then(() => this.modelsUsecases.startModel(modelId, model));
+      .then(() => this.modelsUsecases.startModel(modelId, params));
   }
 
   @HttpCode(200)

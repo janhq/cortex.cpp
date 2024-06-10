@@ -7,9 +7,11 @@ import {
 } from 'nest-commander';
 import { exit } from 'node:process';
 import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
-import { defaultCortexCppHost, defaultCortexCppPort } from '@/infrastructure/constants/cortex';
+import {
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
-import { isLocalModel } from '../utils/normalize-model-id';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
 type RunOptions = {
@@ -77,9 +79,7 @@ export class RunCommand extends CommandRunner {
   }
 
   modelInquiry = async () => {
-    const models = (await this.modelsCliUsecases.listAllModels()).filter(
-      (model) => isLocalModel(model.files),
-    );
+    const models = await this.modelsCliUsecases.listAllModels();
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',

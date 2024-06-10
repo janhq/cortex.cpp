@@ -7,7 +7,6 @@ import {
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { isLocalModel } from '../utils/normalize-model-id';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -52,9 +51,7 @@ export class ModelStartCommand extends CommandRunner {
   }
 
   modelInquiry = async () => {
-    const models = (await this.modelsCliUsecases.listAllModels()).filter(
-      (model) => isLocalModel(model.files),
-    );
+    const models = await this.modelsCliUsecases.listAllModels();
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',

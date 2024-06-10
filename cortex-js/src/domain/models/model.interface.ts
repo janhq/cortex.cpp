@@ -81,7 +81,7 @@ export interface Model {
   ngl?: number;
 
   /**
-   * The number of parallel operations. Only set when enable continuous batching.
+   * Number of parallel sequences to decode
    */
   n_parallel?: number;
 
@@ -94,13 +94,6 @@ export interface Model {
    * The model engine.
    */
   engine?: string;
-}
-
-export interface ModelMetadata {
-  author: string;
-  tags: string[];
-  size: number;
-  cover?: string;
 }
 
 /**
@@ -140,10 +133,3 @@ export interface ModelRuntimeParams {
   presence_penalty?: number;
   engine?: string;
 }
-
-/**
- * Represents the model initialization error.
- */
-export type ModelInitFailed = Model & {
-  error: Error;
-};

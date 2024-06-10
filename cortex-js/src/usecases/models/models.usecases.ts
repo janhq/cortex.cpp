@@ -69,7 +69,11 @@ export class ModelsUsecases {
 
     return this.modelRepository
       .remove(id)
-      .then(() => rmdirSync(modelFolder, { recursive: true }))
+      .then(
+        () =>
+          existsSync(modelFolder) &&
+          rmdirSync(modelFolder, { recursive: true }),
+      )
       .then(() => {
         return {
           message: 'Model removed successfully',
@@ -100,7 +104,9 @@ export class ModelsUsecases {
       // Default settings
       ctx_len: 4096,
       ngl: 100,
-      ...(Array.isArray(model?.files) &&
+      //TODO: Utils for model file retrieval
+      ...(model?.files &&
+        Array.isArray(model.files) &&
         !('llama_model_path' in model) && {
           llama_model_path: (model.files as string[])[0],
         }),

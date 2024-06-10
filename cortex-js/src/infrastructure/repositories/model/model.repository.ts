@@ -12,7 +12,10 @@ import {
   writeFileSync,
 } from 'fs';
 import { load, dump } from 'js-yaml';
-import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
+import {
+  isLocalModel,
+  normalizeModelId,
+} from '@/infrastructure/commanders/utils/normalize-model-id';
 
 @Injectable()
 export class ModelRepositoryImpl implements ModelRepository {
@@ -58,7 +61,9 @@ export class ModelRepositoryImpl implements ModelRepository {
    * @returns the created model
    */
   findAll(): Promise<Model[]> {
-    return this.loadModels();
+    return this.loadModels().then((res) =>
+      res.filter((model) => isLocalModel(model.files)),
+    );
   }
   /**
    * Find one model by id

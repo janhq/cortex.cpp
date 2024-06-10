@@ -4,6 +4,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Min,
 } from 'class-validator';
 import { Model } from '@/domain/models/model.interface';
 import { ModelArtifactDto } from './model-artifact.dto';
@@ -50,6 +51,7 @@ export class CreateModelDto implements Partial<Model> {
   @ApiProperty({
     description:
       'Sets the upper limit on the number of tokens the model can generate in a single output.',
+    example: 4096,
   })
   @IsOptional()
   @IsNumber()
@@ -97,30 +99,40 @@ export class CreateModelDto implements Partial<Model> {
   @ApiProperty({
     description:
       'Sets the maximum input the model can use to generate a response, it varies with the model used.',
+    example: 4096,
   })
   @IsOptional()
   @IsNumber()
   ctx_len?: number;
 
-  @ApiProperty({ description: 'Determines GPU layer usage.' })
+  @ApiProperty({ description: 'Determines GPU layer usage.', example: 32 })
   @IsOptional()
   @IsNumber()
   ngl?: number;
 
-  @ApiProperty({ description: 'Number of parallel processing units to use.' })
+  @ApiProperty({
+    description: 'Number of parallel processing units to use.',
+    example: 1,
+  })
   @IsOptional()
   @IsNumber()
+  @Min(1)
   n_parallel?: number;
 
   @ApiProperty({
     description:
       'Determines CPU inference threads, limited by hardware and OS. ',
+    example: 10,
   })
   @IsOptional()
   @IsNumber()
+  @Min(1)
   cpu_threads?: number;
 
-  @ApiProperty({ description: 'The engine used to run the model.' })
+  @ApiProperty({
+    description: 'The engine used to run the model.',
+    example: 'cortex.llamacpp',
+  })
   @IsOptional()
   @IsString()
   engine?: string;
