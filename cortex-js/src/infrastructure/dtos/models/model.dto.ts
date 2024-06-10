@@ -3,6 +3,14 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsBoolean, IsNumber, IsOptional } from 'class-validator';
 
 export class ModelDto implements Partial<Model> {
+  @ApiProperty({
+    example: 'llama3',
+    description:
+      'The model identifier, which can be referenced in the API endpoints.',
+  })
+  @IsOptional()
+  id: string;
+
   // Prompt Settings
   @ApiProperty({
     example: 'system\n{system_message}\nuser\n{prompt}\nassistant',

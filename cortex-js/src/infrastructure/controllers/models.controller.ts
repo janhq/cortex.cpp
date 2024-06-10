@@ -12,7 +12,7 @@ import {
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
-import { ModelDto } from '@/infrastructure/dtos/models/model-successfully-created.dto';
+import { ModelDto } from '@/infrastructure/dtos/models/model.dto';
 import { ListModelsResponseDto } from '@/infrastructure/dtos/models/list-model-response.dto';
 import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-model.dto';
 import { DownloadModelResponseDto } from '@/infrastructure/dtos/models/download-model.dto';
@@ -120,7 +120,9 @@ export class ModelsController {
   })
   @Get()
   findAll() {
-    return this.modelsUsecases.findAll();
+    return this.modelsUsecases
+      .findAll()
+      .then((data) => data.map((e) => ({ id: e.model, ...e })));
   }
 
   @HttpCode(200)
