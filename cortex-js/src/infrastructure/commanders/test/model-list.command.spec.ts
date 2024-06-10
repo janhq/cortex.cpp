@@ -6,6 +6,7 @@ import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join } from 'path';
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import * as process from 'node:process';
+import axios from 'axios';
 
 let commandInstance: TestingModule;
 
@@ -41,6 +42,7 @@ afterEach(
     }),
 );
 
+const llama3 = 'llama3';
 describe('models list returns array of models', () => {
   test('empty model list', async () => {
     const logMock = stubMethod(console, 'table');
@@ -69,21 +71,25 @@ describe('models list returns array of models', () => {
   test('pull existing model', async () => {
     const logMock = stubMethod(console, 'error');
 
-    await CommandTestFactory.run(commandInstance, ['pull', 'test']);
+    await CommandTestFactory.run(commandInstance, ['pull', llama3]);
     expect(logMock.firstCall?.args[0]).toBe('Model already exists');
   });
 
   test('run model', async () => {
     const logMock = stubMethod(console, 'log');
 
-    await CommandTestFactory.run(commandInstance, ['run', 'llama3']);
+    await CommandTestFactory.run(commandInstance, ['run', llama3]);
     expect(logMock.firstCall?.args[0]).toBe("Inorder to exit, type 'exit()'.");
+
+    const tableMock = stubMethod(console, 'table');
+    await CommandTestFactory.run(commandInstance, ['ps']);
+    expect(tableMock.firstCall?.args[0].length).toBeGreaterThan(0);
   });
 
   test('get model', async () => {
     const logMock = stubMethod(console, 'log');
 
-    await CommandTestFactory.run(commandInstance, ['models', 'get', 'llama3']);
+    await CommandTestFactory.run(commandInstance, ['models', 'get', llama3]);
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Object);
     expect(logMock.firstCall?.args[0].files.length).toBe(1);
   });
@@ -96,10 +102,10 @@ describe('models list returns array of models', () => {
   });
 
   test('local API server via localhost:1337/api', async () => {
-    const logMock = stubMethod(console, 'log');
-
     await CommandTestFactory.run(commandInstance, ['serve']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(0);
+
+    // Send a request to the API server to check if it's running
+    const response = await axios.get('http://localhost:1337/api');
+    expect(response.status).toBe(200);
   });
 });
