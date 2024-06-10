@@ -27,6 +27,7 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { ListMessagesResponseDto } from '../dtos/messages/list-message.dto';
 import { CreateMessageDto } from '../dtos/threads/create-message.dto';
 import { UpdateMessageDto } from '../dtos/threads/update-message.dto';
+import DeleteMessageDto from '../dtos/threads/delete-message.dto';
 
 @ApiTags('Threads')
 @Controller('threads')
@@ -171,6 +172,29 @@ export class ThreadsController {
       messageId,
       updateMessageDto,
     );
+  }
+
+  @ApiResponse({
+    status: 200,
+    description: 'Deletion status.',
+    type: DeleteMessageDto,
+  })
+  @ApiParam({
+    name: 'thread_id',
+    required: true,
+    description: 'The ID of the thread to which this message belongs.',
+  })
+  @ApiParam({
+    name: 'message_id',
+    required: true,
+    description: 'The ID of the message to delete.',
+  })
+  @Delete(':thread_id/messages/:message_id')
+  deleteMessage(
+    @Param('thread_id') threadId: string,
+    @Param('message_id') messageId: string,
+  ) {
+    return this.threadsUsecases.deleteMessage(threadId, messageId);
   }
 
   @ApiResponse({

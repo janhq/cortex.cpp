@@ -11,6 +11,7 @@ import { ulid } from 'ulid';
 import { ContentType, MessageStatus } from '@/domain/models/message.interface';
 import { UpdateMessageDto } from '@/infrastructure/dtos/threads/update-message.dto';
 import { Thread } from '@/domain/models/thread.interface';
+import DeleteMessageDto from '@/infrastructure/dtos/threads/delete-message.dto';
 
 @Injectable()
 export class ThreadsUsecases {
@@ -144,5 +145,27 @@ export class ThreadsUsecases {
 
   remove(id: string) {
     this.threadRepository.delete(id);
+  }
+
+  async deleteMessage(
+    _threadId: string,
+    messageId: string,
+  ): Promise<DeleteMessageDto> {
+    // we still allow user to delete message even if the thread is not there
+    const message = await this.messageRepository.findOne({
+      where: {
+        id: messageId,
+      },
+    });
+    if (!message) {
+      throw new NotFoundException(`Message with id ${messageId} not found`);
+    }
+    await this.messageRepository.delete(messageId);
+
+    return {
+      id: messageId,
+      object: 'thread.message.deleted',
+      deleted: true,
+    };
   }
 }
