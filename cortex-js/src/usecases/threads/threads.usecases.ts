@@ -6,6 +6,11 @@ import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
+import { CreateMessageDto } from '@/infrastructure/dtos/threads/create-message.dto';
+import { ulid } from 'ulid';
+import { ContentType, MessageStatus } from '@/domain/models/message.interface';
+import { UpdateMessageDto } from '@/infrastructure/dtos/threads/update-message.dto';
+import { Thread } from '@/domain/models/thread.interface';
 
 @Injectable()
 export class ThreadsUsecases {
@@ -18,39 +23,41 @@ export class ThreadsUsecases {
 
   async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
     const id = uuidv4();
+    const { assistants } = createThreadDto;
 
     const thread: ThreadEntity = {
-      ...createThreadDto,
       id,
+      assistants,
       object: 'thread',
       createdAt: Date.now(),
+      title: 'New Thread',
     };
     await this.threadRepository.insert(thread);
     return thread;
   }
 
   async findAll(): Promise<ThreadEntity[]> {
-    return this.threadRepository.find();
+    return this.threadRepository.find({
+      order: {
+        createdAt: 'DESC',
+      },
+    });
   }
 
   async getMessagesOfThread(
-    id: string,
+    threadId: string,
     limit: number,
     order: 'asc' | 'desc',
     after?: string,
     before?: string,
     runId?: string,
   ) {
-    const thread = await this.findOne(id);
-    if (!thread) {
-      throw new NotFoundException(`Thread with id ${id} not found`);
-    }
-
+    await this.getThreadOrThrow(threadId);
     const queryBuilder = this.messageRepository.createQueryBuilder();
     const normalizedOrder = order === 'asc' ? 'ASC' : 'DESC';
 
     queryBuilder
-      .where('thread_id = :id', { id })
+      .where('thread_id = :id', { id: threadId })
       .orderBy('created', normalizedOrder)
       .take(limit + 1); // Fetch one more record than the limit
 
@@ -74,6 +81,57 @@ export class ThreadsUsecases {
     const lastId = messages[messages.length - 1]?.id ?? undefined;
 
     return new PageDto(messages, hasMore, firstId, lastId);
+  }
+
+  async createMessageInThread(
+    threadId: string,
+    createMessageDto: CreateMessageDto,
+  ) {
+    const thread = await this.getThreadOrThrow(threadId);
+    const assistantId: string | undefined = thread.assistants[0].assistant_id;
+
+    const message: MessageEntity = {
+      object: 'thread.message',
+      thread_id: threadId,
+      assistant_id: assistantId,
+      id: ulid(),
+      created: Date.now(),
+      status: MessageStatus.Ready,
+      role: createMessageDto.role,
+      content: [
+        {
+          type: ContentType.Text,
+          text: {
+            value: createMessageDto.content,
+            annotations: [],
+          },
+        },
+      ],
+    };
+    await this.messageRepository.insert(message);
+    return message;
+  }
+
+  async updateMessage(
+    threadId: string,
+    messageId: string,
+    updateMessageDto: UpdateMessageDto,
+  ) {
+    await this.getThreadOrThrow(threadId);
+    await this.messageRepository.update(messageId, updateMessageDto);
+    return this.messageRepository.findOne({
+      where: {
+        id: messageId,
+      },
+    });
+  }
+
+  private async getThreadOrThrow(threadId: string): Promise<Thread> {
+    const thread = await this.findOne(threadId);
+    if (!thread) {
+      throw new NotFoundException(`Thread with id ${threadId} not found`);
+    }
+    return thread;
   }
 
   findOne(id: string) {

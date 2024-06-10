@@ -15,7 +15,6 @@ export class AssistantToolDto implements AssistantTool {
   @IsBoolean()
   enabled: boolean;
 
-  // TODO: NamH make a type for this
   @ApiProperty({
     description: "The setting of the assistant's tool.",
   })
