@@ -8,7 +8,11 @@ import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { CreateMessageDto } from '@/infrastructure/dtos/threads/create-message.dto';
 import { ulid } from 'ulid';
-import { ContentType, MessageStatus } from '@/domain/models/message.interface';
+import {
+  ContentType,
+  Message,
+  MessageStatus,
+} from '@/domain/models/message.interface';
 import { UpdateMessageDto } from '@/infrastructure/dtos/threads/update-message.dto';
 import { Thread } from '@/domain/models/thread.interface';
 import DeleteMessageDto from '@/infrastructure/dtos/threads/delete-message.dto';
@@ -135,6 +139,18 @@ export class ThreadsUsecases {
     return thread;
   }
 
+  private async getMessageOrThrow(messageId: string): Promise<Message> {
+    const message = await this.messageRepository.findOne({
+      where: {
+        id: messageId,
+      },
+    });
+    if (!message) {
+      throw new NotFoundException(`Message with id ${messageId} not found`);
+    }
+    return message;
+  }
+
   findOne(id: string) {
     return this.threadRepository.findOne({ where: { id } });
   }
@@ -152,14 +168,7 @@ export class ThreadsUsecases {
     messageId: string,
   ): Promise<DeleteMessageDto> {
     // we still allow user to delete message even if the thread is not there
-    const message = await this.messageRepository.findOne({
-      where: {
-        id: messageId,
-      },
-    });
-    if (!message) {
-      throw new NotFoundException(`Message with id ${messageId} not found`);
-    }
+    await this.getMessageOrThrow(messageId);
     await this.messageRepository.delete(messageId);
 
     return {
@@ -167,5 +176,10 @@ export class ThreadsUsecases {
       object: 'thread.message.deleted',
       deleted: true,
     };
+  }
+
+  async retrieveMessage(_threadId: string, messageId: string) {
+    // we still allow user to delete message even if the thread is not there
+    return this.getMessageOrThrow(messageId);
   }
 }
