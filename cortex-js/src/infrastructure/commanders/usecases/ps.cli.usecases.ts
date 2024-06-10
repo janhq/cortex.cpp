@@ -1,5 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { defaultCortexCppHost, defaultCortexCppPort } from '@/infrastructure/constants/cortex';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  CORTEX_CPP_MODELS_URL,
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 export interface ModelStat {
   modelId: string;
@@ -15,6 +21,7 @@ interface ModelStatResponse {
 }
 @Injectable()
 export class PSCliUsecases {
+  constructor(private readonly httpService: HttpService) {}
   /**
    * Get models running in the Cortex C++ server
    * @param host Cortex host address
@@ -25,32 +32,31 @@ export class PSCliUsecases {
     port: number = defaultCortexCppPort,
   ): Promise<ModelStat[]> {
     return new Promise<ModelStat[]>((resolve, reject) =>
-      fetch(`http://${host}:${port}/inferences/server/models`)
+      firstValueFrom(this.httpService.get(CORTEX_CPP_MODELS_URL(host, port)))
         .then((res) => {
-          if (res.ok) {
-            res
-              .json()
-              .then(({ data }: ModelStatResponse) => {
-                if (data && Array.isArray(data) && data.length > 0) {
-                  resolve(
-                    data.map((e) => {
-                      const startTime = e.start_time ?? new Date();
-                      const currentTime = new Date();
-                      const duration =
-                        currentTime.getTime() - new Date(startTime).getTime();
-                      return {
-                        modelId: e.id,
-                        engine: e.engine ?? 'cortex.llamacpp',
-                        status: 'running',
-                        duration: this.formatDuration(duration),
-                        ram: e.ram ?? '-',
-                        vram: e.vram ?? '-',
-                      };
-                    }),
-                  );
-                } else reject();
-              })
-              .catch(reject);
+          const data = res.data as ModelStatResponse;
+          if (
+            res.status === HttpStatus.OK &&
+            data &&
+            Array.isArray(data.data) &&
+            data.data.length > 0
+          ) {
+            resolve(
+              data.data.map((e) => {
+                const startTime = e.start_time ?? new Date();
+                const currentTime = new Date();
+                const duration =
+                  currentTime.getTime() - new Date(startTime).getTime();
+                return {
+                  modelId: e.id,
+                  engine: e.engine ?? 'cortex.llamacpp',
+                  status: 'running',
+                  duration: this.formatDuration(duration),
+                  ram: e.ram ?? '-',
+                  vram: e.vram ?? '-',
+                };
+              }),
+            );
           } else reject();
         })
         .catch(reject),

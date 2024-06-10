@@ -55,6 +55,7 @@ export class ThreadsUsecases {
     order: 'asc' | 'desc',
     after?: string,
     before?: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     runId?: string,
   ) {
     await this.getThreadOrThrow(threadId);
