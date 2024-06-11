@@ -1,6 +1,12 @@
 import { Model } from '@/domain/models/model.interface';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class ModelDto implements Partial<Model> {
   @ApiProperty({
@@ -85,7 +91,7 @@ export class ModelDto implements Partial<Model> {
   presence_penalty?: number;
 
   // Engine Settings
-  @ApiProperty({ description: 'Determines GPU layer usage.', example: 4096 })
+  @ApiProperty({ description: 'Determines GPU layer usage.', example: 32 })
   @IsOptional()
   @IsNumber()
   ngl?: number;
@@ -101,15 +107,95 @@ export class ModelDto implements Partial<Model> {
 
   @ApiProperty({
     description:
-      'Determines CPU inference threads, limited by hardware and OS. ',
+      'Determines CPU inference threads, limited by hardware and OS.',
+    example: 10,
   })
   @IsOptional()
   @IsNumber()
   cpu_threads?: number;
 
   @ApiProperty({
-    example: 'cortex.llamacpp',
+    description: 'The prompt to use for internal configuration',
+  })
+  @IsOptional()
+  @IsString()
+  pre_prompt?: string;
+
+  @ApiProperty({
+    description: 'The batch size for prompt eval step',
+    example: 512,
+  })
+  @IsOptional()
+  @IsNumber()
+  n_batch?: number;
+
+  @ApiProperty({
+    description: 'To enable prompt caching or not',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  caching_enabled?: boolean;
+
+  @ApiProperty({
+    description: 'Group attention factor in self-extend',
+    example: 1,
+  })
+  @IsOptional()
+  @IsNumber()
+  grp_attn_n?: number;
+
+  @ApiProperty({
+    description: 'Group attention width in self-extend',
+    example: 512,
+  })
+  @IsOptional()
+  @IsNumber()
+  grp_attn_w?: number;
+
+  @ApiProperty({
+    description: 'Prevent system swapping of the model to disk in macOS',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  mlock?: boolean;
+
+  @ApiProperty({
+    description:
+      'You can constrain the sampling using GBNF grammars by providing path to a grammar file',
+  })
+  @IsOptional()
+  @IsString()
+  grammar_file?: string;
+
+  @ApiProperty({
+    description: 'To enable Flash Attention, default is true',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  flash_attn?: boolean;
+
+  @ApiProperty({
+    description: 'KV cache type: f16, q8_0, q4_0, default is f16',
+    example: 'f16',
+  })
+  @IsOptional()
+  @IsString()
+  cache_type?: string;
+
+  @ApiProperty({
+    description: 'To enable mmap, default is true',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  use_mmap?: boolean;
+
+  @ApiProperty({
     description: 'The engine to use.',
+    example: 'cortex.llamacpp',
   })
   @IsOptional()
   engine?: string;

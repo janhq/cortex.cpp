@@ -23,6 +23,11 @@ export const CORTEX_CPP_HEALTH_Z_URL = (
   port: number = defaultCortexCppPort,
 ) => `http://${host}:${port}/healthz`;
 
+export const CORTEX_CPP_MODELS_URL = (
+  host: string = defaultCortexCppHost,
+  port: number = defaultCortexCppPort,
+) => `http://${host}:${port}/inferences/server/models`;
+
 // INITIALIZATION
 export const CORTEX_RELEASES_URL =
   'https://api.github.com/repos/janhq/cortex/releases';

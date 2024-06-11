@@ -18,7 +18,13 @@ import {
   OPEN_CHAT_3_5_JINJA,
   ZEPHYR,
   ZEPHYR_JINJA,
-} from '../../constants/prompt-constants';
+} from './../../constants/prompt-constants';
+import {
+  HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL,
+  HUGGING_FACE_REPO_MODEL_API_URL,
+  HUGGING_FACE_REPO_URL,
+  HUGGING_FACE_TREE_REF_URL,
+} from '../../constants/huggingface';
 import { ModelTokenizer } from '../types/model-tokenizer.interface';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -29,12 +35,6 @@ import { join, basename } from 'path';
 import { load } from 'js-yaml';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { isLocalModel, normalizeModelId } from '../utils/normalize-model-id';
-import {
-  HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL,
-  HUGGING_FACE_REPO_MODEL_API_URL,
-  HUGGING_FACE_REPO_URL,
-  HUGGING_FACE_TREE_REF_URL,
-} from '../../constants/huggingface';
 
 @Injectable()
 export class ModelsCliUsecases {

@@ -1,6 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIP, IsNumber, IsString, Max, Min } from 'class-validator';
-import { defaultCortexCppHost, defaultCortexCppPort } from '@/infrastructure/constants/cortex';
+import {
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
 
 export class StartCortexDto {
   @ApiProperty({
