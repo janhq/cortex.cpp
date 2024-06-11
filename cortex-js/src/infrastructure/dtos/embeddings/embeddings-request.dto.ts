@@ -3,21 +3,21 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEmbeddingsDto {
   @ApiProperty({
-    description: 'Embedding model',
+    description: 'The name of the embedding model to be used.',
     type: String,
   })
   model: string;
 
   @ApiProperty({
     description:
-      'Input text to embed, encoded as a string or array of tokens. To embed multiple inputs in a single request, pass an array of strings or array of token arrays.',
+      'The text or token array(s) to be embedded. This can be a single string, an array of strings, or an array of token arrays to embed multiple inputs in one request.',
     type: [String],
   })
   input: string | string[];
 
   @ApiProperty({
     description:
-      'Encoding format for the embeddings. Supported formats are float and int.',
+      'Specifies the format for the embeddings. Supported formats include `float` and `int`. This field is optional.',
     type: String,
   })
   @Optional()
@@ -25,7 +25,7 @@ export class CreateEmbeddingsDto {
 
   @ApiProperty({
     description:
-      'The number of dimensions the resulting output embeddings should have. Only supported in some models.',
+      'Defines the number of dimensions for the output embeddings. This feature is supported by certain models only. This field is optional.',
     type: Number,
   })
   @Optional()
