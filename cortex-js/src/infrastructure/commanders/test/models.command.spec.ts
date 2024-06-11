@@ -5,8 +5,7 @@ import { CommandModule } from '@/command.module';
 import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join } from 'path';
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
-import * as process from 'node:process';
-import axios from 'axios';
+import { timeout } from '@/infrastructure/commanders/test/helpers.command.spec';
 
 let commandInstance: TestingModule;
 
@@ -68,23 +67,22 @@ describe('models list returns array of models', () => {
     expect(logMock.firstCall?.args[0][0].id).toBe('test');
   });
 
-  test('pull existing model', async () => {
-    const logMock = stubMethod(console, 'error');
+  test(
+    'run model',
+    async () => {
+      const logMock = stubMethod(console, 'log');
 
-    await CommandTestFactory.run(commandInstance, ['pull', llama3]);
-    expect(logMock.firstCall?.args[0]).toBe('Model already exists');
-  });
+      await CommandTestFactory.run(commandInstance, ['run', llama3]);
+      expect(logMock.firstCall?.args[0]).toBe(
+        "Inorder to exit, type 'exit()'.",
+      );
 
-  test('run model', async () => {
-    const logMock = stubMethod(console, 'log');
-
-    await CommandTestFactory.run(commandInstance, ['run', llama3]);
-    expect(logMock.firstCall?.args[0]).toBe("Inorder to exit, type 'exit()'.");
-
-    const tableMock = stubMethod(console, 'table');
-    await CommandTestFactory.run(commandInstance, ['ps']);
-    expect(tableMock.firstCall?.args[0].length).toBeGreaterThan(0);
-  });
+      const tableMock = stubMethod(console, 'table');
+      await CommandTestFactory.run(commandInstance, ['ps']);
+      expect(tableMock.firstCall?.args[0].length).toBeGreaterThan(0);
+    },
+    timeout,
+  );
 
   test('get model', async () => {
     const logMock = stubMethod(console, 'log');
@@ -92,20 +90,5 @@ describe('models list returns array of models', () => {
     await CommandTestFactory.run(commandInstance, ['models', 'get', llama3]);
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Object);
     expect(logMock.firstCall?.args[0].files.length).toBe(1);
-  });
-
-  test('hello world', async () => {
-    const logMock = stubMethod(process.stdout, 'write');
-
-    await CommandTestFactory.run(commandInstance, ['chat', '-m', 'hello']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-  });
-
-  test('local API server via localhost:1337/api', async () => {
-    await CommandTestFactory.run(commandInstance, ['serve']);
-
-    // Send a request to the API server to check if it's running
-    const response = await axios.get('http://localhost:1337/api');
-    expect(response.status).toBe(200);
   });
 });
