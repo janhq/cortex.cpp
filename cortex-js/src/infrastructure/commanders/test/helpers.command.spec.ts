@@ -31,6 +31,24 @@ beforeEach(
 );
 
 describe('Helper commands', () => {
+  test('Help command return guideline to users ', async () => {
+    await CommandTestFactory.run(commandInstance, ['-h']);
+    expect(stdoutSpy.firstCall?.args).toBeInstanceOf(Array);
+    expect(stdoutSpy.firstCall?.args.length).toBe(1);
+    expect(stdoutSpy.firstCall?.args[0]).toContain('display help for command');
+
+    expect(exitSpy.callCount).toBeGreaterThan(1);
+    expect(exitSpy.firstCall?.args[0]).toBe(0);
+  });
+
+  test('Should handle missing command', async () => {
+    await CommandTestFactory.run(commandInstance, ['--unknown']);
+    expect(stderrSpy.firstCall?.args[0]).toContain('error: unknown option');
+    expect(stderrSpy.firstCall?.args[0]).toContain('--unknown');
+    expect(exitSpy.callCount).toBe(1);
+    expect(exitSpy.firstCall?.args[0]).toBe(1);
+  });
+
   test('Chat with option -m', async () => {
     const logMock = stubMethod(console, 'log');
 
