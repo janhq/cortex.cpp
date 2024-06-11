@@ -11,6 +11,7 @@ import { AssistantsModule } from '@/usecases/assistants/assistants.module';
 import { MessagesModule } from '@/usecases/messages/messages.module';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
 import { PSCliUsecases } from './ps.cli.usecases';
+import { BenchmarkCliUsecases } from './benchmark.cli.usecases';
 
 @Module({
   imports: [
@@ -28,7 +29,14 @@ import { PSCliUsecases } from './ps.cli.usecases';
     ModelsCliUsecases,
     ChatCliUsecases,
     PSCliUsecases,
+    BenchmarkCliUsecases,
   ],
-  exports: [InitCliUsecases, ModelsCliUsecases, ChatCliUsecases, PSCliUsecases],
+  exports: [
+    InitCliUsecases,
+    ModelsCliUsecases,
+    ChatCliUsecases,
+    PSCliUsecases,
+    BenchmarkCliUsecases,
+  ],
 })
 export class CliUsecasesModule {}

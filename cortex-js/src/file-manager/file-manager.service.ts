@@ -12,6 +12,7 @@ export class FileManagerService {
   private modelFolderName = 'models';
   private presetFolderName = 'presets';
   private extensionFoldername = 'extensions';
+  private benchmarkFoldername = 'benchmark';
   private cortexCppFolderName = 'cortex-cpp';
 
   /**
@@ -115,5 +116,15 @@ export class FileManagerService {
   async getExtensionsPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.extensionFoldername);
+  }
+
+  /**
+   * Get the benchmark folder path
+   * Usually it is located at the home directory > cortex > extensions
+   * @returns the path to the extensions folder
+   */
+  async getBenchmarkPath(): Promise<string> {
+    const dataFolderPath = await this.getDataFolderPath();
+    return join(dataFolderPath, this.benchmarkFoldername);
   }
 }
