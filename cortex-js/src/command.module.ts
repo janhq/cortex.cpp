@@ -30,6 +30,7 @@ import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { DownloadManagerModule } from './download-manager/download-manager.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     AssistantsModule,
     MessagesModule,
     FileManagerModule,
+    DownloadManagerModule,
   ],
   providers: [
     CortexCommand,

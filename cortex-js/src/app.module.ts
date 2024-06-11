@@ -16,6 +16,7 @@ import { FileManagerModule } from './infrastructure/services/file-manager/file-m
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './infrastructure/controllers/app.controller';
+import { DownloadManagerModule } from './download-manager/download-manager.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AppController } from './infrastructure/controllers/app.controller';
     ExtensionModule,
     FileManagerModule,
     ModelRepositoryModule,
+    DownloadManagerModule,
   ],
   controllers: [AppController],
   providers: [SeedService],

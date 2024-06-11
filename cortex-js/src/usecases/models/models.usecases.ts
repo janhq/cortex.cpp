@@ -3,14 +3,13 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
-import { v4 as uuidv4 } from 'uuid';
 import { join, basename } from 'path';
 import {
   promises,
-  createWriteStream,
   existsSync,
   mkdirSync,
   rmdirSync,
+  createWriteStream,
 } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
@@ -33,12 +32,8 @@ import {
   fetchJanRepoData,
   getHFModelMetadata,
 } from '@/utils/huggingface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import {
-  DownloadItem,
-  DownloadState,
-  DownloadStatus,
-} from '@/domain/models/download.interface';
+import { DownloadType } from '@/domain/models/download.interface';
+import { DownloadManagerService } from '@/download-manager/download-manager.service';
 
 @Injectable()
 export class ModelsUsecases {
@@ -46,8 +41,8 @@ export class ModelsUsecases {
     private readonly modelRepository: ModelRepository,
     private readonly extensionRepository: ExtensionRepository,
     private readonly fileManagerService: FileManagerService,
+    private readonly downloadManagerService: DownloadManagerService,
     private readonly httpService: HttpService,
-    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -244,76 +239,57 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true });
     const destination = join(modelFolder, fileName);
 
-    const response = await firstValueFrom(
-      this.httpService.get(downloadUrl, {
-        responseType: 'stream',
-      }),
-    );
-    if (!response) {
-      throw new Error('Failed to download model');
+    if (callback != null) {
+      const response = await firstValueFrom(
+        this.httpService.get(downloadUrl, {
+          responseType: 'stream',
+        }),
+      );
+      if (!response) {
+        throw new Error('Failed to download model');
+      }
+
+      return new Promise((resolve, reject) => {
+        const writer = createWriteStream(destination);
+        let receivedBytes = 0;
+        const totalBytes = response.headers['content-length'];
+
+        writer.on('finish', () => {
+          resolve(true);
+        });
+
+        writer.on('error', (error) => {
+          reject(error);
+        });
+
+        response.data.on('data', (chunk: any) => {
+          receivedBytes += chunk.length;
+          callback?.(Math.floor((receivedBytes / totalBytes) * 100));
+        });
+
+        response.data.pipe(writer);
+      });
+    } else {
+      // modelId should be unique
+      const downloadId = modelId;
+
+      // inorder to download multiple files, just need to pass more urls and destination to this object
+      const urlToDestination: Record<string, string> = {
+        [downloadUrl]: destination,
+      };
+
+      this.downloadManagerService.submitDownloadRequest(
+        downloadId,
+        model.name ?? modelId,
+        DownloadType.Model,
+        urlToDestination,
+      );
+
+      return {
+        downloadId,
+        message: 'Download started',
+      };
     }
-
-    const downloadItem: DownloadItem = {
-      id: fileName,
-      time: {
-        elapsed: 0,
-        remaining: 0,
-      },
-      size: {
-        total: 0,
-        transferred: 0,
-      },
-      status: DownloadStatus.Pending,
-    };
-    const downloadState: DownloadState = {
-      id: uuidv4(),
-      title: model.name ?? modelId,
-      type: 'model',
-      status: DownloadStatus.Pending,
-      children: [downloadItem],
-    };
-
-    return new Promise((resolve, reject) => {
-      const writer = createWriteStream(destination);
-      let receivedBytes = 0;
-      const totalBytes = response.headers['content-length'];
-      let previousPercentage = 0;
-
-      downloadItem.size.total = totalBytes;
-      downloadItem.status = DownloadStatus.Downloading;
-      downloadState.status = DownloadStatus.Downloading;
-
-      writer.on('finish', () => {
-        downloadItem.status = DownloadStatus.Downloaded;
-        downloadState.status = DownloadStatus.Downloaded;
-        this.eventEmitter.emit('download.event', [downloadState]);
-
-        resolve(true);
-      });
-
-      writer.on('error', (error) => {
-        downloadItem.status = DownloadStatus.Error;
-        downloadItem.error = error.message;
-        downloadState.status = DownloadStatus.Error;
-        downloadState.error = error.message;
-        this.eventEmitter.emit('download.event', [downloadState]);
-
-        reject(error);
-      });
-
-      response.data.on('data', (chunk: any) => {
-        receivedBytes += chunk.length;
-        const percentage = Math.floor((receivedBytes / totalBytes) * 100);
-        callback?.(percentage);
-
-        if (percentage === previousPercentage) return;
-        downloadItem.size.transferred = receivedBytes;
-        this.eventEmitter.emit('download.event', [downloadState]);
-        previousPercentage = percentage;
-      });
-
-      response.data.pipe(writer);
-    });
   }
 
   /**

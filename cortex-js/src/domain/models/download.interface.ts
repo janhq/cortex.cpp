@@ -1,6 +1,6 @@
 export class DownloadState {
   /**
-   * The id of a particular download. This will be an uuid.
+   * The id of a particular download. Being used to prevent duplication of downloads.
    */
   id: string;
 
@@ -12,7 +12,7 @@ export class DownloadState {
   /**
    * The type of download.
    */
-  type: 'model' | 'miscelanous';
+  type: DownloadType;
 
   /**
    * The status of the download.
@@ -64,4 +64,9 @@ export class DownloadItem {
 
 export interface DownloadStateEvent {
   data: DownloadState[];
+}
+
+export enum DownloadType {
+  Model = 'model',
+  Miscelanous = 'miscelanous',
 }

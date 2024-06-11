@@ -7,6 +7,7 @@ import { ExtensionModule } from '@/infrastructure/repositories/extensions/extens
 import { HttpModule } from '@nestjs/axios';
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 import { ModelRepositoryModule } from '@/infrastructure/repositories/models/model.module';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { ModelRepositoryModule } from '@/infrastructure/repositories/models/mode
     HttpModule,
     FileManagerModule,
     ModelRepositoryModule,
+    DownloadManagerModule,
   ],
   controllers: [ModelsController],
   providers: [ModelsUsecases],
