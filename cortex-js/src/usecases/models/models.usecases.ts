@@ -3,6 +3,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { v4 as uuidv4 } from 'uuid';
 import { join, basename } from 'path';
 import {
   promises,
@@ -26,13 +27,18 @@ import {
   HuggingFaceRepoData,
 } from '@/domain/models/huggingface.interface';
 import { LLAMA_2 } from '@/infrastructure/constants/prompt-constants';
-
 import { isValidUrl } from '@/utils/urls';
 import {
   fetchHuggingFaceRepoData,
   fetchJanRepoData,
   getHFModelMetadata,
 } from '@/utils/huggingface';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  DownloadItem,
+  DownloadState,
+  DownloadStatus,
+} from '@/domain/models/download.interface';
 
 @Injectable()
 export class ModelsUsecases {
@@ -41,6 +47,7 @@ export class ModelsUsecases {
     private readonly extensionRepository: ExtensionRepository,
     private readonly fileManagerService: FileManagerService,
     private readonly httpService: HttpService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -246,22 +253,63 @@ export class ModelsUsecases {
       throw new Error('Failed to download model');
     }
 
+    const downloadItem: DownloadItem = {
+      id: fileName,
+      time: {
+        elapsed: 0,
+        remaining: 0,
+      },
+      size: {
+        total: 0,
+        transferred: 0,
+      },
+      status: DownloadStatus.Pending,
+    };
+    const downloadState: DownloadState = {
+      id: uuidv4(),
+      title: model.name ?? modelId,
+      type: 'model',
+      status: DownloadStatus.Pending,
+      children: [downloadItem],
+    };
+
     return new Promise((resolve, reject) => {
       const writer = createWriteStream(destination);
       let receivedBytes = 0;
       const totalBytes = response.headers['content-length'];
+      let previousPercentage = 0;
+
+      downloadItem.size.total = totalBytes;
+      downloadItem.status = DownloadStatus.Downloading;
+      downloadState.status = DownloadStatus.Downloading;
 
       writer.on('finish', () => {
+        downloadItem.status = DownloadStatus.Downloaded;
+        downloadState.status = DownloadStatus.Downloaded;
+        this.eventEmitter.emit('download.event', [downloadState]);
+
         resolve(true);
       });
 
       writer.on('error', (error) => {
+        downloadItem.status = DownloadStatus.Error;
+        downloadItem.error = error.message;
+        downloadState.status = DownloadStatus.Error;
+        downloadState.error = error.message;
+        this.eventEmitter.emit('download.event', [downloadState]);
+
         reject(error);
       });
 
       response.data.on('data', (chunk: any) => {
         receivedBytes += chunk.length;
-        callback?.(Math.floor((receivedBytes / totalBytes) * 100));
+        const percentage = Math.floor((receivedBytes / totalBytes) * 100);
+        callback?.(percentage);
+
+        if (percentage === previousPercentage) return;
+        downloadItem.size.transferred = receivedBytes;
+        this.eventEmitter.emit('download.event', [downloadState]);
+        previousPercentage = percentage;
       });
 
       response.data.pipe(writer);

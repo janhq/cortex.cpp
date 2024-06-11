@@ -37,6 +37,7 @@
     "@nestjs/config": "^3.2.2",
     "@nestjs/core": "^10.0.0",
     "@nestjs/devtools-integration": "^0.1.6",
+    "@nestjs/event-emitter": "^2.0.4",
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.3.1",

@@ -29,6 +29,7 @@ import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command'
       envFilePath:
         process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     ModelsModule,
     CortexModule,

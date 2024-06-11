@@ -14,6 +14,8 @@ import { env } from 'node:process';
 import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { AppController } from './infrastructure/controllers/app.controller';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.mid
       isGlobal: true,
       envFilePath: env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     MessagesModule,
     ThreadsModule,
@@ -35,6 +38,7 @@ import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.mid
     FileManagerModule,
     ModelRepositoryModule,
   ],
+  controllers: [AppController],
   providers: [SeedService],
 })
 export class AppModule implements NestModule {
