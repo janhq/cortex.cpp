@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CortexUsecases } from './cortex.usecases';
 import { DatabaseModule } from '@/infrastructure/database/database.module';
 import { HttpModule } from '@nestjs/axios';
-import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 describe('CortexUsecases', () => {
   let cortexUsecases: CortexUsecases;

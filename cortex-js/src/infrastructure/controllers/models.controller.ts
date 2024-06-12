@@ -115,6 +115,27 @@ export class ModelsController {
   @ApiResponse({
     status: 200,
     description: 'Ok',
+    type: DownloadModelResponseDto,
+  })
+  @ApiOperation({
+    summary: 'Pulls a remote model and download it',
+    description:
+      'Pulls a remote model template from cortex hub or huggingface and downloads it.',
+  })
+  @ApiParam({
+    name: 'modelId',
+    required: true,
+    description: 'The unique identifier of the model.',
+  })
+  @Get('pull/:modelId(*)')
+  pullModel(@Param('modelId') modelId: string) {
+    return this.modelsUsecases.pullModel(modelId);
+  }
+
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
     type: ListModelsResponseDto,
   })
   @ApiOperation({

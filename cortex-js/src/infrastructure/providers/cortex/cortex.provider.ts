@@ -9,9 +9,9 @@ import {
   defaultCortexCppPort,
 } from '@/infrastructure/constants/cortex';
 import { readdirSync } from 'node:fs';
-import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
+import { normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {

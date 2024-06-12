@@ -1,4 +1,5 @@
-export interface ModelTokenizer {
+export interface ModelMetadata {
   stopWord?: string;
   promptTemplate: string;
+  version: number;
 }

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CortexUsecases } from './cortex.usecases';
 import { HttpModule } from '@nestjs/axios';
-import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 @Module({
   imports: [HttpModule, FileManagerModule],

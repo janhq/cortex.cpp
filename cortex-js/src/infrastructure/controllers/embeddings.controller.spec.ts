@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EmbeddingsController } from './embeddings.controller';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { DatabaseModule } from '../database/database.module';
-import { ModelRepositoryModule } from '../repositories/model/model.module';
+import { ModelRepositoryModule } from '../repositories/models/model.module';
 import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
 

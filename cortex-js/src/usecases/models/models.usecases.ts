@@ -15,12 +15,24 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { HttpService } from '@nestjs/axios';
-import { normalizeModelId } from '@/infrastructure/commanders/utils/normalize-model-id';
+import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { AxiosError } from 'axios';
 import { ModelRepository } from '@/domain/repositories/model.interface';
-import { ModelParameterParser } from '@/infrastructure/commanders/utils/model-parameter.parser';
+import { ModelParameterParser } from '@/utils/model-parameter.parser';
+import {
+  HuggingFaceModelVersion,
+  HuggingFaceRepoData,
+} from '@/domain/models/huggingface.interface';
+import { LLAMA_2 } from '@/infrastructure/constants/prompt-constants';
+
+import { isValidUrl } from '@/utils/urls';
+import {
+  fetchHuggingFaceRepoData,
+  fetchJanRepoData,
+  getHFModelMetadata,
+} from '@/utils/huggingface';
 
 @Injectable()
 export class ModelsUsecases {
@@ -31,6 +43,10 @@ export class ModelsUsecases {
     private readonly httpService: HttpService,
   ) {}
 
+  /**
+   * Create a new model
+   * @param createModelDto Model data
+   */
   async create(createModelDto: CreateModelDto) {
     const model: Model = {
       ...createModelDto,
@@ -39,14 +55,28 @@ export class ModelsUsecases {
     await this.modelRepository.create(model);
   }
 
+  /**
+   * Find all models
+   * @returns Models
+   */
   async findAll(): Promise<Model[]> {
     return this.modelRepository.findAll();
   }
 
+  /**
+   * Find a model by ID
+   * @param model Model ID
+   * @returns Model
+   */
   async findOne(model: string) {
     return this.modelRepository.findOne(model);
   }
 
+  /**
+   * Get a model by ID or throw an exception
+   * @param id Model ID
+   * @returns Model
+   */
   async getModelOrThrow(id: string): Promise<Model> {
     const model = await this.findOne(id);
     if (!model) {
@@ -55,10 +85,21 @@ export class ModelsUsecases {
     return model;
   }
 
+  /**
+   * Update a model by ID
+   * @param id Model ID
+   * @param updateModelDto Model data to update
+   * @returns Model update status
+   */
   update(id: string, updateModelDto: UpdateModelDto) {
     return this.modelRepository.update(id, updateModelDto);
   }
 
+  /**
+   * Remove a model by ID
+   * @param id Model ID
+   * @returns Model removal status
+   */
   async remove(id: string) {
     const modelsContainerDir = await this.fileManagerService.getModelsPath();
     if (!existsSync(modelsContainerDir)) {
@@ -82,6 +123,12 @@ export class ModelsUsecases {
       });
   }
 
+  /**
+   * Start a model by ID
+   * @param modelId Model ID
+   * @param settings Model settings
+   * @returns
+   */
   async startModel(
     modelId: string,
     settings?: ModelSettingParams,
@@ -157,6 +204,12 @@ export class ModelsUsecases {
       }));
   }
 
+  /**
+   * Download a remote model from HuggingFace or Jan's repo
+   * @param modelId
+   * @param callback
+   * @returns
+   */
   async downloadModel(modelId: string, callback?: (progress: number) => void) {
     const model = await this.getModelOrThrow(modelId);
 
@@ -169,7 +222,7 @@ export class ModelsUsecases {
     if (!downloadUrl) {
       throw new BadRequestException('No model URL provided');
     }
-    if (!this.isValidUrl(downloadUrl)) {
+    if (!isValidUrl(downloadUrl)) {
       throw new BadRequestException(`Invalid download URL: ${downloadUrl}`);
     }
 
@@ -215,13 +268,83 @@ export class ModelsUsecases {
     });
   }
 
-  private isValidUrl(input: string | undefined): boolean {
-    if (!input) return false;
-    try {
-      new URL(input);
-      return true;
-    } catch (e) {
-      return false;
+  /**
+   * Populate model metadata from a Model repository (HF, Jan...) and download it
+   * @param modelId
+   */
+  async pullModel(modelId: string, callback?: (progress: number) => void) {
+    const existingModel = await this.findOne(modelId);
+    if (isLocalModel(existingModel?.files)) {
+      console.error('Model already exists');
+      process.exit(1);
     }
+
+    // Fetch the repo data
+
+    const data = await this.fetchModelMetadata(modelId);
+    // Pull the model.yaml
+    await this.populateHuggingFaceModel(modelId, data.siblings[0]);
+
+    // Start downloading the model
+    await this.downloadModel(modelId, callback);
+
+    const model = await this.findOne(modelId);
+    const fileUrl = join(
+      await this.fileManagerService.getModelsPath(),
+      normalizeModelId(modelId),
+      basename((model?.files as string[])[0]),
+    );
+    await this.update(modelId, {
+      files: [fileUrl],
+      name: modelId.replace(':default', ''),
+    });
+  }
+
+  /**
+   * It's to pull model from HuggingFace repository
+   * It could be a model from Jan's repo or other authors
+   * @param modelId HuggingFace model id. e.g. "janhq/llama-3 or llama3:7b"
+   */
+  async populateHuggingFaceModel(
+    modelId: string,
+    modelVersion: HuggingFaceModelVersion,
+  ) {
+    if (!modelVersion) throw 'No expected quantization found';
+    const tokenizer = await getHFModelMetadata(modelVersion.downloadUrl!);
+
+    const promptTemplate = tokenizer?.promptTemplate ?? LLAMA_2;
+    const stopWords: string[] = [tokenizer?.stopWord ?? ''];
+
+    const model: CreateModelDto = {
+      files: [modelVersion.downloadUrl ?? ''],
+      model: modelId,
+      name: modelId,
+      prompt_template: promptTemplate,
+      stop: stopWords,
+
+      // Default Inference Params
+      stream: true,
+      max_tokens: 4098,
+      frequency_penalty: 0.7,
+      presence_penalty: 0.7,
+      temperature: 0.7,
+      top_p: 0.7,
+
+      // Default Model Settings
+      ctx_len: 4096,
+      ngl: 100,
+      engine: 'cortex.llamacpp',
+    };
+    if (!(await this.findOne(modelId))) await this.create(model);
+  }
+
+  /**
+   * Fetches the model data from HuggingFace
+   * @param modelId Model repo id. e.g. llama3, llama3:8b, janhq/llama3
+   * @returns
+   */
+  fetchModelMetadata(modelId: string): Promise<HuggingFaceRepoData> {
+    if (modelId.includes('/')) return fetchHuggingFaceRepoData(modelId);
+    else return fetchJanRepoData(modelId);
   }
 }

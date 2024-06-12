@@ -4,7 +4,7 @@ import fs, { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import OpenAI from 'openai';
 import { Presets, SingleBar } from 'cli-progress';
 import yaml from 'js-yaml';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'path';
 import { ModelsCliUsecases } from './models.cli.usecases';
 import { spawn } from 'child_process';
