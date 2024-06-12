@@ -31,23 +31,18 @@ beforeEach(
 );
 
 describe('Helper commands', () => {
-  test('Help command return guideline to users ', async () => {
-    await CommandTestFactory.run(commandInstance, ['-h']);
-    expect(stdoutSpy.firstCall?.args).toBeInstanceOf(Array);
-    expect(stdoutSpy.firstCall?.args.length).toBe(1);
-    expect(stdoutSpy.firstCall?.args[0]).toContain('display help for command');
+  test(
+    'Init with hardware auto detection',
+    async () => {
+      await CommandTestFactory.run(commandInstance, ['init', '-s']);
 
-    expect(exitSpy.callCount).toBeGreaterThan(1);
-    expect(exitSpy.firstCall?.args[0]).toBe(0);
-  });
+      // Wait for a brief period to allow the command to execute
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-  test('Should handle missing command', async () => {
-    await CommandTestFactory.run(commandInstance, ['--unknown']);
-    expect(stderrSpy.firstCall?.args[0]).toContain('error: unknown option');
-    expect(stderrSpy.firstCall?.args[0]).toContain('--unknown');
-    expect(exitSpy.callCount).toBe(1);
-    expect(exitSpy.firstCall?.args[0]).toBe(1);
-  });
+      expect(stdoutSpy.firstCall?.args.length).toBeGreaterThan(0);
+    },
+    timeout,
+  );
 
   test('Chat with option -m', async () => {
     const logMock = stubMethod(console, 'log');
@@ -62,16 +57,6 @@ describe('Helper commands', () => {
     // expect(exitSpy.callCount).toBe(1);
     // expect(exitSpy.firstCall?.args[0]).toBe(1);
   });
-
-  test(
-    'Model already exists',
-    async () => {
-      await CommandTestFactory.run(commandInstance, ['pull', 'llama3']);
-      expect(stdoutSpy.firstCall?.args[0]).toContain('Model already exists');
-      expect(exitSpy.firstCall?.args[0]).toBe(1);
-    },
-    timeout,
-  );
 
   test('Show / kill running models', async () => {
     const tableMock = stubMethod(console, 'table');
@@ -88,7 +73,7 @@ describe('Helper commands', () => {
     expect(tableMock.firstCall?.args[0].length).toEqual(0);
   });
 
-  test('Help command return guideline to users ', async () => {
+  test('Help command return guideline to users', async () => {
     await CommandTestFactory.run(commandInstance, ['-h']);
     expect(stdoutSpy.firstCall?.args).toBeInstanceOf(Array);
     expect(stdoutSpy.firstCall?.args.length).toBe(1);
@@ -105,19 +90,6 @@ describe('Helper commands', () => {
     expect(exitSpy.callCount).toBe(1);
     expect(exitSpy.firstCall?.args[0]).toBe(1);
   });
-
-  test(
-    'Init with hardware auto detection',
-    async () => {
-      await CommandTestFactory.run(commandInstance, ['init', '-s']);
-
-      // Wait for a brief period to allow the command to execute
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      expect(stdoutSpy.firstCall?.args.length).toBeGreaterThan(0);
-    },
-    timeout,
-  );
 
   test('Local API server via localhost:1337/api', async () => {
     await CommandTestFactory.run(commandInstance, ['serve']);

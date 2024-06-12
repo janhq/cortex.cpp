@@ -2,9 +2,8 @@ import { TestingModule } from '@nestjs/testing';
 import { stubMethod } from 'hanbi';
 import { CommandTestFactory } from 'nest-commander-testing';
 import { CommandModule } from '@/command.module';
-import { FileManagerService } from '@/file-manager/file-manager.service';
 import { join } from 'path';
-import { mkdirSync, rmSync, writeFileSync } from 'fs';
+import { rmSync } from 'fs';
 import { timeout } from '@/infrastructure/commanders/test/helpers.command.spec';
 
 let commandInstance: TestingModule;
@@ -18,13 +17,6 @@ beforeEach(
         // .overrideProvider(LogService)
         // .useValue({})
         .compile();
-      const fileService =
-        await commandInstance.resolve<FileManagerService>(FileManagerService);
-
-      // Attempt to create test folder
-      await fileService.writeConfigFile({
-        dataFolderPath: join(__dirname, 'test_data'),
-      });
       res();
     }),
 );
@@ -41,9 +33,21 @@ afterEach(
     }),
 );
 
-const llama3 = 'llama3';
-describe('models list returns array of models', () => {
-  test('empty model list', async () => {
+export const modelName = 'tinyllama';
+describe('Models list returns array of models', () => {
+  test('Init with CPU', async () => {
+    const logMock = stubMethod(console, 'log');
+
+    logMock.passThrough();
+    CommandTestFactory.setAnswers(['CPU', '', 'AVX2']);
+
+    await CommandTestFactory.run(commandInstance, ['init']);
+    expect(logMock.firstCall?.args[0]).toBe(
+      'Downloading engine file windows-amd64-avx2.tar.gz',
+    );
+  }, 50000);
+
+  test('Empty model list', async () => {
     const logMock = stubMethod(console, 'table');
 
     await CommandTestFactory.run(commandInstance, ['models', 'list']);
@@ -51,31 +55,13 @@ describe('models list returns array of models', () => {
     expect(logMock.firstCall?.args[0].length).toBe(0);
   });
 
-  test('many models in the list', async () => {
-    const logMock = stubMethod(console, 'table');
-
-    mkdirSync(join(__dirname, 'test_data', 'models'), { recursive: true });
-    writeFileSync(
-      join(__dirname, 'test_data', 'models', 'test.yaml'),
-      'model: test',
-      'utf8',
-    );
-
-    await CommandTestFactory.run(commandInstance, ['models', 'list']);
-    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(logMock.firstCall?.args[0].length).toBe(1);
-    expect(logMock.firstCall?.args[0][0].id).toBe('test');
-  });
-
   test(
-    'run model',
+    'Run model and check with cortex ps',
     async () => {
       const logMock = stubMethod(console, 'log');
 
-      await CommandTestFactory.run(commandInstance, ['run', llama3]);
-      expect(logMock.firstCall?.args[0]).toBe(
-        "Inorder to exit, type 'exit()'.",
-      );
+      await CommandTestFactory.run(commandInstance, ['run', modelName]);
+      expect(logMock.lastCall?.args[0]).toBe("Inorder to exit, type 'exit()'.");
 
       const tableMock = stubMethod(console, 'table');
       await CommandTestFactory.run(commandInstance, ['ps']);
@@ -84,11 +70,31 @@ describe('models list returns array of models', () => {
     timeout,
   );
 
-  test('get model', async () => {
+  test('Get model', async () => {
     const logMock = stubMethod(console, 'log');
 
-    await CommandTestFactory.run(commandInstance, ['models', 'get', llama3]);
+    await CommandTestFactory.run(commandInstance, ['models', 'get', modelName]);
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Object);
     expect(logMock.firstCall?.args[0].files.length).toBe(1);
   });
+
+  test('Many models in the list', async () => {
+    const logMock = stubMethod(console, 'table');
+    await CommandTestFactory.run(commandInstance, ['models', 'list']);
+    expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
+    expect(logMock.firstCall?.args[0].length).toBe(1);
+    expect(logMock.firstCall?.args[0][0].id).toBe(modelName);
+  });
+
+  test(
+    'Model already exists',
+    async () => {
+      const stdoutSpy = stubMethod(process.stdout, 'write');
+      const exitSpy = stubMethod(process, 'exit');
+      await CommandTestFactory.run(commandInstance, ['pull', modelName]);
+      expect(stdoutSpy.firstCall?.args[0]).toContain('Model already exists');
+      expect(exitSpy.firstCall?.args[0]).toBe(1);
+    },
+    timeout,
+  );
 });
