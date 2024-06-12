@@ -6,8 +6,9 @@ import {
 } from 'nest-commander';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
-import { ModelStat, PSCliUsecases } from './usecases/ps.cli.usecases';
+import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
+import { ModelStat } from './types/model-stat.interface';
 
 type ChatOptions = {
   threadId?: string;

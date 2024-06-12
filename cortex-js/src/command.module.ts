@@ -28,6 +28,7 @@ import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
+import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command
     KillCommand,
     PresetCommand,
     EmbeddingCommand,
+    BenchmarkCommand,
 
     // Questions
     InitRunModeQuestions,

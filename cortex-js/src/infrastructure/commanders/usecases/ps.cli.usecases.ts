@@ -6,15 +6,8 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
+import { ModelStat } from '../types/model-stat.interface';
 
-export interface ModelStat {
-  modelId: string;
-  engine?: string;
-  duration?: string;
-  status: string;
-  vram?: string;
-  ram?: string;
-}
 interface ModelStatResponse {
   object: string;
   data: any;

@@ -5,9 +5,10 @@ import {
   SubCommand,
 } from 'nest-commander';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { ModelStat, PSCliUsecases } from './usecases/ps.cli.usecases';
+import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { inspect } from 'util';
+import { ModelStat } from './types/model-stat.interface';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
