@@ -20,16 +20,22 @@ export class ServeCommand extends CommandRunner {
     const host = options?.host || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
 
-    spawn('node', [join(__dirname, '../../main.js')], {
-      env: {
-        ...process.env,
-        CORTEX_JS_HOST: host,
-        CORTEX_JS_PORT: port.toString(),
-        NODE_ENV: 'production',
+    spawn(
+      'node',
+      process.env.TEST
+        ? [join(__dirname, '../../../dist/src/main.js')]
+        : [join(__dirname, '../../main.js')],
+      {
+        env: {
+          ...process.env,
+          CORTEX_JS_HOST: host,
+          CORTEX_JS_PORT: port.toString(),
+          NODE_ENV: 'production',
+        },
+        stdio: 'inherit',
+        detached: false,
       },
-      stdio: 'inherit',
-      detached: false,
-    });
+    );
   }
 
   @Option({

@@ -10,8 +10,8 @@ export class EmbeddingsController {
   constructor(private readonly chatService: ChatUsecases) {}
 
   @ApiOperation({
-    summary: 'Embedding vector for text',
-    description: 'Creates an embedding vector representing the input text..',
+    summary: 'Create embedding vector',
+    description: 'Creates an embedding vector representing the input text.',
   })
   @HttpCode(200)
   @ApiResponse({

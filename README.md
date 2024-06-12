@@ -33,7 +33,7 @@ Cortex currently supports two inference engines:
 
 Before installation, ensure that you have installed the following:
 
-- **Node.js**: Required for running the installation.
+- **Node.js**: version 18 and above is required to run the installation.
 - **NPM**: Needed to manage packages.
 - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
 

@@ -10,6 +10,7 @@ import { KillCommand } from './kill.command';
 import pkg from '@/../package.json';
 import { PresetCommand } from './presets.command';
 import { EmbeddingCommand } from './embeddings.command';
+import { BenchmarkCommand } from './benchmark.command';
 
 interface CortexCommandOptions {
   version: boolean;
@@ -26,6 +27,7 @@ interface CortexCommandOptions {
     KillCommand,
     PresetCommand,
     EmbeddingCommand,
+    BenchmarkCommand,
   ],
   description: 'Cortex CLI',
 })
