@@ -8,7 +8,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { join } from 'path';
 import { ModelsCliUsecases } from './models.cli.usecases';
 import { spawn } from 'child_process';
-import { BenchmarkConfig } from '../types/benchmark-config.interface';
+import { BenchmarkConfig } from '@commanders/types/benchmark-config.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { inspect } from 'util';
 import { defaultBenchmarkConfiguration } from '@/infrastructure/constants/benchmark';

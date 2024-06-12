@@ -1,4 +1,4 @@
-import { BenchmarkConfig } from '../commanders/types/benchmark-config.interface';
+import { BenchmarkConfig } from '@commanders/types/benchmark-config.interface';
 
 export const defaultBenchmarkConfiguration: BenchmarkConfig = {
   api: {

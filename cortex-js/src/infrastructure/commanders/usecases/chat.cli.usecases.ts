@@ -17,7 +17,7 @@ import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import stream from 'stream';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
-import { ModelParameterParser } from '../../../utils/model-parameter.parser';
+import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 
 @Injectable()

@@ -1,5 +1,5 @@
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 

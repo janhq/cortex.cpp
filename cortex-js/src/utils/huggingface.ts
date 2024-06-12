@@ -64,7 +64,7 @@ export function guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
 export async function fetchHuggingFaceRepoData(
   repoId: string,
 ): Promise<HuggingFaceRepoData> {
-  const sanitizedUrl = this.getRepoModelsUrl(repoId);
+  const sanitizedUrl = getRepoModelsUrl(repoId);
 
   const { data: response } = await axios.get(sanitizedUrl);
   if (response['error'] != null) {
@@ -113,7 +113,7 @@ export async function fetchJanRepoData(
 ): Promise<HuggingFaceRepoData> {
   const repo = modelId.split(':')[0];
   const tree = modelId.split(':')[1] ?? 'default';
-  const url = this.getRepoModelsUrl(`janhq/${repo}`, tree);
+  const url = getRepoModelsUrl(`janhq/${repo}`, tree);
   const res = await fetch(url);
   const response:
     | {

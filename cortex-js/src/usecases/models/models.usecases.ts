@@ -275,15 +275,17 @@ export class ModelsUsecases {
   async pullModel(modelId: string, callback?: (progress: number) => void) {
     const existingModel = await this.findOne(modelId);
     if (isLocalModel(existingModel?.files)) {
-      console.error('Model already exists');
-      process.exit(1);
+      throw new BadRequestException('Model already exists');
     }
 
     // Fetch the repo data
 
     const data = await this.fetchModelMetadata(modelId);
     // Pull the model.yaml
-    await this.populateHuggingFaceModel(modelId, data.siblings[0]);
+    await this.populateHuggingFaceModel(
+      modelId,
+      data.siblings.filter((e) => e.quantization != null)[0],
+    );
 
     // Start downloading the model
     await this.downloadModel(modelId, callback);

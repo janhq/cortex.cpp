@@ -4,7 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
 import { exit } from 'node:process';
-import { InitOptions } from '../types/init-options.interface';
+import { InitOptions } from '@commanders/types/init-options.interface';
 import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';

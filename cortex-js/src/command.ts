@@ -2,7 +2,7 @@
 import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
 import updateNotifier from 'update-notifier';
-import packageJson from './../package.json';
+import packageJson from '@/../package.json';
 
 async function bootstrap() {
   await CommandFactory.run(CommandModule, ['warn', 'error']);

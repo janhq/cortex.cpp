@@ -6,7 +6,7 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
-import { ModelStat } from '../types/model-stat.interface';
+import { ModelStat } from '@commanders/types/model-stat.interface';
 
 interface ModelStatResponse {
   object: string;
