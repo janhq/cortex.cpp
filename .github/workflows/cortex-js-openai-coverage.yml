@@ -69,8 +69,8 @@ jobs:
           
           # Create pytest.ini file with content
           mv ../coverage/pytest.ini pytest.ini
-          echo "rp_api_key=${{ secrets.RP_API_KEY }}" >> pytest.ini
-          echo "rp_endpoint=${{ secrets.RP_ENDPOINT }}" >> pytest.ini
+          echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
+          echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
           
           # Append to conftest.py
           mv ../coverage/conftest.py tests/conftest.py
