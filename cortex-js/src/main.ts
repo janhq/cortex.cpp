@@ -53,6 +53,10 @@ async function bootstrap() {
       'Threads',
       'These endpoints handle the creation, retrieval, updating, and deletion of conversation threads.',
     )
+    .addTag(
+      'Embeddings',
+      'Endpoint for creating and retrieving embedding vectors from text inputs using specified models.',
+    )
     .addServer('http://localhost:1337')
     .addServer('http://localhost:1337/v1')
     .build();
