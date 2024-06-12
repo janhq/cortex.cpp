@@ -4,3 +4,10 @@ dist
 *.lock
 node_modules
 .turbo
+
+# CI - Test - Coverage
+cortex.log
+api.log
+prism.log
+api.json
+openai-python/*
