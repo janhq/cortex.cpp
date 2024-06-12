@@ -1,7 +1,7 @@
 name: Test - OpenAI API Coverage  - Nightly / Manual
 on:
     schedule:
-        - cron: '0 20 * * 1,2,3' # At 8 PM UTC on Monday, Tuesday, and Wednesday which is 3 AM UTC+7 Tuesday, Wednesday, and Thursday
+        - cron: '0 20 * * 1,2,3,4,5,6'
     workflow_dispatch:
         inputs:
             endpoints:
@@ -39,30 +39,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: "Cleanup cache"
-        continue-on-error: true
-        run: |
-          npm cache clean --force
-
-      - name: Install dependencies
-        run: |
-          npm install -g @stoplight/prism-cli
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
 
       - run: yarn install && yarn build
         working-directory: ./cortex-js
 
-      - name: Run and extract openapi.json
-        run: 
-        | 
-            node cortex-js/dist/src/command.js serve --host 127.0.0.1 --port 4010 > cortex.log & cortex_pid=$!
-            sleep 3
-            wget --no-verbose -O api.json http://127.0.0.1:4010/api-json
-            kill $cortex_pid
-
-      - name: Create python virtual environment and run test
+      - name: Run test
         run: |
-          python3 -m venv /tmp/jan
-          source /tmp/jan/bin/activate
+          node cortex-js/dist/src/command.js serve --host 127.0.0.1 --port 4010 > cortex.log & cortex_pid=$!
+          sleep 3
+          wget --no-verbose -O api.json http://127.0.0.1:4010/api-json
+          cat api.json
 
           # Clone openai-api-python repo
           git clone https://github.com/openai/openai-python.git -b $OPENAI_API_PYTHON_TAG
@@ -71,18 +60,15 @@ jobs:
           pip install -r requirements-dev.lock
           pip install pytest-reportportal pytest-html
           
-          # Create pytest.ini file with content
+          mv ../coverage/conftest.py tests/conftest.py
+          mv ../coverage/endpoint_mapping.json tests/endpoints_mapping.json
           mv ../coverage/pytest.ini pytest.ini
           echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
-          
-          # Append to conftest.py
-          mv ../coverage/conftest.py tests/conftest.py
-          mv ../coverage/endpoint_mapping.json tests/endpoints_mapping.json
-          
-          prism mock ../api.json > prism.log & prism_pid=$!
-          pytest --endpoint "$ENDPOINTS" --reportportal --html=report.html && kill $prism_pid
-          deactivate
+
+          pytest --endpoint "$ENDPOINTS" --reportportal --html=report.html
+
+          kill $cortex_pid
         env:
           ENDPOINTS: ${{ github.event.inputs.endpoints }}
 
@@ -91,9 +77,12 @@ jobs:
         run: |
           wget --no-verbose -O total-coverage.json "${{ secrets.RP_ENDPOINT }}/api/v1/openai-api-test/widget/27" --header 'authorization: bearer ${{ secrets.RP_API_KEY }}'
           wget --no-verbose -O today-endpoint.json "${{ secrets.RP_ENDPOINT }}/api/v1/openai-api-test/widget/multilevel/32" --header 'authorization: bearer ${{ secrets.RP_API_KEY }}'
+          
+          echo "Overall coverage"
           cat total-coverage.json
           current_date=$(date +"%m-%d-%Y")
           cp today-endpoint.json $current_date.json
+          echo "Endpoint today"
           cat $current_date.json
 
       - name: Upload report json files to S3
@@ -113,7 +102,6 @@ jobs:
           name: report
           path: |
             openai-python/report.html
-            openai-python/prism.log
             openai-python/cortex.log
             openai-python/total-coverage.json
             openai-python/today-endpoint.json
