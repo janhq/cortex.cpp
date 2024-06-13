@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ModelsUsecases } from './models.usecases';
-import { ModelsController } from '@/infrastructure/controllers/models.controller';
 import { DatabaseModule } from '@/infrastructure/database/database.module';
 import { CortexModule } from '@/usecases/cortex/cortex.module';
 import { ExtensionModule } from '@/infrastructure/repositories/extensions/extension.module';
@@ -19,7 +18,7 @@ import { DownloadManagerModule } from '@/download-manager/download-manager.modul
     ModelRepositoryModule,
     DownloadManagerModule,
   ],
-  controllers: [ModelsController],
+  controllers: [],
   providers: [ModelsUsecases],
   exports: [ModelsUsecases],
 })
