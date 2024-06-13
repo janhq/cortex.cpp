@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Extension } from '@/domain/abstracts/extension.abstract';
-import { readdir, lstat, access } from 'fs/promises';
+import { readdir, lstat } from 'fs/promises';
 import { join } from 'path';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
-import { appPath } from '@/infrastructure/commanders/utils/app-path';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { appPath } from '@/utils/app-path';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { existsSync } from 'fs';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -46,17 +47,12 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   private async loadExternalExtensions() {
     const extensionsPath =
       process.env.EXTENSIONS_PATH ??
-      join(await this.fileService.getDataFolderPath(), 'extensions');
+      (await this.fileService.getExtensionsPath());
     this.loadExtensions(extensionsPath);
   }
 
   private async loadExtensions(extensionsPath: string) {
-    if (
-      !(await access(extensionsPath)
-        .then(() => true)
-        .catch(() => false))
-    )
-      return;
+    if (!existsSync(extensionsPath)) return;
 
     readdir(extensionsPath).then((files) => {
       files.forEach(async (extension) => {

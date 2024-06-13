@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, @typescript-eslint/no-unused-vars */
 import stream from 'stream';
-import { Model, ModelSettingParams } from '../models/model.interface';
+import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { Extension } from './extension.abstract';
 
 export abstract class EngineExtension extends Extension {

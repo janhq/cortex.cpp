@@ -5,7 +5,7 @@ import {
   InquirerService,
 } from 'nest-commander';
 import { exit } from 'node:process';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 type ModelStartOptions = {

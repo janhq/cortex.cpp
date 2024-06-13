@@ -3,7 +3,7 @@ import { CortexProviderModule } from '@/infrastructure/providers/cortex/cortex.m
 import { HttpModule } from '@nestjs/axios';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelRepositoryImpl } from './model.repository';
-import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 @Module({
   imports: [CortexProviderModule, HttpModule, FileManagerModule],

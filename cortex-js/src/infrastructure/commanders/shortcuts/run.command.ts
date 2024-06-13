@@ -6,12 +6,12 @@ import {
   InquirerService,
 } from 'nest-commander';
 import { exit } from 'node:process';
-import { ChatCliUsecases } from '../usecases/chat.cli.usecases';
+import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
 import {
   defaultCortexCppHost,
   defaultCortexCppPort,
 } from '@/infrastructure/constants/cortex';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
 type RunOptions = {

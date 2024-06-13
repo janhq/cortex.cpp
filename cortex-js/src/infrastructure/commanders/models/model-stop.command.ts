@@ -1,6 +1,6 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 
 @SubCommand({ name: 'stop', description: 'Stop a model by ID.' })
 export class ModelStopCommand extends CommandRunner {

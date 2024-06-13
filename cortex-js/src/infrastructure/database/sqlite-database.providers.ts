@@ -1,4 +1,4 @@
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { databaseFile } from '@/infrastructure/constants/cortex';
 import { join } from 'path';
 import { DataSource } from 'typeorm';

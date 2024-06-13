@@ -21,7 +21,8 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@commanders/*": ["src/infrastructure/commanders/*"]
     }
   }
 }

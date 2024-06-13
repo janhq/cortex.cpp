@@ -4,14 +4,17 @@ import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
 import { exit } from 'node:process';
-import { InitOptions } from '../types/init-options.interface';
+import { InitOptions } from '@commanders/types/init-options.interface';
 import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { rm } from 'fs/promises';
 import { exec } from 'child_process';
-import { appPath } from '../utils/app-path';
-import { CORTEX_RELEASES_URL, CUDA_DOWNLOAD_URL } from '../../constants/cortex';
+import { appPath } from '@/utils/app-path';
+import {
+  CORTEX_RELEASES_URL,
+  CUDA_DOWNLOAD_URL,
+} from '@/infrastructure/constants/cortex';
 
 @Injectable()
 export class InitCliUsecases {

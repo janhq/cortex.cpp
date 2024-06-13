@@ -9,7 +9,7 @@ import { CortexModule } from '@/usecases/cortex/cortex.module';
 import { ThreadsModule } from '@/usecases/threads/threads.module';
 import { AssistantsModule } from '@/usecases/assistants/assistants.module';
 import { MessagesModule } from '@/usecases/messages/messages.module';
-import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 import { PSCliUsecases } from './ps.cli.usecases';
 import { BenchmarkCliUsecases } from './benchmark.cli.usecases';
 

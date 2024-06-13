@@ -7,7 +7,7 @@ import {
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { SeedService } from './usecases/seed/seed.service';
-import { FileManagerService } from './file-manager/file-manager.service';
+import { FileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {

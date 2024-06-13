@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { join, extname, basename } from 'path';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { Model } from '@/domain/models/model.interface';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import {
   existsSync,
   mkdirSync,
@@ -15,7 +15,7 @@ import { load, dump } from 'js-yaml';
 import {
   isLocalModel,
   normalizeModelId,
-} from '@/infrastructure/commanders/utils/normalize-model-id';
+} from '@/utils/normalize-model-id';
 
 @Injectable()
 export class ModelRepositoryImpl implements ModelRepository {

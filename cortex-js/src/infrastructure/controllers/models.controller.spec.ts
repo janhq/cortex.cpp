@@ -3,10 +3,10 @@ import { ModelsController } from './models.controller';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { DatabaseModule } from '../database/database.module';
 import { ExtensionModule } from '../repositories/extensions/extension.module';
-import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 import { HttpModule } from '@nestjs/axios';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { ModelRepositoryModule } from '../repositories/model/model.module';
+import { ModelRepositoryModule } from '../repositories/models/model.module';
 
 describe('ModelsController', () => {
   let controller: ModelsController;

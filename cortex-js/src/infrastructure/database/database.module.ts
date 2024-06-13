@@ -3,7 +3,7 @@ import { threadProviders } from './providers/thread.providers';
 import { sqliteDatabaseProviders } from './sqlite-database.providers';
 import { assistantProviders } from './providers/assistant.providers';
 import { messageProviders } from './providers/message.providers';
-import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 @Module({
   imports: [FileManagerModule],

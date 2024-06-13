@@ -9,7 +9,7 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { existsSync } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,

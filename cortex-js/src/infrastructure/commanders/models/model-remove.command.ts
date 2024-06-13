@@ -1,5 +1,5 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 
 @SubCommand({ name: 'remove', description: 'Remove a model by ID locally.' })
