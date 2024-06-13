@@ -100,15 +100,33 @@ export class ModelsController {
   @ApiOperation({
     summary: 'Download model',
     description: 'Downloads a specific model instance.',
-  })
-  @ApiParam({
-    name: 'modelId',
-    required: true,
-    description: 'The unique identifier of the model.',
+    parameters: [
+      {
+        in: 'path',
+        name: 'modelId',
+        required: true,
+        description: 'The unique identifier of the model.',
+      },
+    ],
   })
   @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string) {
     return this.modelsUsecases.downloadModel(modelId);
+  }
+
+  @ApiOperation({
+    parameters: [
+      {
+        in: 'path',
+        name: 'download_id',
+        required: true,
+        description: 'The unique identifier of the download.',
+      },
+    ],
+  })
+  @Get('abort-download/:download_id(*)')
+  abortDownloadModel(@Param('download_id') downloadId: string) {
+    return this.modelsUsecases.abortDownloadModel(downloadId);
   }
 
   @HttpCode(200)

@@ -6,10 +6,10 @@ import { ModelNotFoundException } from '@/infrastructure/exception/model-not-fou
 import { join, basename } from 'path';
 import {
   promises,
-  createWriteStream,
   existsSync,
   mkdirSync,
   rmdirSync,
+  createWriteStream,
 } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
@@ -26,13 +26,14 @@ import {
   HuggingFaceRepoData,
 } from '@/domain/models/huggingface.interface';
 import { LLAMA_2 } from '@/infrastructure/constants/prompt-constants';
-
 import { isValidUrl } from '@/utils/urls';
 import {
   fetchHuggingFaceRepoData,
   fetchJanRepoData,
   getHFModelMetadata,
 } from '@/utils/huggingface';
+import { DownloadType } from '@/domain/models/download.interface';
+import { DownloadManagerService } from '@/download-manager/download-manager.service';
 
 @Injectable()
 export class ModelsUsecases {
@@ -40,6 +41,7 @@ export class ModelsUsecases {
     private readonly modelRepository: ModelRepository,
     private readonly extensionRepository: ExtensionRepository,
     private readonly fileManagerService: FileManagerService,
+    private readonly downloadManagerService: DownloadManagerService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -237,35 +239,61 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true });
     const destination = join(modelFolder, fileName);
 
-    const response = await firstValueFrom(
-      this.httpService.get(downloadUrl, {
-        responseType: 'stream',
-      }),
-    );
-    if (!response) {
-      throw new Error('Failed to download model');
+    if (callback != null) {
+      const response = await firstValueFrom(
+        this.httpService.get(downloadUrl, {
+          responseType: 'stream',
+        }),
+      );
+      if (!response) {
+        throw new Error('Failed to download model');
+      }
+
+      return new Promise((resolve, reject) => {
+        const writer = createWriteStream(destination);
+        let receivedBytes = 0;
+        const totalBytes = response.headers['content-length'];
+
+        writer.on('finish', () => {
+          resolve(true);
+        });
+
+        writer.on('error', (error) => {
+          reject(error);
+        });
+
+        response.data.on('data', (chunk: any) => {
+          receivedBytes += chunk.length;
+          callback?.(Math.floor((receivedBytes / totalBytes) * 100));
+        });
+
+        response.data.pipe(writer);
+      });
+    } else {
+      // modelId should be unique
+      const downloadId = modelId;
+
+      // inorder to download multiple files, just need to pass more urls and destination to this object
+      const urlToDestination: Record<string, string> = {
+        [downloadUrl]: destination,
+      };
+
+      this.downloadManagerService.submitDownloadRequest(
+        downloadId,
+        model.name ?? modelId,
+        DownloadType.Model,
+        urlToDestination,
+      );
+
+      return {
+        downloadId,
+        message: 'Download started',
+      };
     }
+  }
 
-    return new Promise((resolve, reject) => {
-      const writer = createWriteStream(destination);
-      let receivedBytes = 0;
-      const totalBytes = response.headers['content-length'];
-
-      writer.on('finish', () => {
-        resolve(true);
-      });
-
-      writer.on('error', (error) => {
-        reject(error);
-      });
-
-      response.data.on('data', (chunk: any) => {
-        receivedBytes += chunk.length;
-        callback?.(Math.floor((receivedBytes / totalBytes) * 100));
-      });
-
-      response.data.pipe(writer);
-    });
+  async abortDownloadModel(downloadId: string) {
+    this.downloadManagerService.abortDownload(downloadId);
   }
 
   /**
