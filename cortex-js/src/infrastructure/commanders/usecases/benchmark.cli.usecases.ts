@@ -12,6 +12,7 @@ import { BenchmarkConfig } from '@commanders/types/benchmark-config.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { inspect } from 'util';
 import { defaultBenchmarkConfiguration } from '@/infrastructure/constants/benchmark';
+import { PSCliUsecases } from './ps.cli.usecases';
 
 @Injectable()
 export class BenchmarkCliUsecases {
@@ -19,6 +20,7 @@ export class BenchmarkCliUsecases {
     private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
+    private readonly psUsecases: PSCliUsecases,
   ) {}
 
   config: BenchmarkConfig;
@@ -37,7 +39,7 @@ export class BenchmarkCliUsecases {
         timeout: 20 * 1000,
       });
 
-      spawn('cortex', ['serve'], {
+      const serveProcess = spawn('cortex', ['serve'], {
         detached: false,
       });
 
@@ -46,8 +48,24 @@ export class BenchmarkCliUsecases {
         .then(() =>
           this.modelsCliUsecases.startModel(this.config.api.parameters.model),
         )
+        .then(() =>
+          this.psUsecases
+            .getModels()
+            .then((models) =>
+              models.find(
+                (e) => e.modelId === this.config.api.parameters.model,
+              ),
+            ),
+        )
+        .then((model) => {
+          if (!model)
+            throw new Error('Model is not started, please try again!');
+        })
         .then(() => this.runBenchmarks())
-        .then(() => process.exit(0));
+        .then(() => {
+          serveProcess.kill();
+          process.exit(0);
+        });
     });
   }
 
