@@ -13,6 +13,8 @@ import { firstValueFrom } from 'rxjs';
 @Injectable()
 export class DownloadManagerService {
   private allDownloadStates: DownloadState[] = [];
+  private abortControllers: Record<string, Record<string, AbortController>> =
+    {};
 
   constructor(
     private readonly httpService: HttpService,
@@ -22,6 +24,19 @@ export class DownloadManagerService {
     setInterval(() => {
       this.eventEmitter.emit('download.event', this.allDownloadStates);
     }, 500);
+  }
+
+  async abortDownload(downloadId: string) {
+    if (!this.abortControllers[downloadId]) {
+      return;
+    }
+    Object.keys(this.abortControllers[downloadId]).forEach((destination) => {
+      this.abortControllers[downloadId][destination].abort();
+    });
+    delete this.abortControllers[downloadId];
+    this.allDownloadStates = this.allDownloadStates.filter(
+      (downloadState) => downloadState.id !== downloadId,
+    );
   }
 
   async submitDownloadRequest(
@@ -67,6 +82,7 @@ export class DownloadManagerService {
     };
 
     this.allDownloadStates.push(downloadState);
+    this.abortControllers[downloadId] = {};
 
     Object.keys(urlToDestination).forEach((url) => {
       const destination = urlToDestination[url];
@@ -79,11 +95,17 @@ export class DownloadManagerService {
     url: string,
     destination: string,
   ) {
+    const controller = new AbortController();
+    // adding to abort controllers
+    this.abortControllers[downloadId][destination] = controller;
+
     const response = await firstValueFrom(
       this.httpService.get(url, {
         responseType: 'stream',
+        signal: controller.signal,
       }),
     );
+
     // check if response is success
     if (!response) {
       throw new Error('Failed to download model');
@@ -93,7 +115,6 @@ export class DownloadManagerService {
     const totalBytes = response.headers['content-length'];
 
     // update download state
-    // TODO: separte this duplicate code to a function
     const currentDownloadState = this.allDownloadStates.find(
       (downloadState) => downloadState.id === downloadId,
     );
@@ -110,6 +131,8 @@ export class DownloadManagerService {
     let transferredBytes = 0;
 
     writer.on('finish', () => {
+      // delete the abort controller
+      delete this.abortControllers[downloadId][destination];
       const currentDownloadState = this.allDownloadStates.find(
         (downloadState) => downloadState.id === downloadId,
       );
@@ -130,8 +153,8 @@ export class DownloadManagerService {
       );
 
       if (allChildrenDownloaded) {
+        delete this.abortControllers[downloadId];
         currentDownloadState.status = DownloadStatus.Downloaded;
-        // TODO: notify if download success so that client can auto refresh
         // remove download state if all children is downloaded
         this.allDownloadStates = this.allDownloadStates.filter(
           (downloadState) => downloadState.id !== downloadId,
@@ -140,6 +163,7 @@ export class DownloadManagerService {
     });
 
     writer.on('error', (error) => {
+      delete this.abortControllers[downloadId][destination];
       const currentDownloadState = this.allDownloadStates.find(
         (downloadState) => downloadState.id === downloadId,
       );
@@ -158,7 +182,6 @@ export class DownloadManagerService {
       currentDownloadState.status = DownloadStatus.Error;
       currentDownloadState.error = error.message;
 
-      // TODO: notify if download error
       // remove download state if all children is downloaded
       this.allDownloadStates = this.allDownloadStates.filter(
         (downloadState) => downloadState.id !== downloadId,

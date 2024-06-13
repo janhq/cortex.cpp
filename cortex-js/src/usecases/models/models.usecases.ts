@@ -292,6 +292,10 @@ export class ModelsUsecases {
     }
   }
 
+  async abortDownloadModel(downloadId: string) {
+    this.downloadManagerService.abortDownload(downloadId);
+  }
+
   /**
    * Populate model metadata from a Model repository (HF, Jan...) and download it
    * @param modelId
