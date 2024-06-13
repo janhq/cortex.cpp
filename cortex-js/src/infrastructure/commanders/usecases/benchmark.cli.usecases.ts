@@ -28,9 +28,12 @@ export class BenchmarkCliUsecases {
   /**
    * Benchmark and analyze the performance of a specific AI model using a variety of system resources
    */
-  async benchmark() {
+  async benchmark(options: Partial<BenchmarkConfig>) {
     return this.getBenchmarkConfig().then((config) => {
-      this.config = config;
+      this.config = {
+        ...config,
+        ...options,
+      };
 
       // TODO: Using OpenAI client or Cortex client to benchmark?
       this.openai = new OpenAI({
@@ -41,6 +44,7 @@ export class BenchmarkCliUsecases {
 
       const serveProcess = spawn('cortex', ['serve'], {
         detached: false,
+        shell: process.platform == 'win32',
       });
 
       return this.cortexUsecases
@@ -261,8 +265,21 @@ export class BenchmarkCliUsecases {
     fs.writeFileSync(outputFilePath, JSON.stringify(output, null, 2));
     console.log(`Benchmark results and metrics saved to ${outputFilePath}`);
 
-    console.log(
-      inspect(output, { showHidden: false, depth: null, colors: true }),
-    );
+    if (this.config.output === 'table') {
+      console.log('Results:');
+      output.results.forEach((round) => {
+        console.log('Round ' + round.round + ':');
+        console.table(round.results);
+      });
+      console.log('Metrics:');
+      console.table(output.metrics);
+    } else
+      console.log(
+        inspect(output, {
+          showHidden: false,
+          depth: null,
+          colors: true,
+        }),
+      );
   }
 }

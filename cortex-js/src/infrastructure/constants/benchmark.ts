@@ -26,11 +26,11 @@ export const defaultBenchmarkConfiguration: BenchmarkConfig = {
     },
   },
   prompts: {
-    min: 102,
+    min: 1024,
     max: 2048,
     samples: 10,
   },
-  output: 'json',
+  output: 'table',
   hardware: ['cpu', 'gpu', 'psu', 'chassis', 'ram'],
   concurrency: 1,
   num_rounds: 10,
