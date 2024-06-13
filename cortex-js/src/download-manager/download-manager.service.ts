@@ -21,9 +21,9 @@ export class DownloadManagerService {
     private readonly eventEmitter: EventEmitter2,
   ) {
     // start emitting download state each 500ms
-    setInterval(() => {
-      this.eventEmitter.emit('download.event', this.allDownloadStates);
-    }, 500);
+    // setInterval(() => {
+    //   this.eventEmitter.emit('download.event', this.allDownloadStates);
+    // }, 500);
   }
 
   async abortDownload(downloadId: string) {
