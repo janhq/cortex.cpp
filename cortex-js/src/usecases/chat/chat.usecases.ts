@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { ModelEntity } from '@/infrastructure/entities/model.entity';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
+import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
 
 @Injectable()
 export class ChatUsecases {
@@ -12,6 +14,7 @@ export class ChatUsecases {
     @Inject('MODEL_REPOSITORY')
     private readonly modelRepository: Repository<ModelEntity>,
     private readonly extensionRepository: ExtensionRepository,
+    private readonly telemetryUseCases: TelemetryUsecases,
   ) {}
 
   async inference(
@@ -34,6 +37,14 @@ export class ChatUsecases {
     if (engine == null) {
       throw new Error(`No engine found with name: ${model.engine}`);
     }
-    return engine.inference(createChatDto, headers);
+    try {
+      return await engine.inference(createChatDto, headers);
+    } catch (error) {
+      await this.telemetryUseCases.createCrashReport(
+        error,
+        TelemetrySource.CORTEX_CPP,
+      );
+      throw error;
+    }
   }
 }

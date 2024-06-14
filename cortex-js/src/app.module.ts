@@ -13,6 +13,10 @@ import { env } from 'node:process';
 import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './file-manager/file-manager.module';
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
+import { TelemetryModule } from './usecases/telemetry/telemetry.module';
+import { APP_FILTER } from '@nestjs/core';
+import { GlobalExceptionFilter } from './infrastructure/exception/global.exception';
+import { UtilModule } from './util/util.module';
 
 @Module({
   imports: [
@@ -32,8 +36,16 @@ import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.mid
     CortexModule,
     ExtensionModule,
     FileManagerModule,
+    TelemetryModule,
+    UtilModule,
   ],
-  providers: [SeedService],
+  providers: [
+    SeedService,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

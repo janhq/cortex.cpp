@@ -11,6 +11,7 @@ async function bootstrap() {
     snapshot: true,
     cors: true,
   });
+
   const seedService = app.get(SeedService);
   await seedService.seed();
 

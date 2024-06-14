@@ -9,6 +9,9 @@ import { PSCommand } from './ps.command';
 import { KillCommand } from './kill.command';
 import pkg from '@/../package.json';
 import { PresetCommand } from './presets.command';
+import { TelemetryCommand } from './telemetry.command';
+import { SetCommandContext } from './decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 interface CortexCommandOptions {
   version: boolean;
@@ -24,10 +27,16 @@ interface CortexCommandOptions {
     PSCommand,
     KillCommand,
     PresetCommand,
+    TelemetryCommand,
   ],
   description: 'Cortex CLI',
 })
+@SetCommandContext()
 export class CortexCommand extends CommandRunner {
+  constructor(readonly contextService: ContextService) {
+    super();
+  }
+
   async run(input: string[], option: CortexCommandOptions): Promise<void> {
     if (option.version) console.log(pkg.version);
   }

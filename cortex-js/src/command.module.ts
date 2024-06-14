@@ -27,6 +27,9 @@ import { FileManagerModule } from './file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
+import { TelemetryModule } from './usecases/telemetry/telemetry.module';
+import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
+import { UtilModule } from './util/util.module';
 
 @Module({
   imports: [
@@ -44,6 +47,8 @@ import { PresetCommand } from './infrastructure/commanders/presets.command';
     AssistantsModule,
     MessagesModule,
     FileManagerModule,
+    TelemetryModule,
+    UtilModule,
   ],
   providers: [
     CortexCommand,
@@ -70,6 +75,8 @@ import { PresetCommand } from './infrastructure/commanders/presets.command';
 
     // Shortcuts
     RunCommand,
+    // Telemetry
+    TelemetryCommand,
   ],
 })
 export class CommandModule {}

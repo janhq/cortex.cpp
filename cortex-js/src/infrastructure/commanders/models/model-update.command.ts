@@ -6,6 +6,8 @@ import {
   ModelRuntimeParams,
   ModelSettingParams,
 } from '@/domain/models/model.interface';
+import { SetCommandContext } from '../decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 type UpdateOptions = {
   model?: string;
@@ -13,8 +15,12 @@ type UpdateOptions = {
 };
 
 @SubCommand({ name: 'update', description: 'Update configuration of a model.' })
+@SetCommandContext()
 export class ModelUpdateCommand extends CommandRunner {
-  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
+  constructor(
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
+  ) {
     super();
   }
 

@@ -8,6 +8,8 @@ import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
 import { ModelStat, PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
+import { SetCommandContext } from './decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 type ChatOptions = {
   threadId?: string;
@@ -16,12 +18,14 @@ type ChatOptions = {
 };
 
 @SubCommand({ name: 'chat', description: 'Send a chat request to a model' })
+@SetCommandContext()
 export class ChatCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly chatCliUsecases: ChatCliUsecases,
     private readonly modelsUsecases: ModelsUsecases,
     private readonly psCliUsecases: PSCliUsecases,
+    readonly contextService: ContextService,
   ) {
     super();
   }

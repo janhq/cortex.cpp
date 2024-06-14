@@ -2,6 +2,8 @@ import { spawn } from 'child_process';
 import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { join } from 'path';
+import { SetCommandContext } from './decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 type ServeOptions = {
   host?: string;
@@ -12,7 +14,11 @@ type ServeOptions = {
   name: 'serve',
   description: 'Providing API endpoint for Cortex backend',
 })
+@SetCommandContext()
 export class ServeCommand extends CommandRunner {
+  constructor(readonly contextService: ContextService) {
+    super();
+  }
   async run(_input: string[], options?: ServeOptions): Promise<void> {
     const host = options?.host || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;

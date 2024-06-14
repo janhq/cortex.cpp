@@ -27,7 +27,6 @@ export class ChatController {
     @Res() res: Response,
   ) {
     const { stream } = createChatDto;
-
     if (stream) {
       this.chatService
         .inference(createChatDto, headers)

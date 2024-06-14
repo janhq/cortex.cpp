@@ -1,9 +1,11 @@
+import { ContextService } from '@/util/context.service';
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 
 import { Request, Response, NextFunction } from 'express';
 
 @Injectable()
 export class AppLoggerMiddleware implements NestMiddleware {
+  constructor(private readonly contextService: ContextService) {}
   private logger = new Logger('HTTP');
 
   use(req: Request, res: Response, next: NextFunction): void {
@@ -28,6 +30,9 @@ export class AppLoggerMiddleware implements NestMiddleware {
         }),
       );
     });
-    next();
+    this.contextService.init(() => {
+      this.contextService.set('endpoint', originalUrl ?? url);
+      next();
+    });
   }
 }

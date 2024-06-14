@@ -6,6 +6,8 @@ import { CortexModule } from '@/usecases/cortex/cortex.module';
 import { ExtensionModule } from '@/infrastructure/repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
 import { FileManagerModule } from '@/file-manager/file-manager.module';
+import { TelemetryModule } from '../telemetry/telemetry.module';
+import { UtilModule } from '@/util/util.module';
 
 @Module({
   imports: [
@@ -14,6 +16,8 @@ import { FileManagerModule } from '@/file-manager/file-manager.module';
     ExtensionModule,
     HttpModule,
     FileManagerModule,
+    TelemetryModule,
+    UtilModule,
   ],
   controllers: [ModelsController],
   providers: [ModelsUsecases],

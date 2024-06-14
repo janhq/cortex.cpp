@@ -6,16 +6,20 @@ import {
 } from 'nest-commander';
 import { InitCliUsecases } from './usecases/init.cli.usecases';
 import { InitOptions } from './types/init-options.interface';
+import { SetCommandContext } from './decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 @SubCommand({
   name: 'init',
   aliases: ['setup'],
   description: "Init settings and download cortex's dependencies",
 })
+@SetCommandContext()
 export class InitCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly initUsecases: InitCliUsecases,
+    readonly contextService: ContextService,
   ) {
     super();
   }
