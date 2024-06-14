@@ -13,7 +13,6 @@ import { Response } from 'express';
 export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(private readonly telemetryService: TelemetryUsecases) {}
   async catch(exception: HttpException | Error, host: ArgumentsHost) {
-    console.log('Exception', exception);
     const isHttpException = exception instanceof HttpException;
     const httpStatus = isHttpException
       ? exception.getStatus()
@@ -31,7 +30,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         TelemetrySource.CORTEX_SERVER,
       );
       await this.telemetryService.sendCrashReport();
-      console.log('Crash report created');
     }
     response.status(httpStatus).json({
       statusCode: httpStatus,

@@ -37,7 +37,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   loadCoreExtensions(): void {
-    const extensionsPath = join(__dirname, './../../../extensions');
+    const extensionsPath = join(appPath, 'src', 'extensions');
     this.loadExtensions(extensionsPath);
   }
 

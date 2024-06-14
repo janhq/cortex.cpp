@@ -62,7 +62,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   async sendTelemetryToOTelCollector(endpoint: string, telemetry: Telemetry) {
     try {
       console.log('Sending telemetry to OTel collector');
-      const response = await axios.post(
+      await axios.post(
         `${endpoint}/v1/logs`,
         {
           resourceSpans: [telemetry.event],
@@ -73,7 +73,6 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
           },
         },
       );
-      console.log('Response from OTel collector', response.status);
     } catch (error) {
       console.log('Error sending telemetry to OTel collector', error);
     }

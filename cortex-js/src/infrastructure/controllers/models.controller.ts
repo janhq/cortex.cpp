@@ -108,7 +108,6 @@ export class ModelsController {
   })
   @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string) {
-    console.log('modelId', (modelId as any).sdfsdfsdf.asdasdasd);
     return this.modelsUsecases.downloadModel(modelId);
   }
 
