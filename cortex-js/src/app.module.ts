@@ -15,8 +15,8 @@ import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AppController } from './infrastructure/controllers/app.controller';
 import { DownloadManagerModule } from './download-manager/download-manager.module';
+import { EventsController } from './infrastructure/controllers/events.controller';
 
 @Module({
   imports: [
@@ -40,7 +40,7 @@ import { DownloadManagerModule } from './download-manager/download-manager.modul
     ModelRepositoryModule,
     DownloadManagerModule,
   ],
-  controllers: [AppController],
+  controllers: [EventsController],
   providers: [SeedService],
 })
 export class AppModule implements NestModule {

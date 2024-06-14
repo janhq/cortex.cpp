@@ -19,12 +19,7 @@ export class DownloadManagerService {
   constructor(
     private readonly httpService: HttpService,
     private readonly eventEmitter: EventEmitter2,
-  ) {
-    // start emitting download state each 500ms
-    // setInterval(() => {
-    //   this.eventEmitter.emit('download.event', this.allDownloadStates);
-    // }, 500);
-  }
+  ) {}
 
   async abortDownload(downloadId: string) {
     if (!this.abortControllers[downloadId]) {
@@ -37,6 +32,7 @@ export class DownloadManagerService {
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
+    this.eventEmitter.emit('download.event.aborted', this.allDownloadStates);
   }
 
   async submitDownloadRequest(
@@ -160,6 +156,7 @@ export class DownloadManagerService {
           (downloadState) => downloadState.id !== downloadId,
         );
       }
+      this.eventEmitter.emit('download.event', this.allDownloadStates);
     });
 
     writer.on('error', (error) => {
@@ -186,6 +183,7 @@ export class DownloadManagerService {
       this.allDownloadStates = this.allDownloadStates.filter(
         (downloadState) => downloadState.id !== downloadId,
       );
+      this.eventEmitter.emit('download.event', this.allDownloadStates);
     });
 
     response.data.on('data', (chunk: any) => {
@@ -202,8 +200,13 @@ export class DownloadManagerService {
       if (downloadItem) {
         downloadItem.size.transferred = transferredBytes;
       }
+      this.eventEmitter.emit('download.event', this.allDownloadStates);
     });
 
     response.data.pipe(writer);
+  }
+
+  getDownloadStates() {
+    return this.allDownloadStates;
   }
 }
