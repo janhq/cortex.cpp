@@ -11,12 +11,12 @@ import {
   Telemetry,
   TelemetryEventMetadata,
 } from '@/domain/telemetry/telemetry.interface';
-import { FileManagerService } from '@/file-manager/file-manager.service';
 import { Injectable } from '@nestjs/common';
 import { join } from 'path';
 import packageJson from '../../../../package.json';
 import axios from 'axios';
-import { telemetryServerUrl } from 'constant';
+import { telemetryServerUrl } from '@/infrastructure/constants/cortex';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 // refactor using convert to dto
 @Injectable()

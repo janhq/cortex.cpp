@@ -1,5 +1,5 @@
-import { FileManagerService } from '@/file-manager/file-manager.service';
 import { TelemetryRepositoryImpl } from '@/infrastructure/repositories/telemetry/telemetry.repository';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 // import { HttpService } from '@nestjs/axios';
 
 export const telemetryProviders = [
