@@ -1,5 +1,5 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { ContextService } from '@/util/context.service';
 import { SetCommandContext } from '../decorators/CommandContext';
@@ -20,7 +20,8 @@ export class ModelGetCommand extends CommandRunner {
       exit(1);
     }
 
-    const models = await this.modelsCliUsecases.getModel(input[0]);
-    console.log(models);
+    const model = await this.modelsCliUsecases.getModel(input[0]);
+    if (!model) console.error('Model not found');
+    else console.log(model);
   }
 }

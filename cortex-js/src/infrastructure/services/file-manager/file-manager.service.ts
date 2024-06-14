@@ -24,9 +24,16 @@ export class FileManagerService {
   private configFile = '.cortexrc';
   private cortexDirectoryName = 'cortex';
   private modelFolderName = 'models';
+  private presetFolderName = 'presets';
+  private extensionFoldername = 'extensions';
+  private benchmarkFoldername = 'benchmark';
   private cortexCppFolderName = 'cortex-cpp';
   private cortexTelemetryFolderName = 'telemetry';
 
+  /**
+   * Get cortex configs
+   * @returns the config object
+   */
   async getConfig(): Promise<Config> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
@@ -52,7 +59,7 @@ export class FileManagerService {
     }
   }
 
-  private async writeConfigFile(config: Config): Promise<void> {
+  async writeConfigFile(config: Config): Promise<void> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -93,6 +100,11 @@ export class FileManagerService {
     };
   }
 
+  /**
+   * Get the app data folder path
+   * Usually it is located at the home directory > cortex
+   * @returns the path to the data folder
+   */
   async getDataFolderPath(): Promise<string> {
     const config = await this.getConfig();
     return config.dataFolderPath;
@@ -177,5 +189,45 @@ export class FileManagerService {
       crlfDelay: Infinity,
     });
     rl.on('line', callback);
+  }
+
+  /**
+   * Get the models data folder path
+   * Usually it is located at the home directory > cortex > models
+   * @returns the path to the models folder
+   */
+  async getModelsPath(): Promise<string> {
+    const dataFolderPath = await this.getDataFolderPath();
+    return join(dataFolderPath, this.modelFolderName);
+  }
+
+  /**
+   * Get the presets data folder path
+   * Usually it is located at the home directory > cortex > presets
+   * @returns the path to the presets folder
+   */
+  async getPresetsPath(): Promise<string> {
+    const dataFolderPath = await this.getDataFolderPath();
+    return join(dataFolderPath, this.presetFolderName);
+  }
+
+  /**
+   * Get the extensions data folder path
+   * Usually it is located at the home directory > cortex > extensions
+   * @returns the path to the extensions folder
+   */
+  async getExtensionsPath(): Promise<string> {
+    const dataFolderPath = await this.getDataFolderPath();
+    return join(dataFolderPath, this.extensionFoldername);
+  }
+
+  /**
+   * Get the benchmark folder path
+   * Usually it is located at the home directory > cortex > extensions
+   * @returns the path to the extensions folder
+   */
+  async getBenchmarkPath(): Promise<string> {
+    const dataFolderPath = await this.getDataFolderPath();
+    return join(dataFolderPath, this.benchmarkFoldername);
   }
 }

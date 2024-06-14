@@ -1,4 +1,4 @@
-import { databaseName } from 'constant';
+import { databaseName } from '@/infrastructure/constants/cortex';
 import { DataSource } from 'typeorm';
 
 export const mysqlDatabaseProviders = [

@@ -1,3 +1,9 @@
+export interface HuggingFaceModelVersion {
+  rfilename: string;
+  downloadUrl?: string;
+  fileSize?: number;
+  quantization?: Quantization;
+}
 export interface HuggingFaceRepoData {
   id: string;
   modelId: string;

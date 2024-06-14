@@ -23,13 +23,17 @@ import { ModelUpdateCommand } from './infrastructure/commanders/models/model-upd
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { MessagesModule } from './usecases/messages/messages.module';
-import { FileManagerModule } from './file-manager/file-manager.module';
+import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
 import { UtilModule } from './util/util.module';
+import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
+import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { DownloadManagerModule } from './download-manager/download-manager.module';
 
 @Module({
   imports: [
@@ -38,6 +42,7 @@ import { UtilModule } from './util/util.module';
       envFilePath:
         process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
+    EventEmitterModule.forRoot(),
     DatabaseModule,
     ModelsModule,
     CortexModule,
@@ -49,6 +54,7 @@ import { UtilModule } from './util/util.module';
     FileManagerModule,
     TelemetryModule,
     UtilModule,
+    DownloadManagerModule,
   ],
   providers: [
     CortexCommand,
@@ -59,6 +65,8 @@ import { UtilModule } from './util/util.module';
     PSCommand,
     KillCommand,
     PresetCommand,
+    EmbeddingCommand,
+    BenchmarkCommand,
 
     // Questions
     InitRunModeQuestions,

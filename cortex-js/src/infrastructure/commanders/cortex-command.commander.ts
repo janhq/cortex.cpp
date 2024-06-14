@@ -12,6 +12,8 @@ import { PresetCommand } from './presets.command';
 import { TelemetryCommand } from './telemetry.command';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '@/util/context.service';
+import { EmbeddingCommand } from './embeddings.command';
+import { BenchmarkCommand } from './benchmark.command';
 
 interface CortexCommandOptions {
   version: boolean;
@@ -28,6 +30,8 @@ interface CortexCommandOptions {
     KillCommand,
     PresetCommand,
     TelemetryCommand,
+    EmbeddingCommand,
+    BenchmarkCommand,
   ],
   description: 'Cortex CLI',
 })

@@ -1,5 +1,8 @@
 import { spawn } from 'child_process';
-import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
+import {
+  defaultCortexJsHost,
+  defaultCortexJsPort,
+} from '@/infrastructure/constants/cortex';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { join } from 'path';
 import { SetCommandContext } from './decorators/CommandContext';
@@ -23,16 +26,22 @@ export class ServeCommand extends CommandRunner {
     const host = options?.host || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
 
-    spawn('node', [join(__dirname, '../../main.js')], {
-      env: {
-        ...process.env,
-        CORTEX_JS_HOST: host,
-        CORTEX_JS_PORT: port.toString(),
-        NODE_ENV: 'production',
+    spawn(
+      'node',
+      process.env.TEST
+        ? [join(__dirname, '../../../dist/src/main.js')]
+        : [join(__dirname, '../../main.js')],
+      {
+        env: {
+          ...process.env,
+          CORTEX_JS_HOST: host,
+          CORTEX_JS_PORT: port.toString(),
+          NODE_ENV: 'production',
+        },
+        stdio: 'inherit',
+        detached: false,
       },
-      stdio: 'inherit',
-      detached: false,
-    });
+    );
   }
 
   @Option({

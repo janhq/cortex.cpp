@@ -3,7 +3,10 @@ import { ModelArtifact } from '@/domain/models/model.interface';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ModelArtifactDto implements ModelArtifact {
-  @ApiProperty({ description: 'The URL source of the model.' })
+  @ApiProperty({ description: 'The mmproj bin file url.' })
   @IsString()
-  url: string;
+  mmproj?: string;
+  @ApiProperty({ description: 'The llama model bin file url.' })
+  @IsString()
+  llama_model_path?: string;
 }

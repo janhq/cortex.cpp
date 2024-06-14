@@ -80,28 +80,28 @@ jobs:
 
           - os: "windows"
             name: "amd64-avx2"
-            runs-on: "windows-latest"
+            runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: true
             run-python-e2e: true
 
           - os: "windows"
             name: "amd64-avx"
-            runs-on: "windows-latest"
+            runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
             run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx512"
-            runs-on: "windows-latest"
+            runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
             run-python-e2e: false
 
           - os: "windows"
             name: "amd64-vulkan"
-            runs-on: "windows-latest"
+            runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
             run-python-e2e: false

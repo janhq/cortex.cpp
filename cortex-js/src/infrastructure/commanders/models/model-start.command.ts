@@ -5,7 +5,7 @@ import {
   InquirerService,
 } from 'nest-commander';
 import { exit } from 'node:process';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/util/context.service';
@@ -37,6 +37,16 @@ export class ModelStartCommand extends CommandRunner {
       }
     }
 
+    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    if (
+      !existingModel ||
+      !Array.isArray(existingModel.files) ||
+      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
+    ) {
+      console.error('Model is not available. Please pull the model first.');
+      process.exit(1);
+    }
+
     await this.cortexUsecases
       .startCortex(options.attach)
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
@@ -53,7 +63,7 @@ export class ModelStartCommand extends CommandRunner {
       message: 'Select a model to start:',
       choices: models.map((e) => ({
         name: e.name,
-        value: e.id,
+        value: e.model,
       })),
     });
     return model;

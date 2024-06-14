@@ -1,10 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Extension } from '@/domain/abstracts/extension.abstract';
-import { readdir, lstat, access } from 'fs/promises';
+import { readdir, lstat } from 'fs/promises';
 import { join } from 'path';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
-import { appPath } from '@/infrastructure/commanders/utils/app-path';
+import { appPath } from '@/utils/app-path';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { existsSync } from 'fs';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -14,6 +16,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   constructor(
     @Inject('CORTEX_PROVIDER')
     private readonly cortexProvider: EngineExtension,
+    private readonly fileService: FileManagerService,
   ) {
     this.loadCoreExtensions();
     this.loadExternalExtensions();
@@ -36,31 +39,27 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     return Promise.resolve();
   }
 
-  loadCoreExtensions(): void {
+  private loadCoreExtensions(): void {
     const extensionsPath = join(appPath, 'src', 'extensions');
     this.loadExtensions(extensionsPath);
   }
 
-  loadExternalExtensions(): void {
+  private async loadExternalExtensions() {
     const extensionsPath =
-      process.env.EXTENSIONS_PATH ?? join(appPath, 'extensions');
+      process.env.EXTENSIONS_PATH ??
+      (await this.fileService.getExtensionsPath());
     this.loadExtensions(extensionsPath);
   }
 
   private async loadExtensions(extensionsPath: string) {
-    if (
-      !(await access(extensionsPath)
-        .then(() => true)
-        .catch(() => false))
-    )
-      return;
+    if (!existsSync(extensionsPath)) return;
 
     readdir(extensionsPath).then((files) => {
       files.forEach(async (extension) => {
-        if (!(await lstat(`${extensionsPath}/${extension}`)).isDirectory())
-          return;
+        const extensionFullPath = join(extensionsPath, extension);
+        if (!(await lstat(extensionFullPath)).isDirectory()) return;
 
-        import(`${extensionsPath}/${extension}`).then((extensionClass) => {
+        import(extensionFullPath).then((extensionClass) => {
           const newExtension = new extensionClass.default();
           this.extensions.set(extension, newExtension);
         });

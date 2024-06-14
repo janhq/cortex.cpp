@@ -1,9 +1,9 @@
 import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { ThreadAssistantInfo } from '@/domain/models/thread.interface';
-import { CreateThreadModelInfoDto } from './create-thread-model-info.dto';
 import { AssistantToolDto } from '@/infrastructure/dtos/assistants/assistant-tool.dto';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { CreateModelDto } from '../models/create-model.dto';
 
 export class CreateThreadAssistantDto implements ThreadAssistantInfo {
   @ApiProperty({ description: 'The unique identifier of the assistant.' })
@@ -16,7 +16,7 @@ export class CreateThreadAssistantDto implements ThreadAssistantInfo {
 
   @ApiProperty({ description: "The model's unique identifier and settings." })
   @ValidateNested()
-  model: CreateThreadModelInfoDto;
+  model: CreateModelDto;
 
   @ApiProperty({ description: "The assistant's specific instructions." })
   @IsOptional()

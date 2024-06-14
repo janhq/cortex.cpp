@@ -1,4 +1,4 @@
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { readdirSync } from 'fs';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { join } from 'path';

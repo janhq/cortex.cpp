@@ -2,9 +2,12 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { defaultCortexJsHost, defaultCortexJsPort } from 'constant';
+import {
+  defaultCortexJsHost,
+  defaultCortexJsPort,
+} from '@/infrastructure/constants/cortex';
 import { SeedService } from './usecases/seed/seed.service';
-import { FileManagerService } from './file-manager/file-manager.service';
+import { FileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -20,6 +23,7 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe({
+      transform: true,
       enableDebugMessages: true,
     }),
   );
@@ -49,6 +53,10 @@ async function bootstrap() {
     .addTag(
       'Threads',
       'These endpoints handle the creation, retrieval, updating, and deletion of conversation threads.',
+    )
+    .addTag(
+      'Embeddings',
+      'Endpoint for creating and retrieving embedding vectors from text inputs using specified models.',
     )
     .addServer('http://localhost:1337')
     .addServer('http://localhost:1337/v1')

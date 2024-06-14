@@ -3,10 +3,17 @@ import { ChildProcess, spawn } from 'child_process';
 import { join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
-import { defaultCortexCppHost, defaultCortexCppPort } from '@/../constant';
+import {
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
 import { existsSync } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/file-manager/file-manager.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import {
+  CORTEX_CPP_HEALTH_Z_URL,
+  CORTEX_CPP_PROCESS_DESTROY_URL,
+} from '@/infrastructure/constants/cortex';
 
 @Injectable()
 export class CortexUsecases {
@@ -70,15 +77,10 @@ export class CortexUsecases {
     });
   }
 
-  async stopCortex(
-    host: string = defaultCortexCppHost,
-    port: number = defaultCortexCppPort,
-  ): Promise<CortexOperationSuccessfullyDto> {
+  async stopCortex(): Promise<CortexOperationSuccessfullyDto> {
     try {
       await firstValueFrom(
-        this.httpService.delete(
-          `http://${host}:${port}/processmanager/destroy`,
-        ),
+        this.httpService.delete(CORTEX_CPP_PROCESS_DESTROY_URL()),
       );
     } catch (err) {
       console.error(err.response.data);
@@ -92,7 +94,7 @@ export class CortexUsecases {
   }
 
   private healthCheck(host: string, port: number): Promise<boolean> {
-    return fetch(`http://${host}:${port}/healthz`)
+    return fetch(CORTEX_CPP_HEALTH_Z_URL(host, port))
       .then((res) => {
         if (res.ok) {
           return true;
