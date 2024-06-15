@@ -17,6 +17,14 @@ import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.mid
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './download-manager/download-manager.module';
 import { EventsController } from './infrastructure/controllers/events.controller';
+import { AppController } from './infrastructure/controllers/app.controller';
+import { AssistantsController } from './infrastructure/controllers/assistants.controller';
+import { ChatController } from './infrastructure/controllers/chat.controller';
+import { EmbeddingsController } from './infrastructure/controllers/embeddings.controller';
+import { ModelsController } from './infrastructure/controllers/models.controller';
+import { ThreadsController } from './infrastructure/controllers/threads.controller';
+import { StatusController } from './infrastructure/controllers/status.controller';
+import { ProcessController } from './infrastructure/controllers/process.controller';
 
 @Module({
   imports: [
@@ -40,7 +48,17 @@ import { EventsController } from './infrastructure/controllers/events.controller
     ModelRepositoryModule,
     DownloadManagerModule,
   ],
-  controllers: [EventsController],
+  controllers: [
+    AppController,
+    AssistantsController,
+    ChatController,
+    EmbeddingsController,
+    ModelsController,
+    ThreadsController,
+    StatusController,
+    ProcessController,
+    EventsController,
+  ],
   providers: [SeedService],
 })
 export class AppModule implements NestModule {
