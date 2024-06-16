@@ -37,16 +37,32 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
       run: |
         cd cortex-cpp
-        latest_prerelease_name=$(curl -s https://api.github.com/repos/janhq/cortex.llamacpp/releases | jq -r '.[] | select(.prerelease) | .name' | head -n 1)
+        curl -s https://api.github.com/repos/janhq/cortex.llamacpp/releases > /tmp/github_api_releases.json
+        latest_prerelease_name=$(cat /tmp/github_api_releases.json | jq -r '.[] | select(.prerelease) | .name' | head -n 1)
+
+        get_asset_count() {
+          local version_name=$1
+          cat /tmp/github_api_releases.json | jq -r --arg version_name "$version_name" '.[] | select(.name == $version_name) | .assets | length'
+        }
 
         engine_cmake_path="engines/cortex.llamacpp/engine.cmake"
         current_version=$(grep -oP 'set\(VERSION \K[^\)]+' "$engine_cmake_path")
+
+        current_version_asset_count=$(get_asset_count "$current_version")
+        latest_prerelease_asset_count=$(get_asset_count "$latest_prerelease_name")
 
         if [ "$current_version" = "$latest_prerelease_name" ]; then
           echo "cortex.llamacpp remote repo doesn't have update today, skip nightly build"
           echo "::set-output name=pr_created::false"
           exit 0
         fi
+
+        if [ "$current_version_asset_count" != "$latest_prerelease_asset_count" ]; then
+          echo "Latest prerelease version has different number of assets, somethink went wrong, skip update cortex-cpp for today nightly build"
+          echo "::set-output name=pr_created::false"
+          exit 1
+        fi
+
         sed -i "s/set(VERSION $current_version)/set(VERSION $latest_prerelease_name)/" "$engine_cmake_path"
         echo "Updated version from $current_version to $latest_prerelease_name."
         echo "::set-output name=pr_created::true"
