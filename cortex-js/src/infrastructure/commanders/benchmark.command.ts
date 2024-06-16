@@ -4,7 +4,10 @@ import { BenchmarkConfig } from './types/benchmark-config.interface';
 
 @SubCommand({
   name: 'benchmark',
-  subCommands: [],
+  arguments: '[model_id]',
+  argsDescription: {
+    model_id: 'Model to benchmark with',
+  },
   description:
     'Benchmark and analyze the performance of a specific AI model using a variety of system resources',
 })
@@ -17,7 +20,10 @@ export class BenchmarkCommand extends CommandRunner {
     passedParams: string[],
     options?: Partial<BenchmarkConfig>,
   ): Promise<void> {
-    return this.benchmarkUsecases.benchmark(options ?? {});
+    return this.benchmarkUsecases.benchmark({
+      ...options,
+      ...(passedParams[0] ? { modelId: passedParams[0] } : {}),
+    });
   }
 
   @Option({
