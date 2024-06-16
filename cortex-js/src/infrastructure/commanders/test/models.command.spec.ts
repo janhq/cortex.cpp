@@ -34,14 +34,14 @@ afterEach(
 );
 
 export const modelName = 'tinyllama';
-describe('Models list returns array of models', () => {
+describe('Action with models', () => {
   test('Init with CPU', async () => {
     const logMock = stubMethod(console, 'log');
 
     logMock.passThrough();
     CommandTestFactory.setAnswers(['CPU', '', 'AVX2']);
 
-    await CommandTestFactory.run(commandInstance, ['init']);
+    await CommandTestFactory.run(commandInstance, ['setup']);
     expect(logMock.firstCall?.args[0]).toBe(
       'Downloading engine file windows-amd64-avx2.tar.gz',
     );

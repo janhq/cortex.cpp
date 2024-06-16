@@ -91,8 +91,11 @@ describe('Helper commands', () => {
     expect(exitSpy.firstCall?.args[0]).toBe(1);
   });
 
-  test('Local API server via localhost:1337/api', async () => {
+  test('Local API server via default host/port localhost:1337/api', async () => {
     await CommandTestFactory.run(commandInstance, ['serve']);
+    expect(stdoutSpy.firstCall?.args[0]).toContain(
+      'Started server at http://localhost:1337',
+    );
 
     // Add a delay of 1000 milliseconds (1 second)
     return new Promise<void>(async (resolve) => {
