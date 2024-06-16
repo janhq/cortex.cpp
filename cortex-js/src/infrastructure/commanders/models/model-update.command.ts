@@ -8,13 +8,20 @@ type UpdateOptions = {
   options?: string[];
 };
 
-@SubCommand({ name: 'update', description: 'Update configuration of a model.' })
+@SubCommand({
+  name: 'update',
+  description: 'Update configuration of a model.',
+  arguments: '<model_id>',
+  argsDescription: {
+    model_id: 'Model ID to update configuration.',
+  },
+})
 export class ModelUpdateCommand extends CommandRunner {
   constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
     super();
   }
 
-  async run(_input: string[], option: UpdateOptions): Promise<void> {
+  async run(passedParams: string[], option: UpdateOptions): Promise<void> {
     const modelId = option.model;
     if (!modelId) {
       console.error('Model Id is required');

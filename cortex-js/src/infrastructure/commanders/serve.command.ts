@@ -19,7 +19,7 @@ type ServeOptions = {
   subCommands: [ServeStopCommand],
 })
 export class ServeCommand extends CommandRunner {
-  async run(_input: string[], options?: ServeOptions): Promise<void> {
+  async run(passedParams: string[], options?: ServeOptions): Promise<void> {
     const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
 

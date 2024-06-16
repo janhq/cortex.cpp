@@ -32,7 +32,10 @@ interface CortexCommandOptions {
   description: 'Cortex CLI',
 })
 export class CortexCommand extends CommandRunner {
-  async run(input: string[], option: CortexCommandOptions): Promise<void> {
+  async run(
+    passedParams: string[],
+    option: CortexCommandOptions,
+  ): Promise<void> {
     if (option.version) console.log(pkg.version);
     else this.command?.help();
   }

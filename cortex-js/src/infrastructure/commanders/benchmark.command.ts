@@ -14,7 +14,7 @@ export class BenchmarkCommand extends CommandRunner {
   }
 
   async run(
-    _input: string[],
+    passedParams: string[],
     options?: Partial<BenchmarkConfig>,
   ): Promise<void> {
     return this.benchmarkUsecases.benchmark(options ?? {});
