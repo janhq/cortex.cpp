@@ -31,6 +31,7 @@ import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './download-manager/download-manager.module';
+import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
 
 @Module({
   imports: [
@@ -78,6 +79,9 @@ import { DownloadManagerModule } from './download-manager/download-manager.modul
 
     // Shortcuts
     RunCommand,
+
+    // Serve
+    ServeStopCommand,
   ],
 })
 export class CommandModule {}

@@ -1,14 +1,14 @@
 import { spawn } from 'child_process';
 import {
-  CORTEX_JS_STOP_API_SERVER_URL,
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { join } from 'path';
+import { ServeStopCommand } from './sub-commands/serve-stop.command';
 
 type ServeOptions = {
-  host?: string;
+  address?: string;
   port?: number;
   attach: boolean;
 };
@@ -16,23 +16,14 @@ type ServeOptions = {
 @SubCommand({
   name: 'serve',
   description: 'Providing API endpoint for Cortex backend',
+  subCommands: [ServeStopCommand],
 })
 export class ServeCommand extends CommandRunner {
   async run(_input: string[], options?: ServeOptions): Promise<void> {
-    const host = options?.host || defaultCortexJsHost;
+    const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
 
-    if (_input[0] === 'stop') {
-      return this.stopServer().then(() => console.log('API server stopped'));
-    } else {
-      return this.startServer(host, port, options);
-    }
-  }
-
-  private async stopServer() {
-    return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
-      method: 'DELETE',
-    }).catch(() => {});
+    return this.startServer(host, port, options);
   }
 
   private async startServer(
@@ -63,8 +54,8 @@ export class ServeCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-h, --host <host>',
-    description: 'Host to serve the application',
+    flags: '-a, --address <address>',
+    description: 'Address to use',
   })
   parseHost(value: string) {
     return value;
