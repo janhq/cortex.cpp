@@ -34,6 +34,7 @@ interface CortexCommandOptions {
 export class CortexCommand extends CommandRunner {
   async run(input: string[], option: CortexCommandOptions): Promise<void> {
     if (option.version) console.log(pkg.version);
+    else this.command?.help();
   }
 
   @Option({
