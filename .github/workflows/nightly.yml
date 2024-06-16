@@ -51,7 +51,7 @@ jobs:
         echo "Updated version from $current_version to $latest_prerelease_name."
         echo "::set-output name=pr_created::true"
         cd -
-        git add $engine_cmake_path
+        git add cortex-cpp/$engine_cmake_path
         git commit -m "Update cortex.llamacpp nightly to version $latest_prerelease_name"
         branch_name="update-nightly-$(date +'%Y-%m-%d-%H-%M')"
         git checkout -b $branch_name
