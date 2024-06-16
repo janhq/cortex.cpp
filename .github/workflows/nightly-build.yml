@@ -1,4 +1,4 @@
-name: CI Cortex CPP
+name: CI Cortex CPP Nightly Build
 
 on:
   push:
