@@ -114,7 +114,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "@/(.*)$": "<rootDir>/$1"
+      "@/(.*)$": "<rootDir>/$1",
+      "@commanders/(.*)$": "<rootDir>/../src/infrastructure/commanders/$1"
     }
   }
 }
