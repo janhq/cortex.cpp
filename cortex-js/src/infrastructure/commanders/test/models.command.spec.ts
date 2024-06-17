@@ -5,6 +5,7 @@ import { CommandModule } from '@/command.module';
 import { join } from 'path';
 import { rmSync } from 'fs';
 import { timeout } from '@/infrastructure/commanders/test/helpers.command.spec';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 let commandInstance: TestingModule;
 
@@ -17,6 +18,14 @@ beforeEach(
         // .overrideProvider(LogService)
         // .useValue({})
         .compile();
+      const fileService =
+        await commandInstance.resolve<FileManagerService>(FileManagerService);
+
+      // Attempt to create test folder
+      await fileService.writeConfigFile({
+        dataFolderPath: join(__dirname, 'test_data'),
+      });
+
       res();
     }),
 );
