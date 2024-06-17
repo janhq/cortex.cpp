@@ -80,6 +80,8 @@ add_subdirectory(test)
 add_executable(${PROJECT_NAME} main.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_validation.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils/resource-monitor/process_info.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/utils/resource-monitor/system_info.cc
 )
 
 # ##############################################################################
