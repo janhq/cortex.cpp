@@ -1,6 +1,8 @@
+import { LlmEngine } from '@/domain/models/model.interface';
+
 export interface ModelStat {
   modelId: string;
-  engine?: string;
+  engine?: LlmEngine;
   duration?: string;
   status: string;
   vram?: string;

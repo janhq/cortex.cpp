@@ -1,5 +1,25 @@
 import { Model as OpenAiModel } from 'openai/resources/models';
 
+export const LocalEngines = [
+  'cortex.llamacpp',
+  'cortex.onnx',
+  'cortex.tensorrt',
+] as const;
+
+export const RemoteEngines = [
+  'anthropic',
+  'mistral',
+  'martian',
+  'openrouter',
+  'openai',
+  'groq',
+  'triton_trtllm',
+  'cohere',
+] as const;
+
+export const LlmEngines = [...LocalEngines, ...RemoteEngines] as const;
+export type LlmEngine = (typeof LlmEngines)[number];
+
 export interface Model
   extends OpenAiModel,
     ModelSettingParams,
@@ -64,7 +84,7 @@ export interface ModelSettingParams {
   /**
    * The model engine.
    */
-  engine?: string;
+  engine?: LlmEngine;
 
   /**
    * The prompt to use for internal configuration
