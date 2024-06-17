@@ -24,7 +24,6 @@ export const SetCommandContext = () => {
                 this.contextService.set('model', modelId);
               }
             }
-            // const modelId = args[1].model
           }
           const result = await originalMethod.apply(this, args);
           return result;
