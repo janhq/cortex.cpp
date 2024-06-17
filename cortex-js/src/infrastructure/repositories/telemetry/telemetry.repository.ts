@@ -102,6 +102,9 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
 
   async getLastCrashReport(): Promise<Telemetry | null> {
     try {
+      await this.fileManagerService.createFolderIfNotExistInDataFolder(
+        'telemetry',
+      );
       const { data } = await this.fileManagerService.getLastLine(
         join(await this.getTelemetryDirectory(), this.crashReportFileName),
       );

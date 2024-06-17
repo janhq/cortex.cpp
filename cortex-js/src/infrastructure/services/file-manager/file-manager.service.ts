@@ -230,4 +230,12 @@ export class FileManagerService {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.benchmarkFoldername);
   }
+
+  async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {
+    const dataFolderPath = await this.getDataFolderPath();
+    const folderPath = join(dataFolderPath, folderName);
+    if (!existsSync(folderPath)) {
+      await promises.mkdir(folderPath, { recursive: true });
+    }
+  }
 }
