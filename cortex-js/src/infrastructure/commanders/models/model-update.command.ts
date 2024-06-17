@@ -1,6 +1,8 @@
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
+import { SetCommandContext } from '../decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 
 type UpdateOptions = {
@@ -16,8 +18,12 @@ type UpdateOptions = {
     model_id: 'Model ID to update configuration.',
   },
 })
+@SetCommandContext()
 export class ModelUpdateCommand extends CommandRunner {
-  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
+  constructor(
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
+  ) {
     super();
   }
 

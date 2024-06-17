@@ -1,12 +1,18 @@
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { SetCommandContext } from '../decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 interface ModelListOptions {
   format: 'table' | 'json';
 }
 @SubCommand({ name: 'list', description: 'List all models locally.' })
+@SetCommandContext()
 export class ModelListCommand extends CommandRunner {
-  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
+  constructor(
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
+  ) {
     super();
   }
 

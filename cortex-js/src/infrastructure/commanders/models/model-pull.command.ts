@@ -1,5 +1,7 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
+import { SetCommandContext } from '../decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
@@ -10,8 +12,12 @@ import { ModelNotFoundException } from '@/infrastructure/exception/model-not-fou
   argsDescription: { model_id: 'Model repo to pull' },
   description: 'Download a model. Working with HuggingFace model id.',
 })
+@SetCommandContext()
 export class ModelPullCommand extends CommandRunner {
-  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
+  constructor(
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
+  ) {
     super();
   }
 

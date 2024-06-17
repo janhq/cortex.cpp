@@ -7,6 +7,8 @@ import {
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { SetCommandContext } from '../decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -21,11 +23,13 @@ type ModelStartOptions = {
       'Model ID to start. If there is no model ID, it will prompt you to select from the available models.',
   },
 })
+@SetCommandContext()
 export class ModelStartCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly cortexUsecases: CortexUsecases,
     private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
   ) {
     super();
   }

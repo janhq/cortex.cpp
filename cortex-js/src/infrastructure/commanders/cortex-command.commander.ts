@@ -9,6 +9,9 @@ import { PSCommand } from './ps.command';
 import { KillCommand } from './kill.command';
 import pkg from '@/../package.json';
 import { PresetCommand } from './presets.command';
+import { TelemetryCommand } from './telemetry.command';
+import { SetCommandContext } from './decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 import { EmbeddingCommand } from './embeddings.command';
 import { BenchmarkCommand } from './benchmark.command';
 import chalk from 'chalk';
@@ -25,12 +28,17 @@ import { printSlogan } from '@/utils/logo';
     PSCommand,
     KillCommand,
     PresetCommand,
+    TelemetryCommand,
     EmbeddingCommand,
     BenchmarkCommand,
   ],
   description: 'Cortex CLI',
 })
+@SetCommandContext()
 export class CortexCommand extends CommandRunner {
+  constructor(readonly contextService: ContextService) {
+    super();
+  }
   async run(): Promise<void> {
     printSlogan();
     console.log('\n');

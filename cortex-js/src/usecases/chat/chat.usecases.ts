@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
+import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +16,7 @@ export class ChatUsecases {
   constructor(
     private readonly modelRepository: ModelRepository,
     private readonly extensionRepository: ExtensionRepository,
+    private readonly telemetryUseCases: TelemetryUsecases,
     private readonly httpService: HttpService,
   ) {}
 
@@ -35,7 +38,15 @@ export class ChatUsecases {
     if (engine == null) {
       throw new Error(`No engine found with name: ${model.engine}`);
     }
-    return engine.inference(createChatDto, headers);
+    try {
+      return await engine.inference(createChatDto, headers);
+    } catch (error) {
+      await this.telemetryUseCases.createCrashReport(
+        error,
+        TelemetrySource.CORTEX_CPP,
+      );
+      throw error;
+    }
   }
 
   /**

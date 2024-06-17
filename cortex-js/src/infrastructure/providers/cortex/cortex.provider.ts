@@ -76,10 +76,9 @@ export default class CortexProvider extends OAIEngineExtension {
       modelSettings.user_prompt = prompt.user_prompt;
       modelSettings.ai_prompt = prompt.ai_prompt;
     }
-
     return firstValueFrom(
       this.httpService.post(this.loadModelUrl, modelSettings),
-    ).then();
+    ).then(); // pipe error or void instead of throwing
   }
 
   override async unloadModel(modelId: string): Promise<void> {

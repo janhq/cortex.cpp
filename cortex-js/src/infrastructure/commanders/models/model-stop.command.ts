@@ -1,6 +1,8 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
+import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { SetCommandContext } from '../decorators/CommandContext';
+import { ContextService } from '@/util/context.service';
 
 @SubCommand({
   name: 'stop',
@@ -10,8 +12,12 @@ import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
     model_id: 'Model ID to stop.',
   },
 })
+@SetCommandContext()
 export class ModelStopCommand extends CommandRunner {
-  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
+  constructor(
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
+  ) {
     super();
   }
 

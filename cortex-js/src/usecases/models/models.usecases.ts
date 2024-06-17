@@ -19,6 +19,9 @@ import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { AxiosError } from 'axios';
+import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
+import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
+import { ContextService } from '@/util/context.service';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import {
@@ -43,6 +46,8 @@ export class ModelsUsecases {
     private readonly fileManagerService: FileManagerService,
     private readonly downloadManagerService: DownloadManagerService,
     private readonly httpService: HttpService,
+    private readonly telemetryUseCases: TelemetryUsecases,
+    private readonly contextService: ContextService,
   ) {}
 
   /**
@@ -71,6 +76,7 @@ export class ModelsUsecases {
    * @returns Model
    */
   async findOne(model: string) {
+    this.contextService.set('modelId', model);
     return this.modelRepository.findOne(model);
   }
 
@@ -171,13 +177,22 @@ export class ModelsUsecases {
         message: 'Model loaded successfully',
         modelId,
       }))
-      .catch((e) => ({
-        message:
-          e.code === AxiosError.ERR_BAD_REQUEST
-            ? 'Model already loaded'
-            : 'Model failed to load',
-        modelId,
-      }));
+      .catch(async (e) => {
+        if (e.code === AxiosError.ERR_BAD_REQUEST) {
+          return {
+            message: 'Model already loaded',
+            modelId,
+          };
+        }
+        await this.telemetryUseCases.createCrashReport(
+          e,
+          TelemetrySource.CORTEX_CPP,
+        );
+        return {
+          message: 'Failed to load model',
+          modelId,
+        };
+      });
   }
 
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
@@ -200,10 +215,16 @@ export class ModelsUsecases {
         message: 'Model is stopped',
         modelId,
       }))
-      .catch(() => ({
-        message: 'Failed to stop model',
-        modelId,
-      }));
+      .catch(async (e) => {
+        await this.telemetryUseCases.createCrashReport(
+          e,
+          TelemetrySource.CORTEX_CPP,
+        );
+        return {
+          message: 'Failed to stop model',
+          modelId,
+        };
+      });
   }
 
   /**

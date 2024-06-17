@@ -7,15 +7,17 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
-import { ModelRepositoryModule } from './infrastructure/repositories/models/model.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
 import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
+import { TelemetryModule } from './usecases/telemetry/telemetry.module';
+import { APP_FILTER } from '@nestjs/core';
+import { GlobalExceptionFilter } from './infrastructure/exception/global.exception';
+import { UtilModule } from './util/util.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { DownloadManagerModule } from './download-manager/download-manager.module';
 import { EventsController } from './infrastructure/controllers/events.controller';
 import { AssistantsController } from './infrastructure/controllers/assistants.controller';
 import { ChatController } from './infrastructure/controllers/chat.controller';
@@ -44,8 +46,8 @@ import { ProcessController } from './infrastructure/controllers/process.controll
     CortexModule,
     ExtensionModule,
     FileManagerModule,
-    ModelRepositoryModule,
-    DownloadManagerModule,
+    TelemetryModule,
+    UtilModule,
   ],
   controllers: [
     AssistantsController,
@@ -57,7 +59,13 @@ import { ProcessController } from './infrastructure/controllers/process.controll
     ProcessController,
     EventsController,
   ],
-  providers: [SeedService],
+  providers: [
+    SeedService,
+    {
+      provide: APP_FILTER,
+      useClass: GlobalExceptionFilter,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

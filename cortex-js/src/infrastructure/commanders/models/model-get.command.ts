@@ -1,6 +1,8 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
+import { ContextService } from '@/util/context.service';
+import { SetCommandContext } from '../decorators/CommandContext';
 
 @SubCommand({
   name: 'get',
@@ -10,8 +12,12 @@ import { exit } from 'node:process';
     model_id: 'Model ID to get information about.',
   },
 })
+@SetCommandContext()
 export class ModelGetCommand extends CommandRunner {
-  constructor(private readonly modelsCliUsecases: ModelsCliUsecases) {
+  constructor(
+    private readonly modelsCliUsecases: ModelsCliUsecases,
+    readonly contextService: ContextService,
+  ) {
     super();
   }
 
