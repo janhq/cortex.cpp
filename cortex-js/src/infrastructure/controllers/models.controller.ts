@@ -163,9 +163,7 @@ export class ModelsController {
   })
   @Get()
   findAll() {
-    return this.modelsUsecases
-      .findAll()
-      .then((data) => data.map((e) => ({ id: e.model, ...e })));
+    return this.modelsUsecases.findAll();
   }
 
   @HttpCode(200)

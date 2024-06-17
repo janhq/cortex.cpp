@@ -4,16 +4,26 @@ import { Repository } from 'typeorm';
 import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
 import { Assistant } from '@/domain/models/assistant.interface';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
+import { ModelRepository } from '@/domain/repositories/model.interface';
+import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
 @Injectable()
 export class AssistantsUsecases {
   constructor(
     @Inject('ASSISTANT_REPOSITORY')
-    private assistantRepository: Repository<AssistantEntity>,
+    private readonly assistantRepository: Repository<AssistantEntity>,
+    private readonly modelRepository: ModelRepository,
   ) {}
 
   async create(createAssistantDto: CreateAssistantDto) {
-    const { top_p, temperature } = createAssistantDto;
+    const { top_p, temperature, model } = createAssistantDto;
+    if (model !== '*') {
+      const modelEntity = await this.modelRepository.findOne(model);
+      if (!modelEntity) {
+        throw new ModelNotFoundException(model);
+      }
+    }
+
     const assistant: AssistantEntity = {
       ...createAssistantDto,
       object: 'assistant',

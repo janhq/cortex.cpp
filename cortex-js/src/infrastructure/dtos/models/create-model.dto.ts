@@ -136,4 +136,11 @@ export class CreateModelDto implements Partial<Model> {
   @IsOptional()
   @IsString()
   engine?: string;
+
+  @ApiProperty({
+    description: 'The owner of the model.',
+    example: '',
+    default: '',
+  })
+  owned_by?: string;
 }
