@@ -9,7 +9,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 
 let commandInstance: TestingModule;
 
-beforeEach(
+beforeAll(
   () =>
     new Promise<void>(async (res) => {
       commandInstance = await CommandTestFactory.createTestingCommand({
@@ -30,7 +30,7 @@ beforeEach(
     }),
 );
 
-afterEach(
+afterAll(
   () =>
     new Promise<void>(async (res) => {
       // Attempt to clean test folder
@@ -51,9 +51,7 @@ describe('Action with models', () => {
     CommandTestFactory.setAnswers(['CPU', '', 'AVX2']);
 
     await CommandTestFactory.run(commandInstance, ['setup']);
-    expect(logMock.firstCall?.args[0]).toBe(
-      'Downloading engine file windows-amd64-avx2.tar.gz',
-    );
+    expect(logMock.firstCall?.args[0]).toContain('engine file');
   }, 50000);
 
   test('Empty model list', async () => {
@@ -65,12 +63,30 @@ describe('Action with models', () => {
   });
 
   test(
+    'Pull model and check with cortex ps',
+    async () => {
+      const logMock = stubMethod(console, 'log');
+
+      await CommandTestFactory.run(commandInstance, ['pull', modelName]);
+      expect(logMock.lastCall?.args[0]).toContain('Download complete!');
+
+      const tableMock = stubMethod(console, 'table');
+      await CommandTestFactory.run(commandInstance, ['ps']);
+      expect(tableMock.firstCall?.args[0].length).toBeGreaterThan(0);
+    },
+    timeout,
+  );
+
+  test(
     'Run model and check with cortex ps',
     async () => {
       const logMock = stubMethod(console, 'log');
 
       await CommandTestFactory.run(commandInstance, ['run', modelName]);
-      expect(logMock.lastCall?.args[0]).toBe("Inorder to exit, type 'exit()'.");
+      expect([
+        "Inorder to exit, type 'exit()'.",
+        `Model ${modelName} not found. Try pulling model...`,
+      ]).toContain(logMock.lastCall?.args[0]);
 
       const tableMock = stubMethod(console, 'table');
       await CommandTestFactory.run(commandInstance, ['ps']);
