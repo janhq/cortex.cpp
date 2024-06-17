@@ -114,7 +114,7 @@ export class FileManagerService {
     filePath: string,
   ): Promise<{ data: any; position: number }> {
     try {
-      const fileDescriptor = await openAsync(filePath, 'r');
+      const fileDescriptor = await openAsync(filePath, 'a+');
       const stats = await promises.stat(filePath);
       const bufferSize = 1024 * 5; // 5KB
       const buffer = Buffer.alloc(bufferSize);
