@@ -49,38 +49,62 @@ jobs:
         include:
           - os: "linux"
             name: "amd64-avx2"
-            runs-on: "ubuntu-18-04"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
             run-e2e: true
 
           - os: "linux"
             name: "amd64-avx"
-            runs-on: "ubuntu-18-04"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
             run-e2e: false
 
           - os: "linux"
             name: "amd64-avx512"
-            runs-on: "ubuntu-18-04"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
             run-e2e: false
 
           - os: "linux"
             name: "amd64-vulkan"
-            runs-on: "ubuntu-18-04-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
             run-e2e: false
 
           - os: "linux"
-            name: "amd64-cuda-11-7"
-            runs-on: "ubuntu-18-04-cuda-11-7"
-            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
+            name: "amd64-avx2-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
             run-e2e: false
 
           - os: "linux"
-            name: "amd64-cuda-12-0"
-            runs-on: "ubuntu-18-04-cuda-12-0"
-            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
+            name: "amd64-avx-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx512-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx2-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx512-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
             run-e2e: false
 
           - os: "mac"
