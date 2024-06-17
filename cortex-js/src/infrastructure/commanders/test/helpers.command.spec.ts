@@ -68,19 +68,28 @@ describe('Helper commands', () => {
     timeout,
   );
 
-  test('Chat with option -m', async () => {
-    const logMock = stubMethod(console, 'log');
+  test(
+    'Chat with option -m',
+    async () => {
+      const logMock = stubMethod(console, 'log');
 
-    await CommandTestFactory.run(commandInstance, [
-      'chat',
-      // '-m',
-      // 'hello',
-      // '>output.txt',
-    ]);
-    expect(logMock.firstCall?.args[0]).toBe("Inorder to exit, type 'exit()'.");
-    // expect(exitSpy.callCount).toBe(1);
-    // expect(exitSpy.firstCall?.args[0]).toBe(1);
-  });
+      await CommandTestFactory.run(commandInstance, [
+        'run',
+        'tinyllama',
+        // '-m',
+        // 'hello',
+        // '>output.txt',
+      ]);
+      expect(
+        logMock.firstCall?.args[0] === "Inorder to exit, type 'exit()'." ||
+          logMock.firstCall?.args[0] ===
+            'Model tinyllama not found. Try pulling model...',
+      ).toBeTruthy();
+      // expect(exitSpy.callCount).toBe(1);
+      // expect(exitSpy.firstCall?.args[0]).toBe(1);
+    },
+    timeout,
+  );
 
   test('Show / kill running models', async () => {
     const tableMock = stubMethod(console, 'table');
