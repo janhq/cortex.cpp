@@ -29,7 +29,7 @@ export class TelemetryUsecases {
   ): Promise<void> {
     try {
       const isCollectingTelemetryEnabled = process.env.CORTEX_CRASH_REPORT;
-      if (isCollectingTelemetryEnabled === '0') {
+      if (isCollectingTelemetryEnabled !== '1') {
         return;
       }
       const crashReport: CrashReportAttributes = this.buildCrashReport(error);
