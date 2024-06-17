@@ -215,6 +215,11 @@ export class ChatCliUsecases {
               }
             }
           });
+        })
+        .catch(() => {
+          stdout.write('Something went wrong! Please check model status.\n');
+          if (attach) rl.prompt();
+          else rl.close();
         });
     }
   }

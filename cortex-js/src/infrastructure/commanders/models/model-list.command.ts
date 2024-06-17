@@ -10,7 +10,7 @@ export class ModelListCommand extends CommandRunner {
     super();
   }
 
-  async run(_input: string[], option: ModelListOptions): Promise<void> {
+  async run(passedParams: string[], option: ModelListOptions): Promise<void> {
     const models = await this.modelsCliUsecases.listAllModels();
     option.format === 'table'
       ? console.table(

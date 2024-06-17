@@ -18,7 +18,12 @@ interface EmbeddingCommandOptions {
 
 @SubCommand({
   name: 'embeddings',
+  arguments: '[model_id]',
   description: 'Creates an embedding vector representing the input text.',
+  argsDescription: {
+    model_id:
+      'Model to use for embedding. If not provided, it will prompt to select from running models.',
+  },
 })
 export class EmbeddingCommand extends CommandRunner {
   constructor(
@@ -29,16 +34,19 @@ export class EmbeddingCommand extends CommandRunner {
   ) {
     super();
   }
-  async run(_input: string[], options: EmbeddingCommandOptions): Promise<void> {
-    let modelId = _input[0];
+  async run(
+    passedParams: string[],
+    options: EmbeddingCommandOptions,
+  ): Promise<void> {
+    let modelId = passedParams[0];
     // First attempt to get message from input or options
-    let input: string | string[] = options.input ?? _input.splice(1);
+    let input: string | string[] = options.input ?? passedParams.splice(1);
 
     // Check for model existing
     if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
       // Model ID is not provided
       // first input might be message input
-      input = _input ?? options.input;
+      input = passedParams ?? options.input;
       // If model ID is not provided, prompt user to select from running models
       const models = await this.psCliUsecases.getModels();
       if (models.length === 1) {

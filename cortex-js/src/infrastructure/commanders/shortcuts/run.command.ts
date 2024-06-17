@@ -21,6 +21,11 @@ type RunOptions = {
 
 @SubCommand({
   name: 'run',
+  arguments: '[model_id]',
+  argsDescription: {
+    model_id:
+      'Model to run. If the model is not available, it will attempt to pull.',
+  },
   description: 'Shortcut to start a model and chat',
 })
 export class RunCommand extends CommandRunner {
@@ -33,8 +38,8 @@ export class RunCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[], options: RunOptions): Promise<void> {
-    let modelId = input[0];
+  async run(passedParams: string[], options: RunOptions): Promise<void> {
+    let modelId = passedParams[0];
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
