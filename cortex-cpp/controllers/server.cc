@@ -17,6 +17,7 @@ namespace {
 constexpr static auto kLlamaEngine = "cortex.llamacpp";
 constexpr static auto kPythonRuntimeEngine = "cortex.python";
 constexpr static auto kOnnxEngine = "cortex.onnx";
+constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
 }  // namespace
 
 server::server(){
@@ -48,7 +49,7 @@ void server::ChatCompletion(
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
   auto q = std::make_shared<SyncQueue>();
-  std::get<EngineI*>(engines_[engine_type].engine)
+  std::get<CortexTensorrtLlmEngineI*>(engines_[engine_type].engine)
       ->HandleChatCompletion(json_body,
                              [q](Json::Value status, Json::Value res) {
                                q->push(std::make_pair(status, res));
@@ -264,6 +265,8 @@ void server::LoadModel(const HttpRequestPtr& req,
         return cortex_utils::kLlamaLibPath;
       } else if(e == kOnnxEngine) {
         return cortex_utils::kOnnxLibPath;
+      } else if(e == kTensorrtLlmEngine) {
+        return cortex_utils::kTensorrtLlmPath;
       }
       return cortex_utils::kLlamaLibPath;
     };
@@ -297,13 +300,13 @@ void server::LoadModel(const HttpRequestPtr& req,
     cur_engine_type_ = engine_type;
 
     auto func =
-        engines_[engine_type].dl->get_function<EngineI*()>("get_engine");
+        engines_[engine_type].dl->get_function<CortexTensorrtLlmEngineI*()>("get_engine");
     engines_[engine_type].engine = func();
     LOG_INFO << "Loaded engine: " << engine_type;
   }
 
   LOG_TRACE << "Load model";
-  auto& en = std::get<EngineI*>(engines_[engine_type].engine);
+  auto& en = std::get<CortexTensorrtLlmEngineI*>(engines_[engine_type].engine);
   en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
                                           Json::Value status, Json::Value res) {
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
