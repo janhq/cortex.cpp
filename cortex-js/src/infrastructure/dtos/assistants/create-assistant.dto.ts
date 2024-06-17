@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 import { Assistant } from '@/domain/models/assistant.interface';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -63,4 +63,22 @@ export class CreateAssistantDto implements Partial<Assistant> {
   })
   @IsOptional()
   metadata: unknown | null;
+
+  @ApiProperty({
+    description: 'Top p.',
+    example: '0.7',
+    default: '0.7',
+  })
+  @IsOptional()
+  @IsNumber()
+  top_p?: number;
+
+  @ApiProperty({
+    description: 'Temperature.',
+    example: '0.7',
+    default: '0.7',
+  })
+  @IsOptional()
+  @IsNumber()
+  temperature?: number;
 }

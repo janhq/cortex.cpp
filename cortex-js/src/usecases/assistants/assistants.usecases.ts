@@ -13,10 +13,15 @@ export class AssistantsUsecases {
   ) {}
 
   async create(createAssistantDto: CreateAssistantDto) {
+    const { top_p, temperature } = createAssistantDto;
     const assistant: AssistantEntity = {
       ...createAssistantDto,
       object: 'assistant',
       created_at: Date.now(),
+      response_format: null,
+      tool_resources: null,
+      top_p: top_p ?? null,
+      temperature: temperature ?? null,
     };
     await this.assistantRepository.insert(assistant);
     return this.findOne(assistant.id);

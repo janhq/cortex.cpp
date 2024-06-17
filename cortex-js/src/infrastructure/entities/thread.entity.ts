@@ -4,24 +4,24 @@ import { AssistantEntity } from './assistant.entity';
 
 @Entity('threads')
 export class ThreadEntity implements Thread {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: String })
   id: string;
 
-  @Column()
+  @Column({ type: String })
   object: 'thread';
 
-  @Column({ name: 'title' })
+  @Column({ type: String, name: 'title' })
   title: string;
 
   @Column({ type: 'simple-json' })
   assistants: AssistantEntity[];
 
-  @Column()
+  @Column({ type: Number })
   created_at: number;
 
   @Column({ type: 'simple-json', nullable: true })
   tool_resources: ThreadToolResources | null;
 
   @Column({ type: 'simple-json', nullable: true })
-  metadata: any;
+  metadata: any | null;
 }

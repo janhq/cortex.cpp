@@ -3,10 +3,6 @@ import { AssistantResponseFormatOption as OpenAIAssistantResponseFormatOption } 
 
 export interface Assistant extends OpenAiAssistant {
   avatar?: string;
-
-  response_format?: AssistantResponseFormatOption;
-
-  tool_resources?: AssistantToolResources;
 }
 
 export type AssistantResponseFormatOption = OpenAIAssistantResponseFormatOption;

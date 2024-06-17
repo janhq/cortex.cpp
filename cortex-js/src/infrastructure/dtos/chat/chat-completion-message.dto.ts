@@ -1,5 +1,4 @@
-import { IsEnum, IsString } from 'class-validator';
-import { ChatCompletionRole } from '@/domain/models/message.interface';
+import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChatCompletionMessage {
@@ -10,6 +9,5 @@ export class ChatCompletionMessage {
   @ApiProperty({
     description: 'The role of the entity in the chat completion.',
   })
-  @IsEnum(ChatCompletionRole)
-  role: ChatCompletionRole;
+  role: 'user' | 'assistant';
 }

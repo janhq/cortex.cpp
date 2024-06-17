@@ -2,9 +2,9 @@ import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   Assistant,
+  AssistantResponseFormatOption,
   AssistantToolResources,
 } from '@/domain/models/assistant.interface';
-import { AssistantResponseFormatOption } from 'openai/resources/beta/threads/threads';
 
 export class CreateThreadAssistantDto implements Assistant {
   @ApiProperty({
