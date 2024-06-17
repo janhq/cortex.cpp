@@ -1,9 +1,6 @@
-import {
-  Thread,
-  ThreadAssistantInfo,
-  ThreadMetadata,
-} from '@/domain/models/thread.interface';
+import { Thread, ThreadToolResources } from '@/domain/models/thread.interface';
 import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { AssistantEntity } from './assistant.entity';
 
 @Entity('threads')
 export class ThreadEntity implements Thread {
@@ -11,20 +8,20 @@ export class ThreadEntity implements Thread {
   id: string;
 
   @Column()
-  object: string;
+  object: 'thread';
 
   @Column({ name: 'title' })
   title: string;
 
   @Column({ type: 'simple-json' })
-  assistants: ThreadAssistantInfo[];
+  assistants: AssistantEntity[];
 
   @Column()
-  createdAt: number;
+  created_at: number;
 
-  @Column({ nullable: true })
-  updatedAt?: number;
+  @Column({ type: 'simple-json', nullable: true })
+  tool_resources: ThreadToolResources | null;
 
-  @Column({ nullable: true, type: 'simple-json' })
-  metadata?: ThreadMetadata;
+  @Column({ type: 'simple-json', nullable: true })
+  metadata: any;
 }

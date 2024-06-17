@@ -1,12 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import {
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
-import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 
 async function bootstrap() {
@@ -14,9 +13,6 @@ async function bootstrap() {
     snapshot: true,
     cors: true,
   });
-
-  const seedService = app.get(SeedService);
-  await seedService.seed();
 
   const fileService = app.get(FileManagerService);
   await fileService.getConfig();
@@ -76,7 +72,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
 
   SwaggerModule.setup('api', app, document);
-  buildSwagger(app);
 
   // getting port from env
   const host = process.env.CORTEX_JS_HOST || defaultCortexJsHost;
@@ -85,16 +80,5 @@ async function bootstrap() {
   await app.listen(port, host);
   console.log(`Started server at http://${host}:${port}`);
 }
-
-const buildSwagger = (app: INestApplication<any>) => {
-  const config = new DocumentBuilder()
-    .setTitle('Cortex API')
-    .setDescription('The Cortex API description')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-
-  SwaggerModule.setup('api', app, document);
-};
 
 bootstrap();

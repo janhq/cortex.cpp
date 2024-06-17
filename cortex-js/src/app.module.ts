@@ -10,7 +10,6 @@ import { ExtensionModule } from './infrastructure/repositories/extensions/extens
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
-import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
@@ -38,6 +37,7 @@ import { DownloadManagerModule } from './infrastructure/services/download-manage
       envFilePath: env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
     EventEmitterModule.forRoot(),
+    DownloadManagerModule,
     DatabaseModule,
     MessagesModule,
     ThreadsModule,
@@ -62,7 +62,6 @@ import { DownloadManagerModule } from './infrastructure/services/download-manage
     EventsController,
   ],
   providers: [
-    SeedService,
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,

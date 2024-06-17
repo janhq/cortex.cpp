@@ -34,8 +34,10 @@ export class ThreadsUsecases {
       id,
       assistants,
       object: 'thread',
-      createdAt: Date.now(),
+      created_at: Date.now(),
       title: 'New Thread',
+      tool_resources: null,
+      metadata: null,
     };
     await this.threadRepository.insert(thread);
     return thread;
@@ -44,7 +46,7 @@ export class ThreadsUsecases {
   async findAll(): Promise<ThreadEntity[]> {
     return this.threadRepository.find({
       order: {
-        createdAt: 'DESC',
+        created_at: 'DESC',
       },
     });
   }
@@ -94,7 +96,7 @@ export class ThreadsUsecases {
     createMessageDto: CreateMessageDto,
   ) {
     const thread = await this.getThreadOrThrow(threadId);
-    const assistantId: string | undefined = thread.assistants[0].assistant_id;
+    const assistantId: string = thread.assistants[0].id;
 
     const message: MessageEntity = {
       object: 'thread.message',
@@ -157,7 +159,10 @@ export class ThreadsUsecases {
   }
 
   update(id: string, updateThreadDto: UpdateThreadDto) {
-    return this.threadRepository.update(id, updateThreadDto);
+    const entity: Partial<ThreadEntity> = {
+      ...updateThreadDto,
+    };
+    return this.threadRepository.update(id, entity);
   }
 
   remove(id: string) {
