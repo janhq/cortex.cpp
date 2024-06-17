@@ -1,8 +1,3 @@
-import {
-  ChatCompletionRole,
-  ContentType,
-  MessageStatus,
-} from '@/domain/models/message.interface';
 import { exit, stdin, stdout } from 'node:process';
 import * as readline from 'node:readline/promises';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
@@ -19,6 +14,7 @@ import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.
 import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
+import { TextContentBlock } from '@/domain/models/message.interface';
 
 @Injectable()
 export class ChatCliUsecases {
@@ -46,7 +42,7 @@ export class ChatCliUsecases {
     const messages: ChatCompletionMessage[] = (
       await this.messagesUsecases.getLastMessagesByThread(thread.id, 10)
     ).map((message) => ({
-      content: message.content[0].text.value,
+      content: (message.content[0] as TextContentBlock).text.value,
       role: message.role,
     }));
 
@@ -76,22 +72,22 @@ export class ChatCliUsecases {
 
       messages.push({
         content: userInput,
-        role: ChatCompletionRole.User,
+        role: 'user',
       });
 
       const createMessageDto: CreateMessageDto = {
         thread_id: thread.id,
-        role: ChatCompletionRole.User,
+        role: 'user',
         content: [
           {
-            type: ContentType.Text,
+            type: 'text',
             text: {
               value: userInput,
               annotations: [],
             },
           },
         ],
-        status: MessageStatus.Ready,
+        status: 'completed',
       };
       this.messagesUsecases.create(createMessageDto);
 
@@ -127,22 +123,22 @@ export class ChatCliUsecases {
             stdout.write(assistantResponse);
             messages.push({
               content: assistantResponse,
-              role: ChatCompletionRole.Assistant,
+              role: 'assistant',
             });
 
             const createMessageDto: CreateMessageDto = {
               thread_id: thread.id,
-              role: ChatCompletionRole.Assistant,
+              role: 'assistant',
               content: [
                 {
-                  type: ContentType.Text,
+                  type: 'text',
                   text: {
                     value: assistantResponse,
                     annotations: [],
                   },
                 },
               ],
-              status: MessageStatus.Ready,
+              status: 'completed',
             };
 
             this.messagesUsecases.create(createMessageDto).then(() => {
@@ -164,21 +160,21 @@ export class ChatCliUsecases {
           response.on('end', () => {
             messages.push({
               content: assistantResponse,
-              role: ChatCompletionRole.Assistant,
+              role: 'assistant',
             });
             const createMessageDto: CreateMessageDto = {
               thread_id: thread.id,
-              role: ChatCompletionRole.Assistant,
+              role: 'assistant',
               content: [
                 {
-                  type: ContentType.Text,
+                  type: 'text',
                   text: {
                     value: assistantResponse,
                     annotations: [],
                   },
                 },
               ],
-              status: MessageStatus.Ready,
+              status: 'completed',
             };
 
             this.messagesUsecases.create(createMessageDto).then(() => {

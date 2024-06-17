@@ -8,14 +8,11 @@ import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { CreateMessageDto } from '@/infrastructure/dtos/threads/create-message.dto';
 import { ulid } from 'ulid';
-import {
-  ContentType,
-  Message,
-  MessageStatus,
-} from '@/domain/models/message.interface';
+import { Message, MessageContent } from '@/domain/models/message.interface';
 import { UpdateMessageDto } from '@/infrastructure/dtos/threads/update-message.dto';
 import { Thread } from '@/domain/models/thread.interface';
 import DeleteMessageDto from '@/infrastructure/dtos/threads/delete-message.dto';
+import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
 
 @Injectable()
 export class ThreadsUsecases {
@@ -29,10 +26,20 @@ export class ThreadsUsecases {
   async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
     const id = uuidv4();
     const { assistants } = createThreadDto;
+    const assistantEntity: AssistantEntity[] = assistants.map((assistant) => {
+      const entity: AssistantEntity = {
+        ...assistant,
+        response_format: null,
+        tool_resources: null,
+        top_p: assistant.top_p ?? null,
+        temperature: assistant.temperature ?? null,
+      };
+      return entity;
+    });
 
     const thread: ThreadEntity = {
       id,
-      assistants,
+      assistants: assistantEntity,
       object: 'thread',
       created_at: Date.now(),
       title: 'New Thread',
@@ -66,7 +73,7 @@ export class ThreadsUsecases {
 
     queryBuilder
       .where('thread_id = :id', { id: threadId })
-      .orderBy('created', normalizedOrder)
+      .orderBy('created_at', normalizedOrder)
       .take(limit + 1); // Fetch one more record than the limit
 
     if (after) {
@@ -98,23 +105,29 @@ export class ThreadsUsecases {
     const thread = await this.getThreadOrThrow(threadId);
     const assistantId: string = thread.assistants[0].id;
 
+    const messageContent: MessageContent = {
+      type: 'text',
+      text: {
+        annotations: [],
+        value: createMessageDto.content,
+      },
+    };
+
     const message: MessageEntity = {
+      id: ulid(),
       object: 'thread.message',
       thread_id: threadId,
       assistant_id: assistantId,
-      id: ulid(),
-      created: Date.now(),
-      status: MessageStatus.Ready,
+      created_at: Date.now(),
+      status: 'completed',
       role: createMessageDto.role,
-      content: [
-        {
-          type: ContentType.Text,
-          text: {
-            value: createMessageDto.content,
-            annotations: [],
-          },
-        },
-      ],
+      content: [messageContent],
+      metadata: null,
+      run_id: null,
+      completed_at: null,
+      incomplete_details: null,
+      attachments: [],
+      incomplete_at: null,
     };
     await this.messageRepository.insert(message);
     return message;
@@ -158,9 +171,23 @@ export class ThreadsUsecases {
     return this.threadRepository.findOne({ where: { id } });
   }
 
-  update(id: string, updateThreadDto: UpdateThreadDto) {
+  async update(id: string, updateThreadDto: UpdateThreadDto) {
+    const assistantEntities: AssistantEntity[] =
+      updateThreadDto.assistants?.map((assistant) => {
+        const entity: AssistantEntity = {
+          ...assistant,
+          name: assistant.name,
+          response_format: null,
+          tool_resources: null,
+          top_p: assistant.top_p ?? null,
+          temperature: assistant.temperature ?? null,
+        };
+        return entity;
+      }) ?? [];
+
     const entity: Partial<ThreadEntity> = {
       ...updateThreadDto,
+      assistants: assistantEntities,
     };
     return this.threadRepository.update(id, entity);
   }

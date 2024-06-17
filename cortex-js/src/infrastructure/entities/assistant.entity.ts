@@ -7,45 +7,45 @@ import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('assistants')
 export class AssistantEntity implements Assistant {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: String })
   id: string;
 
-  @Column({ nullable: true })
+  @Column({ type: String, nullable: true })
   avatar?: string;
 
-  @Column()
+  @Column({ type: String })
   object: 'assistant';
 
-  @Column()
+  @Column({ type: Number })
   created_at: number;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: String, nullable: true })
   name: string | null;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: String, nullable: true })
   description: string | null;
 
-  @Column()
+  @Column({ type: String })
   model: string;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({ type: String, nullable: true })
   instructions: string | null;
 
   @Column({ type: 'simple-json' })
   tools: any;
 
   @Column({ type: 'simple-json', nullable: true })
-  metadata: any;
+  metadata: any | null;
+
+  @Column({ type: Number, nullable: true })
+  top_p: number | null;
+
+  @Column({ type: Number, nullable: true })
+  temperature: number | null;
 
   @Column({ type: 'simple-json', nullable: true })
-  top_p?: number | null;
+  response_format: AssistantResponseFormatOption | null;
 
   @Column({ type: 'simple-json', nullable: true })
-  temperature?: number | null;
-
-  @Column({ type: 'simple-json', nullable: true })
-  response_format?: AssistantResponseFormatOption;
-
-  @Column({ type: 'simple-json', nullable: true })
-  tool_resources?: AssistantToolResources;
+  tool_resources: AssistantToolResources | null;
 }
