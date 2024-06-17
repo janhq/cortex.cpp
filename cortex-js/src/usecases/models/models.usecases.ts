@@ -61,8 +61,13 @@ export class ModelsUsecases {
    * @param createModelDto Model data
    */
   async create(createModelDto: CreateModelDto) {
+    const { model: modelId, owned_by } = createModelDto;
     const model: Model = {
       ...createModelDto,
+      id: modelId,
+      created: Date.now(),
+      object: 'model',
+      owned_by: owned_by ?? '',
     };
 
     await this.modelRepository.create(model);
