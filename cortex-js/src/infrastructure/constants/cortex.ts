@@ -28,6 +28,16 @@ export const CORTEX_CPP_MODELS_URL = (
   port: number = defaultCortexCppPort,
 ) => `http://${host}:${port}/inferences/server/models`;
 
+export const CORTEX_JS_HEALTH_URL = (
+  host: string = defaultCortexJsHost,
+  port: number = defaultCortexJsPort,
+) => `http://${host}:${port}/health`;
+
+export const CORTEX_JS_STOP_API_SERVER_URL = (
+  host: string = defaultCortexJsHost,
+  port: number = defaultCortexJsPort,
+) => `http://${host}:${port}/process`;
+
 // INITIALIZATION
 export const CORTEX_RELEASES_URL =
   'https://api.github.com/repos/janhq/cortex/releases';

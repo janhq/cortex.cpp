@@ -1,5 +1,6 @@
 import { spawn } from 'child_process';
 import {
+  CORTEX_JS_STOP_API_SERVER_URL,
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
@@ -11,6 +12,7 @@ import { ContextService } from '@/util/context.service';
 type ServeOptions = {
   host?: string;
   port?: number;
+  attach: boolean;
 };
 
 @SubCommand({
@@ -26,7 +28,25 @@ export class ServeCommand extends CommandRunner {
     const host = options?.host || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
 
-    spawn(
+    if (_input[0] === 'stop') {
+      return this.stopServer().then(() => console.log('API server stopped'));
+    } else {
+      return this.startServer(host, port, options);
+    }
+  }
+
+  private async stopServer() {
+    return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
+      method: 'DELETE',
+    }).catch(() => {});
+  }
+
+  private async startServer(
+    host: string,
+    port: number,
+    options: ServeOptions = { attach: true },
+  ) {
+    const serveProcess = spawn(
       'node',
       process.env.TEST
         ? [join(__dirname, '../../../dist/src/main.js')]
@@ -38,10 +58,14 @@ export class ServeCommand extends CommandRunner {
           CORTEX_JS_PORT: port.toString(),
           NODE_ENV: 'production',
         },
-        stdio: 'inherit',
-        detached: false,
+        stdio: options?.attach ? 'inherit' : 'ignore',
+        detached: true,
       },
     );
+    if (!options?.attach) {
+      serveProcess.unref();
+      console.log('Started server at http://%s:%d', host, port);
+    }
   }
 
   @Option({
@@ -58,5 +82,15 @@ export class ServeCommand extends CommandRunner {
   })
   parsePort(value: string) {
     return parseInt(value, 10);
+  }
+
+  @Option({
+    flags: '-a, --attach',
+    description: 'Attach to interactive chat session',
+    defaultValue: false,
+    name: 'attach',
+  })
+  parseAttach() {
+    return true;
   }
 }

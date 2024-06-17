@@ -99,6 +99,8 @@ class server : public drogon::HttpController<server>,
                            SyncQueue& q);
   bool IsEngineLoaded(const std::string& e);
 
+  void UnloadEngines();
+
  private:
   struct SyncQueue {
     void push(std::pair<Json::Value, Json::Value>&& p) {
@@ -145,5 +147,6 @@ class server : public drogon::HttpController<server>,
     EngineV engine;
   };
   std::unordered_map<std::string, EngineInfo> engines_;
+  std::string cur_engine_type_;
 };
 };  // namespace inferences

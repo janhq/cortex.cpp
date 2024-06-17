@@ -7,7 +7,6 @@ import { DatabaseModule } from './infrastructure/database/database.module';
 import { ChatModule } from './usecases/chat/chat.module';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
-import { ModelRepositoryModule } from './infrastructure/repositories/models/model.module';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
@@ -19,8 +18,14 @@ import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from './infrastructure/exception/global.exception';
 import { UtilModule } from './util/util.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { AppController } from './infrastructure/controllers/app.controller';
-import { DownloadManagerModule } from './download-manager/download-manager.module';
+import { EventsController } from './infrastructure/controllers/events.controller';
+import { AssistantsController } from './infrastructure/controllers/assistants.controller';
+import { ChatController } from './infrastructure/controllers/chat.controller';
+import { EmbeddingsController } from './infrastructure/controllers/embeddings.controller';
+import { ModelsController } from './infrastructure/controllers/models.controller';
+import { ThreadsController } from './infrastructure/controllers/threads.controller';
+import { StatusController } from './infrastructure/controllers/status.controller';
+import { ProcessController } from './infrastructure/controllers/process.controller';
 
 @Module({
   imports: [
@@ -44,17 +49,23 @@ import { DownloadManagerModule } from './download-manager/download-manager.modul
     TelemetryModule,
     UtilModule,
   ],
+  controllers: [
+    AssistantsController,
+    ChatController,
+    EmbeddingsController,
+    ModelsController,
+    ThreadsController,
+    StatusController,
+    ProcessController,
+    EventsController,
+  ],
   providers: [
     SeedService,
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
     },
-    ModelRepositoryModule,
-    DownloadManagerModule,
-    SeedService,
   ],
-  controllers: [AppController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

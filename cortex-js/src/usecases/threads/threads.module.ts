@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ThreadsUsecases } from './threads.usecases';
-import { ThreadsController } from '@/infrastructure/controllers/threads.controller';
 import { DatabaseModule } from '@/infrastructure/database/database.module';
 
 @Module({
   imports: [DatabaseModule],
-  controllers: [ThreadsController],
+  controllers: [],
   providers: [ThreadsUsecases],
   exports: [ThreadsUsecases],
 })
