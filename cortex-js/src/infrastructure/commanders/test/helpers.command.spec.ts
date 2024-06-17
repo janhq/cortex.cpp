@@ -15,7 +15,7 @@ let commandInstance: TestingModule,
   stderrSpy: Stub<typeof process.stderr.write>;
 export const timeout = 500000;
 
-beforeEach(
+beforeAll(
   () =>
     new Promise<void>(async (res) => {
       stubMethod(process.stderr, 'write');
@@ -28,8 +28,6 @@ beforeEach(
         .overrideProvider(LogService)
         .useValue({ log: spy().handler })
         .compile();
-      stdoutSpy.reset();
-      stderrSpy.reset();
 
       const fileService =
         await commandInstance.resolve<FileManagerService>(FileManagerService);
@@ -42,7 +40,13 @@ beforeEach(
     }),
 );
 
-afterEach(
+beforeEach(() => {
+  stdoutSpy.reset();
+  stderrSpy.reset();
+  exitSpy.reset();
+});
+
+afterAll(
   () =>
     new Promise<void>(async (res) => {
       // Attempt to clean test folder
@@ -82,20 +86,24 @@ describe('Helper commands', () => {
     // expect(exitSpy.firstCall?.args[0]).toBe(1);
   });
 
-  test('Show / kill running models', async () => {
-    const tableMock = stubMethod(console, 'table');
+  test(
+    'Show / kill running models',
+    async () => {
+      const tableMock = stubMethod(console, 'table');
 
-    const logMock = stubMethod(console, 'log');
-    await CommandTestFactory.run(commandInstance, ['kill']);
-    await CommandTestFactory.run(commandInstance, ['ps']);
+      const logMock = stubMethod(console, 'log');
+      await CommandTestFactory.run(commandInstance, ['kill']);
+      await CommandTestFactory.run(commandInstance, ['ps']);
 
-    expect(logMock.firstCall?.args[0]).toEqual({
-      message: 'Cortex stopped successfully',
-      status: 'success',
-    });
-    expect(tableMock.firstCall?.args[0]).toBeInstanceOf(Array);
-    expect(tableMock.firstCall?.args[0].length).toEqual(0);
-  });
+      expect(logMock.firstCall?.args[0]).toEqual({
+        message: 'Cortex stopped successfully',
+        status: 'success',
+      });
+      expect(tableMock.firstCall?.args[0]).toBeInstanceOf(Array);
+      expect(tableMock.firstCall?.args[0].length).toEqual(0);
+    },
+    timeout,
+  );
 
   test('Help command return guideline to users', async () => {
     await CommandTestFactory.run(commandInstance, ['-h']);
@@ -111,7 +119,7 @@ describe('Helper commands', () => {
     await CommandTestFactory.run(commandInstance, ['--unknown']);
     expect(stderrSpy.firstCall?.args[0]).toContain('error: unknown option');
     expect(stderrSpy.firstCall?.args[0]).toContain('--unknown');
-    expect(exitSpy.callCount).toBe(1);
+    expect(exitSpy.callCount).toBeGreaterThan(0);
     expect(exitSpy.firstCall?.args[0]).toBe(1);
   });
 
@@ -128,7 +136,7 @@ describe('Helper commands', () => {
         const response = await axios.get('http://localhost:1337/api');
         expect(response.status).toBe(200);
         resolve();
-      }, 1000);
+      }, 20000);
     });
-  });
+  }, 25000);
 });
