@@ -14,6 +14,7 @@ describe('ChatService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         ExtensionModule,
         ModelRepositoryModule,

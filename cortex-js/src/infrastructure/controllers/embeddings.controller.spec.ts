@@ -14,6 +14,7 @@ describe('EmbeddingsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         ModelRepositoryModule,
         ExtensionModule,
