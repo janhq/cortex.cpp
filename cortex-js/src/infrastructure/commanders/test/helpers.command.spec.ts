@@ -3,7 +3,11 @@ import { spy, Stub, stubMethod } from 'hanbi';
 import { CommandTestFactory } from 'nest-commander-testing';
 import { CommandModule } from '@/command.module';
 import { LogService } from '@/infrastructure/commanders/test/log.service';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+
 import axios from 'axios';
+import { join } from 'path';
+import { rmSync } from 'fs';
 
 let commandInstance: TestingModule,
   exitSpy: Stub<typeof process.exit>,
@@ -24,9 +28,29 @@ beforeEach(
         .overrideProvider(LogService)
         .useValue({ log: spy().handler })
         .compile();
-      res();
       stdoutSpy.reset();
       stderrSpy.reset();
+
+      const fileService =
+        await commandInstance.resolve<FileManagerService>(FileManagerService);
+
+      // Attempt to create test folder
+      await fileService.writeConfigFile({
+        dataFolderPath: join(__dirname, 'test_data'),
+      });
+      res();
+    }),
+);
+
+afterEach(
+  () =>
+    new Promise<void>(async (res) => {
+      // Attempt to clean test folder
+      rmSync(join(__dirname, 'test_data'), {
+        recursive: true,
+        force: true,
+      });
+      res();
     }),
 );
 
