@@ -13,7 +13,7 @@ import {
 } from '@/domain/telemetry/telemetry.interface';
 import { Injectable } from '@nestjs/common';
 import { join } from 'path';
-import packageJson from '../../../../package.json';
+import packageJson from '@/../package.json';
 import axios from 'axios';
 import { telemetryServerUrl } from '@/infrastructure/constants/cortex';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
@@ -50,11 +50,12 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
         {
           headers: {
             'Content-Type': 'application/json',
-            'cortex-checksum': this.generateChecksum(telemetry),
+            'cortex-checksum': this.generateChecksum(telemetry.event),
           },
         },
       );
     } catch (error) {
+      console.log(JSON.stringify(telemetry.event, null, 2));
       console.log('Error sending telemetry to server', error);
     }
   }
@@ -62,17 +63,11 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   async sendTelemetryToOTelCollector(endpoint: string, telemetry: Telemetry) {
     try {
       console.log('Sending telemetry to OTel collector');
-      await axios.post(
-        `${endpoint}/v1/logs`,
-        {
-          resourceSpans: [telemetry.event],
+      await axios.post(`${endpoint}/v1/logs`, telemetry.event, {
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      );
+      });
     } catch (error) {
       console.log('Error sending telemetry to OTel collector', error);
     }
@@ -172,7 +167,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
           return {
             key,
             value: {
-              kvListValue: {
+              kvlist_value: {
                 values: Object.entries(value).map(([k, v]) => ({
                   key: k,
                   value: { stringValue: v as string },

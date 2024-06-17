@@ -17,10 +17,7 @@ export class TelemetryCommand extends CommandRunner {
     if (options?.type === 'crash') {
       try {
         await this.telemetryUseCase.readCrashReports((telemetryEvent) => {
-          const formattedLog = console.log(
-            JSON.stringify(telemetryEvent, null, 2),
-          );
-          console.log(formattedLog);
+          console.log(JSON.stringify(telemetryEvent, null, 2));
         });
       } catch (e) {
         console.error('Error reading crash reports', e);

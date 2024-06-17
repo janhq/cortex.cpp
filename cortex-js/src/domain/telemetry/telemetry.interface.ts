@@ -38,7 +38,7 @@ interface StringValue {
 }
 
 interface ObjectValue {
-  kvListValue: {
+  kvlist_value: {
     values: {
       key: string;
       value: StringValue;
