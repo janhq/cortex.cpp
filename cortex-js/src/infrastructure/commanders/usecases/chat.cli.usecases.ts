@@ -265,9 +265,16 @@ export class ChatCliUsecases {
     if (!assistant) throw new Error('No assistant available');
 
     const assistantDto: CreateThreadAssistantDto = {
-      assistant_id: assistant.id,
-      assistant_name: assistant.name,
-      model: model,
+      avatar: '',
+      id: 'jan',
+      object: 'assistant',
+      created_at: Date.now(),
+      name: 'Jan',
+      description: 'A default assistant that can use all downloaded models',
+      model: modelId,
+      instructions: '',
+      tools: [],
+      metadata: {},
     };
 
     const createThreadDto: CreateThreadDto = {
