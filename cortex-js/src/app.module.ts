@@ -26,6 +26,7 @@ import { ModelsController } from './infrastructure/controllers/models.controller
 import { ThreadsController } from './infrastructure/controllers/threads.controller';
 import { StatusController } from './infrastructure/controllers/status.controller';
 import { ProcessController } from './infrastructure/controllers/process.controller';
+import { DownloadManagerModule } from './download-manager/download-manager.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { ProcessController } from './infrastructure/controllers/process.controll
     FileManagerModule,
     TelemetryModule,
     UtilModule,
+    DownloadManagerModule,
   ],
   controllers: [
     AssistantsController,
