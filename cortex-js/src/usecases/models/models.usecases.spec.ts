@@ -15,10 +15,12 @@ describe('ModelsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         ModelsModule,
         ExtensionModule,
         FileManagerModule,
+        DownloadManagerModule,
         HttpModule,
         ModelRepositoryModule,
         DownloadManagerModule,
