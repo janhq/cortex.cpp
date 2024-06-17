@@ -43,6 +43,8 @@ export interface Model
    * The model download source. It can be an external url or a local filepath.
    */
   files: string[] | ModelArtifact;
+
+  metadata?: Record<string, any>;
 }
 
 /**
