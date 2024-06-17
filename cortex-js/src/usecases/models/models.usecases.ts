@@ -205,7 +205,7 @@ export class ModelsUsecases {
         message: 'Model loaded successfully',
         modelId,
       }))
-      .catch((e) => {
+      .catch(async (e) => {
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
 
