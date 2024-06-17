@@ -1,9 +1,10 @@
 {
   "name": "@janhq/cortex",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Cortex is an openAI-compatible local AI server that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and a Typescript client library. It can be used as a standalone server, or imported as a library.",
+  "author": "Jan <service@jan.ai>",
   "license": "AGPL-3.0",
+  "homepage": "https://github.com/janhq/cortex",
   "bin": {
     "cortex": "./dist/src/command.js"
   },
@@ -114,7 +115,8 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "@/(.*)$": "<rootDir>/$1"
+      "@/(.*)$": "<rootDir>/$1",
+      "@commanders/(.*)$": "<rootDir>/../src/infrastructure/commanders/$1"
     }
   }
 }

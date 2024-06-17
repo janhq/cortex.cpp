@@ -4,6 +4,8 @@ import { DatabaseModule } from '@/infrastructure/database/database.module';
 import { ExtensionModule } from '@/infrastructure/repositories/extensions/extension.module';
 import { ModelRepositoryModule } from '@/infrastructure/repositories/models/model.module';
 import { HttpModule } from '@nestjs/axios';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('ChatService', () => {
   let service: ChatUsecases;
@@ -15,6 +17,8 @@ describe('ChatService', () => {
         ExtensionModule,
         ModelRepositoryModule,
         HttpModule,
+        DownloadManagerModule,
+        EventEmitterModule.forRoot(),
       ],
       providers: [ChatUsecases],
       exports: [ChatUsecases],

@@ -17,7 +17,6 @@ import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.mid
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './download-manager/download-manager.module';
 import { EventsController } from './infrastructure/controllers/events.controller';
-import { AppController } from './infrastructure/controllers/app.controller';
 import { AssistantsController } from './infrastructure/controllers/assistants.controller';
 import { ChatController } from './infrastructure/controllers/chat.controller';
 import { EmbeddingsController } from './infrastructure/controllers/embeddings.controller';
@@ -49,7 +48,6 @@ import { ProcessController } from './infrastructure/controllers/process.controll
     DownloadManagerModule,
   ],
   controllers: [
-    AppController,
     AssistantsController,
     ChatController,
     EmbeddingsController,

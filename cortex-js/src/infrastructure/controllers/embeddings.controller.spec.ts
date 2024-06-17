@@ -5,6 +5,8 @@ import { DatabaseModule } from '../database/database.module';
 import { ModelRepositoryModule } from '../repositories/models/model.module';
 import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('EmbeddingsController', () => {
   let controller: EmbeddingsController;
@@ -16,6 +18,8 @@ describe('EmbeddingsController', () => {
         ModelRepositoryModule,
         ExtensionModule,
         HttpModule,
+        DownloadManagerModule,
+        EventEmitterModule.forRoot(),
       ],
       controllers: [EmbeddingsController],
       providers: [ChatUsecases],

@@ -12,7 +12,15 @@ type ModelStartOptions = {
   attach: boolean;
   preset?: string;
 };
-@SubCommand({ name: 'start', description: 'Start a model by ID.' })
+@SubCommand({
+  name: 'start',
+  description: 'Start a model by ID.',
+  arguments: '[model_id]',
+  argsDescription: {
+    model_id:
+      'Model ID to start. If there is no model ID, it will prompt you to select from the available models.',
+  },
+})
 export class ModelStartCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
@@ -22,8 +30,8 @@ export class ModelStartCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[], options: ModelStartOptions): Promise<void> {
-    let modelId = input[0];
+  async run(passedParams: string[], options: ModelStartOptions): Promise<void> {
+    let modelId = passedParams[0];
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();

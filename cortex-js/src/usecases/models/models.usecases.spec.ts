@@ -6,6 +6,8 @@ import { ExtensionModule } from '@/infrastructure/repositories/extensions/extens
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 import { HttpModule } from '@nestjs/axios';
 import { ModelRepositoryModule } from '@/infrastructure/repositories/models/model.module';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('ModelsService', () => {
   let service: ModelsUsecases;
@@ -19,6 +21,8 @@ describe('ModelsService', () => {
         FileManagerModule,
         HttpModule,
         ModelRepositoryModule,
+        DownloadManagerModule,
+        EventEmitterModule.forRoot(),
       ],
       providers: [ModelsUsecases],
       exports: [ModelsUsecases],

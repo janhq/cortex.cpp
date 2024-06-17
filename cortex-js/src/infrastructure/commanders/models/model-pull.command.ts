@@ -6,6 +6,8 @@ import { ModelNotFoundException } from '@/infrastructure/exception/model-not-fou
 @SubCommand({
   name: 'pull',
   aliases: ['download'],
+  arguments: '<model_id>',
+  argsDescription: { model_id: 'Model repo to pull' },
   description: 'Download a model. Working with HuggingFace model id.',
 })
 export class ModelPullCommand extends CommandRunner {
@@ -13,18 +15,20 @@ export class ModelPullCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[]) {
-    if (input.length < 1) {
+  async run(passedParams: string[]) {
+    if (passedParams.length < 1) {
       console.error('Model Id is required');
       exit(1);
     }
 
-    await this.modelsCliUsecases.pullModel(input[0]).catch((e: Error) => {
-      if (e instanceof ModelNotFoundException)
-        console.error('Model does not exist.');
-      else console.error(e);
-      exit(1);
-    });
+    await this.modelsCliUsecases
+      .pullModel(passedParams[0])
+      .catch((e: Error) => {
+        if (e instanceof ModelNotFoundException)
+          console.error('Model does not exist.');
+        else console.error(e);
+        exit(1);
+      });
 
     console.log('\nDownload complete!');
     exit(0);
