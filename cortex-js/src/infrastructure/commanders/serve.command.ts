@@ -12,7 +12,7 @@ import { ServeStopCommand } from './sub-commands/serve-stop.command';
 type ServeOptions = {
   address?: string;
   port?: number;
-  attach: boolean;
+  detach: boolean;
 };
 
 @SubCommand({
@@ -36,7 +36,7 @@ export class ServeCommand extends CommandRunner {
   private async startServer(
     host: string,
     port: number,
-    options: ServeOptions = { attach: true },
+    options: ServeOptions = { detach: false },
   ) {
     const serveProcess = spawn(
       'node',
@@ -50,11 +50,11 @@ export class ServeCommand extends CommandRunner {
           CORTEX_JS_PORT: port.toString(),
           NODE_ENV: 'production',
         },
-        stdio: options?.attach ? 'inherit' : 'ignore',
+        stdio: options?.detach ? 'ignore' : 'inherit',
         detached: true,
       },
     );
-    if (!options?.attach) {
+    if (options?.detach) {
       serveProcess.unref();
       console.log('Started server at http://%s:%d', host, port);
     }
@@ -77,12 +77,12 @@ export class ServeCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-a, --attach',
-    description: 'Attach to interactive chat session',
+    flags: '-d, --detach',
+    description: 'Run the server in detached mode',
     defaultValue: false,
-    name: 'attach',
+    name: 'detach',
   })
-  parseAttach() {
+  parseDetach() {
     return true;
   }
 }
