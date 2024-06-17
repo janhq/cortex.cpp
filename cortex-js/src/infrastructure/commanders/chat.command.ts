@@ -18,7 +18,16 @@ type ChatOptions = {
   attach: boolean;
 };
 
-@SubCommand({ name: 'chat', description: 'Send a chat request to a model' })
+@SubCommand({
+  name: 'chat',
+  description: 'Send a chat request to a model',
+  arguments: '[model_id] [message]',
+  argsDescription: {
+    model_id:
+      'Model ID to chat with. If there is no model_id provided, it will prompt to select from running models.',
+    message: 'Message to send to the model',
+  },
+})
 @SetCommandContext()
 export class ChatCommand extends CommandRunner {
   constructor(
@@ -31,17 +40,19 @@ export class ChatCommand extends CommandRunner {
     super();
   }
 
-  async run(_input: string[], options: ChatOptions): Promise<void> {
-    let modelId = _input[0];
+  async run(passedParams: string[], options: ChatOptions): Promise<void> {
+    let modelId = passedParams[0];
     // First attempt to get message from input or options
     // Extract input from 1 to end of array
-    let message = options.message ?? _input.slice(1).join(' ');
+    let message = options.message ?? passedParams.slice(1).join(' ');
 
     // Check for model existing
     if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
       // Model ID is not provided
       // first input might be message input
-      message = _input.length ? _input.join(' ') : options.message ?? '';
+      message = passedParams.length
+        ? passedParams.join(' ')
+        : options.message ?? '';
       // If model ID is not provided, prompt user to select from running models
       const models = await this.psCliUsecases.getModels();
       if (models.length === 1) {

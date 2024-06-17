@@ -1,4 +1,4 @@
-import { RootCommand, CommandRunner, Option } from 'nest-commander';
+import { RootCommand, CommandRunner } from 'nest-commander';
 import { ServeCommand } from './serve.command';
 import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
@@ -14,10 +14,9 @@ import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '@/util/context.service';
 import { EmbeddingCommand } from './embeddings.command';
 import { BenchmarkCommand } from './benchmark.command';
+import chalk from 'chalk';
+import { printSlogan } from '@/utils/logo';
 
-interface CortexCommandOptions {
-  version: boolean;
-}
 @RootCommand({
   subCommands: [
     ModelsCommand,
@@ -40,18 +39,12 @@ export class CortexCommand extends CommandRunner {
   constructor(readonly contextService: ContextService) {
     super();
   }
-
-  async run(input: string[], option: CortexCommandOptions): Promise<void> {
-    if (option.version) console.log(pkg.version);
-  }
-
-  @Option({
-    flags: '-v, --version',
-    description: 'Cortex version',
-    defaultValue: false,
-    name: 'version',
-  })
-  parseVersion() {
-    return true;
+  async run(): Promise<void> {
+    printSlogan();
+    console.log('\n');
+    console.log(`Cortex CLI - v${pkg.version}`);
+    console.log(chalk.blue(`Github: ${pkg.homepage}`));
+    console.log('\n');
+    this.command?.help();
   }
 }

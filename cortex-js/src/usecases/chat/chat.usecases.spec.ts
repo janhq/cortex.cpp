@@ -5,6 +5,8 @@ import { ExtensionModule } from '@/infrastructure/repositories/extensions/extens
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { ModelRepositoryModule } from '@/infrastructure/repositories/models/model.module';
 import { HttpModule } from '@nestjs/axios';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('ChatService', () => {
   let service: ChatUsecases;
@@ -17,6 +19,8 @@ describe('ChatService', () => {
         ModelRepositoryModule,
         HttpModule,
         TelemetryModule,
+        DownloadManagerModule,
+        EventEmitterModule.forRoot(),
       ],
       providers: [ChatUsecases],
       exports: [ChatUsecases],

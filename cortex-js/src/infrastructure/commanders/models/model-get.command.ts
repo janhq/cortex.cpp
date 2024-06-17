@@ -4,7 +4,14 @@ import { exit } from 'node:process';
 import { ContextService } from '@/util/context.service';
 import { SetCommandContext } from '../decorators/CommandContext';
 
-@SubCommand({ name: 'get', description: 'Get a model by ID.' })
+@SubCommand({
+  name: 'get',
+  description: 'Get a model by ID.',
+  arguments: '<model_id>',
+  argsDescription: {
+    model_id: 'Model ID to get information about.',
+  },
+})
 @SetCommandContext()
 export class ModelGetCommand extends CommandRunner {
   constructor(
@@ -14,13 +21,13 @@ export class ModelGetCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[]): Promise<void> {
-    if (input.length === 0) {
+  async run(passedParams: string[]): Promise<void> {
+    if (passedParams.length === 0) {
       console.error('Model ID is required');
       exit(1);
     }
 
-    const model = await this.modelsCliUsecases.getModel(input[0]);
+    const model = await this.modelsCliUsecases.getModel(passedParams[0]);
     if (!model) console.error('Model not found');
     else console.log(model);
   }

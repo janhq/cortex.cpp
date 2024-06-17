@@ -7,6 +7,8 @@ import { FileManagerModule } from '@/infrastructure/services/file-manager/file-m
 import { HttpModule } from '@nestjs/axios';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelRepositoryModule } from '../repositories/models/model.module';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('ModelsController', () => {
   let controller: ModelsController;
@@ -19,6 +21,8 @@ describe('ModelsController', () => {
         FileManagerModule,
         HttpModule,
         ModelRepositoryModule,
+        DownloadManagerModule,
+        EventEmitterModule.forRoot(),
       ],
       controllers: [ModelsController],
       providers: [ModelsUsecases, CortexUsecases],

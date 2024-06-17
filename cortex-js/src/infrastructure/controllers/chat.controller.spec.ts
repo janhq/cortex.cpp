@@ -5,6 +5,8 @@ import { DatabaseModule } from '../database/database.module';
 import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { ModelRepositoryModule } from '../repositories/models/model.module';
 import { HttpModule } from '@nestjs/axios';
+import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 describe('ChatController', () => {
   let controller: ChatController;
@@ -16,6 +18,8 @@ describe('ChatController', () => {
         ExtensionModule,
         ModelRepositoryModule,
         HttpModule,
+        DownloadManagerModule,
+        EventEmitterModule.forRoot(),
       ],
       controllers: [ChatController],
       providers: [ChatUsecases],

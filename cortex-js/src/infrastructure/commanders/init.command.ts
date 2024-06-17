@@ -12,7 +12,11 @@ import { ContextService } from '@/util/context.service';
 @SubCommand({
   name: 'init',
   aliases: ['setup'],
+  arguments: '[version]',
   description: "Init settings and download cortex's dependencies",
+  argsDescription: {
+    version: 'Version of cortex engine',
+  },
 })
 @SetCommandContext()
 export class InitCommand extends CommandRunner {
@@ -24,16 +28,19 @@ export class InitCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[], options?: InitOptions): Promise<void> {
+  async run(passedParams: string[], options?: InitOptions): Promise<void> {
     if (options?.silent) {
-      return this.initSilently(input);
+      return this.initSilently(passedParams);
     } else {
-      return this.initPrompts(input, options);
+      return this.initPrompts(passedParams, options);
     }
   }
 
-  private initSilently = async (input: string[], options: InitOptions = {}) => {
-    const version = input[0] ?? 'latest';
+  private initSilently = async (
+    passedParams: string[],
+    options: InitOptions = {},
+  ) => {
+    const version = passedParams[0] ?? 'latest';
     if (process.platform === 'darwin') {
       const engineFileName = this.initUsecases.parseEngineFileName(options);
       return this.initUsecases.installEngine(engineFileName, version);

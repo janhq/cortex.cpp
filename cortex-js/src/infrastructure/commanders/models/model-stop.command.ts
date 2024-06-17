@@ -4,7 +4,14 @@ import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/util/context.service';
 
-@SubCommand({ name: 'stop', description: 'Stop a model by ID.' })
+@SubCommand({
+  name: 'stop',
+  description: 'Stop a model by ID.',
+  arguments: '<model_id>',
+  argsDescription: {
+    model_id: 'Model ID to stop.',
+  },
+})
 @SetCommandContext()
 export class ModelStopCommand extends CommandRunner {
   constructor(
@@ -14,12 +21,12 @@ export class ModelStopCommand extends CommandRunner {
     super();
   }
 
-  async run(input: string[]): Promise<void> {
-    if (input.length === 0) {
+  async run(passedParams: string[]): Promise<void> {
+    if (passedParams.length === 0) {
       console.error('Model ID is required');
       exit(1);
     }
 
-    await this.modelsCliUsecases.stopModel(input[0]).then(console.log);
+    await this.modelsCliUsecases.stopModel(passedParams[0]).then(console.log);
   }
 }
