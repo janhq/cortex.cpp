@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ChildProcess, spawn } from 'child_process';
-import { join } from 'path';
+import { join, delimiter } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
 import {
@@ -45,6 +45,7 @@ export class CortexUsecases {
     if (!existsSync(cortexCppPath)) {
       throw new Error('The engine is not available, please run "cortex init".');
     }
+    await this.addAdditionalDependencies();
 
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
@@ -102,5 +103,27 @@ export class CortexUsecases {
         return false;
       })
       .catch(() => false);
+  }
+
+  private async addAdditionalDependencies() {
+    const cortexCPPPath = join(
+      await this.fileManagerService.getDataFolderPath(),
+      'cortex-cpp',
+    );
+    const additionalLlamaCppPath = delimiter.concat(
+      join(cortexCPPPath, 'cortex.llamacpp'),
+    );
+    const additionalTensortLLMCppPath = delimiter.concat(
+      join(cortexCPPPath, 'cortex.tensorrt-llm'),
+    );
+    const additionalPaths = delimiter.concat(
+      additionalLlamaCppPath,
+      additionalTensortLLMCppPath,
+    );
+    // Set the updated PATH
+    process.env.PATH = (process.env.PATH || '').concat(additionalPaths);
+    process.env.LD_LIBRARY_PATH = (process.env.LD_LIBRARY_PATH || '').concat(
+      additionalPaths,
+    );
   }
 }
