@@ -6,7 +6,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { LlmEngine, Model } from '@/domain/models/model.interface';
+import { Model } from '@/domain/models/model.interface';
 import { ModelArtifactDto } from './model-artifact.dto';
 import { ApiProperty, getSchemaPath } from '@nestjs/swagger';
 
@@ -135,7 +135,7 @@ export class CreateModelDto implements Partial<Model> {
   })
   @IsOptional()
   @IsString()
-  engine?: LlmEngine;
+  engine?: string;
 
   @ApiProperty({
     description: 'The owner of the model.',
