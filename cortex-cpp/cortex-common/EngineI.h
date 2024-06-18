@@ -1,16 +1,16 @@
 #pragma once
 
 #include <functional>
-#include <iostream>
 #include <memory>
 
 #include "json/value.h"
 
+// Interface for inference engine.
+// Note: only append new function to keep the compatibility.
 class EngineI {
  public:
   virtual ~EngineI() {}
 
-  // cortex.llamacpp interface
   virtual void HandleChatCompletion(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
@@ -27,11 +27,18 @@ class EngineI {
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
-  // For backward compatible checking
-  virtual bool IsSupported(const std::string& f) = 0;
+  // For backward compatible checking, add to list when we add more APIs
+  virtual bool IsSupported(const std::string& f) {
+    if (f == "HandleChatCompletion" || f == "HandleEmbedding" ||
+        f == "UnloadModel" || f == "GetModelStatus" ||
+        f == "GetModels") {
+      return true;
+    }
+    return false;
+  }
 
-  // Get list of running models
+  // API to get running models.
   virtual void GetModels(
-      std::shared_ptr<Json::Value> jsonBody,
+      std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };

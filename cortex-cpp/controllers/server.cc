@@ -49,7 +49,7 @@ void server::ChatCompletion(
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
   auto q = std::make_shared<SyncQueue>();
-  std::get<CortexTensorrtLlmEngineI*>(engines_[engine_type].engine)
+  std::get<EngineI*>(engines_[engine_type].engine)
       ->HandleChatCompletion(json_body,
                              [q](Json::Value status, Json::Value res) {
                                q->push(std::make_pair(status, res));
@@ -300,13 +300,13 @@ void server::LoadModel(const HttpRequestPtr& req,
     cur_engine_type_ = engine_type;
 
     auto func =
-        engines_[engine_type].dl->get_function<CortexTensorrtLlmEngineI*()>("get_engine");
+        engines_[engine_type].dl->get_function<EngineI*()>("get_engine");
     engines_[engine_type].engine = func();
     LOG_INFO << "Loaded engine: " << engine_type;
   }
 
   LOG_TRACE << "Load model";
-  auto& en = std::get<CortexTensorrtLlmEngineI*>(engines_[engine_type].engine);
+  auto& en = std::get<EngineI*>(engines_[engine_type].engine);
   en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
                                           Json::Value status, Json::Value res) {
     auto resp = cortex_utils::nitroHttpJsonResponse(res);

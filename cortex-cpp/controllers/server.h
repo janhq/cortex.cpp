@@ -19,7 +19,6 @@
 #include "common/base.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
-#include "cortex-common/cortextensorrtllmi.h"
 #include "trantor/utils/SerialTaskQueue.h"
 #include "utils/dylib.h"
 #include "utils/json.hpp"
@@ -142,7 +141,7 @@ class server : public drogon::HttpController<server>,
   };
 
  private:
-  using EngineV = std::variant<EngineI*, CortexPythonEngineI*, CortexTensorrtLlmEngineI*>;
+  using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
