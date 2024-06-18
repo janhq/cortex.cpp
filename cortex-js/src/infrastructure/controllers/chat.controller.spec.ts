@@ -7,6 +7,7 @@ import { ModelRepositoryModule } from '../repositories/models/model.module';
 import { HttpModule } from '@nestjs/axios';
 import { DownloadManagerModule } from '@/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
 
 describe('ChatController', () => {
   let controller: ChatController;
@@ -14,12 +15,14 @@ describe('ChatController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         ExtensionModule,
         ModelRepositoryModule,
         HttpModule,
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
+        TelemetryModule,
       ],
       controllers: [ChatController],
       providers: [ChatUsecases],

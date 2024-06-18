@@ -9,6 +9,8 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelRepositoryModule } from '../repositories/models/model.module';
 import { DownloadManagerModule } from '@/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
+import { UtilModule } from '@/util/util.module';
 
 describe('ModelsController', () => {
   let controller: ModelsController;
@@ -16,13 +18,17 @@ describe('ModelsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         ExtensionModule,
         FileManagerModule,
         HttpModule,
+        DownloadManagerModule,
         ModelRepositoryModule,
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
+        TelemetryModule,
+        UtilModule,
       ],
       controllers: [ModelsController],
       providers: [ModelsUsecases, CortexUsecases],

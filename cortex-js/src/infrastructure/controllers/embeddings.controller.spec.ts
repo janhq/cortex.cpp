@@ -7,6 +7,7 @@ import { ExtensionModule } from '../repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
 import { DownloadManagerModule } from '@/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
 
 describe('EmbeddingsController', () => {
   let controller: EmbeddingsController;
@@ -14,12 +15,14 @@ describe('EmbeddingsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [
+        EventEmitterModule.forRoot(),
         DatabaseModule,
         ModelRepositoryModule,
         ExtensionModule,
         HttpModule,
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
+        TelemetryModule,
       ],
       controllers: [EmbeddingsController],
       providers: [ChatUsecases],
