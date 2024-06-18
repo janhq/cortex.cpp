@@ -1,4 +1,11 @@
-import { createWriteStream, existsSync, rmSync } from 'fs';
+import {
+  cpSync,
+  createWriteStream,
+  existsSync,
+  readdir,
+  readdirSync,
+  rmSync,
+} from 'fs';
 import { delimiter, join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
@@ -12,6 +19,7 @@ import { rm } from 'fs/promises';
 import { exec } from 'child_process';
 import { appPath } from '@/utils/app-path';
 import {
+  CORTEX_ONNX_ENGINE_RELEASES_URL,
   CORTEX_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
@@ -59,7 +67,7 @@ export class InitCliUsecases {
       exit(1);
     }
 
-    console.log(`Downloading engine file ${engineFileName}`);
+    console.log(`Downloading Llama.cpp engine file ${engineFileName}`);
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const engineDir = join(dataFolderPath, 'cortex-cpp');
     if (existsSync(engineDir)) rmSync(engineDir, { recursive: true });
@@ -109,6 +117,9 @@ export class InitCliUsecases {
       exit(1);
     }
     await rm(destination, { force: true });
+
+    // Ship ONNX Runtime on Windows by default
+    if (process.platform === 'win32') await this.installONNXEngine();
   };
 
   parseEngineFileName = (options?: InitOptions) => {
@@ -187,6 +198,7 @@ export class InitCliUsecases {
     ).replace('<platform>', platform);
     const destination = join(dataFolderPath, 'cuda-toolkit.tar.gz');
 
+    console.log('Downloading CUDA Toolkit dependency...');
     const download = await firstValueFrom(
       this.httpService.get(url, {
         responseType: 'stream',
@@ -282,6 +294,109 @@ export class InitCliUsecases {
       );
     });
   };
+
+  /**
+   * Download and install ONNX engine
+   * @param version
+   * @param engineFileName 
+   */
+  async installONNXEngine(
+    version: string = 'latest',
+    engineFileName: string = 'windows-amd64',
+  ) {
+    const res = await firstValueFrom(
+      this.httpService.get(
+        CORTEX_ONNX_ENGINE_RELEASES_URL +
+          `${version === 'latest' ? '/latest' : ''}`,
+        {
+          headers: {
+            'X-GitHub-Api-Version': '2022-11-28',
+            Accept: 'application/vnd.github+json',
+          },
+        },
+      ),
+    );
+
+    if (!res?.data) {
+      console.log('Failed to fetch releases');
+      exit(1);
+    }
+
+    let release = res?.data;
+    if (Array.isArray(res?.data)) {
+      release = Array(res?.data)[0].find(
+        (e) => e.name === version.replace('v', ''),
+      );
+    }
+    const toDownloadAsset = release.assets.find((s: any) =>
+      s.name.includes(engineFileName),
+    );
+
+    if (!toDownloadAsset) {
+      console.log(`Could not find engine file ${engineFileName}`);
+      exit(1);
+    }
+
+    console.log(`Downloading ONNX engine file ${engineFileName}`);
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    const engineDir = join(dataFolderPath, 'cortex-cpp');
+
+    const download = await firstValueFrom(
+      this.httpService.get(toDownloadAsset.browser_download_url, {
+        responseType: 'stream',
+      }),
+    );
+    if (!download) {
+      console.log('Failed to download model');
+      process.exit(1);
+    }
+
+    const destination = join(dataFolderPath, toDownloadAsset.name);
+
+    await new Promise((resolve, reject) => {
+      const writer = createWriteStream(destination);
+      let receivedBytes = 0;
+      const totalBytes = download.headers['content-length'];
+
+      writer.on('finish', () => {
+        bar.stop();
+        resolve(true);
+      });
+
+      writer.on('error', (error) => {
+        bar.stop();
+        reject(error);
+      });
+
+      const bar = new SingleBar({}, Presets.shades_classic);
+      bar.start(100, 0);
+
+      download.data.on('data', (chunk: any) => {
+        receivedBytes += chunk.length;
+        bar.update(Math.floor((receivedBytes / totalBytes) * 100));
+      });
+
+      download.data.pipe(writer);
+    });
+
+    try {
+      await decompress(destination, join(engineDir, 'engines'));
+    } catch (e) {
+      console.error('Error decompressing file', e);
+      exit(1);
+    }
+    await rm(destination, { force: true });
+
+    // Copy the additional files to the cortex-cpp directory
+    for (const file of readdirSync(join(engineDir, 'engines', 'cortex.onnx'))) {
+      if (file !== 'engine.dll') {
+        await cpSync(
+          join(engineDir, 'engines', 'cortex.onnx', file),
+          join(engineDir, file),
+        );
+      }
+    }
+  }
 
   private checkFileExistenceInPaths = (
     file: string,

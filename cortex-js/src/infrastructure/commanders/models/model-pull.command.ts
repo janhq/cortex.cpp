@@ -10,7 +10,8 @@ import { ModelNotFoundException } from '@/infrastructure/exception/model-not-fou
   aliases: ['download'],
   arguments: '<model_id>',
   argsDescription: { model_id: 'Model repo to pull' },
-  description: 'Download a model. Working with HuggingFace model id.',
+  description:
+    'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexhub',
 })
 @SetCommandContext()
 export class ModelPullCommand extends CommandRunner {
