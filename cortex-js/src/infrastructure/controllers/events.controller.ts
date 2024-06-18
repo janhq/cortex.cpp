@@ -9,7 +9,7 @@ import {
   ModelStatus,
   ModelStatusAndEvent,
 } from '@/domain/models/model.event';
-import { DownloadManagerService } from '@/download-manager/download-manager.service';
+import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { Controller, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
