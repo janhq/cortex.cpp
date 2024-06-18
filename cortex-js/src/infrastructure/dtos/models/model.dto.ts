@@ -1,4 +1,4 @@
-import { LlmEngine, Model } from '@/domain/models/model.interface';
+import { Model } from '@/domain/models/model.interface';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
@@ -198,5 +198,5 @@ export class ModelDto implements Partial<Model> {
     example: 'cortex.llamacpp',
   })
   @IsOptional()
-  engine?: LlmEngine;
+  engine?: string;
 }

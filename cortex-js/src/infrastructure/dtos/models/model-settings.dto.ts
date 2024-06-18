@@ -1,4 +1,4 @@
-import { LlmEngine, ModelSettingParams } from '@/domain/models/model.interface';
+import { ModelSettingParams } from '@/domain/models/model.interface';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
@@ -138,5 +138,5 @@ export class ModelSettingsDto implements ModelSettingParams {
     description: 'The engine to use.',
   })
   @IsOptional()
-  engine?: LlmEngine;
+  engine?: string;
 }
