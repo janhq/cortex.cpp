@@ -28,6 +28,7 @@ import {
   HuggingFaceModelVersion,
   HuggingFaceRepoData,
 } from '@/domain/models/huggingface.interface';
+
 import { LLAMA_2 } from '@/infrastructure/constants/prompt-constants';
 import { isValidUrl } from '@/utils/urls';
 import {
@@ -147,10 +148,9 @@ export class ModelsUsecases {
     settings?: ModelSettingParams,
   ): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
-    const extensions = (await this.extensionRepository.findAll()) ?? [];
-    const engine = extensions.find((e: any) => e.provider === model?.engine) as
-      | EngineExtension
-      | undefined;
+    const engine = (await this.extensionRepository.findOne(
+      model!.engine ?? 'cortex.llamacpp',
+    )) as EngineExtension | undefined;
 
     if (!engine) {
       return {
@@ -180,8 +180,9 @@ export class ModelsUsecases {
         Array.isArray(model.files) &&
         !('llama_model_path' in model) && {
           llama_model_path: (model.files as string[])[0],
+          model_path: (model.files as string[])[0],
         }),
-      engine: 'cortex.llamacpp',
+      engine: model.engine ?? 'cortex.llamacpp',
       // User / Model settings
       ...parser.parseModelEngineSettings(model),
       ...parser.parseModelEngineSettings(settings ?? {}),
@@ -233,10 +234,9 @@ export class ModelsUsecases {
 
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
-    const extensions = (await this.extensionRepository.findAll()) ?? [];
-    const engine = extensions.find((e: any) => e.provider === model?.engine) as
-      | EngineExtension
-      | undefined;
+    const engine = (await this.extensionRepository.findOne(
+      model!.engine ?? 'cortex.llamacpp',
+    )) as EngineExtension | undefined;
 
     if (!engine) {
       return {
@@ -419,6 +419,7 @@ export class ModelsUsecases {
     modelVersion: HuggingFaceModelVersion,
   ) {
     if (!modelVersion) throw 'No expected quantization found';
+
     const tokenizer = await getHFModelMetadata(modelVersion.downloadUrl!);
 
     const promptTemplate = tokenizer?.promptTemplate ?? LLAMA_2;
@@ -442,7 +443,7 @@ export class ModelsUsecases {
       // Default Model Settings
       ctx_len: 4096,
       ngl: 100,
-      engine: 'cortex.llamacpp',
+      engine: modelId.includes('onnx') ? 'cortex.onnx' : 'cortex.llamacpp',
     };
     if (!(await this.findOne(modelId))) await this.create(model);
   }

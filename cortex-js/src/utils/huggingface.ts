@@ -64,6 +64,7 @@ export function guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
 export async function fetchHuggingFaceRepoData(
   repoId: string,
 ): Promise<HuggingFaceRepoData> {
+
   const sanitizedUrl = getRepoModelsUrl(repoId);
 
   const { data: response } = await axios.get(sanitizedUrl);
@@ -113,7 +114,8 @@ export async function fetchJanRepoData(
 ): Promise<HuggingFaceRepoData> {
   const repo = modelId.split(':')[0];
   const tree = modelId.split(':')[1] ?? 'default';
-  const url = getRepoModelsUrl(`janhq/${repo}`, tree);
+  const url = getRepoModelsUrl(`cortexhub/${repo}`, tree);
+
   const res = await fetch(url);
   const response:
     | {
@@ -140,7 +142,7 @@ export async function fetchJanRepoData(
     tags: ['gguf'],
     id: modelId,
     modelId: modelId,
-    author: 'janhq',
+    author: 'cortexhub',
     sha: '',
     downloads: 0,
     lastModified: '',
@@ -161,6 +163,9 @@ export async function fetchJanRepoData(
   });
 
   data.modelUrl = url;
+
+  
+  
   return data;
 }
 
@@ -199,7 +204,7 @@ export async function getHFModelMetadata(
       version,
     };
   } catch (err) {
-    console.log('Failed to get model metadata:', err);
+    console.log('Failed to get model metadata:', err.message);
     return undefined;
   }
 }
