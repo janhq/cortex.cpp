@@ -7,8 +7,8 @@ export class StatusController {
   constructor() {}
 
   @ApiOperation({
-    summary: 'Health check',
-    description: 'Health check endpoint.',
+    summary: "Get health status",
+    description: "Retrieves the health status of your Cortex's system.",
   })
   @HttpCode(200)
   @ApiResponse({

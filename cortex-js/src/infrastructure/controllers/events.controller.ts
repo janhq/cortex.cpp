@@ -13,7 +13,7 @@ import { DownloadManagerService } from '@/download-manager/download-manager.serv
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { Controller, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Observable,
   combineLatest,
@@ -34,6 +34,10 @@ export class EventsController {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
+  @ApiOperation({
+    summary: 'Get download status',
+    description: "Retrieves the model's download status.",
+  })
   @Sse('download')
   downloadEvent(): Observable<DownloadStateEvent> {
     const latestDownloadState$: Observable<DownloadStateEvent> = of({
@@ -60,6 +64,10 @@ export class EventsController {
     ).pipe();
   }
 
+  @ApiOperation({
+    summary: 'Get model status',
+    description: 'Retrieves all the available model statuses within Cortex.',
+  })
   @Sse('model')
   modelEvent(): Observable<ModelStatusAndEvent> {
     const latestModelStatus$: Observable<Record<ModelId, ModelStatus>> = of(

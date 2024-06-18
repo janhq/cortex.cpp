@@ -58,6 +58,18 @@ async function bootstrap() {
       'Embeddings',
       'Endpoint for creating and retrieving embedding vectors from text inputs using specified models.',
     )
+    .addTag(
+      'Status',
+      "Endpoint for actively querying the health status of the Cortex.",
+    )
+    .addTag(
+      'Processes',
+      'Endpoint for terminating the Cortex API server processes.',
+    )
+    .addTag(
+      'Events',
+      'Endpoints for  observing Cortex statuses through event notifications.',
+    )    
     .addServer('http://localhost:1337')
     .addServer('http://localhost:1337/v1')
     .build();

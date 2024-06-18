@@ -8,7 +8,7 @@ export class ProcessController {
 
   @ApiOperation({
     summary: 'Terminate service',
-    description: 'Terminate service endpoint',
+    description: 'Terminates the Cortex API endpoint server for the detached mode.',
   })
   @Delete()
   async delete() {
