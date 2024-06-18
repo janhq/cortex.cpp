@@ -17,6 +17,7 @@ namespace {
 constexpr static auto kLlamaEngine = "cortex.llamacpp";
 constexpr static auto kPythonRuntimeEngine = "cortex.python";
 constexpr static auto kOnnxEngine = "cortex.onnx";
+constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
 }  // namespace
 
 server::server(){
@@ -264,6 +265,8 @@ void server::LoadModel(const HttpRequestPtr& req,
         return cortex_utils::kLlamaLibPath;
       } else if(e == kOnnxEngine) {
         return cortex_utils::kOnnxLibPath;
+      } else if(e == kTensorrtLlmEngine) {
+        return cortex_utils::kTensorrtLlmPath;
       }
       return cortex_utils::kLlamaLibPath;
     };
