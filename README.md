@@ -89,6 +89,16 @@ cortex models start llama3:7b
 cortex chat tell me a joke
 ```
 
+5. Model library
+Here are some example models that can be downloaded:
+
+| Model              | Parameters | Size  | Download                       |
+| ------------------ | ---------- | ----- | ------------------------------ |
+| Llama 3            | 8B         | 4.7GB | `cortex run llama3:8b`         |
+| Llama 3            | 70B        | 40GB  | `cortex run llama3:70b`        |
+
+
+> Note: You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 13B models, and 32 GB to run the 33B models.
 
 ## Run as an API server
 To run Cortex as an API server:
