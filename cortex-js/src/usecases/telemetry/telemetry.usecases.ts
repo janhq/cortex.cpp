@@ -35,9 +35,7 @@ export class TelemetryUsecases {
       const crashReport: CrashReportAttributes = this.buildCrashReport(error);
 
       await this.telemetryRepository.createCrashReport(crashReport, source);
-    } catch (e) {
-      console.log('Error creating crash report', e);
-    }
+    } catch (e) {}
     return;
   }
 
