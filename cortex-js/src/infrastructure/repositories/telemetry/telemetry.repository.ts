@@ -54,10 +54,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
           },
         },
       );
-    } catch (error) {
-      console.log(JSON.stringify(telemetry.event, null, 2));
-      console.log('Error sending telemetry to server', error);
-    }
+    } catch (error) {}
   }
 
   async sendTelemetryToOTelCollector(endpoint: string, telemetry: Telemetry) {
@@ -68,9 +65,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
           'Content-Type': 'application/json',
         },
       });
-    } catch (error) {
-      console.log('Error sending telemetry to OTel collector', error);
-    }
+    } catch (error) {}
   }
 
   async markLastCrashReportAsSent(): Promise<void> {
@@ -85,9 +80,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
         JSON.stringify(Telemetry),
         position,
       );
-    } catch (error) {
-      console.log('Error marking crash report as sent', error);
-    }
+    } catch (error) {}
   }
 
   async readCrashReports(callback: (Telemetry: Telemetry) => void) {
@@ -113,7 +106,6 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
       }
       return JSON.parse(data) as Telemetry;
     } catch (error) {
-      console.log('Error reading crash report', error);
       return null;
     }
   }

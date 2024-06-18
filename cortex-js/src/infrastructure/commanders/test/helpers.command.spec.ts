@@ -119,25 +119,24 @@ describe('Helper commands', () => {
     await CommandTestFactory.run(commandInstance, ['--unknown']);
     expect(stderrSpy.firstCall?.args[0]).toContain('error: unknown option');
     expect(stderrSpy.firstCall?.args[0]).toContain('--unknown');
-    expect(exitSpy.callCount).toBeGreaterThan(0);
+    expect(exitSpy.callCount).toBe(1);
     expect(exitSpy.firstCall?.args[0]).toBe(1);
   });
 
   test('Local API server via default host/port localhost:1337/api', async () => {
     await CommandTestFactory.run(commandInstance, ['serve']);
+    expect(stdoutSpy.firstCall?.args[0]).toContain(
+      'Started server at http://localhost:1337',
+    );
 
-    // Add a delay
+    // Add a delay of 1000 milliseconds (1 second)
     return new Promise<void>(async (resolve) => {
       setTimeout(async () => {
-        expect(stdoutSpy.firstCall?.args[0]).toContain(
-          'Started server at http://localhost:1337',
-        );
         // Send a request to the API server to check if it's running
-        // Temporally disable for further investigation
-        // const response = await axios.get('http://localhost:1337/api');
-        // expect(response.status).toBe(200);
+        const response = await axios.get('http://localhost:1337/api');
+        expect(response.status).toBe(200);
         resolve();
-      }, 5000);
+      }, 1000);
     });
-  }, 15000);
+  });
 });

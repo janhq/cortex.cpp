@@ -50,38 +50,62 @@ jobs:
         include:
           - os: "linux"
             name: "amd64-avx2"
-            runs-on: "ubuntu-18-04"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
             run-e2e: true
 
           - os: "linux"
             name: "amd64-avx"
-            runs-on: "ubuntu-18-04"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
             run-e2e: false
 
           - os: "linux"
             name: "amd64-avx512"
-            runs-on: "ubuntu-18-04"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
             run-e2e: false
 
           - os: "linux"
             name: "amd64-vulkan"
-            runs-on: "ubuntu-18-04-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
             run-e2e: false
 
           - os: "linux"
-            name: "amd64-cuda-11-7"
-            runs-on: "ubuntu-18-04-cuda-11-7"
-            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
+            name: "amd64-avx2-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
             run-e2e: false
 
           - os: "linux"
-            name: "amd64-cuda-12-0"
-            runs-on: "ubuntu-18-04-cuda-12-0"
-            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
+            name: "amd64-avx-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx512-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx2-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            run-e2e: false
+
+          - os: "linux"
+            name: "amd64-avx512-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
             run-e2e: false
 
           - os: "mac"
@@ -195,24 +219,24 @@ jobs:
           cd cortex-cpp
           make pre-package
 
-      - name: Code Signing macOS
-        if: runner.os == 'macOS'
-        run: |
-          cd cortex-cpp
-          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+      # - name: Code Signing macOS
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     cd cortex-cpp
+      #     make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
-      - uses: nick-fields/retry@v3
-        with:
-          continue_on_error: true
-          retry_wait_seconds: 10
-          timeout_minutes: 10
-          max_attempts: 3
-          command: |
-            cd cortex-cpp
-            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
-        name: Code Signing Windows
-        if: runner.os == 'Windows'
+      # - uses: nick-fields/retry@v3
+      #   with:
+      #     continue_on_error: true
+      #     retry_wait_seconds: 10
+      #     timeout_minutes: 10
+      #     max_attempts: 3
+      #     command: |
+      #       cd cortex-cpp
+      #       set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+      #       make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+      #   name: Code Signing Windows
+      #   if: runner.os == 'Windows'
 
       - name: Package
         run: |
