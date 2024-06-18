@@ -28,20 +28,20 @@ export class TelemetryUsecases {
     source: TelemetrySource,
   ): Promise<void> {
     try {
-      const isCollectingTelemetryEnabled = process.env.CORTEX_CRASH_REPORT;
-      if (isCollectingTelemetryEnabled !== '1') {
+      if (this.isCrashReportEnabled() === false) {
         return;
       }
       const crashReport: CrashReportAttributes = this.buildCrashReport(error);
 
       await this.telemetryRepository.createCrashReport(crashReport, source);
-    } catch (e) {
-      console.log('Error creating crash report', e);
-    }
+    } catch (e) {}
     return;
   }
 
   async sendCrashReport(): Promise<void> {
+    if (!this.isCrashReportEnabled()) {
+      return;
+    }
     const crashReport = await this.telemetryRepository.getLastCrashReport();
     if (crashReport && !crashReport.metadata.sentAt) {
       const promises = [
@@ -80,5 +80,9 @@ export class TelemetryUsecases {
         command: this.contextService.get('command') || '',
       },
     };
+  }
+
+  private isCrashReportEnabled(): boolean {
+    return process.env.CORTEX_CRASH_REPORT === '1';
   }
 }

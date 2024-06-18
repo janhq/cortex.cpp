@@ -42,7 +42,10 @@ export const CORTEX_JS_STOP_API_SERVER_URL = (
 export const CORTEX_RELEASES_URL =
   'https://api.github.com/repos/janhq/cortex/releases';
 
+export const CORTEX_ONNX_ENGINE_RELEASES_URL =
+  'https://api.github.com/repos/janhq/cortex.onnx/releases';
+
 export const CUDA_DOWNLOAD_URL =
   'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
 
-export const telemetryServerUrl = 'http://127.0.0.1:1338';
+export const telemetryServerUrl = 'http://192.168.100.30:1338/';

@@ -2,21 +2,40 @@ import {
   DownloadState,
   DownloadStateEvent,
 } from '@/domain/models/download.interface';
-import { DownloadManagerService } from '@/download-manager/download-manager.service';
+import {
+  EmptyModelEvent,
+  ModelEvent,
+  ModelId,
+  ModelStatus,
+  ModelStatusAndEvent,
+} from '@/domain/models/model.event';
+import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
+import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { Controller, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Observable, fromEvent, map, merge, of, throttleTime } from 'rxjs';
+import { ApiTags } from '@nestjs/swagger';
+import {
+  Observable,
+  combineLatest,
+  fromEvent,
+  map,
+  merge,
+  of,
+  startWith,
+  throttleTime,
+} from 'rxjs';
 
+@ApiTags('Events')
 @Controller('events')
 export class EventsController {
   constructor(
     private readonly downloadManagerService: DownloadManagerService,
+    private readonly modelsUsecases: ModelsUsecases,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Sse('download')
   downloadEvent(): Observable<DownloadStateEvent> {
-    // Welcome message Observable
     const latestDownloadState$: Observable<DownloadStateEvent> = of({
       data: this.downloadManagerService.getDownloadStates(),
     });
@@ -39,5 +58,21 @@ export class EventsController {
       downloadEvent$,
       downloadAbortEvent$,
     ).pipe();
+  }
+
+  @Sse('model')
+  modelEvent(): Observable<ModelStatusAndEvent> {
+    const latestModelStatus$: Observable<Record<ModelId, ModelStatus>> = of(
+      this.modelsUsecases.getModelStatuses(),
+    );
+
+    const modelEvent$ = fromEvent<ModelEvent>(
+      this.eventEmitter,
+      'model.event',
+    ).pipe(startWith(EmptyModelEvent));
+
+    return combineLatest([latestModelStatus$, modelEvent$]).pipe(
+      map(([status, event]) => ({ data: { status, event } })),
+    );
   }
 }

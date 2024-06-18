@@ -17,6 +17,8 @@ import { load } from 'js-yaml';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
 import { getHFModelMetadata } from '@/utils/huggingface';
+import { createWriteStream, mkdirSync, promises } from 'node:fs';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class ModelsCliUsecases {
@@ -118,40 +120,116 @@ export class ModelsCliUsecases {
       process.exit(1);
     }
 
-    await this.pullHuggingFaceModel(modelId);
-    const bar = new SingleBar({}, Presets.shades_classic);
-    bar.start(100, 0);
-    const callback = (progress: number) => {
-      bar.update(progress);
-    };
+    if (modelId.includes('onnx')) {
+      await this.pullOnnxModel(modelId);
+    } else {
+      await this.pullGGUFModel(modelId);
+      const bar = new SingleBar({}, Presets.shades_classic);
+      bar.start(100, 0);
+      const callback = (progress: number) => {
+        bar.update(progress);
+      };
 
-    try {
-      await this.modelsUsecases.downloadModel(modelId, callback);
+      try {
+        await this.modelsUsecases.downloadModel(modelId, callback);
 
-      const model = await this.modelsUsecases.findOne(modelId);
-      const fileUrl = join(
-        await this.fileService.getModelsPath(),
-        normalizeModelId(modelId),
-        basename((model?.files as string[])[0]),
-      );
-      await this.modelsUsecases.update(modelId, {
-        files: [fileUrl],
-        name: modelId.replace(':default', ''),
-      });
-    } catch (err) {
-      bar.stop();
-      throw err;
+        const model = await this.modelsUsecases.findOne(modelId);
+        const fileUrl = join(
+          await this.fileService.getModelsPath(),
+          normalizeModelId(modelId),
+          basename((model?.files as string[])[0]),
+        );
+        await this.modelsUsecases.update(modelId, {
+          files: [fileUrl],
+          name: modelId.replace(':default', ''),
+        });
+      } catch (err) {
+        bar.stop();
+        throw err;
+      }
     }
   }
 
-  //// PRIVATE METHODS ////
+  /**
+   * It's to pull ONNX model from HuggingFace repository
+   * @param modelId 
+   */
+  private async pullOnnxModel(modelId: string) {
+    const modelsContainerDir = await this.fileService.getModelsPath();
 
+    if (!existsSync(modelsContainerDir)) {
+      mkdirSync(modelsContainerDir, { recursive: true });
+    }
+
+    const modelFolder = join(modelsContainerDir, normalizeModelId(modelId));
+    await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
+
+    const files = [
+      'genai_config.json',
+      'model.onnx',
+      'model.onnx.data',
+      'model.yml',
+      'special_tokens_map.json',
+      'tokenizer.json',
+      'tokenizer_config.json',
+    ];
+    const repo = modelId.split(':')[0];
+    const branch = modelId.split(':')[1] || 'default';
+    for (const file of files) {
+      console.log(`Downloading ${file}`);
+      const bar = new SingleBar({}, Presets.shades_classic);
+      bar.start(100, 0);
+
+      const response = await firstValueFrom(
+        this.httpService.get(
+          `https://huggingface.co/cortexhub/${repo}/resolve/${branch}/${file}?download=true`,
+          {
+            responseType: 'stream',
+          },
+        ),
+      );
+      if (!response) {
+        throw new Error('Failed to download model');
+      }
+
+      await new Promise((resolve, reject) => {
+        const writer = createWriteStream(join(modelFolder, file));
+        let receivedBytes = 0;
+        const totalBytes = response.headers['content-length'];
+
+        writer.on('finish', () => {
+          resolve(true);
+        });
+
+        writer.on('error', (error) => {
+          reject(error);
+        });
+
+        response.data.on('data', (chunk: any) => {
+          receivedBytes += chunk.length;
+          bar.update(Math.floor((receivedBytes / totalBytes) * 100));
+        });
+
+        response.data.pipe(writer);
+      });
+      bar.stop();
+    }
+
+    const model: CreateModelDto = load(
+      readFileSync(join(modelFolder, 'model.yml'), 'utf-8'),
+    ) as CreateModelDto;
+    model.files = [join(modelFolder)];
+    model.model = modelId
+
+    if (!(await this.modelsUsecases.findOne(modelId)))
+      await this.modelsUsecases.create(model);
+  }
   /**
    * It's to pull model from HuggingFace repository
    * It could be a model from Jan's repo or other authors
    * @param modelId HuggingFace model id. e.g. "janhq/llama-3 or llama3:7b"
    */
-  private async pullHuggingFaceModel(modelId: string) {
+  private async pullGGUFModel(modelId: string) {
     const data: HuggingFaceRepoData =
       await this.modelsUsecases.fetchModelMetadata(modelId);
 
@@ -179,6 +257,7 @@ export class ModelsCliUsecases {
     } else {
       modelVersion = data.siblings.find((e) => e.rfilename.includes('.gguf'));
     }
+
     if (!modelVersion) throw 'No expected quantization found';
     const metadata = await getHFModelMetadata(modelVersion.downloadUrl!);
 
@@ -203,12 +282,17 @@ export class ModelsCliUsecases {
       // Default Model Settings
       ctx_len: 4096,
       ngl: 100,
-      engine: 'cortex.llamacpp',
+      engine: modelId.includes('onnx') ? 'cortex.onnx' : 'cortex.llamacpp',
     };
     if (!(await this.modelsUsecases.findOne(modelId)))
       await this.modelsUsecases.create(model);
   }
 
+  /**
+   * Parse preset file
+   * @param preset 
+   * @returns 
+   */
   private async parsePreset(preset?: string): Promise<object> {
     const presetsFolder = await this.fileService.getPresetsPath();
 
