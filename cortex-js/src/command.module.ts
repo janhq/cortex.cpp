@@ -33,7 +33,7 @@ import { UtilModule } from './util/util.module';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { DownloadManagerModule } from './download-manager/download-manager.module';
+import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
 
 @Module({

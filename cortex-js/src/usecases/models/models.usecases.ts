@@ -36,9 +36,9 @@ import {
   getHFModelMetadata,
 } from '@/utils/huggingface';
 import { DownloadType } from '@/domain/models/download.interface';
-import { DownloadManagerService } from '@/download-manager/download-manager.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ModelId, ModelStatus } from '@/domain/models/model.event';
+import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 
 @Injectable()
 export class ModelsUsecases {

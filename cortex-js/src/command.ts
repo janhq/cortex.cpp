@@ -1,4 +1,4 @@
-#!/usr/bin/env node --no-warnings
+#!/usr/bin/env node
 import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
 import updateNotifier from 'update-notifier';

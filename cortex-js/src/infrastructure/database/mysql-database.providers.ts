@@ -1,5 +1,8 @@
 import { databaseName } from '@/infrastructure/constants/cortex';
 import { DataSource } from 'typeorm';
+import { ThreadEntity } from '../entities/thread.entity';
+import { AssistantEntity } from '../entities/assistant.entity';
+import { MessageEntity } from '../entities/message.entity';
 
 export const mysqlDatabaseProviders = [
   {
@@ -12,7 +15,7 @@ export const mysqlDatabaseProviders = [
         username: 'root',
         password: '',
         database: databaseName,
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+        entities: [ThreadEntity, AssistantEntity, MessageEntity],
         synchronize: process.env.NODE_ENV !== 'production',
       });
 
