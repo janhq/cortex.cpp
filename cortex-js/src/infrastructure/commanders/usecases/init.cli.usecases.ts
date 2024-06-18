@@ -301,7 +301,7 @@ export class InitCliUsecases {
    * @param engineFileName 
    */
   async installONNXEngine(
-    version: string = 'v0.1.1',
+    version: string = 'latest',
     engineFileName: string = 'windows-amd64',
   ) {
     const res = await firstValueFrom(
