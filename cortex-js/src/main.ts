@@ -60,7 +60,7 @@ async function bootstrap() {
     )
     .addTag(
       'Status',
-      "Endpoint for actively querying the health status of the Cortex.",
+      "Endpoint for actively querying the health status of the Cortex's API server.",
     )
     .addTag(
       'Processes',
