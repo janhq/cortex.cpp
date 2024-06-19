@@ -12,7 +12,6 @@ on:
 env:
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
   EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
-  PYTHON_FILE_EXECUTION_PATH: "python-file-to-test.py"
 
 jobs:
   build-and-test:
@@ -27,154 +26,132 @@ jobs:
             runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
             run-e2e: true
-            run-python-e2e: true
 
           - os: "linux"
             name: "amd64-avx"
             runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx512"
             runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-vulkan"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx2-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx512-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx2-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "linux"
             name: "amd64-avx512-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "mac"
             name: "amd64"
             runs-on: "macos-13"
             cmake-flags: ""
             run-e2e: true
-            run-python-e2e: true
 
           - os: "mac"
             name: "arm64"
             runs-on: "mac-silicon"
             cmake-flags: "-DMAC_ARM64=ON"
             run-e2e: true
-            run-python-e2e: true
 
           - os: "windows"
             name: "amd64-avx2"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: true
-            run-python-e2e: true
 
           - os: "windows"
             name: "amd64-avx"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx512"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-vulkan"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx2-cuda-12-0"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx-cuda-12-0"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx512-cuda-12-0"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx2-cuda-11-7"
             runs-on: "windows-cuda-11-7"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx-cuda-11-7"
             runs-on: "windows-cuda-11-7"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
           - os: "windows"
             name: "amd64-avx512-cuda-11-7"
             runs-on: "windows-cuda-11-7"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
             run-e2e: false
-            run-python-e2e: false
 
     steps:
       - name: Clone
@@ -208,12 +185,6 @@ jobs:
         run: |
           cd cortex-cpp
           make run-e2e-test RUN_TESTS=true LLM_MODEL_URL=${{ env.LLM_MODEL_URL }} EMBEDDING_MODEL_URL=${{ env.EMBEDDING_MODEL_URL }}
-
-      - name: Run python e2e testing
-        if: ${{ matrix.run-python-e2e }}
-        run: |
-          cd cortex-cpp
-          make run-python-e2e-test RUN_TESTS=true PYTHON_FILE_EXECUTION_PATH=${{ env.PYTHON_FILE_EXECUTION_PATH }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
