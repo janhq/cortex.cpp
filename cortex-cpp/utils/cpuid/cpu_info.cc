@@ -69,6 +69,14 @@ bool CpuInfo::has_avx() const {
   return impl->has_avx;
 }
 
+bool CpuInfo::has_avx_vnni() const {
+#if defined(__AVXVNNI__)
+  return true;
+#else
+  return false;
+#endif
+}
+
 bool CpuInfo::has_avx2() const {
   return impl->has_avx2;
 }
@@ -155,36 +163,37 @@ std::string CpuInfo::to_string() {
   auto get = [](bool flag) -> std::string {
     return flag ? "1" : "0";
   };
-  s += "fpu = " + get(impl->has_fpu) + "| ";
-  s += "mmx = " + get(impl->has_mmx) + "| ";
-  s += "sse = " + get(impl->has_sse) + "| ";
-  s += "sse2 = " + get(impl->has_sse2) + "| ";
-  s += "sse3 = " + get(impl->has_sse3) + "| ";
-  s += "ssse3 = " + get(impl->has_ssse3) + "| ";
-  s += "sse4_1 = " + get(impl->has_sse4_1) + "| ";
-  s += "sse4_2 = " + get(impl->has_sse4_2) + "| ";
-  s += "pclmulqdq = " + get(impl->has_pclmulqdq) + "| ";
-  s += "avx = " + get(impl->has_avx) + "| ";
-  s += "avx2 = " + get(impl->has_avx2) + "| ";
-  s += "avx512_f = " + get(impl->has_avx512_f) + "| ";
-  s += "avx512_dq = " + get(impl->has_avx512_dq) + "| ";
-  s += "avx512_ifma = " + get(impl->has_avx512_ifma) + "| ";
-  s += "avx512_pf = " + get(impl->has_avx512_pf) + "| ";
-  s += "avx512_er = " + get(impl->has_avx512_er) + "| ";
-  s += "avx512_cd = " + get(impl->has_avx512_cd) + "| ";
-  s += "avx512_bw = " + get(impl->has_avx512_bw) + "| ";
-  s += "has_avx512_vl = " + get(impl->has_avx512_vl) + "| ";
-  s += "has_avx512_vbmi = " + get(impl->has_avx512_vbmi) + "| ";
-  s += "has_avx512_vbmi2 = " + get(impl->has_avx512_vbmi2) + "| ";
-  s += "avx512_vnni = " + get(impl->has_avx512_vnni) + "| ";
-  s += "avx512_bitalg = " + get(impl->has_avx512_bitalg) + "| ";
-  s += "avx512_vpopcntdq = " + get(impl->has_avx512_vpopcntdq) + "| ";
-  s += "avx512_4vnniw = " + get(impl->has_avx512_4vnniw) + "| ";
-  s += "avx512_4fmaps = " + get(impl->has_avx512_4fmaps) + "| ";
-  s += "avx512_vp2intersect = " + get(impl->has_avx512_vp2intersect) + "| ";
-  s += "aes = " + get(impl->has_aes) + "| ";
-  s += "f16c = " + get(impl->has_f16c) + "|";
+  s += "fpu = " + get(impl->has_fpu) + " | ";
+  s += "mmx = " + get(impl->has_mmx) + " | ";
+  s += "sse = " + get(impl->has_sse) + " | ";
+  s += "sse2 = " + get(impl->has_sse2) + " | ";
+  s += "sse3 = " + get(impl->has_sse3) + " | ";
+  s += "ssse3 = " + get(impl->has_ssse3) + " | ";
+  s += "sse4_1 = " + get(impl->has_sse4_1) + " | ";
+  s += "sse4_2 = " + get(impl->has_sse4_2) + " | ";
+  s += "pclmulqdq = " + get(impl->has_pclmulqdq) + " | ";
+  s += "avx = " + get(impl->has_avx) + " | ";
+  s += "avx_vnni = " + get(has_avx_vnni()) + " | ";
+  s += "avx2 = " + get(impl->has_avx2) + " | ";
+  s += "avx512_f = " + get(impl->has_avx512_f) + " | ";
+  s += "avx512_dq = " + get(impl->has_avx512_dq) + " | ";
+  s += "avx512_ifma = " + get(impl->has_avx512_ifma) + " | ";
+  s += "avx512_pf = " + get(impl->has_avx512_pf) + " | ";
+  s += "avx512_er = " + get(impl->has_avx512_er) + " | ";
+  s += "avx512_cd = " + get(impl->has_avx512_cd) + " | ";
+  s += "avx512_bw = " + get(impl->has_avx512_bw) + " | ";
+  s += "avx512_vl = " + get(impl->has_avx512_vl) + " | ";
+  s += "avx512_vbmi = " + get(impl->has_avx512_vbmi) + " | ";
+  s += "avx512_vbmi2 = " + get(impl->has_avx512_vbmi2) + " | ";
+  s += "avx512_vnni = " + get(impl->has_avx512_vnni) + " | ";
+  s += "avx512_bitalg = " + get(impl->has_avx512_bitalg) + " | ";
+  s += "avx512_vpopcntdq = " + get(impl->has_avx512_vpopcntdq) + " | ";
+  s += "avx512_4vnniw = " + get(impl->has_avx512_4vnniw) + " | ";
+  s += "avx512_4fmaps = " + get(impl->has_avx512_4fmaps) + " | ";
+  s += "avx512_vp2intersect = " + get(impl->has_avx512_vp2intersect) + " | ";
+  s += "aes = " + get(impl->has_aes) + " | ";
+  s += "f16c = " + get(impl->has_f16c) + " |";
   return s;
 }
 
-}  // namespace cpuid
+}  // namespace cortex::cpuid

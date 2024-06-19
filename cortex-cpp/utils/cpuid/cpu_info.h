@@ -48,6 +48,10 @@ class CpuInfo {
   /// Return true if the CPU supports Advanced Vector Extensions
   bool has_avx() const;
 
+  /// Return true if the CPU supports AVX Vector Neural Network
+  /// Instructions
+  bool has_avx_vnni() const;
+
   /// Return true if the CPU supports Advanced Vector Extensions 2
   bool has_avx2() const;
 
