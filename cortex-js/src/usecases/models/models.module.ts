@@ -8,7 +8,7 @@ import { TelemetryModule } from '../telemetry/telemetry.module';
 import { UtilModule } from '@/util/util.module';
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 import { ModelRepositoryModule } from '@/infrastructure/repositories/models/model.module';
-import { DownloadManagerModule } from '@/download-manager/download-manager.module';
+import { DownloadManagerModule } from '@/infrastructure/services/download-manager/download-manager.module';
 
 @Module({
   imports: [

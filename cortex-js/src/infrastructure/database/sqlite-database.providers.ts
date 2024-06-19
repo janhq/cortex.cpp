@@ -2,6 +2,9 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { databaseFile } from '@/infrastructure/constants/cortex';
 import { join } from 'path';
 import { DataSource } from 'typeorm';
+import { ThreadEntity } from '../entities/thread.entity';
+import { AssistantEntity } from '../entities/assistant.entity';
+import { MessageEntity } from '../entities/message.entity';
 
 export const sqliteDatabaseProviders = [
   {
@@ -14,7 +17,7 @@ export const sqliteDatabaseProviders = [
         type: 'sqlite',
         database: sqlitePath,
         synchronize: process.env.NODE_ENV !== 'production',
-        entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+        entities: [ThreadEntity, AssistantEntity, MessageEntity],
       });
 
       return dataSource.initialize();

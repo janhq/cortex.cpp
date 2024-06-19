@@ -25,15 +25,14 @@ export class ChatUsecases {
     headers: Record<string, string>,
   ): Promise<any> {
     const { model: modelId } = createChatDto;
-    const extensions = (await this.extensionRepository.findAll()) ?? [];
     const model = await this.modelRepository.findOne(modelId);
 
     if (!model) {
       throw new ModelNotFoundException(modelId);
     }
-    const engine = extensions.find((e: any) => e.provider === model?.engine) as
-      | EngineExtension
-      | undefined;
+    const engine = (await this.extensionRepository.findOne(
+      model!.engine ?? 'cortex.llamacpp',
+    )) as EngineExtension | undefined;
 
     if (engine == null) {
       throw new Error(`No engine found with name: ${model.engine}`);
