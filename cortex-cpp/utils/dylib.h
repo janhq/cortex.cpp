@@ -15,6 +15,8 @@
 #include <string>
 #include <stdexcept>
 #include <utility>
+#include <sstream>
+#include "trantor/utils/Logger.h"
 
 #if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
 #define DYLIB_CPP17
@@ -137,7 +139,7 @@ public:
 
         m_handle = open((final_path + final_name).c_str());
 
-        if (!m_handle)
+        if (!m_handle) 
             throw load_error("Could not load library \"" + final_path + final_name + "\"\n" + get_error_description());
     }
 
@@ -296,15 +298,33 @@ protected:
 
     static std::string get_error_description() noexcept {
 #if (defined(_WIN32) || defined(_WIN64))
-        constexpr const size_t BUF_SIZE = 512;
         const auto error_code = GetLastError();
         if (!error_code)
             return "No error reported by GetLastError";
-        char description[BUF_SIZE];
-        const auto lang = MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US);
-        const DWORD length =
-            FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM, nullptr, error_code, lang, description, BUF_SIZE, nullptr);
-        return (length == 0) ? "Unknown error (FormatMessage failed)" : description;
+
+        LPVOID error_message = nullptr;
+        DWORD message_length = FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            error_code,
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPSTR)&error_message,
+            0,
+            NULL
+        );
+
+        std::string error_description;
+        if (message_length > 0) {
+            error_description = std::string((LPSTR)error_message, message_length);
+            LocalFree(error_message);
+        } else {
+            DWORD format_error_code = GetLastError();
+            std::ostringstream oss;
+            oss << "Unknown error (FormatMessage failed with error code " << format_error_code << ")";
+            error_description = oss.str();
+        }
+
+        return error_description;
 #else
         const auto description = dlerror();
         return (description == nullptr) ? "No error reported by dlerror" : description;
