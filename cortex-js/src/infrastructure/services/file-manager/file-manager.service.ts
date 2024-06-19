@@ -175,6 +175,7 @@ export class FileManagerService {
         stats.size === 0 ? data : `\n${data}`,
         {
           encoding: 'utf8',
+          flag: 'a+',
         },
       );
     } catch (err) {

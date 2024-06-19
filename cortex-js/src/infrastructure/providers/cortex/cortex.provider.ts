@@ -15,7 +15,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
-  provider: string = 'cortex.llamacpp';
+  provider: string = 'cortex';
   apiUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/chat_completion`;
 
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;

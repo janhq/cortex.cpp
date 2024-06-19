@@ -51,7 +51,7 @@ export class ServeCommand extends CommandRunner {
           NODE_ENV: 'production',
         },
         stdio: options?.detach ? 'ignore' : 'inherit',
-        detached: true,
+        detached: options?.detach,
       },
     );
     if (options?.detach) {

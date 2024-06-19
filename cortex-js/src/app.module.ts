@@ -26,7 +26,7 @@ import { ModelsController } from './infrastructure/controllers/models.controller
 import { ThreadsController } from './infrastructure/controllers/threads.controller';
 import { StatusController } from './infrastructure/controllers/status.controller';
 import { ProcessController } from './infrastructure/controllers/process.controller';
-import { DownloadManagerModule } from './download-manager/download-manager.module';
+import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 
 @Module({
   imports: [
