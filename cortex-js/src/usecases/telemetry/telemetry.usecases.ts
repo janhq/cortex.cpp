@@ -9,18 +9,15 @@ import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class TelemetryUsecases {
+  private readonly crashReports: string[] = [];
+  private readonly maxSize = 100;
+
   constructor(
     @Inject('TELEMETRY_REPOSITORY')
     private readonly telemetryRepository: TelemetryRepository,
     private readonly contextService: ContextService,
   ) {
-    process.on('uncaughtException', async (error: Error) => {
-      telemetryRepository.createCrashReport(this.buildCrashReport(error));
-    });
-
-    process.on('unhandledRejection', async (error: Error) => {
-      telemetryRepository.createCrashReport(this.buildCrashReport(error));
-    });
+    this.catchException();
   }
 
   async createCrashReport(
@@ -28,10 +25,19 @@ export class TelemetryUsecases {
     source: TelemetrySource,
   ): Promise<void> {
     try {
-      if (this.isCrashReportEnabled() === false) {
+      console.log('Creating crash report', error);
+      if (!this.isCrashReportEnabled()) {
         return;
       }
+
       const crashReport: CrashReportAttributes = this.buildCrashReport(error);
+      if (this.crashReports.includes(JSON.stringify(crashReport))) {
+        return;
+      }
+      if (this.crashReports.length >= this.maxSize) {
+        this.crashReports.shift();
+      }
+      this.crashReports.push(JSON.stringify(crashReport));
 
       await this.telemetryRepository.createCrashReport(crashReport, source);
     } catch (e) {}
@@ -83,6 +89,22 @@ export class TelemetryUsecases {
   }
 
   private isCrashReportEnabled(): boolean {
-    return process.env.CORTEX_CRASH_REPORT === '1';
+    return process.env.CORTEX_CRASH_REPORT !== '0';
+  }
+
+  private async catchException(): Promise<void> {
+    process.on('uncaughtException', async (error: Error) => {
+      await this.createCrashReport(
+        error,
+        this.contextService.get('source') as TelemetrySource,
+      );
+    });
+
+    process.on('unhandledRejection', async (error: Error) => {
+      await this.createCrashReport(
+        error,
+        this.contextService.get('source') as TelemetrySource,
+      );
+    });
   }
 }

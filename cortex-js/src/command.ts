@@ -24,10 +24,17 @@ async function bootstrap() {
       process.exit(1);
     },
   });
+
   telemetryUseCase = await app.resolve(TelemetryUsecases);
   contextService = await app.resolve(ContextService);
+
   telemetryUseCase!.sendCrashReport();
-  await contextService!.init(async () => CommandFactory.runApplication(app));
+
+  await contextService!.init(async () => {
+    contextService!.set('source', TelemetrySource.CLI);
+    return CommandFactory.runApplication(app);
+  });
+
   const notifier = updateNotifier({
     pkg: packageJson,
     updateCheckInterval: 1000 * 60 * 60, // 1 hour
