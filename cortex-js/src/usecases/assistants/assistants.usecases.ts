@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
 import { Assistant } from '@/domain/models/assistant.interface';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { DuplicateAssistantException } from '@/infrastructure/exception/duplicate-assistant.exception';
 
 @Injectable()
 export class AssistantsUsecases {
@@ -16,7 +17,7 @@ export class AssistantsUsecases {
   ) {}
 
   async create(createAssistantDto: CreateAssistantDto) {
-    const { top_p, temperature, model } = createAssistantDto;
+    const { top_p, temperature, model, id } = createAssistantDto;
     if (model !== '*') {
       const modelEntity = await this.modelRepository.findOne(model);
       if (!modelEntity) {
@@ -33,7 +34,18 @@ export class AssistantsUsecases {
       top_p: top_p ?? null,
       temperature: temperature ?? null,
     };
-    await this.assistantRepository.insert(assistant);
+
+    try {
+      await this.assistantRepository.insert(assistant);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        if (err.driverError.code === 'SQLITE_CONSTRAINT')
+          throw new DuplicateAssistantException(id);
+      }
+
+      throw err;
+    }
+
     return this.findOne(assistant.id);
   }
 
