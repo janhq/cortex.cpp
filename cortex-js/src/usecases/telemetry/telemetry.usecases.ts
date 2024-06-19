@@ -25,14 +25,10 @@ export class TelemetryUsecases {
     source: TelemetrySource,
   ): Promise<void> {
     try {
-      if (!this.isCrashReportEnabled()) {
-        return;
-      }
+      if (!this.isCrashReportEnabled()) return;
 
       const crashReport: CrashReportAttributes = this.buildCrashReport(error);
-      if (this.crashReports.includes(JSON.stringify(crashReport))) {
-        return;
-      }
+      if (this.crashReports.includes(JSON.stringify(crashReport))) return;
       if (this.crashReports.length >= this.maxSize) {
         this.crashReports.shift();
       }
