@@ -33,6 +33,9 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
 
   private async getTelemetryDirectory(): Promise<string> {
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    await this.fileManagerService.createFolderIfNotExistInDataFolder(
+      'telemetry',
+    );
     return join(dataFolderPath, 'telemetry');
   }
 
