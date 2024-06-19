@@ -25,7 +25,6 @@ export class TelemetryUsecases {
     source: TelemetrySource,
   ): Promise<void> {
     try {
-      console.log('Creating crash report', error);
       if (!this.isCrashReportEnabled()) {
         return;
       }
