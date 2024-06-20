@@ -15,10 +15,6 @@ on:
               required: false
               default: dev
               type: string
-        
-    push:
-      branches:    
-        - fix/openai_coverage_misc
 
 env:
     OPENAI_API_PYTHON_TAG: v1.33.0
