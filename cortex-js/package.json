@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "nest dev",
     "build": "yarn build:extensions && nest build && cpx \"cpuinfo/bin/**\" dist/bin",
-    "build:binary": "yarn build && nexe dist/src/command.js --build --python=$(which python3) -o dist/cortex",
+    "build:binary": "yarn build && nexe dist/src/command.js --build -r './node_modules/**/*' -o dist/cortex",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "build:extensions": "run-script-os",
     "build:extensions:windows": "powershell -command \"$jobs = Get-ChildItem -Path './src/extensions' -Directory | ForEach-Object { Start-Job -Name ($_.Name) -ScriptBlock { param($_dir); try { Set-Location $_dir; yarn; yarn build; Write-Output 'Build successful in ' + $_dir } catch { Write-Error 'Error in ' + $_dir; throw } } -ArgumentList $_.FullName }; $jobs | Wait-Job; $jobs | ForEach-Object { Receive-Job -Job $_ -Keep } | ForEach-Object { Write-Host $_ }; $failed = $jobs | Where-Object { $_.State -ne 'Completed' -or $_.ChildJobs[0].JobStateInfo.State -ne 'Completed' }; if ($failed) { Exit 1 }\"",
