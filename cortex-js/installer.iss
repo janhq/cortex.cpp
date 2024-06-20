@@ -18,7 +18,6 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Define the files to be installed
 [Files]
 Source: "cortex.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "node_modules\sqlite3\*"; DestDir: "{app}\node_modules\sqlite3"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Define the icons to be created
 [Icons]

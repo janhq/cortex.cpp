@@ -205,7 +205,7 @@ jobs:
           p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
           p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
 
-      - name: Build Cortex CPP
+      - name: Build
         run: |
           cd cortex-cpp
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}"
@@ -219,36 +219,6 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           cd cortex-cpp
-          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
-
-      # Cortex-JS Build
-      - name: "Update version by tag"
-        run: |
-          cd cortex-js
-          # Remove the v prefix
-          tag_version=${GITHUB_REF#refs/tags/v}
-          # Remove the -cortex-js suffix
-          new_version=${tag_version%-cortex-js}
-
-          # Replace the old version with the new version in package.json
-          jq --arg version "$new_version" '.version = $version' ./package.json > /tmp/package.json && mv /tmp/package.json ./package.json
-
-          # Print the new version
-          echo "Updated package.json version to: $new_version"
-
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@v3
-        with:
-          node-version: "20.x"
-          registry-url: "https://registry.npmjs.org"
-
-      - run: yarn install && yarn build:binary
-        working-directory: ./cortex-js
-
-      - name: Code Signing macOS
-        if: runner.os == 'macOS'
-        run: |
-          cd cortex-js/dist
           make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
       - uses: nick-fields/retry@v3
@@ -276,17 +246,11 @@ jobs:
           cd cortex-cpp
           make run-e2e-test RUN_TESTS=true LLM_MODEL_URL=${{ env.LLM_MODEL_URL }} EMBEDDING_MODEL_URL=${{ env.EMBEDDING_MODEL_URL }}
 
-      - name: Upload CPP Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
           name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
           path: ./cortex-cpp/cortex-cpp
-
-      - name: Upload JS Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-${{ matrix.name }}
-          path: ./cortex-js/dist/cortex
 
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
