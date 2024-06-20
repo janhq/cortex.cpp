@@ -48,7 +48,7 @@ jobs:
 
       - name: Run test
         run: |
-          node cortex-js/dist/src/command.js serve --host 127.0.0.1 --port 4010 > cortex.log & cortex_pid=$!
+          node cortex-js/dist/src/command.js serve --address 127.0.0.1 --port 4010 > cortex.log & cortex_pid=$!
           sleep 3
           wget --no-verbose -O api.json http://127.0.0.1:4010/api-json
           cat api.json
