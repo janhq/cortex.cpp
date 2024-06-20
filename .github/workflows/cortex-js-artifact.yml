@@ -7,9 +7,31 @@ on:
   workflow_dispatch:
 
 jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    permissions:
+      contents: write
+    steps:
+      - name: Extract tag name without v prefix
+        id: get_version
+        run: |
+          echo "VERSION=0.4.17" >> $GITHUB_ENV && echo "::set-output name=version::0.4.17"
+      - name: Create Draft Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.4.17
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: "${{ env.VERSION }}"
+          draft: true
+          prerelease: false
+
   build-cortex-single-binary:
     runs-on: ${{ matrix.runs-on }}
-    needs: []
+    needs: [create-draft-release]
     timeout-minutes: 20
     strategy:
       fail-fast: false
@@ -51,9 +73,9 @@ jobs:
         with:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
-      
+
       - run: npm install -g yarn
-        
+
       - run: yarn install && yarn build && yarn build:binary
         working-directory: ./cortex-js
 
@@ -80,7 +102,7 @@ jobs:
         run: |
           cd cortex-js
           make postbundle
-          
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -88,3 +110,12 @@ jobs:
           path: |
             ./cortex-js/cortex
             ./cortex-js/cortex.exe
+
+      - uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex.tar.gz
+          asset_name: cortex-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip

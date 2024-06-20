@@ -12,11 +12,15 @@ ifeq ($(RUN_TESTS),false)
 	@exit 0
 endif
 ifeq ($(OS),Windows_NT)
+	@powershell -Command "7z a -ttar temp.tar cortex.exe; 7z a -tgzip cortex.tar.gz temp.tar;"
 else ifeq ($(shell uname -s),Linux)
 	@chmod +x cortex;
+	tar -czvf cortex.tar.gz cortex;
 else
 	@chmod +x cortex;
+	tar -czvf cortex.tar.gz cortex;
 endif
+
 
 codesign:
 ifeq ($(CODE_SIGN),false)
