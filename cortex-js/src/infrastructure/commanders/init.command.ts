@@ -8,6 +8,11 @@ import { InitCliUsecases } from './usecases/init.cli.usecases';
 import { InitOptions } from './types/init-options.interface';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '@/util/context.service';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
 
 @SubCommand({
   name: 'init',
@@ -24,16 +29,24 @@ export class InitCommand extends CommandRunner {
     private readonly inquirerService: InquirerService,
     private readonly initUsecases: InitCliUsecases,
     readonly contextService: ContextService,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {
     super();
   }
 
   async run(passedParams: string[], options?: InitOptions): Promise<void> {
-    if (options?.silent) {
-      return this.initSilently(passedParams);
-    } else {
-      return this.initPrompts(passedParams, options);
-    }
+    const result = options?.silent
+      ? await this.initSilently(passedParams)
+      : await this.initPrompts(passedParams, options);
+    this.telemetryUsecases.sendEvent(
+      [
+        {
+          name: EventName.INIT,
+        },
+      ],
+      TelemetrySource.CLI,
+    );
+    return result;
   }
 
   private initSilently = async (

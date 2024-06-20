@@ -10,6 +10,8 @@ import {
   TelemetryResource,
   Telemetry,
   TelemetryEventMetadata,
+  EventAttributes,
+  TelemetryAnonymized,
 } from '@/domain/telemetry/telemetry.interface';
 import { Injectable } from '@nestjs/common';
 import { join } from 'path';
@@ -29,6 +31,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   };
 
   private readonly crashReportFileName = 'crash-report.jsonl';
+  private readonly anonymizedDataFileName = 'metadata.json';
   constructor(private readonly fileManagerService: FileManagerService) {}
 
   private async getTelemetryDirectory(): Promise<string> {
@@ -45,18 +48,17 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
     return hash.digest('hex');
   }
 
-  async sendTelemetryToServer(telemetry: Telemetry) {
+  async sendTelemetryToServer(
+    telemetryEvent: Telemetry['event'],
+    type: 'crash-report' | 'metrics' = 'crash-report',
+  ): Promise<void> {
     try {
-      await axios.post(
-        `${telemetryServerUrl}/api/v1/crash-report`,
-        telemetry.event,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'cortex-checksum': this.generateChecksum(telemetry.event),
-          },
+      await axios.post(`${telemetryServerUrl}/api/v1/${type}`, telemetryEvent, {
+        headers: {
+          'Content-Type': 'application/json',
+          'cortex-checksum': this.generateChecksum(telemetryEvent),
         },
-      );
+      });
     } catch (error) {}
   }
 
@@ -117,10 +119,11 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
     crashReport: CrashReportAttributes,
     source: TelemetrySource,
   ): Promise<void> {
-    const telemetryEvent = await this.convertCrashReportToTelemetryEvent(
-      crashReport,
+    const telemetryEvent = await this.convertToTelemetryEvent({
+      attributes: crashReport,
       source,
-    );
+      type: 'crash-report',
+    });
     const metadata: TelemetryEventMetadata = {
       createdAt: new Date().toISOString(),
       sentAt: null,
@@ -136,11 +139,15 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
     );
   }
 
-  private async convertCrashReportToTelemetryEvent(
-    crashReport: CrashReportAttributes,
-    // move this to telemetryResource
-    source: TelemetrySource,
-  ): Promise<TelemetryEvent> {
+  private async convertToTelemetryEvent({
+    attributes,
+    source,
+    type,
+  }: {
+    attributes: CrashReportAttributes | EventAttributes;
+    source: TelemetrySource;
+    type: 'crash-report' | 'metrics';
+  }): Promise<TelemetryEvent> {
     const gpus = (await systemInformation.graphics()).controllers.map(
       ({ model, vendor, vram, vramDynamic }) => ({
         model,
@@ -149,9 +156,17 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
         vramDynamic,
       }),
     );
+
+    const body =
+      type === 'crash-report'
+        ? (attributes as CrashReportAttributes).message
+        : (attributes as EventAttributes).name;
+
+    const severity = type === 'crash-report' ? 'ERROR' : 'INFO';
+
     const resourceAttributes: Attribute[] = Object.entries({
       ...this.telemetryResource,
-      'service.name': 'crash-reporting',
+      'service.name': type,
       cpu: os.cpus()[0].model,
       gpus: JSON.stringify(gpus),
       source,
@@ -159,7 +174,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
       key,
       value: { stringValue: value },
     }));
-    const telemetryLogAttributes: Attribute[] = Object.entries(crashReport).map(
+    const telemetryLogAttributes: Attribute[] = Object.entries(attributes).map(
       ([key, value]) => {
         if (typeof value === 'object') {
           return {
@@ -194,13 +209,54 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
               startTimeUnixNano: (
                 BigInt(Date.now()) * BigInt(1000000)
               ).toString(),
-              body: { stringValue: crashReport.message },
-              severityText: 'ERROR',
+              body: { stringValue: body },
+              severityText: severity,
               attributes: telemetryLogAttributes,
             },
           ],
         },
       ],
     };
+  }
+
+  async sendEvent(
+    events: EventAttributes[],
+    source: TelemetrySource,
+  ): Promise<void> {
+    const telemetryEvents = await Promise.all(
+      events.map(async (event) =>
+        this.convertToTelemetryEvent({
+          attributes: event,
+          source,
+          type: 'metrics',
+        }),
+      ),
+    );
+    await this.sendTelemetryToServer(
+      {
+        resourceLogs: telemetryEvents,
+      },
+      'metrics',
+    );
+  }
+
+  async getAnonymizedData(): Promise<TelemetryAnonymized | null> {
+    const content = await this.fileManagerService.readFile(
+      join(await this.getTelemetryDirectory(), this.anonymizedDataFileName),
+    );
+
+    if (!content) {
+      return null;
+    }
+
+    const data = JSON.parse(content) as TelemetryAnonymized;
+    return data;
+  }
+
+  async updateAnonymousData(data: TelemetryAnonymized): Promise<void> {
+    return this.fileManagerService.writeFile(
+      join(await this.getTelemetryDirectory(), this.anonymizedDataFileName),
+      JSON.stringify(data),
+    );
   }
 }

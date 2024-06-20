@@ -11,6 +11,11 @@ import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '@/util/context.service';
 import { ModelStat } from './types/model-stat.interface';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
 
 type ChatOptions = {
   threadId?: string;
@@ -36,6 +41,7 @@ export class ChatCommand extends CommandRunner {
     private readonly modelsUsecases: ModelsUsecases,
     private readonly psCliUsecases: PSCliUsecases,
     readonly contextService: ContextService,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {
     super();
   }
@@ -66,14 +72,23 @@ export class ChatCommand extends CommandRunner {
     }
 
     if (!message) options.attach = true;
-
-    return this.chatCliUsecases.chat(
+    const result = await this.chatCliUsecases.chat(
       modelId,
       options.threadId,
       message, // Accept both message from inputs or arguments
       options.attach,
       false, // Do not stop cortex session or loaded model
     );
+    this.telemetryUsecases.sendEvent(
+      [
+        {
+          name: EventName.CHAT,
+          modelId,
+        },
+      ],
+      TelemetrySource.CLI,
+    );
+    return result;
   }
 
   modelInquiry = async (models: ModelStat[]) => {

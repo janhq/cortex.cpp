@@ -1,16 +1,25 @@
 import { TelemetryRepository } from '@/domain/repositories/telemetry.interface';
 import {
   CrashReportAttributes,
+  EventAttributes,
+  EventName,
   Telemetry,
+  TelemetryAnonymized,
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '@/util/context.service';
 import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
+import { v4 } from 'uuid';
 
 @Injectable({ scope: Scope.TRANSIENT })
 export class TelemetryUsecases {
   private readonly crashReports: string[] = [];
-  private readonly maxSize = 100;
+  private readonly maxSize = 10;
+  private metricQueue: EventAttributes[] = [];
+  private readonly maxQueueSize = 10;
+  private readonly flushInterval = 1000 * 60 * 5;
+  private interval: NodeJS.Timeout = this.flushMetricQueueInterval();
+  private lastActiveAt?: string | null;
 
   constructor(
     @Inject('TELEMETRY_REPOSITORY')
@@ -46,7 +55,7 @@ export class TelemetryUsecases {
     const crashReport = await this.telemetryRepository.getLastCrashReport();
     if (crashReport && !crashReport.metadata.sentAt) {
       const promises = [
-        this.telemetryRepository.sendTelemetryToServer(crashReport),
+        this.telemetryRepository.sendTelemetryToServer(crashReport.event),
       ];
       const collectorEndpoint = process.env.CORTEX_EXPORTER_OLTP_ENDPOINT;
       if (collectorEndpoint) {
@@ -80,11 +89,16 @@ export class TelemetryUsecases {
         endpoint: this.contextService.get('endpoint') || '',
         command: this.contextService.get('command') || '',
       },
+      sessionId: this.contextService.get('sessionId') || '',
     };
   }
 
   private isCrashReportEnabled(): boolean {
     return process.env.CORTEX_CRASH_REPORT !== '0';
+  }
+
+  private isMetricsEnabled(): boolean {
+    return process.env.CORTEX_METRICS !== '0';
   }
 
   private async catchException(): Promise<void> {
@@ -101,5 +115,95 @@ export class TelemetryUsecases {
         this.contextService.get('source') as TelemetrySource,
       );
     });
+  }
+
+  async sendEvent(
+    events: EventAttributes[],
+    source: TelemetrySource,
+  ): Promise<void> {
+    try {
+      if (!this.isMetricsEnabled()) return;
+      const sessionId = (this.contextService.get('sessionId') as string) || '';
+      const sessionEvents = events.map((event) => ({
+        ...event,
+        sessionId,
+      }));
+      await this.telemetryRepository.sendEvent(sessionEvents, source);
+    } catch (e) {
+      console.error('Error sending event:', e);
+    }
+  }
+
+  async sendActivationEvent(source: TelemetrySource): Promise<void> {
+    try {
+      if (!this.isMetricsEnabled()) return;
+      if (!this.lastActiveAt) {
+        const currentData = await this.telemetryRepository.getAnonymizedData();
+        this.lastActiveAt = currentData?.lastActiveAt;
+      }
+      console.log('lastActiveAt:', this.lastActiveAt);
+      const isActivatedToday =
+        this.lastActiveAt &&
+        new Date(this.lastActiveAt).getDate() === new Date().getDate();
+      console.log('isActivatedToday:', isActivatedToday);
+      if (isActivatedToday) return;
+      console.log('Sending activation event');
+      await this.telemetryRepository.sendEvent(
+        [
+          {
+            name: EventName.ACTIVATE,
+          },
+        ],
+        source,
+      );
+      this.lastActiveAt = new Date().toISOString();
+      await this.updateAnonymousData(this.lastActiveAt);
+    } catch (e) {
+      console.error('Error sending activation event:', e);
+    }
+  }
+
+  async addEventToQueue(event: EventAttributes): Promise<void> {
+    if (!this.isMetricsEnabled()) return;
+    this.metricQueue.push({
+      ...event,
+      sessionId: this.contextService.get('sessionId') || '',
+    });
+    if (this.metricQueue.length >= this.maxQueueSize) {
+      await this.flushMetricQueue();
+    }
+  }
+
+  private async flushMetricQueue(): Promise<void> {
+    if (this.metricQueue.length > 0) {
+      clearInterval(this.interval);
+      await this.sendEvent(this.metricQueue, TelemetrySource.CORTEX_SERVER);
+      this.interval = this.flushMetricQueueInterval();
+      this.metricQueue = [];
+    }
+  }
+
+  private flushMetricQueueInterval(): NodeJS.Timeout {
+    return setInterval(() => {
+      this.flushMetricQueue();
+    }, this.flushInterval);
+  }
+
+  async updateAnonymousData(
+    lastActiveAt?: string,
+  ): Promise<TelemetryAnonymized | null> {
+    try {
+      const currentData = await this.telemetryRepository.getAnonymizedData();
+      const updatedData = {
+        ...currentData,
+        sessionId: currentData?.sessionId || v4(),
+        ...(lastActiveAt && { lastActiveAt }),
+      };
+      await this.telemetryRepository.updateAnonymousData(updatedData);
+      return updatedData;
+    } catch (e) {
+      console.error('Error updating anonymous data:', e);
+      return null;
+    }
   }
 }

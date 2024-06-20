@@ -28,10 +28,13 @@ async function bootstrap() {
   telemetryUseCase = await app.resolve(TelemetryUsecases);
   contextService = await app.resolve(ContextService);
 
+  const anonymousData = await telemetryUseCase!.updateAnonymousData();
+  await telemetryUseCase!.sendActivationEvent(TelemetrySource.CLI);
   telemetryUseCase!.sendCrashReport();
 
   await contextService!.init(async () => {
     contextService!.set('source', TelemetrySource.CLI);
+    contextService!.set('sessionId', anonymousData?.sessionId);
     return CommandFactory.runApplication(app);
   });
 
