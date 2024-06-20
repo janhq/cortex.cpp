@@ -1,51 +1,52 @@
 import {
-  ChatCompletionRole,
-  ErrorCode,
   Message,
-  MessageMetadata,
-  MessageStatus,
-  ThreadContent,
+  MessageContent,
+  MessageIncompleteDetails,
+  MessageAttachment,
 } from '@/domain/models/message.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('messages')
 export class MessageEntity implements Message {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: String })
   id: string;
 
-  @Column()
-  object: string;
+  @Column({ type: String })
+  object: 'thread.message';
 
-  @Column()
+  @Column({ type: String })
   thread_id: string;
 
-  @Column({ nullable: true })
-  assistant_id?: string;
+  @Column({ type: String, nullable: true })
+  assistant_id: string | null;
 
-  @Column()
-  role: ChatCompletionRole;
+  @Column({ type: String })
+  role: 'user' | 'assistant';
+
+  @Column({ type: String })
+  status: 'in_progress' | 'incomplete' | 'completed';
+
+  @Column({ type: 'simple-json', nullable: true })
+  metadata: any | null;
+
+  @Column({ type: String, nullable: true })
+  run_id: string | null;
+
+  @Column({ type: Number, nullable: true })
+  completed_at: number | null;
 
   @Column({ type: 'simple-json' })
-  content: ThreadContent[];
-
-  @Column()
-  status: MessageStatus;
-
-  @Column()
-  created: number;
-
-  @Column({ nullable: true })
-  updated?: number;
+  content: MessageContent[];
 
   @Column({ type: 'simple-json', nullable: true })
-  metadata?: MessageMetadata;
+  incomplete_details: MessageIncompleteDetails | null;
 
-  @Column({ nullable: true })
-  type?: string;
+  @Column({ type: Number })
+  created_at: number;
 
-  @Column({ nullable: true })
-  error_code?: ErrorCode;
+  @Column({ type: 'simple-json' })
+  attachments: MessageAttachment[];
 
-  @Column({ type: 'simple-json', nullable: true })
-  attachments?: any[];
+  @Column({ type: Number, nullable: true })
+  incomplete_at: number | null;
 }

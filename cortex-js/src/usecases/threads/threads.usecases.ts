@@ -8,14 +8,11 @@ import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { CreateMessageDto } from '@/infrastructure/dtos/threads/create-message.dto';
 import { ulid } from 'ulid';
-import {
-  ContentType,
-  Message,
-  MessageStatus,
-} from '@/domain/models/message.interface';
+import { Message, MessageContent } from '@/domain/models/message.interface';
 import { UpdateMessageDto } from '@/infrastructure/dtos/threads/update-message.dto';
 import { Thread } from '@/domain/models/thread.interface';
 import DeleteMessageDto from '@/infrastructure/dtos/threads/delete-message.dto';
+import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
 
 @Injectable()
 export class ThreadsUsecases {
@@ -29,13 +26,25 @@ export class ThreadsUsecases {
   async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
     const id = uuidv4();
     const { assistants } = createThreadDto;
+    const assistantEntity: AssistantEntity[] = assistants.map((assistant) => {
+      const entity: AssistantEntity = {
+        ...assistant,
+        response_format: null,
+        tool_resources: null,
+        top_p: assistant.top_p ?? null,
+        temperature: assistant.temperature ?? null,
+      };
+      return entity;
+    });
 
     const thread: ThreadEntity = {
       id,
-      assistants,
+      assistants: assistantEntity,
       object: 'thread',
-      createdAt: Date.now(),
+      created_at: Date.now(),
       title: 'New Thread',
+      tool_resources: null,
+      metadata: null,
     };
     await this.threadRepository.insert(thread);
     return thread;
@@ -44,7 +53,7 @@ export class ThreadsUsecases {
   async findAll(): Promise<ThreadEntity[]> {
     return this.threadRepository.find({
       order: {
-        createdAt: 'DESC',
+        created_at: 'DESC',
       },
     });
   }
@@ -64,7 +73,7 @@ export class ThreadsUsecases {
 
     queryBuilder
       .where('thread_id = :id', { id: threadId })
-      .orderBy('created', normalizedOrder)
+      .orderBy('created_at', normalizedOrder)
       .take(limit + 1); // Fetch one more record than the limit
 
     if (after) {
@@ -94,25 +103,31 @@ export class ThreadsUsecases {
     createMessageDto: CreateMessageDto,
   ) {
     const thread = await this.getThreadOrThrow(threadId);
-    const assistantId: string | undefined = thread.assistants[0].assistant_id;
+    const assistantId: string = thread.assistants[0].id;
+
+    const messageContent: MessageContent = {
+      type: 'text',
+      text: {
+        annotations: [],
+        value: createMessageDto.content,
+      },
+    };
 
     const message: MessageEntity = {
+      id: ulid(),
       object: 'thread.message',
       thread_id: threadId,
       assistant_id: assistantId,
-      id: ulid(),
-      created: Date.now(),
-      status: MessageStatus.Ready,
+      created_at: Date.now(),
+      status: 'completed',
       role: createMessageDto.role,
-      content: [
-        {
-          type: ContentType.Text,
-          text: {
-            value: createMessageDto.content,
-            annotations: [],
-          },
-        },
-      ],
+      content: [messageContent],
+      metadata: null,
+      run_id: null,
+      completed_at: null,
+      incomplete_details: null,
+      attachments: [],
+      incomplete_at: null,
     };
     await this.messageRepository.insert(message);
     return message;
@@ -156,8 +171,25 @@ export class ThreadsUsecases {
     return this.threadRepository.findOne({ where: { id } });
   }
 
-  update(id: string, updateThreadDto: UpdateThreadDto) {
-    return this.threadRepository.update(id, updateThreadDto);
+  async update(id: string, updateThreadDto: UpdateThreadDto) {
+    const assistantEntities: AssistantEntity[] =
+      updateThreadDto.assistants?.map((assistant) => {
+        const entity: AssistantEntity = {
+          ...assistant,
+          name: assistant.name,
+          response_format: null,
+          tool_resources: null,
+          top_p: assistant.top_p ?? null,
+          temperature: assistant.temperature ?? null,
+        };
+        return entity;
+      }) ?? [];
+
+    const entity: Partial<ThreadEntity> = {
+      ...updateThreadDto,
+      assistants: assistantEntities,
+    };
+    return this.threadRepository.update(id, entity);
   }
 
   remove(id: string) {
@@ -182,5 +214,10 @@ export class ThreadsUsecases {
   async retrieveMessage(_threadId: string, messageId: string) {
     // we still allow user to delete message even if the thread is not there
     return this.getMessageOrThrow(messageId);
+  }
+
+  async clean(threadId: string) {
+    await this.getThreadOrThrow(threadId);
+    await this.messageRepository.delete({ thread_id: threadId });
   }
 }

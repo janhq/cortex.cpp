@@ -13,11 +13,19 @@ export class MessagesUsecases {
   ) {}
 
   async create(createMessageDto: CreateMessageDto) {
+    const { assistant_id } = createMessageDto;
     const message: MessageEntity = {
       ...createMessageDto,
       id: ulid(),
-      object: 'message',
-      created: Date.now(),
+      created_at: Date.now(),
+      object: 'thread.message',
+      run_id: null,
+      completed_at: null,
+      incomplete_details: null,
+      attachments: [],
+      incomplete_at: null,
+      metadata: undefined,
+      assistant_id: assistant_id ?? null,
     };
     this.messageRepository.insert(message);
   }
@@ -35,7 +43,10 @@ export class MessagesUsecases {
   }
 
   update(id: string, updateMessageDto: UpdateMessageDto) {
-    return this.messageRepository.update(id, updateMessageDto);
+    const updateEntity: Partial<MessageEntity> = {
+      ...updateMessageDto,
+    };
+    return this.messageRepository.update(id, updateEntity);
   }
 
   remove(id: string) {
@@ -48,7 +59,7 @@ export class MessagesUsecases {
         thread_id: threadId,
       },
       order: {
-        created: 'DESC',
+        created_at: 'DESC',
       },
       take: limit,
     });

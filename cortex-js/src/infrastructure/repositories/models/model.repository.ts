@@ -12,10 +12,7 @@ import {
   writeFileSync,
 } from 'fs';
 import { load, dump } from 'js-yaml';
-import {
-  isLocalModel,
-  normalizeModelId,
-} from '@/utils/normalize-model-id';
+import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
 
 @Injectable()
 export class ModelRepositoryImpl implements ModelRepository {

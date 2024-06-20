@@ -38,7 +38,7 @@ import {
 } from '@/utils/huggingface';
 import { DownloadType } from '@/domain/models/download.interface';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ModelId, ModelStatus } from '@/domain/models/model.event';
+import { ModelEvent, ModelId, ModelStatus } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 
 @Injectable()
@@ -61,8 +61,13 @@ export class ModelsUsecases {
    * @param createModelDto Model data
    */
   async create(createModelDto: CreateModelDto) {
+    const { model: modelId, owned_by } = createModelDto;
     const model: Model = {
       ...createModelDto,
+      id: modelId,
+      created: Date.now(),
+      object: 'model',
+      owned_by: owned_by ?? '',
     };
 
     await this.modelRepository.create(model);
@@ -165,10 +170,12 @@ export class ModelsUsecases {
       status: 'starting',
       metadata: {},
     };
-    this.eventEmitter.emit('model.event', {
-      id: modelId,
-      action: 'starting',
-    });
+    const modelEvent: ModelEvent = {
+      model: modelId,
+      event: 'starting',
+      metadata: {},
+    };
+    this.eventEmitter.emit('model.event', modelEvent);
 
     const parser = new ModelParameterParser();
     const loadModelSettings: ModelSettingParams = {
@@ -196,11 +203,12 @@ export class ModelsUsecases {
           status: 'started',
           metadata: {},
         };
-
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'started',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'started',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
       })
       .then(() => ({
         message: 'Model loaded successfully',
@@ -209,11 +217,12 @@ export class ModelsUsecases {
       .catch(async (e) => {
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
-
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'starting-failed',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'starting-failed',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
         console.error('Starting model failed', e.code, e.message, e.stack);
         if (e.code === AxiosError.ERR_BAD_REQUEST) {
           return {
@@ -250,30 +259,35 @@ export class ModelsUsecases {
       status: 'stopping',
       metadata: {},
     };
-    this.eventEmitter.emit('model.event', {
-      id: modelId,
-      action: 'stopping',
-    });
+    const modelEvent: ModelEvent = {
+      model: modelId,
+      event: 'stopping',
+      metadata: {},
+    };
+    this.eventEmitter.emit('model.event', modelEvent);
 
     return engine
       .unloadModel(modelId)
       .then(() => {
         delete this.activeModelStatuses[modelId];
-
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'stopped',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'stopped',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
       })
       .then(() => ({
         message: 'Model is stopped',
         modelId,
       }))
       .catch(async (e) => {
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'stopping-failed',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'stopping-failed',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
         await this.telemetryUseCases.createCrashReport(
           e,
           TelemetrySource.CORTEX_CPP,
