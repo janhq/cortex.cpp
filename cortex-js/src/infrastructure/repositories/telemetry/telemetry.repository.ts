@@ -55,6 +55,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
             'Content-Type': 'application/json',
             'cortex-checksum': this.generateChecksum(telemetry.event),
           },
+          timeout: 1000,
         },
       );
     } catch (error) {}
