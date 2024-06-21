@@ -63,15 +63,17 @@ export class ModelStartCommand extends CommandRunner {
     const engine = existingModel.engine || 'cortex.llamacpp';
     // Pull engine if not exist
     if (
-      !existsSync(
-        join(await this.fileService.getDataFolderPath(), 'engines', engine),
-      )
+      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
         'latest',
         engine,
       );
+    }
+    if (engine === 'cortex.onnx' && process.platform !== 'win32') {
+      console.error('The ONNX engine does not support this OS yet.');
+      process.exit(1);
     }
     await this.cortexUsecases
       .startCortex(options.attach)

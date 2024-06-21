@@ -47,10 +47,9 @@ export class ModelPullCommand extends CommandRunner {
 
     // Pull engine if not exist
     if (
-      !existsSync(
-        join(await this.fileService.getDataFolderPath(), 'engines', engine),
-      )
+      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
+      console.log('\n');
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
         'latest',

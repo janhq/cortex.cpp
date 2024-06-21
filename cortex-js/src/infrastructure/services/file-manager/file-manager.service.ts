@@ -234,11 +234,19 @@ export class FileManagerService {
   /**
    * Get the benchmark folder path
    * Usually it is located at the home directory > cortex > extensions
-   * @returns the path to the extensions folder
+   * @returns the path to the benchmark folder
    */
   async getBenchmarkPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.benchmarkFoldername);
+  }
+
+  /**
+   * Get Cortex CPP engines folder path
+   * @returns the path to the cortex engines folder
+   */
+  async getCortexCppEnginePath(): Promise<string> {
+    return join(await this.getDataFolderPath(), 'cortex-cpp', 'engines');
   }
 
   async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {

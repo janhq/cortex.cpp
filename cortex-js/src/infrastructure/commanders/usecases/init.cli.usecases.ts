@@ -63,16 +63,19 @@ export class InitCliUsecases {
     if (
       !existsSync(
         join(
-          await this.fileManagerService.getDataFolderPath(),
-          'engines',
-          engine,
+          await this.fileManagerService.getCortexCppEnginePath(),
+          'cortex.llamacpp',
         ),
       )
     )
       await this.installLlamaCppEngine(options, version);
 
-    if (engine === 'cortex.onnx')
-      if (process.platform === 'win32') await this.installONNXEngine();
+    if (engine === 'cortex.onnx' && process.platform === 'win32')
+      await this.installONNXEngine();
+    else if (engine === 'cortex.onnx' && process.platform !== 'win32') {
+      console.error('The ONNX engine does not support this OS yet.');
+      process.exit(1);
+    }
 
     configs.initialized = true;
     await this.fileManagerService.writeConfigFile(configs);
