@@ -1,7 +1,7 @@
-import {
-  Assistant,
-  AssistantResponseFormatOption,
+import { Assistant } from '@/domain/models/assistant.interface';
+import type {
   AssistantToolResources,
+  AssistantResponseFormatOption,
 } from '@/domain/models/assistant.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 

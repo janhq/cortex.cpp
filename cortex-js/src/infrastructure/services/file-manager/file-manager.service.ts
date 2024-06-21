@@ -52,7 +52,10 @@ export class FileManagerService {
     try {
       const content = await promises.readFile(configPath, 'utf8');
       const config = yaml.load(content) as Config;
-      return config;
+      return {
+        ...this.defaultConfig(),
+        ...config,
+      };
     } catch (error) {
       console.warn('Error reading config file. Using default config.');
       console.warn(error);
