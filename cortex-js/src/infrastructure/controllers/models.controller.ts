@@ -21,6 +21,11 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 
 @ApiTags('Models')
 @Controller('models')
@@ -29,6 +34,7 @@ export class ModelsController {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
     private readonly cortexUsecases: CortexUsecases,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {}
 
   @HttpCode(201)
@@ -110,8 +116,18 @@ export class ModelsController {
     ],
   })
   @Get('download/:modelId(*)')
-  downloadModel(@Param('modelId') modelId: string) {
-    return this.modelsUsecases.downloadModel(modelId);
+  async downloadModel(@Param('modelId') modelId: string) {
+    const result = await this.modelsUsecases.downloadModel(modelId);
+    this.telemetryUsecases.sendEvent(
+      [
+        {
+          name: EventName.DOWNLOAD_MODEL,
+          modelId,
+        },
+      ],
+      TelemetrySource.CORTEX_SERVER,
+    );
+    return result;
   }
 
   @ApiOperation({
@@ -146,8 +162,18 @@ export class ModelsController {
     description: 'The unique identifier of the model.',
   })
   @Get('pull/:modelId(*)')
-  pullModel(@Param('modelId') modelId: string) {
-    return this.modelsUsecases.pullModel(modelId);
+  async pullModel(@Param('modelId') modelId: string) {
+    const result = await this.modelsUsecases.pullModel(modelId);
+    this.telemetryUsecases.sendEvent(
+      [
+        {
+          name: EventName.DOWNLOAD_MODEL,
+          modelId,
+        },
+      ],
+      TelemetrySource.CORTEX_SERVER,
+    );
+    return result;
   }
 
   @HttpCode(200)

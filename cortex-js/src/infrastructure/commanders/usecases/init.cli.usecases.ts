@@ -1,11 +1,4 @@
-import {
-  cpSync,
-  createWriteStream,
-  existsSync,
-  readdir,
-  readdirSync,
-  rmSync,
-} from 'fs';
+import { cpSync, createWriteStream, existsSync, readdirSync, rmSync } from 'fs';
 import { delimiter, join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
@@ -298,7 +291,7 @@ export class InitCliUsecases {
   /**
    * Download and install ONNX engine
    * @param version
-   * @param engineFileName 
+   * @param engineFileName
    */
   async installONNXEngine(
     version: string = 'latest',
