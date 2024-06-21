@@ -14,6 +14,10 @@ import { promisify } from 'util';
 import yaml from 'js-yaml';
 import { write } from 'fs';
 import { createInterface } from 'readline';
+import {
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
 
 const readFileAsync = promisify(read);
 const openAsync = promisify(open);
@@ -97,6 +101,9 @@ export class FileManagerService {
 
     return {
       dataFolderPath,
+      initialized: false,
+      cortexCppHost: defaultCortexCppHost,
+      cortexCppPort: defaultCortexCppPort,
     };
   }
 

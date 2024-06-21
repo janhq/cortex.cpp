@@ -7,10 +7,6 @@ import {
 } from 'nest-commander';
 import { exit } from 'node:process';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
-import {
-  defaultCortexCppHost,
-  defaultCortexCppPort,
-} from '@/infrastructure/constants/cortex';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 
@@ -62,7 +58,7 @@ export class RunCommand extends CommandRunner {
     }
 
     return this.cortexUsecases
-      .startCortex(false, defaultCortexCppHost, defaultCortexCppPort)
+      .startCortex(false)
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
       .then(() => this.chatCliUsecases.chat(modelId, options.threadId));
   }

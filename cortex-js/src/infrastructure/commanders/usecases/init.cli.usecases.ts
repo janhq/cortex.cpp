@@ -16,6 +16,7 @@ import {
   CORTEX_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
+import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
 
 @Injectable()
 export class InitCliUsecases {
@@ -24,10 +25,41 @@ export class InitCliUsecases {
     private readonly fileManagerService: FileManagerService,
   ) {}
 
+  /**
+   * Default installation options base on the system
+   * @returns
+   */
+  defaultInstallationOptions = async (): Promise<InitOptions> => {
+    let options: InitOptions = {};
+
+    // Skip check if darwin
+    if (process.platform === 'darwin') {
+      return options;
+    }
+    // If Nvidia Driver is installed -> GPU
+    options.runMode = (await checkNvidiaGPUExist()) ? 'GPU' : 'CPU';
+    options.gpuType = 'Nvidia';
+    //CPU Instructions detection
+    options.instructions = await this.detectInstructions();
+    return options;
+  };
+
+  /**
+   * Install Engine and Dependencies with given options
+   * @param engineFileName
+   * @param version
+   */
   installEngine = async (
-    engineFileName: string,
+    options: InitOptions,
     version: string = 'latest',
+    force: boolean = true,
   ): Promise<any> => {
+    const configs = await this.fileManagerService.getConfig();
+
+    if (configs.initialized && !force) return;
+
+    const engineFileName = this.parseEngineFileName(options);
+
     const res = await firstValueFrom(
       this.httpService.get(
         CORTEX_RELEASES_URL + `${version === 'latest' ? '/latest' : ''}`,
@@ -40,14 +72,14 @@ export class InitCliUsecases {
       ),
     );
 
-    if (!res?.data) {
+    if (!res.data) {
       console.log('Failed to fetch releases');
       exit(1);
     }
 
-    let release = res?.data;
-    if (Array.isArray(res?.data)) {
-      release = Array(res?.data)[0].find(
+    let release = res.data;
+    if (Array.isArray(res.data)) {
+      release = Array(res.data)[0].find(
         (e) => e.name === version.replace('v', ''),
       );
     }
@@ -109,13 +141,28 @@ export class InitCliUsecases {
       console.error('Error decompressing file', e);
       exit(1);
     }
+
     await rm(destination, { force: true });
+
+    // If the user selected GPU mode and Nvidia GPU, install CUDA Toolkit dependencies
+    if (options.runMode === 'GPU' && !(await cudaVersion())) {
+      await this.installCudaToolkitDependency(options.cudaVersion);
+    }
 
     // Ship ONNX Runtime on Windows by default
     if (process.platform === 'win32') await this.installONNXEngine();
+
+    configs.initialized = true;
+    await this.fileManagerService.writeConfigFile(configs);
   };
 
-  parseEngineFileName = (options?: InitOptions) => {
+  /**
+   * Parse the engine file name based on the options
+   * Please check cortex-cpp release artifacts for the available engine files
+   * @param options
+   * @returns
+   */
+  private parseEngineFileName = (options?: InitOptions) => {
     const platform =
       process.platform === 'win32'
         ? 'windows'
@@ -136,58 +183,17 @@ export class InitCliUsecases {
     return `${engineName}.tar.gz`;
   };
 
-  cudaVersion = async () => {
-    let filesCuda12: string[];
-    let filesCuda11: string[];
-    let paths: string[];
-
-    if (process.platform === 'win32') {
-      filesCuda12 = ['cublas64_12.dll', 'cudart64_12.dll', 'cublasLt64_12.dll'];
-      filesCuda11 = [
-        'cublas64_11.dll',
-        'cudart64_110.dll',
-        'cublasLt64_11.dll',
-      ];
-      paths = process.env.PATH ? process.env.PATH.split(delimiter) : [];
-    } else {
-      filesCuda12 = ['libcudart.so.12', 'libcublas.so.12', 'libcublasLt.so.12'];
-      filesCuda11 = [
-        'libcudart.so.11.0',
-        'libcublas.so.11',
-        'libcublasLt.so.11',
-      ];
-      paths = process.env.LD_LIBRARY_PATH
-        ? process.env.LD_LIBRARY_PATH.split(delimiter)
-        : [];
-      paths.push('/usr/lib/x86_64-linux-gnu/');
-    }
-
-    if (
-      filesCuda12.every(
-        (file) =>
-          existsSync(file) || this.checkFileExistenceInPaths(file, paths),
-      )
-    )
-      return '12';
-
-    if (
-      filesCuda11.every(
-        (file) =>
-          existsSync(file) || this.checkFileExistenceInPaths(file, paths),
-      )
-    )
-      return '11';
-
-    return undefined; // No CUDA Toolkit found
-  };
-
-  installCudaToolkitDependency = async (options: InitOptions) => {
+  /**
+   * Install CUDA Toolkit dependency (dll/so files)
+   * @param options
+   */
+  private installCudaToolkitDependency = async (cudaVersion?: string) => {
     const platform = process.platform === 'win32' ? 'windows' : 'linux';
 
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const url = CUDA_DOWNLOAD_URL.replace(
       '<version>',
-      options.cudaVersion === '11' ? '11.7' : '12.0',
+      cudaVersion === '11' ? '11.7' : '12.0',
     ).replace('<platform>', platform);
     const destination = join(dataFolderPath, 'cuda-toolkit.tar.gz');
 
@@ -238,25 +244,9 @@ export class InitCliUsecases {
     await rm(destination, { force: true });
   };
 
-  // Function to check for NVIDIA GPU
-  checkNvidiaGPUExist = (): Promise<boolean> => {
-    return new Promise<boolean>((resolve) => {
-      // Execute the nvidia-smi command
-      exec('nvidia-smi', (error) => {
-        if (error) {
-          // If there's an error, it means nvidia-smi is not installed or there's no NVIDIA GPU
-          console.log('NVIDIA GPU not detected or nvidia-smi not installed.');
-          resolve(false);
-        } else {
-          // If the command executes successfully, NVIDIA GPU is present
-          console.log('NVIDIA GPU detected.');
-          resolve(true);
-        }
-      });
-    });
-  };
-
-  detectInstructions = (): Promise<'AVX' | 'AVX2' | 'AVX512' | undefined> => {
+  private detectInstructions = (): Promise<
+    'AVX' | 'AVX2' | 'AVX512' | undefined
+  > => {
     return new Promise<'AVX' | 'AVX2' | 'AVX512' | undefined>((res) => {
       // Execute the cpuinfo command
 
@@ -293,7 +283,7 @@ export class InitCliUsecases {
    * @param version
    * @param engineFileName
    */
-  async installONNXEngine(
+  private async installONNXEngine(
     version: string = 'latest',
     engineFileName: string = 'windows-amd64',
   ) {
@@ -390,11 +380,4 @@ export class InitCliUsecases {
       }
     }
   }
-
-  private checkFileExistenceInPaths = (
-    file: string,
-    paths: string[],
-  ): boolean => {
-    return paths.some((p) => existsSync(join(p, file)));
-  };
 }

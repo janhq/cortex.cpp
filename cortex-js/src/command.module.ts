@@ -18,7 +18,6 @@ import { ModelStopCommand } from './infrastructure/commanders/models/model-stop.
 import { ModelGetCommand } from './infrastructure/commanders/models/model-get.command';
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
-import { InitCudaQuestions } from './infrastructure/commanders/questions/cuda.questions';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
@@ -71,7 +70,6 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
 
     // Questions
     InitRunModeQuestions,
-    InitCudaQuestions,
 
     // Model commands
     ModelStartCommand,
