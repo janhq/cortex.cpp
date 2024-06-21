@@ -13,7 +13,7 @@ ifeq ($(RUN_TESTS),false)
 endif
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "7z a -ttar temp.tar cortex.exe; 7z a -tgzip cortex.tar.gz temp.tar;"
-	@powershell -Command "7z a -ttar temp.tar setup.exe; 7z a -tgzip cortex-installer.tar.gz temp.tar;"
+	@powershell -Command "7z a -ttar temp2.tar setup.exe; 7z a -tgzip cortex-installer.tar.gz temp2.tar;"
 else ifeq ($(shell uname -s),Linux)
 	@chmod +x cortex;
 	tar -czvf cortex.tar.gz cortex;
