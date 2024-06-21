@@ -257,9 +257,6 @@ export class ChatCliUsecases {
     const model = await this.modelsUsecases.findOne(modelId);
     if (!model) throw new Error(`Cannot find model with id: ${modelId}`);
 
-    const assistant = await this.assistantUsecases.findOne('jan');
-    if (!assistant) throw new Error('No assistant available');
-
     const assistantDto: CreateThreadAssistantDto = {
       avatar: '',
       id: 'jan',
