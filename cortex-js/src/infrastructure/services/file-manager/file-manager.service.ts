@@ -151,7 +151,7 @@ export class FileManagerService {
 
       return await readPreviousChunk();
     } catch (err) {
-      console.error('Error reading last line:', err);
+      //todo: add log level then log error
       throw err;
     }
   }
@@ -162,7 +162,7 @@ export class FileManagerService {
       await writeAsync(fd, buffer, 0, buffer.length, position);
       await closeAsync(fd);
     } catch (err) {
-      console.error('Error modifying last line:', err);
+      //todo: add log level then log error
       throw err;
     }
   }
@@ -179,7 +179,6 @@ export class FileManagerService {
         },
       );
     } catch (err) {
-      console.error('Error appending to file:', err);
       throw err;
     }
   }
