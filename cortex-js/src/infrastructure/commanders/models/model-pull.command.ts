@@ -4,6 +4,10 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { ContextService } from '@/infrastructure/services/context/context.service';
+import { existsSync } from 'fs';
+import { join } from 'node:path';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { InitCliUsecases } from '../usecases/init.cli.usecases';
 
 @SubCommand({
   name: 'pull',
@@ -17,6 +21,8 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 export class ModelPullCommand extends CommandRunner {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
+    private readonly initUsecases: InitCliUsecases,
+    private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {
     super();
@@ -27,15 +33,27 @@ export class ModelPullCommand extends CommandRunner {
       console.error('Model Id is required');
       exit(1);
     }
+    const modelId = passedParams[0];
 
-    await this.modelsCliUsecases
-      .pullModel(passedParams[0])
-      .catch((e: Error) => {
-        if (e instanceof ModelNotFoundException)
-          console.error('Model does not exist.');
-        else console.error(e);
-        exit(1);
-      });
+    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    const engine = existingModel?.engine || 'cortex.llamacpp';
+    // Pull engine if not exist
+    if (
+      !existsSync(
+        join(await this.fileService.getDataFolderPath(), 'engines', engine),
+      )
+    ) {
+      await this.initUsecases.installEngine(
+        await this.initUsecases.defaultInstallationOptions(),
+      );
+    }
+
+    await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
+      if (e instanceof ModelNotFoundException)
+        console.error('Model does not exist.');
+      else console.error(e);
+      exit(1);
+    });
 
     console.log('\nDownload complete!');
     exit(0);

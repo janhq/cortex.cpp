@@ -7,6 +7,7 @@ import {
 import { InitCliUsecases } from './usecases/init.cli.usecases';
 import { InitOptions } from './types/init-options.interface';
 import { SetCommandContext } from './decorators/CommandContext';
+import { ContextService } from '../services/context/context.service';
 
 @SubCommand({
   name: 'init',
@@ -22,6 +23,7 @@ export class InitCommand extends CommandRunner {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly initUsecases: InitCliUsecases,
+    readonly contextService: ContextService,
   ) {
     super();
   }

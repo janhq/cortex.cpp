@@ -16,6 +16,6 @@ export class KillCommand extends CommandRunner {
     super();
   }
   async run(): Promise<void> {
-    this.usecases.stopCortex().then(console.log);
+    return this.usecases.stopCortex().then(console.log);
   }
 }
