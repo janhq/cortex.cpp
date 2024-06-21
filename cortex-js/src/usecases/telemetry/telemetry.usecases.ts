@@ -42,7 +42,6 @@ export class TelemetryUsecases {
         this.crashReports.shift();
       }
       this.crashReports.push(JSON.stringify(crashReport));
-
       await this.telemetryRepository.createCrashReport(crashReport, source);
     } catch (e) {}
     return;
@@ -141,26 +140,25 @@ export class TelemetryUsecases {
         const currentData = await this.telemetryRepository.getAnonymizedData();
         this.lastActiveAt = currentData?.lastActiveAt;
       }
-      console.log('lastActiveAt:', this.lastActiveAt);
       const isActivatedToday =
         this.lastActiveAt &&
         new Date(this.lastActiveAt).getDate() === new Date().getDate();
-      console.log('isActivatedToday:', isActivatedToday);
       if (isActivatedToday) return;
-      console.log('Sending activation event');
-      await this.telemetryRepository.sendEvent(
+      const isNewActivation = !this.lastActiveAt;
+      await this.sendEvent(
         [
           {
-            name: EventName.ACTIVATE,
+            name: isNewActivation ? EventName.NEW_ACTIVATE : EventName.ACTIVATE,
           },
         ],
         source,
       );
+      console.log('Activation event sent', isNewActivation);
       this.lastActiveAt = new Date().toISOString();
-      await this.updateAnonymousData(this.lastActiveAt);
     } catch (e) {
       console.error('Error sending activation event:', e);
     }
+    await this.updateAnonymousData(this.lastActiveAt);
   }
 
   async addEventToQueue(event: EventAttributes): Promise<void> {
@@ -190,7 +188,7 @@ export class TelemetryUsecases {
   }
 
   async updateAnonymousData(
-    lastActiveAt?: string,
+    lastActiveAt?: string | null,
   ): Promise<TelemetryAnonymized | null> {
     try {
       const currentData = await this.telemetryRepository.getAnonymizedData();
@@ -202,7 +200,6 @@ export class TelemetryUsecases {
       await this.telemetryRepository.updateAnonymousData(updatedData);
       return updatedData;
     } catch (e) {
-      console.error('Error updating anonymous data:', e);
       return null;
     }
   }

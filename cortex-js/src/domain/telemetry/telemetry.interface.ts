@@ -90,6 +90,7 @@ export enum EventName {
   DOWNLOAD_MODEL = 'download-model',
   CHAT = 'chat',
   ACTIVATE = 'activate',
+  NEW_ACTIVATE = 'new_activate',
 }
 
 export interface EventAttributes {
