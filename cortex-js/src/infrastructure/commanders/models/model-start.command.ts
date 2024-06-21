@@ -69,6 +69,8 @@ export class ModelStartCommand extends CommandRunner {
     ) {
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
+        'latest',
+        engine,
       );
     }
     await this.cortexUsecases

@@ -52,12 +52,41 @@ export class InitCliUsecases {
   installEngine = async (
     options: InitOptions,
     version: string = 'latest',
+    engine: string = 'default',
     force: boolean = true,
   ): Promise<any> => {
     const configs = await this.fileManagerService.getConfig();
 
     if (configs.initialized && !force) return;
 
+    // Ship Llama.cpp engine by default
+    if (
+      !existsSync(
+        join(
+          await this.fileManagerService.getDataFolderPath(),
+          'engines',
+          engine,
+        ),
+      )
+    )
+      await this.installLlamaCppEngine(options, version);
+
+    if (engine === 'cortex.onnx')
+      if (process.platform === 'win32') await this.installONNXEngine();
+
+    configs.initialized = true;
+    await this.fileManagerService.writeConfigFile(configs);
+  };
+
+  /**
+   * Install Llama.cpp engine
+   * @param options
+   * @param version
+   */
+  private installLlamaCppEngine = async (
+    options: InitOptions,
+    version: string = 'latest',
+  ) => {
     const engineFileName = this.parseEngineFileName(options);
 
     const res = await firstValueFrom(
@@ -148,12 +177,6 @@ export class InitCliUsecases {
     if (options.runMode === 'GPU' && !(await cudaVersion())) {
       await this.installCudaToolkitDependency(options.cudaVersion);
     }
-
-    // Ship ONNX Runtime on Windows by default
-    if (process.platform === 'win32') await this.installONNXEngine();
-
-    configs.initialized = true;
-    await this.fileManagerService.writeConfigFile(configs);
   };
 
   /**

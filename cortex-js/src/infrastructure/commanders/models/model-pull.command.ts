@@ -35,8 +35,16 @@ export class ModelPullCommand extends CommandRunner {
     }
     const modelId = passedParams[0];
 
+    await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
+      if (e instanceof ModelNotFoundException)
+        console.error('Model does not exist.');
+      else console.error(e);
+      exit(1);
+    });
+
     const existingModel = await this.modelsCliUsecases.getModel(modelId);
     const engine = existingModel?.engine || 'cortex.llamacpp';
+
     // Pull engine if not exist
     if (
       !existsSync(
@@ -45,15 +53,10 @@ export class ModelPullCommand extends CommandRunner {
     ) {
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
+        'latest',
+        engine,
       );
     }
-
-    await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
-      if (e instanceof ModelNotFoundException)
-        console.error('Model does not exist.');
-      else console.error(e);
-      exit(1);
-    });
 
     console.log('\nDownload complete!');
     exit(0);
