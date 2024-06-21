@@ -14,6 +14,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   extensions = new Map<string, Extension>([
     ['cortex.llamacpp', this.cortexProvider],
     ['cortex.onnx', this.cortexProvider],
+    ['cortex.tensorrt-llm', this.cortexProvider],
   ]);
 
   constructor(
