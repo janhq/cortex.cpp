@@ -1,7 +1,7 @@
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '../services/context/context.service';
 
 @SubCommand({
   name: 'kill',

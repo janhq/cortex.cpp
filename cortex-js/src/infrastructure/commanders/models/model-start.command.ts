@@ -8,7 +8,7 @@ import { exit } from 'node:process';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 type ModelStartOptions = {
   attach: boolean;

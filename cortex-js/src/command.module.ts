@@ -28,12 +28,12 @@ import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
-import { UtilModule } from './util/util.module';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
+import { ContextModule } from './infrastructure/services/context/context.module';
 
 @Module({
   imports: [
@@ -53,7 +53,7 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
     MessagesModule,
     FileManagerModule,
     TelemetryModule,
-    UtilModule,
+    ContextModule,
     DownloadManagerModule,
   ],
   providers: [
