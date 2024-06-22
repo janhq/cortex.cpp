@@ -94,7 +94,14 @@ cortex chat tell me a joke
 To run Cortex as an API server:
 ```bash
 cortex serve
+
+# Output
+# Started server at http://localhost:1337
+# Swagger UI available at http://localhost:1337/api
 ```
+
+You can now access the Cortex API server at `http://localhost:1337`,
+and the Swagger UI at `http://localhost:1337/api`.
 
 ## Build from Source
 
