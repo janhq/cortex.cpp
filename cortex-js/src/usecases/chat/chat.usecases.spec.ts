@@ -7,6 +7,7 @@ import { ModelRepositoryModule } from '@/infrastructure/repositories/models/mode
 import { HttpModule } from '@nestjs/axios';
 import { DownloadManagerModule } from '@/infrastructure/services/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 describe('ChatService', () => {
   let service: ChatUsecases;
@@ -22,6 +23,7 @@ describe('ChatService', () => {
         TelemetryModule,
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
+        FileManagerModule,
       ],
       providers: [ChatUsecases],
       exports: [ChatUsecases],
