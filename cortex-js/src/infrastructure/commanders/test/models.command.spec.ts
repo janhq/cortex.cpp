@@ -24,6 +24,9 @@ beforeAll(
       // Attempt to create test folder
       await fileService.writeConfigFile({
         dataFolderPath: join(__dirname, 'test_data'),
+        initialized: false,
+        cortexCppHost: 'localhost',
+        cortexCppPort: 3929,
       });
 
       res();

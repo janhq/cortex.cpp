@@ -4,7 +4,7 @@ import {
   Telemetry,
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
 
 @Injectable({ scope: Scope.TRANSIENT })

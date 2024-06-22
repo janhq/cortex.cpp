@@ -15,7 +15,6 @@ import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.mid
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from './infrastructure/exception/global.exception';
-import { UtilModule } from './util/util.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventsController } from './infrastructure/controllers/events.controller';
 import { AssistantsController } from './infrastructure/controllers/assistants.controller';
@@ -26,6 +25,7 @@ import { ThreadsController } from './infrastructure/controllers/threads.controll
 import { StatusController } from './infrastructure/controllers/status.controller';
 import { ProcessController } from './infrastructure/controllers/process.controller';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
+import { ContextModule } from './infrastructure/services/context/context.module';
 
 @Module({
   imports: [
@@ -48,7 +48,7 @@ import { DownloadManagerModule } from './infrastructure/services/download-manage
     ExtensionModule,
     FileManagerModule,
     TelemetryModule,
-    UtilModule,
+    ContextModule,
     DownloadManagerModule,
   ],
   controllers: [

@@ -6,4 +6,4 @@ import { ContextService } from './context.service';
   providers: [ContextService],
   exports: [ContextService],
 })
-export class UtilModule {}
+export class ContextModule {}

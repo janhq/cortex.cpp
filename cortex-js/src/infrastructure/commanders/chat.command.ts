@@ -9,8 +9,8 @@ import { exit } from 'node:process';
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
 import { ModelStat } from './types/model-stat.interface';
+import { ContextService } from '../services/context/context.service';
 
 type ChatOptions = {
   threadId?: string;

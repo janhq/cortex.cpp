@@ -4,7 +4,7 @@ import { CommandModule } from './command.module';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
 import { AsyncLocalStorage } from 'async_hooks';
-import { ContextService } from './util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 export const asyncLocalStorage = new AsyncLocalStorage();
 
