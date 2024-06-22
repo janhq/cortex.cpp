@@ -79,6 +79,7 @@ async function bootstrap() {
 
   await app.listen(port, host);
   console.log(`Started server at http://${host}:${port}`);
+  console.log(`Swagger UI available at http://${host}:${port}/api`);
 }
 
 bootstrap();
