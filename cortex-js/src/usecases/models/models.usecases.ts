@@ -21,7 +21,6 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { AxiosError } from 'axios';
 import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
 import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
-import { ContextService } from '@/util/context.service';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import {
@@ -40,6 +39,7 @@ import { DownloadType } from '@/domain/models/download.interface';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ModelEvent, ModelId, ModelStatus } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 @Injectable()
 export class ModelsUsecases {
@@ -146,7 +146,7 @@ export class ModelsUsecases {
    * Start a model by ID
    * @param modelId Model ID
    * @param settings Model settings
-   * @returns
+   * @returns Model start status
    */
   async startModel(
     modelId: string,
@@ -241,6 +241,11 @@ export class ModelsUsecases {
       });
   }
 
+  /**
+   * Stop a running model
+   * @param modelId Model Identifier
+   * @returns Model stop status
+   */
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const engine = (await this.extensionRepository.findOne(
@@ -301,8 +306,8 @@ export class ModelsUsecases {
 
   /**
    * Download a remote model from HuggingFace or Jan's repo
-   * @param modelId
-   * @param callback
+   * @param modelId Model ID
+   * @param callback Callback function to track download progress
    * @returns
    */
   async downloadModel(modelId: string, callback?: (progress: number) => void) {
@@ -385,6 +390,10 @@ export class ModelsUsecases {
     }
   }
 
+  /**
+   * Abort a download
+   * @param downloadId Download ID
+   */
   async abortDownloadModel(downloadId: string) {
     this.downloadManagerService.abortDownload(downloadId);
   }
@@ -465,13 +474,17 @@ export class ModelsUsecases {
   /**
    * Fetches the model data from HuggingFace
    * @param modelId Model repo id. e.g. llama3, llama3:8b, janhq/llama3
-   * @returns
+   * @returns Model metadata
    */
   fetchModelMetadata(modelId: string): Promise<HuggingFaceRepoData> {
     if (modelId.includes('/')) return fetchHuggingFaceRepoData(modelId);
     else return fetchJanRepoData(modelId);
   }
 
+  /**
+   * Get the current status of the models
+   * @returns Model statuses
+   */
   getModelStatuses(): Record<ModelId, ModelStatus> {
     return this.activeModelStatuses;
   }

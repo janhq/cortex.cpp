@@ -6,8 +6,8 @@ import {
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { join } from 'path';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
+import { ContextService } from '../services/context/context.service';
 
 type ServeOptions = {
   address?: string;

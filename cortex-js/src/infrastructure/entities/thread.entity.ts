@@ -1,4 +1,4 @@
-import { Thread, ThreadToolResources } from '@/domain/models/thread.interface';
+import type { Thread, ThreadToolResources } from '@/domain/models/thread.interface';
 import { Entity, PrimaryColumn, Column } from 'typeorm';
 import { AssistantEntity } from './assistant.entity';
 

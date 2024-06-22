@@ -152,7 +152,7 @@ export class ModelsCliUsecases {
 
   /**
    * It's to pull ONNX model from HuggingFace repository
-   * @param modelId 
+   * @param modelId
    */
   private async pullOnnxModel(modelId: string) {
     const modelsContainerDir = await this.fileService.getModelsPath();
@@ -179,7 +179,6 @@ export class ModelsCliUsecases {
       console.log(`Downloading ${file}`);
       const bar = new SingleBar({}, Presets.shades_classic);
       bar.start(100, 0);
-
       const response = await firstValueFrom(
         this.httpService.get(
           `https://huggingface.co/cortexhub/${repo}/resolve/${branch}/${file}?download=true`,
@@ -219,7 +218,7 @@ export class ModelsCliUsecases {
       readFileSync(join(modelFolder, 'model.yml'), 'utf-8'),
     ) as CreateModelDto;
     model.files = [join(modelFolder)];
-    model.model = modelId
+    model.model = modelId;
 
     if (!(await this.modelsUsecases.findOne(modelId)))
       await this.modelsUsecases.create(model);
@@ -290,8 +289,8 @@ export class ModelsCliUsecases {
 
   /**
    * Parse preset file
-   * @param preset 
-   * @returns 
+   * @param preset
+   * @returns
    */
   private async parsePreset(preset?: string): Promise<object> {
     const presetsFolder = await this.fileService.getPresetsPath();

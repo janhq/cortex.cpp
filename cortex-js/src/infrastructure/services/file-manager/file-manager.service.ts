@@ -14,6 +14,10 @@ import { promisify } from 'util';
 import yaml from 'js-yaml';
 import { write } from 'fs';
 import { createInterface } from 'readline';
+import {
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
 
 const readFileAsync = promisify(read);
 const openAsync = promisify(open);
@@ -48,7 +52,10 @@ export class FileManagerService {
     try {
       const content = await promises.readFile(configPath, 'utf8');
       const config = yaml.load(content) as Config;
-      return config;
+      return {
+        ...this.defaultConfig(),
+        ...config,
+      };
     } catch (error) {
       console.warn('Error reading config file. Using default config.');
       console.warn(error);
@@ -97,6 +104,9 @@ export class FileManagerService {
 
     return {
       dataFolderPath,
+      initialized: false,
+      cortexCppHost: defaultCortexCppHost,
+      cortexCppPort: defaultCortexCppPort,
     };
   }
 
@@ -224,11 +234,19 @@ export class FileManagerService {
   /**
    * Get the benchmark folder path
    * Usually it is located at the home directory > cortex > extensions
-   * @returns the path to the extensions folder
+   * @returns the path to the benchmark folder
    */
   async getBenchmarkPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.benchmarkFoldername);
+  }
+
+  /**
+   * Get Cortex CPP engines folder path
+   * @returns the path to the cortex engines folder
+   */
+  async getCortexCppEnginePath(): Promise<string> {
+    return join(await this.getDataFolderPath(), 'cortex-cpp', 'engines');
   }
 
   async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {

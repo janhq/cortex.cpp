@@ -8,7 +8,11 @@ import { exit } from 'node:process';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
+import { InitCliUsecases } from '../usecases/init.cli.usecases';
+import { existsSync } from 'node:fs';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { join } from 'node:path';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -29,6 +33,8 @@ export class ModelStartCommand extends CommandRunner {
     private readonly inquirerService: InquirerService,
     private readonly cortexUsecases: CortexUsecases,
     private readonly modelsCliUsecases: ModelsCliUsecases,
+    private readonly initUsecases: InitCliUsecases,
+    private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {
     super();
@@ -54,7 +60,21 @@ export class ModelStartCommand extends CommandRunner {
       console.error('Model is not available. Please pull the model first.');
       process.exit(1);
     }
-
+    const engine = existingModel.engine || 'cortex.llamacpp';
+    // Pull engine if not exist
+    if (
+      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+    ) {
+      await this.initUsecases.installEngine(
+        await this.initUsecases.defaultInstallationOptions(),
+        'latest',
+        engine,
+      );
+    }
+    if (engine === 'cortex.onnx' && process.platform !== 'win32') {
+      console.error('The ONNX engine does not support this OS yet.');
+      process.exit(1);
+    }
     await this.cortexUsecases
       .startCortex(options.attach)
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
