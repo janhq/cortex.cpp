@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';

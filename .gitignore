@@ -11,3 +11,4 @@ api.log
 prism.log
 api.json
 openai-python/*
+cortex-js/cortex
