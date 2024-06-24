@@ -20,6 +20,7 @@ import {
 } from '@/infrastructure/constants/prompt-constants';
 import { gguf } from '@huggingface/gguf';
 import axios from 'axios';
+import { parseModelHubEngineBranch } from './normalize-model-id';
 
 // TODO: move this to somewhere else, should be reused by API as well. Maybe in a separate service / provider?
 export function guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
@@ -64,7 +65,6 @@ export function guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
 export async function fetchHuggingFaceRepoData(
   repoId: string,
 ): Promise<HuggingFaceRepoData> {
-
   const sanitizedUrl = getRepoModelsUrl(repoId);
 
   const { data: response } = await axios.get(sanitizedUrl);
@@ -113,7 +113,7 @@ export async function fetchJanRepoData(
   modelId: string,
 ): Promise<HuggingFaceRepoData> {
   const repo = modelId.split(':')[0];
-  const tree = modelId.split(':')[1] ?? 'default';
+  const tree = await parseModelHubEngineBranch(modelId.split(':')[1] ?? 'default');
   const url = getRepoModelsUrl(`cortexhub/${repo}`, tree);
 
   const res = await fetch(url);
@@ -164,8 +164,6 @@ export async function fetchJanRepoData(
 
   data.modelUrl = url;
 
-  
-  
   return data;
 }
 

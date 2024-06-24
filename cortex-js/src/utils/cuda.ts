@@ -3,6 +3,13 @@ import { existsSync } from 'fs';
 import { delimiter } from 'path';
 import { checkFileExistenceInPaths } from './app-path';
 
+export type GpuSettingInfo = {
+  id: string;
+  vram: string;
+  name: string;
+  arch?: string;
+};
+
 /**
  * Return the CUDA version installed on the system
  * @returns CUDA Version 11 | 12
@@ -62,4 +69,47 @@ export const checkNvidiaGPUExist = (): Promise<boolean> => {
       }
     });
   });
+};
+
+/**
+ * Get GPU information from the system
+ * @returns GPU information
+ */
+export const getGpuInfo = async (): Promise<GpuSettingInfo[]> =>
+  new Promise((resolve) => {
+    exec(
+      'nvidia-smi --query-gpu=index,memory.total,name --format=csv,noheader,nounits',
+      async (error, stdout) => {
+        if (!error) {
+          // Get GPU info and gpu has higher memory first
+          let highestVram = 0;
+          let highestVramId = '0';
+          const gpus: GpuSettingInfo[] = stdout
+            .trim()
+            .split('\n')
+            .map((line) => {
+              let [id, vram, name] = line.split(', ');
+              const arch = getGpuArch(name);
+              vram = vram.replace(/\r/g, '');
+              if (parseFloat(vram) > highestVram) {
+                highestVram = parseFloat(vram);
+                highestVramId = id;
+              }
+              return { id, vram, name, arch };
+            });
+
+          resolve(gpus);
+        } else {
+          resolve([]);
+        }
+      },
+    );
+  });
+
+const getGpuArch = (gpuName: string): string => {
+  if (!gpuName.toLowerCase().includes('nvidia')) return 'unknown';
+
+  if (gpuName.includes('30')) return 'ampere';
+  else if (gpuName.includes('40')) return 'ada';
+  else return 'unknown';
 };
