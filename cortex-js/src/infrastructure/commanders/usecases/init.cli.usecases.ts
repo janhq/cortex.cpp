@@ -12,7 +12,7 @@ import { rm } from 'fs/promises';
 import { exec } from 'child_process';
 import { appPath } from '@/utils/app-path';
 import {
-  CORTEX_ONNX_ENGINE_RELEASES_URL,
+  CORTEX_ENGINE_RELEASES_URL,
   CORTEX_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
@@ -70,12 +70,12 @@ export class InitCliUsecases {
     )
       await this.installLlamaCppEngine(options, version);
 
-    if (engine === 'cortex.onnx' && process.platform === 'win32')
-      await this.installONNXEngine();
-    else if (engine === 'cortex.onnx' && process.platform !== 'win32') {
+    if (engine === 'cortex.onnx' && process.platform !== 'win32') {
       console.error('The ONNX engine does not support this OS yet.');
       process.exit(1);
     }
+
+    if (engine !== 'cortex.llamacpp') await this.installAcceleratedEngine();
 
     configs.initialized = true;
     await this.fileManagerService.writeConfigFile(configs);
@@ -305,17 +305,17 @@ export class InitCliUsecases {
   };
 
   /**
-   * Download and install ONNX engine
+   * Download and install accelerated engine
    * @param version
    * @param engineFileName
    */
-  private async installONNXEngine(
+  private async installAcceleratedEngine(
     version: string = 'latest',
-    engineFileName: string = 'windows-amd64',
+    engine: string = 'cortex.onnx',
   ) {
     const res = await firstValueFrom(
       this.httpService.get(
-        CORTEX_ONNX_ENGINE_RELEASES_URL +
+        CORTEX_ENGINE_RELEASES_URL(engine) +
           `${version === 'latest' ? '/latest' : ''}`,
         {
           headers: {
@@ -338,15 +338,17 @@ export class InitCliUsecases {
       );
     }
     const toDownloadAsset = release.assets.find((s: any) =>
-      s.name.includes(engineFileName),
+      s.name.includes(process.platform === 'win32' ? 'windows' : 'linux'),
     );
 
     if (!toDownloadAsset) {
-      console.log(`Could not find engine file ${engineFileName}`);
+      console.log(
+        `Could not find engine file for platform ${process.platform}`,
+      );
       exit(1);
     }
 
-    console.log(`Downloading ONNX engine file ${engineFileName}`);
+    console.log(`Downloading ONNX engine file ${toDownloadAsset.name}`);
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const engineDir = join(dataFolderPath, 'cortex-cpp');
 
@@ -397,7 +399,7 @@ export class InitCliUsecases {
     await rm(destination, { force: true });
 
     // Copy the additional files to the cortex-cpp directory
-    for (const file of readdirSync(join(engineDir, 'engines', 'cortex.onnx'))) {
+    for (const file of readdirSync(join(engineDir, 'engines', engine))) {
       if (file !== 'engine.dll') {
         await cpSync(
           join(engineDir, 'engines', 'cortex.onnx', file),
