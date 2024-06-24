@@ -1,7 +1,7 @@
 # Makefile for Cortex llamacpp engine - Build, Lint, Test, and Clean
 .PHONY: all build package run-e2e-test
 
-
+BUILD_DEPS_CMAKE_EXTRA_FLAGS ?= ""
 CMAKE_EXTRA_FLAGS ?= ""
 RUN_TESTS ?= false
 LLM_MODEL_URL ?= "https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
@@ -22,7 +22,7 @@ all:
 # Build the Cortex engine
 build:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "cmake -S ./cortex-cpp-deps -B ./build-deps/cortex-cpp-deps;"
+	@powershell -Command "cmake -S ./cortex-cpp-deps -B ./build-deps/cortex-cpp-deps $(BUILD_DEPS_CMAKE_EXTRA_FLAGS);"
 	@powershell -Command "cmake --build ./build-deps/cortex-cpp-deps --config Release -j4;"
 	@powershell -Command "mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
 else ifeq ($(shell uname -s),Linux)
@@ -40,7 +40,7 @@ endif
 pre-package:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex-cpp\engines\cortex.llamacpp\; cp build\engines\cortex.llamacpp\engine.dll cortex-cpp\engines\cortex.llamacpp\;"
-	@powershell -Command "cp build\Release\cortex-cpp.exe .\cortex-cpp\;"
+	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
 	@powershell -Command "cp build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
