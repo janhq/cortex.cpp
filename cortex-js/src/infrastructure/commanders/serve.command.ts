@@ -40,9 +40,7 @@ export class ServeCommand extends CommandRunner {
   ) {
     const serveProcess = spawn(
       'node',
-      process.env.TEST
-        ? [join(__dirname, '../../../dist/src/main.js')]
-        : [join(__dirname, '../../main.js')],
+      [join(__dirname, '../../../dist/src/main.js')],
       {
         env: {
           ...process.env,

@@ -1,6 +1,6 @@
 import { IsArray, IsNumber, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import {
+import type {
   Assistant,
   AssistantResponseFormatOption,
   AssistantToolResources,
