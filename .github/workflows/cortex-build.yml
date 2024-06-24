@@ -182,17 +182,16 @@ jobs:
         with:
           submodules: recursive
       
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.0.1
+
       - name: "Update version by tag"
+        shell: bash
         run: |
-          cd cortex-js
-          # Remove the v prefix
-          tag_version=${GITHUB_REF#refs/tags/v}
-
-          # Replace the old version with the new version in package.json
-          jq --arg version "$tag_version" '.version = $version' ./package.json > /tmp/package.json && mv /tmp/package.json ./package.json
-
-          # Print the new version
-          echo "Updated package.json version to: $tag_version"
+          echo "Version: ${{ inputs.new_version }}"
+          # Update the version in package.json
+          jq --arg version "${{ inputs.new_version }}" '.version = $version' package.json > /tmp/package.json
+          mv /tmp/package.json package.json
 
       - uses: actions/setup-dotnet@v3
         if: runner.os == 'Windows'
