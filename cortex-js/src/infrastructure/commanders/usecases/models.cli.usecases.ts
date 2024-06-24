@@ -16,7 +16,10 @@ import { join, basename } from 'path';
 import { load } from 'js-yaml';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
-import { getHFModelMetadata } from '@/utils/huggingface';
+import {
+  fetchJanRepoData,
+  getHFModelMetadata,
+} from '@/utils/huggingface';
 import { createWriteStream, mkdirSync, promises } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
 
@@ -120,8 +123,8 @@ export class ModelsCliUsecases {
       process.exit(1);
     }
 
-    if (modelId.includes('onnx')) {
-      await this.pullOnnxModel(modelId);
+    if (modelId.includes('onnx') || modelId.includes('tensorrt')) {
+      await this.pullEngineModelFiles(modelId);
     } else {
       await this.pullGGUFModel(modelId);
       const bar = new SingleBar({}, Presets.shades_classic);
@@ -151,10 +154,10 @@ export class ModelsCliUsecases {
   }
 
   /**
-   * It's to pull ONNX model from HuggingFace repository
+   * It's to pull engine model files from HuggingFace repository
    * @param modelId
    */
-  private async pullOnnxModel(modelId: string) {
+  private async pullEngineModelFiles(modelId: string) {
     const modelsContainerDir = await this.fileService.getModelsPath();
 
     if (!existsSync(modelsContainerDir)) {
@@ -164,35 +167,22 @@ export class ModelsCliUsecases {
     const modelFolder = join(modelsContainerDir, normalizeModelId(modelId));
     await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
 
-    const files = [
-      'genai_config.json',
-      'model.onnx',
-      'model.onnx.data',
-      'model.yml',
-      'special_tokens_map.json',
-      'tokenizer.json',
-      'tokenizer_config.json',
-    ];
-    const repo = modelId.split(':')[0];
-    const branch = modelId.split(':')[1] || 'default';
+    const files = (await fetchJanRepoData(modelId)).siblings;
     for (const file of files) {
-      console.log(`Downloading ${file}`);
+      console.log(`Downloading ${file.rfilename}`);
       const bar = new SingleBar({}, Presets.shades_classic);
       bar.start(100, 0);
       const response = await firstValueFrom(
-        this.httpService.get(
-          `https://huggingface.co/cortexhub/${repo}/resolve/${branch}/${file}?download=true`,
-          {
-            responseType: 'stream',
-          },
-        ),
+        this.httpService.get(file.downloadUrl ?? '', {
+          responseType: 'stream',
+        }),
       );
       if (!response) {
         throw new Error('Failed to download model');
       }
 
       await new Promise((resolve, reject) => {
-        const writer = createWriteStream(join(modelFolder, file));
+        const writer = createWriteStream(join(modelFolder, file.rfilename));
         let receivedBytes = 0;
         const totalBytes = response.headers['content-length'];
 
