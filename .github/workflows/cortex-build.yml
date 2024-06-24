@@ -181,6 +181,18 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
+      
+      - name: "Update version by tag"
+        run: |
+          cd cortex-js
+          # Remove the v prefix
+          tag_version=${GITHUB_REF#refs/tags/v}
+
+          # Replace the old version with the new version in package.json
+          jq --arg version "$tag_version" '.version = $version' ./package.json > /tmp/package.json && mv /tmp/package.json ./package.json
+
+          # Print the new version
+          echo "Updated package.json version to: $tag_version"
 
       - uses: actions/setup-dotnet@v3
         if: runner.os == 'Windows'
