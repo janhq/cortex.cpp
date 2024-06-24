@@ -14,7 +14,7 @@
     "build:binary": "run-script-os && cpx \"cpuinfo/bin/**\" dist/bin",
     "build:binary:windows": "bun build --compile --target=bun-windows-x64 ./src/command.ts --outfile cortex.exe --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
     "build:binary:linux": "bun build --compile --target=bun-linux-x64 ./src/command.ts --outfile cortex --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
-    "build:binary:macos": "bun build --compile --target=bun-darwin-arm64 ./src/command.ts --outfile cortex --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
+    "build:binary:macos": "bun build --compile ./src/command.ts --outfile cortex --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "build:extensions": "run-script-os",
     "build:extensions:windows": "powershell -command \"$jobs = Get-ChildItem -Path './src/extensions' -Directory | ForEach-Object { Start-Job -Name ($_.Name) -ScriptBlock { param($_dir); try { Set-Location $_dir; yarn; yarn build; Write-Output 'Build successful in ' + $_dir } catch { Write-Error 'Error in ' + $_dir; throw } } -ArgumentList $_.FullName }; $jobs | Wait-Job; $jobs | ForEach-Object { Receive-Job -Job $_ -Keep } | ForEach-Object { Write-Host $_ }; $failed = $jobs | Where-Object { $_.State -ne 'Completed' -or $_.ChildJobs[0].JobStateInfo.State -ne 'Completed' }; if ($failed) { Exit 1 }\"",
