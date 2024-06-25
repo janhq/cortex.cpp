@@ -9,6 +9,11 @@ import { exit } from 'node:process';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { existsSync } from 'fs';
+import { join } from 'path';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { InitCliUsecases } from '../usecases/init.cli.usecases';
+import { Engines } from '../types/engine.interface';
 
 type RunOptions = {
   threadId?: string;
@@ -30,6 +35,8 @@ export class RunCommand extends CommandRunner {
     private readonly cortexUsecases: CortexUsecases,
     private readonly chatCliUsecases: ChatCliUsecases,
     private readonly inquirerService: InquirerService,
+    private readonly fileService: FileManagerService,
+    private readonly initUsecases: InitCliUsecases,
   ) {
     super();
   }
@@ -55,6 +62,33 @@ export class RunCommand extends CommandRunner {
         else console.error(e);
         exit(1);
       });
+    }
+
+    // Second check if model is available
+    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    if (
+      !existingModel ||
+      !Array.isArray(existingModel.files) ||
+      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
+    ) {
+      console.error('Model is not available. Please pull the model first.');
+      process.exit(1);
+    }
+
+    const engine = existingModel.engine || 'cortex.llamacpp';
+    // Pull engine if not exist
+    if (
+      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+    ) {
+      await this.initUsecases.installEngine(
+        await this.initUsecases.defaultInstallationOptions(),
+        'latest',
+        engine,
+      );
+    }
+    if (engine === Engines.onnx && process.platform !== 'win32') {
+      console.error('The ONNX engine does not support this OS yet.');
+      process.exit(1);
     }
 
     return this.cortexUsecases
