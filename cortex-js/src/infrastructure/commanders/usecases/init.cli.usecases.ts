@@ -122,11 +122,11 @@ export class InitCliUsecases {
     );
 
     if (!toDownloadAsset) {
-      console.log(`Could not find engine file ${engineFileName}`);
+      console.log(`Could not find engine ${engineFileName}`);
       exit(1);
     }
 
-    console.log(`Downloading Llama.cpp engine file ${engineFileName}`);
+    console.log(`Downloading default engine ${engineFileName}`);
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const engineDir = join(dataFolderPath, 'cortex-cpp');
     if (existsSync(engineDir)) rmSync(engineDir, { recursive: true });
