@@ -13,6 +13,7 @@ import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { existsSync } from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
+import { Engines } from '../types/engine.interface';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -71,7 +72,7 @@ export class ModelStartCommand extends CommandRunner {
         engine,
       );
     }
-    if (engine === 'cortex.onnx' && process.platform !== 'win32') {
+    if (engine === Engines.onnx && process.platform !== 'win32') {
       console.error('The ONNX engine does not support this OS yet.');
       process.exit(1);
     }

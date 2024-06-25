@@ -63,6 +63,8 @@ export class ChatCliUsecases {
     rl.on('line', sendCompletionMessage.bind(this));
 
     async function sendCompletionMessage(userInput: string) {
+      if (!userInput || userInput.trim() === '') return;
+
       if (userInput.trim() === this.exitClause) {
         rl.close();
         return;
@@ -98,12 +100,7 @@ export class ChatCliUsecases {
         model: modelId,
         stream: true,
         max_tokens: 4098,
-        stop: [],
-        frequency_penalty: 0.7,
-        presence_penalty: 0.7,
         temperature: 0.7,
-        top_p: 0.7,
-
         // Override with model settings
         ...parser.parseModelInferenceParams(model),
       };

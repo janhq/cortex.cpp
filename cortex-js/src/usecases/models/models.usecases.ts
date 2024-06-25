@@ -40,6 +40,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ModelEvent, ModelId, ModelStatus } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 import { ContextService } from '@/infrastructure/services/context/context.service';
+import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 
 @Injectable()
 export class ModelsUsecases {
@@ -466,7 +467,7 @@ export class ModelsUsecases {
       // Default Model Settings
       ctx_len: 4096,
       ngl: 100,
-      engine: modelId.includes('onnx') ? 'cortex.onnx' : 'cortex.llamacpp',
+      engine: Engines.llamaCPP,
     };
     if (!(await this.findOne(modelId))) await this.create(model);
   }
