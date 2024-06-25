@@ -6,7 +6,7 @@ export const defaultCortexJsHost = 'localhost';
 export const defaultCortexJsPort = 1337;
 
 export const defaultCortexCppHost = '127.0.0.1';
-export const defaultCortexCppPort = 3928;
+export const defaultCortexCppPort = 3929;
 // CORTEX CPP
 export const CORTEX_CPP_EMBEDDINGS_URL = (
   host: string = defaultCortexCppHost,
@@ -48,4 +48,4 @@ export const CORTEX_ONNX_ENGINE_RELEASES_URL =
 export const CUDA_DOWNLOAD_URL =
   'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
 
-export const telemetryServerUrl = 'http://192.168.100.30:1338/';
+export const telemetryServerUrl = 'http://192.168.100.30:1338';

@@ -11,16 +11,16 @@ import { existsSync } from 'fs';
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
   // Initialize the Extensions Map with the key-value pairs of the core providers.
-  extensions = new Map<string, Extension>([
-    ['cortex.llamacpp', this.cortexProvider],
-    ['cortex.onnx', this.cortexProvider],
-  ]);
+  extensions = new Map<string, Extension>();
 
   constructor(
     @Inject('CORTEX_PROVIDER')
     private readonly cortexProvider: EngineExtension,
     private readonly fileService: FileManagerService,
   ) {
+    this.extensions.set('cortex.llamacpp', this.cortexProvider);
+    this.extensions.set('cortex.onnx', this.cortexProvider);
+    this.extensions.set('cortex.tensorrt-llm', this.cortexProvider);
     this.loadCoreExtensions();
     this.loadExternalExtensions();
   }

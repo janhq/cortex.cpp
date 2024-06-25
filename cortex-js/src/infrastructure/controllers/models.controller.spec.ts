@@ -10,7 +10,7 @@ import { ModelRepositoryModule } from '../repositories/models/model.module';
 import { DownloadManagerModule } from '@/infrastructure/services/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
-import { UtilModule } from '@/util/util.module';
+import { ContextModule } from '../services/context/context.module';
 
 describe('ModelsController', () => {
   let controller: ModelsController;
@@ -28,7 +28,7 @@ describe('ModelsController', () => {
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
         TelemetryModule,
-        UtilModule,
+        ContextModule,
       ],
       controllers: [ModelsController],
       providers: [ModelsUsecases, CortexUsecases],

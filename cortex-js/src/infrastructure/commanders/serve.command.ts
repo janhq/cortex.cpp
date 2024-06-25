@@ -1,13 +1,13 @@
-import { spawn } from 'child_process';
 import {
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
-import { join } from 'path';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
+import { ContextService } from '../services/context/context.service';
+import { getApp } from '@/app';
+import { Logger } from '@nestjs/common';
 
 type ServeOptions = {
   address?: string;
@@ -30,34 +30,14 @@ export class ServeCommand extends CommandRunner {
     const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
 
-    return this.startServer(host, port, options);
+    return this.startServer(host, port);
   }
 
-  private async startServer(
-    host: string,
-    port: number,
-    options: ServeOptions = { detach: false },
-  ) {
-    const serveProcess = spawn(
-      'node',
-      process.env.TEST
-        ? [join(__dirname, '../../../dist/src/main.js')]
-        : [join(__dirname, '../../main.js')],
-      {
-        env: {
-          ...process.env,
-          CORTEX_JS_HOST: host,
-          CORTEX_JS_PORT: port.toString(),
-          NODE_ENV: 'production',
-        },
-        stdio: options?.detach ? 'ignore' : 'inherit',
-        detached: options?.detach,
-      },
-    );
-    if (options?.detach) {
-      serveProcess.unref();
-      console.log('Started server at http://%s:%d', host, port);
-    }
+  private async startServer(host: string, port: number) {
+    const app = await getApp();
+
+    await app.listen(port, host);
+    console.log(`Started server at http://${host}:${port}`);
   }
 
   @Option({
@@ -74,15 +54,5 @@ export class ServeCommand extends CommandRunner {
   })
   parsePort(value: string) {
     return parseInt(value, 10);
-  }
-
-  @Option({
-    flags: '-d, --detach',
-    description: 'Run the server in detached mode',
-    defaultValue: false,
-    name: 'detach',
-  })
-  parseDetach() {
-    return true;
   }
 }

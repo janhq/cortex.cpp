@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
-import updateNotifier from 'update-notifier';
-import packageJson from './../package.json';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
 import { AsyncLocalStorage } from 'async_hooks';
-import { ContextService } from './util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 export const asyncLocalStorage = new AsyncLocalStorage();
 
@@ -24,17 +22,15 @@ async function bootstrap() {
       process.exit(1);
     },
   });
+
   telemetryUseCase = await app.resolve(TelemetryUsecases);
   contextService = await app.resolve(ContextService);
+
   telemetryUseCase!.sendCrashReport();
-  await contextService!.init(async () => CommandFactory.runApplication(app));
-  const notifier = updateNotifier({
-    pkg: packageJson,
-    updateCheckInterval: 1000 * 60 * 60, // 1 hour
-    shouldNotifyInNpmScript: true,
-  });
-  notifier.notify({
-    isGlobal: true,
+
+  await contextService!.init(async () => {
+    contextService!.set('source', TelemetrySource.CLI);
+    return CommandFactory.runApplication(app);
   });
 }
 

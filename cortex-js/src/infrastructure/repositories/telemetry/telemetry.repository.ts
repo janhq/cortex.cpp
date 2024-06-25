@@ -33,6 +33,9 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
 
   private async getTelemetryDirectory(): Promise<string> {
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    await this.fileManagerService.createFolderIfNotExistInDataFolder(
+      'telemetry',
+    );
     return join(dataFolderPath, 'telemetry');
   }
 
@@ -52,6 +55,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
             'Content-Type': 'application/json',
             'cortex-checksum': this.generateChecksum(telemetry.event),
           },
+          timeout: 1000,
         },
       );
     } catch (error) {}

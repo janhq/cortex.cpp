@@ -21,7 +21,6 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { AxiosError } from 'axios';
 import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
 import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
-import { ContextService } from '@/util/context.service';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import {
@@ -38,8 +37,9 @@ import {
 } from '@/utils/huggingface';
 import { DownloadType } from '@/domain/models/download.interface';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ModelId, ModelStatus } from '@/domain/models/model.event';
+import { ModelEvent, ModelId, ModelStatus } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 @Injectable()
 export class ModelsUsecases {
@@ -61,8 +61,13 @@ export class ModelsUsecases {
    * @param createModelDto Model data
    */
   async create(createModelDto: CreateModelDto) {
+    const { model: modelId, owned_by } = createModelDto;
     const model: Model = {
       ...createModelDto,
+      id: modelId,
+      created: Date.now(),
+      object: 'model',
+      owned_by: owned_by ?? '',
     };
 
     await this.modelRepository.create(model);
@@ -141,7 +146,7 @@ export class ModelsUsecases {
    * Start a model by ID
    * @param modelId Model ID
    * @param settings Model settings
-   * @returns
+   * @returns Model start status
    */
   async startModel(
     modelId: string,
@@ -165,10 +170,12 @@ export class ModelsUsecases {
       status: 'starting',
       metadata: {},
     };
-    this.eventEmitter.emit('model.event', {
-      id: modelId,
-      action: 'starting',
-    });
+    const modelEvent: ModelEvent = {
+      model: modelId,
+      event: 'starting',
+      metadata: {},
+    };
+    this.eventEmitter.emit('model.event', modelEvent);
 
     const parser = new ModelParameterParser();
     const loadModelSettings: ModelSettingParams = {
@@ -196,11 +203,12 @@ export class ModelsUsecases {
           status: 'started',
           metadata: {},
         };
-
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'started',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'started',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
       })
       .then(() => ({
         message: 'Model loaded successfully',
@@ -209,11 +217,12 @@ export class ModelsUsecases {
       .catch(async (e) => {
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
-
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'starting-failed',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'starting-failed',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
         console.error('Starting model failed', e.code, e.message, e.stack);
         if (e.code === AxiosError.ERR_BAD_REQUEST) {
           return {
@@ -232,6 +241,11 @@ export class ModelsUsecases {
       });
   }
 
+  /**
+   * Stop a running model
+   * @param modelId Model Identifier
+   * @returns Model stop status
+   */
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const engine = (await this.extensionRepository.findOne(
@@ -250,30 +264,35 @@ export class ModelsUsecases {
       status: 'stopping',
       metadata: {},
     };
-    this.eventEmitter.emit('model.event', {
-      id: modelId,
-      action: 'stopping',
-    });
+    const modelEvent: ModelEvent = {
+      model: modelId,
+      event: 'stopping',
+      metadata: {},
+    };
+    this.eventEmitter.emit('model.event', modelEvent);
 
     return engine
       .unloadModel(modelId)
       .then(() => {
         delete this.activeModelStatuses[modelId];
-
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'stopped',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'stopped',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
       })
       .then(() => ({
         message: 'Model is stopped',
         modelId,
       }))
       .catch(async (e) => {
-        this.eventEmitter.emit('model.event', {
-          id: modelId,
-          action: 'stopping-failed',
-        });
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'stopping-failed',
+          metadata: {},
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
         await this.telemetryUseCases.createCrashReport(
           e,
           TelemetrySource.CORTEX_CPP,
@@ -287,8 +306,8 @@ export class ModelsUsecases {
 
   /**
    * Download a remote model from HuggingFace or Jan's repo
-   * @param modelId
-   * @param callback
+   * @param modelId Model ID
+   * @param callback Callback function to track download progress
    * @returns
    */
   async downloadModel(modelId: string, callback?: (progress: number) => void) {
@@ -371,6 +390,10 @@ export class ModelsUsecases {
     }
   }
 
+  /**
+   * Abort a download
+   * @param downloadId Download ID
+   */
   async abortDownloadModel(downloadId: string) {
     this.downloadManagerService.abortDownload(downloadId);
   }
@@ -451,13 +474,17 @@ export class ModelsUsecases {
   /**
    * Fetches the model data from HuggingFace
    * @param modelId Model repo id. e.g. llama3, llama3:8b, janhq/llama3
-   * @returns
+   * @returns Model metadata
    */
   fetchModelMetadata(modelId: string): Promise<HuggingFaceRepoData> {
     if (modelId.includes('/')) return fetchHuggingFaceRepoData(modelId);
     else return fetchJanRepoData(modelId);
   }
 
+  /**
+   * Get the current status of the models
+   * @returns Model statuses
+   */
   getModelStatuses(): Record<ModelId, ModelStatus> {
     return this.activeModelStatuses;
   }

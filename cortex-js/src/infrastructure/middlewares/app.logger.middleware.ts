@@ -1,7 +1,8 @@
-import { ContextService } from '@/util/context.service';
+import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
 import { Injectable, NestMiddleware, Logger } from '@nestjs/common';
 
 import { Request, Response, NextFunction } from 'express';
+import { ContextService } from '../services/context/context.service';
 
 @Injectable()
 export class AppLoggerMiddleware implements NestMiddleware {
@@ -32,6 +33,7 @@ export class AppLoggerMiddleware implements NestMiddleware {
     });
     this.contextService.init(() => {
       this.contextService.set('endpoint', originalUrl ?? url);
+      this.contextService.set('source', TelemetrySource.CORTEX_SERVER);
       next();
     });
   }

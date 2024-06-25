@@ -2,7 +2,7 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 @SubCommand({
   name: 'stop',

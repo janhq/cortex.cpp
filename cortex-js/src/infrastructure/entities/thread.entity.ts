@@ -1,30 +1,27 @@
-import {
-  Thread,
-  ThreadAssistantInfo,
-  ThreadMetadata,
-} from '@/domain/models/thread.interface';
+import type { Thread, ThreadToolResources } from '@/domain/models/thread.interface';
 import { Entity, PrimaryColumn, Column } from 'typeorm';
+import { AssistantEntity } from './assistant.entity';
 
 @Entity('threads')
 export class ThreadEntity implements Thread {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: String })
   id: string;
 
-  @Column()
-  object: string;
+  @Column({ type: String })
+  object: 'thread';
 
-  @Column({ name: 'title' })
+  @Column({ type: String, name: 'title' })
   title: string;
 
   @Column({ type: 'simple-json' })
-  assistants: ThreadAssistantInfo[];
+  assistants: AssistantEntity[];
 
-  @Column()
-  createdAt: number;
+  @Column({ type: Number })
+  created_at: number;
 
-  @Column({ nullable: true })
-  updatedAt?: number;
+  @Column({ type: 'simple-json', nullable: true })
+  tool_resources: ThreadToolResources | null;
 
-  @Column({ nullable: true, type: 'simple-json' })
-  metadata?: ThreadMetadata;
+  @Column({ type: 'simple-json', nullable: true })
+  metadata: any | null;
 }

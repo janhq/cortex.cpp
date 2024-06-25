@@ -2,8 +2,8 @@ import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 type UpdateOptions = {
   model?: string;

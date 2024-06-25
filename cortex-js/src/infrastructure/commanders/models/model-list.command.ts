@@ -1,7 +1,7 @@
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 
 interface ModelListOptions {
   format: 'table' | 'json';
