@@ -7,6 +7,7 @@ import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { appPath } from '@/utils/app-path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { existsSync } from 'fs';
+import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -18,9 +19,9 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     private readonly cortexProvider: EngineExtension,
     private readonly fileService: FileManagerService,
   ) {
-    this.extensions.set('cortex.llamacpp', this.cortexProvider);
-    this.extensions.set('cortex.onnx', this.cortexProvider);
-    this.extensions.set('cortex.tensorrt-llm', this.cortexProvider);
+    this.extensions.set(Engines.llamaCPP, this.cortexProvider);
+    this.extensions.set(Engines.onnx, this.cortexProvider);
+    this.extensions.set(Engines.tensorrtLLM, this.cortexProvider);
     this.loadCoreExtensions();
     this.loadExternalExtensions();
   }
