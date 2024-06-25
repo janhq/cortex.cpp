@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "nest dev",
     "build": "nest build && cpx \"cpuinfo/bin/**\" dist/bin",
-    "build:binary": "run-script-os && cpx \"cpuinfo/bin/**\" dist/bin",
+    "build:binary": "npx -q patch-package && run-script-os && cpx \"cpuinfo/bin/**\" dist/bin",
     "build:binary:windows": "bun build --compile ./src/command.ts --outfile cortex.exe --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
     "build:binary:linux": "bun build --compile ./src/command.ts --outfile cortex --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
     "build:binary:macos": "bun build --compile ./src/command.ts --outfile cortex --external @nestjs/microservices --external @nestjs/websockets/socket-module --external class-transformer/storage",
@@ -31,8 +31,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typeorm": "typeorm-ts-node-esm",
-    "build:dev": "npx nest build && chmod +x ./dist/src/command.js && npm link",
-    "postinstall": "npx --yes patch-package"
+    "build:dev": "npx nest build && chmod +x ./dist/src/command.js && npm link"
   },
   "dependencies": {
     "@huggingface/gguf": "^0.1.5",
