@@ -16,12 +16,10 @@ import { join, basename } from 'path';
 import { load } from 'js-yaml';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
-import {
-  fetchJanRepoData,
-  getHFModelMetadata,
-} from '@/utils/huggingface';
+import { fetchJanRepoData, getHFModelMetadata } from '@/utils/huggingface';
 import { createWriteStream, mkdirSync, promises } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
+import { Engines } from '../types/engine.interface';
 
 @Injectable()
 export class ModelsCliUsecases {
@@ -271,7 +269,7 @@ export class ModelsCliUsecases {
       // Default Model Settings
       ctx_len: 4096,
       ngl: 100,
-      engine: modelId.includes('onnx') ? 'cortex.onnx' : 'cortex.llamacpp',
+      engine: Engines.llamaCPP,
     };
     if (!(await this.modelsUsecases.findOne(modelId)))
       await this.modelsUsecases.create(model);

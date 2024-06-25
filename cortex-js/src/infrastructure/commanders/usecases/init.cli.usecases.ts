@@ -17,6 +17,7 @@ import {
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
 import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
+import { Engines } from '../types/engine.interface';
 
 @Injectable()
 export class InitCliUsecases {
@@ -70,7 +71,7 @@ export class InitCliUsecases {
     )
       await this.installLlamaCppEngine(options, version);
 
-    if (engine === 'cortex.onnx' && process.platform !== 'win32') {
+    if (engine === Engines.onnx && process.platform !== 'win32') {
       console.error('The ONNX engine does not support this OS yet.');
       process.exit(1);
     }
@@ -312,7 +313,7 @@ export class InitCliUsecases {
    */
   private async installAcceleratedEngine(
     version: string = 'latest',
-    engine: string = 'cortex.onnx',
+    engine: string = Engines.onnx,
   ) {
     const res = await firstValueFrom(
       this.httpService.get(
