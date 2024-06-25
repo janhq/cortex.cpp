@@ -1,5 +1,8 @@
 # cortex.llamacpp release version
 set(VERSION 0.1.17-19.06.24)
+# vulka is unstable, we need to use a customized version
+set(VULKA_VERSION 0.1.12-25.06.24)
+
 set(ENGINE_VERSION v${VERSION})
 add_compile_definitions(CORTEX_LLAMACPP_VERSION="${VERSION}")
 
@@ -24,7 +27,7 @@ if(UNIX AND NOT APPLE)
       set(LIBRARY_NAME cortex.llamacpp-${VERSION}-linux-amd64-avx2-cuda-11-7.tar.gz)
     endif()
   elseif(LLAMA_VULKAN)
-    set(LIBRARY_NAME cortex.llamacpp-${VERSION}-linux-amd64-vulkan.tar.gz)
+    set(LIBRARY_NAME cortex.llamacpp-${VULKA_VERSION}-linux-amd64-vulkan.tar.gz)
   elseif(LLAMA_AVX512)
     set(LIBRARY_NAME cortex.llamacpp-${VERSION}-linux-amd64-avx512.tar.gz)
   elseif(NOT LLAMA_AVX2)
@@ -56,7 +59,7 @@ else()
       set(LIBRARY_NAME cortex.llamacpp-${VERSION}-windows-amd64-avx2-cuda-11-7.tar.gz)
     endif()
   elseif(LLAMA_VULKAN)
-    set(LIBRARY_NAME cortex.llamacpp-${VERSION}-windows-amd64-vulkan.tar.gz)
+    set(LIBRARY_NAME cortex.llamacpp-${VULKA_VERSION}-windows-amd64-vulkan.tar.gz)
   elseif(LLAMA_AVX512)
     set(LIBRARY_NAME cortex.llamacpp-${VERSION}-windows-amd64-avx512.tar.gz)
   elseif(NOT LLAMA_AVX2)
