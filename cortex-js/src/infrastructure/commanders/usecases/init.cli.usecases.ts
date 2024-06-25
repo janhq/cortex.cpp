@@ -221,7 +221,7 @@ export class InitCliUsecases {
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const url = CUDA_DOWNLOAD_URL.replace(
       '<version>',
-      cudaVersion === '11' ? '11.7' : '12.0',
+      cudaVersion === '11' ? '11.7' : '12.3',
     ).replace('<platform>', platform);
     const destination = join(dataFolderPath, 'cuda-toolkit.tar.gz');
 

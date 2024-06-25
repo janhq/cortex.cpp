@@ -210,6 +210,17 @@ export class ModelsCliUsecases {
 
     if (!(await this.modelsUsecases.findOne(modelId)))
       await this.modelsUsecases.create(model);
+
+    if (model.engine === Engines.tensorrtLLM) {
+      if (process.platform === 'win32')
+        console.log(
+          'Please ensure that you install MPI and its SDK to use the TensorRT engine, as it also requires the Cuda Toolkit 12.3 to work. Refs:\n- https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.1/msmpisetup.exe\n- https://github.com/microsoft/Microsoft-MPI/releases/download/v10.1.1/msmpisdk.msi',
+        );
+      else if (process.platform === 'linux')
+        console.log(
+          'Please ensure that you install OpenMPI and its SDK to use the TensorRT engine, as it also requires the Cuda Toolkit 12.3 to work.\nYou can install OpenMPI by running "sudo apt update && sudo apt install openmpi-bin libopenmpi-dev"',
+        );
+    }
   }
   /**
    * It's to pull model from HuggingFace repository
