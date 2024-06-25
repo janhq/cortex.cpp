@@ -47,7 +47,7 @@ Ensure that your system meets the following requirements to run Cortex:
 - **OS**:
   - MacOSX 13.6 or higher.
   - Windows 10 or higher.
-  - Ubuntu 12.04 and later.
+  - Ubuntu 22.04 and later.
 - **RAM (CPU Mode):**
   - 8GB for running up to 3B models.
   - 16GB for running up to 7B models.
@@ -64,7 +64,7 @@ Ensure that your system meets the following requirements to run Cortex:
 To install Cortex CLI, follow the steps below:
 1. Install the Cortex NPM package globally:
 ``` bash
-npm i -g @janhq/cortex
+npm i -g cortexso
 ```
 > Cortex automatically detects your CPU and GPU, downloading the appropriate CPU instruction sets and required dependencies to optimize GPU performance.
 
@@ -150,7 +150,7 @@ Run the following command to uninstall Cortex globally on your machine:
 
 ```
 # Uninstall globally using NPM
-npm uninstall -g @janhq/cortex
+npm uninstall -g cortexso
 ```
 ## Contact Support
 - For support, please file a GitHub ticket.
