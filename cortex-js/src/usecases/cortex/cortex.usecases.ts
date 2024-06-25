@@ -11,7 +11,6 @@ import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
 } from '@/infrastructure/constants/cortex';
-import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 
 @Injectable()
 export class CortexUsecases {
