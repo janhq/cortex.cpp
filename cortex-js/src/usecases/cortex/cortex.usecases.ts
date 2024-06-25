@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ChildProcess, spawn } from 'child_process';
-import { join } from 'path';
+import { delimiter, join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
 
@@ -11,6 +11,7 @@ import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
 } from '@/infrastructure/constants/cortex';
+import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 
 @Injectable()
 export class CortexUsecases {
@@ -44,6 +45,11 @@ export class CortexUsecases {
       throw new Error('The engine is not available, please run "cortex init".');
     }
 
+    const cortexCPPPath = join(
+      await this.fileManagerService.getDataFolderPath(),
+      'cortex-cpp',
+    );
+
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
       detached: !attach,
@@ -52,6 +58,11 @@ export class CortexUsecases {
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
+        PATH: (process.env.PATH || '').concat(delimiter, cortexCPPPath),
+        LD_LIBRARY_PATH: (process.env.LD_LIBRARY_PATH || '').concat(
+          delimiter,
+          cortexCPPPath,
+        ),
         // // Vulkan - Support 1 device at a time for now
         // ...(executableOptions.vkVisibleDevices?.length > 0 && {
         //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
