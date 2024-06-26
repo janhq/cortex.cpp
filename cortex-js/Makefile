@@ -20,6 +20,7 @@ else ifeq ($(shell uname -s),Linux)
 else
 	@chmod +x cortex;
 	tar -czvf cortex.tar.gz cortex;
+	tar -czvf cortex-installer.tar.gz cortex-installer.pkg;
 endif
 
 
