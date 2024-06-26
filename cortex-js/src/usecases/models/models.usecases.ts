@@ -235,7 +235,7 @@ export class ModelsUsecases {
           TelemetrySource.CORTEX_CPP,
         );
         return {
-          message: 'Failed to load model',
+          message: e.message,
           modelId,
         };
       });
@@ -298,7 +298,7 @@ export class ModelsUsecases {
           TelemetrySource.CORTEX_CPP,
         );
         return {
-          message: 'Failed to stop model',
+          message: e.message,
           modelId,
         };
       });
