@@ -90,6 +90,9 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
   models start        Start a specified model.
   models stop         Stop a specified model.
   models update       Update the configuration of a specified model.
+  benchmark           Benchmark and analyze the performance of a specific AI model using your system.
+  presets             Show all the available model presets within Cortex.
+  telemetry           Retrieve telemetry logs for monitoring and analysis.
 ```
 
 ## Uninstall Cortex
@@ -98,7 +101,7 @@ Run the following command to uninstall Cortex globally on your machine:
 
 ```
 # Uninstall globally using NPM
-npm uninstall -g @janhq/cortex
+npm uninstall -g @janhq/cortexso
 ```
 
 ## Contact Support
