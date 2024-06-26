@@ -131,3 +131,4 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
 - For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
+
