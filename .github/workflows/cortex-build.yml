@@ -414,6 +414,14 @@ jobs:
           cd cortex-js
           make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
+      - name: Create MacOS PKG Installer
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-js
+          mkdir installer
+          cp cortex installer/cortex
+          pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
+
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         if: runner.os == 'Windows'
@@ -447,11 +455,26 @@ jobs:
           path: |
             ./cortex-js/cortex
             ./cortex-js/cortex.exe
-            ./cortex-js/setup.exe
 
-      - name: Upload Cortex Windows Installer
-        uses: actions/upload-release-asset@v1.0.1
+      - name: Upload Windows Installer
         if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/setup.exe
+      
+      - name: Upload MacOS Installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/cortex-installer.pkg
+
+      - name: Upload Cortex Installer
+        uses: actions/upload-release-asset@v1.0.1
+        if: runner.os != 'Linux'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
