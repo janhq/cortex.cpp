@@ -62,8 +62,7 @@ export const getApp = async () => {
       'Events',
       'Endpoints for  observing Cortex statuses through event notifications.',
     )
-    .addServer('http://localhost:1337/api')
-    .addServer('http://localhost:1337/v1')
+    .addServer('http://localhost:1337')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
