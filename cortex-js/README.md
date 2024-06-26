@@ -39,9 +39,16 @@ Ensure that your system meets the following requirements to run Cortex:
 > Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
 ``` bash
+# Install using NPM
 npm i -g cortexso
+# Install using Brew
+brew tap janhq/cortexso
+brew install cortexso
+# Run model
 cortex run llama3
 ```
+> You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
+
 To run Cortex as an API server:
 ```bash
 cortex serve
@@ -112,6 +119,10 @@ Run the following command to uninstall Cortex globally on your machine:
 ```
 # Uninstall globally using NPM
 npm uninstall -g cortexso
+
+# Uninstall using Brew
+brew uninstall cortexso
+brew untap janhq/cortexso
 ```
 
 ## Contact Support
