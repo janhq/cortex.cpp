@@ -34,7 +34,7 @@ Ensure that your system meets the following requirements to run Cortex:
 - **OS**:
   - MacOSX 13.6 or higher.
   - Windows 10 or higher.
-  - Ubuntu 12.04 and later.
+  - Ubuntu 22.04 and later.
 
 > Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
