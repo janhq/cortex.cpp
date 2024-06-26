@@ -12,6 +12,7 @@ import {
   TelemetryEventMetadata,
   EventAttributes,
   TelemetryAnonymized,
+  BenchmarkHardware,
 } from '@/domain/telemetry/telemetry.interface';
 import { Injectable } from '@nestjs/common';
 import { join } from 'path';
@@ -19,6 +20,7 @@ import packageJson from '@/../package.json';
 import axios from 'axios';
 import { telemetryServerUrl } from '@/infrastructure/constants/cortex';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { ModelStat } from '@/infrastructure/commanders/types/model-stat.interface';
 
 // refactor using convert to dto
 @Injectable()
@@ -31,7 +33,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   };
 
   private readonly crashReportFileName = 'crash-report.jsonl';
-  private readonly anonymizedDataFileName = 'metadata.json';
+  private readonly anonymizedDataFileName = 'session.json';
   constructor(private readonly fileManagerService: FileManagerService) {}
 
   private async getTelemetryDirectory(): Promise<string> {
@@ -57,6 +59,23 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
         headers: {
           'Content-Type': 'application/json',
           'cortex-checksum': this.generateChecksum(telemetryEvent),
+        },
+      });
+    } catch (error) {}
+  }
+
+  async sendBenchmarkToServer(data: {
+    hardware: BenchmarkHardware;
+    results: any;
+    metrics: any;
+    model: ModelStat;
+    sessionId: string;
+  }): Promise<void> {
+    try {
+      await axios.post(`${telemetryServerUrl}/api/v1/benchmark`, data, {
+        headers: {
+          'Content-Type': 'application/json',
+          'cortex-checksum': this.generateChecksum(data),
         },
       });
     } catch (error) {}

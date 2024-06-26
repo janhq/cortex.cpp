@@ -12,6 +12,7 @@ import { MessagesModule } from '@/usecases/messages/messages.module';
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 import { PSCliUsecases } from './ps.cli.usecases';
 import { BenchmarkCliUsecases } from './benchmark.cli.usecases';
+import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { BenchmarkCliUsecases } from './benchmark.cli.usecases';
     AssistantsModule,
     MessagesModule,
     FileManagerModule,
+    TelemetryModule,
   ],
   providers: [
     InitCliUsecases,

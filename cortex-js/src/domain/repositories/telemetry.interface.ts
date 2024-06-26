@@ -1,4 +1,6 @@
+import { ModelStat } from '@/infrastructure/commanders/types/model-stat.interface';
 import {
+  BenchmarkHardware,
   CrashReportAttributes,
   EventAttributes,
   Telemetry,
@@ -37,4 +39,12 @@ export abstract class TelemetryRepository {
   abstract getAnonymizedData(): Promise<TelemetryAnonymized | null>;
 
   abstract updateAnonymousData(data: TelemetryAnonymized): Promise<void>;
+
+  abstract sendBenchmarkToServer(data: {
+    hardware: BenchmarkHardware;
+    results: any;
+    metrics: any;
+    model: ModelStat;
+    sessionId: string;
+  }): Promise<void>;
 }

@@ -42,14 +42,9 @@ export class ChatController {
     } else {
       res.json(await this.chatService.inference(createChatDto, headers));
     }
-    this.telemetryUsecases.sendEvent(
-      [
-        {
-          name: EventName.CHAT,
-          modelId: createChatDto.model,
-        },
-      ],
-      TelemetrySource.CORTEX_SERVER,
-    );
+    this.telemetryUsecases.addEventToQueue({
+      name: EventName.CHAT,
+      modelId: createChatDto.model,
+    });
   }
 }

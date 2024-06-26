@@ -118,15 +118,10 @@ export class ModelsController {
   @Get('download/:modelId(*)')
   async downloadModel(@Param('modelId') modelId: string) {
     const result = await this.modelsUsecases.downloadModel(modelId);
-    this.telemetryUsecases.sendEvent(
-      [
-        {
-          name: EventName.DOWNLOAD_MODEL,
-          modelId,
-        },
-      ],
-      TelemetrySource.CORTEX_SERVER,
-    );
+    this.telemetryUsecases.addEventToQueue({
+      name: EventName.DOWNLOAD_MODEL,
+      modelId,
+    });
     return result;
   }
 
@@ -164,15 +159,10 @@ export class ModelsController {
   @Get('pull/:modelId(*)')
   async pullModel(@Param('modelId') modelId: string) {
     const result = await this.modelsUsecases.pullModel(modelId);
-    this.telemetryUsecases.sendEvent(
-      [
-        {
-          name: EventName.DOWNLOAD_MODEL,
-          modelId,
-        },
-      ],
-      TelemetrySource.CORTEX_SERVER,
-    );
+    this.telemetryUsecases.addEventToQueue({
+      name: EventName.DOWNLOAD_MODEL,
+      modelId,
+    });
     return result;
   }
 

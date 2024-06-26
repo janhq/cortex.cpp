@@ -1,5 +1,6 @@
 import { TelemetryRepository } from '@/domain/repositories/telemetry.interface';
 import {
+  BenchmarkHardware,
   CrashReportAttributes,
   EventAttributes,
   EventName,
@@ -7,6 +8,7 @@ import {
   TelemetryAnonymized,
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
+import { ModelStat } from '@/infrastructure/commanders/types/model-stat.interface';
 import { ContextService } from '@/util/context.service';
 import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
 import { v4 } from 'uuid';
@@ -17,8 +19,8 @@ export class TelemetryUsecases {
   private readonly maxSize = 10;
   private metricQueue: EventAttributes[] = [];
   private readonly maxQueueSize = 10;
-  private readonly flushInterval = 1000 * 60 * 5;
-  private interval: NodeJS.Timeout = this.flushMetricQueueInterval();
+  private readonly flushInterval = 1000 * 5;
+  private interval: NodeJS.Timeout;
   private lastActiveAt?: string | null;
 
   constructor(
@@ -100,6 +102,10 @@ export class TelemetryUsecases {
     return process.env.CORTEX_METRICS !== '0';
   }
 
+  private isBenchmarkEnabled(): boolean {
+    return process.env.CORTEX_BENCHMARK !== '0';
+  }
+
   private async catchException(): Promise<void> {
     process.on('uncaughtException', async (error: Error) => {
       await this.createCrashReport(
@@ -116,6 +122,10 @@ export class TelemetryUsecases {
     });
   }
 
+  async initInterval(): Promise<void> {
+    this.interval = this.flushMetricQueueInterval();
+  }
+
   async sendEvent(
     events: EventAttributes[],
     source: TelemetrySource,
@@ -128,9 +138,7 @@ export class TelemetryUsecases {
         sessionId,
       }));
       await this.telemetryRepository.sendEvent(sessionEvents, source);
-    } catch (e) {
-      console.error('Error sending event:', e);
-    }
+    } catch (e) {}
   }
 
   async sendActivationEvent(source: TelemetrySource): Promise<void> {
@@ -153,11 +161,8 @@ export class TelemetryUsecases {
         ],
         source,
       );
-      console.log('Activation event sent', isNewActivation);
       this.lastActiveAt = new Date().toISOString();
-    } catch (e) {
-      console.error('Error sending activation event:', e);
-    }
+    } catch (e) {}
     await this.updateAnonymousData(this.lastActiveAt);
   }
 
@@ -202,5 +207,29 @@ export class TelemetryUsecases {
     } catch (e) {
       return null;
     }
+  }
+
+  async sendBenchmarkEvent({
+    hardware,
+    results,
+    metrics,
+    model,
+  }: {
+    hardware: BenchmarkHardware;
+    results: any;
+    metrics: any;
+    model: ModelStat;
+  }): Promise<void> {
+    try {
+      if (!this.isBenchmarkEnabled()) return;
+      const sessionId: string = this.contextService.get('sessionId') || '';
+      await this.telemetryRepository.sendBenchmarkToServer({
+        hardware,
+        results,
+        metrics,
+        model,
+        sessionId,
+      });
+    } catch (e) {}
   }
 }

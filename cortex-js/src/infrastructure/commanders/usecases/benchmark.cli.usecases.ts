@@ -13,6 +13,9 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { inspect } from 'util';
 import { defaultBenchmarkConfiguration } from '@/infrastructure/constants/benchmark';
 import { PSCliUsecases } from './ps.cli.usecases';
+import { ModelStat } from '../types/model-stat.interface';
+import { BenchmarkHardware } from '@/domain/telemetry/telemetry.interface';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 
 @Injectable()
 export class BenchmarkCliUsecases {
@@ -21,6 +24,7 @@ export class BenchmarkCliUsecases {
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     private readonly psUsecases: PSCliUsecases,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {}
 
   config: BenchmarkConfig;
@@ -46,7 +50,6 @@ export class BenchmarkCliUsecases {
         detached: false,
         shell: process.platform == 'win32',
       });
-
       return this.cortexUsecases
         .startCortex()
         .then(() =>
@@ -64,8 +67,9 @@ export class BenchmarkCliUsecases {
         .then((model) => {
           if (!model)
             throw new Error('Model is not started, please try again!');
+          return model;
         })
-        .then(() => this.runBenchmarks())
+        .then((model) => this.runBenchmarks(model))
         .then(() => {
           serveProcess.kill();
           process.exit(0);
@@ -101,11 +105,22 @@ export class BenchmarkCliUsecases {
    * using the systeminformation library
    * @returns the system resources
    */
-  private async getSystemResources() {
+  private async getSystemResources(): Promise<
+    BenchmarkHardware & {
+      cpuLoad: any;
+      mem: any;
+    }
+  > {
     return {
-      cpu: await si.currentLoad(),
+      cpuLoad: await si.currentLoad(),
       mem: await si.mem(),
       gpu: (await si.graphics()).controllers,
+      cpu: await si.cpu(),
+      board: await si.baseboard(),
+      disk: await si.diskLayout(),
+      chassis: await si.chassis(),
+      memLayout: await si.memLayout(),
+      os: await si.osInfo(),
     };
   }
 
@@ -116,11 +131,12 @@ export class BenchmarkCliUsecases {
    * @returns the resource change
    */
   private async getResourceChange(startData: any, endData: any) {
+    console.log(startData.cpuLoad.currentLoad, endData.cpuLoad.currentLoad);
     return {
-      cpu:
-        startData.cpu && endData.cpu
-          ? ((endData.cpu.currentload - startData.cpu.currentload) /
-              startData.cpu.currentload) *
+      cpuLoad:
+        startData.cpuLoad && endData.cpuLoad
+          ? ((endData.cpuLoad.currentLoad - startData.cpuLoad.currentLoad) /
+              startData.cpuLoad.currentLoad) *
             100
           : null,
       mem:
@@ -203,7 +219,7 @@ export class BenchmarkCliUsecases {
   /**
    * Run the benchmarks
    */
-  private async runBenchmarks() {
+  private async runBenchmarks(model: ModelStat) {
     const allResults: any[] = [];
     const rounds = this.config.num_rounds || 1;
 
@@ -255,6 +271,7 @@ export class BenchmarkCliUsecases {
       hardware: await this.getSystemResources(),
       results: allResults,
       metrics,
+      model,
     };
     bar.stop();
 
@@ -262,6 +279,20 @@ export class BenchmarkCliUsecases {
       await this.fileService.getBenchmarkPath(),
       'output.json',
     );
+    await this.telemetryUsecases.sendBenchmarkEvent({
+      hardware: {
+        cpu: output.hardware.cpu,
+        gpu: output.hardware.gpu,
+        memLayout: output.hardware.memLayout,
+        board: output.hardware.board,
+        disk: output.hardware.disk,
+        chassis: output.hardware.chassis,
+        os: output.hardware.os,
+      },
+      results: output.results,
+      metrics: output.metrics,
+      model,
+    });
     fs.writeFileSync(outputFilePath, JSON.stringify(output, null, 2));
     console.log(`Benchmark results and metrics saved to ${outputFilePath}`);
 

@@ -8,6 +8,7 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerService } from './infrastructure/services/file-manager/file-manager.service';
+import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,9 +18,12 @@ async function bootstrap() {
 
   const seedService = app.get(SeedService);
   await seedService.seed();
+  const telemetryService = await app.resolve(TelemetryUsecases);
 
   const fileService = app.get(FileManagerService);
   await fileService.getConfig();
+
+  await telemetryService.initInterval();
 
   app.useGlobalPipes(
     new ValidationPipe({
