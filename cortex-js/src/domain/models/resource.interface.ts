@@ -10,6 +10,6 @@ export interface ResourceStatus {
 }
 
 export interface UsedMemInfo {
-  totalMemMb: number;
-  usedMemMb: number;
+  total: number;
+  used: number;
 }

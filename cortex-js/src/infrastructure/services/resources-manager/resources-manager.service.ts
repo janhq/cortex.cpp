@@ -3,21 +3,25 @@ import {
   UsedMemInfo,
 } from '@/domain/models/resource.interface';
 import { Injectable } from '@nestjs/common';
-import { cpu, mem } from 'node-os-utils';
+import systemInformation, { Systeminformation } from 'systeminformation';
 
 @Injectable()
 export class ResourcesManagerService {
   async getResourceStatuses(): Promise<ResourceStatus> {
-    const promises = [cpu.usage(), mem.used()];
+    const promises = [systemInformation.currentLoad(), systemInformation.mem()];
     const results = await Promise.all(promises);
 
-    const cpuUsage = results[0] as number;
-    const memInfo = results[1] as UsedMemInfo;
+    const cpuUsage = results[0] as Systeminformation.CurrentLoadData;
+    const memory = results[1] as Systeminformation.MemData;
+    const memInfo: UsedMemInfo = {
+      total: memory.total,
+      used: memory.used,
+    };
 
     return {
       mem: memInfo,
       cpu: {
-        usage: cpuUsage,
+        usage: cpuUsage.avgLoad,
       },
     };
   }
