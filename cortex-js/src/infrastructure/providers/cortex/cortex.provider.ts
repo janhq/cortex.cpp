@@ -17,6 +17,9 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 export default class CortexProvider extends OAIEngineExtension {
   provider: string = 'cortex';
   apiUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/chat_completion`;
+  name = 'Cortex Inference Engine';
+  description? =
+    'This extension enables chat completion API calls using the Cortex engine';
 
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
   private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;

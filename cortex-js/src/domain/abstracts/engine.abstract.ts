@@ -6,6 +6,8 @@ import { Extension } from './extension.abstract';
 export abstract class EngineExtension extends Extension {
   abstract provider: string;
 
+  abstract onLoad(): void;
+
   abstract inference(
     dto: any,
     headers: Record<string, string>,

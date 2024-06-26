@@ -16,6 +16,8 @@ import { BenchmarkCommand } from './benchmark.command';
 import chalk from 'chalk';
 import { printSlogan } from '@/utils/logo';
 import { ContextService } from '../services/context/context.service';
+import { EnginesCommand } from './engines.command';
+import { ConfigsCommand } from './configs.command';
 
 @RootCommand({
   subCommands: [
@@ -31,6 +33,8 @@ import { ContextService } from '../services/context/context.service';
     TelemetryCommand,
     EmbeddingCommand,
     BenchmarkCommand,
+    EnginesCommand,
+    ConfigsCommand,
   ],
   description: 'Cortex CLI',
 })

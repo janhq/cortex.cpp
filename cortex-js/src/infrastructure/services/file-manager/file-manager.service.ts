@@ -38,7 +38,7 @@ export class FileManagerService {
    * Get cortex configs
    * @returns the config object
    */
-  async getConfig(): Promise<Config> {
+  async getConfig(): Promise<Config & object> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -66,7 +66,7 @@ export class FileManagerService {
     }
   }
 
-  async writeConfigFile(config: Config): Promise<void> {
+  async writeConfigFile(config: Config & object): Promise<void> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 

@@ -4,10 +4,10 @@ import { Extension } from '@/domain/abstracts/extension.abstract';
 import { readdir, lstat } from 'fs/promises';
 import { join } from 'path';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
-import { appPath } from '@/utils/app-path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { existsSync } from 'fs';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
+import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -18,10 +18,9 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     @Inject('CORTEX_PROVIDER')
     private readonly cortexProvider: EngineExtension,
     private readonly fileService: FileManagerService,
+    @Inject('EXTENSIONS_PROVIDER')
+    private readonly coreExtensions: OAIEngineExtension[],
   ) {
-    this.extensions.set(Engines.llamaCPP, this.cortexProvider);
-    this.extensions.set(Engines.onnx, this.cortexProvider);
-    this.extensions.set(Engines.tensorrtLLM, this.cortexProvider);
     this.loadCoreExtensions();
     this.loadExternalExtensions();
   }
@@ -30,7 +29,14 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     return Promise.resolve(object);
   }
   findAll(): Promise<Extension[]> {
-    return Promise.resolve(Array.from(this.extensions.values()));
+    return Promise.resolve(
+      Array.from(this.extensions.keys()).map(
+        (e) =>
+          ({
+            name: e,
+          }) as Extension,
+      ),
+    );
   }
   findOne(id: string): Promise<Extension | null> {
     return Promise.resolve(this.extensions.get(id) ?? null);
@@ -43,9 +49,15 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     return Promise.resolve();
   }
 
-  private loadCoreExtensions(): void {
-    const extensionsPath = join(appPath, 'src', 'extensions');
-    this.loadExtensions(extensionsPath);
+  private async loadCoreExtensions() {
+    await this.cortexProvider.onLoad();
+    this.extensions.set(Engines.llamaCPP, this.cortexProvider);
+    this.extensions.set(Engines.onnx, this.cortexProvider);
+    this.extensions.set(Engines.tensorrtLLM, this.cortexProvider);
+    for (const extension of this.coreExtensions) {
+      await extension.onLoad();
+      this.extensions.set(extension.provider, extension);
+    }
   }
 
   private async loadExternalExtensions() {
