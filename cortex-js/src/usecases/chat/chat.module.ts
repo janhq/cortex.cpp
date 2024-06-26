@@ -5,6 +5,7 @@ import { ExtensionModule } from '@/infrastructure/repositories/extensions/extens
 import { ModelRepositoryModule } from '@/infrastructure/repositories/models/model.module';
 import { HttpModule } from '@nestjs/axios';
 import { TelemetryModule } from '../telemetry/telemetry.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TelemetryModule } from '../telemetry/telemetry.module';
     ModelRepositoryModule,
     HttpModule,
     TelemetryModule,
+    FileManagerModule,
   ],
   controllers: [],
   providers: [ChatUsecases],

@@ -8,6 +8,7 @@ import { HttpModule } from '@nestjs/axios';
 import { DownloadManagerModule } from '@/infrastructure/services/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
+import { FileManagerModule } from '../services/file-manager/file-manager.module';
 
 describe('EmbeddingsController', () => {
   let controller: EmbeddingsController;
@@ -23,6 +24,7 @@ describe('EmbeddingsController', () => {
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
         TelemetryModule,
+        FileManagerModule,
       ],
       controllers: [EmbeddingsController],
       providers: [ChatUsecases],

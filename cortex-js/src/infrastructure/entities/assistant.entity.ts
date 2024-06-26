@@ -1,45 +1,51 @@
-import {
-  Assistant,
-  AssistantMetadata,
-  AssistantTool,
+import { Assistant } from '@/domain/models/assistant.interface';
+import type {
+  AssistantToolResources,
+  AssistantResponseFormatOption,
 } from '@/domain/models/assistant.interface';
 import { Column, Entity, PrimaryColumn } from 'typeorm';
 
 @Entity('assistants')
 export class AssistantEntity implements Assistant {
-  @PrimaryColumn()
+  @PrimaryColumn({ type: String })
   id: string;
 
-  @Column()
-  avatar: string;
+  @Column({ type: String, nullable: true })
+  avatar?: string;
 
-  @Column({ nullable: true })
-  thread_location?: string;
+  @Column({ type: String })
+  object: 'assistant';
 
-  @Column()
-  object: string;
-
-  @Column()
+  @Column({ type: Number })
   created_at: number;
 
-  @Column()
-  name: string;
+  @Column({ type: String, nullable: true })
+  name: string | null;
 
-  @Column({ nullable: true })
-  description?: string;
+  @Column({ type: String, nullable: true })
+  description: string | null;
 
-  @Column()
+  @Column({ type: String })
   model: string;
 
-  @Column({ nullable: true })
-  instructions?: string;
+  @Column({ type: String, nullable: true })
+  instructions: string | null;
+
+  @Column({ type: 'simple-json' })
+  tools: any;
 
   @Column({ type: 'simple-json', nullable: true })
-  tools?: AssistantTool[];
+  metadata: any | null;
 
-  @Column({ type: 'simple-array' })
-  file_ids: string[];
+  @Column({ type: Number, nullable: true })
+  top_p: number | null;
+
+  @Column({ type: Number, nullable: true })
+  temperature: number | null;
 
   @Column({ type: 'simple-json', nullable: true })
-  metadata?: AssistantMetadata;
+  response_format: AssistantResponseFormatOption | null;
+
+  @Column({ type: 'simple-json', nullable: true })
+  tool_resources: AssistantToolResources | null;
 }

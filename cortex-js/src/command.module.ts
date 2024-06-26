@@ -18,7 +18,6 @@ import { ModelStopCommand } from './infrastructure/commanders/models/model-stop.
 import { ModelGetCommand } from './infrastructure/commanders/models/model-get.command';
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
-import { InitCudaQuestions } from './infrastructure/commanders/questions/cuda.questions';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
@@ -29,12 +28,12 @@ import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
-import { UtilModule } from './util/util.module';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
+import { ContextModule } from './infrastructure/services/context/context.module';
 
 @Module({
   imports: [
@@ -54,7 +53,7 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
     MessagesModule,
     FileManagerModule,
     TelemetryModule,
-    UtilModule,
+    ContextModule,
     DownloadManagerModule,
   ],
   providers: [
@@ -71,7 +70,6 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
 
     // Questions
     InitRunModeQuestions,
-    InitCudaQuestions,
 
     // Model commands
     ModelStartCommand,

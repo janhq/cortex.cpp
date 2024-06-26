@@ -1,12 +1,9 @@
-name: CI Cortex CPP Nightly Build
+name: CI Cortex Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+-[0-9]+.[0-9]+.[0-9]+"]
-    paths:
-      [
-        "cortex-cpp/**",
-      ]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    paths: ["cortex-cpp/**", "cortex-js/**"]
   workflow_dispatch:
 
 env:
@@ -36,9 +33,8 @@ jobs:
           tag_name: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
           name: "${{ env.VERSION }}"
-          draft: false
-          generate_release_notes: true
-          prerelease: true
+          draft: true
+          prerelease: false
 
   build-and-test:
     runs-on: ${{ matrix.runs-on }}
@@ -141,7 +137,7 @@ jobs:
             runs-on: "macos-latest"
             cmake-flags: "-DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
-            run-e2e: false
+            run-e2e: true
             ccache-dir: ''
 
           - os: "windows"
@@ -259,7 +255,7 @@ jobs:
         shell: bash
         env:
           CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-  
+
       - uses: apple-actions/import-codesign-certs@v2
         if: runner.os == 'macOS'
         with:
@@ -333,3 +329,166 @@ jobs:
           AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+
+  build-cortex-single-binary:
+    runs-on: ${{ matrix.runs-on }}
+    needs: [create-draft-release]
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-latest"
+
+          - os: "windows"
+            name: "amd64"
+            runs-on: "windows-2019"
+
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-13"
+
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-latest"
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.0.1
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: "Update version by tag"
+        working-directory: cortex-js
+        shell: bash
+        run: |
+          echo "Version: ${{ needs.create-draft-release.outputs.version }}"
+          # Update the version in package.json
+          jq --arg version "${{ needs.create-draft-release.outputs.version }}" '.version = $version' package.json > /tmp/package.json
+          mv /tmp/package.json package.json
+
+      - name: Install choco on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install make -y
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: yarn install && yarn build && yarn build:binary
+        working-directory: ./cortex-js
+
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        shell: bash
+        env:
+          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+
+      - uses: apple-actions/import-codesign-certs@v2
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
+      - name: Code Signing macOS
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-js
+          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - name: Compile .ISS to .EXE Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        if: runner.os == 'Windows'
+        with:
+          path: cortex-js/installer.iss
+          options: /O+
+
+      - uses: nick-fields/retry@v3
+        with:
+          continue_on_error: true
+          retry_wait_seconds: 10
+          timeout_minutes: 10
+          max_attempts: 3
+          shell: cmd
+          command: |
+            cd cortex-js
+            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+            make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+        name: Code Signing Windows
+        if: runner.os == 'Windows'
+
+      - name: Post-Bundle
+        run: |
+          cd cortex-js
+          make postbundle
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/cortex
+            ./cortex-js/cortex.exe
+            ./cortex-js/setup.exe
+
+      - name: Upload Cortex Windows Installer
+        uses: actions/upload-release-asset@v1.0.1
+        if: runner.os == 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex-installer.tar.gz
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
+      - uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex.tar.gz
+          asset_name: cortex-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
+  update_release_draft:
+    needs: [build-and-test, build-cortex-single-binary]
+    permissions:
+      # write permission is required to create a github release
+      contents: write
+      # write permission is required for autolabeler
+      # otherwise, read permission is required at least
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      # (Optional) GitHub Enterprise requires GHE_HOST variable set
+      #- name: Set GHE_HOST
+      #  run: |
+      #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
+
+      # Drafts your next Release notes as Pull Requests are merged into "master"
+      - uses: release-drafter/release-drafter@v5
+        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
+        # with:
+        #   config-name: my-config.yml
+        #   disable-autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

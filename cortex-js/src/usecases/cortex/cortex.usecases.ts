@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ChildProcess, spawn } from 'child_process';
-import { join, delimiter } from 'path';
+import { delimiter, join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
-import {
-  defaultCortexCppHost,
-  defaultCortexCppPort,
-} from '@/infrastructure/constants/cortex';
+
 import { existsSync } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
@@ -27,9 +24,10 @@ export class CortexUsecases {
 
   async startCortex(
     attach: boolean = false,
-    host: string = defaultCortexCppHost,
-    port: number = defaultCortexCppPort,
   ): Promise<CortexOperationSuccessfullyDto> {
+    const configs = await this.fileManagerService.getConfig();
+    const host = configs.cortexCppHost;
+    const port = configs.cortexCppPort;
     if (this.cortexProcess || (await this.healthCheck(host, port))) {
       return {
         message: 'Cortex is already running',
@@ -45,7 +43,11 @@ export class CortexUsecases {
     if (!existsSync(cortexCppPath)) {
       throw new Error('The engine is not available, please run "cortex init".');
     }
-    await this.addAdditionalDependencies();
+
+    const cortexCPPPath = join(
+      await this.fileManagerService.getDataFolderPath(),
+      'cortex-cpp',
+    );
 
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
@@ -55,6 +57,11 @@ export class CortexUsecases {
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
+        PATH: (process.env.PATH || '').concat(delimiter, cortexCPPPath),
+        LD_LIBRARY_PATH: (process.env.LD_LIBRARY_PATH || '').concat(
+          delimiter,
+          cortexCPPPath,
+        ),
         // // Vulkan - Support 1 device at a time for now
         // ...(executableOptions.vkVisibleDevices?.length > 0 && {
         //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
@@ -75,13 +82,26 @@ export class CortexUsecases {
           })
           .catch(reject);
       }, 1000);
+    }).then((res) => {
+      this.fileManagerService.writeConfigFile({
+        ...configs,
+        cortexCppHost: host,
+        cortexCppPort: port,
+      });
+      return res;
     });
   }
 
   async stopCortex(): Promise<CortexOperationSuccessfullyDto> {
+    const configs = await this.fileManagerService.getConfig();
     try {
       await firstValueFrom(
-        this.httpService.delete(CORTEX_CPP_PROCESS_DESTROY_URL()),
+        this.httpService.delete(
+          CORTEX_CPP_PROCESS_DESTROY_URL(
+            configs.cortexCppHost,
+            configs.cortexCppPort,
+          ),
+        ),
       );
     } catch (err) {
       console.error(err.response.data);
@@ -103,27 +123,5 @@ export class CortexUsecases {
         return false;
       })
       .catch(() => false);
-  }
-
-  private async addAdditionalDependencies() {
-    const cortexCPPPath = join(
-      await this.fileManagerService.getDataFolderPath(),
-      'cortex-cpp',
-    );
-    const additionalLlamaCppPath = delimiter.concat(
-      join(cortexCPPPath, 'cortex.llamacpp'),
-    );
-    const additionalTensortLLMCppPath = delimiter.concat(
-      join(cortexCPPPath, 'cortex.tensorrt-llm'),
-    );
-    const additionalPaths = delimiter.concat(
-      additionalLlamaCppPath,
-      additionalTensortLLMCppPath,
-    );
-    // Set the updated PATH
-    process.env.PATH = (process.env.PATH || '').concat(additionalPaths);
-    process.env.LD_LIBRARY_PATH = (process.env.LD_LIBRARY_PATH || '').concat(
-      additionalPaths,
-    );
   }
 }

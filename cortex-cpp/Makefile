@@ -1,12 +1,11 @@
 # Makefile for Cortex llamacpp engine - Build, Lint, Test, and Clean
 .PHONY: all build package run-e2e-test
 
-
+BUILD_DEPS_CMAKE_EXTRA_FLAGS ?= ""
 CMAKE_EXTRA_FLAGS ?= ""
 RUN_TESTS ?= false
 LLM_MODEL_URL ?= "https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
 EMBEDDING_MODEL_URL ?= "https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf"
-PYTHON_FILE_EXECUTION_PATH ?= "python-file-to-test.py"
 CODE_SIGN ?= false
 AZURE_KEY_VAULT_URI ?= xxxx
 AZURE_CLIENT_ID ?= xxxx
@@ -22,7 +21,7 @@ all:
 # Build the Cortex engine
 build:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "cmake -S ./cortex-cpp-deps -B ./build-deps/cortex-cpp-deps;"
+	@powershell -Command "cmake -S ./cortex-cpp-deps -B ./build-deps/cortex-cpp-deps $(BUILD_DEPS_CMAKE_EXTRA_FLAGS);"
 	@powershell -Command "cmake --build ./build-deps/cortex-cpp-deps --config Release -j4;"
 	@powershell -Command "mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
 else ifeq ($(shell uname -s),Linux)
@@ -40,7 +39,7 @@ endif
 pre-package:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex-cpp\engines\cortex.llamacpp\; cp build\engines\cortex.llamacpp\engine.dll cortex-cpp\engines\cortex.llamacpp\;"
-	@powershell -Command "cp build\Release\cortex-cpp.exe .\cortex-cpp\;"
+	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
 	@powershell -Command "cp build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
@@ -96,30 +95,6 @@ else
 	@cd cortex-cpp; \
 	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./cortex-cpp $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
 	rm -rf uploads/;
-endif
-
-run-python-e2e-test:
-ifeq ($(RUN_TESTS),false)
-	@echo "Skipping tests"
-	@exit 0
-endif
-ifeq ($(OS),Windows_NT)
-	@powershell -Command "cp -r build\engines\cortex.python cortex-cpp\engines\;"
-	@powershell -Command "cd cortex-cpp;..\..\.github\scripts\e2e-test-python-windows.bat cortex-cpp.exe ..\..\.github\scripts\$(PYTHON_FILE_EXECUTION_PATH);"
-	@powershell -Command "cd .\cortex-cpp\; rm *.txt;"
-	@powershell -Command "mkdir python-temp; cd .\cortex-cpp\engines; Move-Item -Path .\cortex.python -Destination ..\..\python-temp;"
-else ifeq ($(shell uname -s),Linux)
-	@cp -rf build/engines/cortex.python cortex-cpp/engines/; \
-	cd cortex-cpp; \
-	chmod +x ../../.github/scripts/e2e-test-python-linux-and-mac.sh && ../../.github/scripts/e2e-test-python-linux-and-mac.sh ./cortex-cpp ../../.github/scripts/$(PYTHON_FILE_EXECUTION_PATH); \
-	rm -rf uploads/; \
-	rm -rf ./engines/cortex.python;
-else
-	@cp -rf build/engines/cortex.python cortex-cpp/engines/; \
-	cd cortex-cpp; \
-	chmod +x ../../.github/scripts/e2e-test-python-linux-and-mac.sh && ../../.github/scripts/e2e-test-python-linux-and-mac.sh ./cortex-cpp ../../.github/scripts/$(PYTHON_FILE_EXECUTION_PATH); \
-	rm -rf uploads/; \
-	rm -rf ./engines/cortex.python;
 endif
 
 clean:
