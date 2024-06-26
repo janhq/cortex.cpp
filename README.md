@@ -38,6 +38,7 @@ Ensure that your system meets the following requirements to run Cortex:
 
 > Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
+### NPM
 ``` bash
 # Install using NPM
 npm i -g cortexso
@@ -46,6 +47,20 @@ brew tap janhq/cortexso
 brew install cortexso
 # Run model
 cortex run llama3
+# To uninstall globally using NPM
+npm uninstall -g cortexso
+```
+
+### Homebrew
+``` bash
+# Install using Brew
+brew tap janhq/cortexso
+brew install cortexso
+# Run model
+cortex run llama3
+# To uninstall using Brew
+brew uninstall cortexso
+brew untap janhq/cortexso
 ```
 > You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
 
@@ -110,19 +125,6 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
   benchmark           Benchmark and analyze the performance of a specific AI model using your system.
   presets             Show all the available model presets within Cortex.
   telemetry           Retrieve telemetry logs for monitoring and analysis.
-```
-
-## Uninstall Cortex
-
-Run the following command to uninstall Cortex globally on your machine:
-
-```
-# Uninstall globally using NPM
-npm uninstall -g cortexso
-
-# Uninstall using Brew
-brew uninstall cortexso
-brew untap janhq/cortexso
 ```
 
 ## Contact Support
