@@ -25,13 +25,45 @@ Cortex currently supports 3 inference engines:
 - [Docs](https://cortex.jan.ai/docs/)
 
 ## Quickstart
+### Prerequisites
+Ensure that your system meets the following requirements to run Cortex:
+- **Dependencies**:
+  - **Node.js**: version 18 and above is required to run the installation.
+  - **NPM**: Needed to manage packages.
+  - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 22.04 and later.
 
-Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
+> Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
+### NPM
 ``` bash
-npm i -g @janhq/cortex
+# Install using NPM
+npm i -g cortexso
+# Install using Brew
+brew tap janhq/cortexso
+brew install cortexso
+# Run model
 cortex run llama3
+# To uninstall globally using NPM
+npm uninstall -g cortexso
 ```
+
+### Homebrew
+``` bash
+# Install using Brew
+brew tap janhq/cortexso
+brew install cortexso
+# Run model
+cortex run llama3
+# To uninstall using Brew
+brew uninstall cortexso
+brew untap janhq/cortexso
+```
+> You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
+
 To run Cortex as an API server:
 ```bash
 cortex serve
@@ -90,18 +122,13 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
   models start        Start a specified model.
   models stop         Stop a specified model.
   models update       Update the configuration of a specified model.
-```
-
-## Uninstall Cortex
-
-Run the following command to uninstall Cortex globally on your machine:
-
-```
-# Uninstall globally using NPM
-npm uninstall -g @janhq/cortex
+  benchmark           Benchmark and analyze the performance of a specific AI model using your system.
+  presets             Show all the available model presets within Cortex.
+  telemetry           Retrieve telemetry logs for monitoring and analysis.
 ```
 
 ## Contact Support
 - For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
+

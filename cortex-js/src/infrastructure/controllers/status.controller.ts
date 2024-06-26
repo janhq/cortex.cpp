@@ -8,7 +8,7 @@ export class StatusController {
 
   @ApiOperation({
     summary: "Get health status",
-    description: "Retrieves the health status of the Cortex's API endpoint server.",
+    description: "Retrieves the health status of your Cortex's system.",
   })
   @HttpCode(200)
   @ApiResponse({
