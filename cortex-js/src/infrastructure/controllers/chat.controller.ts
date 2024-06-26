@@ -27,11 +27,14 @@ export class ChatController {
     @Res() res: Response,
   ) {
     const { stream } = createChatDto;
+
     if (stream) {
+      res.header('Content-Type', 'text/event-stream');
       this.chatService
         .inference(createChatDto, headers)
         .then((stream) => stream.pipe(res));
     } else {
+      res.header('Content-Type', 'application/json');
       res.json(await this.chatService.inference(createChatDto, headers));
     }
   }

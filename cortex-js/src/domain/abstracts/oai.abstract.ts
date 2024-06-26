@@ -10,6 +10,8 @@ export abstract class OAIEngineExtension extends EngineExtension {
     super();
   }
 
+  override onLoad(): void {}
+
   override async inference(
     createChatDto: any,
     headers: Record<string, string>,

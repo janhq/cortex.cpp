@@ -224,7 +224,6 @@ export class ModelsUsecases {
           metadata: {},
         };
         this.eventEmitter.emit('model.event', modelEvent);
-        console.error('Starting model failed', e.code, e.message, e.stack);
         if (e.code === AxiosError.ERR_BAD_REQUEST) {
           return {
             message: 'Model already loaded',
@@ -236,7 +235,7 @@ export class ModelsUsecases {
           TelemetrySource.CORTEX_CPP,
         );
         return {
-          message: 'Failed to load model',
+          message: e.message,
           modelId,
         };
       });
@@ -299,7 +298,7 @@ export class ModelsUsecases {
           TelemetrySource.CORTEX_CPP,
         );
         return {
-          message: 'Failed to stop model',
+          message: e.message,
           modelId,
         };
       });

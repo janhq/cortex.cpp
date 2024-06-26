@@ -34,6 +34,16 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
 import { ContextModule } from './infrastructure/services/context/context.module';
+import { ExtensionsModule } from './extensions/extensions.module';
+import { ConfigsCommand } from './infrastructure/commanders/configs.command';
+import { EnginesCommand } from './infrastructure/commanders/engines.command';
+import { ConfigsModule } from './usecases/configs/configs.module';
+import { EnginesModule } from './usecases/engines/engines.module';
+import { ConfigsGetCommand } from './infrastructure/commanders/configs/configs-get.command';
+import { ConfigsListCommand } from './infrastructure/commanders/configs/configs-list.command';
+import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-set.command';
+import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
+import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 
 @Module({
   imports: [
@@ -55,6 +65,9 @@ import { ContextModule } from './infrastructure/services/context/context.module'
     TelemetryModule,
     ContextModule,
     DownloadManagerModule,
+    ExtensionsModule,
+    ConfigsModule,
+    EnginesModule,
   ],
   providers: [
     CortexCommand,
@@ -67,6 +80,7 @@ import { ContextModule } from './infrastructure/services/context/context.module'
     PresetCommand,
     EmbeddingCommand,
     BenchmarkCommand,
+    EnginesCommand,
 
     // Questions
     InitRunModeQuestions,
@@ -88,6 +102,16 @@ import { ContextModule } from './infrastructure/services/context/context.module'
 
     // Serve
     ServeStopCommand,
+
+    // Configs
+    ConfigsCommand,
+    ConfigsGetCommand,
+    ConfigsListCommand,
+    ConfigsSetCommand,
+
+    // Engines
+    EnginesListCommand,
+    EnginesGetCommand,
   ],
 })
 export class CommandModule {}

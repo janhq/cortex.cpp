@@ -7,8 +7,11 @@ export const getApp = async () => {
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
     cors: true,
-    logger: console
+    logger: console,
   });
+
+  // Set the global prefix for the API /v1/
+  app.setGlobalPrefix('v1');
 
   const fileService = app.get(FileManagerService);
   await fileService.getConfig();

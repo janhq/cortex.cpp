@@ -26,6 +26,11 @@ import { StatusController } from './infrastructure/controllers/status.controller
 import { ProcessController } from './infrastructure/controllers/process.controller';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ContextModule } from './infrastructure/services/context/context.module';
+import { ExtensionsModule } from './extensions/extensions.module';
+import { ConfigsModule } from './usecases/configs/configs.module';
+import { EnginesModule } from './usecases/engines/engines.module';
+import { ConfigsController } from './infrastructure/controllers/configs.controller';
+import { EnginesController } from './infrastructure/controllers/engines.controller';
 
 @Module({
   imports: [
@@ -50,6 +55,9 @@ import { ContextModule } from './infrastructure/services/context/context.module'
     TelemetryModule,
     ContextModule,
     DownloadManagerModule,
+    ExtensionsModule,
+    ConfigsModule,
+    EnginesModule,
   ],
   controllers: [
     AssistantsController,
@@ -60,6 +68,8 @@ import { ContextModule } from './infrastructure/services/context/context.module'
     StatusController,
     ProcessController,
     EventsController,
+    ConfigsController,
+    EnginesController,
   ],
   providers: [
     {
