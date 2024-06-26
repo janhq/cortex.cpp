@@ -7,7 +7,7 @@ import { SetCommandContext } from './decorators/CommandContext';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
 import { ContextService } from '../services/context/context.service';
 import { getApp } from '@/app';
-import { Logger } from '@nestjs/common';
+import chalk from 'chalk';
 
 type ServeOptions = {
   address?: string;
@@ -37,7 +37,10 @@ export class ServeCommand extends CommandRunner {
     const app = await getApp();
 
     await app.listen(port, host);
-    console.log(`Started server at http://${host}:${port}`);
+    console.log(chalk.blue(`Started server at http://${host}:${port}`));
+    console.log(
+      chalk.blue(`API Playground available at http://${host}:${port}/api`),
+    );
   }
 
   @Option({
