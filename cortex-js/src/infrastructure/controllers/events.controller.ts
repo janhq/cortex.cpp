@@ -16,14 +16,20 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Observable,
+  catchError,
   combineLatest,
+  from,
   fromEvent,
+  interval,
   map,
   merge,
   of,
   startWith,
+  switchMap,
   throttleTime,
 } from 'rxjs';
+import { ResourcesManagerService } from '../services/resources-manager/resources-manager.service';
+import { ResourceEvent } from '@/domain/models/resource.interface';
 
 @ApiTags('Events')
 @Controller('events')
@@ -32,6 +38,7 @@ export class EventsController {
     private readonly downloadManagerService: DownloadManagerService,
     private readonly modelsUsecases: ModelsUsecases,
     private readonly eventEmitter: EventEmitter2,
+    private readonly resourcesManagerService: ResourcesManagerService,
   ) {}
 
   @ApiOperation({
@@ -82,5 +89,34 @@ export class EventsController {
     return combineLatest([latestModelStatus$, modelEvent$]).pipe(
       map(([status, event]) => ({ data: { status, event } })),
     );
+  }
+
+  @ApiOperation({
+    summary: 'Get resources status',
+    description: 'Retrieves the resources status of the system.',
+  })
+  @Sse('resources')
+  resourcesEvent(): Observable<ResourceEvent> {
+    const initialData$ = from(
+      this.resourcesManagerService.getResourceStatuses(),
+    ).pipe(
+      map((data) => ({ data: data })),
+      catchError((error) => {
+        console.error('Error fetching initial resource statuses', error);
+        return of(); // Ensure the stream is kept alive even if initial fetch fails
+      }),
+    );
+
+    const getResourceStatuses$ = interval(2000).pipe(
+      switchMap(() => this.resourcesManagerService.getResourceStatuses()),
+      map((data) => ({ data: data })),
+      catchError((error) => {
+        console.error('Error fetching resource statuses', error);
+        return of(); // Keep the stream alive on error
+      }),
+    );
+
+    // Merge the initial data with the interval updates
+    return merge(initialData$, getResourceStatuses$);
   }
 }
