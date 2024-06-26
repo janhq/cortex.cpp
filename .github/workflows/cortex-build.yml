@@ -422,6 +422,16 @@ jobs:
           cp cortex installer/cortex
           pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
 
+      - name: Create MacOS PKG Installer
+        if: runner.os == 'Linux'
+        run: |
+          cd cortex-js
+          mkdir -p cortexso/DEBIAN
+          mkdir -p cortexso/usr/local/bin
+          sed "s/Version:/Version: ${{ needs.create-draft-release.outputs.version }}/g" control.template > cortexso/DEBIAN/control
+          cp cortex cortexso/usr/local/bin/cortex
+          dpkg-deb --build cortexso
+
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         if: runner.os == 'Windows'
@@ -463,6 +473,14 @@ jobs:
           name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
           path: |
             ./cortex-js/setup.exe
+
+      - name: Upload Linux Installer
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/cortexso.deb
       
       - name: Upload MacOS Installer
         if: runner.os == 'macOS'
@@ -490,6 +508,16 @@ jobs:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
           asset_path: ./cortex-js/cortex.tar.gz
           asset_name: cortex-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: runner.os == 'Linux'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortexso.deb
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.deb
           asset_content_type: application/gzip
 
   update_release_draft:
