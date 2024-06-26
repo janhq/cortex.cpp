@@ -1,6 +1,9 @@
 import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { BenchmarkCliUsecases } from './usecases/benchmark.cli.usecases';
-import { BenchmarkConfig } from './types/benchmark-config.interface';
+import {
+  BenchmarkConfig,
+  ParametersConfig,
+} from './types/benchmark-config.interface';
 
 @SubCommand({
   name: 'benchmark',
@@ -20,10 +23,12 @@ export class BenchmarkCommand extends CommandRunner {
     passedParams: string[],
     options?: Partial<BenchmarkConfig>,
   ): Promise<void> {
-    return this.benchmarkUsecases.benchmark({
-      ...options,
-      ...(passedParams[0] ? { modelId: passedParams[0] } : {}),
-    });
+    return this.benchmarkUsecases.benchmark(
+      options ?? {},
+      passedParams[0]
+        ? ({ model: passedParams[0] } as ParametersConfig)
+        : undefined,
+    );
   }
 
   @Option({

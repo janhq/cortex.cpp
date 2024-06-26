@@ -1,21 +1,25 @@
 import { ChatCompletionMessageParam } from 'openai/resources';
 
+export interface ApiConfig {
+  base_url: string;
+  api_key: string;
+  parameters: ParametersConfig;
+}
+
+export interface ParametersConfig {
+  messages: ChatCompletionMessageParam[];
+  model: string;
+  stream?: boolean;
+  max_tokens?: number;
+  stop?: string[];
+  frequency_penalty?: number;
+  presence_penalty?: number;
+  temperature?: number;
+  top_p?: number;
+}
+
 export interface BenchmarkConfig {
-  api: {
-    base_url: string;
-    api_key: string;
-    parameters: {
-      messages: ChatCompletionMessageParam[];
-      model: string;
-      stream?: boolean;
-      max_tokens?: number;
-      stop?: string[];
-      frequency_penalty?: number;
-      presence_penalty?: number;
-      temperature?: number;
-      top_p?: number;
-    };
-  };
+  api: ApiConfig;
   prompts?: {
     min: number;
     max: number;
