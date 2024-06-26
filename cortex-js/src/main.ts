@@ -11,11 +11,15 @@ async function bootstrap() {
   const host = process.env.CORTEX_JS_HOST || defaultCortexJsHost;
   const port = process.env.CORTEX_JS_PORT || defaultCortexJsPort;
 
-  await app.listen(port, host);
-  console.log(chalk.blue(`Started server at http://${host}:${port}`));
-  console.log(
-    chalk.blue(`API Playground available at http://${host}:${port}/api`),
-  );
+  try {
+    await app.listen(port, host);
+    console.log(chalk.blue(`Started server at http://${host}:${port}`));
+    console.log(
+      chalk.blue(`API Playground available at http://${host}:${port}/api`),
+    );
+  } catch (err) {
+    console.error(err.message);
+  }
 }
 
 bootstrap();

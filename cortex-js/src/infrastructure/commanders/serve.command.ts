@@ -36,11 +36,15 @@ export class ServeCommand extends CommandRunner {
   private async startServer(host: string, port: number) {
     const app = await getApp();
 
-    await app.listen(port, host);
-    console.log(chalk.blue(`Started server at http://${host}:${port}`));
-    console.log(
-      chalk.blue(`API Playground available at http://${host}:${port}/api`),
-    );
+    try {
+      await app.listen(port, host);
+      console.log(chalk.blue(`Started server at http://${host}:${port}`));
+      console.log(
+        chalk.blue(`API Playground available at http://${host}:${port}/api`),
+      );
+    } catch (err) {
+      console.error(err.message);
+    }
   }
 
   @Option({
