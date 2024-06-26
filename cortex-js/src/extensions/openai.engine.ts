@@ -8,10 +8,11 @@ import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
  * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
  */
 export default class OpenAIEngineExtension extends OAIEngineExtension {
-  provider: string = 'openai';
   apiUrl = 'https://api.openai.com/v1/chat/completions';
-  name = 'OpenAI Inference Engine';
-  description? = 'This extension enables OpenAI chat completion API calls';
+  name = 'openai';
+  productName = 'OpenAI Inference Engine';
+  description = 'This extension enables OpenAI chat completion API calls';
+  version = '0.0.1';
 
   constructor(
     protected readonly httpService: HttpService,
@@ -22,9 +23,9 @@ export default class OpenAIEngineExtension extends OAIEngineExtension {
 
   async onLoad() {
     const configs = (await this.configsUsecases.getGroupConfigs(
-      this.provider,
+      this.name,
     )) as unknown as { apiKey: string };
     if (!configs?.apiKey)
-      await this.configsUsecases.saveConfig('apiKey', '', this.provider);
+      await this.configsUsecases.saveConfig('apiKey', '', this.name);
   }
 }

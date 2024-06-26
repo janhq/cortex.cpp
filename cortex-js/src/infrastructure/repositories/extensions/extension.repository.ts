@@ -3,11 +3,12 @@ import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Extension } from '@/domain/abstracts/extension.abstract';
 import { readdir, lstat } from 'fs/promises';
 import { join } from 'path';
-import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { existsSync } from 'fs';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
+import CortexProvider from '@/infrastructure/providers/cortex/cortex.provider';
+import { HttpService } from '@nestjs/axios';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -15,11 +16,11 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   extensions = new Map<string, Extension>();
 
   constructor(
-    @Inject('CORTEX_PROVIDER')
-    private readonly cortexProvider: EngineExtension,
     private readonly fileService: FileManagerService,
     @Inject('EXTENSIONS_PROVIDER')
     private readonly coreExtensions: OAIEngineExtension[],
+    private readonly httpService: HttpService,
+    private readonly fileManagerService: FileManagerService,
   ) {
     this.loadCoreExtensions();
     this.loadExternalExtensions();
@@ -29,14 +30,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     return Promise.resolve(object);
   }
   findAll(): Promise<Extension[]> {
-    return Promise.resolve(
-      Array.from(this.extensions.keys()).map(
-        (e) =>
-          ({
-            name: e,
-          }) as Extension,
-      ),
-    );
+    return Promise.resolve(Array.from(this.extensions.values()));
   }
   findOne(id: string): Promise<Extension | null> {
     return Promise.resolve(this.extensions.get(id) ?? null);
@@ -50,13 +44,34 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   private async loadCoreExtensions() {
-    await this.cortexProvider.onLoad();
-    this.extensions.set(Engines.llamaCPP, this.cortexProvider);
-    this.extensions.set(Engines.onnx, this.cortexProvider);
-    this.extensions.set(Engines.tensorrtLLM, this.cortexProvider);
+    const llamaCPPEngine = new CortexProvider(
+      this.httpService,
+      this.fileManagerService,
+    );
+    llamaCPPEngine.name = 'cortex.llamacpp';
+    const onnxEngine = new CortexProvider(
+      this.httpService,
+      this.fileManagerService,
+    );
+    onnxEngine.name = 'cortex.onnx';
+
+    const tensorrtLLMEngine = new CortexProvider(
+      this.httpService,
+      this.fileManagerService,
+    );
+    tensorrtLLMEngine.name = 'cortex.tensorrt-llm';
+
+    await llamaCPPEngine.onLoad();
+    await onnxEngine.onLoad();
+    await tensorrtLLMEngine.onLoad();
+
+    this.extensions.set(Engines.llamaCPP, llamaCPPEngine);
+    this.extensions.set(Engines.onnx, onnxEngine);
+    this.extensions.set(Engines.tensorrtLLM, tensorrtLLMEngine);
+
     for (const extension of this.coreExtensions) {
       await extension.onLoad();
-      this.extensions.set(extension.provider, extension);
+      this.extensions.set(extension.name, extension);
     }
   }
 

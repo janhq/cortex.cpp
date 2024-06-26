@@ -29,6 +29,8 @@ import { ContextModule } from './infrastructure/services/context/context.module'
 import { ExtensionsModule } from './extensions/extensions.module';
 import { ConfigsModule } from './usecases/configs/configs.module';
 import { EnginesModule } from './usecases/engines/engines.module';
+import { ConfigsController } from './infrastructure/controllers/configs.controller';
+import { EnginesController } from './infrastructure/controllers/engines.controller';
 
 @Module({
   imports: [
@@ -66,6 +68,8 @@ import { EnginesModule } from './usecases/engines/engines.module';
     StatusController,
     ProcessController,
     EventsController,
+    ConfigsController,
+    EnginesController,
   ],
   providers: [
     {

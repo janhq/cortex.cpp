@@ -1,20 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigsUsecases } from '../configs/configs.usecase';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 
 @Injectable()
 export class EnginesUsecases {
-  constructor(
-    private readonly configsUsechases: ConfigsUsecases,
-    private readonly extensionRepository: ExtensionRepository,
-  ) {}
+  constructor(private readonly extensionRepository: ExtensionRepository) {}
 
   /**
    * Get the engines
    * @returns Cortex supported Engines
    */
   async getEngines() {
-    return this.extensionRepository.findAll();
+    return (await this.extensionRepository.findAll()).map((e) => ({
+      name: e.name,
+      description: e.description,
+      version: e.version,
+      productName: e.productName,
+    }));
   }
 
   /**
@@ -23,9 +24,15 @@ export class EnginesUsecases {
    * @returns Engine
    */
   async getEngine(name: string) {
-    return {
-      engine: await this.extensionRepository.findOne(name),
-      configs: await this.configsUsechases.getGroupConfigs(name),
-    };
+    return this.extensionRepository.findOne(name).then((engine) =>
+      engine
+        ? {
+            name: engine.name,
+            description: engine.description,
+            version: engine.version,
+            productName: engine.productName,
+          }
+        : undefined,
+    );
   }
 }

@@ -1,3 +1,4 @@
+import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Injectable } from '@nestjs/common';
 
@@ -10,7 +11,11 @@ export class ConfigsUsecases {
    * @param key Configuration Key
    * @param group Configuration Group where the key belongs
    */
-  async saveConfig(key: string, value: string, group?: string) {
+  async saveConfig(
+    key: string,
+    value: string,
+    group?: string,
+  ): Promise<CommonResponseDto> {
     const configs = await this.fileManagerService.getConfig();
 
     const groupConfigs = configs[
@@ -28,7 +33,11 @@ export class ConfigsUsecases {
         : {}),
     };
 
-    await this.fileManagerService.writeConfigFile(newConfigs);
+    return this.fileManagerService.writeConfigFile(newConfigs).then(() => {
+      return {
+        message: 'The config has been successfully updated.',
+      };
+    });
   }
 
   /**

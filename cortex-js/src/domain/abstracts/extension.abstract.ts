@@ -4,7 +4,7 @@
  */
 export abstract class Extension {
   /** @type {string} Name of the extension. */
-  name?: string;
+  name: string;
 
   /** @type {string} Product Name of the extension. */
   productName?: string;

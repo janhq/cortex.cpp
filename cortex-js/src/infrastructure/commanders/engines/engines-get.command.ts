@@ -21,15 +21,6 @@ export class EnginesGetCommand extends CommandRunner {
   }
 
   async run(passedParams: string[]): Promise<void> {
-    return this.engineUsecases.getEngine(passedParams[0]).then((e) =>
-      console.table({
-        engine: {
-          name: passedParams[0],
-          displayName: e.engine?.name,
-          description: e.engine?.description,
-        },
-        configs: e.configs,
-      }),
-    );
+    return this.engineUsecases.getEngine(passedParams[0]).then(console.table);
   }
 }
