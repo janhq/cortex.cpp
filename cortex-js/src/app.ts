@@ -23,7 +23,7 @@ export const getApp = async () => {
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
     .setDescription(
-      'Cortex API provides a command-line interface (CLI) for seamless interaction with large language models (LLMs). It is fully compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference) and enables straightforward command execution and management of LLM interactions. Cortex = "http://localhost:1337/api". Jan = "http://localhost:1337/v1"',
+      'Cortex API provides a command-line interface (CLI) for seamless interaction with large language models (LLMs). It is fully compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference) and enables straightforward command execution and management of LLM interactions. Cortex = `http://localhost:1337/api`. Jan = `http://localhost:1337/v1`',
     )
     .setVersion('1.0')
     .addTag(
