@@ -25,8 +25,18 @@ Cortex currently supports 3 inference engines:
 - [Docs](https://cortex.jan.ai/docs/)
 
 ## Quickstart
+### Prerequisites
+Ensure that your system meets the following requirements to run Cortex:
+- **Dependencies**:
+  - **Node.js**: version 18 and above is required to run the installation.
+  - **NPM**: Needed to manage packages.
+  - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 12.04 and later.
 
-Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
+> Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
 ``` bash
 npm i -g cortexso
