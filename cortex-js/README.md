@@ -29,7 +29,7 @@ Cortex currently supports 3 inference engines:
 Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
 ``` bash
-npm i -g @janhq/cortex
+npm i -g cortexso
 cortex run llama3
 ```
 To run Cortex as an API server:
@@ -101,7 +101,7 @@ Run the following command to uninstall Cortex globally on your machine:
 
 ```
 # Uninstall globally using NPM
-npm uninstall -g @janhq/cortexso
+npm uninstall -g cortexso
 ```
 
 ## Contact Support
