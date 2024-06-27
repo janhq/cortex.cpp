@@ -63,11 +63,7 @@ export class BenchmarkCliUsecases {
         .then(() =>
           this.psUsecases
             .getModels()
-            .then((models) =>
-              models.find(
-                (e) => e.modelId === model,
-              ),
-            ),
+            .then((models) => models.find((e) => e.modelId === model)),
         )
         .then((model) => {
           if (!model)
