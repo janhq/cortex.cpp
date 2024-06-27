@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import si from 'systeminformation';
 import fs, { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import OpenAI from 'openai';
+import Cortex from 'cortexso-node';
 import { Presets, SingleBar } from 'cli-progress';
 import yaml from 'js-yaml';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
@@ -27,7 +27,7 @@ export class BenchmarkCliUsecases {
   ) {}
 
   config: BenchmarkConfig;
-  openai?: OpenAI;
+  cortexClient?: Cortex;
   /**
    * Benchmark and analyze the performance of a specific AI model using a variety of system resources
    */
@@ -43,7 +43,7 @@ export class BenchmarkCliUsecases {
 
       const model = params?.model ?? this.config.api.parameters.model;
       // TODO: Using OpenAI client or Cortex client to benchmark?
-      this.openai = new OpenAI({
+      this.cortexClient = new Cortex({
         apiKey: this.config.api.api_key,
         baseURL: this.config.api.base_url,
         timeout: 20 * 1000,
@@ -60,11 +60,7 @@ export class BenchmarkCliUsecases {
         .then(() =>
           this.psUsecases
             .getModels()
-            .then((models) =>
-              models.find(
-                (e) => e.modelId === model,
-              ),
-            ),
+            .then((models) => models.find((e) => e.modelId === model)),
         )
         .then((model) => {
           if (!model)
@@ -147,7 +143,7 @@ export class BenchmarkCliUsecases {
     let firstTokenTime = null;
 
     try {
-      const stream = await this.openai!.chat.completions.create({
+      const stream = await this.cortexClient!.chat.completions.create({
         model: this.config.api.parameters.model,
         messages: this.config.api.parameters.messages,
         max_tokens: this.config.api.parameters.max_tokens,

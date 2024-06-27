@@ -2,7 +2,7 @@ import {
   Message as OpenAiMessage,
   MessageContent as OpenAiMessageContent,
   TextContentBlock as OpenAiTextContentBlock,
-} from 'openai/resources/beta/threads/messages';
+} from 'cortexso-node/resources/beta/threads/messages';
 
 export interface Message extends OpenAiMessage {}
 
