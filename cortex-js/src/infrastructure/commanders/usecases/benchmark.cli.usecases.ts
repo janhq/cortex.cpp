@@ -50,7 +50,8 @@ export class BenchmarkCliUsecases {
       await this.fileService.getBenchmarkPath(),
       'output.json',
     );
-    return
+    fs.writeFileSync(outputFilePath, JSON.stringify(output, null, 2));
+    return;
     return this.getBenchmarkConfig().then((config) => {
       this.config = {
         ...config,
