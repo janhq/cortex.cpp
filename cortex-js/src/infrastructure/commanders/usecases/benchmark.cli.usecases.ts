@@ -131,7 +131,6 @@ export class BenchmarkCliUsecases {
    * @returns the resource change
    */
   private async getResourceChange(startData: any, endData: any) {
-    console.log(startData.cpuLoad.currentLoad, endData.cpuLoad.currentLoad);
     return {
       cpuLoad:
         startData.cpuLoad && endData.cpuLoad

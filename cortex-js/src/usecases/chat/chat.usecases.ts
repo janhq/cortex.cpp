@@ -26,7 +26,6 @@ export class ChatUsecases {
   ): Promise<any> {
     const { model: modelId } = createChatDto;
     const model = await this.modelRepository.findOne(modelId);
-    console.log('model', model);
     if (!model) {
       throw new ModelNotFoundException(modelId);
     }

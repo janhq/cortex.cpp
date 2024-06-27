@@ -251,7 +251,6 @@ export class FileManagerService {
       });
       return content;
     } catch (error) {
-      console.error('Error reading json file:', error);
       throw error;
     }
   }
@@ -264,7 +263,6 @@ export class FileManagerService {
         flag: 'w+',
       });
     } catch (error) {
-      console.error('Error writing json file:', error);
       throw error;
     }
   }
