@@ -149,7 +149,7 @@ export class ChatCliUsecases {
           let assistantResponse: string = '';
 
           response.on('error', (error: any) => {
-            console.error(error);
+            console.error(error.message ?? error);
             if (attach) rl.prompt();
             else rl.close();
           });

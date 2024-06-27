@@ -18,7 +18,7 @@ async function bootstrap() {
       chalk.blue(`API Playground available at http://${host}:${port}/api`),
     );
   } catch (err) {
-    console.error(err.message);
+    console.error(err.message ?? err);
   }
 }
 

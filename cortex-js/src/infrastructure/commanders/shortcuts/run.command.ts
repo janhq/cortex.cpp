@@ -59,7 +59,7 @@ export class RunCommand extends CommandRunner {
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
           console.error('Model does not exist.');
-        else console.error(e);
+        else console.error(e.message ?? e);
         exit(1);
       });
     }

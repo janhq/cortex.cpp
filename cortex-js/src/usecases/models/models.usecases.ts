@@ -408,8 +408,18 @@ export class ModelsUsecases {
       throw new BadRequestException('Model already exists');
     }
 
-    // Fetch the repo data
+    // ONNX only supported on Windows
+    if (modelId.includes('onnx') && process.platform !== 'win32') {
+      throw new BadRequestException('ONNX models are not supported on this OS');
+    }
 
+    if (modelId.includes('tensorrt-llm') && process.platform === 'darwin') {
+      throw new BadRequestException(
+        'Tensorrt-LLM models are not supported on this OS',
+      );
+    }
+
+    // Fetch the repo data
     const data = await this.fetchModelMetadata(modelId);
     // Pull the model.yaml
     await this.populateHuggingFaceModel(
