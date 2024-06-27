@@ -13,6 +13,7 @@ export default class MistralEngineExtension extends OAIEngineExtension {
   productName = 'Mistral Inference Engine';
   description = 'This extension enables Mistral chat completion API calls';
   version = '0.0.1';
+  apiKey?: string;
 
   constructor(
     protected readonly httpService: HttpService,
@@ -25,6 +26,7 @@ export default class MistralEngineExtension extends OAIEngineExtension {
     const configs = (await this.configsUsecases.getGroupConfigs(
       this.name,
     )) as unknown as { apiKey: string };
+    this.apiKey = configs?.apiKey;
     if (!configs?.apiKey)
       await this.configsUsecases.saveConfig('apiKey', '', this.name);
   }

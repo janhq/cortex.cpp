@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 export abstract class OAIEngineExtension extends EngineExtension {
   abstract apiUrl: string;
+  abstract apiKey?: string;
 
   constructor(protected readonly httpService: HttpService) {
     super();
@@ -21,7 +22,9 @@ export abstract class OAIEngineExtension extends EngineExtension {
       this.httpService.post(this.apiUrl, createChatDto, {
         headers: {
           'Content-Type': headers['content-type'] ?? 'application/json',
-          Authorization: headers['authorization'],
+          Authorization: this.apiKey
+            ? `Bearer ${this.apiKey}`
+            : headers['authorization'],
         },
         responseType: stream ? 'stream' : 'json',
       }),
