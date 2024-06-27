@@ -11,11 +11,13 @@ import pkg from '@/../package.json';
 import { PresetCommand } from './presets.command';
 import { TelemetryCommand } from './telemetry.command';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
 import { EmbeddingCommand } from './embeddings.command';
 import { BenchmarkCommand } from './benchmark.command';
 import chalk from 'chalk';
 import { printSlogan } from '@/utils/logo';
+import { ContextService } from '../services/context/context.service';
+import { EnginesCommand } from './engines.command';
+import { ConfigsCommand } from './configs.command';
 
 @RootCommand({
   subCommands: [
@@ -31,6 +33,8 @@ import { printSlogan } from '@/utils/logo';
     TelemetryCommand,
     EmbeddingCommand,
     BenchmarkCommand,
+    EnginesCommand,
+    ConfigsCommand,
   ],
   description: 'Cortex CLI',
 })

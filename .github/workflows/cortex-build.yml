@@ -1,0 +1,545 @@
+name: CI Cortex Release
+
+on:
+  push:
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    paths: ["cortex-cpp/**", "cortex-js/**"]
+  workflow_dispatch:
+
+env:
+  LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
+  EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
+
+jobs:
+  create-draft-release:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    permissions:
+      contents: write
+    steps:
+      - name: Extract tag name without v prefix
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV && echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
+        env:
+          GITHUB_REF: ${{ github.ref }}
+      - name: Create Draft Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: "${{ env.VERSION }}"
+          draft: true
+          prerelease: false
+
+  build-and-test:
+    runs-on: ${{ matrix.runs-on }}
+    needs: [create-draft-release]
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: "linux"
+            name: "amd64-avx2"
+            runs-on: "ubuntu-20-04"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
+            run-e2e: true
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx"
+            runs-on: "ubuntu-20-04"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx512"
+            runs-on: "ubuntu-20-04"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-vulkan"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx2-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx512-cuda-11-7"
+            runs-on: "ubuntu-20-04-cuda-11-7"
+            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx2-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "linux"
+            name: "amd64-avx512-cuda-12-0"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
+            build-deps-cmake-flags: ""
+            run-e2e: false
+            ccache-dir: ''
+
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-13"
+            cmake-flags: ""
+            build-deps-cmake-flags: ""
+            run-e2e: true
+            ccache-dir: ''
+
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-latest"
+            cmake-flags: "-DMAC_ARM64=ON"
+            build-deps-cmake-flags: ""
+            run-e2e: true
+            ccache-dir: ''
+
+          - os: "windows"
+            name: "amd64-avx2"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: true
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx512"
+            runs-on: "windows-cuda-12-0"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-vulkan"
+            runs-on: "windows-cuda-12-0"
+            cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx2-cuda-12-0"
+            runs-on: "windows-cuda-12-0"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx-cuda-12-0"
+            runs-on: "windows-cuda-12-0"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx512-cuda-12-0"
+            runs-on: "windows-cuda-12-0"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx2-cuda-11-7"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx-cuda-11-7"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+          - os: "windows"
+            name: "amd64-avx512-cuda-11-7"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install choco on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install make pkgconfiglite ccache awscli 7zip ninja -y
+
+      - name: Download ccache from s3
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        shell: bash
+        env:
+          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+
+      - uses: apple-actions/import-codesign-certs@v2
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
+      - name: Build
+        run: |
+          cd cortex-cpp
+          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+
+      - name: Pre-package
+        run: |
+          cd cortex-cpp
+          make pre-package
+
+      - name: Code Signing macOS
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-cpp
+          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - uses: nick-fields/retry@v3
+        with:
+          continue_on_error: true
+          retry_wait_seconds: 10
+          timeout_minutes: 10
+          max_attempts: 3
+          shell: cmd
+          command: |
+            cd cortex-cpp
+            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+            make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+        name: Code Signing Windows
+        if: runner.os == 'Windows'
+
+      - name: Package
+        run: |
+          cd cortex-cpp
+          make package
+
+      - name: Run e2e testing
+        if: ${{ matrix.run-e2e }}
+        run: |
+          cd cortex-cpp
+          make run-e2e-test RUN_TESTS=true LLM_MODEL_URL=${{ env.LLM_MODEL_URL }} EMBEDDING_MODEL_URL=${{ env.EMBEDDING_MODEL_URL }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
+          path: ./cortex-cpp/cortex-cpp
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-cpp/cortex-cpp.tar.gz
+          asset_name: cortex-cpp-${{ needs.create-draft-release.outputs.version }}-${{ matrix.os }}-${{ matrix.name }}.tar.gz
+          asset_content_type: application/gzip
+      - name: Upload ccache to s3
+        continue-on-error: true
+        if: always() && runner.os == 'Windows'
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          aws s3 cp ${{ matrix.ccache-dir }} s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+
+  build-cortex-single-binary:
+    runs-on: ${{ matrix.runs-on }}
+    needs: [create-draft-release]
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-latest"
+
+          - os: "windows"
+            name: "amd64"
+            runs-on: "windows-2019"
+
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-13"
+
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-latest"
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.0.1
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: "Update version by tag"
+        working-directory: cortex-js
+        shell: bash
+        run: |
+          echo "Version: ${{ needs.create-draft-release.outputs.version }}"
+          # Update the version in package.json
+          jq --arg version "${{ needs.create-draft-release.outputs.version }}" '.version = $version' package.json > /tmp/package.json
+          mv /tmp/package.json package.json
+
+      - name: Install choco on Windows
+        if: runner.os == 'Windows'
+        run: |
+          choco install make -y
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+          registry-url: "https://registry.npmjs.org"
+
+      - run: yarn install && yarn build && yarn build:binary
+        working-directory: ./cortex-js
+
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        shell: bash
+        env:
+          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+
+      - uses: apple-actions/import-codesign-certs@v2
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
+      - name: Code Signing macOS
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-js
+          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - name: Create MacOS PKG Installer
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-js
+          mkdir installer
+          cp cortex installer/cortex
+          pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
+
+      - name: Create MacOS PKG Installer
+        if: runner.os == 'Linux'
+        run: |
+          cd cortex-js
+          mkdir -p cortexso/DEBIAN
+          mkdir -p cortexso/usr/local/bin
+          sed "s/Version:/Version: ${{ needs.create-draft-release.outputs.version }}/g" control.template > cortexso/DEBIAN/control
+          cp cortex cortexso/usr/local/bin/cortex
+          dpkg-deb --build cortexso
+
+      - name: Compile .ISS to .EXE Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        if: runner.os == 'Windows'
+        with:
+          path: cortex-js/installer.iss
+          options: /O+
+
+      - uses: nick-fields/retry@v3
+        with:
+          continue_on_error: true
+          retry_wait_seconds: 10
+          timeout_minutes: 10
+          max_attempts: 3
+          shell: cmd
+          command: |
+            cd cortex-js
+            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+            make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+        name: Code Signing Windows
+        if: runner.os == 'Windows'
+
+      - name: Post-Bundle
+        run: |
+          cd cortex-js
+          make postbundle
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/cortex
+            ./cortex-js/cortex.exe
+
+      - name: Upload Windows Installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/setup.exe
+
+      - name: Upload Linux Installer
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/cortexso.deb
+      
+      - name: Upload MacOS Installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
+          path: |
+            ./cortex-js/cortex-installer.pkg
+
+      - name: Upload Cortex Installer
+        uses: actions/upload-release-asset@v1.0.1
+        if: runner.os != 'Linux'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex-installer.tar.gz
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
+      - uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex.tar.gz
+          asset_name: cortex-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
+      - uses: actions/upload-release-asset@v1.0.1
+        if: runner.os == 'Linux'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortexso.deb
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.deb
+          asset_content_type: application/gzip
+
+  update_release_draft:
+    needs: [build-and-test, build-cortex-single-binary]
+    permissions:
+      # write permission is required to create a github release
+      contents: write
+      # write permission is required for autolabeler
+      # otherwise, read permission is required at least
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      # (Optional) GitHub Enterprise requires GHE_HOST variable set
+      #- name: Set GHE_HOST
+      #  run: |
+      #    echo "GHE_HOST=${GITHUB_SERVER_URL##https:\/\/}" >> $GITHUB_ENV
+
+      # Drafts your next Release notes as Pull Requests are merged into "master"
+      - uses: release-drafter/release-drafter@v5
+        # (Optional) specify config name to use, relative to .github/. Default: release-drafter.yml
+        # with:
+        #   config-name: my-config.yml
+        #   disable-autolabeler: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

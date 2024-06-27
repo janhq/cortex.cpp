@@ -14,6 +14,10 @@ import { promisify } from 'util';
 import yaml from 'js-yaml';
 import { write } from 'fs';
 import { createInterface } from 'readline';
+import {
+  defaultCortexCppHost,
+  defaultCortexCppPort,
+} from '@/infrastructure/constants/cortex';
 
 const readFileAsync = promisify(read);
 const openAsync = promisify(open);
@@ -34,7 +38,7 @@ export class FileManagerService {
    * Get cortex configs
    * @returns the config object
    */
-  async getConfig(): Promise<Config> {
+  async getConfig(): Promise<Config & object> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -48,7 +52,10 @@ export class FileManagerService {
     try {
       const content = await promises.readFile(configPath, 'utf8');
       const config = yaml.load(content) as Config;
-      return config;
+      return {
+        ...this.defaultConfig(),
+        ...config,
+      };
     } catch (error) {
       console.warn('Error reading config file. Using default config.');
       console.warn(error);
@@ -59,7 +66,7 @@ export class FileManagerService {
     }
   }
 
-  async writeConfigFile(config: Config): Promise<void> {
+  async writeConfigFile(config: Config & object): Promise<void> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -97,6 +104,9 @@ export class FileManagerService {
 
     return {
       dataFolderPath,
+      initialized: false,
+      cortexCppHost: defaultCortexCppHost,
+      cortexCppPort: defaultCortexCppPort,
     };
   }
 
@@ -151,7 +161,7 @@ export class FileManagerService {
 
       return await readPreviousChunk();
     } catch (err) {
-      console.error('Error reading last line:', err);
+      //todo: add log level then log error
       throw err;
     }
   }
@@ -162,7 +172,7 @@ export class FileManagerService {
       await writeAsync(fd, buffer, 0, buffer.length, position);
       await closeAsync(fd);
     } catch (err) {
-      console.error('Error modifying last line:', err);
+      //todo: add log level then log error
       throw err;
     }
   }
@@ -179,7 +189,6 @@ export class FileManagerService {
         },
       );
     } catch (err) {
-      console.error('Error appending to file:', err);
       throw err;
     }
   }
@@ -225,11 +234,19 @@ export class FileManagerService {
   /**
    * Get the benchmark folder path
    * Usually it is located at the home directory > cortex > extensions
-   * @returns the path to the extensions folder
+   * @returns the path to the benchmark folder
    */
   async getBenchmarkPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.benchmarkFoldername);
+  }
+
+  /**
+   * Get Cortex CPP engines folder path
+   * @returns the path to the cortex engines folder
+   */
+  async getCortexCppEnginePath(): Promise<string> {
+    return join(await this.getDataFolderPath(), 'cortex-cpp', 'engines');
   }
 
   async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {

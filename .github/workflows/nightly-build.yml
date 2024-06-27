@@ -52,132 +52,177 @@ jobs:
             name: "amd64-avx2"
             runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
             run-e2e: true
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx"
             runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx512"
             runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-vulkan"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx2-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx512-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
             cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx2-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=ON"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX2=OFF"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "linux"
             name: "amd64-avx512-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON -DLLAMA_AVX512=ON"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "mac"
             name: "amd64"
             runs-on: "macos-13"
             cmake-flags: ""
+            build-deps-cmake-flags: ""
             run-e2e: true
+            ccache-dir: ''
 
           - os: "mac"
             name: "arm64"
             runs-on: "macos-latest"
             cmake-flags: "-DMAC_ARM64=ON"
+            build-deps-cmake-flags: ""
             run-e2e: false
+            ccache-dir: ''
 
           - os: "windows"
             name: "amd64-avx2"
-            runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: true
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx"
-            runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            runs-on: "windows-cuda-11-7"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx512"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-vulkan"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx2-cuda-12-0"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx-cuda-12-0"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx512-cuda-12-0"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx2-cuda-11-7"
             runs-on: "windows-cuda-11-7"
-            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX2=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
           - os: "windows"
             name: "amd64-avx-cuda-11-7"
             runs-on: "windows-cuda-11-7"
-            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX2=OFF -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+
           - os: "windows"
             name: "amd64-avx512-cuda-11-7"
             runs-on: "windows-cuda-11-7"
-            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE"
+            cmake-flags: "-DLLAMA_AVX512=ON -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
+            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
 
     steps:
       - name: Clone
@@ -194,7 +239,19 @@ jobs:
       - name: Install choco on Windows
         if: runner.os == 'Windows'
         run: |
-          choco install make -y
+          choco install make pkgconfiglite ccache awscli 7zip ninja -y
+
+      - name: Download ccache from s3
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
       - name: Get Cer for code signing
         if: runner.os == 'macOS'
@@ -212,7 +269,7 @@ jobs:
       - name: Build
         run: |
           cd cortex-cpp
-          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}"
+          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
       - name: Pre-package
         run: |
@@ -265,3 +322,14 @@ jobs:
           asset_path: ./cortex-cpp/cortex-cpp.tar.gz
           asset_name: cortex-cpp-${{ needs.create-draft-release.outputs.version }}-${{ matrix.os }}-${{ matrix.name }}.tar.gz
           asset_content_type: application/gzip
+      - name: Upload ccache to s3
+        continue-on-error: true
+        if: always() && runner.os == 'Windows'
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          aws s3 cp ${{ matrix.ccache-dir }} s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"

@@ -1,24 +1,52 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
 import { Assistant } from '@/domain/models/assistant.interface';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
+import { ModelRepository } from '@/domain/repositories/model.interface';
+import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { DuplicateAssistantException } from '@/infrastructure/exception/duplicate-assistant.exception';
 
 @Injectable()
 export class AssistantsUsecases {
   constructor(
     @Inject('ASSISTANT_REPOSITORY')
-    private assistantRepository: Repository<AssistantEntity>,
+    private readonly assistantRepository: Repository<AssistantEntity>,
+    private readonly modelRepository: ModelRepository,
   ) {}
 
-  create(createAssistantDto: CreateAssistantDto) {
-    const assistant: Assistant = {
+  async create(createAssistantDto: CreateAssistantDto) {
+    const { top_p, temperature, model, id } = createAssistantDto;
+    if (model !== '*') {
+      const modelEntity = await this.modelRepository.findOne(model);
+      if (!modelEntity) {
+        throw new ModelNotFoundException(model);
+      }
+    }
+
+    const assistant: AssistantEntity = {
       ...createAssistantDto,
       object: 'assistant',
       created_at: Date.now(),
+      response_format: null,
+      tool_resources: null,
+      top_p: top_p ?? null,
+      temperature: temperature ?? null,
     };
-    this.assistantRepository.insert(assistant);
+
+    try {
+      await this.assistantRepository.insert(assistant);
+    } catch (err) {
+      if (err instanceof QueryFailedError) {
+        if (err.driverError.code === 'SQLITE_CONSTRAINT')
+          throw new DuplicateAssistantException(id);
+      }
+
+      throw err;
+    }
+
+    return this.findOne(assistant.id);
   }
 
   async listAssistants(
@@ -42,10 +70,6 @@ export class AssistantsUsecases {
 
     const { entities: assistants } = await queryBuilder.getRawAndEntities();
 
-    if (assistants.length === 0) {
-      assistants.push(this.janAssistant);
-    }
-
     let hasMore = false;
     if (assistants.length > limit) {
       hasMore = true;
@@ -63,51 +87,12 @@ export class AssistantsUsecases {
   }
 
   async findOne(id: string) {
-    if (id === this.janAssistant.id) {
-      return this.janAssistant;
-    }
-
     return this.assistantRepository.findOne({
       where: { id },
     });
   }
 
   async remove(id: string) {
-    if (id === this.janAssistant.id) {
-      throw new BadRequestException('Cannot delete Jan assistant!');
-    }
     return this.assistantRepository.delete(id);
-  }
-
-  janAssistant: Assistant = {
-    avatar: '',
-    id: 'jan',
-    object: 'assistant',
-    created_at: Date.now(),
-    name: 'Jan',
-    description: 'A default assistant that can use all downloaded models',
-    model: '*',
-    instructions: '',
-    tools: [
-      {
-        type: 'retrieval',
-        enabled: false,
-        settings: {
-          top_k: 2,
-          chunk_size: 1024,
-          chunk_overlap: 64,
-          retrieval_template:
-            "Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.\n----------------\nCONTEXT: {CONTEXT}\n----------------\nQUESTION: {QUESTION}\n----------------\nHelpful Answer:",
-        },
-      },
-    ],
-    file_ids: [],
-  };
-
-  async seed() {
-    if ((await this.findOne(this.janAssistant.id)) != null) {
-      return;
-    }
-    await this.assistantRepository.insert(this.janAssistant);
   }
 }

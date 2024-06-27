@@ -179,9 +179,7 @@ export class ModelsController {
   })
   @Get()
   findAll() {
-    return this.modelsUsecases
-      .findAll()
-      .then((data) => data.map((e) => ({ id: e.model, ...e })));
+    return this.modelsUsecases.findAll();
   }
 
   @HttpCode(200)
@@ -214,15 +212,21 @@ export class ModelsController {
   @ApiOperation({
     summary: 'Update model',
     description: "Updates a model instance defined by a model's `id`.",
+    parameters: [
+      {
+        in: 'path',
+        name: 'model',
+        required: true,
+        description: 'The unique identifier of the model.',
+      },
+    ],
   })
-  @ApiParam({
-    name: 'id',
-    required: true,
-    description: 'The unique identifier of the model.',
-  })
-  @Patch(':id(*)')
-  update(@Param('id') id: string, @Body() updateModelDto: UpdateModelDto) {
-    return this.modelsUsecases.update(id, updateModelDto);
+  @Post(':model(*)/config')
+  async update(
+    @Param('model') model: string,
+    @Body() updateModelDto: UpdateModelDto,
+  ) {
+    return this.modelsUsecases.update(model, updateModelDto);
   }
 
   @ApiResponse({

@@ -10,6 +10,7 @@ import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { CORTEX_CPP_EMBEDDINGS_URL } from '@/infrastructure/constants/cortex';
 import { CreateEmbeddingsDto } from '@/infrastructure/dtos/embeddings/embeddings-request.dto';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @Injectable()
 export class ChatUsecases {
@@ -18,6 +19,7 @@ export class ChatUsecases {
     private readonly extensionRepository: ExtensionRepository,
     private readonly telemetryUseCases: TelemetryUsecases,
     private readonly httpService: HttpService,
+    private readonly fileService: FileManagerService,
   ) {}
 
   async inference(
@@ -56,14 +58,19 @@ export class ChatUsecases {
    * @param port Cortex CPP port.
    * @returns Embedding vector.
    */
-  embeddings(dto: CreateEmbeddingsDto) {
+  async embeddings(dto: CreateEmbeddingsDto) {
+    const configs = await this.fileService.getConfig();
     return firstValueFrom(
-      this.httpService.post(CORTEX_CPP_EMBEDDINGS_URL(), dto, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept-Encoding': 'gzip',
+      this.httpService.post(
+        CORTEX_CPP_EMBEDDINGS_URL(configs.cortexCppHost, configs.cortexCppPort),
+        dto,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip',
+          },
         },
-      }),
+      ),
     ).then((res) => res.data);
   }
 }

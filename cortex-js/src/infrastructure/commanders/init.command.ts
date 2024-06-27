@@ -13,6 +13,7 @@ import {
   EventName,
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
+import { ContextService } from '../services/context/context.service';
 
 @SubCommand({
   name: 'init',
@@ -35,67 +36,29 @@ export class InitCommand extends CommandRunner {
   }
 
   async run(passedParams: string[], options?: InitOptions): Promise<void> {
-    const result = options?.silent
-      ? await this.initSilently(passedParams)
-      : await this.initPrompts(passedParams, options);
-    this.telemetryUsecases.sendEvent(
-      [
-        {
-          name: EventName.INIT,
-        },
-      ],
-      TelemetrySource.CLI,
-    );
-    return result;
+    if (options?.silent) {
+      const installationOptions =
+        await this.initUsecases.defaultInstallationOptions();
+      return this.initUsecases.installEngine(installationOptions);
+    } else {
+      options = await this.inquirerService.ask(
+        'init-run-mode-questions',
+        options,
+      );
+
+      const version = passedParams[0] ?? 'latest';
+
+      await this.initUsecases.installEngine(options, version);
+      this.telemetryUsecases.sendEvent(
+        [
+          {
+            name: EventName.INIT,
+          },
+        ],
+        TelemetrySource.CLI,
+      );
+    }
   }
-
-  private initSilently = async (
-    passedParams: string[],
-    options: InitOptions = {},
-  ) => {
-    const version = passedParams[0] ?? 'latest';
-    if (process.platform === 'darwin') {
-      const engineFileName = this.initUsecases.parseEngineFileName(options);
-      return this.initUsecases.installEngine(engineFileName, version);
-    }
-    // If Nvidia Driver is installed -> GPU
-    options.runMode = (await this.initUsecases.checkNvidiaGPUExist())
-      ? 'GPU'
-      : 'CPU';
-    // CPU Instructions detection
-    options.gpuType = 'Nvidia';
-    options.instructions = await this.initUsecases.detectInstructions();
-    const engineFileName = this.initUsecases.parseEngineFileName(options);
-    return this.initUsecases
-      .installEngine(engineFileName, version)
-      .then(() => this.initUsecases.installCudaToolkitDependency(options));
-  };
-
-  /**
-   * Manual initalization
-   * To setup cortex's dependencies
-   * @param input
-   * @param options GPU | CPU / Nvidia | Others (Vulkan) / AVX | AVX2 | AVX512
-   */
-  private initPrompts = async (input: string[], options?: InitOptions) => {
-    options = await this.inquirerService.ask(
-      'init-run-mode-questions',
-      options,
-    );
-
-    if (options.runMode === 'GPU' && !(await this.initUsecases.cudaVersion())) {
-      options = await this.inquirerService.ask('init-cuda-questions', options);
-    }
-
-    const version = input[0] ?? 'latest';
-
-    const engineFileName = this.initUsecases.parseEngineFileName(options);
-    await this.initUsecases.installEngine(engineFileName, version);
-
-    if (options.installCuda === 'Yes') {
-      await this.initUsecases.installCudaToolkitDependency(options);
-    }
-  };
 
   @Option({
     flags: '-s, --silent',

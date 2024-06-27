@@ -9,7 +9,7 @@ import {
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
 import { ModelStat } from '@/infrastructure/commanders/types/model-stat.interface';
-import { ContextService } from '@/util/context.service';
+import { ContextService } from '@/infrastructure/services/context/context.service';
 import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
 import { v4 } from 'uuid';
 

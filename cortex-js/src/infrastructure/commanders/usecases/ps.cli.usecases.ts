@@ -2,14 +2,13 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import {
   CORTEX_CPP_MODELS_URL,
   CORTEX_JS_HEALTH_URL,
-  defaultCortexCppHost,
-  defaultCortexCppPort,
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ModelStat } from '@commanders/types/model-stat.interface';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 interface ModelStatResponse {
   object: string;
@@ -17,18 +16,21 @@ interface ModelStatResponse {
 }
 @Injectable()
 export class PSCliUsecases {
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly fileService: FileManagerService,
+  ) {}
   /**
    * Get models running in the Cortex C++ server
-   * @param host Cortex host address
-   * @param port Cortex port address
    */
-  async getModels(
-    host: string = defaultCortexCppHost,
-    port: number = defaultCortexCppPort,
-  ): Promise<ModelStat[]> {
+  async getModels(): Promise<ModelStat[]> {
+    const configs = await this.fileService.getConfig();
     return new Promise<ModelStat[]>((resolve, reject) =>
-      firstValueFrom(this.httpService.get(CORTEX_CPP_MODELS_URL(host, port)))
+      firstValueFrom(
+        this.httpService.get(
+          CORTEX_CPP_MODELS_URL(configs.cortexCppHost, configs.cortexCppPort),
+        ),
+      )
         .then((res) => {
           const data = res.data as ModelStatResponse;
           if (

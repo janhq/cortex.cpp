@@ -216,6 +216,24 @@ export class ThreadsController {
   }
 
   @ApiOperation({
+    summary: 'Clean thread',
+    description: 'Deletes all messages in a thread.',
+    tags: ['Threads'],
+    parameters: [
+      {
+        in: 'path',
+        name: 'thread_id',
+        required: true,
+        description: 'The ID of the thread to clean.',
+      },
+    ],
+  })
+  @Post(':thread_id/clean')
+  async cleanThread(@Param('thread_id') threadId: string) {
+    return this.threadsUsecases.clean(threadId);
+  }
+
+  @ApiOperation({
     summary: 'Delete message',
     description: 'Deletes a message.',
     tags: ['Messages'],

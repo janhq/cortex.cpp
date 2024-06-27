@@ -1,13 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
-import {
-  ChatCompletionRole,
-  ErrorCode,
-  Message,
-  MessageStatus,
-} from '@/domain/models/message.interface';
-import { ThreadContentDto } from './thread-content.dto';
-import { Type } from 'class-transformer';
+import { IsArray, IsString } from 'class-validator';
+import { Message, MessageContent } from '@/domain/models/message.interface';
 
 export class CreateMessageDto implements Partial<Message> {
   @ApiProperty({
@@ -21,18 +14,14 @@ export class CreateMessageDto implements Partial<Message> {
   assistant_id?: string;
 
   @ApiProperty({ description: 'The sources of the messages.' })
-  @IsEnum(ChatCompletionRole)
-  role: ChatCompletionRole;
+  role: 'user' | 'assistant';
 
   @ApiProperty({ description: 'The content of the messages.' })
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => ThreadContentDto)
-  content: ThreadContentDto[];
+  content: MessageContent[];
 
   @ApiProperty({ description: 'Current status of the message.' })
-  @IsEnum(MessageStatus)
-  status: MessageStatus;
+  status: 'in_progress' | 'incomplete' | 'completed';
 
   @ApiProperty({
     description:
@@ -43,8 +32,4 @@ export class CreateMessageDto implements Partial<Message> {
   @ApiProperty({ description: 'Type of the message.' })
   @IsString()
   type?: string;
-
-  @ApiProperty({ description: 'Specifies the cause of any error.' })
-  @IsEnum(ErrorCode)
-  error_code?: ErrorCode;
 }

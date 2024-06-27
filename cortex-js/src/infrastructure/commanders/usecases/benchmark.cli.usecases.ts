@@ -8,7 +8,10 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { join } from 'path';
 import { ModelsCliUsecases } from './models.cli.usecases';
 import { spawn } from 'child_process';
-import { BenchmarkConfig } from '@commanders/types/benchmark-config.interface';
+import {
+  BenchmarkConfig,
+  ParametersConfig,
+} from '@commanders/types/benchmark-config.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { inspect } from 'util';
 import { defaultBenchmarkConfiguration } from '@/infrastructure/constants/benchmark';
@@ -32,13 +35,17 @@ export class BenchmarkCliUsecases {
   /**
    * Benchmark and analyze the performance of a specific AI model using a variety of system resources
    */
-  async benchmark(options: Partial<BenchmarkConfig>) {
+  async benchmark(
+    options: Partial<BenchmarkConfig>,
+    params?: ParametersConfig,
+  ) {
     return this.getBenchmarkConfig().then((config) => {
       this.config = {
         ...config,
         ...options,
       };
 
+      const model = params?.model ?? this.config.api.parameters.model;
       // TODO: Using OpenAI client or Cortex client to benchmark?
       this.openai = new OpenAI({
         apiKey: this.config.api.api_key,
@@ -52,15 +59,13 @@ export class BenchmarkCliUsecases {
       });
       return this.cortexUsecases
         .startCortex()
-        .then(() =>
-          this.modelsCliUsecases.startModel(this.config.api.parameters.model),
-        )
+        .then(() => this.modelsCliUsecases.startModel(model))
         .then(() =>
           this.psUsecases
             .getModels()
             .then((models) =>
               models.find(
-                (e) => e.modelId === this.config.api.parameters.model,
+                (e) => e.modelId === model,
               ),
             ),
         )

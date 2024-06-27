@@ -18,7 +18,6 @@ import { ModelStopCommand } from './infrastructure/commanders/models/model-stop.
 import { ModelGetCommand } from './infrastructure/commanders/models/model-get.command';
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
-import { InitCudaQuestions } from './infrastructure/commanders/questions/cuda.questions';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
@@ -29,12 +28,22 @@ import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
-import { UtilModule } from './util/util.module';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
+import { ContextModule } from './infrastructure/services/context/context.module';
+import { ExtensionsModule } from './extensions/extensions.module';
+import { ConfigsCommand } from './infrastructure/commanders/configs.command';
+import { EnginesCommand } from './infrastructure/commanders/engines.command';
+import { ConfigsModule } from './usecases/configs/configs.module';
+import { EnginesModule } from './usecases/engines/engines.module';
+import { ConfigsGetCommand } from './infrastructure/commanders/configs/configs-get.command';
+import { ConfigsListCommand } from './infrastructure/commanders/configs/configs-list.command';
+import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-set.command';
+import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
+import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 
 @Module({
   imports: [
@@ -54,8 +63,11 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
     MessagesModule,
     FileManagerModule,
     TelemetryModule,
-    UtilModule,
+    ContextModule,
     DownloadManagerModule,
+    ExtensionsModule,
+    ConfigsModule,
+    EnginesModule,
   ],
   providers: [
     CortexCommand,
@@ -68,10 +80,10 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
     PresetCommand,
     EmbeddingCommand,
     BenchmarkCommand,
+    EnginesCommand,
 
     // Questions
     InitRunModeQuestions,
-    InitCudaQuestions,
 
     // Model commands
     ModelStartCommand,
@@ -90,6 +102,16 @@ import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve
 
     // Serve
     ServeStopCommand,
+
+    // Configs
+    ConfigsCommand,
+    ConfigsGetCommand,
+    ConfigsListCommand,
+    ConfigsSetCommand,
+
+    // Engines
+    EnginesListCommand,
+    EnginesGetCommand,
   ],
 })
 export class CommandModule {}

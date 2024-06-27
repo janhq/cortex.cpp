@@ -10,13 +10,11 @@ import { ExtensionModule } from './infrastructure/repositories/extensions/extens
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ConfigModule } from '@nestjs/config';
 import { env } from 'node:process';
-import { SeedService } from './usecases/seed/seed.service';
 import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { AppLoggerMiddleware } from './infrastructure/middlewares/app.logger.middleware';
 import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from './infrastructure/exception/global.exception';
-import { UtilModule } from './util/util.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { EventsController } from './infrastructure/controllers/events.controller';
 import { AssistantsController } from './infrastructure/controllers/assistants.controller';
@@ -27,6 +25,13 @@ import { ThreadsController } from './infrastructure/controllers/threads.controll
 import { StatusController } from './infrastructure/controllers/status.controller';
 import { ProcessController } from './infrastructure/controllers/process.controller';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
+import { ContextModule } from './infrastructure/services/context/context.module';
+import { ExtensionsModule } from './extensions/extensions.module';
+import { ConfigsModule } from './usecases/configs/configs.module';
+import { EnginesModule } from './usecases/engines/engines.module';
+import { ConfigsController } from './infrastructure/controllers/configs.controller';
+import { EnginesController } from './infrastructure/controllers/engines.controller';
+import { ResourceManagerModule } from './infrastructure/services/resources-manager/resources-manager.module';
 
 @Module({
   imports: [
@@ -38,6 +43,7 @@ import { DownloadManagerModule } from './infrastructure/services/download-manage
       envFilePath: env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
     EventEmitterModule.forRoot(),
+    DownloadManagerModule,
     DatabaseModule,
     MessagesModule,
     ThreadsModule,
@@ -48,8 +54,12 @@ import { DownloadManagerModule } from './infrastructure/services/download-manage
     ExtensionModule,
     FileManagerModule,
     TelemetryModule,
-    UtilModule,
+    ContextModule,
     DownloadManagerModule,
+    ExtensionsModule,
+    ConfigsModule,
+    EnginesModule,
+    ResourceManagerModule,
   ],
   controllers: [
     AssistantsController,
@@ -60,9 +70,10 @@ import { DownloadManagerModule } from './infrastructure/services/download-manage
     StatusController,
     ProcessController,
     EventsController,
+    ConfigsController,
+    EnginesController,
   ],
   providers: [
-    SeedService,
     {
       provide: APP_FILTER,
       useClass: GlobalExceptionFilter,
