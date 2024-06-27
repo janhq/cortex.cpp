@@ -39,6 +39,18 @@ export class BenchmarkCliUsecases {
     options: Partial<BenchmarkConfig>,
     params?: ParametersConfig,
   ) {
+    const output = {
+      hardware: await this.getSystemResources(),
+      results: [],
+      metrics: {},
+      model: {},
+    };
+
+    const outputFilePath = join(
+      await this.fileService.getBenchmarkPath(),
+      'output.json',
+    );
+    return
     return this.getBenchmarkConfig().then((config) => {
       this.config = {
         ...config,
@@ -47,16 +59,17 @@ export class BenchmarkCliUsecases {
 
       const model = params?.model ?? this.config.api.parameters.model;
       // TODO: Using OpenAI client or Cortex client to benchmark?
-      this.openai = new OpenAI({
-        apiKey: this.config.api.api_key,
-        baseURL: this.config.api.base_url,
-        timeout: 20 * 1000,
-      });
+      // this.openai = new OpenAI({
+      //   apiKey: this.config.api.api_key,
+      //   baseURL: this.config.api.base_url,
+      //   timeout: 20 * 1000,
+      // });
 
       const serveProcess = spawn('cortex', ['serve'], {
         detached: false,
         shell: process.platform == 'win32',
       });
+      
       return this.cortexUsecases
         .startCortex()
         .then(() => this.modelsCliUsecases.startModel(model))
