@@ -21,6 +21,7 @@ export default class CortexProvider extends OAIEngineExtension {
   description =
     'This extension enables chat completion API calls using the Cortex engine';
   version = '0.0.1';
+  apiKey?: string | undefined;
 
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
   private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;
