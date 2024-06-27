@@ -63,11 +63,7 @@ export class BenchmarkCliUsecases {
         .then(() =>
           this.psUsecases
             .getModels()
-            .then((models) =>
-              models.find(
-                (e) => e.modelId === model,
-              ),
-            ),
+            .then((models) => models.find((e) => e.modelId === model)),
         )
         .then((model) => {
           if (!model)
@@ -231,15 +227,15 @@ export class BenchmarkCliUsecases {
     bar.start(rounds, 0);
 
     for (let i = 0; i < rounds; i++) {
-      const roundResults = [];
+      // const roundResults = [];
       const hardwareBefore = await this.getSystemResources();
 
-      for (let j = 0; j < this.config.concurrency; j++) {
-        const result = await this.benchmarkUser();
-        if (result) {
-          roundResults.push(result);
-        }
-      }
+      // for (let j = 0; j < this.config.concurrency; j++) {
+      //   const result = await this.benchmarkUser();
+      //   if (result) {
+      //     roundResults.push(result);
+      //   }
+      // }
 
       const hardwareAfter = await this.getSystemResources();
       const hardwareChanges = await this.getResourceChange(
@@ -249,7 +245,7 @@ export class BenchmarkCliUsecases {
 
       allResults.push({
         round: i + 1,
-        results: roundResults,
+        results: [],
         hardwareChanges,
       });
 
