@@ -1,4 +1,4 @@
-import { Model as OpenAiModel } from 'openai/resources/models';
+import { Model as OpenAiModel } from 'cortexso-node/resources/models';
 
 export interface Model
   extends OpenAiModel,

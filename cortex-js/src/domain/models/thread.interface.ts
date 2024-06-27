@@ -1,4 +1,4 @@
-import { Thread as OpenAiThread } from 'openai/resources/beta/threads/threads';
+import { Thread as OpenAiThread } from 'cortexso-node/resources/beta/threads/threads';
 import { Assistant } from './assistant.interface';
 
 export interface ThreadToolResources extends OpenAiThread.ToolResources {}

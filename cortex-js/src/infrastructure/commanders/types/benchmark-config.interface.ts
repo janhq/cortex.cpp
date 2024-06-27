@@ -1,4 +1,4 @@
-import { ChatCompletionMessageParam } from 'openai/resources';
+import { ChatCompletionMessageParam } from 'cortexso-node/resources';
 
 export interface ApiConfig {
   base_url: string;

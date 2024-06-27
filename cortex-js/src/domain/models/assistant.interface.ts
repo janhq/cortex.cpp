@@ -1,5 +1,5 @@
-import { Assistant as OpenAiAssistant } from 'openai/resources/beta/assistants';
-import { AssistantResponseFormatOption as OpenAIAssistantResponseFormatOption } from 'openai/resources/beta/threads/threads';
+import { Assistant as OpenAiAssistant } from 'cortexso-node/resources/beta/assistants';
+import { AssistantResponseFormatOption as OpenAIAssistantResponseFormatOption } from 'cortexso-node/resources/beta/threads/threads';
 
 export interface Assistant extends OpenAiAssistant {
   avatar?: string;
