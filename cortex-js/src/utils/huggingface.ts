@@ -1,6 +1,9 @@
 //// PRIVATE METHODS ////
 
-import { HuggingFaceRepoData } from '@/domain/models/huggingface.interface';
+import {
+  HuggingFaceRepoData,
+  HuggingFaceRepoSibling,
+} from '@/domain/models/huggingface.interface';
 import { ModelMetadata } from '@/infrastructure/commanders/types/model-tokenizer.interface';
 import {
   AllQuantizations,
@@ -84,8 +87,7 @@ export async function fetchHuggingFaceRepoData(
 
   for (let i = 0; i < data.siblings.length; i++) {
     const downloadUrl = HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL(
-      paths[2],
-      paths[3],
+      [paths[2], paths[3]].join('/'),
       data.siblings[i].rfilename,
     );
     data.siblings[i].downloadUrl = downloadUrl;
@@ -113,16 +115,37 @@ export async function fetchJanRepoData(
   modelId: string,
 ): Promise<HuggingFaceRepoData> {
   const repo = modelId.split(':')[0];
-  const tree = await parseModelHubEngineBranch(modelId.split(':')[1] ?? 'default');
-  const url = getRepoModelsUrl(`cortexhub/${repo}`, tree);
+  const tree = await parseModelHubEngineBranch(
+    modelId.split(':')[1] ?? !modelId.includes('/') ? 'default' : '',
+  );
+  const url = getRepoModelsUrl(
+    `${!modelId.includes('/') ? 'cortexhub/' : ''}${repo}`,
+    tree,
+  );
 
   const res = await fetch(url);
+  const jsonData = await res.json();
+  if ('siblings' in jsonData) {
+    AllQuantizations.forEach((quantization) => {
+      jsonData.siblings.forEach((sibling: HuggingFaceRepoSibling) => {
+        if (!sibling.quantization && sibling.rfilename.includes(quantization)) {
+          sibling.quantization = quantization;
+          sibling.downloadUrl = HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL(
+            repo,
+            sibling.rfilename,
+          );
+        }
+      });
+    });
+    return jsonData as HuggingFaceRepoData;
+  }
+
   const response:
     | {
         path: string;
         size: number;
       }[]
-    | { error: string } = await res.json();
+    | { error: string } = jsonData;
 
   if ('error' in response && response.error != null) {
     throw new Error(response.error);

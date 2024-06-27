@@ -14,6 +14,7 @@ import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { Engines } from '../types/engine.interface';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 type RunOptions = {
   threadId?: string;
@@ -55,7 +56,9 @@ export class RunCommand extends CommandRunner {
     // If not exist
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
-      console.log(`Model ${modelId} not found. Try pulling model...`);
+      console.log(
+        `${modelId} not found on filesystem. Downloading from remote: https://huggingface.co/cortexhub if possible.`,
+      );
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
           console.error('Model does not exist.');
@@ -71,9 +74,11 @@ export class RunCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error('Model is not available. Please pull the model first.');
+      console.error('Model is not available.');
       process.exit(1);
     }
+
+    checkModelCompatibility(modelId);
 
     const engine = existingModel.engine || 'cortex.llamacpp';
     // Pull engine if not exist
@@ -85,10 +90,6 @@ export class RunCommand extends CommandRunner {
         'latest',
         engine,
       );
-    }
-    if (engine === Engines.onnx && process.platform !== 'win32') {
-      console.error('The ONNX engine does not support this OS yet.');
-      process.exit(1);
     }
 
     return this.cortexUsecases
