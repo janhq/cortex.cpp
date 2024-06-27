@@ -11,3 +11,9 @@ api.log
 prism.log
 api.json
 openai-python/*
+build
+cortex-js/cortex.exe
+cortex-js/package-lock.json
+.vscode
+cortex-js/command
+cortex-js/src/infrastructure/commanders/test/test_data

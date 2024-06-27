@@ -38,7 +38,7 @@ export class InitCommand extends CommandRunner {
     if (options?.silent) {
       const installationOptions =
         await this.initUsecases.defaultInstallationOptions();
-      return this.initUsecases.installEngine(installationOptions);
+      await this.initUsecases.installEngine(installationOptions);
     } else {
       options = await this.inquirerService.ask(
         'init-run-mode-questions',
@@ -57,6 +57,7 @@ export class InitCommand extends CommandRunner {
         TelemetrySource.CLI,
       );
     }
+    console.log('Cortex engines installed successfully!');
   }
 
   @Option({
