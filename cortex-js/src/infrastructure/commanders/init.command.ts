@@ -7,7 +7,6 @@ import {
 import { InitCliUsecases } from './usecases/init.cli.usecases';
 import { InitOptions } from './types/init-options.interface';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '@/util/context.service';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import {
   EventName,

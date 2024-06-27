@@ -3,6 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { FileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 import { ValidationPipe } from '@nestjs/common';
+import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 export const getApp = async () => {
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
@@ -15,6 +16,9 @@ export const getApp = async () => {
 
   const fileService = app.get(FileManagerService);
   await fileService.getConfig();
+
+  const telemetryService = await app.resolve(TelemetryUsecases);
+  await telemetryService.initInterval();
 
   app.useGlobalPipes(
     new ValidationPipe({
