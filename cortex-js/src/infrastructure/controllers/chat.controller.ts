@@ -12,7 +12,7 @@ export class ChatController {
 
   @ApiOperation({
     summary: 'Create chat completion',
-    description: 'Creates a model response for the given conversation.',
+    description: 'Creates a model response for the given conversation. The following parameters are not working for the `TensorRT-LLM` engine:\n- `frequency_penalty`\n- `presence_penalty`\n- `top_p`',
   })
   @HttpCode(200)
   @ApiResponse({
