@@ -192,7 +192,7 @@ export class ChatCliUsecases {
                 const toParse = cachedLines + line;
                 if (!line.includes('data: [DONE]')) {
                   const data = JSON.parse(toParse.replace('data: ', ''));
-                  content += data.choices[0]?.delta?.content ?? '';
+                  content = data.choices[0]?.delta?.content ?? '';
 
                   if (content.startsWith('assistant: ')) {
                     content = content.replace('assistant: ', '');
@@ -209,8 +209,10 @@ export class ChatCliUsecases {
             }
           });
         })
-        .catch(() => {
-          stdout.write('Something went wrong! Please check model status.\n');
+        .catch((e: any) => {
+          stdout.write(
+            `Something went wrong! Please check model status.\n${e.message}\n`,
+          );
           if (attach) rl.prompt();
           else rl.close();
         });
