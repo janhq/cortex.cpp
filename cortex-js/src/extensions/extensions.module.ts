@@ -4,7 +4,7 @@ import MistralEngineExtension from './mistral.engine';
 import OpenAIEngineExtension from './openai.engine';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
-import { ConfigsModule } from '@/usecases/configs/configs.module';
+import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 const provider = {
   provide: 'EXTENSIONS_PROVIDER',
@@ -17,9 +17,10 @@ const provider = {
 };
 
 @Module({
-  imports: [HttpModule, ConfigsModule],
+  // Do not import ConfigsModule here to avoid circular dependency
+  imports: [HttpModule, FileManagerModule],
   controllers: [],
-  providers: [provider],
-  exports: [provider],
+  providers: [ConfigsUsecases, provider],
+  exports: [ConfigsUsecases, provider],
 })
 export class ExtensionsModule {}
