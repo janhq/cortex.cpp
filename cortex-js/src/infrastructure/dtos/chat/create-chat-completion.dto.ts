@@ -22,6 +22,7 @@ export class CreateChatCompletionDto {
 
   @ApiProperty({
     description: 'The unique identifier of the model.',
+    example: 'gpt-4',
   })
   @IsString()
   model: string;
@@ -29,6 +30,7 @@ export class CreateChatCompletionDto {
   @ApiProperty({
     description:
       'Determines the format for output generation. If set to `true`, the output is generated continuously, allowing for real-time streaming of responses. If set to `false`, the output is delivered in a single JSON file.',
+      example: true,
   })
   @IsOptional()
   @IsBoolean()
@@ -37,6 +39,7 @@ export class CreateChatCompletionDto {
   @ApiProperty({
     description:
       'Sets the upper limit on the number of tokens the model can generate in a single output.',
+      example: 4096,
   })
   @IsOptional()
   @IsNumber()
@@ -45,6 +48,7 @@ export class CreateChatCompletionDto {
   @ApiProperty({
     description:
       'Defines specific tokens or phrases that signal the model to stop producing further output.',
+      example: ["End"],
   })
   @IsOptional()
   @IsArray()
@@ -53,6 +57,7 @@ export class CreateChatCompletionDto {
   @ApiProperty({
     description:
       'Modifies the likelihood of the model repeating the same words or phrases within a single output.',
+      example: 0.2,
   })
   @IsOptional()
   @IsNumber()
@@ -61,6 +66,7 @@ export class CreateChatCompletionDto {
   @ApiProperty({
     description:
       'Reduces the likelihood of repeating tokens, promoting novelty in the output.',
+      example: 0.6,
   })
   @IsOptional()
   @IsNumber()
@@ -68,6 +74,7 @@ export class CreateChatCompletionDto {
 
   @ApiProperty({
     description: "Influences the randomness of the model's output.",
+    example: 0.8,
   })
   @IsOptional()
   @IsNumber()
@@ -75,6 +82,7 @@ export class CreateChatCompletionDto {
 
   @ApiProperty({
     description: 'Sets probability threshold for more relevant outputs.',
+    example: 0.95,
   })
   @IsOptional()
   @IsNumber()
