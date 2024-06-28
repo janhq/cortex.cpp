@@ -29,13 +29,25 @@ export class ChatController {
     const { stream } = createChatDto;
 
     if (stream) {
-      res.header('Content-Type', 'text/event-stream');
       this.chatService
         .inference(createChatDto, headers)
-        .then((stream) => stream.pipe(res));
+        .then((stream) => {
+          res.header('Content-Type', 'text/event-stream');
+          stream.pipe(res);
+        })
+        .catch((error) =>
+          res.status(error.statusCode ?? 400).send(error.message),
+        );
     } else {
       res.header('Content-Type', 'application/json');
-      res.json(await this.chatService.inference(createChatDto, headers));
+      this.chatService
+        .inference(createChatDto, headers)
+        .then((response) => {
+          res.json(response);
+        })
+        .catch((error) =>
+          res.status(error.statusCode ?? 400).send(error.message),
+        );
     }
   }
 }
