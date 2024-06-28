@@ -31,12 +31,12 @@ export const CORTEX_CPP_MODELS_URL = (
 export const CORTEX_JS_HEALTH_URL = (
   host: string = defaultCortexJsHost,
   port: number = defaultCortexJsPort,
-) => `http://${host}:${port}/health`;
+) => `http://${host}:${port}/v1/health`;
 
 export const CORTEX_JS_STOP_API_SERVER_URL = (
   host: string = defaultCortexJsHost,
   port: number = defaultCortexJsPort,
-) => `http://${host}:${port}/process`;
+) => `http://${host}:${port}/v1/process`;
 
 // INITIALIZATION
 export const CORTEX_RELEASES_URL =
