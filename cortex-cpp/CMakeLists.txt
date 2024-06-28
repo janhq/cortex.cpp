@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(cortex-cpp C CXX)
 
-include(engines/cortex.llamacpp/engine.cmake)
 include(CheckIncludeFileCXX)
 
 check_include_file_cxx(any HAS_ANY)
