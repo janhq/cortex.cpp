@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -18,8 +19,15 @@ export default class OpenAIEngineExtension extends OAIEngineExtension {
   constructor(
     protected readonly httpService: HttpService,
     protected readonly configsUsecases: ConfigsUsecases,
+    protected readonly eventEmmitter: EventEmitter2,
   ) {
     super(httpService);
+
+    eventEmmitter.on('config.updated', async (data) => {
+      if (data.group === this.name) {
+        this.apiKey = data.value;
+      }
+    });
   }
 
   async onLoad() {

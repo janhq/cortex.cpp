@@ -1,10 +1,14 @@
 import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ConfigsUsecases {
-  constructor(private readonly fileManagerService: FileManagerService) {}
+  constructor(
+    private readonly fileManagerService: FileManagerService,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
 
   /**
    * Save a configuration to the .cortexrc file.
@@ -33,11 +37,22 @@ export class ConfigsUsecases {
         : {}),
     };
 
-    return this.fileManagerService.writeConfigFile(newConfigs).then(() => {
-      return {
-        message: 'The config has been successfully updated.',
-      };
-    });
+    return this.fileManagerService
+      .writeConfigFile(newConfigs)
+      .then(async () => {
+        if (group) {
+          this.eventEmitter.emit('config.updated', {
+            group,
+            key,
+            value,
+          });
+        }
+      })
+      .then(() => {
+        return {
+          message: 'The config has been successfully updated.',
+        };
+      });
   }
 
   /**
