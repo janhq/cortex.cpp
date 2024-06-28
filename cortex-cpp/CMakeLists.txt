@@ -56,27 +56,10 @@ endif()
 
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 
-if(LLAMA_CUDA)
-  add_compile_definitions(CORTEX_CUDA)
-endif()
-
-if(LLAMA_AVX512)
-  add_compile_definitions(CORTEX_AVX512)
-endif()
-
-if(LLAMA_AVX2)
-  add_compile_definitions(CORTEX_AVX2)
-endif()
-
-if(LLAMA_VULKAN)
-  add_compile_definitions(CORTEX_VULKAN)
-endif()
-
-add_subdirectory(test)
+# add_subdirectory(test)
 
 add_executable(${PROJECT_NAME} main.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_validation.cc
 )
 
 # ##############################################################################
