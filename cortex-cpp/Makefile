@@ -36,6 +36,22 @@ else
 	make -j4;
 endif
 
+pre-package:
+ifeq ($(OS),Windows_NT)
+	@powershell -Command "mkdir -p cortex-cpp;"
+	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
+	@powershell -Command "cp build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
+else ifeq ($(shell uname -s),Linux)
+	@mkdir -p cortex-cpp; \
+	cp build/cortex-cpp cortex-cpp/;
+else
+	@mkdir -p cortex-cpp; \
+	cp build/cortex-cpp cortex-cpp/;
+endif
+
 codesign:
 ifeq ($(CODE_SIGN),false)
 	@echo "Skipping Code Sign"

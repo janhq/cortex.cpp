@@ -114,6 +114,11 @@ jobs:
           cd cortex-cpp
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
+      - name: Pre-package
+        run: |
+          cd cortex-cpp
+          make pre-package
+          
       - name: Code Signing macOS
         if: runner.os == 'macOS'
         run: |
