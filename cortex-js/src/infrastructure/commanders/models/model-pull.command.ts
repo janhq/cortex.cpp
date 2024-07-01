@@ -8,6 +8,7 @@ import { existsSync } from 'fs';
 import { join } from 'node:path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 @SubCommand({
   name: 'pull',
@@ -34,6 +35,8 @@ export class ModelPullCommand extends CommandRunner {
       exit(1);
     }
     const modelId = passedParams[0];
+
+    checkModelCompatibility(modelId);
 
     await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
