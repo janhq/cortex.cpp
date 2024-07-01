@@ -13,14 +13,14 @@ async function bootstrap() {
   console.time('CLI');
   const app = await CommandFactory.createWithoutRunning(CommandModule, {
     logger: ['warn', 'error'],
-    // errorHandler: async (error) => {
-    //   await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
-    //   process.exit(1);
-    // },
-    // serviceErrorHandler: async (error) => {
-    //   await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
-    //   process.exit(1);
-    // },
+    errorHandler: async (error) => {
+      await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+      process.exit(1);
+    },
+    serviceErrorHandler: async (error) => {
+      await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+      process.exit(1);
+    },
   });
 
   telemetryUseCase = await app.resolve(TelemetryUsecases);
