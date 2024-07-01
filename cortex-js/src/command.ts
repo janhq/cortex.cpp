@@ -1,10 +1,13 @@
 #!/usr/bin/env node --no-warnings
+console.log('1');
+console.time('import');
 import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 
+console.timeEnd('import');
 console.time('test');
 console.log('Running CLI');
 async function bootstrap() {
