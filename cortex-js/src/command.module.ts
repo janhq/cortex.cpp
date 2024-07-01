@@ -53,7 +53,7 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
         process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
     EventEmitterModule.forRoot(),
-    // DatabaseModule,
+    DatabaseModule,
     ModelsModule,
     CortexModule,
     ExtensionModule,

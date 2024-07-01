@@ -18,6 +18,7 @@ export const sqliteDatabaseProviders = [
         database: sqlitePath,
         synchronize: process.env.NODE_ENV !== 'production',
         entities: [ThreadEntity, AssistantEntity, MessageEntity],
+        logging: true, 
       });
 
       return dataSource.initialize();
