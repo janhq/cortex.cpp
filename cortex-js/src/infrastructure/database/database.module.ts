@@ -9,7 +9,7 @@ import { FileManagerModule } from '@/infrastructure/services/file-manager/file-m
 @Module({
   imports: [FileManagerModule],
   providers: [
-    // ...sqliteDatabaseProviders,
+    ...sqliteDatabaseProviders,
     ...threadProviders,
     ...assistantProviders,
     ...messageProviders,

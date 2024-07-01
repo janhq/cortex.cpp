@@ -5,7 +5,7 @@ export const assistantProviders = [
   {
     provide: 'ASSISTANT_REPOSITORY',
     useFactory: (dataSource: DataSource) =>
-      dataSource.getRepository(AssistantEntity),
+      dataSource?.getRepository(AssistantEntity),
     inject: ['DATA_SOURCE'],
   },
 ];

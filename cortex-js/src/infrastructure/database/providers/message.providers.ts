@@ -5,7 +5,7 @@ export const messageProviders = [
   {
     provide: 'MESSAGE_REPOSITORY',
     useFactory: (dataSource: DataSource) =>
-      dataSource.getRepository(MessageEntity),
+      dataSource?.getRepository(MessageEntity),
     inject: ['DATA_SOURCE'],
   },
 ];

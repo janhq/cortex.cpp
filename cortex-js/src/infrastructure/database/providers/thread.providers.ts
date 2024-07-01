@@ -5,7 +5,7 @@ export const threadProviders = [
   {
     provide: 'THREAD_REPOSITORY',
     useFactory: (dataSource: DataSource) =>
-      dataSource.getRepository(ThreadEntity),
+      dataSource?.getRepository(ThreadEntity),
     inject: ['DATA_SOURCE'],
   },
 ];
