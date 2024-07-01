@@ -23,15 +23,15 @@ async function bootstrap() {
     // },
   });
 
-  // telemetryUseCase = await app.resolve(TelemetryUsecases);
+  telemetryUseCase = await app.resolve(TelemetryUsecases);
   contextService = await app.resolve(ContextService);
 
-  // telemetryUseCase!.sendCrashReport();
+  telemetryUseCase!.sendCrashReport();
 
   await contextService!.init(async () => {
     contextService!.set('source', TelemetrySource.CLI);
     await CommandFactory.runApplication(app);
-    // await CommandFactory.run(CommandModule, ['warn', 'error']);
+    await CommandFactory.run(CommandModule, ['warn', 'error']);
     console.timeEnd('CLI');
     console.timeEnd('test');
   });

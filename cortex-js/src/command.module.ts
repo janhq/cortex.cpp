@@ -62,7 +62,7 @@ import { ContextModule } from './infrastructure/services/context/context.module'
     // AssistantsModule,
     // MessagesModule,
     // FileManagerModule,
-    // TelemetryModule,
+    TelemetryModule,
     ContextModule,
     // DownloadManagerModule,
     // ExtensionsModule,
