@@ -39,6 +39,7 @@ export class FileManagerService {
    * @returns the config object
    */
   async getConfig(): Promise<Config & object> {
+    console.log('getConfig');
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -67,6 +68,7 @@ export class FileManagerService {
   }
 
   async writeConfigFile(config: Config & object): Promise<void> {
+    console.log('writeConfigFile');
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -76,6 +78,7 @@ export class FileManagerService {
   }
 
   private async createFolderIfNotExist(dataFolderPath: string): Promise<void> {
+    console.log('createFolderIfNotExist');
     if (!existsSync(dataFolderPath)) {
       await promises.mkdir(dataFolderPath, { recursive: true });
     }
@@ -98,6 +101,7 @@ export class FileManagerService {
   }
 
   private defaultConfig(): Config {
+    console.log('defaultConfig');
     // default will store at home directory
     const homeDir = os.homedir();
     const dataFolderPath = join(homeDir, this.cortexDirectoryName);
@@ -124,6 +128,7 @@ export class FileManagerService {
     filePath: string,
   ): Promise<{ data: any; position: number }> {
     try {
+      console.log('getLastLine');
       const fileDescriptor = await openAsync(filePath, 'a+');
       const stats = await promises.stat(filePath);
       const bufferSize = 1024 * 5; // 5KB

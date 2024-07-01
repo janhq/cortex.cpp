@@ -47,27 +47,27 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
 
 @Module({
   imports: [
-    // ConfigModule.forRoot({
-    //   isGlobal: true,
-    //   envFilePath:
-    //     process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
-    // }),
-    // EventEmitterModule.forRoot(),
-    // DatabaseModule,
-    // ModelsModule,
-    // CortexModule,
-    // ExtensionModule,
-    // HttpModule,
-    // CliUsecasesModule,
-    // AssistantsModule,
-    // MessagesModule,
-    // FileManagerModule,
-    // TelemetryModule,
-    // ContextModule,
-    // DownloadManagerModule,
-    // ExtensionsModule,
-    // ConfigsModule,
-    // EnginesModule,
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath:
+        process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
+    }),
+    EventEmitterModule.forRoot(),
+    DatabaseModule,
+    ModelsModule,
+    CortexModule,
+    ExtensionModule,
+    HttpModule,
+    CliUsecasesModule,
+    AssistantsModule,
+    MessagesModule,
+    FileManagerModule,
+    TelemetryModule,
+    ContextModule,
+    DownloadManagerModule,
+    ExtensionsModule,
+    ConfigsModule,
+    EnginesModule,
   ],
   providers: [
     CortexCommand,
