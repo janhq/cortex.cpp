@@ -119,7 +119,7 @@ export async function fetchJanRepoData(
     modelId.split(':')[1] ?? !modelId.includes('/') ? 'default' : '',
   );
   const url = getRepoModelsUrl(
-    `${!modelId.includes('/') ? 'cortexhub/' : ''}${repo}`,
+    `${!modelId.includes('/') ? 'cortexso/' : ''}${repo}`,
     tree,
   );
 
@@ -165,7 +165,7 @@ export async function fetchJanRepoData(
     tags: ['gguf'],
     id: modelId,
     modelId: modelId,
-    author: 'cortexhub',
+    author: 'cortexso',
     sha: '',
     downloads: 0,
     lastModified: '',
