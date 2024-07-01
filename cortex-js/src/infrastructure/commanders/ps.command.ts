@@ -7,7 +7,7 @@ import { ContextService } from '../services/context/context.service';
   name: 'ps',
   description: 'Show running models and their status',
 })
-@SetCommandContext()
+// @SetCommandContext()
 export class PSCommand extends CommandRunner {
   constructor(
   ) {
