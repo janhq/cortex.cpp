@@ -129,6 +129,14 @@ export class ModelsUsecases {
           rmdirSync(modelFolder, { recursive: true }),
       )
       .then(() => {
+        const modelEvent: ModelEvent = {
+          model: id,
+          event: 'model-deleted',
+          metadata: {},
+        };
+        this.eventEmitter.emit(modelEvent.event, modelEvent);
+      })
+      .then(() => {
         return {
           message: 'Model removed successfully',
           modelId: id,
@@ -342,6 +350,7 @@ export class ModelsUsecases {
     const toDownloads: Record<string, string> = files
       .filter((e) => this.validFileDownload(e))
       .reduce((acc: Record<string, string>, file) => {
+        // @ts-expect-error ignore
         acc[file.downloadUrl] = join(modelFolder, file.rfilename);
         return acc;
       }, {});
@@ -389,6 +398,12 @@ export class ModelsUsecases {
             });
           }
         }
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'model-downloaded',
+          metadata: {},
+        };
+        this.eventEmitter.emit(modelEvent.event, modelEvent);
       },
       inSequence,
     );
