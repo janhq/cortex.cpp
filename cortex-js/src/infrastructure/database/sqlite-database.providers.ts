@@ -11,17 +11,18 @@ export const sqliteDatabaseProviders = [
     provide: 'DATA_SOURCE',
     inject: [FileManagerService],
     useFactory: async (fileManagerService: FileManagerService) => {
-      const dataFolderPath = await fileManagerService.getDataFolderPath();
-      const sqlitePath = join(dataFolderPath, databaseFile);
-      const dataSource = new DataSource({
-        type: 'sqlite',
-        database: sqlitePath,
-        synchronize: process.env.NODE_ENV !== 'production',
-        entities: [ThreadEntity, AssistantEntity, MessageEntity],
-        logging: true, 
-      });
+      return null;
+      // const dataFolderPath = await fileManagerService.getDataFolderPath();
+      // const sqlitePath = join(dataFolderPath, databaseFile);
+      // const dataSource = new DataSource({
+      //   type: 'sqlite',
+      //   database: sqlitePath,
+      //   synchronize: process.env.NODE_ENV !== 'production',
+      //   entities: [ThreadEntity, AssistantEntity, MessageEntity],
+      //   logging: true, 
+      // });
 
-      return dataSource.initialize();
+      // return dataSource.initialize();
     },
   },
 ];
