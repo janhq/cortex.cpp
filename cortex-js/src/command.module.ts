@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ModelsModule } from './usecases/models/models.module';
-import { DatabaseModule } from './infrastructure/database/database.module';
+// import { DatabaseModule } from './infrastructure/database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ServeCommand } from './infrastructure/commanders/serve.command';
@@ -53,7 +53,7 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
         process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
     EventEmitterModule.forRoot(),
-    DatabaseModule,
+    // DatabaseModule,
     ModelsModule,
     CortexModule,
     ExtensionModule,
