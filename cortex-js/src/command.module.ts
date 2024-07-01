@@ -22,7 +22,7 @@ import { Module } from '@nestjs/common';
 // import { AssistantsModule } from './usecases/assistants/assistants.module';
 // import { MessagesModule } from './usecases/messages/messages.module';
 // import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
-// import { PSCommand } from './infrastructure/commanders/ps.command';
+import { PSCommand } from './infrastructure/commanders/ps.command';
 // import { KillCommand } from './infrastructure/commanders/kill.command';
 // import { PresetCommand } from './infrastructure/commanders/presets.command';
 // // import { TelemetryModule } from './usecases/telemetry/telemetry.module';
