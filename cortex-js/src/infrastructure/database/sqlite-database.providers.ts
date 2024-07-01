@@ -11,7 +11,6 @@ export const sqliteDatabaseProviders = [
     provide: 'DATA_SOURCE',
     inject: [FileManagerService],
     useFactory: async (fileManagerService: FileManagerService) => {
-      return null;
       const dataFolderPath = await fileManagerService.getDataFolderPath();
       const sqlitePath = join(dataFolderPath, databaseFile);
       const dataSource = new DataSource({
