@@ -20,8 +20,6 @@ import {
   HuggingFaceRepoData,
   HuggingFaceRepoSibling,
 } from '@/domain/models/huggingface.interface';
-
-import { LLAMA_2 } from '@/infrastructure/constants/prompt-constants';
 import {
   fetchHuggingFaceRepoData,
   fetchJanRepoData,
@@ -134,7 +132,7 @@ export class ModelsUsecases {
           event: 'model-deleted',
           metadata: {},
         };
-        this.eventEmitter.emit(modelEvent.event, modelEvent);
+        this.eventEmitter.emit('model.event', modelEvent);
       })
       .then(() => {
         return {
@@ -402,7 +400,7 @@ export class ModelsUsecases {
           event: 'model-downloaded',
           metadata: {},
         };
-        this.eventEmitter.emit(modelEvent.event, modelEvent);
+        this.eventEmitter.emit('model.event', modelEvent);
       },
       inSequence,
     );
