@@ -10,15 +10,15 @@ import { FileManagerModule } from '@/infrastructure/services/file-manager/file-m
   imports: [FileManagerModule],
   providers: [
     // ...sqliteDatabaseProviders,
-    // ...threadProviders,
-    // ...assistantProviders,
-    // ...messageProviders,
+    ...threadProviders,
+    ...assistantProviders,
+    ...messageProviders,
     ...telemetryProviders,
   ],
   exports: [
-    // ...threadProviders,
-    // ...assistantProviders,
-    // ...messageProviders,
+    ...threadProviders,
+    ...assistantProviders,
+    ...messageProviders,
     ...telemetryProviders,
   ],
 })
