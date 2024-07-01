@@ -3,10 +3,10 @@ import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
-import { AsyncLocalStorage } from 'async_hooks';
+// import { AsyncLocalStorage } from 'async_hooks';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 
-export const asyncLocalStorage = new AsyncLocalStorage();
+// export const asyncLocalStorage = new AsyncLocalStorage();
 console.time('test');
 console.log('Running CLI');
 async function bootstrap() {
