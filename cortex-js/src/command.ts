@@ -11,27 +11,29 @@ export const asyncLocalStorage = new AsyncLocalStorage();
 async function bootstrap() {
   let telemetryUseCase: TelemetryUsecases | null = null;
   let contextService: ContextService | null = null;
+  console.time('CLI');
   const app = await CommandFactory.createWithoutRunning(CommandModule, {
     logger: ['warn', 'error'],
-    errorHandler: async (error) => {
-      await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
-      process.exit(1);
-    },
-    serviceErrorHandler: async (error) => {
-      await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
-      process.exit(1);
-    },
+    // errorHandler: async (error) => {
+    //   await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+    //   process.exit(1);
+    // },
+    // serviceErrorHandler: async (error) => {
+    //   await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+    //   process.exit(1);
+    // },
   });
 
-  telemetryUseCase = await app.resolve(TelemetryUsecases);
-  contextService = await app.resolve(ContextService);
+  // telemetryUseCase = await app.resolve(TelemetryUsecases);
+  // contextService = await app.resolve(ContextService);
 
-  telemetryUseCase!.sendCrashReport();
+  // telemetryUseCase!.sendCrashReport();
 
-  await contextService!.init(async () => {
-    contextService!.set('source', TelemetrySource.CLI);
-    return CommandFactory.runApplication(app);
-  });
+  // await contextService!.init(async () => {
+    // contextService!.set('source', TelemetrySource.CLI);
+    await CommandFactory.runApplication(app);
+    console.timeEnd('CLI');
+  // });
 }
 
 bootstrap();
