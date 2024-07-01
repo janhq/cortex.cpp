@@ -66,7 +66,7 @@ export class BenchmarkCliUsecases {
           if (!model)
             throw new Error('Model is not started, please try again!');
         })
-        .then(() => this.runBenchmarks())
+        .then(() => this.runBenchmarks(model))
         .then(() => {
           serveProcess.kill();
           process.exit(0);
@@ -136,19 +136,26 @@ export class BenchmarkCliUsecases {
    * Benchmark a user using the OpenAI API
    * @returns
    */
-  private async benchmarkUser() {
+  private async benchmarkUser(model: string) {
     const startResources = await this.getSystemResources();
     const start = Date.now();
     let tokenCount = 0;
     let firstTokenTime = null;
 
     try {
-      const stream = await this.cortexClient!.chat.completions.create({
-        model: this.config.api.parameters.model,
+      console.log('Benchmarking user...', {
+        model,
         messages: this.config.api.parameters.messages,
         max_tokens: this.config.api.parameters.max_tokens,
         stream: true,
       });
+      const stream = await this.cortexClient!.chat.completions.create({
+        model,
+        messages: this.config.api.parameters.messages,
+        max_tokens: this.config.api.parameters.max_tokens,
+        stream: true,
+      });
+      
 
       for await (const chunk of stream) {
         if (!firstTokenTime && chunk.choices[0]?.delta?.content) {
@@ -204,7 +211,7 @@ export class BenchmarkCliUsecases {
   /**
    * Run the benchmarks
    */
-  private async runBenchmarks() {
+  private async runBenchmarks(model: string) {
     const allResults: any[] = [];
     const rounds = this.config.num_rounds || 1;
 
@@ -216,7 +223,7 @@ export class BenchmarkCliUsecases {
       const hardwareBefore = await this.getSystemResources();
 
       for (let j = 0; j < this.config.concurrency; j++) {
-        const result = await this.benchmarkUser();
+        const result = await this.benchmarkUser(model);
         if (result) {
           roundResults.push(result);
         }
