@@ -21,7 +21,7 @@ import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { MessagesModule } from './usecases/messages/messages.module';
-import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
+// import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
@@ -61,7 +61,7 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
     CliUsecasesModule,
     AssistantsModule,
     MessagesModule,
-    FileManagerModule,
+    // FileManagerModule,
     // TelemetryModule,
     // ContextModule,
     DownloadManagerModule,
