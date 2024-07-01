@@ -100,6 +100,7 @@ export class DownloadManagerService {
           (downloadState) => downloadState.id !== downloadId,
         );
       }
+      this.eventEmitter.emit('download.event', this.allDownloadStates);
     };
     if (!inSequence) {
       return Promise.all(
@@ -140,7 +141,7 @@ export class DownloadManagerService {
       }
 
       const writer = createWriteStream(destination);
-      const totalBytes = response.headers['content-length'];
+      const totalBytes = Number(response.headers['content-length']);
 
       // update download state
       const currentDownloadState = this.allDownloadStates.find(
