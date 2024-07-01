@@ -5,14 +5,19 @@ import OpenAIEngineExtension from './openai.engine';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { ConfigsModule } from '@/usecases/configs/configs.module';
+import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
 
 const provider = {
   provide: 'EXTENSIONS_PROVIDER',
-  inject: [HttpService, ConfigsUsecases],
-  useFactory: (httpService: HttpService, configUsecases: ConfigsUsecases) => [
-    new OpenAIEngineExtension(httpService, configUsecases),
-    new GroqEngineExtension(httpService, configUsecases),
-    new MistralEngineExtension(httpService, configUsecases),
+  inject: [HttpService, ConfigsUsecases, EventEmitter2],
+  useFactory: (
+    httpService: HttpService,
+    configUsecases: ConfigsUsecases,
+    eventEmitter: EventEmitter2,
+  ) => [
+    new OpenAIEngineExtension(httpService, configUsecases, eventEmitter),
+    new GroqEngineExtension(httpService, configUsecases, eventEmitter),
+    new MistralEngineExtension(httpService, configUsecases, eventEmitter),
   ],
 };
 

@@ -2,7 +2,7 @@ import { IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ChatCompletionMessage {
-  @ApiProperty({ description: 'The Content of the chat message.' })
+  @ApiProperty({ description: 'The Content of the chat message.',  })
   @IsString()
   content: string;
 

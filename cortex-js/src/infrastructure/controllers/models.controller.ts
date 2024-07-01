@@ -126,6 +126,8 @@ export class ModelsController {
   }
 
   @ApiOperation({
+    summary: 'Abort model download',
+    description: 'Abort the model download operation.',
     parameters: [
       {
         in: 'path',
@@ -147,7 +149,7 @@ export class ModelsController {
     type: DownloadModelResponseDto,
   })
   @ApiOperation({
-    summary: 'Pulls a remote model and download it',
+    summary: 'Download a remote model',
     description:
       'Pulls a remote model template from cortex hub or huggingface and downloads it.',
   })

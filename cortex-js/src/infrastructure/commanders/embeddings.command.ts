@@ -65,7 +65,7 @@ export class EmbeddingCommand extends CommandRunner {
         inspect(res, { showHidden: false, depth: null, colors: true }),
       )
       .then(console.log)
-      .catch(console.error);
+      .catch((e) => console.error(e.message ?? e));
   }
 
   modelInquiry = async (models: ModelStat[]) => {

@@ -16,7 +16,7 @@ export class EngineDto implements Partial<Extension> {
   @ApiProperty({
     type: String,
     example: 'Cortex',
-    description: 'The display name of the engine',
+    description: 'The display name of the engine.',
   })
   @IsString()
   @IsOptional()
@@ -25,7 +25,7 @@ export class EngineDto implements Partial<Extension> {
   @ApiProperty({
     type: String,
     example: 'Cortex engine',
-    description: 'The description of the engine',
+    description: 'The description of the engine.',
   })
   @IsString()
   @IsOptional()
@@ -34,7 +34,7 @@ export class EngineDto implements Partial<Extension> {
   @ApiProperty({
     type: String,
     example: '0.0.1',
-    description: 'The version of the engine',
+    description: 'The version of the engine.',
   })
   @IsString()
   @IsOptional()

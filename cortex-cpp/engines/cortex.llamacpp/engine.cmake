@@ -1,5 +1,5 @@
 # cortex.llamacpp release version
-set(VERSION 0.1.17-19.06.24)
+set(VERSION 0.1.20)
 # vulka is unstable, we need to use a customized version
 set(VULKA_VERSION 0.1.12-25.06.24)
 

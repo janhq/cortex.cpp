@@ -20,7 +20,7 @@ export class ChatController {
 
   @ApiOperation({
     summary: 'Create chat completion',
-    description: 'Creates a model response for the given conversation.',
+    description: 'Creates a model response for the given conversation. The following parameters are not working for the `TensorRT-LLM` engine:\n- `frequency_penalty`\n- `presence_penalty`\n- `top_p`',
   })
   @HttpCode(200)
   @ApiResponse({
@@ -37,13 +37,25 @@ export class ChatController {
     const { stream } = createChatDto;
 
     if (stream) {
-      res.header('Content-Type', 'text/event-stream');
       this.chatService
         .inference(createChatDto, headers)
-        .then((stream) => stream.pipe(res));
+        .then((stream) => {
+          res.header('Content-Type', 'text/event-stream');
+          stream.pipe(res);
+        })
+        .catch((error) =>
+          res.status(error.statusCode ?? 400).send(error.message),
+        );
     } else {
       res.header('Content-Type', 'application/json');
-      res.json(await this.chatService.inference(createChatDto, headers));
+      this.chatService
+        .inference(createChatDto, headers)
+        .then((response) => {
+          res.json(response);
+        })
+        .catch((error) =>
+          res.status(error.statusCode ?? 400).send(error.message),
+        );
     }
     this.telemetryUsecases.addEventToQueue({
       name: EventName.CHAT,

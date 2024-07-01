@@ -67,10 +67,17 @@ export const getApp = async () => {
     )
     .addTag(
       'Events',
-      'Endpoints for  observing Cortex statuses through event notifications.',
+      'Endpoints for observing Cortex statuses through event notifications.',
+    )
+    .addTag(
+      'Configurations',
+      "Endpoints for customizing the Cortex's configurations.",
+    )
+    .addTag(
+      'Engines',
+      'Endpoints for managing the available engines within Cortex.',
     )
     .addServer('http://localhost:1337')
-    .addServer('http://localhost:1337/v1')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
