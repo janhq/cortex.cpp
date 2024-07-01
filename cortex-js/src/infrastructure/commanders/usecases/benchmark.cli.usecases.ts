@@ -42,7 +42,6 @@ export class BenchmarkCliUsecases {
       };
 
       const model = params?.model ?? this.config.api.parameters.model;
-      // TODO: Using OpenAI client or Cortex client to benchmark?
       this.cortexClient = new Cortex({
         apiKey: this.config.api.api_key,
         baseURL: this.config.api.base_url,

@@ -16,7 +16,7 @@ import { checkModelCompatibility } from '@/utils/model-check';
   arguments: '<model_id>',
   argsDescription: { model_id: 'Model repo to pull' },
   description:
-    'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexhub',
+    'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexso',
 })
 @SetCommandContext()
 export class ModelPullCommand extends CommandRunner {

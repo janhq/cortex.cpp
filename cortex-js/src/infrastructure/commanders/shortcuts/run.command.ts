@@ -57,7 +57,7 @@ export class RunCommand extends CommandRunner {
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
       console.log(
-        `${modelId} not found on filesystem. Downloading from remote: https://huggingface.co/cortexhub if possible.`,
+        `${modelId} not found on filesystem. Downloading from remote: https://huggingface.co/cortexso if possible.`,
       );
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
