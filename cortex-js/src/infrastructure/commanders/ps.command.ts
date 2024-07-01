@@ -16,9 +16,15 @@ export class PSCommand extends CommandRunner {
     super();
   }
   async run(): Promise<void> {
+    console.log('Running ps command');
+    console.time('ps');
     return this.usecases
       .getModels()
-      .then(console.table)
+      .then((models) => {
+        console.table(models);
+        console.timeEnd('ps');
+      }
+  )
       .then(() => this.usecases.isAPIServerOnline())
       .then((isOnline) => {
         if (isOnline) console.log('API server is online');
