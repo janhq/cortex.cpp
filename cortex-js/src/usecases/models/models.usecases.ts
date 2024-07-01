@@ -350,7 +350,6 @@ export class ModelsUsecases {
     const toDownloads: Record<string, string> = files
       .filter((e) => this.validFileDownload(e))
       .reduce((acc: Record<string, string>, file) => {
-        // @ts-expect-error ignore
         acc[file.downloadUrl] = join(modelFolder, file.rfilename);
         return acc;
       }, {});
