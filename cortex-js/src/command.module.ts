@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ModelsModule } from './usecases/models/models.module';
-// import { DatabaseModule } from './infrastructure/database/database.module';
-// import { ConfigModule } from '@nestjs/config';
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { ConfigModule } from '@nestjs/config';
 import { CortexModule } from './usecases/cortex/cortex.module';
 import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
@@ -21,12 +21,12 @@ import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { MessagesModule } from './usecases/messages/messages.module';
-// import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
+import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
 import { KillCommand } from './infrastructure/commanders/kill.command';
 import { PresetCommand } from './infrastructure/commanders/presets.command';
-// import { TelemetryModule } from './usecases/telemetry/telemetry.module';
-// import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
+import { TelemetryModule } from './usecases/telemetry/telemetry.module';
+import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -37,7 +37,7 @@ import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usec
 import { ExtensionsModule } from './extensions/extensions.module';
 import { ConfigsCommand } from './infrastructure/commanders/configs.command';
 import { EnginesCommand } from './infrastructure/commanders/engines.command';
-// import { ConfigsModule } from './usecases/configs/configs.module';
+import { ConfigsModule } from './usecases/configs/configs.module';
 import { EnginesModule } from './usecases/engines/engines.module';
 import { ConfigsGetCommand } from './infrastructure/commanders/configs/configs-get.command';
 import { ConfigsListCommand } from './infrastructure/commanders/configs/configs-list.command';
@@ -54,20 +54,20 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
     // }),
     // EventEmitterModule.forRoot(),
     // DatabaseModule,
-    ModelsModule,
-    CortexModule,
-    ExtensionModule,
-    HttpModule,
-    CliUsecasesModule,
-    AssistantsModule,
-    MessagesModule,
+    // ModelsModule,
+    // CortexModule,
+    // ExtensionModule,
+    // HttpModule,
+    // CliUsecasesModule,
+    // AssistantsModule,
+    // MessagesModule,
     // FileManagerModule,
     // TelemetryModule,
     // ContextModule,
-    DownloadManagerModule,
-    ExtensionsModule,
+    // DownloadManagerModule,
+    // ExtensionsModule,
     // ConfigsModule,
-    EnginesModule,
+    // EnginesModule,
   ],
   providers: [
     CortexCommand,
@@ -98,16 +98,16 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
     RunCommand,
 
     // Telemetry
-    // TelemetryCommand,
+    TelemetryCommand,
 
     // Serve
     ServeStopCommand,
 
     // // Configs
-    // ConfigsCommand,
-    // ConfigsGetCommand,
-    // ConfigsListCommand,
-    // ConfigsSetCommand,
+    ConfigsCommand,
+    ConfigsGetCommand,
+    ConfigsListCommand,
+    ConfigsSetCommand,
 
     // Engines
     EnginesListCommand,
