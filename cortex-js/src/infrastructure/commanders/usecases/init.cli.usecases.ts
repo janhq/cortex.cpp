@@ -18,6 +18,7 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
 import { Engines } from '../types/engine.interface';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 @Injectable()
 export class InitCliUsecases {
@@ -70,11 +71,6 @@ export class InitCliUsecases {
       )
     )
       await this.installLlamaCppEngine(options, version);
-
-    if (engine === Engines.onnx && process.platform !== 'win32') {
-      console.error('The ONNX engine does not support this OS yet.');
-      process.exit(1);
-    }
 
     if (engine !== 'cortex.llamacpp')
       await this.installAcceleratedEngine('latest', engine);

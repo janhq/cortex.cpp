@@ -21,6 +21,7 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
+import { CommonResponseDto } from '../dtos/common/common-response.dto';
 
 @ApiTags('Models')
 @Controller('models')
@@ -111,7 +112,11 @@ export class ModelsController {
   })
   @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string) {
-    return this.modelsUsecases.downloadModel(modelId);
+    this.modelsUsecases.pullModel(modelId, false);
+
+    return {
+      message: 'Download model started successfully.',
+    };
   }
 
   @ApiOperation({
@@ -135,7 +140,7 @@ export class ModelsController {
   @ApiResponse({
     status: 200,
     description: 'Ok',
-    type: DownloadModelResponseDto,
+    type: CommonResponseDto,
   })
   @ApiOperation({
     summary: 'Download a remote model',
@@ -149,7 +154,11 @@ export class ModelsController {
   })
   @Get('pull/:modelId(*)')
   pullModel(@Param('modelId') modelId: string) {
-    return this.modelsUsecases.pullModel(modelId);
+    this.modelsUsecases.pullModel(modelId);
+
+    return {
+      message: 'Download model started successfully.',
+    };
   }
 
   @HttpCode(200)

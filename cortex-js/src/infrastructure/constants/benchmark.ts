@@ -2,7 +2,7 @@ import { BenchmarkConfig } from '@commanders/types/benchmark-config.interface';
 
 export const defaultBenchmarkConfiguration: BenchmarkConfig = {
   api: {
-    base_url: 'http://localhost:1337/',
+    base_url: 'http://localhost:1337/v1',
     api_key: '<api_key>',
     parameters: {
       messages: [
