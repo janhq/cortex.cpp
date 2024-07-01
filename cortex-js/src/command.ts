@@ -7,7 +7,8 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 
 export const asyncLocalStorage = new AsyncLocalStorage();
-
+console.time('test');
+console.log('Running CLI');
 async function bootstrap() {
   let telemetryUseCase: TelemetryUsecases | null = null;
   let contextService: ContextService | null = null;
@@ -34,6 +35,7 @@ async function bootstrap() {
     // await CommandFactory.runApplication(app);
     await CommandFactory.run(CommandModule, ['warn', 'error']);
     console.timeEnd('CLI');
+    console.timeEnd('test');
   // });
 }
 
