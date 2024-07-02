@@ -74,48 +74,48 @@ console.time('import-command');
     // EnginesModule,
   ],
   providers: [
-    CortexCommand,
-    ModelsCommand,
-    ServeCommand,
-    ChatCommand,
-    InitCommand,
-    PSCommand,
-    KillCommand,
-    PresetCommand,
-    EmbeddingCommand,
-    BenchmarkCommand,
-    EnginesCommand,
+    // CortexCommand,
+    // ModelsCommand,
+    // ServeCommand,
+    // ChatCommand,
+    // InitCommand,
+    // PSCommand,
+    // KillCommand,
+    // PresetCommand,
+    // EmbeddingCommand,
+    // BenchmarkCommand,
+    // EnginesCommand,
 
-    // Questions
-    InitRunModeQuestions,
+    // // Questions
+    // InitRunModeQuestions,
 
-    // Model commands
-    ModelStartCommand,
-    ModelStopCommand,
-    ModelListCommand,
-    ModelGetCommand,
-    ModelRemoveCommand,
-    ModelPullCommand,
-    ModelUpdateCommand,
+    // // Model commands
+    // ModelStartCommand,
+    // ModelStopCommand,
+    // ModelListCommand,
+    // ModelGetCommand,
+    // ModelRemoveCommand,
+    // ModelPullCommand,
+    // ModelUpdateCommand,
 
-    // Shortcuts
-    RunCommand,
+    // // Shortcuts
+    // RunCommand,
 
-    // Telemetry
-    TelemetryCommand,
+    // // Telemetry
+    // TelemetryCommand,
 
-    // Serve
-    ServeStopCommand,
+    // // Serve
+    // ServeStopCommand,
 
-    // // Configs
-    ConfigsCommand,
-    ConfigsGetCommand,
-    ConfigsListCommand,
-    ConfigsSetCommand,
+    // // // Configs
+    // ConfigsCommand,
+    // ConfigsGetCommand,
+    // ConfigsListCommand,
+    // ConfigsSetCommand,
 
-    // Engines
-    EnginesListCommand,
-    EnginesGetCommand,
+    // // Engines
+    // EnginesListCommand,
+    // EnginesGetCommand,
   ],
 })
 export class CommandModule {}
