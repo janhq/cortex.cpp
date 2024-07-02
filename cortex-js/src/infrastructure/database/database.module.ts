@@ -7,7 +7,7 @@ import { telemetryProviders } from './providers/telemetry.providers';
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
 
 @Module({
-  imports: [],
+  imports: [FileManagerModule],
   providers: [
     ...sqliteDatabaseProviders,
     ...threadProviders,
