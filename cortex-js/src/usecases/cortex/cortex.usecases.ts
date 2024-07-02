@@ -10,6 +10,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
+  CORTEX_JS_STOP_API_SERVER_URL,
 } from '@/infrastructure/constants/cortex';
 
 @Injectable()
@@ -22,6 +23,11 @@ export class CortexUsecases {
     private readonly fileManagerService: FileManagerService,
   ) {}
 
+  /**
+   * Start the Cortex CPP process
+   * @param attach 
+   * @returns 
+   */
   async startCortex(
     attach: boolean = false,
   ): Promise<CortexOperationSuccessfullyDto> {
@@ -92,6 +98,9 @@ export class CortexUsecases {
     });
   }
 
+  /**
+   * Stop the Cortex CPP process
+   */
   async stopCortex(): Promise<CortexOperationSuccessfullyDto> {
     const configs = await this.fileManagerService.getConfig();
     try {
@@ -112,6 +121,18 @@ export class CortexUsecases {
         status: 'success',
       };
     }
+  }
+
+  /**
+   * Stop the API server
+   * @returns
+   */
+  async stopServe(): Promise<void> {
+    return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
+      method: 'DELETE',
+    })
+      .then(() => {})
+      .catch(() => {});
   }
 
   private healthCheck(host: string, port: number): Promise<boolean> {

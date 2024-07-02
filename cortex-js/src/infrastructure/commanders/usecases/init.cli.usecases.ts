@@ -66,14 +66,15 @@ export class InitCliUsecases {
       !existsSync(
         join(
           await this.fileManagerService.getCortexCppEnginePath(),
-          'cortex.llamacpp',
+          Engines.llamaCPP,
         ),
-      )
+      ) ||
+      (engine === Engines.llamaCPP && force)
     )
       await this.installLlamaCppEngine(options, version);
 
-    if (engine !== 'cortex.llamacpp')
-      await this.installAcceleratedEngine('latest', engine);
+    if (engine !== Engines.llamaCPP)
+      await this.installAcceleratedEngine(version, engine);
 
     configs.initialized = true;
     await this.fileManagerService.writeConfigFile(configs);

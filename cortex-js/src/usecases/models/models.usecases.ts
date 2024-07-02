@@ -154,7 +154,7 @@ export class ModelsUsecases {
   ): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const engine = (await this.extensionRepository.findOne(
-      model!.engine ?? 'cortex.llamacpp',
+      model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
 
     if (!engine) {
@@ -189,7 +189,7 @@ export class ModelsUsecases {
           llama_model_path: (model.files as string[])[0],
           model_path: (model.files as string[])[0],
         }),
-      engine: model.engine ?? 'cortex.llamacpp',
+      engine: model.engine ?? Engines.llamaCPP,
       // User / Model settings
       ...parser.parseModelEngineSettings(model),
       ...parser.parseModelEngineSettings(settings ?? {}),
@@ -248,7 +248,7 @@ export class ModelsUsecases {
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const engine = (await this.extensionRepository.findOne(
-      model!.engine ?? 'cortex.llamacpp',
+      model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
 
     if (!engine) {
@@ -348,7 +348,8 @@ export class ModelsUsecases {
     const toDownloads: Record<string, string> = files
       .filter((e) => this.validFileDownload(e))
       .reduce((acc: Record<string, string>, file) => {
-        acc[file.downloadUrl] = join(modelFolder, file.rfilename);
+        if (file.downloadUrl)
+          acc[file.downloadUrl] = join(modelFolder, file.rfilename);
         return acc;
       }, {});
 
@@ -365,7 +366,7 @@ export class ModelsUsecases {
           const model: CreateModelDto = load(
             readFileSync(join(modelFolder, 'model.yml'), 'utf-8'),
           ) as CreateModelDto;
-          if (model.engine === 'cortex.llamacpp') {
+          if (model.engine === Engines.llamaCPP) {
             const fileUrl = join(
               await this.fileManagerService.getModelsPath(),
               normalizeModelId(modelId),

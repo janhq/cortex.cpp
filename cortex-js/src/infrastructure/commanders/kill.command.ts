@@ -10,12 +10,15 @@ import { ContextService } from '../services/context/context.service';
 @SetCommandContext()
 export class KillCommand extends CommandRunner {
   constructor(
-    private readonly usecases: CortexUsecases,
+    private readonly cortexUsecases: CortexUsecases,
     readonly contextService: ContextService,
   ) {
     super();
   }
   async run(): Promise<void> {
-    return this.usecases.stopCortex().then(console.log);
+    return this.cortexUsecases
+      .stopCortex()
+      .then(this.cortexUsecases.stopServe)
+      .then(() => console.log('Cortex processes stopped successfully!'));
   }
 }

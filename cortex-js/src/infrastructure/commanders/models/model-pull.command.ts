@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { checkModelCompatibility } from '@/utils/model-check';
+import { Engines } from '../types/engine.interface';
 
 @SubCommand({
   name: 'pull',
@@ -52,7 +53,7 @@ export class ModelPullCommand extends CommandRunner {
     });
 
     const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    const engine = existingModel?.engine || 'cortex.llamacpp';
+    const engine = existingModel?.engine || Engines.llamaCPP;
 
     // Pull engine if not exist
     if (

@@ -9,6 +9,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ModelStat } from '@commanders/types/model-stat.interface';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { Engines } from '../types/engine.interface';
 
 interface ModelStatResponse {
   object: string;
@@ -47,7 +48,7 @@ export class PSCliUsecases {
                   currentTime.getTime() - new Date(startTime).getTime();
                 return {
                   modelId: e.id,
-                  engine: e.engine ?? 'cortex.llamacpp',
+                  engine: e.engine ?? Engines.llamaCPP,
                   status: 'running',
                   duration: this.formatDuration(duration),
                   ram: e.ram ?? '-',
