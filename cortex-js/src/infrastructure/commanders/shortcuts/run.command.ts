@@ -80,7 +80,7 @@ export class RunCommand extends CommandRunner {
 
     checkModelCompatibility(modelId);
 
-    const engine = existingModel.engine || 'cortex.llamacpp';
+    const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
