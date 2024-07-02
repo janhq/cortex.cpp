@@ -11,6 +11,7 @@ export const sqliteDatabaseProviders = [
     provide: 'DATA_SOURCE',
     inject: [FileManagerService],
     useFactory: async (fileManagerService: FileManagerService) => {
+      console.time('sqliteDatabaseProviders');
       const dataFolderPath = await fileManagerService.getDataFolderPath();
       const sqlitePath = join(dataFolderPath, databaseFile);
       const dataSource = new DataSource({
@@ -20,8 +21,9 @@ export const sqliteDatabaseProviders = [
         entities: [ThreadEntity, AssistantEntity, MessageEntity],
         logging: true, 
       });
-
-      return dataSource.initialize();
+      const result = await dataSource.initialize();
+      console.timeEnd('sqliteDatabaseProviders');
+      return result;
     },
   },
 ];
