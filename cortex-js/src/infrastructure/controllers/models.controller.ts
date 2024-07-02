@@ -115,15 +115,14 @@ export class ModelsController {
       },
     ],
   })
-  @Get('download/:modelId(*)')
-  async downloadModel(@Param('modelId') modelId: string) {
-    await this.modelsUsecases.pullModel(modelId, false);
 
-    
-    this.telemetryUsecases.addEventToQueue({
+  @Get('download/:modelId(*)')
+  downloadModel(@Param('modelId') modelId: string) {
+    this.modelsUsecases.pullModel(modelId, false).then(() => this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
-    });
+    })
+    );
     return {
       message: 'Download model started successfully.',
     };
@@ -163,12 +162,12 @@ export class ModelsController {
     description: 'The unique identifier of the model.',
   })
   @Get('pull/:modelId(*)')
-  async pullModel(@Param('modelId') modelId: string) {
-    await this.modelsUsecases.pullModel(modelId);
-    this.telemetryUsecases.addEventToQueue({
+  pullModel(@Param('modelId') modelId: string) {
+    this.modelsUsecases.pullModel(modelId).then(() => this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
-    });
+    })
+    );
     return {
       message: 'Download model started successfully.',
     };
