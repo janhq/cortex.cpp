@@ -27,7 +27,7 @@ export const sqliteDatabaseProviders = [
       const dataSource = new DataSource({
         type: 'sqlite',
         database: sqlitePath,
-        synchronize: process.env.NODE_ENV !== 'production',
+        synchronize: false,
         entities: [ThreadEntity, AssistantEntity, MessageEntity],
         logging: true, 
       });
