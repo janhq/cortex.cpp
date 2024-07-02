@@ -1,5 +1,4 @@
 import { databaseName } from '@/infrastructure/constants/cortex';
-import { DataSource } from 'typeorm';
 import { ThreadEntity } from '../entities/thread.entity';
 import { AssistantEntity } from '../entities/assistant.entity';
 import { MessageEntity } from '../entities/message.entity';
@@ -8,6 +7,7 @@ export const mysqlDatabaseProviders = [
   {
     provide: 'DATA_SOURCE',
     useFactory: async () => {
+      const {DataSource} = await import('typeorm');
       const dataSource = new DataSource({
         type: 'mysql',
         host: 'localhost',

@@ -1,11 +1,11 @@
-import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
-import { DataSource } from 'typeorm';
-
 export const assistantProviders = [
   {
     provide: 'ASSISTANT_REPOSITORY',
-    useFactory: (dataSource: DataSource) =>
-      dataSource?.getRepository(AssistantEntity),
+    useFactory: async(dataSource: any) =>{
+      const {AssistantEntity } = await import('../../entities/assistant.entity');
+      const result = await dataSource?.getRepository(AssistantEntity)
+      return result;
+    },
     inject: ['DATA_SOURCE'],
   },
 ];

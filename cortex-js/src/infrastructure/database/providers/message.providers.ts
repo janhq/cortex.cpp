@@ -1,11 +1,11 @@
-import { MessageEntity } from '@/infrastructure/entities/message.entity';
-import { DataSource } from 'typeorm';
-
 export const messageProviders = [
   {
     provide: 'MESSAGE_REPOSITORY',
-    useFactory: (dataSource: DataSource) =>
-      dataSource?.getRepository(MessageEntity),
+    useFactory: async(dataSource: any) =>{
+      const {MessageEntity } = await import('../../entities/message.entity');
+      const result = await dataSource?.getRepository(MessageEntity)
+      return result;
+    },
     inject: ['DATA_SOURCE'],
   },
 ];
