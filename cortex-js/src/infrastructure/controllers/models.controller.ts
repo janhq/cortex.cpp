@@ -115,6 +115,7 @@ export class ModelsController {
       },
     ],
   })
+
   @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string) {
     this.modelsUsecases.pullModel(modelId, false).then(() => this.telemetryUsecases.addEventToQueue({

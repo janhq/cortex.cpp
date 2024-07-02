@@ -48,4 +48,4 @@ export const CORTEX_ENGINE_RELEASES_URL = (engine: string) =>
 export const CUDA_DOWNLOAD_URL =
   'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
 
-export const telemetryServerUrl = 'https://telemetry.jan.ai/';
+export const telemetryServerUrl = 'https://telemetry.jan.ai';
