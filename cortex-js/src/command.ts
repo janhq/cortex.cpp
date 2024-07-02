@@ -1,12 +1,19 @@
 #!/usr/bin/env node --no-warnings
 console.log('1');
 console.time('import');
+console.time('imporCommandFactory');
 import { CommandFactory } from 'nest-commander';
+console.timeEnd('imporCommandFactory');
+console.time('importCommandModule');
 import { CommandModule } from './command.module';
+console.timeEnd('importCommandModule');
+console.time('importTelemetryUsecases');
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
+console.timeEnd('importTelemetryUsecases');
+console.time('importContextService');
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-
+console.timeEnd('importContextService');
 console.timeEnd('import');
 console.time('test');
 console.log('Running CLI');
