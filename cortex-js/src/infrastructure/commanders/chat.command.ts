@@ -4,13 +4,27 @@ import {
   Option,
   InquirerService,
 } from 'nest-commander';
+console.time('import-command-chat-cli-usecases');
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
+console.timeEnd('import-command-chat-cli-usecases');
+console.time('import-command-chat-exit');
 import { exit } from 'node:process';
+console.timeEnd('import-command-chat-exit');
+console.time('import-command-chat-ps-cli-usecases');
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
+console.timeEnd('import-command-chat-ps-cli-usecases');
+console.time('import-command-chat-models-usecases');
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
+console.timeEnd('import-command-chat-models-usecases');
+console.time('import-command-chat-types');
 import { SetCommandContext } from './decorators/CommandContext';
+console.timeEnd('import-command-chat-types');
+console.time('import-command-chat-types');
 import { ModelStat } from './types/model-stat.interface';
+console.timeEnd('import-command-chat-types');
+console.time('import-command-chat-types');
 import { ContextService } from '../services/context/context.service';
+console.timeEnd('import-command-chat-types');
 
 type ChatOptions = {
   threadId?: string;

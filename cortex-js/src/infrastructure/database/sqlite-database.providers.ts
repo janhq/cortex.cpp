@@ -9,6 +9,7 @@ console.time('sqliteDatabaseProviders-import-path');
 import { join } from 'path';
 console.timeEnd('sqliteDatabaseProviders-import-path');
 console.time('sqliteDatabaseProviders-import-typeorm');
+import { DataSource } from 'typeorm';
 console.timeEnd('sqliteDatabaseProviders-import-typeorm');
 console.time('sqliteDatabaseProviders-import');
 
@@ -23,7 +24,7 @@ export const sqliteDatabaseProviders = [
       const { AssistantEntity } = await import('../entities/assistant.entity');
       const { MessageEntity } = await import('../entities/message.entity');
       const sqlitePath = join(dataFolderPath, databaseFile);
-      const { DataSource } = await import('typeorm');
+      
       const dataSource = new DataSource({
         type: 'sqlite',
         database: sqlitePath,

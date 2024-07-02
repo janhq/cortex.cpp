@@ -2,6 +2,7 @@
 console.log('1');
 console.time('import');
 console.time('imporCommandFactory');
+require("time-require");
 import { CommandFactory } from 'nest-commander';
 console.timeEnd('imporCommandFactory');
 console.time('importCommandModule');
