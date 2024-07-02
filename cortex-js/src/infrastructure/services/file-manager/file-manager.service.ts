@@ -256,4 +256,31 @@ export class FileManagerService {
       await promises.mkdir(folderPath, { recursive: true });
     }
   }
+
+  async readFile(filePath: string): Promise<string | null> {
+    try {
+      const isFileExist = existsSync(filePath);
+      if (!isFileExist) {
+        return null;
+      }
+      const content = await promises.readFile(filePath, {
+        encoding: 'utf8',
+      });
+      return content;
+    } catch (error) {
+      throw error;
+    }
+  }
+  async writeFile(filePath: string, data: any): Promise<void> {
+    try {
+      const dirPath = filePath.split('/').slice(0, -1).join('/');
+      await this.createFolderIfNotExistInDataFolder(dirPath);
+      return promises.writeFile(filePath, data, {
+        encoding: 'utf8',
+        flag: 'w+',
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }

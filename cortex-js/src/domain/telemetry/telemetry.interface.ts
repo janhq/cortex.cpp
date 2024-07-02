@@ -8,14 +8,7 @@ export interface TelemetryResource {
   source?: TelemetrySource;
   cpu?: string;
   gpus?: string;
-  // todo: consider about sessionId
-  // sessionId: string;
-}
-
-export interface CrashReportEvent {
-  modelId?: string;
-  sessionId: string;
-  stack?: string;
+  sessionId?: string;
 }
 
 export interface Resource {
@@ -77,6 +70,7 @@ export interface CrashReportAttributes {
   stack?: string;
   message: string;
   payload: CrashReportPayload;
+  sessionId?: string;
 }
 
 export interface TelemetryEventMetadata {
@@ -89,4 +83,32 @@ export interface Telemetry {
   event: {
     resourceLogs: TelemetryEvent[];
   };
+}
+
+export enum EventName {
+  INIT = 'init',
+  DOWNLOAD_MODEL = 'download-model',
+  CHAT = 'chat',
+  ACTIVATE = 'activate',
+  NEW_ACTIVATE = 'new_activate',
+}
+
+export interface EventAttributes {
+  name: string;
+  modelId?: string;
+  sessionId?: string;
+}
+
+export interface TelemetryAnonymized {
+  sessionId: string | null;
+  lastActiveAt?: string | null;
+}
+export interface BenchmarkHardware {
+  gpu: any[];
+  cpu: any;
+  board: any;
+  disk: any[];
+  chassis: any;
+  memLayout: any[];
+  os: any;
 }

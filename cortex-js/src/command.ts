@@ -15,10 +15,12 @@ async function bootstrap() {
     logger: ['warn', 'error'],
     errorHandler: async (error) => {
       await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+      console.error(error);
       process.exit(1);
     },
     serviceErrorHandler: async (error) => {
       await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+      console.error(error);
       process.exit(1);
     },
   });
@@ -26,10 +28,13 @@ async function bootstrap() {
   telemetryUseCase = await app.resolve(TelemetryUsecases);
   contextService = await app.resolve(ContextService);
 
-  telemetryUseCase!.sendCrashReport();
+  const anonymousData = await telemetryUseCase!.updateAnonymousData();
 
   await contextService!.init(async () => {
     contextService!.set('source', TelemetrySource.CLI);
+    contextService!.set('sessionId', anonymousData?.sessionId);
+    telemetryUseCase!.sendActivationEvent(TelemetrySource.CLI);
+    telemetryUseCase!.sendCrashReport();
     return CommandFactory.runApplication(app);
   });
 }

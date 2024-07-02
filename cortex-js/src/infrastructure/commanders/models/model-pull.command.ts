@@ -3,6 +3,11 @@ import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { existsSync } from 'fs';
 import { join } from 'node:path';
@@ -25,6 +30,7 @@ export class ModelPullCommand extends CommandRunner {
     private readonly initUsecases: InitCliUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {
     super();
   }
@@ -59,7 +65,15 @@ export class ModelPullCommand extends CommandRunner {
         engine,
       );
     }
-
+    this.telemetryUsecases.sendEvent(
+      [
+        {
+          name: EventName.DOWNLOAD_MODEL,
+          modelId: passedParams[0],
+        },
+      ],
+      TelemetrySource.CLI,
+    );
     console.log('\nDownload complete!');
     exit(0);
   }
