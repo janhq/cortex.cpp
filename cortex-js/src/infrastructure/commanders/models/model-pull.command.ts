@@ -13,6 +13,7 @@ import { existsSync } from 'fs';
 import { join } from 'node:path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 @SubCommand({
   name: 'pull',
@@ -20,7 +21,7 @@ import { InitCliUsecases } from '../usecases/init.cli.usecases';
   arguments: '<model_id>',
   argsDescription: { model_id: 'Model repo to pull' },
   description:
-    'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexhub',
+    'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexso',
 })
 @SetCommandContext()
 export class ModelPullCommand extends CommandRunner {
@@ -40,6 +41,8 @@ export class ModelPullCommand extends CommandRunner {
       exit(1);
     }
     const modelId = passedParams[0];
+
+    checkModelCompatibility(modelId);
 
     await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)

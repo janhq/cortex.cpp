@@ -45,8 +45,7 @@ export class BenchmarkCliUsecases {
         ...options,
       };
 
-      const model = params?.model ?? this.config.api.parameters.model;
-      // TODO: Using OpenAI client or Cortex client to benchmark?
+      const modelId = params?.model ?? this.config.api.parameters.model;
       this.cortexClient = new Cortex({
         apiKey: this.config.api.api_key,
         baseURL: this.config.api.base_url,
@@ -59,11 +58,11 @@ export class BenchmarkCliUsecases {
       });
       return this.cortexUsecases
         .startCortex()
-        .then(() => this.modelsCliUsecases.startModel(model))
+        .then(() => this.modelsCliUsecases.startModel(modelId))
         .then(() =>
           this.psUsecases
             .getModels()
-            .then((models) => models.find((e) => e.modelId === model)),
+            .then((models) => models.find((e) => e.modelId === modelId)),
         )
         .then((model) => {
           if (!model)
@@ -151,7 +150,7 @@ export class BenchmarkCliUsecases {
    * Benchmark a user using the OpenAI API
    * @returns
    */
-  private async benchmarkUser() {
+  private async benchmarkUser(model: ModelStat) {
     const startResources = await this.getSystemResources();
     const start = Date.now();
     let tokenCount = 0;
@@ -159,11 +158,12 @@ export class BenchmarkCliUsecases {
 
     try {
       const stream = await this.cortexClient!.chat.completions.create({
-        model: this.config.api.parameters.model,
+        model: model.modelId,
         messages: this.config.api.parameters.messages,
         max_tokens: this.config.api.parameters.max_tokens,
         stream: true,
       });
+      
 
       for await (const chunk of stream) {
         if (!firstTokenTime && chunk.choices[0]?.delta?.content) {
@@ -231,7 +231,7 @@ export class BenchmarkCliUsecases {
       const hardwareBefore = await this.getSystemResources();
 
       for (let j = 0; j < this.config.concurrency; j++) {
-        const result = await this.benchmarkUser();
+        const result = await this.benchmarkUser(model);
         if (result) {
           roundResults.push(result);
         }

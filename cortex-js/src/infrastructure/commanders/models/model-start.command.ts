@@ -14,6 +14,7 @@ import { existsSync } from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -58,9 +59,14 @@ export class ModelStartCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error('Model is not available. Please pull the model first.');
+      console.error(
+        `${modelId} not found on filesystem. Please try 'cortex pull ${modelId}' first.`,
+      );
       process.exit(1);
     }
+
+    checkModelCompatibility(modelId);
+
     const engine = existingModel.engine || 'cortex.llamacpp';
     // Pull engine if not exist
     if (
@@ -72,10 +78,7 @@ export class ModelStartCommand extends CommandRunner {
         engine,
       );
     }
-    if (engine === Engines.onnx && process.platform !== 'win32') {
-      console.error('The ONNX engine does not support this OS yet.');
-      process.exit(1);
-    }
+
     await this.cortexUsecases
       .startCortex(options.attach)
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))

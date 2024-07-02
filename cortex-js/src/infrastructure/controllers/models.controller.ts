@@ -23,9 +23,9 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
 import {
   EventName,
-  TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import { CommonResponseDto } from '../dtos/common/common-response.dto';
 
 @ApiTags('Models')
 @Controller('models')
@@ -117,12 +117,16 @@ export class ModelsController {
   })
   @Get('download/:modelId(*)')
   async downloadModel(@Param('modelId') modelId: string) {
-    const result = await this.modelsUsecases.downloadModel(modelId);
+    await this.modelsUsecases.pullModel(modelId, false);
+
+    
     this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
     });
-    return result;
+    return {
+      message: 'Download model started successfully.',
+    };
   }
 
   @ApiOperation({
@@ -146,7 +150,7 @@ export class ModelsController {
   @ApiResponse({
     status: 200,
     description: 'Ok',
-    type: DownloadModelResponseDto,
+    type: CommonResponseDto,
   })
   @ApiOperation({
     summary: 'Download a remote model',
@@ -160,12 +164,14 @@ export class ModelsController {
   })
   @Get('pull/:modelId(*)')
   async pullModel(@Param('modelId') modelId: string) {
-    const result = await this.modelsUsecases.pullModel(modelId);
+    await this.modelsUsecases.pullModel(modelId);
     this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
     });
-    return result;
+    return {
+      message: 'Download model started successfully.',
+    };
   }
 
   @HttpCode(200)

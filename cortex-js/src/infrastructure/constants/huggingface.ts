@@ -2,13 +2,12 @@ export const HUGGING_FACE_TREE_REF_URL = (
   repo: string,
   tree: string,
   path: string,
-) => `https://huggingface.co/cortexhub/${repo}/resolve/${tree}/${path}`;
+) => `https://huggingface.co/cortexso/${repo}/resolve/${tree}/${path}`;
 
 export const HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL = (
-  author: string,
-  repo: string,
+  modelId: string,
   fileName: string,
-) => `https://huggingface.co/${author}/${repo}/resolve/main/${fileName}`;
+) => `https://huggingface.co/${modelId}/resolve/main/${fileName}`;
 
 export const HUGGING_FACE_REPO_URL = (author: string, repo: string) =>
   `https://huggingface.co/${author}/${repo}`;
