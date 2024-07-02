@@ -1,3 +1,4 @@
+console.time('import-command');
 import { Module } from '@nestjs/common';
 import { ModelsModule } from './usecases/models/models.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
@@ -44,30 +45,33 @@ import { ConfigsListCommand } from './infrastructure/commanders/configs/configs-
 import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-set.command';
 import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
+console.timeEnd('import-command');
+
+console.time('import-command');
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath:
-        process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
-    }),
-    EventEmitterModule.forRoot(),
-    DatabaseModule,
-    ModelsModule,
-    CortexModule,
-    ExtensionModule,
-    HttpModule,
-    CliUsecasesModule,
-    AssistantsModule,
-    MessagesModule,
-    FileManagerModule,
-    TelemetryModule,
-    ContextModule,
-    DownloadManagerModule,
-    ExtensionsModule,
-    ConfigsModule,
-    EnginesModule,
+    // ConfigModule.forRoot({
+    //   isGlobal: true,
+    //   envFilePath:
+    //     process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
+    // }),
+    // EventEmitterModule.forRoot(),
+    // DatabaseModule,
+    // ModelsModule,
+    // CortexModule,
+    // ExtensionModule,
+    // HttpModule,
+    // CliUsecasesModule,
+    // AssistantsModule,
+    // MessagesModule,
+    // FileManagerModule,
+    // TelemetryModule,
+    // ContextModule,
+    // DownloadManagerModule,
+    // ExtensionsModule,
+    // ConfigsModule,
+    // EnginesModule,
   ],
   providers: [
     CortexCommand,
