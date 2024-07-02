@@ -10,19 +10,18 @@ import { ContextService } from '../services/context/context.service';
 @SetCommandContext()
 export class PSCommand extends CommandRunner {
   constructor(
-    // private readonly usecases: PSCliUsecases,
-    // readonly contextService: ContextService,
+    private readonly usecases: PSCliUsecases,
+    readonly contextService: ContextService,
   ) {
     super();
   }
   async run(): Promise<void> {
-    return;
-    // return this.usecases
-    //   .getModels()
-    //   .then(console.table)
-    //   .then(() => this.usecases.isAPIServerOnline())
-    //   .then((isOnline) => {
-    //     if (isOnline) console.log('API server is online');
-    //   });
+    return this.usecases
+      .getModels()
+      .then(console.table)
+      .then(() => this.usecases.isAPIServerOnline())
+      .then((isOnline) => {
+        if (isOnline) console.log('API server is online');
+      });
   }
 }
