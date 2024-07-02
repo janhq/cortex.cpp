@@ -6,7 +6,6 @@ import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
 import { ContextService } from '../services/context/context.service';
-import { getApp } from '@/app';
 import chalk from 'chalk';
 
 type ServeOptions = {
@@ -34,6 +33,7 @@ export class ServeCommand extends CommandRunner {
   }
 
   private async startServer(host: string, port: number) {
+    const { getApp } = await import('@/app'); 
     const app = await getApp();
 
     try {
