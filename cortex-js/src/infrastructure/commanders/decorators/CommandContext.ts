@@ -2,6 +2,7 @@ type Constructor = new (...args: any[]) => any;
 
 export const SetCommandContext = () => {
   return (constructor: Constructor) => {
+    console.time('SetCommandContext');
     const classMethods = Object.getOwnPropertyNames(constructor.prototype);
 
     classMethods.forEach((methodName) => {
@@ -30,5 +31,6 @@ export const SetCommandContext = () => {
         };
       }
     });
+    console.timeEnd('SetCommandContext');
   };
 };
