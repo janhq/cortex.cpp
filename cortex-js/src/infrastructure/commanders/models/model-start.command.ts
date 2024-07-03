@@ -60,7 +60,7 @@ export class ModelStartCommand extends CommandRunner {
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
       console.error(
-        `${modelId} not found on filesystem. Please try 'cortex pull ${modelId}' first.`,
+        `${modelId} not found on filesystem.\nPlease try 'cortex pull ${modelId}' first.`,
       );
       process.exit(1);
     }

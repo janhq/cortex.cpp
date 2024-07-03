@@ -3,9 +3,7 @@ import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { Model } from '@/domain/models/model.interface';
 import { InquirerService } from 'nest-commander';
 import { Inject, Injectable } from '@nestjs/common';
-import { Presets, SingleBar } from 'cli-progress';
 
-import { HttpService } from '@nestjs/axios';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
@@ -14,6 +12,7 @@ import { load } from 'js-yaml';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { isLocalModel } from '@/utils/normalize-model-id';
 import { HuggingFaceRepoSibling } from '@/domain/models/huggingface.interface';
+import { printLastErrorLines } from '@/utils/logs';
 
 @Injectable()
 export class ModelsCliUsecases {
@@ -21,7 +20,6 @@ export class ModelsCliUsecases {
     private readonly modelsUsecases: ModelsUsecases,
     @Inject(InquirerService)
     private readonly inquirerService: InquirerService,
-    private readonly httpService: HttpService,
     private readonly fileService: FileManagerService,
   ) {}
 
@@ -40,11 +38,16 @@ export class ModelsCliUsecases {
         ...parsedPreset,
       }))
       .then((settings) => this.modelsUsecases.startModel(modelId, settings))
-      .catch(() => {
-        return {
-          modelId: modelId,
-          message: 'Model not found',
-        };
+      .catch(async (e) => {
+        console.error('Model start failed with reason:', e.message);
+
+        printLastErrorLines(await this.fileService.getDataFolderPath(), 5);
+
+        console.log(
+          'For more information, please check the logs at: %s',
+          join(await this.fileService.getDataFolderPath(), 'cortex.log'),
+        );
+        process.exit(1);
       });
   }
 
@@ -114,6 +117,11 @@ export class ModelsCliUsecases {
       console.error('Model already exists');
       process.exit(1);
     }
+    // Checking dependencies
+
+    console.log(
+      `${modelId} not found on filesystem.\nDownloading from remote: https://huggingface.co/${modelId.includes('/') ? modelId : 'cortexso'}...`,
+    );
     await this.modelsUsecases.pullModel(modelId, true, (files) => {
       return new Promise<HuggingFaceRepoSibling>(async (resolve) => {
         const listChoices = files

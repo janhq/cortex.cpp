@@ -12,6 +12,7 @@ import {
   CORTEX_CPP_PROCESS_DESTROY_URL,
   CORTEX_JS_STOP_API_SERVER_URL,
 } from '@/infrastructure/constants/cortex';
+import { createWriteStream, openSync } from 'fs';
 
 @Injectable()
 export class CortexUsecases {
@@ -25,8 +26,8 @@ export class CortexUsecases {
 
   /**
    * Start the Cortex CPP process
-   * @param attach 
-   * @returns 
+   * @param attach
+   * @returns
    */
   async startCortex(
     attach: boolean = false,
@@ -55,11 +56,16 @@ export class CortexUsecases {
       'cortex-cpp',
     );
 
+    const writer = openSync(
+      join(await this.fileManagerService.getDataFolderPath(), 'cortex.log'),
+      'a+',
+    );
+
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
       detached: !attach,
       cwd: cortexCppFolderPath,
-      stdio: attach ? 'inherit' : undefined,
+      stdio: [0, writer, writer],
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',

@@ -163,7 +163,7 @@ export class ModelsUsecases {
         modelId,
       };
     }
-
+    console.log('Loading model...');
     // update states and emitting event
     this.activeModelStatuses[modelId] = {
       model: modelId,
@@ -233,7 +233,7 @@ export class ModelsUsecases {
           e,
           TelemetrySource.CORTEX_CPP,
         );
-        return {
+        throw {
           message: e.message,
           modelId,
         };
