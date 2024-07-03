@@ -11,14 +11,14 @@ CORTEX_VERSION ?= "0.0.0.1"
 
 update-app-info:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command 'npx resedit --in $(CORTEX_EXE_IN) --out $(CORTEX_EXE_OUT) --icon "1,favicon.ico" --no-grow --company-name "Homebrew Computer Pte Ltd" --file-description "cortex cli" --file-version "$(CORTEX_VERSION)" --internal-name "cortex" --product-name "cortex" --product-version "$(CORTEX_VERSION)"'
+	@powershell -Command 'npx resedit --in $(CORTEX_EXE_IN) --out $(CORTEX_EXE_OUT) --icon "1,cortex.ico" --no-grow --company-name "Homebrew Computer Pte Ltd" --file-description "cortex cli" --file-version "$(CORTEX_VERSION)" --internal-name "cortex" --product-name "cortex" --product-version "$(CORTEX_VERSION)"'
 else ifeq ($(shell uname -s),Linux)
 	@cp ./dist/cortexso-linux ./cortex
 else
 	@cp ./dist/cortexso-macos ./cortex
 endif
 
-codesign-binary: update-app-info
+codesign-binary:
 ifeq ($(CODE_SIGN),false)
 	@echo "Skipping Code Sign"
 	@exit 0
@@ -34,7 +34,7 @@ else
 	find "cortex" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
 endif
 
-codesign-installer: codesign-binary
+codesign-installer:
 ifeq ($(CODE_SIGN),false)
 	@echo "Skipping Code Sign"
 	@exit 0
