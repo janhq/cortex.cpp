@@ -365,7 +365,7 @@ export class ModelsUsecases {
           const model: CreateModelDto = load(
             readFileSync(join(modelFolder, 'model.yml'), 'utf-8'),
           ) as CreateModelDto;
-          if (model.engine === Engines.llamaCPP) {
+          if (model.engine === Engines.llamaCPP && model.files) {
             const fileUrl = join(
               await this.fileManagerService.getModelsPath(),
               normalizeModelId(modelId),
@@ -373,6 +373,17 @@ export class ModelsUsecases {
             );
             model.files = [fileUrl];
             model.name = modelId.replace(':default', '');
+          } else if (model.engine === Engines.llamaCPP) {
+            model.files = [
+              join(
+                await this.fileManagerService.getModelsPath(),
+                normalizeModelId(modelId),
+                basename(
+                  files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
+                    files[0].rfilename,
+                ),
+              ),
+            ];
           } else {
             model.files = [modelFolder];
           }
@@ -387,7 +398,10 @@ export class ModelsUsecases {
             const fileUrl = join(
               await this.fileManagerService.getModelsPath(),
               normalizeModelId(modelId),
-              basename(files[0].rfilename),
+              basename(
+                files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
+                  files[0].rfilename,
+              ),
             );
             await this.update(modelId, {
               files: [fileUrl],
