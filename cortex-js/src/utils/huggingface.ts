@@ -116,7 +116,7 @@ export async function fetchJanRepoData(
 ): Promise<HuggingFaceRepoData> {
   const repo = modelId.split(':')[0];
   const tree = await parseModelHubEngineBranch(
-    modelId.split(':')[1] ?? !modelId.includes('/') ? 'default' : '',
+    modelId.split(':')[1] ?? (!modelId.includes('/') ? 'default' : ''),
   );
   const url = getRepoModelsUrl(
     `${!modelId.includes('/') ? 'cortexso/' : ''}${repo}`,
