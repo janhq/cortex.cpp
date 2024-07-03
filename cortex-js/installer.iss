@@ -26,6 +26,7 @@ Name: "{group}\Cortex"; Filename: "{app}\cortex.exe"
 ; Define the run section to execute the application after installation
 [Run]
 Filename: "cmd"; Parameters: "/c setx PATH ""%PATH%;{app}"""; StatusMsg: "Updating system PATH environment variable..."; Flags: runhidden
+Filename: "cmd"; Parameters: "/c cortex init"; StatusMsg: "Initializing Cortex..."; Flags: runhidden waituntilterminated
 Filename: "{app}\cortex.exe"; Description: "{cm:LaunchProgram,Cortex}"; Flags: nowait postinstall skipifsilent
 
 ; Define the tasks section (optional, for additional tasks like creating desktop icons)
