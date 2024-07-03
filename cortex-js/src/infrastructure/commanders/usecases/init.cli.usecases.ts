@@ -17,7 +17,7 @@ import {
 import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
 import { Engines } from '../types/engine.interface';
 
-import { cpuInfo } from 'cpuinfo';
+import { cpuInfo } from 'cpu-instructions';
 
 @Injectable()
 export class InitCliUsecases {
