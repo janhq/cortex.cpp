@@ -420,18 +420,33 @@ jobs:
           cd cortex-js
           make update-app-info
 
+      - name: copy bin file macos
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-js
+          mkdir -p installer
+          which cp
+          which mv
+          npm install -g cpx
+          npx cpx ./dist/cortexso-macos ./
+          mv cortexso-macos cortex
+
       - name: Code Signing macOS
         if: runner.os == 'macOS'
         run: |
           cd cortex-js
+          ./dist/cortexso-macos --help
+          echo "--------"
+          ./cortex --help
           make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
       - name: Create MacOS PKG Installer
         if: runner.os == 'macOS'
         run: |
           cd cortex-js
-          mkdir installer
-          cp cortex installer/cortex
+          echo "--------"
+          npx cpx ./cortex ./installer
+          ./installer/cortex --help
           pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
           make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
