@@ -1,8 +1,21 @@
 #!/usr/bin/env node --no-warnings
+/* eslint-disable @typescript-eslint/no-var-requires */
 console.log('1');
 console.time('import');
 console.time('imporCommandFactory');
-require("time-require");
+require('time-require');
+const { TraceEvents, trackRequires } = require('perftrace');
+const { writeFileSync } = require('fs');
+
+const traceEvents = new TraceEvents();
+
+process.on('beforeExit', () => {
+  const events = traceEvents.getEvents();
+  traceEvents.destroy();
+  writeFileSync('events.json', JSON.stringify(events));
+});
+
+trackRequires(true);
 import { CommandFactory } from 'nest-commander';
 console.timeEnd('imporCommandFactory');
 console.time('importCommandModule');
