@@ -120,7 +120,7 @@ export class ModelsCliUsecases {
     // Checking dependencies
 
     console.log(
-      `${modelId} not found on filesystem.\nDownloading from remote: https://huggingface.co/${modelId.includes('/') ? modelId : 'cortexso'}...`,
+      `${modelId} not found on filesystem.\nDownloading from remote: https://huggingface.co/${modelId.includes('/') ? modelId : 'cortexso'} ...`,
     );
     await this.modelsUsecases.pullModel(modelId, true, (files) => {
       return new Promise<HuggingFaceRepoSibling>(async (resolve) => {

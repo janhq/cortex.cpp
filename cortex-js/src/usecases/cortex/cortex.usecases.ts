@@ -141,7 +141,13 @@ export class CortexUsecases {
       .catch(() => {});
   }
 
-  private healthCheck(host: string, port: number): Promise<boolean> {
+  /**
+   * Check whether the Cortex CPP is healthy
+   * @param host 
+   * @param port 
+   * @returns 
+   */
+  healthCheck(host: string, port: number): Promise<boolean> {
     return fetch(CORTEX_CPP_HEALTH_Z_URL(host, port))
       .then((res) => {
         if (res.ok) {
