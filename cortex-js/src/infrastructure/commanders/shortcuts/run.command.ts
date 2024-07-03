@@ -44,6 +44,7 @@ export class RunCommand extends CommandRunner {
 
   async run(passedParams: string[], options: RunOptions): Promise<void> {
     let modelId = passedParams[0];
+    console.log('Running model...');
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
@@ -82,6 +83,7 @@ export class RunCommand extends CommandRunner {
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
+      console.log('Installing engine...');
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
         'latest',

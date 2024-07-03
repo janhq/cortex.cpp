@@ -26,6 +26,7 @@ export class PSCliUsecases {
    */
   async getModels(): Promise<ModelStat[]> {
     const configs = await this.fileService.getConfig();
+    console.log('Getting models...');
     return new Promise<ModelStat[]>((resolve, reject) =>
       firstValueFrom(
         this.httpService.get(
