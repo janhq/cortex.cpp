@@ -4,6 +4,7 @@ dist
 *.lock
 node_modules
 .turbo
+package-lock.json
 
 # CI - Test - Coverage
 cortex.log
