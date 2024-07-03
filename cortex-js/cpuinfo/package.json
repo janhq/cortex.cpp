@@ -1,0 +1,38 @@
+{
+  "name": "cpuinfo",
+  "version": "1.0.0",
+  "description": "Get CPU instructions",
+  "main": "index.js",
+  "types": "./index.d.ts",
+  "scripts": {
+    "install": "prebuild-install -r napi || node-gyp rebuild"
+  },
+  "author": "",
+  "license": "ISC",
+  "gypfile": true,
+  "binary": {
+    "napi_versions": [
+      3,
+      6
+    ]
+  },
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "node-addon-api": "^7.0.0",
+    "prebuild-install": "^7.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.5.3"
+  },
+  "peerDependencies": {
+    "node-gyp": "8.x"
+  },
+  "files": [
+    "binding.gyp",
+    "deps/",
+    "*.js",
+    "*.d.ts",
+    "src/"
+  ]
+}
