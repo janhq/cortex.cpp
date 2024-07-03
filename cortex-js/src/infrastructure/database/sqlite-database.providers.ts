@@ -9,7 +9,10 @@ console.time('sqliteDatabaseProviders-import-path');
 import { join } from 'path';
 console.timeEnd('sqliteDatabaseProviders-import-path');
 console.time('sqliteDatabaseProviders-import-typeorm');
-import { DataSource } from 'typeorm';
+import { ThreadEntity } from '../entities/thread.entity';
+import { MessageEntity } from '../entities/message.entity';
+import { AssistantEntity } from '../entities/assistant.entity';
+import { Sequelize } from 'sequelize-typescript';
 console.timeEnd('sqliteDatabaseProviders-import-typeorm');
 console.time('sqliteDatabaseProviders-import');
 
@@ -20,21 +23,14 @@ export const sqliteDatabaseProviders = [
     useFactory: async (fileManagerService: FileManagerService) => {
       console.time('sqliteDatabaseProviders');
       const dataFolderPath = await fileManagerService.getDataFolderPath();
-      const { ThreadEntity } = await import('../entities/thread.entity');
-      const { AssistantEntity } = await import('../entities/assistant.entity');
-      const { MessageEntity } = await import('../entities/message.entity');
       const sqlitePath = join(dataFolderPath, databaseFile);
       
-      const dataSource = new DataSource({
-        type: 'sqlite',
-        database: sqlitePath,
-        synchronize: false,
-        entities: [ThreadEntity, AssistantEntity, MessageEntity],
-        logging: true, 
+      const sequelize = new Sequelize({
+        dialect: 'sqlite',
+        storage: sqlitePath,
       });
-      const result = await dataSource.initialize();
-      console.timeEnd('sqliteDatabaseProviders');
-      return result;
+      sequelize.addModels([ThreadEntity, MessageEntity, AssistantEntity]);
+      return sequelize;
     },
   },
 ];

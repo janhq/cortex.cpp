@@ -41,7 +41,7 @@ export class ChatCliUsecases {
     const thread = await this.getOrCreateNewThread(modelId, threadId);
     const messages: ChatCompletionMessage[] = (
       await this.messagesUsecases.getLastMessagesByThread(thread.id, 10)
-    ).map((message) => ({
+    ).map((message: any) => ({
       content: (message.content[0] as TextContentBlock).text.value,
       role: message.role,
     }));

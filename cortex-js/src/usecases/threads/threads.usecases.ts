@@ -2,7 +2,6 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
 import { ThreadEntity } from '@/infrastructure/entities/thread.entity';
-import { Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
@@ -13,21 +12,23 @@ import { UpdateMessageDto } from '@/infrastructure/dtos/threads/update-message.d
 import { Thread } from '@/domain/models/thread.interface';
 import DeleteMessageDto from '@/infrastructure/dtos/threads/delete-message.dto';
 import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
+import { Repository } from 'sequelize-typescript';
+import { Assistant } from '@/domain/models/assistant.interface';
 
 @Injectable()
 export class ThreadsUsecases {
   constructor(
     @Inject('THREAD_REPOSITORY')
-    private threadRepository: Repository<ThreadEntity>,
+    private threadRepository: any,
     @Inject('MESSAGE_REPOSITORY')
-    private messageRepository: Repository<MessageEntity>,
+    private messageRepository: any,
   ) {}
 
   async create(createThreadDto: CreateThreadDto): Promise<ThreadEntity> {
     const id = uuidv4();
     const { assistants } = createThreadDto;
-    const assistantEntity: AssistantEntity[] = assistants.map((assistant) => {
-      const entity: AssistantEntity = {
+    const assistantEntity: Assistant[] = assistants.map((assistant) => {
+      const entity: Assistant = {
         ...assistant,
         response_format: null,
         tool_resources: null,
@@ -37,7 +38,7 @@ export class ThreadsUsecases {
       return entity;
     });
 
-    const thread: ThreadEntity = {
+    const thread: Thread = {
       id,
       assistants: assistantEntity,
       object: 'thread',
@@ -46,15 +47,22 @@ export class ThreadsUsecases {
       tool_resources: null,
       metadata: null,
     };
-    await this.threadRepository.insert(thread);
-    return thread;
+    await this.threadRepository.create({
+      id,
+      assistants: assistantEntity,
+      object: 'thread',
+      created_at: Date.now(),
+      title: 'New Thread',
+      tool_resources: null,
+      metadata: null,
+    });
+    return thread as ThreadEntity;
   }
 
   async findAll(): Promise<ThreadEntity[]> {
-    return this.threadRepository.find({
-      order: {
-        created_at: 'DESC',
-      },
+    return this.threadRepository.findAll({
+      include: [AssistantEntity],
+      order: [['created_at', 'DESC']],
     });
   }
 
@@ -113,7 +121,7 @@ export class ThreadsUsecases {
       },
     };
 
-    const message: MessageEntity = {
+    const message: Message = {
       id: ulid(),
       object: 'thread.message',
       thread_id: threadId,
@@ -172,9 +180,9 @@ export class ThreadsUsecases {
   }
 
   async update(id: string, updateThreadDto: UpdateThreadDto) {
-    const assistantEntities: AssistantEntity[] =
+    const assistantEntities: Assistant[] =
       updateThreadDto.assistants?.map((assistant) => {
-        const entity: AssistantEntity = {
+        const entity: Assistant = {
           ...assistant,
           name: assistant.name,
           response_format: null,
@@ -185,7 +193,7 @@ export class ThreadsUsecases {
         return entity;
       }) ?? [];
 
-    const entity: Partial<ThreadEntity> = {
+    const entity: Partial<Thread> = {
       ...updateThreadDto,
       assistants: assistantEntities,
     };

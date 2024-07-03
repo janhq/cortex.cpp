@@ -1,18 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
-import { QueryFailedError, Repository } from 'typeorm';
 import { CreateAssistantDto } from '@/infrastructure/dtos/assistants/create-assistant.dto';
 import { Assistant } from '@/domain/models/assistant.interface';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { DuplicateAssistantException } from '@/infrastructure/exception/duplicate-assistant.exception';
+import { Repository } from 'sequelize-typescript';
 
 @Injectable()
 export class AssistantsUsecases {
   constructor(
     @Inject('ASSISTANT_REPOSITORY')
-    private readonly assistantRepository: Repository<AssistantEntity>,
+    private readonly assistantRepository: any,
     private readonly modelRepository: ModelRepository,
   ) {}
 
@@ -25,7 +24,7 @@ export class AssistantsUsecases {
       }
     }
 
-    const assistant: AssistantEntity = {
+    const assistant: Assistant = {
       ...createAssistantDto,
       object: 'assistant',
       created_at: Date.now(),
@@ -38,10 +37,6 @@ export class AssistantsUsecases {
     try {
       await this.assistantRepository.insert(assistant);
     } catch (err) {
-      if (err instanceof QueryFailedError) {
-        if (err.driverError.code === 'SQLITE_CONSTRAINT')
-          throw new DuplicateAssistantException(id);
-      }
 
       throw err;
     }

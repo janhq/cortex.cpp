@@ -1,10 +1,11 @@
+import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
+import { Sequelize } from 'sequelize-typescript';
+
 export const assistantProviders = [
   {
     provide: 'ASSISTANT_REPOSITORY',
-    useFactory: async(dataSource: any) =>{
-      const {AssistantEntity } = await import('../../entities/assistant.entity');
-      const result = await dataSource?.getRepository(AssistantEntity)
-      return result;
+    useFactory: async(sequelize: Sequelize) =>{
+      return sequelize.getRepository(AssistantEntity);
     },
     inject: ['DATA_SOURCE'],
   },

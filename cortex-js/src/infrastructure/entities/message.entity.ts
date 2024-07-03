@@ -1,52 +1,88 @@
+import { Table, Column, Model, PrimaryKey, DataType } from 'sequelize-typescript';
 import type {
   Message,
   MessageContent,
   MessageIncompleteDetails,
   MessageAttachment,
 } from '@/domain/models/message.interface';
-import { Column, Entity, PrimaryColumn } from 'typeorm';
 
-@Entity('messages')
-export class MessageEntity implements Message {
-  @PrimaryColumn({ type: String })
+@Table({ tableName: 'messages' })
+export class MessageEntity extends Model implements Message {
+  @PrimaryKey
+  @Column({
+    type: DataType.STRING,
+  })
   id: string;
 
-  @Column({ type: String })
+  @Column({
+    type: DataType.STRING,
+    defaultValue: 'thread.message',
+  })
   object: 'thread.message';
 
-  @Column({ type: String })
+  @Column({
+    type: DataType.STRING,
+  })
   thread_id: string;
 
-  @Column({ type: String, nullable: true })
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
   assistant_id: string | null;
 
-  @Column({ type: String })
+  @Column({
+    type: DataType.STRING,
+  })
   role: 'user' | 'assistant';
 
-  @Column({ type: String })
+  @Column({
+    type: DataType.STRING,
+  })
   status: 'in_progress' | 'incomplete' | 'completed';
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({
+    type: DataType.JSON,
+    allowNull: true,
+  })
   metadata: any | null;
 
-  @Column({ type: String, nullable: true })
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
   run_id: string | null;
 
-  @Column({ type: Number, nullable: true })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
   completed_at: number | null;
 
-  @Column({ type: 'simple-json' })
+  @Column({
+    type: DataType.JSON,
+  })
   content: MessageContent[];
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({
+    type: DataType.JSON,
+    allowNull: true,
+  })
   incomplete_details: MessageIncompleteDetails | null;
 
-  @Column({ type: Number })
+  @Column({
+    type: DataType.INTEGER,
+  })
   created_at: number;
 
-  @Column({ type: 'simple-json' })
+  @Column({
+    type: DataType.JSON,
+  })
   attachments: MessageAttachment[];
 
-  @Column({ type: Number, nullable: true })
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+  })
   incomplete_at: number | null;
 }
