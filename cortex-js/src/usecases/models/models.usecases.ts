@@ -327,7 +327,6 @@ export class ModelsUsecases {
       throw new BadRequestException('Model already exists');
     }
 
-    // ONNX only supported on Windows
     const modelsContainerDir = await this.fileManagerService.getModelsPath();
 
     if (!existsSync(modelsContainerDir)) {
