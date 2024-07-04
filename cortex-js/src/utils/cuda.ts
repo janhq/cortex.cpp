@@ -75,10 +75,23 @@ export const checkNvidiaGPUExist = (): Promise<boolean> => {
 export const getCudaVersion = (): Promise<string> => {
   return new Promise<string>((resolve, reject) => {
     // Execute the nvidia-smi command
-    exec('nvidia-smi --query-gpu=driver_version --format=csv,noheader', (error, stdout) => {
+    exec('nvidia-smi', (error, stdout) => {
       if (!error) {
         const firstLine = stdout.split('\n')[0].trim()
-        resolve(firstLine);
+        const cudaVersionLine = stdout.split('\n').find(line => line.includes('CUDA Version'));
+    
+        if (cudaVersionLine) {
+            // Extract the CUDA version number
+            const cudaVersionMatch = cudaVersionLine.match(/CUDA Version:\s+(\d+\.\d+)/);
+            if (cudaVersionMatch) {
+                const cudaVersion = cudaVersionMatch[1];
+                resolve(cudaVersion);
+            } else {
+                reject('CUDA Version not found.');
+            }
+        } else {
+            reject('CUDA Version not found.');
+        }
       } else {
         reject(error);
       }
