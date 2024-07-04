@@ -1,12 +1,14 @@
-#!/usr/bin/env node --no-warnings
+#!/usr/bin/env node
+import ora from 'ora';
+const dependenciesSpinner = ora('Loading dependencies...').start();
+const time = Date.now();
 import { CommandFactory } from 'nest-commander';
 import { CommandModule } from './command.module';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
-import { AsyncLocalStorage } from 'async_hooks';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 
-export const asyncLocalStorage = new AsyncLocalStorage();
+dependenciesSpinner.succeed('Dependencies loaded in ' + (Date.now() - time) + 'ms');
 
 async function bootstrap() {
   let telemetryUseCase: TelemetryUsecases | null = null;
