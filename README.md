@@ -21,8 +21,8 @@ Cortex currently supports 3 inference engines:
 
 ## Quicklinks
 
-- [Homepage](https://cortex.jan.ai/)
-- [Docs](https://cortex.jan.ai/docs/)
+- [Homepage](https://cortex.so/)
+- [Docs](https://cortex.so/docs/)
 
 ## Quickstart
 ### Prerequisites
@@ -36,7 +36,7 @@ Ensure that your system meets the following requirements to run Cortex:
   - Windows 10 or higher.
   - Ubuntu 22.04 and later.
 
-> Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
+> Visit [Quickstart](https://cortex.so/docs/quickstart) to get started.
 
 ### NPM
 Install using NPM package:
@@ -100,7 +100,7 @@ npm link
 ## Cortex CLI Commands
 
 The following CLI commands are currently available.
-See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
+See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
 
 ```bash
 
