@@ -1,4 +1,4 @@
-#!/usr/bin/env node --no-warnings
+#!/usr/bin/env node
 import ora from 'ora';
 const dependenciesSpinner = ora('Loading dependencies...').start();
 const time = Date.now();
@@ -9,6 +9,8 @@ import { TelemetrySource } from './domain/telemetry/telemetry.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 
 dependenciesSpinner.succeed('Dependencies loaded in ' + (Date.now() - time) + 'ms');
+
+process.removeAllListeners('warning');
 
 async function bootstrap() {
   let telemetryUseCase: TelemetryUsecases | null = null;
