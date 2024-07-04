@@ -219,6 +219,7 @@ export class ModelsUsecases {
         };
       })
       .catch(async (e) => {
+        console.error(e);
         loadingModelSpinner.fail('Model loading failed');
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
@@ -364,7 +365,9 @@ export class ModelsUsecases {
       toDownloads,
       // Post processing
       async () => {
-        console.log('Update model metadata...');
+        const uploadModelMetadataSpiner = ora(
+          'Updating model metadata...',
+        ).start();
         // Post processing after download
         if (existsSync(join(modelFolder, 'model.yml'))) {
           const model: CreateModelDto = load(
@@ -414,6 +417,7 @@ export class ModelsUsecases {
             });
           }
         }
+        uploadModelMetadataSpiner.succeed('Model metadata updated');
         const modelEvent: ModelEvent = {
           model: modelId,
           event: 'model-downloaded',
