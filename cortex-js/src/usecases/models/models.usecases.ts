@@ -219,7 +219,6 @@ export class ModelsUsecases {
         };
       })
       .catch(async (e) => {
-        console.error(e);
         loadingModelSpinner.fail('Model loading failed');
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];

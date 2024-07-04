@@ -60,8 +60,8 @@ export class RunCommand extends CommandRunner {
       checkingSpinner.succeed('Model not found. Attempting to pull...');
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
-          console.error('Model does not exist.');
-        else console.error(e.message ?? e);
+          checkingSpinner.fail('Model does not exist.');
+        else checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
     }

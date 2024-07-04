@@ -10,11 +10,9 @@
   },
   "scripts": {
     "dev": "nest dev",
-    "preinstall": "(cd cpuinfo && npm install) && (npx node-gyp rebuild -C ./cpuinfo)",
     "compile": "npx ncc build ./dist/src/command.js -o command",
     "build": "nest build",
-    "build:cpuInfo": "npx node-gyp rebuild -C ./cpuinfo",
-    "build:binary": "yarn build:cpuInfo && yarn build && yarn compile && npx -q patch-package && npx @yao-pkg/pkg .",
+    "build:binary": "yarn build && yarn compile && npx -q patch-package && npx @yao-pkg/pkg .",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "build:extensions": "run-script-os",
     "build:extensions:windows": "powershell -command \"$jobs = Get-ChildItem -Path './src/extensions' -Directory | ForEach-Object { Start-Job -Name ($_.Name) -ScriptBlock { param($_dir); try { Set-Location $_dir; yarn; yarn build; Write-Output 'Build successful in ' + $_dir } catch { Write-Error 'Error in ' + $_dir; throw } } -ArgumentList $_.FullName }; $jobs | Wait-Job; $jobs | ForEach-Object { Receive-Job -Job $_ -Keep } | ForEach-Object { Write-Host $_ }; $failed = $jobs | Where-Object { $_.State -ne 'Completed' -or $_.ChildJobs[0].JobStateInfo.State -ne 'Completed' }; if ($failed) { Exit 1 }\"",
@@ -54,7 +52,7 @@
     "class-validator": "^0.14.1",
     "cli-progress": "^3.12.0",
     "cortexso-node": "^0.0.4",
-    "cpuinfo": "file:./cpuinfo",
+    "cpu-instructions": "^0.0.10",
     "decompress": "^4.2.1",
     "js-yaml": "^4.1.0",
     "nest-commander": "^3.13.0",
@@ -141,8 +139,7 @@
     "assets": [
       "command/*.node",
       "**/package.json",
-      "node_modules/axios/**/*",
-      "cpuinfo/**/*"
+      "node_modules/axios/**/*"
     ],
     "outputPath": "dist"
   }
