@@ -25,7 +25,7 @@ export class EnginesController {
   @ApiOperation({
     summary: 'List available engines',
     description:
-      'Lists the currently available engines, including local and remote engines',
+      'Lists the currently available engines, including local and remote engines.',
   })
   @Get()
   findAll() {
@@ -41,7 +41,7 @@ export class EnginesController {
   @ApiOperation({
     summary: 'Get an engine',
     description:
-      'Retrieves an engine instance, providing basic information about the engine',
+      'Retrieves an engine instance, providing basic information about the engine.',
   })
   @ApiParam({
     name: 'name',

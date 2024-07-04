@@ -4,7 +4,7 @@ import { IsOptional, IsString } from 'class-validator';
 export class ConfigUpdateDto {
   @ApiProperty({
     example: 'apiKey',
-    description: 'The configuration key.',
+    description: 'The configuration API key.',
   })
   @IsString()
   @IsOptional()
@@ -14,7 +14,7 @@ export class ConfigUpdateDto {
   @ApiProperty({
     type: String,
     example: 'sk-xxxxxx',
-    description: 'The value of the configuration.',
+    description: 'The value of the configuration API key.',
   })
   @IsString()
   @IsOptional()
@@ -23,7 +23,7 @@ export class ConfigUpdateDto {
   @ApiProperty({
     type: String,
     example: 'openai',
-    description: 'The configuration name.',
+    description: 'The name of the configuration.',
   })
   @IsString()
   @IsOptional()
