@@ -5,7 +5,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { basename, join } from 'path';
-import { promises, existsSync, mkdirSync, rmdirSync, readFileSync } from 'fs';
+import { promises, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
@@ -125,7 +125,7 @@ export class ModelsUsecases {
       .then(
         () =>
           existsSync(modelFolder) &&
-          rmdirSync(modelFolder, { recursive: true }),
+          rmSync(modelFolder, { recursive: true }),
       )
       .then(() => {
         const modelEvent: ModelEvent = {
