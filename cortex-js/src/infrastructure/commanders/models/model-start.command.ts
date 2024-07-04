@@ -44,7 +44,6 @@ export class ModelStartCommand extends CommandRunner {
 
   async run(passedParams: string[], options: ModelStartOptions): Promise<void> {
     let modelId = passedParams[0];
-    console.log('Finding model...');
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
