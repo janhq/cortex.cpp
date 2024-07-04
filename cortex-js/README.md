@@ -38,13 +38,12 @@ Ensure that your system meets the following requirements to run Cortex:
 
 > Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
 
+
 ### NPM
+Install using NPM package:
 ``` bash
 # Install using NPM
 npm i -g cortexso
-# Install using Brew
-brew tap janhq/cortexso
-brew install cortexso
 # Run model
 cortex run llama3
 # To uninstall globally using NPM
@@ -52,15 +51,14 @@ npm uninstall -g cortexso
 ```
 
 ### Homebrew
+Install using Homebrew:
 ``` bash
 # Install using Brew
-brew tap janhq/cortexso
 brew install cortexso
 # Run model
 cortex run llama3
 # To uninstall using Brew
 brew uninstall cortexso
-brew untap janhq/cortexso
 ```
 > You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
 
@@ -107,14 +105,14 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
 
 ```bash
 
-  serve               Providing API endpoint for Cortex backend
-  chat                Send a chat request to a model
-  init|setup          Init settings and download cortex's dependencies
-  ps                  Show running models and their status
-  kill                Kill running cortex processes
+  serve               Providing API endpoint for Cortex backend.
+  chat                Send a chat request to a model.
+  init|setup          Init settings and download cortex's dependencies.
+  ps                  Show running models and their status.
+  kill                Kill running cortex processes.
   pull|download       Download a model. Working with HuggingFace model id.
-  run [options]       EXPERIMENTAL: Shortcut to start a model and chat
-  models              Subcommands for managing models
+  run [options]       EXPERIMENTAL: Shortcut to start a model and chat.
+  models              Subcommands for managing models.
   models list         List all available models.
   models pull         Download a specified model.
   models remove       Delete a specified model.
@@ -125,6 +123,15 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
   benchmark           Benchmark and analyze the performance of a specific AI model using your system.
   presets             Show all the available model presets within Cortex.
   telemetry           Retrieve telemetry logs for monitoring and analysis.
+  embeddings          Creates an embedding vector representing the input text.
+  engines             Subcommands for managing engines.
+  engines get         Get an engine details.
+  engines list        Get all the available Cortex engines.
+  engines init        Setup and download the required dependencies to run cortex engines.
+  configs             Subcommands for managing configurations.
+  configs get         Get a configuration details.
+  configs list        Get all the available configurations.
+  configs set         Set a configuration.
 ```
 
 ## Contact Support

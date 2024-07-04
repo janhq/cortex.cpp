@@ -4,6 +4,7 @@ import {
   Option,
   SubCommand,
 } from 'nest-commander';
+import ora from 'ora';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
@@ -39,6 +40,7 @@ export class EmbeddingCommand extends CommandRunner {
     options: EmbeddingCommandOptions,
   ): Promise<void> {
     let modelId = passedParams[0];
+    const checkingSpinner = ora('Checking model...').start();
     // First attempt to get message from input or options
     let input: string | string[] = options.input ?? passedParams.splice(1);
 
@@ -54,11 +56,11 @@ export class EmbeddingCommand extends CommandRunner {
       } else if (models.length > 0) {
         modelId = await this.modelInquiry(models);
       } else {
-        console.error('Model ID is required');
+        checkingSpinner.fail('Model ID is required');
         process.exit(1);
       }
     }
-
+    checkingSpinner.succeed(`Model found`);
     return this.chatCliUsecases
       .embeddings(modelId, input)
       .then((res) =>
