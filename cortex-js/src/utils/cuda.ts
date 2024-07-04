@@ -15,6 +15,7 @@ export type GpuSettingInfo = {
  * @returns CUDA Version 11 | 12
  */
 export const cudaVersion = async () => {
+ 
   let filesCuda12: string[];
   let filesCuda11: string[];
   let paths: string[];
@@ -67,6 +68,21 @@ export const checkNvidiaGPUExist = (): Promise<boolean> => {
         console.log('NVIDIA GPU detected.');
         resolve(true);
       }
+    });
+  });
+};
+
+export const getCudaVersion = (): Promise<string> => {
+  return new Promise<string>((resolve, reject) => {
+    // Execute the nvidia-smi command
+    exec('nvidia-smi --query-gpu=driver_version --format=csv,noheader', (error, stdout) => {
+      if (!error) {
+        const firstLine = stdout.split('\n')[0].trim()
+        resolve(firstLine);
+      } else {
+        reject(error);
+      }
+
     });
   });
 };

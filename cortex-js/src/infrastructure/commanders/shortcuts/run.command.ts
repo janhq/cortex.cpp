@@ -75,7 +75,7 @@ export class RunCommand extends CommandRunner {
     }
 
     // Check model compatibility on this machine
-    checkModelCompatibility(modelId);
+    await checkModelCompatibility(modelId);
 
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
