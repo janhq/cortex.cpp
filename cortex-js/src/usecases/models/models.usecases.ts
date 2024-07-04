@@ -1,10 +1,11 @@
+import ora from 'ora';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { basename, join } from 'path';
-import { promises, existsSync, mkdirSync, rmdirSync, readFileSync } from 'fs';
+import { promises, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
@@ -123,8 +124,7 @@ export class ModelsUsecases {
       .remove(id)
       .then(
         () =>
-          existsSync(modelFolder) &&
-          rmdirSync(modelFolder, { recursive: true }),
+          existsSync(modelFolder) && rmSync(modelFolder, { recursive: true }),
       )
       .then(() => {
         const modelEvent: ModelEvent = {
@@ -163,7 +163,7 @@ export class ModelsUsecases {
         modelId,
       };
     }
-    console.log('Loading model...');
+    const loadingModelSpinner = ora('Loading model...').start();
     // update states and emitting event
     this.activeModelStatuses[modelId] = {
       model: modelId,
@@ -210,10 +210,13 @@ export class ModelsUsecases {
         };
         this.eventEmitter.emit('model.event', modelEvent);
       })
-      .then(() => ({
-        message: 'Model loaded successfully',
-        modelId,
-      }))
+      .then(() => {
+        loadingModelSpinner.succeed('Model loaded');
+        return {
+          message: 'Model loaded successfully',
+          modelId,
+        };
+      })
       .catch(async (e) => {
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
@@ -229,6 +232,7 @@ export class ModelsUsecases {
             modelId,
           };
         }
+        loadingModelSpinner.fail('Model loading failed');
         await this.telemetryUseCases.createCrashReport(
           e,
           TelemetrySource.CORTEX_CPP,
@@ -359,7 +363,9 @@ export class ModelsUsecases {
       toDownloads,
       // Post processing
       async () => {
-        console.log('Update model metadata...');
+        const uploadModelMetadataSpiner = ora(
+          'Updating model metadata...',
+        ).start();
         // Post processing after download
         if (existsSync(join(modelFolder, 'model.yml'))) {
           const model: CreateModelDto = load(
@@ -409,6 +415,7 @@ export class ModelsUsecases {
             });
           }
         }
+        uploadModelMetadataSpiner.succeed('Model metadata updated');
         const modelEvent: ModelEvent = {
           model: modelId,
           event: 'model-downloaded',

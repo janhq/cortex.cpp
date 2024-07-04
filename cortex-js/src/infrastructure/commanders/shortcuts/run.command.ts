@@ -6,6 +6,7 @@ import {
   InquirerService,
 } from 'nest-commander';
 import { exit } from 'node:process';
+import ora from 'ora';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
@@ -44,21 +45,23 @@ export class RunCommand extends CommandRunner {
 
   async run(passedParams: string[], options: RunOptions): Promise<void> {
     let modelId = passedParams[0];
+    const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
       } catch {
-        console.error('Model ID is required');
+        checkingSpinner.fail('Model ID is required');
         exit(1);
       }
     }
     // If not exist
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
+      checkingSpinner.succeed('Model not found. Attempting to pull...');
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
-          console.error('Model does not exist.');
-        else console.error(e.message ?? e);
+          checkingSpinner.fail('Model does not exist.');
+        else checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
     }
@@ -70,23 +73,27 @@ export class RunCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error('Model is not available.');
+      checkingSpinner.fail(
+        `Model is not available`
+      );
       process.exit(1);
     }
+    checkingSpinner.succeed('Model found');
 
     // Check model compatibility on this machine
     checkModelCompatibility(modelId);
-
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
+      const engineSpinner = ora('Installing engine...').start();
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
         'latest',
         engine,
       );
+      engineSpinner.succeed('Engine installed');
     }
 
     return this.cortexUsecases
