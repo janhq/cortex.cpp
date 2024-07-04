@@ -303,12 +303,6 @@ jobs:
           cd cortex-cpp
           make run-e2e-test RUN_TESTS=true LLM_MODEL_URL=${{ env.LLM_MODEL_URL }} EMBEDDING_MODEL_URL=${{ env.EMBEDDING_MODEL_URL }}
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
-          path: ./cortex-cpp/cortex-cpp
-
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
@@ -352,7 +346,7 @@ jobs:
 
           - os: "mac"
             name: "arm64"
-            runs-on: "macos-latest"
+            runs-on: "macos-silicon"
     steps:
       - name: Clone
         id: checkout
@@ -410,6 +404,7 @@ jobs:
           CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
 
       - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
         if: runner.os == 'macOS'
         with:
           p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
@@ -499,38 +494,6 @@ jobs:
         run: |
           cd cortex-js
           make postbundle
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/cortex
-            ./cortex-js/cortex.exe
-
-      - name: Upload Windows Installer
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/setup.exe
-
-      - name: Upload Linux Installer
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/cortexso.deb
-      
-      - name: Upload MacOS Installer
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/cortex-installer.pkg
 
       - name: Upload Cortex Installer
         uses: actions/upload-release-asset@v1.0.1
