@@ -53,10 +53,12 @@ npm uninstall -g cortexso
 Install using Homebrew:
 ``` bash
 # Install using Brew
+brew tap janhq/cortexso
 brew install cortexso
 # Run model
 cortex run llama3
 # To uninstall using Brew
+brew untap janhq/cortexso
 brew uninstall cortexso
 ```
 > You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
