@@ -1,3 +1,4 @@
+import ora from 'ora';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
@@ -163,7 +164,7 @@ export class ModelsUsecases {
         modelId,
       };
     }
-    console.log('Loading model...');
+    const loadingModelSpinner = ora('Loading model...').start();
     // update states and emitting event
     this.activeModelStatuses[modelId] = {
       model: modelId,
@@ -210,11 +211,15 @@ export class ModelsUsecases {
         };
         this.eventEmitter.emit('model.event', modelEvent);
       })
-      .then(() => ({
-        message: 'Model loaded successfully',
-        modelId,
-      }))
+      .then(() => {
+        loadingModelSpinner.succeed('Model loaded');
+        return {
+          message: 'Model loaded successfully',
+          modelId,
+        };
+      })
       .catch(async (e) => {
+        loadingModelSpinner.fail('Model loading failed');
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
         const modelEvent: ModelEvent = {

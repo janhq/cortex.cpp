@@ -103,6 +103,7 @@ export interface TelemetryAnonymized {
   sessionId: string | null;
   lastActiveAt?: string | null;
 }
+
 export interface BenchmarkHardware {
   gpu: any[];
   cpu: any;
