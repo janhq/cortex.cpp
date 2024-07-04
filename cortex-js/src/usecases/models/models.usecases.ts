@@ -124,8 +124,7 @@ export class ModelsUsecases {
       .remove(id)
       .then(
         () =>
-          existsSync(modelFolder) &&
-          rmSync(modelFolder, { recursive: true }),
+          existsSync(modelFolder) && rmSync(modelFolder, { recursive: true }),
       )
       .then(() => {
         const modelEvent: ModelEvent = {
@@ -219,7 +218,6 @@ export class ModelsUsecases {
         };
       })
       .catch(async (e) => {
-        loadingModelSpinner.fail('Model loading failed');
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
         const modelEvent: ModelEvent = {
@@ -234,6 +232,7 @@ export class ModelsUsecases {
             modelId,
           };
         }
+        loadingModelSpinner.fail('Model loading failed');
         await this.telemetryUseCases.createCrashReport(
           e,
           TelemetrySource.CORTEX_CPP,
