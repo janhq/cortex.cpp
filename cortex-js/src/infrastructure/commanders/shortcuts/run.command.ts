@@ -52,13 +52,9 @@ export class RunCommand extends CommandRunner {
         exit(1);
       }
     }
-
     // If not exist
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
-      console.log(
-        `${modelId} not found on filesystem. Downloading from remote: https://huggingface.co/cortexso if possible.`,
-      );
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
           console.error('Model does not exist.');
@@ -78,6 +74,7 @@ export class RunCommand extends CommandRunner {
       process.exit(1);
     }
 
+    // Check model compatibility on this machine
     checkModelCompatibility(modelId);
 
     const engine = existingModel.engine || Engines.llamaCPP;

@@ -37,7 +37,7 @@ export class ChatCliUsecases {
     attach: boolean = true,
     stopModel: boolean = true,
   ): Promise<void> {
-    if (attach) console.log(`Inorder to exit, type '${this.exitClause}'.`);
+    if (attach) console.log(`In order to exit, type '${this.exitClause}'.`);
     const thread = await this.getOrCreateNewThread(modelId, threadId);
     const messages: ChatCompletionMessage[] = (
       await this.messagesUsecases.getLastMessagesByThread(thread.id, 10)
