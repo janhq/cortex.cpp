@@ -1,3 +1,4 @@
+import { MIN_CUDA_VERSION } from "@/infrastructure/constants/cortex";
 import { getCudaVersion } from "./cuda";
 
 export const checkModelCompatibility = async (modelId: string) => {  
@@ -14,7 +15,13 @@ export const checkModelCompatibility = async (modelId: string) => {
 
     try{
       const version = await getCudaVersion();
-      console.log('Checking model compatibility...', version);
+      const [currentMajor, currentMinor] = version.split('.').map(Number);
+      const [requiredMajor, requiredMinor] = MIN_CUDA_VERSION.split('.').map(Number);
+      const isMatchRequired = currentMajor > requiredMajor || (currentMajor === requiredMajor && currentMinor >= requiredMinor);
+      if (!isMatchRequired) {
+        console.error(`CUDA version ${version} is not compatible with TensorRT-LLM models. Required version: ${MIN_CUDA_VERSION}`);
+        process.exit(1);
+      }
       } catch (e) {
         console.error(e.message ?? e);
         process.exit(1);

@@ -77,7 +77,6 @@ export const getCudaVersion = (): Promise<string> => {
     // Execute the nvidia-smi command
     exec('nvidia-smi', (error, stdout) => {
       if (!error) {
-        const firstLine = stdout.split('\n')[0].trim()
         const cudaVersionLine = stdout.split('\n').find(line => line.includes('CUDA Version'));
     
         if (cudaVersionLine) {

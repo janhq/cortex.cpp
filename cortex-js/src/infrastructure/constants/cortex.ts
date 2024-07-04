@@ -49,3 +49,5 @@ export const CUDA_DOWNLOAD_URL =
   'https://catalog.jan.ai/dist/cuda-dependencies/<version>/<platform>/cuda.tar.gz';
 
 export const telemetryServerUrl = 'https://telemetry.jan.ai';
+
+export const MIN_CUDA_VERSION = '12.3';
