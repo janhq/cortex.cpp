@@ -4,6 +4,7 @@ import {
   Option,
   InquirerService,
 } from 'nest-commander';
+import ora from 'ora';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
@@ -44,11 +45,12 @@ export class ModelStartCommand extends CommandRunner {
 
   async run(passedParams: string[], options: ModelStartOptions): Promise<void> {
     let modelId = passedParams[0];
+    const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
       } catch {
-        console.error('Model ID is required');
+        checkingSpinner.fail('Model ID is required');
         exit(1);
       }
     }
@@ -59,27 +61,25 @@ export class ModelStartCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error(
-        `${modelId} not found on filesystem.\nPlease try 'cortex pull ${modelId}' first.`,
-      );
+      checkingSpinner.fail(`Model ${modelId} not found on filesystem.\nPlease try 'cortex pull ${modelId}' first.`);
       process.exit(1);
     }
 
     checkModelCompatibility(modelId);
-
+    checkingSpinner.succeed('Model found');
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      console.log('Installing engine...');
+      const engineSpinner = ora('Installing engine...').start();
       await this.initUsecases.installEngine(
         await this.initUsecases.defaultInstallationOptions(),
         'latest',
         engine,
       );
+      engineSpinner.succeed();
     }
-    console.log('Starting model...');
     await this.cortexUsecases
       .startCortex(options.attach)
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
