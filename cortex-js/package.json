@@ -65,6 +65,7 @@
     "typeorm": "^0.3.20",
     "ulid": "^2.3.0",
     "uuid": "^9.0.1",
+    "whatwg-url": "^14.0.0",
     "yaml": "^2.4.2"
   },
   "devDependencies": {
@@ -109,9 +110,6 @@
   "resolutions": {
     "ajv": "8.15.0",
     "whatwg-url": "14.0.0"
-  },
-  "overrides": {
-    "whatwg-url": "14.x"
   },
   "files": [
     "dist"
