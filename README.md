@@ -1,6 +1,6 @@
 # Cortex
 <p align="center">
-  <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex/dev/assets/cortex-banner.png">
+  <img width="1286" alt="Cortex banner" src="https://github.com/janhq/cortex/assets/89722390/83968b87-eb3e-4d6e-8f0f-6727d070a0d1">
 </p>
 
 <p align="center">
