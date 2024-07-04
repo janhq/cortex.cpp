@@ -54,6 +54,10 @@ export class RunCommand extends CommandRunner {
         exit(1);
       }
     }
+
+    // Check model compatibility on this machine
+    await checkModelCompatibility(modelId);
+
     // If not exist
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
@@ -73,15 +77,10 @@ export class RunCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      checkingSpinner.fail(
-        `Model is not available`
-      );
+      checkingSpinner.fail(`Model is not available`);
       process.exit(1);
     }
     checkingSpinner.succeed('Model found');
-
-    // Check model compatibility on this machine
-    await checkModelCompatibility(modelId);
 
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
