@@ -73,11 +73,12 @@ export class RunCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error(
+      checkingSpinner.fail(
         `Model is not available`
       );
       process.exit(1);
     }
+    checkingSpinner.succeed('Model found');
 
     // Check model compatibility on this machine
     checkModelCompatibility(modelId);
