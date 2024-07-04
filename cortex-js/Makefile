@@ -15,7 +15,6 @@ ifeq ($(OS),Windows_NT)
 else ifeq ($(shell uname -s),Linux)
 	@cp ./dist/cortexso-linux ./cortex
 else
-	@cp ./dist/cortexso-macos ./cortex
 endif
 
 codesign-binary:
