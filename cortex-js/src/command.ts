@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env node --no-warnings
 import ora from 'ora';
 const dependenciesSpinner = ora('Loading dependencies...').start();
 const time = Date.now();
