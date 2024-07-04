@@ -43,7 +43,7 @@ export class ModelPullCommand extends CommandRunner {
     }
     const modelId = passedParams[0];
 
-    checkModelCompatibility(modelId);
+    await checkModelCompatibility(modelId);
 
     await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)

@@ -65,8 +65,9 @@ export class ModelStartCommand extends CommandRunner {
       process.exit(1);
     }
 
-    checkModelCompatibility(modelId);
+    await checkModelCompatibility(modelId);
     checkingSpinner.succeed('Model found');
+
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
