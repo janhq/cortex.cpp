@@ -14,8 +14,6 @@ ifeq ($(OS),Windows_NT)
 	@powershell -Command 'npx resedit --in $(CORTEX_EXE_IN) --out $(CORTEX_EXE_OUT) --icon "1,cortex.ico" --no-grow --company-name "Homebrew Computer Pte Ltd" --file-description "cortex cli" --file-version "$(CORTEX_VERSION)" --internal-name "cortex" --product-name "cortex" --product-version "$(CORTEX_VERSION)"'
 else ifeq ($(shell uname -s),Linux)
 	@cp ./dist/cortexso-linux ./cortex
-else
-	@cp ./dist/cortexso-macos ./cortex
 endif
 
 codesign-binary:
@@ -59,10 +57,10 @@ ifeq ($(OS),Windows_NT)
 	@powershell -Command "7z a -ttar temp.tar cortex.exe; 7z a -tgzip cortex.tar.gz temp.tar;"
 	@powershell -Command "7z a -ttar temp2.tar setup.exe; 7z a -tgzip cortex-installer.tar.gz temp2.tar;"
 else ifeq ($(shell uname -s),Linux)
-	@chmod +x cortex;
+	@chmod +x cortex; \
 	tar -czvf cortex.tar.gz cortex;
 else
-	@chmod +x cortex;
-	tar -czvf cortex.tar.gz cortex;
+	@chmod +x cortex; \
+	tar -czvf cortex.tar.gz cortex; \
 	tar -czvf cortex-installer.tar.gz cortex-installer.pkg;
 endif
