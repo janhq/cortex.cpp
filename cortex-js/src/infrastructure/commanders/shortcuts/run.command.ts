@@ -56,12 +56,12 @@ export class RunCommand extends CommandRunner {
     }
 
     // Check model compatibility on this machine
-    await checkModelCompatibility(modelId);
+    await checkModelCompatibility(modelId, checkingSpinner);
 
     // If not exist
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
-      checkingSpinner.succeed('Model not found. Attempting to pull...');
+      checkingSpinner.succeed();
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
           checkingSpinner.fail('Model does not exist.');
