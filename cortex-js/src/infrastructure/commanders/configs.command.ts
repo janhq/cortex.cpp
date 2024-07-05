@@ -8,11 +8,7 @@ import { ConfigsSetCommand } from './configs/configs-set.command';
 @SubCommand({
   name: 'configs',
   description: 'Get cortex configurations',
-  arguments: '<name>',
   subCommands: [ConfigsGetCommand, ConfigsListCommand, ConfigsSetCommand],
-  argsDescription: {
-    name: 'Configuration name to get',
-  },
 })
 @SetCommandContext()
 export class ConfigsCommand extends CommandRunner {
@@ -20,5 +16,7 @@ export class ConfigsCommand extends CommandRunner {
     super();
   }
 
-  async run(): Promise<void> {}
+  async run(): Promise<void> {
+    this.command?.help();
+  }
 }

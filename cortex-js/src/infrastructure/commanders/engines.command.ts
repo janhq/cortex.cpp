@@ -16,5 +16,7 @@ export class EnginesCommand extends CommandRunner {
     super();
   }
 
-  async run(): Promise<void> {}
+  async run(): Promise<void> {
+    this.command?.help();
+  }
 }
