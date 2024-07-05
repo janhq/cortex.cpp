@@ -7,7 +7,7 @@ export class EngineDto implements Partial<Extension> {
     type: String,
     example: 'cortex.llamacpp',
     description:
-      'The name of the engine, which can be referenced in the API endpoints.',
+      'The name of the engine that you want to retrieve.',
   })
   @IsString()
   name: string;

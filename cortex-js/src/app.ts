@@ -30,12 +30,12 @@ export const getApp = async () => {
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
     .setDescription(
-      'Cortex API provides a command-line interface (CLI) for seamless interaction with large language models (LLMs). It is fully compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference) and enables straightforward command execution and management of LLM interactions.',
+      'Cortex API provides a command-line interface (CLI) for seamless interaction with Large Language Models (LLMs). It is fully compatible with the [OpenAI API](https://platform.openai.com/docs/api-reference) and enables straightforward command execution and management of LLM interactions.',
     )
     .setVersion('1.0')
     .addTag(
       'Inference',
-      'This endpoint initiates interaction with a Language Learning Model (LLM).',
+      'This endpoint initiates interaction with a Large Language Models (LLM).',
     )
     .addTag(
       'Assistants',
