@@ -28,9 +28,13 @@ Cortex currently supports 3 inference engines:
 ### Prerequisites
 Ensure that your system meets the following requirements to run Cortex:
 - **Dependencies**:
-  - **Node.js**: version 18 and above is required to run the installation.
+  - **Node.js**: Version 18 and above is required to run the installation.
   - **NPM**: Needed to manage packages.
   - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
+  - **OpenMPI**: Required for Linux. Install by using the following command:
+    ```bash
+    sudo apt install openmpi-bin libopenmpi-dev
+    ```
 - **OS**:
   - MacOSX 13.6 or higher.
   - Windows 10 or higher.
