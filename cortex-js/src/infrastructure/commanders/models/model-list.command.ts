@@ -22,6 +22,7 @@ export class ModelListCommand extends CommandRunner {
       ? console.table(
           models.map((e) => ({
             id: e.model,
+            name: e.name,
             engine: e.engine,
             version: e.version,
           })),
