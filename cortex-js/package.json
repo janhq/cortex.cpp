@@ -140,7 +140,8 @@
     "assets": [
       "command/*.node",
       "**/package.json",
-      "node_modules/axios/**/*"
+      "node_modules/axios/**/*",
+      "node_modules/swagger-ui-dist/"
     ],
     "outputPath": "dist"
   }
