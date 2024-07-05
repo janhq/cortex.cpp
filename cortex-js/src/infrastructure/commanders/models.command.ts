@@ -23,5 +23,7 @@ import { RunCommand } from './shortcuts/run.command';
   description: 'Subcommands for managing models',
 })
 export class ModelsCommand extends CommandRunner {
-  async run(): Promise<void> {}
+  async run(): Promise<void> {
+    this.command?.help();
+  }
 }
