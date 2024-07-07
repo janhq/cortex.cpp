@@ -1,5 +1,17 @@
 cmake_minimum_required(VERSION 3.5)
+cmake_policy(SET CMP0091 NEW)
+cmake_policy(SET CMP0042 NEW)
 project(cortex-cpp C CXX)
+
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  include_directories(${CMAKE_JS_INC})
+endif()
+
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  include_directories(${CMAKE_JS_INC})
+endif()
 
 include(CheckIncludeFileCXX)
 
@@ -53,13 +65,29 @@ if(APPLE)
   endif()
 endif()
 
+if(DEFINED CMAKE_JS_INC)
+  # define NPI_VERSION
+  add_compile_definitions(NAPI_VERSION=8)
+endif()
+
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 
 # add_subdirectory(test)
 
-add_executable(${PROJECT_NAME} main.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
-)
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  if(("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") OR("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+  endif()
+
+  add_library(${PROJECT_NAME} SHARED addon.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+  )
+else() # Official build
+  add_executable(${PROJECT_NAME} main.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+  )
+endif()
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
@@ -104,3 +132,15 @@ target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
+
+  target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
+
+  if(MSVC AND CMAKE_JS_NODELIB_DEF AND CMAKE_JS_NODELIB_TARGET)
+    # Generate node.lib
+    execute_process(COMMAND ${CMAKE_AR} /def:${CMAKE_JS_NODELIB_DEF} /out:${CMAKE_JS_NODELIB_TARGET} ${CMAKE_STATIC_LINKER_FLAGS})
+  endif()
+endif()

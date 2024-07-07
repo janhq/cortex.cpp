@@ -1,0 +1,41 @@
+{
+  "name": "cortex-cpp",
+  "version": "0.0.11",
+  "description": "Cortex-cpp is a streamlined, stateless C++ server engineered to be fully compatible with OpenAI's API, particularly its stateless functionalities",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/janhq/cortex.git"
+  },
+  "scripts": {
+    "install": "prebuild-install --runtime napi --backend cmake-js || cmake-js rebuild",
+    "build": "cmake-js configure && cmake-js build",
+    "rebuild": "cmake-js rebuild",
+    "prebuild": "prebuild --runtime napi --backend cmake-js --all --strip --verbose",
+    "upload": "prebuild --runtime napi --backend cmake-js --upload ${GITHUB_TOKEN}"
+  },
+  "author": "Jan <service@jan.ai>",
+  "license": "Apache-2.0",
+  "gypfile": true,
+  "dependencies": {
+    "bindings": "^1.5.0",
+    "cmake-js": "^7.3.0",
+    "node-addon-api": "^7.0.0",
+    "prebuild": "^13.0.1",
+    "prebuild-install": "^7.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "typescript": "^5.5.3"
+  },
+  "binary": {
+    "napi_versions": [
+      8
+    ]
+  },
+  "files": [
+    "*.js",
+    "*.d.ts"
+  ]
+}
