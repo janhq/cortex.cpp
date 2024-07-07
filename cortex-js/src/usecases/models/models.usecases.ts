@@ -227,6 +227,7 @@ export class ModelsUsecases {
         };
         this.eventEmitter.emit('model.event', modelEvent);
         if (e.code === AxiosError.ERR_BAD_REQUEST) {
+          loadingModelSpinner.succeed('Model loaded');
           return {
             message: 'Model already loaded',
             modelId,

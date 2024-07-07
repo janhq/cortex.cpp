@@ -249,6 +249,14 @@ export class FileManagerService {
     return join(await this.getDataFolderPath(), 'cortex-cpp', 'engines');
   }
 
+  /**
+   * Get log path
+   * @returns the path to the cortex engines folder
+   */
+  async getLogPath(): Promise<string> {
+    return join(await this.getDataFolderPath(), 'cortex.log');
+  }
+
   async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {
     const dataFolderPath = await this.getDataFolderPath();
     const folderPath = join(dataFolderPath, folderName);

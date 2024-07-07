@@ -88,16 +88,12 @@ export class RunCommand extends CommandRunner {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       const engineSpinner = ora('Installing engine...').start();
-      await this.initUsecases.installEngine(
-        await this.initUsecases.defaultInstallationOptions(),
-        'latest',
-        engine,
-      );
+      await this.initUsecases.installEngine(undefined, 'latest', engine);
       engineSpinner.succeed('Engine installed');
     }
 
     return this.cortexUsecases
-      .startCortex(false)
+      .startCortex()
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
       .then(() => this.chatCliUsecases.chat(modelId, options.threadId));
   }
