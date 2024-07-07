@@ -51,7 +51,7 @@ interface ScopeLog {
 
 export interface TelemetryLog {
   traceId: string;
-  startTimeUnixNano?: string;
+  timeUnixNano?: string;
   endTimeUnixNano?: string;
   severityText: string;
   body: {
