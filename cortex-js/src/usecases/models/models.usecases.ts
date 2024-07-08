@@ -343,7 +343,7 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
 
     let files = (await fetchJanRepoData(modelId)).siblings;
-    console.log(files);
+    
     // HuggingFace GGUF Repo - Only one file is downloaded
     if (modelId.includes('/') && selection && files.length) {
       files = [await selection(files)];
