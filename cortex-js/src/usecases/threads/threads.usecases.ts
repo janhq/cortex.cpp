@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { UpdateThreadDto } from '@/infrastructure/dtos/threads/update-thread.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -12,17 +12,16 @@ import DeleteMessageDto from '@/infrastructure/dtos/threads/delete-message.dto';
 import { Assistant } from '@/domain/models/assistant.interface';
 import { Repository } from 'sequelize-typescript';
 import { ThreadEntity } from '@/infrastructure/entities/thread.entity';
-import { InjectModel } from '@nestjs/sequelize';
 import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { Op } from 'sequelize';
 
 @Injectable()
 export class ThreadsUsecases {
   constructor(
-    @InjectModel(ThreadEntity)
-    private threadRepository: typeof ThreadEntity,
-    @InjectModel(MessageEntity)
-    private messageRepository: typeof MessageEntity,
+    @Inject('THREAD_REPOSITORY')
+    private threadRepository: Repository<ThreadEntity>,
+    @Inject('MESSAGE_REPOSITORY')
+    private messageRepository:  Repository<MessageEntity>,
   ) {}
 
   async create(createThreadDto: CreateThreadDto): Promise<Thread> {

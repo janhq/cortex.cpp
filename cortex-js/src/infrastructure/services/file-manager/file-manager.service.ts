@@ -39,7 +39,6 @@ export class FileManagerService {
    * @returns the config object
    */
   async getConfig(): Promise<Config & object> {
-    console.log('getConfig');
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -68,7 +67,6 @@ export class FileManagerService {
   }
 
   async writeConfigFile(config: Config & object): Promise<void> {
-    console.log('writeConfigFile');
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
@@ -78,7 +76,6 @@ export class FileManagerService {
   }
 
   private async createFolderIfNotExist(dataFolderPath: string): Promise<void> {
-    console.log('createFolderIfNotExist');
     if (!existsSync(dataFolderPath)) {
       await promises.mkdir(dataFolderPath, { recursive: true });
     }
@@ -101,7 +98,6 @@ export class FileManagerService {
   }
 
   private defaultConfig(): Config {
-    console.log('defaultConfig');
     // default will store at home directory
     const homeDir = os.homedir();
     const dataFolderPath = join(homeDir, this.cortexDirectoryName);
@@ -128,7 +124,6 @@ export class FileManagerService {
     filePath: string,
   ): Promise<{ data: any; position: number }> {
     try {
-      console.log('getLastLine');
       const fileDescriptor = await openAsync(filePath, 'a+');
       const stats = await promises.stat(filePath);
       const bufferSize = 1024 * 5; // 5KB
@@ -172,7 +167,6 @@ export class FileManagerService {
   }
   async modifyLine(filePath: string, modifiedLine: any, position: number) {
     try {
-      console.log('modifyLine');
       const fd = await openAsync(filePath, 'r+');
       const buffer = Buffer.from(modifiedLine, 'utf8');
       await writeAsync(fd, buffer, 0, buffer.length, position);
@@ -185,7 +179,6 @@ export class FileManagerService {
 
   async append(filePath: string, data: any) {
     try {
-      console.log('append');
       const stats = await promises.stat(filePath);
       return await promises.appendFile(
         filePath,
@@ -200,7 +193,6 @@ export class FileManagerService {
     }
   }
   readLines(filePath: string, callback: (line: string) => void) {
-    console.log('readLines');
     const fileStream = createReadStream(filePath);
     const rl = createInterface({
       input: fileStream,
@@ -215,7 +207,6 @@ export class FileManagerService {
    * @returns the path to the models folder
    */
   async getModelsPath(): Promise<string> {
-    console.log('getModelsPath');
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.modelFolderName);
   }
@@ -226,7 +217,6 @@ export class FileManagerService {
    * @returns the path to the presets folder
    */
   async getPresetsPath(): Promise<string> {
-    console.log('getPresetsPath');
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.presetFolderName);
   }
@@ -237,7 +227,6 @@ export class FileManagerService {
    * @returns the path to the extensions folder
    */
   async getExtensionsPath(): Promise<string> {
-    console.log('getExtensionsPath');
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.extensionFoldername);
   }
@@ -248,7 +237,6 @@ export class FileManagerService {
    * @returns the path to the benchmark folder
    */
   async getBenchmarkPath(): Promise<string> {
-    console.log('getBenchmarkPath');
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.benchmarkFoldername);
   }
@@ -258,12 +246,10 @@ export class FileManagerService {
    * @returns the path to the cortex engines folder
    */
   async getCortexCppEnginePath(): Promise<string> {
-    console.log('getCortexCppEnginePath');
     return join(await this.getDataFolderPath(), 'cortex-cpp', 'engines');
   }
 
   async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {
-    console.log('createFolderIfNotExistInDataFolder');
     const dataFolderPath = await this.getDataFolderPath();
     const folderPath = join(dataFolderPath, folderName);
     if (!existsSync(folderPath)) {

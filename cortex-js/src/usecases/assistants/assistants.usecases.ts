@@ -4,16 +4,15 @@ import { Assistant } from '@/domain/models/assistant.interface';
 import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
-import { DuplicateAssistantException } from '@/infrastructure/exception/duplicate-assistant.exception';
-import { InjectModel } from '@nestjs/sequelize';
 import { Op } from 'sequelize';
 import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
+import { Repository } from 'sequelize-typescript';
 
 @Injectable()
 export class AssistantsUsecases {
   constructor(
-    @InjectModel(AssistantEntity)
-    private readonly assistantModel: typeof AssistantEntity,
+    @Inject('ASSISTANT_REPOSITORY')
+    private readonly assistantModel: Repository<AssistantEntity>,
     private readonly modelRepository: ModelRepository,
   ) {}
 

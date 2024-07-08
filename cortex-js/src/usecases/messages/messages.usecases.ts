@@ -4,14 +4,13 @@ import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.
 import { ulid } from 'ulid';
 import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { Message } from '@/domain/models/message.interface';
-import { InjectModel } from '@nestjs/sequelize';
-import { Op } from 'sequelize';
+import { Repository } from 'sequelize-typescript';
 
 @Injectable()
 export class MessagesUsecases {
   constructor(
-    @InjectModel(MessageEntity)
-    private readonly messageModel: typeof MessageEntity,
+    @Inject('MESSAGE_REPOSITORY')
+    private messageRepository:  Repository<MessageEntity>,
   ) {}
 
   async create(createMessageDto: CreateMessageDto) {
@@ -29,15 +28,15 @@ export class MessagesUsecases {
       metadata: undefined,
       assistant_id: assistant_id ?? null,
     };
-    return this.messageModel.create(message);
+    return this.messageRepository.create(message);
   }
 
   async findAll() {
-    return this.messageModel.findAll();
+    return this.messageRepository.findAll();
   }
 
   async findOne(id: string) {
-    return this.messageModel.findOne({
+    return this.messageRepository.findOne({
       where: {
         id,
       },
@@ -45,7 +44,7 @@ export class MessagesUsecases {
   }
 
   async update(id: string, updateMessageDto: UpdateMessageDto) {
-    const [numberOfAffectedRows, [updatedMessage]] = await this.messageModel.update(updateMessageDto, {
+    const [numberOfAffectedRows, [updatedMessage]] = await this.messageRepository.update(updateMessageDto, {
       where: { id },
       returning: true,
     });
@@ -53,13 +52,13 @@ export class MessagesUsecases {
   }
 
   async remove(id: string) {
-    return this.messageModel.destroy({
+    return this.messageRepository.destroy({
       where: { id },
     });
   }
 
   async getLastMessagesByThread(threadId: string, limit: number) {
-    return this.messageModel.findAll({
+    return this.messageRepository.findAll({
       where: {
         thread_id: threadId,
       },

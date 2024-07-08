@@ -22,10 +22,8 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     private readonly httpService: HttpService,
     private readonly fileManagerService: FileManagerService,
   ) {
-    console.time('loadExtensions');
     this.loadCoreExtensions();
     this.loadExternalExtensions();
-    console.timeEnd('loadExtensions');
   }
   create(object: Extension): Promise<Extension> {
     this.extensions.set(object.name ?? '', object);
