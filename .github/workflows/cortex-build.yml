@@ -46,24 +46,32 @@ jobs:
             cmake-flags: ""
             build-deps-cmake-flags: ""
             ccache-dir: ""
+            arch: "x64"
+            platform: "linux"
           - os: "mac"
             name: "amd64"
             runs-on: "macos-13"
             cmake-flags: ""
             build-deps-cmake-flags: ""
             ccache-dir: ""
+            arch: "x64"
+            platform: "darwin"
           - os: "mac"
             name: "arm64"
             runs-on: "macos-latest"
             cmake-flags: "-DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ""
+            arch: "arm64"
+            platform: "darwin"
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+            arch: "x64"
+            platform: "windows"
 
     steps:
       - name: Clone
@@ -193,24 +201,13 @@ jobs:
       # upload prebuilds
       - name: Upload Prebuilds Darwin
         uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && matrix.os == 'mac'
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-cpp/prebuilds/cortex-cpp-v${{ needs.create-draft-release.outputs.version }}-napi-v8-darwin-${{ matrix.name }}.tar.gz
-          asset_name: cortex-cpp-v${{ needs.create-draft-release.outputs.version }}-napi-v8-darwin-${{ matrix.name }}.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Prebuilds Others
-        uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') && matrix.os != 'mac'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-cpp/prebuilds/cortex-cpp-v${{ needs.create-draft-release.outputs.version }}-napi-v8-${{ matrix.os }}-${{ matrix.name }}.tar.gz
-          asset_name: cortex-cpp-v${{ needs.create-draft-release.outputs.version }}-napi-v8-${{ matrix.os }}-${{ matrix.name }}.tar.gz
+          asset_path: ./cortex-cpp/prebuilds/cortex-cpp-v${{ needs.create-draft-release.outputs.version }}-napi-v8-${{matrix.platform}}-${{ matrix.arch }}.tar.gz
+          asset_name: cortex-cpp-v${{ needs.create-draft-release.outputs.version }}-napi-v8-${{matrix.platform}}-${{ matrix.arch }}.tar.gz
           asset_content_type: application/gzip
 
       # Setup .npmrc file to publish to npm - upload only once
