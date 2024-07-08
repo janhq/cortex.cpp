@@ -4,7 +4,6 @@ import { CommandTestFactory } from 'nest-commander-testing';
 import { CommandModule } from '@/command.module';
 import { join } from 'path';
 import { rmSync } from 'fs';
-import { timeout } from '@/infrastructure/commanders/test/helpers.command.spec';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 let commandInstance: TestingModule;

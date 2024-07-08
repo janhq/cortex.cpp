@@ -21,6 +21,10 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
+import {
+  EventName,
+} from '@/domain/telemetry/telemetry.interface';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
 
 @ApiTags('Models')
@@ -30,6 +34,7 @@ export class ModelsController {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
     private readonly cortexUsecases: CortexUsecases,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {}
 
   @HttpCode(201)
@@ -110,10 +115,14 @@ export class ModelsController {
       },
     ],
   })
+
   @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string) {
-    this.modelsUsecases.pullModel(modelId, false);
-
+    this.modelsUsecases.pullModel(modelId, false).then(() => this.telemetryUsecases.addEventToQueue({
+      name: EventName.DOWNLOAD_MODEL,
+      modelId,
+    })
+    );
     return {
       message: 'Download model started successfully.',
     };
@@ -154,8 +163,11 @@ export class ModelsController {
   })
   @Get('pull/:modelId(*)')
   pullModel(@Param('modelId') modelId: string) {
-    this.modelsUsecases.pullModel(modelId);
-
+    this.modelsUsecases.pullModel(modelId).then(() => this.telemetryUsecases.addEventToQueue({
+      name: EventName.DOWNLOAD_MODEL,
+      modelId,
+    })
+    );
     return {
       message: 'Download model started successfully.',
     };

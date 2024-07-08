@@ -1,10 +1,11 @@
+import ora from 'ora';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { basename, join } from 'path';
-import { promises, existsSync, mkdirSync, rmdirSync, readFileSync } from 'fs';
+import { promises, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
@@ -123,8 +124,7 @@ export class ModelsUsecases {
       .remove(id)
       .then(
         () =>
-          existsSync(modelFolder) &&
-          rmdirSync(modelFolder, { recursive: true }),
+          existsSync(modelFolder) && rmSync(modelFolder, { recursive: true }),
       )
       .then(() => {
         const modelEvent: ModelEvent = {
@@ -154,7 +154,7 @@ export class ModelsUsecases {
   ): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const engine = (await this.extensionRepository.findOne(
-      model!.engine ?? 'cortex.llamacpp',
+      model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
 
     if (!engine) {
@@ -163,7 +163,7 @@ export class ModelsUsecases {
         modelId,
       };
     }
-
+    const loadingModelSpinner = ora('Loading model...').start();
     // update states and emitting event
     this.activeModelStatuses[modelId] = {
       model: modelId,
@@ -189,7 +189,7 @@ export class ModelsUsecases {
           llama_model_path: (model.files as string[])[0],
           model_path: (model.files as string[])[0],
         }),
-      engine: model.engine ?? 'cortex.llamacpp',
+      engine: model.engine ?? Engines.llamaCPP,
       // User / Model settings
       ...parser.parseModelEngineSettings(model),
       ...parser.parseModelEngineSettings(settings ?? {}),
@@ -210,10 +210,13 @@ export class ModelsUsecases {
         };
         this.eventEmitter.emit('model.event', modelEvent);
       })
-      .then(() => ({
-        message: 'Model loaded successfully',
-        modelId,
-      }))
+      .then(() => {
+        loadingModelSpinner.succeed('Model loaded');
+        return {
+          message: 'Model loaded successfully',
+          modelId,
+        };
+      })
       .catch(async (e) => {
         // remove the model from this.activeModelStatus.
         delete this.activeModelStatuses[modelId];
@@ -224,16 +227,18 @@ export class ModelsUsecases {
         };
         this.eventEmitter.emit('model.event', modelEvent);
         if (e.code === AxiosError.ERR_BAD_REQUEST) {
+          loadingModelSpinner.succeed('Model loaded');
           return {
             message: 'Model already loaded',
             modelId,
           };
         }
+        loadingModelSpinner.fail('Model loading failed');
         await this.telemetryUseCases.createCrashReport(
           e,
           TelemetrySource.CORTEX_CPP,
         );
-        return {
+        throw {
           message: e.message,
           modelId,
         };
@@ -248,7 +253,7 @@ export class ModelsUsecases {
   async stopModel(modelId: string): Promise<StartModelSuccessDto> {
     const model = await this.getModelOrThrow(modelId);
     const engine = (await this.extensionRepository.findOne(
-      model!.engine ?? 'cortex.llamacpp',
+      model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
 
     if (!engine) {
@@ -327,7 +332,6 @@ export class ModelsUsecases {
       throw new BadRequestException('Model already exists');
     }
 
-    // ONNX only supported on Windows
     const modelsContainerDir = await this.fileManagerService.getModelsPath();
 
     if (!existsSync(modelsContainerDir)) {
@@ -348,7 +352,8 @@ export class ModelsUsecases {
     const toDownloads: Record<string, string> = files
       .filter((e) => this.validFileDownload(e))
       .reduce((acc: Record<string, string>, file) => {
-        acc[file.downloadUrl] = join(modelFolder, file.rfilename);
+        if (file.downloadUrl)
+          acc[file.downloadUrl] = join(modelFolder, file.rfilename);
         return acc;
       }, {});
 
@@ -359,13 +364,15 @@ export class ModelsUsecases {
       toDownloads,
       // Post processing
       async () => {
-        console.log('Update model metadata...');
+        const uploadModelMetadataSpiner = ora(
+          'Updating model metadata...',
+        ).start();
         // Post processing after download
         if (existsSync(join(modelFolder, 'model.yml'))) {
           const model: CreateModelDto = load(
             readFileSync(join(modelFolder, 'model.yml'), 'utf-8'),
           ) as CreateModelDto;
-          if (model.engine === 'cortex.llamacpp') {
+          if (model.engine === Engines.llamaCPP && model.files) {
             const fileUrl = join(
               await this.fileManagerService.getModelsPath(),
               normalizeModelId(modelId),
@@ -373,6 +380,17 @@ export class ModelsUsecases {
             );
             model.files = [fileUrl];
             model.name = modelId.replace(':default', '');
+          } else if (model.engine === Engines.llamaCPP) {
+            model.files = [
+              join(
+                await this.fileManagerService.getModelsPath(),
+                normalizeModelId(modelId),
+                basename(
+                  files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
+                    files[0].rfilename,
+                ),
+              ),
+            ];
           } else {
             model.files = [modelFolder];
           }
@@ -387,7 +405,10 @@ export class ModelsUsecases {
             const fileUrl = join(
               await this.fileManagerService.getModelsPath(),
               normalizeModelId(modelId),
-              basename(files[0].rfilename),
+              basename(
+                files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
+                  files[0].rfilename,
+              ),
             );
             await this.update(modelId, {
               files: [fileUrl],
@@ -395,6 +416,7 @@ export class ModelsUsecases {
             });
           }
         }
+        uploadModelMetadataSpiner.succeed('Model metadata updated');
         const modelEvent: ModelEvent = {
           model: modelId,
           event: 'model-downloaded',

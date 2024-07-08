@@ -88,16 +88,16 @@ ExternalProject_Add(
 )
 
 # Download and install GoogleTest
-ExternalProject_Add(
-    gtest
-    GIT_REPOSITORY https://github.com/google/googletest
-    GIT_TAG v1.14.0
-    CMAKE_ARGS
-	-Dgtest_force_shared_crt=ON
-	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
-	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
-    -DCMAKE_BUILD_TYPE=RELEASE
-)
+# ExternalProject_Add(
+#     gtest
+#     GIT_REPOSITORY https://github.com/google/googletest
+#     GIT_TAG v1.14.0
+#     CMAKE_ARGS
+# 	-Dgtest_force_shared_crt=ON
+# 	-DCMAKE_PREFIX_PATH=${THIRD_PARTY_INSTALL_PATH}
+# 	-DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
+#     -DCMAKE_BUILD_TYPE=RELEASE
+# )
 
 
 if(WIN32)

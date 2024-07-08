@@ -7,7 +7,6 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
-#include "utils/cpuid/cpu_validation.h"
 #include "utils/logging_utils.h"
 
 using namespace inferences;
@@ -275,10 +274,6 @@ void server::LoadModel(const HttpRequestPtr& req,
       if (engine_type == kLlamaEngine) {
         cortex::cpuid::CpuInfo cpu_info;
         LOG_INFO << "CPU instruction set: " << cpu_info.to_string();
-        if (auto [res, err] = cortex::cpuid::llamacpp::IsValidInstructions();
-            !res) {
-          LOG_WARN << err;
-        }
       }
 
       std::string abs_path =

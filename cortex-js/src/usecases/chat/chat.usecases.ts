@@ -11,6 +11,7 @@ import { HttpService } from '@nestjs/axios';
 import { CORTEX_CPP_EMBEDDINGS_URL } from '@/infrastructure/constants/cortex';
 import { CreateEmbeddingsDto } from '@/infrastructure/dtos/embeddings/embeddings-request.dto';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 
 @Injectable()
 export class ChatUsecases {
@@ -28,12 +29,11 @@ export class ChatUsecases {
   ): Promise<any> {
     const { model: modelId } = createChatDto;
     const model = await this.modelRepository.findOne(modelId);
-
     if (!model) {
       throw new ModelNotFoundException(modelId);
     }
     const engine = (await this.extensionRepository.findOne(
-      model!.engine ?? 'cortex.llamacpp',
+      model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
 
     if (engine == null) {

@@ -1,4 +1,5 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
+import ora from 'ora';
 import {
   CORTEX_CPP_MODELS_URL,
   CORTEX_JS_HEALTH_URL,
@@ -9,6 +10,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ModelStat } from '@commanders/types/model-stat.interface';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { Engines } from '../types/engine.interface';
 
 interface ModelStatResponse {
   object: string;
@@ -25,6 +27,7 @@ export class PSCliUsecases {
    */
   async getModels(): Promise<ModelStat[]> {
     const configs = await this.fileService.getConfig();
+    const runningSpinner = ora('Getting models...').start();
     return new Promise<ModelStat[]>((resolve, reject) =>
       firstValueFrom(
         this.httpService.get(
@@ -39,6 +42,7 @@ export class PSCliUsecases {
             Array.isArray(data.data) &&
             data.data.length > 0
           ) {
+            runningSpinner.succeed();
             resolve(
               data.data.map((e) => {
                 const startTime = e.start_time ?? new Date();
@@ -47,7 +51,7 @@ export class PSCliUsecases {
                   currentTime.getTime() - new Date(startTime).getTime();
                 return {
                   modelId: e.id,
-                  engine: e.engine ?? 'cortex.llamacpp',
+                  engine: e.engine ?? Engines.llamaCPP,
                   status: 'running',
                   duration: this.formatDuration(duration),
                   ram: e.ram ?? '-',
@@ -58,7 +62,10 @@ export class PSCliUsecases {
           } else reject();
         })
         .catch(reject),
-    ).catch(() => []);
+    ).catch(() => {
+      runningSpinner.succeed('');
+      return [];
+    });
   }
 
   /**

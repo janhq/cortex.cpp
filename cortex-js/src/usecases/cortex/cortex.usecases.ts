@@ -10,7 +10,9 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
+  CORTEX_JS_STOP_API_SERVER_URL,
 } from '@/infrastructure/constants/cortex';
+import { createWriteStream, openSync } from 'fs';
 
 @Injectable()
 export class CortexUsecases {
@@ -22,9 +24,12 @@ export class CortexUsecases {
     private readonly fileManagerService: FileManagerService,
   ) {}
 
-  async startCortex(
-    attach: boolean = false,
-  ): Promise<CortexOperationSuccessfullyDto> {
+  /**
+   * Start the Cortex CPP process
+   * @param attach
+   * @returns
+   */
+  async startCortex(): Promise<CortexOperationSuccessfullyDto> {
     const configs = await this.fileManagerService.getConfig();
     const host = configs.cortexCppHost;
     const port = configs.cortexCppPort;
@@ -49,11 +54,13 @@ export class CortexUsecases {
       'cortex-cpp',
     );
 
+    const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
+
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
-      detached: !attach,
+      detached: true,
       cwd: cortexCppFolderPath,
-      stdio: attach ? 'inherit' : undefined,
+      stdio: [0, writer, writer],
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
@@ -92,6 +99,9 @@ export class CortexUsecases {
     });
   }
 
+  /**
+   * Stop the Cortex CPP process
+   */
   async stopCortex(): Promise<CortexOperationSuccessfullyDto> {
     const configs = await this.fileManagerService.getConfig();
     try {
@@ -114,7 +124,25 @@ export class CortexUsecases {
     }
   }
 
-  private healthCheck(host: string, port: number): Promise<boolean> {
+  /**
+   * Stop the API server
+   * @returns
+   */
+  async stopServe(): Promise<void> {
+    return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
+      method: 'DELETE',
+    })
+      .then(() => {})
+      .catch(() => {});
+  }
+
+  /**
+   * Check whether the Cortex CPP is healthy
+   * @param host
+   * @param port
+   * @returns
+   */
+  healthCheck(host: string, port: number): Promise<boolean> {
     return fetch(CORTEX_CPP_HEALTH_Z_URL(host, port))
       .then((res) => {
         if (res.ok) {

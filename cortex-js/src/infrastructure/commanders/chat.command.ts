@@ -4,12 +4,18 @@ import {
   Option,
   InquirerService,
 } from 'nest-commander';
+import ora from 'ora';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ModelStat } from './types/model-stat.interface';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '../services/context/context.service';
 
 type ChatOptions = {
@@ -36,12 +42,14 @@ export class ChatCommand extends CommandRunner {
     private readonly modelsUsecases: ModelsUsecases,
     private readonly psCliUsecases: PSCliUsecases,
     readonly contextService: ContextService,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {
     super();
   }
 
   async run(passedParams: string[], options: ChatOptions): Promise<void> {
     let modelId = passedParams[0];
+    const checkingSpinner = ora('Checking model...').start();
     // First attempt to get message from input or options
     // Extract input from 1 to end of array
     let message = options.message ?? passedParams.slice(1).join(' ');
@@ -60,20 +68,30 @@ export class ChatCommand extends CommandRunner {
       } else if (models.length > 0) {
         modelId = await this.modelInquiry(models);
       } else {
-        console.error('Model ID is required');
+        checkingSpinner.fail('Model ID is required');
         exit(1);
       }
     }
+    checkingSpinner.succeed(`Model found`);
 
     if (!message) options.attach = true;
-
-    return this.chatCliUsecases.chat(
+    const result = await this.chatCliUsecases.chat(
       modelId,
       options.threadId,
       message, // Accept both message from inputs or arguments
       options.attach,
       false, // Do not stop cortex session or loaded model
     );
+    this.telemetryUsecases.sendEvent(
+      [
+        {
+          name: EventName.CHAT,
+          modelId,
+        },
+      ],
+      TelemetrySource.CLI,
+    );
+    return result;
   }
 
   modelInquiry = async (models: ModelStat[]) => {

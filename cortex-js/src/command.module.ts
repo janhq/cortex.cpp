@@ -44,6 +44,7 @@ import { ConfigsListCommand } from './infrastructure/commanders/configs/configs-
 import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-set.command';
 import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
+import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
 
 
 @Module({
@@ -113,6 +114,7 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
     // Engines
     EnginesListCommand,
     EnginesGetCommand,
+    EnginesInitCommand,
   ],
 })
 export class CommandModule {}

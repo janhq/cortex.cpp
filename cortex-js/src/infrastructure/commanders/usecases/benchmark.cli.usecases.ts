@@ -16,6 +16,9 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { inspect } from 'util';
 import { defaultBenchmarkConfiguration } from '@/infrastructure/constants/benchmark';
 import { PSCliUsecases } from './ps.cli.usecases';
+import { ModelStat } from '../types/model-stat.interface';
+import { BenchmarkHardware } from '@/domain/telemetry/telemetry.interface';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 
 @Injectable()
 export class BenchmarkCliUsecases {
@@ -24,6 +27,7 @@ export class BenchmarkCliUsecases {
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     private readonly psUsecases: PSCliUsecases,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {}
 
   config: BenchmarkConfig;
@@ -41,8 +45,7 @@ export class BenchmarkCliUsecases {
         ...options,
       };
 
-      const model = params?.model ?? this.config.api.parameters.model;
-      // TODO: Using OpenAI client or Cortex client to benchmark?
+      const modelId = params?.model ?? this.config.api.parameters.model;
       this.cortexClient = new Cortex({
         apiKey: this.config.api.api_key,
         baseURL: this.config.api.base_url,
@@ -53,20 +56,20 @@ export class BenchmarkCliUsecases {
         detached: false,
         shell: process.platform == 'win32',
       });
-
       return this.cortexUsecases
         .startCortex()
-        .then(() => this.modelsCliUsecases.startModel(model))
+        .then(() => this.modelsCliUsecases.startModel(modelId))
         .then(() =>
           this.psUsecases
             .getModels()
-            .then((models) => models.find((e) => e.modelId === model)),
+            .then((models) => models.find((e) => e.modelId === modelId)),
         )
         .then((model) => {
           if (!model)
             throw new Error('Model is not started, please try again!');
+          return model;
         })
-        .then(() => this.runBenchmarks())
+        .then((model) => this.runBenchmarks(model))
         .then(() => {
           serveProcess.kill();
           process.exit(0);
@@ -102,11 +105,22 @@ export class BenchmarkCliUsecases {
    * using the systeminformation library
    * @returns the system resources
    */
-  private async getSystemResources() {
+  private async getSystemResources(): Promise<
+    BenchmarkHardware & {
+      cpuLoad: any;
+      mem: any;
+    }
+  > {
     return {
-      cpu: await si.currentLoad(),
+      cpuLoad: await si.currentLoad(),
       mem: await si.mem(),
       gpu: (await si.graphics()).controllers,
+      cpu: await si.cpu(),
+      board: await si.baseboard(),
+      disk: await si.diskLayout(),
+      chassis: await si.chassis(),
+      memLayout: await si.memLayout(),
+      os: await si.osInfo(),
     };
   }
 
@@ -118,10 +132,10 @@ export class BenchmarkCliUsecases {
    */
   private async getResourceChange(startData: any, endData: any) {
     return {
-      cpu:
-        startData.cpu && endData.cpu
-          ? ((endData.cpu.currentload - startData.cpu.currentload) /
-              startData.cpu.currentload) *
+      cpuLoad:
+        startData.cpuLoad && endData.cpuLoad
+          ? ((endData.cpuLoad.currentLoad - startData.cpuLoad.currentLoad) /
+              startData.cpuLoad.currentLoad) *
             100
           : null,
       mem:
@@ -136,7 +150,7 @@ export class BenchmarkCliUsecases {
    * Benchmark a user using the OpenAI API
    * @returns
    */
-  private async benchmarkUser() {
+  private async benchmarkUser(model: ModelStat) {
     const startResources = await this.getSystemResources();
     const start = Date.now();
     let tokenCount = 0;
@@ -144,11 +158,12 @@ export class BenchmarkCliUsecases {
 
     try {
       const stream = await this.cortexClient!.chat.completions.create({
-        model: this.config.api.parameters.model,
+        model: model.modelId,
         messages: this.config.api.parameters.messages,
         max_tokens: this.config.api.parameters.max_tokens,
         stream: true,
       });
+      
 
       for await (const chunk of stream) {
         if (!firstTokenTime && chunk.choices[0]?.delta?.content) {
@@ -204,7 +219,7 @@ export class BenchmarkCliUsecases {
   /**
    * Run the benchmarks
    */
-  private async runBenchmarks() {
+  private async runBenchmarks(model: ModelStat) {
     const allResults: any[] = [];
     const rounds = this.config.num_rounds || 1;
 
@@ -216,7 +231,7 @@ export class BenchmarkCliUsecases {
       const hardwareBefore = await this.getSystemResources();
 
       for (let j = 0; j < this.config.concurrency; j++) {
-        const result = await this.benchmarkUser();
+        const result = await this.benchmarkUser(model);
         if (result) {
           roundResults.push(result);
         }
@@ -256,6 +271,7 @@ export class BenchmarkCliUsecases {
       hardware: await this.getSystemResources(),
       results: allResults,
       metrics,
+      model,
     };
     bar.stop();
 
@@ -263,6 +279,20 @@ export class BenchmarkCliUsecases {
       await this.fileService.getBenchmarkPath(),
       'output.json',
     );
+    await this.telemetryUsecases.sendBenchmarkEvent({
+      hardware: {
+        cpu: output.hardware.cpu,
+        gpu: output.hardware.gpu,
+        memLayout: output.hardware.memLayout,
+        board: output.hardware.board,
+        disk: output.hardware.disk,
+        chassis: output.hardware.chassis,
+        os: output.hardware.os,
+      },
+      results: output.results,
+      metrics: output.metrics,
+      model,
+    });
     fs.writeFileSync(outputFilePath, JSON.stringify(output, null, 2));
     console.log(`Benchmark results and metrics saved to ${outputFilePath}`);
 

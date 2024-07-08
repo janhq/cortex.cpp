@@ -4,11 +4,19 @@ import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { Response } from 'express';
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { ChatCompletionResponseDto } from '../dtos/chat/chat-completion-response.dto';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
 
 @ApiTags('Inference')
 @Controller('chat')
 export class ChatController {
-  constructor(private readonly chatService: ChatUsecases) {}
+  constructor(
+    private readonly chatService: ChatUsecases,
+    private readonly telemetryUsecases: TelemetryUsecases,
+  ) {}
 
   @ApiOperation({
     summary: 'Create chat completion',
@@ -49,5 +57,9 @@ export class ChatController {
           res.status(error.statusCode ?? 400).send(error.message),
         );
     }
+    this.telemetryUsecases.addEventToQueue({
+      name: EventName.CHAT,
+      modelId: createChatDto.model,
+    });
   }
 }

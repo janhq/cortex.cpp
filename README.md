@@ -21,30 +21,32 @@ Cortex currently supports 3 inference engines:
 
 ## Quicklinks
 
-- [Homepage](https://cortex.jan.ai/)
-- [Docs](https://cortex.jan.ai/docs/)
+- [Homepage](https://cortex.so/)
+- [Docs](https://cortex.so/docs/)
 
 ## Quickstart
 ### Prerequisites
 Ensure that your system meets the following requirements to run Cortex:
 - **Dependencies**:
-  - **Node.js**: version 18 and above is required to run the installation.
+  - **Node.js**: Version 18 and above is required to run the installation.
   - **NPM**: Needed to manage packages.
   - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
+  - **OpenMPI**: Required for Linux. Install by using the following command:
+    ```bash
+    sudo apt install openmpi-bin libopenmpi-dev
+    ```
 - **OS**:
   - MacOSX 13.6 or higher.
   - Windows 10 or higher.
   - Ubuntu 22.04 and later.
 
-> Visit [Quickstart](https://cortex.jan.ai/docs/quickstart) to get started.
+> Visit [Quickstart](https://cortex.so/docs/quickstart) to get started.
 
 ### NPM
+Install using NPM package:
 ``` bash
 # Install using NPM
 npm i -g cortexso
-# Install using Brew
-brew tap janhq/cortexso
-brew install cortexso
 # Run model
 cortex run llama3
 # To uninstall globally using NPM
@@ -52,6 +54,7 @@ npm uninstall -g cortexso
 ```
 
 ### Homebrew
+Install using Homebrew:
 ``` bash
 # Install using Brew
 brew tap janhq/cortexso
@@ -59,8 +62,8 @@ brew install cortexso
 # Run model
 cortex run llama3
 # To uninstall using Brew
-brew uninstall cortexso
 brew untap janhq/cortexso
+brew uninstall cortexso
 ```
 > You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
 
@@ -103,18 +106,18 @@ npm link
 ## Cortex CLI Commands
 
 The following CLI commands are currently available.
-See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
+See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
 
 ```bash
 
-  serve               Providing API endpoint for Cortex backend
-  chat                Send a chat request to a model
-  init|setup          Init settings and download cortex's dependencies
-  ps                  Show running models and their status
-  kill                Kill running cortex processes
+  serve               Providing API endpoint for Cortex backend.
+  chat                Send a chat request to a model.
+  init|setup          Init settings and download cortex's dependencies.
+  ps                  Show running models and their status.
+  kill                Kill running cortex processes.
   pull|download       Download a model. Working with HuggingFace model id.
-  run [options]       EXPERIMENTAL: Shortcut to start a model and chat
-  models              Subcommands for managing models
+  run [options]       EXPERIMENTAL: Shortcut to start a model and chat.
+  models              Subcommands for managing models.
   models list         List all available models.
   models pull         Download a specified model.
   models remove       Delete a specified model.
@@ -125,6 +128,15 @@ See [CLI Reference Docs](https://cortex.jan.ai/docs/cli) for more information.
   benchmark           Benchmark and analyze the performance of a specific AI model using your system.
   presets             Show all the available model presets within Cortex.
   telemetry           Retrieve telemetry logs for monitoring and analysis.
+  embeddings          Creates an embedding vector representing the input text.
+  engines             Subcommands for managing engines.
+  engines get         Get an engine details.
+  engines list        Get all the available Cortex engines.
+  engines init        Setup and download the required dependencies to run cortex engines.
+  configs             Subcommands for managing configurations.
+  configs get         Get a configuration details.
+  configs list        Get all the available configurations.
+  configs set         Set a configuration.
 ```
 
 ## Contact Support

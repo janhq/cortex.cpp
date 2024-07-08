@@ -2,7 +2,7 @@ export const HUGGING_FACE_TREE_REF_URL = (
   repo: string,
   tree: string,
   path: string,
-) => `https://huggingface.co/cortexhub/${repo}/resolve/${tree}/${path}`;
+) => `https://huggingface.co/cortexso/${repo}/resolve/${tree}/${path}`;
 
 export const HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL = (
   modelId: string,

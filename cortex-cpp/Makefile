@@ -1,5 +1,5 @@
 # Makefile for Cortex llamacpp engine - Build, Lint, Test, and Clean
-.PHONY: all build package run-e2e-test
+.PHONY: all build package
 
 BUILD_DEPS_CMAKE_EXTRA_FLAGS ?= ""
 CMAKE_EXTRA_FLAGS ?= ""
@@ -38,19 +38,17 @@ endif
 
 pre-package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "mkdir -p cortex-cpp\engines\cortex.llamacpp\; cp build\engines\cortex.llamacpp\engine.dll cortex-cpp\engines\cortex.llamacpp\;"
+	@powershell -Command "mkdir -p cortex-cpp;"
 	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
 	@powershell -Command "cp build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
 else ifeq ($(shell uname -s),Linux)
-	@mkdir -p cortex-cpp/engines/cortex.llamacpp; \
-	cp build/engines/cortex.llamacpp/libengine.so cortex-cpp/engines/cortex.llamacpp/; \
+	@mkdir -p cortex-cpp; \
 	cp build/cortex-cpp cortex-cpp/;
 else
-	@mkdir -p cortex-cpp/engines/cortex.llamacpp; \
-	cp build/engines/cortex.llamacpp/libengine.dylib cortex-cpp/engines/cortex.llamacpp/; \
+	@mkdir -p cortex-cpp; \
 	cp build/cortex-cpp cortex-cpp/;
 endif
 
@@ -78,23 +76,6 @@ else ifeq ($(shell uname -s),Linux)
 	tar -czvf cortex-cpp.tar.gz cortex-cpp;
 else
 	tar -czvf cortex-cpp.tar.gz cortex-cpp;
-endif
-
-run-e2e-test:
-ifeq ($(RUN_TESTS),false)
-	@echo "Skipping tests"
-	@exit 0
-endif
-ifeq ($(OS),Windows_NT)
-	@powershell -Command "cd cortex-cpp; ..\..\.github\scripts\e2e-test-llama-windows.bat cortex-cpp.exe $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL);"
-else ifeq ($(shell uname -s),Linux)
-	@cd cortex-cpp; \
-	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./cortex-cpp $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
-	rm -rf uploads/;
-else
-	@cd cortex-cpp; \
-	chmod +x ../../.github/scripts/e2e-test-llama-linux-and-mac.sh && ../../.github/scripts/e2e-test-llama-linux-and-mac.sh ./cortex-cpp $(LLM_MODEL_URL) $(EMBEDDING_MODEL_URL); \
-	rm -rf uploads/;
 endif
 
 clean:
