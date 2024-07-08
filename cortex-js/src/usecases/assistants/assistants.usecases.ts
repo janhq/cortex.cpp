@@ -12,7 +12,7 @@ import { Repository } from 'sequelize-typescript';
 export class AssistantsUsecases {
   constructor(
     @Inject('ASSISTANT_REPOSITORY')
-    private readonly assistantModel: Repository<AssistantEntity>,
+    private readonly assistantRepository: Repository<AssistantEntity>,
     private readonly modelRepository: ModelRepository,
   ) {}
 
@@ -36,7 +36,7 @@ export class AssistantsUsecases {
     };
 
     try {
-      await this.assistantModel.create(assistant);
+      await this.assistantRepository.create(assistant);
     } catch (err) {
       throw err;
     }
@@ -60,7 +60,7 @@ export class AssistantsUsecases {
       where.id = { [Op.lt]: before };
     }
 
-    const assistants = await this.assistantModel.findAll({
+    const assistants = await this.assistantRepository.findAll({
       where,
       order: [['created_at', normalizedOrder]],
       limit: limit + 1,
@@ -79,17 +79,17 @@ export class AssistantsUsecases {
   }
 
   async findAll(): Promise<Assistant[]> {
-    return this.assistantModel.findAll();
+    return this.assistantRepository.findAll();
   }
 
   async findOne(id: string) {
-    return this.assistantModel.findOne({
+    return this.assistantRepository.findOne({
       where: { id },
     });
   }
 
   async remove(id: string) {
-    return this.assistantModel.destroy({
+    return this.assistantRepository.destroy({
       where: { id },
     });
   }
