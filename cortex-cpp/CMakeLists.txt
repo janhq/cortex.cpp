@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
-cmake_policy(SET CMP0091 NEW)
-cmake_policy(SET CMP0042 NEW)
-project(cortex-cpp C CXX)
 
-# Build using CMAKE-JS
-if(DEFINED CMAKE_JS_INC)
-  include_directories(${CMAKE_JS_INC})
-endif()
+project(cortex-cpp C CXX)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
@@ -97,9 +91,23 @@ endif()
 # and comment out the following lines
 
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
-                                              ${CMAKE_THREAD_LIBS_INIT})
 
+
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
+
+  target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
+  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_JS_LIB})
+
+  if(MSVC AND CMAKE_JS_NODELIB_DEF AND CMAKE_JS_NODELIB_TARGET)
+    # Generate node.lib
+    execute_process(COMMAND ${CMAKE_AR} /def:${CMAKE_JS_NODELIB_DEF} /out:${CMAKE_JS_NODELIB_TARGET} ${CMAKE_STATIC_LINKER_FLAGS})
+  endif()
+else()
+  target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
+  ${CMAKE_THREAD_LIBS_INIT})
+endif()
 # ##############################################################################
 
 if(CMAKE_CXX_STANDARD LESS 17)
@@ -132,15 +140,3 @@ target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC})
 # ##############################################################################
 # uncomment the following line for dynamically loading views set_property(TARGET
 # ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
-
-# Build using CMAKE-JS
-if(DEFINED CMAKE_JS_INC)
-  set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
-
-  target_link_libraries(${PROJECT_NAME} ${CMAKE_JS_LIB})
-
-  if(MSVC AND CMAKE_JS_NODELIB_DEF AND CMAKE_JS_NODELIB_TARGET)
-    # Generate node.lib
-    execute_process(COMMAND ${CMAKE_AR} /def:${CMAKE_JS_NODELIB_DEF} /out:${CMAKE_JS_NODELIB_TARGET} ${CMAKE_STATIC_LINKER_FLAGS})
-  endif()
-endif()

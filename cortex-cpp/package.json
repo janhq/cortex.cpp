@@ -9,10 +9,10 @@
     "url": "git+https://github.com/janhq/cortex.git"
   },
   "scripts": {
-    "install": "prebuild-install --runtime napi --backend cmake-js || cmake-js rebuild",
-    "build": "cmake-js configure && cmake-js build",
-    "rebuild": "cmake-js rebuild",
-    "prebuild": "prebuild --runtime napi --backend cmake-js --all --strip --verbose",
+    "install": "prebuild-install --runtime napi --backend cmake-js --config Release || cmake-js rebuild --config Release",
+    "build": "cmake-js configure --config Release && cmake-js build --config Release",
+    "rebuild": "cmake-js rebuild --config Release",
+    "prebuild": "prebuild --runtime napi --backend cmake-js --all --strip --verbose --config Release",
     "upload": "prebuild --runtime napi --backend cmake-js --upload ${GITHUB_TOKEN}"
   },
   "author": "Jan <service@jan.ai>",
@@ -35,7 +35,7 @@
     ]
   },
   "files": [
-    "*.js",
-    "*.d.ts"
+    "binding/*.js",
+    "binding/*.d.ts"
   ]
 }

@@ -45,7 +45,6 @@ jobs:
             runs-on: "ubuntu-20-04"
             cmake-flags: ""
             build-deps-cmake-flags: ""
-            ccache-dir: ""
             arch: "x64"
             platform: "linux"
           - os: "mac"
@@ -53,7 +52,6 @@ jobs:
             runs-on: "macos-13"
             cmake-flags: ""
             build-deps-cmake-flags: ""
-            ccache-dir: ""
             arch: "x64"
             platform: "darwin"
           - os: "mac"
@@ -61,7 +59,6 @@ jobs:
             runs-on: "macos-latest"
             cmake-flags: "-DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
-            ccache-dir: ""
             arch: "arm64"
             platform: "darwin"
           - os: "windows"
@@ -69,9 +66,8 @@ jobs:
             runs-on: "windows-cuda-12-0"
             cmake-flags: "-DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
             arch: "x64"
-            platform: "windows"
+            platform: "win32"
 
     steps:
       - name: Clone
@@ -184,12 +180,12 @@ jobs:
 
       - name: "Update version by tag"
         working-directory: cortex-cpp
-        shell: bash
         run: |
           echo "Version: ${{ needs.create-draft-release.outputs.version }}"
           # Update the version in package.json
-          jq --arg version "${{ needs.create-draft-release.outputs.version }}" '.version = $version' package.json > /tmp/package.json
-          mv /tmp/package.json package.json
+          jq --arg version "${{ needs.create-draft-release.outputs.version }}" '.version = $version' package.json > package-tmp.json
+          rm package.json
+          mv package-tmp.json package.json
 
       # build prebuilds
       - name: Build Prebuilds
@@ -212,6 +208,7 @@ jobs:
 
       # Setup .npmrc file to publish to npm - upload only once
       - run: npm publish --access public
+        continue-on-error: true
         if: runner.os == 'linux'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
