@@ -195,6 +195,7 @@ export class ThreadsUsecases {
   }
 
   async retrieveMessage(_threadId: string, messageId: string) {
+     // we still allow user to delete message even if the thread is not there
     return this.getMessageOrThrow(messageId);
   }
 

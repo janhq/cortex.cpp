@@ -104,7 +104,7 @@ import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-g
     // Serve
     ServeStopCommand,
 
-    // // Configs
+    // Configs
     ConfigsCommand,
     ConfigsGetCommand,
     ConfigsListCommand,

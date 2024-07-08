@@ -2,7 +2,6 @@ type Constructor = new (...args: any[]) => any;
 
 export const SetCommandContext = () => {
   return (constructor: Constructor) => {
-    const name = 'SetCommandContext' + constructor.name;
     const classMethods = Object.getOwnPropertyNames(constructor.prototype);
 
     classMethods.forEach((methodName) => {

@@ -1,13 +1,13 @@
 import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Injectable } from '@nestjs/common';
-// import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ConfigsUsecases {
   constructor(
     private readonly fileManagerService: FileManagerService,
-    // private readonly eventEmitter: EventEmitter2,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -41,11 +41,11 @@ export class ConfigsUsecases {
       .writeConfigFile(newConfigs)
       .then(async () => {
         if (group) {
-          // this.eventEmitter.emit('config.updated', {
-          //   group,
-          //   key,
-          //   value,
-          // });
+          this.eventEmitter.emit('config.updated', {
+            group,
+            key,
+            value,
+          });
         }
       })
       .then(() => {
