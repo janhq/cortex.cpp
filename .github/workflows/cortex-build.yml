@@ -54,7 +54,7 @@ jobs:
             ccache-dir: ''
           - os: "mac"
             name: "arm64"
-            runs-on: "mac-silicon"
+            runs-on: "macos-latest"
             cmake-flags: "-DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
             ccache-dir: ''
