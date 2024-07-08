@@ -21,7 +21,7 @@ export const checkModelCompatibility = async (modelId: string, spinner?: ora.Ora
       process.exit(1);
     }
 
-    try{
+    try {
       const version = await getCudaVersion();
       const [currentMajor, currentMinor] = version.split('.').map(Number);
       const [requiredMajor, requiredMinor] = MIN_CUDA_VERSION.split('.').map(Number);

@@ -124,7 +124,7 @@ export class ModelsController {
     this.modelsUsecases.pullModel(modelId, false, (files) => {
       return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
         const file = files
-          .find((e) => e.quantization != null && e.rfilename === fileName)
+          .find((e) => e.quantization && e.rfilename === fileName)
         if(!file) {
           return reject(new BadRequestException('File not found'));
         }
@@ -178,7 +178,7 @@ export class ModelsController {
     this.modelsUsecases.pullModel(modelId, false, (files) => {
       return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
         const file = files
-          .find((e) => e.quantization != null && e.rfilename === fileName)
+          .find((e) => e.quantization && e.rfilename === fileName)
         if(!file) {
           return reject(new BadRequestException('File not found'));
         }

@@ -345,7 +345,7 @@ export class ModelsUsecases {
     
     // HuggingFace GGUF Repo - Only one file is downloaded
     if (modelId.includes('/') && selection && files.length) {
-      try{
+      try {
       files = [await selection(files)];
       } catch (e) {
         const modelEvent: ModelEvent = {
