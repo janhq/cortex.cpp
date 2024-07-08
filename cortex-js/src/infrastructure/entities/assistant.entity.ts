@@ -5,7 +5,7 @@ import type {
   AssistantResponseFormatOption,
 } from '@/domain/models/assistant.interface';
 
-@Table({ tableName: 'assistants' })
+@Table({ tableName: 'assistants', timestamps: false})
 export class AssistantEntity extends Model implements Assistant {
   @PrimaryKey
   @Column({

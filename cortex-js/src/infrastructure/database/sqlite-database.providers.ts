@@ -13,10 +13,10 @@ export const sqliteDatabaseProviders = [
     useFactory: async (fileManagerService: FileManagerService) => {
       const dataFolderPath = await fileManagerService.getDataFolderPath();
       const sqlitePath = join(dataFolderPath, databaseFile);
-      
       const sequelize = new Sequelize({
         dialect: 'sqlite',
         storage: sqlitePath,
+        logging: false,
       });
       sequelize.addModels([ThreadEntity, MessageEntity, AssistantEntity]);
       return sequelize;

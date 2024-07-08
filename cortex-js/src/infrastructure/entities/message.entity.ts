@@ -6,7 +6,7 @@ import type {
   MessageAttachment,
 } from '@/domain/models/message.interface';
 
-@Table({ tableName: 'messages' })
+@Table({ tableName: 'messages', timestamps: false})
 export class MessageEntity extends Model implements Message {
   @PrimaryKey
   @Column({
