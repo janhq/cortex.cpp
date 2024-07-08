@@ -2,8 +2,8 @@
   "name": "cortex-cpp",
   "version": "0.0.11",
   "description": "Cortex-cpp is a streamlined, stateless C++ server engineered to be fully compatible with OpenAI's API, particularly its stateless functionalities",
-  "main": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./binding/index.js",
+  "types": "./binding/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/janhq/cortex.git"
