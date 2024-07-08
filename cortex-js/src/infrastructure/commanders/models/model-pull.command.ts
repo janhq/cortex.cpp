@@ -60,11 +60,7 @@ export class ModelPullCommand extends CommandRunner {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');
-      await this.initUsecases.installEngine(
-        await this.initUsecases.defaultInstallationOptions(),
-        'latest',
-        engine,
-      );
+      await this.initUsecases.installEngine(undefined, 'latest', engine);
     }
     this.telemetryUsecases.sendEvent(
       [

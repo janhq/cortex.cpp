@@ -36,9 +36,7 @@ export class InitCommand extends CommandRunner {
 
   async run(passedParams: string[], options?: InitOptions): Promise<void> {
     if (options?.silent) {
-      const installationOptions =
-        await this.initUsecases.defaultInstallationOptions();
-      await this.initUsecases.installEngine(installationOptions);
+      await this.initUsecases.installEngine(undefined);
     } else {
       options = await this.inquirerService.ask(
         'init-run-mode-questions',

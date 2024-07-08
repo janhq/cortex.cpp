@@ -8,12 +8,12 @@ import { createInterface } from 'readline';
  * @param numLines
  */
 export async function printLastErrorLines(
-  dataFolderPath: string,
-  numLines: number = 5,
+  logPath: string,
+  numLines: number = 10,
 ): Promise<void> {
   const errorLines: string[] = [];
 
-  const fileStream = createReadStream(join(dataFolderPath, 'cortex.log'));
+  const fileStream = createReadStream(logPath);
   const rl = createInterface({
     input: fileStream,
     crlfDelay: Infinity,

@@ -41,11 +41,11 @@ export class ModelsCliUsecases {
       .catch(async (e) => {
         console.error('Model start failed with reason:', e.message);
 
-        printLastErrorLines(await this.fileService.getDataFolderPath(), 5);
+        printLastErrorLines(await this.fileService.getLogPath());
 
         console.log(
           'For more information, please check the logs at: %s',
-          join(await this.fileService.getDataFolderPath(), 'cortex.log'),
+          await this.fileService.getLogPath(),
         );
         process.exit(1);
       });

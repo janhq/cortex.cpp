@@ -51,11 +51,15 @@ export class InitCliUsecases {
    * @param version
    */
   installEngine = async (
-    options: InitOptions,
+    options?: InitOptions,
     version: string = 'latest',
     engine: string = 'default',
     force: boolean = true,
   ): Promise<any> => {
+    // Use default option if not defined
+    if (!options) {
+      options = await this.defaultInstallationOptions();
+    }
     const configs = await this.fileManagerService.getConfig();
 
     if (configs.initialized && !force) return;
@@ -271,7 +275,7 @@ export class InitCliUsecases {
   private detectInstructions = (): Promise<
     'AVX' | 'AVX2' | 'AVX512' | undefined
   > => {
-    const cpuInstruction = cpuInfo.cpuInfo()[0]?? 'AVX'
+    const cpuInstruction = cpuInfo.cpuInfo()[0] ?? 'AVX';
     console.log(cpuInstruction, 'CPU instructions detected');
     return Promise.resolve(cpuInstruction);
   };

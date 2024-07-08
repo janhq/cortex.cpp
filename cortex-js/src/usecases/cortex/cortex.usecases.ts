@@ -29,9 +29,7 @@ export class CortexUsecases {
    * @param attach
    * @returns
    */
-  async startCortex(
-    attach: boolean = false,
-  ): Promise<CortexOperationSuccessfullyDto> {
+  async startCortex(): Promise<CortexOperationSuccessfullyDto> {
     const configs = await this.fileManagerService.getConfig();
     const host = configs.cortexCppHost;
     const port = configs.cortexCppPort;
@@ -56,14 +54,11 @@ export class CortexUsecases {
       'cortex-cpp',
     );
 
-    const writer = openSync(
-      join(await this.fileManagerService.getDataFolderPath(), 'cortex.log'),
-      'a+',
-    );
+    const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
 
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = spawn(cortexCppPath, args, {
-      detached: !attach,
+      detached: true,
       cwd: cortexCppFolderPath,
       stdio: [0, writer, writer],
       env: {
@@ -143,9 +138,9 @@ export class CortexUsecases {
 
   /**
    * Check whether the Cortex CPP is healthy
-   * @param host 
-   * @param port 
-   * @returns 
+   * @param host
+   * @param port
+   * @returns
    */
   healthCheck(host: string, port: number): Promise<boolean> {
     return fetch(CORTEX_CPP_HEALTH_Z_URL(host, port))
