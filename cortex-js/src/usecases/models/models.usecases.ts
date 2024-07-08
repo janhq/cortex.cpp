@@ -326,7 +326,6 @@ export class ModelsUsecases {
     selection?: (
       siblings: HuggingFaceRepoSibling[],
     ) => Promise<HuggingFaceRepoSibling>,
-    fileName?: string,
   ) {
     const existingModel = await this.findOne(modelId);
     if (isLocalModel(existingModel?.files)) {
@@ -346,10 +345,18 @@ export class ModelsUsecases {
     
     // HuggingFace GGUF Repo - Only one file is downloaded
     if (modelId.includes('/') && selection && files.length) {
+      try{
       files = [await selection(files)];
-    }
-    if(modelId.includes('/') && fileName && files.length) {
-      files = files.filter((e) => e.rfilename === fileName);
+      } catch (e) {
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'model-downloaded-failed',
+          metadata: {
+            error: e.message || e,
+          },
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
+      }
     }
 
     // Start downloading the model
@@ -425,7 +432,7 @@ export class ModelsUsecases {
           model: modelId,
           event: 'model-downloaded',
           metadata: {
-            ...(fileName || selection ? { file: [files] } : {}),
+            ...(selection ? { file: [files] } : {}),
           },
         };
         this.eventEmitter.emit('model.event', modelEvent);

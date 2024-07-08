@@ -9,6 +9,7 @@ import {
   HttpCode,
   UseInterceptors,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
@@ -27,6 +28,7 @@ import {
 } from '@/domain/telemetry/telemetry.interface';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
+import { HuggingFaceRepoSibling } from '@/domain/models/huggingface.interface';
 
 @ApiTags('Models')
 @Controller('models')
@@ -119,7 +121,16 @@ export class ModelsController {
 
   @Get('download/:modelId(*)')
   downloadModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string) {
-    this.modelsUsecases.pullModel(modelId, false, undefined, fileName).then(() => this.telemetryUsecases.addEventToQueue({
+    this.modelsUsecases.pullModel(modelId, false, (files) => {
+      return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
+        const file = files
+          .find((e) => e.quantization != null && e.rfilename === fileName)
+        if(!file) {
+          return reject(new BadRequestException('File not found'));
+        }
+        return resolve(file);
+      });
+    }).then(() => this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
     })
@@ -164,7 +175,16 @@ export class ModelsController {
   })
   @Get('pull/:modelId(*)')
   pullModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string) {
-    this.modelsUsecases.pullModel(modelId, false, undefined, fileName).then(() => this.telemetryUsecases.addEventToQueue({
+    this.modelsUsecases.pullModel(modelId, false, (files) => {
+      return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
+        const file = files
+          .find((e) => e.quantization != null && e.rfilename === fileName)
+        if(!file) {
+          return reject(new BadRequestException('File not found'));
+        }
+        return resolve(file);
+      });
+    }).then(() => this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
     })

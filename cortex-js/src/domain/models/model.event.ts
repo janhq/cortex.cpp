@@ -8,6 +8,7 @@ const ModelLoadingEvents = [
   'starting-failed',
   'stopping-failed',
   'model-downloaded',
+  'model-downloaded-failed',
   'model-deleted',
 ] as const;
 export type ModelLoadingEvent = (typeof ModelLoadingEvents)[number];
