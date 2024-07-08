@@ -5,13 +5,15 @@ import { PageDto } from '@/infrastructure/dtos/page.dto';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { DuplicateAssistantException } from '@/infrastructure/exception/duplicate-assistant.exception';
-import { Repository } from 'sequelize-typescript';
+import { InjectModel } from '@nestjs/sequelize';
+import { Op } from 'sequelize';
+import { AssistantEntity } from '@/infrastructure/entities/assistant.entity';
 
 @Injectable()
 export class AssistantsUsecases {
   constructor(
-    @Inject('ASSISTANT_REPOSITORY')
-    private readonly assistantRepository: any,
+    @InjectModel(AssistantEntity)
+    private readonly assistantModel: typeof AssistantEntity,
     private readonly modelRepository: ModelRepository,
   ) {}
 
@@ -24,7 +26,7 @@ export class AssistantsUsecases {
       }
     }
 
-    const assistant: Assistant = {
+    const assistant: Partial<Assistant> = {
       ...createAssistantDto,
       object: 'assistant',
       created_at: Date.now(),
@@ -35,13 +37,12 @@ export class AssistantsUsecases {
     };
 
     try {
-      await this.assistantRepository.insert(assistant);
+      await this.assistantModel.create(assistant);
     } catch (err) {
-
       throw err;
     }
 
-    return this.findOne(assistant.id);
+    return this.findOne(id);
   }
 
   async listAssistants(
@@ -50,20 +51,21 @@ export class AssistantsUsecases {
     after?: string,
     before?: string,
   ) {
-    const queryBuilder = this.assistantRepository.createQueryBuilder();
     const normalizedOrder = order === 'asc' ? 'ASC' : 'DESC';
 
-    queryBuilder.orderBy('created_at', normalizedOrder).take(limit + 1);
-
+    const where: any = {};
     if (after) {
-      queryBuilder.andWhere('id > :after', { after });
+      where.id = { [Op.gt]: after };
     }
-
     if (before) {
-      queryBuilder.andWhere('id < :before', { before });
+      where.id = { [Op.lt]: before };
     }
 
-    const { entities: assistants } = await queryBuilder.getRawAndEntities();
+    const assistants = await this.assistantModel.findAll({
+      where,
+      order: [['created_at', normalizedOrder]],
+      limit: limit + 1,
+    });
 
     let hasMore = false;
     if (assistants.length > limit) {
@@ -78,16 +80,18 @@ export class AssistantsUsecases {
   }
 
   async findAll(): Promise<Assistant[]> {
-    return this.assistantRepository.find();
+    return this.assistantModel.findAll();
   }
 
   async findOne(id: string) {
-    return this.assistantRepository.findOne({
+    return this.assistantModel.findOne({
       where: { id },
     });
   }
 
   async remove(id: string) {
-    return this.assistantRepository.delete(id);
+    return this.assistantModel.destroy({
+      where: { id },
+    });
   }
 }
