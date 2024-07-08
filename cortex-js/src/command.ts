@@ -11,10 +11,12 @@ async function bootstrap() {
     logger: ['warn', 'error'],
     errorHandler: async (error) => {
       await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+      console.error(error);
       process.exit(1);
     },
     serviceErrorHandler: async (error) => {
       await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
+      console.error(error);
       process.exit(1);
     },
   });
