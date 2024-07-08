@@ -98,10 +98,7 @@ describe('Helper commands', () => {
       await CommandTestFactory.run(commandInstance, ['kill']);
       await CommandTestFactory.run(commandInstance, ['ps']);
 
-      expect(logMock.firstCall?.args[0]).toEqual({
-        message: 'Cortex stopped successfully',
-        status: 'success',
-      });
+      expect(logMock.firstCall?.args[0]).toEqual("Cortex processes stopped successfully!");
       expect(tableMock.firstCall?.args[0]).toBeInstanceOf(Array);
       expect(tableMock.firstCall?.args[0].length).toEqual(0);
     },

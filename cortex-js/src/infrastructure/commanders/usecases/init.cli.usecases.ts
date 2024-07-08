@@ -1,5 +1,5 @@
 import { cpSync, createWriteStream, existsSync, readdirSync, rmSync } from 'fs';
-import { delimiter, join } from 'path';
+import { join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
 import decompress from 'decompress';
@@ -9,8 +9,6 @@ import { Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { rm } from 'fs/promises';
-import { exec } from 'child_process';
-import { appPath } from '@/utils/app-path';
 import {
   CORTEX_ENGINE_RELEASES_URL,
   CORTEX_RELEASES_URL,
@@ -18,6 +16,8 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
 import { Engines } from '../types/engine.interface';
+
+import { cpuInfo } from 'cpu-instructions';
 
 @Injectable()
 export class InitCliUsecases {
@@ -51,11 +51,15 @@ export class InitCliUsecases {
    * @param version
    */
   installEngine = async (
-    options: InitOptions,
+    options?: InitOptions,
     version: string = 'latest',
     engine: string = 'default',
     force: boolean = true,
   ): Promise<any> => {
+    // Use default option if not defined
+    if (!options) {
+      options = await this.defaultInstallationOptions();
+    }
     const configs = await this.fileManagerService.getConfig();
 
     if (configs.initialized && !force) return;
@@ -65,19 +69,15 @@ export class InitCliUsecases {
       !existsSync(
         join(
           await this.fileManagerService.getCortexCppEnginePath(),
-          'cortex.llamacpp',
+          Engines.llamaCPP,
         ),
-      )
+      ) ||
+      (engine === Engines.llamaCPP && force)
     )
       await this.installLlamaCppEngine(options, version);
 
-    if (engine === Engines.onnx && process.platform !== 'win32') {
-      console.error('The ONNX engine does not support this OS yet.');
-      process.exit(1);
-    }
-
-    if (engine !== 'cortex.llamacpp')
-      await this.installAcceleratedEngine('latest', engine);
+    if (engine !== Engines.llamaCPP)
+      await this.installAcceleratedEngine(version, engine);
 
     configs.initialized = true;
     await this.fileManagerService.writeConfigFile(configs);
@@ -275,35 +275,9 @@ export class InitCliUsecases {
   private detectInstructions = (): Promise<
     'AVX' | 'AVX2' | 'AVX512' | undefined
   > => {
-    return new Promise<'AVX' | 'AVX2' | 'AVX512' | undefined>((res) => {
-      // Execute the cpuinfo command
-
-      exec(
-        join(
-          appPath,
-          `bin/cpuinfo${process.platform !== 'linux' ? '.exe' : ''}`,
-        ),
-        (error, stdout) => {
-          if (error) {
-            // If there's an error, it means lscpu is not installed
-            console.log('CPUInfo is not installed.');
-            res('AVX');
-          } else {
-            // If the command executes successfully, parse the output to detect CPU instructions
-            if (stdout.includes('"AVX512": "true"')) {
-              console.log('AVX-512 instructions detected.');
-              res('AVX512');
-            } else if ('"AVX2": "true"') {
-              console.log('AVX2 instructions detected.');
-              res('AVX2');
-            } else {
-              console.log('AVXs instructions detected.');
-              res('AVX');
-            }
-          }
-        },
-      );
-    });
+    const cpuInstruction = cpuInfo.cpuInfo()[0] ?? 'AVX';
+    console.log(cpuInstruction, 'CPU instructions detected');
+    return Promise.resolve(cpuInstruction);
   };
 
   /**

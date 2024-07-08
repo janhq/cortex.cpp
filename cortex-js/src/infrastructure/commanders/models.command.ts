@@ -6,6 +6,7 @@ import { ModelStopCommand } from './models/model-stop.command';
 import { ModelPullCommand } from './models/model-pull.command';
 import { ModelRemoveCommand } from './models/model-remove.command';
 import { ModelUpdateCommand } from './models/model-update.command';
+import { RunCommand } from './shortcuts/run.command';
 
 @SubCommand({
   name: 'models',
@@ -17,9 +18,12 @@ import { ModelUpdateCommand } from './models/model-update.command';
     ModelGetCommand,
     ModelRemoveCommand,
     ModelUpdateCommand,
+    RunCommand,
   ],
   description: 'Subcommands for managing models',
 })
 export class ModelsCommand extends CommandRunner {
-  async run(): Promise<void> {}
+  async run(): Promise<void> {
+    this.command?.help();
+  }
 }

@@ -42,8 +42,8 @@ export class ServeCommand extends CommandRunner {
       console.log(
         chalk.blue(`API Playground available at http://${host}:${port}/api`),
       );
-    } catch (err) {
-      console.error(err.message ?? err);
+    } catch {
+      console.error(`Failed to start server. Is port ${port} in use?`);
     }
   }
 

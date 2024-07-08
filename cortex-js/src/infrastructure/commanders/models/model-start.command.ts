@@ -4,16 +4,18 @@ import {
   Option,
   InquirerService,
 } from 'nest-commander';
+import ora from 'ora';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
-import { existsSync } from 'node:fs';
+import { createReadStream, existsSync, statSync, watchFile } from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -43,11 +45,12 @@ export class ModelStartCommand extends CommandRunner {
 
   async run(passedParams: string[], options: ModelStartOptions): Promise<void> {
     let modelId = passedParams[0];
+    const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
       } catch {
-        console.error('Model ID is required');
+        checkingSpinner.fail('Model ID is required');
         exit(1);
       }
     }
@@ -58,29 +61,34 @@ export class ModelStartCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error('Model is not available. Please pull the model first.');
+      checkingSpinner.fail(
+        `Model ${modelId} not found on filesystem.\nPlease try 'cortex pull ${modelId}' first.`,
+      );
       process.exit(1);
     }
-    const engine = existingModel.engine || 'cortex.llamacpp';
+
+    await checkModelCompatibility(modelId);
+    checkingSpinner.succeed('Model found');
+
+    const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(
-        await this.initUsecases.defaultInstallationOptions(),
-        'latest',
-        engine,
-      );
+      const engineSpinner = ora('Installing engine...').start();
+      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      engineSpinner.succeed();
     }
-    if (engine === Engines.onnx && process.platform !== 'win32') {
-      console.error('The ONNX engine does not support this OS yet.');
-      process.exit(1);
+
+    // Attached - stdout logs
+    if (options.attach) {
+      this.attachLogWatch();
     }
+
     await this.cortexUsecases
-      .startCortex(options.attach)
+      .startCortex()
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
-      .then(console.log)
-      .then(() => !options.attach && process.exit(0));
+      .then(() => options.attach && ora('Model is running...').start());
   }
 
   modelInquiry = async () => {
@@ -114,5 +122,39 @@ export class ModelStartCommand extends CommandRunner {
   })
   parseTemplate(value: string) {
     return value;
+  }
+
+  /**
+   * Attach to the log file and watch for changes
+   */
+  private async attachLogWatch() {
+    const logPath = await this.fileService.getLogPath();
+    const initialSize = statSync(logPath).size;
+    const logStream = createReadStream(logPath, {
+      start: initialSize,
+      encoding: 'utf-8',
+      autoClose: false,
+    });
+    logStream.on('data', (chunk) => {
+      console.log(chunk);
+    });
+    watchFile(logPath, (curr, prev) => {
+      // Check if the file size has increased
+      if (curr.size > prev.size) {
+        // Calculate the position to start reading from
+        const position = prev.size;
+
+        // Create a new read stream from the updated position
+        const updateStream = createReadStream(logPath, {
+          encoding: 'utf8',
+          start: position,
+        });
+
+        // Read the newly written content
+        updateStream.on('data', (chunk) => {
+          console.log(chunk);
+        });
+      }
+    });
   }
 }

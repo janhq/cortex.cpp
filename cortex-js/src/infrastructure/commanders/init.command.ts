@@ -7,6 +7,11 @@ import {
 import { InitCliUsecases } from './usecases/init.cli.usecases';
 import { InitOptions } from './types/init-options.interface';
 import { SetCommandContext } from './decorators/CommandContext';
+import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
+import {
+  EventName,
+  TelemetrySource,
+} from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '../services/context/context.service';
 
 @SubCommand({
@@ -24,15 +29,14 @@ export class InitCommand extends CommandRunner {
     private readonly inquirerService: InquirerService,
     private readonly initUsecases: InitCliUsecases,
     readonly contextService: ContextService,
+    private readonly telemetryUsecases: TelemetryUsecases,
   ) {
     super();
   }
 
   async run(passedParams: string[], options?: InitOptions): Promise<void> {
     if (options?.silent) {
-      const installationOptions =
-        await this.initUsecases.defaultInstallationOptions();
-      return this.initUsecases.installEngine(installationOptions);
+      await this.initUsecases.installEngine(undefined);
     } else {
       options = await this.inquirerService.ask(
         'init-run-mode-questions',
@@ -42,7 +46,16 @@ export class InitCommand extends CommandRunner {
       const version = passedParams[0] ?? 'latest';
 
       await this.initUsecases.installEngine(options, version);
+      this.telemetryUsecases.sendEvent(
+        [
+          {
+            name: EventName.INIT,
+          },
+        ],
+        TelemetrySource.CLI,
+      );
     }
+    console.log('Cortex engines installed successfully!');
   }
 
   @Option({

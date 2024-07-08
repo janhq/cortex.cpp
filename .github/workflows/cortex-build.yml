@@ -144,12 +144,6 @@ jobs:
           cd cortex-cpp
           make package
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
-          path: ./cortex-cpp/cortex-cpp
-
       - uses: actions/upload-release-asset@v1.0.1
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         env:
@@ -193,7 +187,7 @@ jobs:
 
           - os: "mac"
             name: "arm64"
-            runs-on: "macos-latest"
+            runs-on: "macos-silicon"
     steps:
       - name: Clone
         id: checkout
@@ -233,7 +227,14 @@ jobs:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
 
-      - run: yarn install && yarn build && yarn build:binary
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - run: pip3 install --upgrade setuptools 
+        if: runner.os == 'macOS'
+
+      - run: yarn install && yarn build:binary
         working-directory: ./cortex-js
 
       - name: Get Cer for code signing
@@ -244,24 +245,46 @@ jobs:
           CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
 
       - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
         if: runner.os == 'macOS'
         with:
           p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
           p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
 
+      - name: update app info
+        run: |
+          cd cortex-js
+          make update-app-info
+
+      - name: copy bin file macos
+        if: runner.os == 'macOS'
+        run: |
+          cd cortex-js
+          mkdir -p installer
+          which cp
+          which mv
+          npm install -g cpx
+          npx cpx ./dist/cortexso-macos ./
+          mv cortexso-macos cortex
+
       - name: Code Signing macOS
         if: runner.os == 'macOS'
         run: |
           cd cortex-js
-          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+          ./dist/cortexso-macos --help
+          echo "--------"
+          ./cortex --help
+          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
       - name: Create MacOS PKG Installer
         if: runner.os == 'macOS'
         run: |
           cd cortex-js
-          mkdir installer
-          cp cortex installer/cortex
+          echo "--------"
+          npx cpx ./cortex ./installer
+          ./installer/cortex --help
           pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
+          make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
       - name: Create MacOS PKG Installer
         if: runner.os == 'Linux'
@@ -272,6 +295,20 @@ jobs:
           sed "s/Version:/Version: ${{ needs.create-draft-release.outputs.version }}/g" control.template > cortexso/DEBIAN/control
           cp cortex cortexso/usr/local/bin/cortex
           dpkg-deb --build cortexso
+
+      - uses: nick-fields/retry@v3
+        with:
+          continue_on_error: true
+          retry_wait_seconds: 10
+          timeout_minutes: 10
+          max_attempts: 3
+          shell: cmd
+          command: |
+            cd cortex-js
+            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+            make codesign-binary CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+        name: Code Signing Windows
+        if: runner.os == 'Windows'
 
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
@@ -290,7 +327,7 @@ jobs:
           command: |
             cd cortex-js
             set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+            make codesign-installer CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
         if: runner.os == 'Windows'
 
@@ -298,38 +335,6 @@ jobs:
         run: |
           cd cortex-js
           make postbundle
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/cortex
-            ./cortex-js/cortex.exe
-
-      - name: Upload Windows Installer
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/setup.exe
-
-      - name: Upload Linux Installer
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/cortexso.deb
-      
-      - name: Upload MacOS Installer
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-installer-${{ matrix.os }}-${{ matrix.name }}
-          path: |
-            ./cortex-js/cortex-installer.pkg
 
       - name: Upload Cortex Installer
         uses: actions/upload-release-asset@v1.0.1

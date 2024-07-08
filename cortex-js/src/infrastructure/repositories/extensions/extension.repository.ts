@@ -48,18 +48,18 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       this.httpService,
       this.fileManagerService,
     );
-    llamaCPPEngine.name = 'cortex.llamacpp';
+    llamaCPPEngine.name = Engines.llamaCPP;
     const onnxEngine = new CortexProvider(
       this.httpService,
       this.fileManagerService,
     );
-    onnxEngine.name = 'cortex.onnx';
+    onnxEngine.name = Engines.onnx;
 
     const tensorrtLLMEngine = new CortexProvider(
       this.httpService,
       this.fileManagerService,
     );
-    tensorrtLLMEngine.name = 'cortex.tensorrt-llm';
+    tensorrtLLMEngine.name = Engines.tensorrtLLM;
 
     await llamaCPPEngine.onLoad();
     await onnxEngine.onLoad();

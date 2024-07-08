@@ -168,4 +168,5 @@ export interface ModelRuntimeParams {
 export interface ModelArtifact {
   mmproj?: string;
   llama_model_path?: string;
+  model_path?: string;
 }

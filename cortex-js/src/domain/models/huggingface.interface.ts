@@ -4,6 +4,13 @@ export interface HuggingFaceModelVersion {
   fileSize?: number;
   quantization?: Quantization;
 }
+
+export interface HuggingFaceRepoSibling {
+  rfilename: string;
+  downloadUrl?: string;
+  fileSize?: number;
+  quantization?: Quantization;
+}
 export interface HuggingFaceRepoData {
   id: string;
   modelId: string;
@@ -18,12 +25,7 @@ export interface HuggingFaceRepoData {
   pipeline_tag: 'text-generation';
   tags: Array<'transformers' | 'pytorch' | 'safetensors' | string>;
   cardData: Record<CardDataKeys | string, unknown>;
-  siblings: {
-    rfilename: string;
-    downloadUrl?: string;
-    fileSize?: number;
-    quantization?: Quantization;
-  }[];
+  siblings: HuggingFaceRepoSibling[];
   createdAt: string;
 }
 

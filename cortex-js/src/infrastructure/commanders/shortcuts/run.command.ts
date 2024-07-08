@@ -6,6 +6,7 @@ import {
   InquirerService,
 } from 'nest-commander';
 import { exit } from 'node:process';
+import ora from 'ora';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
@@ -14,6 +15,7 @@ import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { Engines } from '../types/engine.interface';
+import { checkModelCompatibility } from '@/utils/model-check';
 
 type RunOptions = {
   threadId?: string;
@@ -43,23 +45,27 @@ export class RunCommand extends CommandRunner {
 
   async run(passedParams: string[], options: RunOptions): Promise<void> {
     let modelId = passedParams[0];
+    const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
       try {
         modelId = await this.modelInquiry();
       } catch {
-        console.error('Model ID is required');
+        checkingSpinner.fail('Model ID is required');
         exit(1);
       }
     }
 
+    // Check model compatibility on this machine
+    await checkModelCompatibility(modelId, checkingSpinner);
+
     // If not exist
     // Try Pull
     if (!(await this.modelsCliUsecases.getModel(modelId))) {
-      console.log(`Model ${modelId} not found. Try pulling model...`);
+      checkingSpinner.succeed();
       await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
-          console.error('Model does not exist.');
-        else console.error(e.message ?? e);
+          checkingSpinner.fail('Model does not exist.');
+        else checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
     }
@@ -71,28 +77,23 @@ export class RunCommand extends CommandRunner {
       !Array.isArray(existingModel.files) ||
       /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
     ) {
-      console.error('Model is not available. Please pull the model first.');
+      checkingSpinner.fail(`Model is not available`);
       process.exit(1);
     }
+    checkingSpinner.succeed('Model found');
 
-    const engine = existingModel.engine || 'cortex.llamacpp';
+    const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(
-        await this.initUsecases.defaultInstallationOptions(),
-        'latest',
-        engine,
-      );
-    }
-    if (engine === Engines.onnx && process.platform !== 'win32') {
-      console.error('The ONNX engine does not support this OS yet.');
-      process.exit(1);
+      const engineSpinner = ora('Installing engine...').start();
+      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      engineSpinner.succeed('Engine installed');
     }
 
     return this.cortexUsecases
-      .startCortex(false)
+      .startCortex()
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
       .then(() => this.chatCliUsecases.chat(modelId, options.threadId));
   }

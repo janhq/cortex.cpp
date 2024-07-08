@@ -28,7 +28,7 @@ export class ConfigsController {
   @ApiOperation({
     summary: 'List configs',
     description:
-      'Lists the currently available configs, including the default and user-defined configurations',
+      'Lists the currently available configs, including the default and user-defined configurations.',
   })
   @Get()
   findAll() {
@@ -44,7 +44,7 @@ export class ConfigsController {
   @ApiOperation({
     summary: 'Get a config',
     description:
-      'Retrieves a config instance, providing basic information about the config',
+      'Retrieves a config instance, providing basic information about the config.',
   })
   @ApiParam({
     name: 'name',
@@ -64,7 +64,7 @@ export class ConfigsController {
   })
   @ApiOperation({
     summary: 'Configure a model',
-    description: "Updates a config by it's group and key",
+    description: "Updates a specific configuration setting by its group and key.",
     parameters: [
       {
         in: 'path',

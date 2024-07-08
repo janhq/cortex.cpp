@@ -163,7 +163,7 @@ Below is the available list of the model parameters you can set when loading a m
 
 
 ## Manual Build
-Manual build is a process in which the developers build the software manually. This is usually done when a new feature is implemented, or a bug is fixed. The process for this project is defined in [`.github/workflows/build.yml`](.github/workflows/build.yml)
+Manual build is a process in which the developers build the software manually. This is usually done when a new feature is implemented, or a bug is fixed. The process for this project is defined in [`.github/workflows/cortex-build.yml`](../.github/workflows/cortex-build.yml)
 
 ## Contact Support
 
