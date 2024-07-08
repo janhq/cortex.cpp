@@ -6,8 +6,6 @@ on:
     paths: ["cortex-cpp/**", "cortex-js/**"]
   workflow_dispatch:
 
-env:
-
 jobs:
   create-draft-release:
     runs-on: ubuntu-latest
