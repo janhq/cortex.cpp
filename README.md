@@ -48,7 +48,7 @@ Install using NPM package:
 # Install using NPM
 npm i -g cortexso
 # Run model
-cortex run llama3
+cortex run mistral
 # To uninstall globally using NPM
 npm uninstall -g cortexso
 ```
@@ -57,12 +57,10 @@ npm uninstall -g cortexso
 Install using Homebrew:
 ``` bash
 # Install using Brew
-brew tap janhq/cortexso
 brew install cortexso
 # Run model
-cortex run llama3
+cortex run mistral
 # To uninstall using Brew
-brew untap janhq/cortexso
 brew uninstall cortexso
 ```
 > You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
