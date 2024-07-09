@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.5)
+
 project(cortex-cpp C CXX)
+
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  include_directories(${CMAKE_JS_INC})
+endif()
 
 include(CheckIncludeFileCXX)
 
@@ -53,13 +59,29 @@ if(APPLE)
   endif()
 endif()
 
+if(DEFINED CMAKE_JS_INC)
+  # define NPI_VERSION
+  add_compile_definitions(NAPI_VERSION=8)
+endif()
+
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 
 # add_subdirectory(test)
 
-add_executable(${PROJECT_NAME} main.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
-)
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  if(("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang") OR("${CMAKE_CXX_COMPILER_ID}" MATCHES "GNU"))
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+  endif()
+
+  add_library(${PROJECT_NAME} SHARED addon.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+  )
+else() # Official build
+  add_executable(${PROJECT_NAME} main.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+  )
+endif()
 
 # ##############################################################################
 # If you include the drogon source code locally in your project, use this method
@@ -69,9 +91,23 @@ add_executable(${PROJECT_NAME} main.cc
 # and comment out the following lines
 
 find_package(Drogon CONFIG REQUIRED)
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
-                                              ${CMAKE_THREAD_LIBS_INIT})
 
+
+# Build using CMAKE-JS
+if(DEFINED CMAKE_JS_INC)
+  set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "" SUFFIX ".node")
+
+  target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
+  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_JS_LIB})
+
+  if(MSVC AND CMAKE_JS_NODELIB_DEF AND CMAKE_JS_NODELIB_TARGET)
+    # Generate node.lib
+    execute_process(COMMAND ${CMAKE_AR} /def:${CMAKE_JS_NODELIB_DEF} /out:${CMAKE_JS_NODELIB_TARGET} ${CMAKE_STATIC_LINKER_FLAGS})
+  endif()
+else()
+  target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
+  ${CMAKE_THREAD_LIBS_INIT})
+endif()
 # ##############################################################################
 
 if(CMAKE_CXX_STANDARD LESS 17)

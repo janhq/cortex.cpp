@@ -1,4 +1,4 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { CommandRunner, Option, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { InitCliUsecases } from '../usecases/init.cli.usecases';
@@ -25,10 +25,16 @@ export class EnginesInitCommand extends CommandRunner {
     super();
   }
 
-  async run(passedParams: string[]): Promise<void> {
+  async run(
+    passedParams: string[],
+    options: { vulkan: boolean },
+  ): Promise<void> {
     const engine = passedParams[0];
-    const options = passedParams.includes(Engines.llamaCPP)
-      ? await this.initUsecases.defaultInstallationOptions()
+    const params = passedParams.includes(Engines.llamaCPP)
+      ? {
+          ...(await this.initUsecases.defaultInstallationOptions()),
+          ...options,
+        }
       : {};
 
     const configs = await this.fileManagerService.getConfig();
@@ -40,14 +46,23 @@ export class EnginesInitCommand extends CommandRunner {
     }
     return this.initUsecases
       .installEngine(
-        options,
+        params,
         engine.includes('@') ? engine.split('@')[1] : 'latest',
         engine,
-        true,
+        true
       )
       .then(() => console.log('Engine installed successfully!'))
       .catch((e) =>
         console.error('Install engine failed with reason: %s', e.message ?? e),
       );
+  }
+
+  @Option({
+    flags: '-vk, --vulkan',
+    description: 'Install Vulkan engine',
+    defaultValue: false,
+  })
+  parseVulkan() {
+    return true;
   }
 }

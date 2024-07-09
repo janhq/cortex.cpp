@@ -87,9 +87,7 @@ export class RunCommand extends CommandRunner {
     if (
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      const engineSpinner = ora('Installing engine...').start();
       await this.initUsecases.installEngine(undefined, 'latest', engine);
-      engineSpinner.succeed('Engine installed');
     }
 
     return this.cortexUsecases

@@ -31,7 +31,7 @@ export class FileManagerService {
   private presetFolderName = 'presets';
   private extensionFoldername = 'extensions';
   private benchmarkFoldername = 'benchmark';
-  private cortexCppFolderName = 'cortex-cpp';
+  private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
 
   /**
@@ -81,7 +81,10 @@ export class FileManagerService {
     }
 
     const modelFolderPath = join(dataFolderPath, this.modelFolderName);
-    const cortexCppFolderPath = join(dataFolderPath, this.cortexCppFolderName);
+    const cortexCppFolderPath = join(
+      dataFolderPath,
+      this.cortexEnginesFolderName,
+    );
     const cortexTelemetryFolderPath = join(
       dataFolderPath,
       this.cortexTelemetryFolderName,
@@ -246,7 +249,7 @@ export class FileManagerService {
    * @returns the path to the cortex engines folder
    */
   async getCortexCppEnginePath(): Promise<string> {
-    return join(await this.getDataFolderPath(), 'cortex-cpp', 'engines');
+    return join(await this.getDataFolderPath(), this.cortexEnginesFolderName);
   }
 
   /**

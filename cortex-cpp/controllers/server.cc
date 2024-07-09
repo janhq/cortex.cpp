@@ -206,7 +206,9 @@ void server::FineTuning(
   if (engines_.find(engine_type) == engines_.end()) {
     try {
       std::string abs_path =
-          cortex_utils::GetCurrentPath() + cortex_utils::kPythonRuntimeLibPath;
+          (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
+                                 : cortex_utils::GetCurrentPath()) +
+          cortex_utils::kPythonRuntimeLibPath;
       engines_[engine_type].dl =
           std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
     } catch (const cortex_cpp::dylib::load_error& e) {
@@ -262,9 +264,9 @@ void server::LoadModel(const HttpRequestPtr& req,
     auto get_engine_path = [](std::string_view e) {
       if (e == kLlamaEngine) {
         return cortex_utils::kLlamaLibPath;
-      } else if(e == kOnnxEngine) {
+      } else if (e == kOnnxEngine) {
         return cortex_utils::kOnnxLibPath;
-      } else if(e == kTensorrtLlmEngine) {
+      } else if (e == kTensorrtLlmEngine) {
         return cortex_utils::kTensorrtLlmPath;
       }
       return cortex_utils::kLlamaLibPath;
@@ -277,7 +279,9 @@ void server::LoadModel(const HttpRequestPtr& req,
       }
 
       std::string abs_path =
-          cortex_utils::GetCurrentPath() + get_engine_path(engine_type);
+          (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
+                                 : cortex_utils::GetCurrentPath()) +
+          get_engine_path(engine_type);
       engines_[engine_type].dl =
           std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
 

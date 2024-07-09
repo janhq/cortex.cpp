@@ -1,4 +1,11 @@
-import { cpSync, createWriteStream, existsSync, readdirSync, rmSync } from 'fs';
+import {
+  cpSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  rmSync,
+} from 'fs';
 import { join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import { Presets, SingleBar } from 'cli-progress';
@@ -11,13 +18,13 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { rm } from 'fs/promises';
 import {
   CORTEX_ENGINE_RELEASES_URL,
-  CORTEX_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
-import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
+import { checkNvidiaGPUExist } from '@/utils/cuda';
 import { Engines } from '../types/engine.interface';
 
 import { cpuInfo } from 'cpu-instructions';
+import ora from 'ora';
 
 @Injectable()
 export class InitCliUsecases {
@@ -54,161 +61,65 @@ export class InitCliUsecases {
     options?: InitOptions,
     version: string = 'latest',
     engine: string = 'default',
-    force: boolean = true,
+    force: boolean = false,
   ): Promise<any> => {
     // Use default option if not defined
-    if (!options) {
+    if (!options && engine === Engines.llamaCPP) {
       options = await this.defaultInstallationOptions();
     }
     const configs = await this.fileManagerService.getConfig();
 
-    if (configs.initialized && !force) return;
-
+    const engineSpinner = ora('Installing engine...').start();
     // Ship Llama.cpp engine by default
     if (
       !existsSync(
-        join(
-          await this.fileManagerService.getCortexCppEnginePath(),
-          Engines.llamaCPP,
-        ),
+        join(await this.fileManagerService.getCortexCppEnginePath(), engine),
       ) ||
-      (engine === Engines.llamaCPP && force)
-    )
-      await this.installLlamaCppEngine(options, version);
+      force
+    ) {
+      const isVulkan =
+        engine === Engines.llamaCPP &&
+        (options?.vulkan ||
+          (options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'));
+      await this.installAcceleratedEngine(version, engine, [
+        process.platform === 'win32'
+          ? '-windows'
+          : process.platform === 'darwin'
+            ? '-mac'
+            : '-linux',
+        // CPU Instructions - CPU | GPU Non-Vulkan
+        options?.instructions &&
+        (options?.runMode === 'CPU' ||
+          (options?.runMode === 'GPU' && !isVulkan))
+          ? `-${options?.instructions?.toLowerCase()}`
+          : '',
+        // Cuda
+        options?.runMode === 'GPU' && options?.gpuType === 'Nvidia' && !isVulkan
+          ? `cuda-${options.cudaVersion ?? '12'}`
+          : '',
+        // Vulkan
+        isVulkan ? '-vulkan' : '',
 
-    if (engine !== Engines.llamaCPP)
-      await this.installAcceleratedEngine(version, engine);
+        // Arch
+        engine !== Engines.tensorrtLLM
+          ? process.arch === 'arm64'
+            ? '-arm64'
+            : '-amd64'
+          : '',
+      ]);
+    }
+
+    if (
+      (engine === Engines.llamaCPP || engine === Engines.tensorrtLLM) &&
+      options?.runMode === 'GPU' &&
+      options?.gpuType === 'Nvidia' &&
+      !options?.vulkan
+    )
+      await this.installCudaToolkitDependency(options?.cudaVersion);
 
     configs.initialized = true;
     await this.fileManagerService.writeConfigFile(configs);
-  };
-
-  /**
-   * Install Llama.cpp engine
-   * @param options
-   * @param version
-   */
-  private installLlamaCppEngine = async (
-    options: InitOptions,
-    version: string = 'latest',
-  ) => {
-    const engineFileName = this.parseEngineFileName(options);
-
-    const res = await firstValueFrom(
-      this.httpService.get(
-        CORTEX_RELEASES_URL + `${version === 'latest' ? '/latest' : ''}`,
-        {
-          headers: {
-            'X-GitHub-Api-Version': '2022-11-28',
-            Accept: 'application/vnd.github+json',
-          },
-        },
-      ),
-    );
-
-    if (!res.data) {
-      console.log('Failed to fetch releases');
-      exit(1);
-    }
-
-    let release = res.data;
-    if (Array.isArray(res.data)) {
-      release = Array(res.data)[0].find(
-        (e) => e.name === version.replace('v', ''),
-      );
-    }
-    const toDownloadAsset = release.assets.find((s: any) =>
-      s.name.includes(engineFileName),
-    );
-
-    if (!toDownloadAsset) {
-      console.log(`Could not find engine ${engineFileName}`);
-      exit(1);
-    }
-
-    console.log(`Downloading default engine ${engineFileName}`);
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    const engineDir = join(dataFolderPath, 'cortex-cpp');
-    if (existsSync(engineDir)) rmSync(engineDir, { recursive: true });
-
-    const download = await firstValueFrom(
-      this.httpService.get(toDownloadAsset.browser_download_url, {
-        responseType: 'stream',
-      }),
-    );
-    if (!download) {
-      console.log('Failed to download model');
-      process.exit(1);
-    }
-
-    const destination = join(dataFolderPath, toDownloadAsset.name);
-
-    await new Promise((resolve, reject) => {
-      const writer = createWriteStream(destination);
-      let receivedBytes = 0;
-      const totalBytes = download.headers['content-length'];
-
-      writer.on('finish', () => {
-        bar.stop();
-        resolve(true);
-      });
-
-      writer.on('error', (error) => {
-        bar.stop();
-        reject(error);
-      });
-
-      const bar = new SingleBar({}, Presets.shades_classic);
-      bar.start(100, 0);
-
-      download.data.on('data', (chunk: any) => {
-        receivedBytes += chunk.length;
-        bar.update(Math.floor((receivedBytes / totalBytes) * 100));
-      });
-
-      download.data.pipe(writer);
-    });
-
-    try {
-      await decompress(destination, join(dataFolderPath));
-    } catch (e) {
-      console.error('Error decompressing file', e);
-      exit(1);
-    }
-
-    await rm(destination, { force: true });
-
-    // If the user selected GPU mode and Nvidia GPU, install CUDA Toolkit dependencies
-    if (options.runMode === 'GPU' && !(await cudaVersion())) {
-      await this.installCudaToolkitDependency(options.cudaVersion);
-    }
-  };
-
-  /**
-   * Parse the engine file name based on the options
-   * Please check cortex-cpp release artifacts for the available engine files
-   * @param options
-   * @returns
-   */
-  private parseEngineFileName = (options?: InitOptions) => {
-    const platform =
-      process.platform === 'win32'
-        ? 'windows'
-        : process.platform === 'darwin'
-          ? 'mac'
-          : process.platform;
-    const arch = process.arch === 'arm64' ? process.arch : 'amd64';
-    const cudaVersion =
-      options?.runMode === 'GPU'
-        ? options.gpuType === 'Nvidia'
-          ? '-cuda-' + (options.cudaVersion === '11' ? '11-7' : '12-0')
-          : '-vulkan'
-        : '';
-    const instructions = options?.instructions
-      ? `-${options.instructions}`
-      : '';
-    const engineName = `${platform}-${arch}${instructions.toLowerCase()}${cudaVersion}`;
-    return `${engineName}.tar.gz`;
+    engineSpinner.succeed('Engine installed');
   };
 
   /**
@@ -264,7 +175,10 @@ export class InitCliUsecases {
     });
 
     try {
-      await decompress(destination, join(dataFolderPath, 'cortex-cpp'));
+      await decompress(
+        destination,
+        await this.fileManagerService.getCortexCppEnginePath(),
+      );
     } catch (e) {
       console.log(e);
       exit(1);
@@ -287,8 +201,10 @@ export class InitCliUsecases {
    */
   private async installAcceleratedEngine(
     version: string = 'latest',
-    engine: string = Engines.onnx,
+    engine: string = Engines.llamaCPP,
+    matchers: string[] = [],
   ) {
+    const checkingIndicator = ora('Fetching engine repo...').start();
     const res = await firstValueFrom(
       this.httpService.get(
         CORTEX_ENGINE_RELEASES_URL(engine) +
@@ -313,8 +229,10 @@ export class InitCliUsecases {
         (e) => e.name === version.replace('v', ''),
       );
     }
-    const toDownloadAsset = release.assets.find((s: any) =>
-      s.name.includes(process.platform === 'win32' ? 'windows' : 'linux'),
+
+    // Find the asset for the current platform
+    const toDownloadAsset = release.assets.find((asset: any) =>
+      matchers.every((matcher) => asset.name.includes(matcher)),
     );
 
     if (!toDownloadAsset) {
@@ -324,9 +242,11 @@ export class InitCliUsecases {
       exit(1);
     }
 
-    console.log(`Downloading engine file ${toDownloadAsset.name}`);
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    const engineDir = join(dataFolderPath, 'cortex-cpp');
+    checkingIndicator.succeed('Engine repo fetched');
+
+    const engineDir = await this.fileManagerService.getCortexCppEnginePath();
+
+    if (!existsSync(engineDir)) mkdirSync(engineDir, { recursive: true });
 
     const download = await firstValueFrom(
       this.httpService.get(toDownloadAsset.browser_download_url, {
@@ -338,7 +258,7 @@ export class InitCliUsecases {
       process.exit(1);
     }
 
-    const destination = join(dataFolderPath, toDownloadAsset.name);
+    const destination = join(engineDir, toDownloadAsset.name);
 
     await new Promise((resolve, reject) => {
       const writer = createWriteStream(destination);
@@ -366,8 +286,9 @@ export class InitCliUsecases {
       download.data.pipe(writer);
     });
 
+    const decompressIndicator = ora('Decompressing engine...').start();
     try {
-      await decompress(destination, join(engineDir, 'engines'));
+      await decompress(destination, engineDir);
     } catch (e) {
       console.error('Error decompressing file', e);
       exit(1);
@@ -375,13 +296,12 @@ export class InitCliUsecases {
     await rm(destination, { force: true });
 
     // Copy the additional files to the cortex-cpp directory
-    for (const file of readdirSync(join(engineDir, 'engines', engine))) {
+    for (const file of readdirSync(join(engineDir, engine))) {
       if (file !== 'engine.dll') {
-        await cpSync(
-          join(engineDir, 'engines', engine, file),
-          join(engineDir, file),
-        );
+        await cpSync(join(engineDir, engine, file), join(engineDir, file));
+        await rmSync(join(engineDir, engine, file));
       }
     }
+    decompressIndicator.succeed('Engine decompressed');
   }
 }
