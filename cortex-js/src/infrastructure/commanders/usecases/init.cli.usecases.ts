@@ -18,10 +18,9 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { rm } from 'fs/promises';
 import {
   CORTEX_ENGINE_RELEASES_URL,
-  CORTEX_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
-import { checkNvidiaGPUExist, cudaVersion } from '@/utils/cuda';
+import { checkNvidiaGPUExist } from '@/utils/cuda';
 import { Engines } from '../types/engine.interface';
 
 import { cpuInfo } from 'cpu-instructions';
@@ -300,6 +299,7 @@ export class InitCliUsecases {
     for (const file of readdirSync(join(engineDir, engine))) {
       if (file !== 'engine.dll') {
         await cpSync(join(engineDir, engine, file), join(engineDir, file));
+        await rmSync(join(engineDir, engine, file));
       }
     }
     decompressIndicator.succeed('Engine decompressed');
