@@ -26,6 +26,12 @@ class BaseModel {
   virtual void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void CreateTranscription(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void CreateTranslation(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
 };
 
 class BaseChatCompletion {

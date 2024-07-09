@@ -34,4 +34,13 @@ class EngineI {
   virtual void GetModels(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  // cortex.audio interface
+  virtual void CreateTranscription(
+      std::shared_ptr<Json::Value> jsonBody,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  virtual void CreateTranslation(
+      std::shared_ptr<Json::Value> jsonBody,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };
