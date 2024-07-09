@@ -35,7 +35,6 @@ export class ChatUsecases {
     const engine = (await this.extensionRepository.findOne(
       model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
-
     if (engine == null) {
       throw new Error(`No engine found with name: ${model.engine}`);
     }

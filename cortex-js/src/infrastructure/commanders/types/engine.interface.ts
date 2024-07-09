@@ -7,4 +7,5 @@ export enum Engines {
   groq = 'groq',
   mistral = 'mistral',
   openai = 'openai',
+  anthropic = 'anthropic',
 }
