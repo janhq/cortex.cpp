@@ -226,7 +226,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
           logRecords: [
             {
               traceId: cypto.randomBytes(16).toString('hex'),
-              startTimeUnixNano: (
+              timeUnixNano: (
                 BigInt(Date.now()) * BigInt(1000000)
               ).toString(),
               body: { stringValue: body },
