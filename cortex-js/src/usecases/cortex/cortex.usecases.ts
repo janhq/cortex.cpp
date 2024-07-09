@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ChildProcess, spawn } from 'child_process';
+import { ChildProcess, fork } from 'child_process';
 import { delimiter, join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
 import { HttpService } from '@nestjs/axios';
 
-import { existsSync } from 'node:fs';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import {
@@ -12,12 +11,11 @@ import {
   CORTEX_CPP_PROCESS_DESTROY_URL,
   CORTEX_JS_STOP_API_SERVER_URL,
 } from '@/infrastructure/constants/cortex';
-import { createWriteStream, openSync } from 'fs';
+import { openSync } from 'fs';
 
 @Injectable()
 export class CortexUsecases {
   private cortexProcess: ChildProcess | undefined;
-  private cortexBinaryName: string = `cortex-cpp${process.platform === 'win32' ? '.exe' : ''}`;
 
   constructor(
     private readonly httpService: HttpService,
@@ -40,34 +38,22 @@ export class CortexUsecases {
       };
     }
 
-    const args: string[] = ['1', host, `${port}`];
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    const cortexCppFolderPath = join(dataFolderPath, 'cortex-cpp');
-    const cortexCppPath = join(cortexCppFolderPath, this.cortexBinaryName);
-
-    if (!existsSync(cortexCppPath)) {
-      throw new Error('The engine is not available, please run "cortex init".');
-    }
-
-    const cortexCPPPath = join(
-      await this.fileManagerService.getDataFolderPath(),
-      'cortex-cpp',
-    );
 
     const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
-
     // go up one level to get the binary folder, have to also work on windows
-    this.cortexProcess = spawn(cortexCppPath, args, {
+    this.cortexProcess = fork(join(__dirname, './../../utils/cortex-cpp'), [], {
       detached: true,
-      cwd: cortexCppFolderPath,
-      stdio: [0, writer, writer],
+      cwd: dataFolderPath,
+      stdio: [0, writer, writer, 'ipc'],
       env: {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
-        PATH: (process.env.PATH || '').concat(delimiter, cortexCPPPath),
+        ENGINE_PATH: dataFolderPath,
+        PATH: (process.env.PATH || '').concat(delimiter, dataFolderPath),
         LD_LIBRARY_PATH: (process.env.LD_LIBRARY_PATH || '').concat(
           delimiter,
-          cortexCPPPath,
+          dataFolderPath,
         ),
         // // Vulkan - Support 1 device at a time for now
         // ...(executableOptions.vkVisibleDevices?.length > 0 && {

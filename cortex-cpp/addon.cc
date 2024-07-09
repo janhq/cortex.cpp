@@ -7,6 +7,7 @@
 #include "cortex-common/cortexpythoni.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include <stdlib.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -59,6 +60,19 @@ void stop() {
 Napi::Value Start(const Napi::CallbackInfo &info)
 {
   Napi::Env env = info.Env();
+
+  LOG_INFO << "set env";
+  Napi::Object objs = info[0].As<Napi::Value>().ToObject();
+  Napi::Array props = objs.GetPropertyNames();
+
+  for (unsigned int i = 0; i < props.Length(); i++)
+  {
+      Napi::Value key = props.Get(i);
+      LOG_INFO << key.ToString().Utf8Value();
+      LOG_INFO << objs.Get(key).ToString().Utf8Value();
+      setenv(key.ToString().Utf8Value().c_str(), objs.Get(key).ToString().Utf8Value().c_str(), 1);
+  }
+
   start();
   return Napi::String::New(env, "Server started successfully");
 }

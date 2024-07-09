@@ -2,6 +2,6 @@
 
 /// <reference types="node" />
 declare module "cortex-cpp" {
-  start();
-  stop();
+  export function start();
+  export function stop();
 }
