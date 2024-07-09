@@ -356,6 +356,7 @@ export class ModelsUsecases {
           },
         };
         this.eventEmitter.emit('model.event', modelEvent);
+        throw e;
       }
     }
 
