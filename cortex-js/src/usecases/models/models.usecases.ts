@@ -342,10 +342,21 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
 
     let files = (await fetchJanRepoData(modelId)).siblings;
-
+    
     // HuggingFace GGUF Repo - Only one file is downloaded
     if (modelId.includes('/') && selection && files.length) {
+      try {
       files = [await selection(files)];
+      } catch (e) {
+        const modelEvent: ModelEvent = {
+          model: modelId,
+          event: 'model-downloaded-failed',
+          metadata: {
+            error: e.message || e,
+          },
+        };
+        this.eventEmitter.emit('model.event', modelEvent);
+      }
     }
 
     // Start downloading the model
@@ -420,7 +431,9 @@ export class ModelsUsecases {
         const modelEvent: ModelEvent = {
           model: modelId,
           event: 'model-downloaded',
-          metadata: {},
+          metadata: {
+            ...(selection ? { file: [files] } : {}),
+          },
         };
         this.eventEmitter.emit('model.event', modelEvent);
       },
