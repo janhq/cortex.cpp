@@ -20,7 +20,6 @@ import { ModelRemoveCommand } from './infrastructure/commanders/models/model-rem
 import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
-import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { MessagesModule } from './usecases/messages/messages.module';
 import { FileManagerModule } from './infrastructure/services/file-manager/file-manager.module';
 import { PSCommand } from './infrastructure/commanders/ps.command';
@@ -34,6 +33,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
 import { ContextModule } from './infrastructure/services/context/context.module';
+import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { ExtensionsModule } from './extensions/extensions.module';
 import { ConfigsCommand } from './infrastructure/commanders/configs.command';
 import { EnginesCommand } from './infrastructure/commanders/engines.command';
@@ -45,6 +45,7 @@ import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-s
 import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
+
 
 @Module({
   imports: [

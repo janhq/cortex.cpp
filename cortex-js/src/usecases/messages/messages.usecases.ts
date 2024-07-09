@@ -1,20 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { UpdateMessageDto } from '@/infrastructure/dtos/messages/update-message.dto';
-import { Repository } from 'typeorm';
-import { MessageEntity } from '@/infrastructure/entities/message.entity';
 import { ulid } from 'ulid';
+import { MessageEntity } from '@/infrastructure/entities/message.entity';
+import { Message } from '@/domain/models/message.interface';
+import { Repository } from 'sequelize-typescript';
 
 @Injectable()
 export class MessagesUsecases {
   constructor(
     @Inject('MESSAGE_REPOSITORY')
-    private messageRepository: Repository<MessageEntity>,
+    private messageRepository:  Repository<MessageEntity>,
   ) {}
 
   async create(createMessageDto: CreateMessageDto) {
     const { assistant_id } = createMessageDto;
-    const message: MessageEntity = {
+    const message: Partial<Message> = {
       ...createMessageDto,
       id: ulid(),
       created_at: Date.now(),
@@ -27,14 +28,14 @@ export class MessagesUsecases {
       metadata: undefined,
       assistant_id: assistant_id ?? null,
     };
-    this.messageRepository.insert(message);
+    return this.messageRepository.create(message);
   }
 
-  findAll() {
-    return this.messageRepository.find();
+  async findAll() {
+    return this.messageRepository.findAll();
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     return this.messageRepository.findOne({
       where: {
         id,
@@ -42,26 +43,27 @@ export class MessagesUsecases {
     });
   }
 
-  update(id: string, updateMessageDto: UpdateMessageDto) {
-    const updateEntity: Partial<MessageEntity> = {
-      ...updateMessageDto,
-    };
-    return this.messageRepository.update(id, updateEntity);
+  async update(id: string, updateMessageDto: UpdateMessageDto) {
+    const [numberOfAffectedRows, [updatedMessage]] = await this.messageRepository.update(updateMessageDto, {
+      where: { id },
+      returning: true,
+    });
+    return { numberOfAffectedRows, updatedMessage };
   }
 
-  remove(id: string) {
-    return this.messageRepository.delete(id);
+  async remove(id: string) {
+    return this.messageRepository.destroy({
+      where: { id },
+    });
   }
 
   async getLastMessagesByThread(threadId: string, limit: number) {
-    return this.messageRepository.find({
+    return this.messageRepository.findAll({
       where: {
         thread_id: threadId,
       },
-      order: {
-        created_at: 'DESC',
-      },
-      take: limit,
+      order: [['created_at', 'DESC']],
+      limit: limit,
     });
   }
 }

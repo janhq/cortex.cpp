@@ -1,27 +1,45 @@
+import { Table, Column, Model, PrimaryKey, DataType } from 'sequelize-typescript';
 import type { Thread, ThreadToolResources } from '@/domain/models/thread.interface';
-import { Entity, PrimaryColumn, Column } from 'typeorm';
 import { AssistantEntity } from './assistant.entity';
 
-@Entity('threads')
-export class ThreadEntity implements Thread {
-  @PrimaryColumn({ type: String })
+@Table({ tableName: 'threads', timestamps: false})
+export class ThreadEntity extends Model implements Thread {
+  @PrimaryKey
+  @Column({
+    type: DataType.STRING,
+  })
   id: string;
 
-  @Column({ type: String })
+  @Column({
+    type: DataType.STRING,
+    defaultValue: 'thread',
+  })
   object: 'thread';
 
-  @Column({ type: String, name: 'title' })
+  @Column({
+    type: DataType.STRING,
+  })
   title: string;
 
-  @Column({ type: 'simple-json' })
+  @Column({
+    type: DataType.JSON,
+  })
   assistants: AssistantEntity[];
 
-  @Column({ type: Number })
+  @Column({
+    type: DataType.INTEGER,
+  })
   created_at: number;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({
+    type: DataType.JSON,
+    allowNull: true,
+  })
   tool_resources: ThreadToolResources | null;
 
-  @Column({ type: 'simple-json', nullable: true })
+  @Column({
+    type: DataType.JSON,
+    allowNull: true,
+  })
   metadata: any | null;
 }

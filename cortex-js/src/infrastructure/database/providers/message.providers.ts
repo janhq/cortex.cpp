@@ -1,11 +1,12 @@
-import { MessageEntity } from '@/infrastructure/entities/message.entity';
-import { DataSource } from 'typeorm';
+import { MessageEntity } from "@/infrastructure/entities/message.entity";
+import { Sequelize } from "sequelize-typescript";
 
 export const messageProviders = [
   {
     provide: 'MESSAGE_REPOSITORY',
-    useFactory: (dataSource: DataSource) =>
-      dataSource.getRepository(MessageEntity),
+    useFactory: async(sequelize: Sequelize) =>{
+      return sequelize.getRepository(MessageEntity);
+    },
     inject: ['DATA_SOURCE'],
   },
 ];

@@ -39,7 +39,7 @@ async function bootstrap() {
     contextService!.set('sessionId', anonymousData?.sessionId);
     telemetryUseCase!.sendActivationEvent(TelemetrySource.CLI);
     telemetryUseCase!.sendCrashReport();
-    return CommandFactory.runApplication(app);
+    await CommandFactory.runApplication(app);
   });
 }
 
