@@ -62,7 +62,7 @@ export class InitCliUsecases {
     options?: InitOptions,
     version: string = 'latest',
     engine: string = 'default',
-    force: boolean = true,
+    force: boolean = false,
   ): Promise<any> => {
     // Use default option if not defined
     if (!options && engine === Engines.llamaCPP) {
@@ -70,18 +70,18 @@ export class InitCliUsecases {
     }
     const configs = await this.fileManagerService.getConfig();
 
-    if (configs.initialized && !force) return;
     const engineSpinner = ora('Installing engine...').start();
     // Ship Llama.cpp engine by default
     if (
       !existsSync(
-        join(
-          await this.fileManagerService.getCortexCppEnginePath(),
-          Engines.llamaCPP,
-        ),
+        join(await this.fileManagerService.getCortexCppEnginePath(), engine),
       ) ||
-      (engine === Engines.llamaCPP && force)
-    )
+      force
+    ) {
+      const isVulkan =
+        engine === Engines.llamaCPP &&
+        (options?.vulkan ||
+          (options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'));
       await this.installAcceleratedEngine(version, engine, [
         process.platform === 'win32'
           ? '-windows'
@@ -91,17 +91,15 @@ export class InitCliUsecases {
         // CPU Instructions - CPU | GPU Non-Vulkan
         options?.instructions &&
         (options?.runMode === 'CPU' ||
-          (options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'))
+          (options?.runMode === 'GPU' && !isVulkan))
           ? `-${options?.instructions?.toLowerCase()}`
           : '',
         // Cuda
-        options?.runMode === 'GPU' && options?.gpuType === 'Nvidia'
+        options?.runMode === 'GPU' && options?.gpuType === 'Nvidia' && !isVulkan
           ? `cuda-${options.cudaVersion ?? '12'}`
           : '',
         // Vulkan
-        options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'
-          ? '-vulkan'
-          : '',
+        isVulkan ? '-vulkan' : '',
 
         // Arch
         engine !== Engines.tensorrtLLM
@@ -110,11 +108,13 @@ export class InitCliUsecases {
             : '-amd64'
           : '',
       ]);
+    }
 
     if (
       (engine === Engines.llamaCPP || engine === Engines.tensorrtLLM) &&
       options?.runMode === 'GPU' &&
-      options?.gpuType === 'Nvidia'
+      options?.gpuType === 'Nvidia' &&
+      !options?.vulkan
     )
       await this.installCudaToolkitDependency(options?.cudaVersion);
 

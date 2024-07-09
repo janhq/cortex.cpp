@@ -38,7 +38,8 @@ export class CortexUsecases {
       };
     }
 
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    const engineDir = await this.fileManagerService.getCortexCppEnginePath();
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath()
 
     const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
     // go up one level to get the binary folder, have to also work on windows
@@ -50,10 +51,10 @@ export class CortexUsecases {
         ...process.env,
         CUDA_VISIBLE_DEVICES: '0',
         ENGINE_PATH: dataFolderPath,
-        PATH: (process.env.PATH || '').concat(delimiter, dataFolderPath),
+        PATH: (process.env.PATH || '').concat(delimiter, engineDir),
         LD_LIBRARY_PATH: (process.env.LD_LIBRARY_PATH || '').concat(
           delimiter,
-          dataFolderPath,
+          engineDir,
         ),
         // // Vulkan - Support 1 device at a time for now
         // ...(executableOptions.vkVisibleDevices?.length > 0 && {
@@ -61,6 +62,7 @@ export class CortexUsecases {
         // }),
       },
     });
+    this.cortexProcess.unref();
 
     // Await for the /healthz status ok
     return new Promise<CortexOperationSuccessfullyDto>((resolve, reject) => {

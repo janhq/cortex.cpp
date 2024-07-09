@@ -4,4 +4,5 @@ export interface InitOptions {
   instructions?: 'AVX' | 'AVX2' | 'AVX512' | undefined;
   cudaVersion?: '11' | '12';
   silent?: boolean;
+  vulkan?: boolean;
 }

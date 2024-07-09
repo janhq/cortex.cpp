@@ -2,12 +2,12 @@
 
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <stdlib.h>
 #include <climits>  // for PATH_MAX
 #include <iostream>
 #include "cortex-common/cortexpythoni.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
-#include <stdlib.h>
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -22,15 +22,15 @@
 #error "Unsupported platform!"
 #endif
 
+static Napi::Env* s_env = nullptr;
+
 void start() {
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3929;
   std::string uploads_folder_path;
-
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
-  // cortex_utils::nitro_logo();
 #ifdef CORTEX_CPP_VERSION
   LOG_INFO << "cortex-cpp version: " << CORTEX_CPP_VERSION;
 #else
@@ -57,40 +57,32 @@ void stop() {
   drogon::app().quit();
 }
 
-Napi::Value Start(const Napi::CallbackInfo &info)
-{
-  Napi::Env env = info.Env();
-
-  LOG_INFO << "set env";
-  Napi::Object objs = info[0].As<Napi::Value>().ToObject();
-  Napi::Array props = objs.GetPropertyNames();
-
-  for (unsigned int i = 0; i < props.Length(); i++)
-  {
-      Napi::Value key = props.Get(i);
-      LOG_INFO << key.ToString().Utf8Value();
-      LOG_INFO << objs.Get(key).ToString().Utf8Value();
-      setenv(key.ToString().Utf8Value().c_str(), objs.Get(key).ToString().Utf8Value().c_str(), 1);
-  }
-
-  start();
-  return Napi::String::New(env, "Server started successfully");
+void exitCallback() {
+  Napi::TypeError::New(*s_env, "Process Exited!").ThrowAsJavaScriptException();
 }
 
-Napi::Value Stop(const Napi::CallbackInfo &info)
-{
+Napi::Value Start(const Napi::CallbackInfo& info) {
+  Napi::Env env = info.Env();
+
+  s_env = &env;
+
+  // Register exitCallback with atexit
+  std::atexit(exitCallback);
+
+  start();
+  return env.Undefined();
+}
+
+Napi::Value Stop(const Napi::CallbackInfo& info) {
   Napi::Env env = info.Env();
   stop();
   return Napi::String::New(env, "Server stopped successfully");
 }
 
-Napi::Object Init(Napi::Env env, Napi::Object exports)
-{
-    exports.Set(Napi::String::New(env, "start"),
-                Napi::Function::New(env, Start));
-    exports.Set(Napi::String::New(env, "stop"),
-                Napi::Function::New(env, Start));
-    return exports;
+Napi::Object Init(Napi::Env env, Napi::Object exports) {
+  exports.Set(Napi::String::New(env, "start"), Napi::Function::New(env, Start));
+  exports.Set(Napi::String::New(env, "stop"), Napi::Function::New(env, Start));
+  return exports;
 }
 
 NODE_API_MODULE(cortex-cpp, Init)
