@@ -6,6 +6,10 @@ import { Extension } from './extension.abstract';
 export abstract class EngineExtension extends Extension {
   abstract onLoad(): void;
 
+  transformPayload?: Function;
+
+  transformResponse?: Function;
+
   abstract inference(
     dto: any,
     headers: Record<string, string>,
@@ -17,4 +21,5 @@ export abstract class EngineExtension extends Extension {
   ): Promise<void> {}
 
   async unloadModel(modelId: string): Promise<void> {}
+  
 }
