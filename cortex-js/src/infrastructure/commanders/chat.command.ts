@@ -49,7 +49,6 @@ export class ChatCommand extends CommandRunner {
 
   async run(passedParams: string[], options: ChatOptions): Promise<void> {
     let modelId = passedParams[0];
-    const checkingSpinner = ora('Checking model...').start();
     // First attempt to get message from input or options
     // Extract input from 1 to end of array
     let message = options.message ?? passedParams.slice(1).join(' ');
@@ -68,11 +67,9 @@ export class ChatCommand extends CommandRunner {
       } else if (models.length > 0) {
         modelId = await this.modelInquiry(models);
       } else {
-        checkingSpinner.fail('Model ID is required');
         exit(1);
       }
     }
-    checkingSpinner.succeed(`Model found`);
 
     if (!message) options.attach = true;
     const result = await this.chatCliUsecases.chat(
