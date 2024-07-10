@@ -6,7 +6,6 @@ import { CortexModule } from './usecases/cortex/cortex.module';
 import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
-import { InitCommand } from './infrastructure/commanders/init.command';
 import { HttpModule } from '@nestjs/axios';
 import { InitRunModeQuestions } from './infrastructure/commanders/questions/init.questions';
 import { ModelListCommand } from './infrastructure/commanders/models/model-list.command';
@@ -76,7 +75,6 @@ import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-
     ModelsCommand,
     ServeCommand,
     ChatCommand,
-    InitCommand,
     PSCommand,
     KillCommand,
     PresetCommand,
