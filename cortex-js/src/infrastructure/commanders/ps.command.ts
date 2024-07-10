@@ -1,4 +1,5 @@
 import ora from 'ora';
+import systeminformation from 'systeminformation';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
@@ -32,6 +33,30 @@ export class PSCommand extends CommandRunner {
       })
       .then((isOnline) => {
         checkingSpinner.succeed(isOnline ? 'API server is online' : 'API server is offline');
-      });
+      })
+      .then(async () => {
+        const table = [];
+        const cpuUsage = (await systeminformation.currentLoad()).currentLoad.toFixed(2);
+        const gpusLoad = [];
+        const gpus = await systeminformation.graphics();
+        for (const gpu of gpus.controllers) {
+          const totalVram = gpu.vram || 0;
+          gpusLoad.push({
+            totalVram,
+          });
+        }
+        const memoryData = await systeminformation.mem();
+        const memoryUsage =  (memoryData.active / memoryData.total * 100).toFixed(2)
+        table.push({
+          'CPU Usage': `${cpuUsage}%`,
+          'Memory Usage': `${memoryUsage}%`,
+        });
+        if(gpusLoad.length > 0 && gpusLoad.filter(gpu => gpu.totalVram > 0).length > 0) {
+          table.push({
+            'VRAM': gpusLoad,
+          });
+        }
+        console.table(table);
+      })
   }
 }
