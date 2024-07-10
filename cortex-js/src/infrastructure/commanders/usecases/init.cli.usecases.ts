@@ -297,9 +297,8 @@ export class InitCliUsecases {
 
     // Copy the additional files to the cortex-cpp directory
     for (const file of readdirSync(join(engineDir, engine))) {
-      if (file !== 'engine.dll') {
+      if (!file.includes('engine')) {
         await cpSync(join(engineDir, engine, file), join(engineDir, file));
-        await rmSync(join(engineDir, engine, file));
       }
     }
     decompressIndicator.succeed('Engine decompressed');
