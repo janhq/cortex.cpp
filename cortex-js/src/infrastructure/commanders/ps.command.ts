@@ -35,7 +35,6 @@ export class PSCommand extends CommandRunner {
         checkingSpinner.succeed(isOnline ? 'API server is online' : 'API server is offline');
       })
       .then(async () => {
-        const table = [];
         const cpuUsage = (await systeminformation.currentLoad()).currentLoad.toFixed(2);
         const gpusLoad = [];
         const gpus = await systeminformation.graphics();
@@ -47,16 +46,19 @@ export class PSCommand extends CommandRunner {
         }
         const memoryData = await systeminformation.mem();
         const memoryUsage =  (memoryData.active / memoryData.total * 100).toFixed(2)
-        table.push({
+        const consumedTable = {
           'CPU Usage': `${cpuUsage}%`,
           'Memory Usage': `${memoryUsage}%`,
-        });
-        if(gpusLoad.length > 0 && gpusLoad.filter(gpu => gpu.totalVram > 0).length > 0) {
-          table.push({
-            'VRAM': gpusLoad,
-          });
+        } as {
+          'CPU Usage': string,
+          'Memory Usage': string,
+          'VRAM'?: string,
         }
-        console.table(table);
+        
+        if(gpusLoad.length > 0 && gpusLoad.filter(gpu => gpu.totalVram > 0).length > 0) {
+          consumedTable['VRAM'] = gpusLoad.map(gpu => `${gpu.totalVram} MB`).join(', ');
+        }
+        console.table([consumedTable]);
       })
   }
 }
