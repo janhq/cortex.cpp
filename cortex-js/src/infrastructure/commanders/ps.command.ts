@@ -50,8 +50,12 @@ export class PSCommand extends CommandRunner {
         table.push({
           'CPU Usage': `${cpuUsage}%`,
           'Memory Usage': `${memoryUsage}%`,
-          'VRAM': gpusLoad.map((gpu) => `${gpu.totalVram} MB`).join('\n'),
         });
+        if(gpusLoad.length > 0 && gpusLoad.filter(gpu => gpu.totalVram > 0).length > 0) {
+          table.push({
+            'VRAM': gpusLoad,
+          });
+        }
         console.table(table);
       })
   }
