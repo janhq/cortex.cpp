@@ -28,6 +28,9 @@ import { EnginesListCommand } from './infrastructure/commanders/engines/engines-
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
 import { EnginesSetCommand } from './infrastructure/commanders/engines/engines-set.command';
+import { VectorStoresCommand } from './infrastructure/commanders/vector_stores.command';
+import { VectorStoresCreateCommand } from './infrastructure/commanders/vector_stores/vs-create.command';
+import { VectorStoresUploadCommand } from './infrastructure/commanders/vector_stores/vs-upload.command';
 
 @Module({
   imports: [
@@ -51,6 +54,7 @@ import { EnginesSetCommand } from './infrastructure/commanders/engines/engines-s
     EmbeddingCommand,
     BenchmarkCommand,
     EnginesCommand,
+    VectorStoresCommand,
 
     // Questions
     InitRunModeQuestions,
@@ -78,6 +82,9 @@ import { EnginesSetCommand } from './infrastructure/commanders/engines/engines-s
     EnginesGetCommand,
     EnginesInitCommand,
     EnginesSetCommand,
+    // Vector Stores
+    VectorStoresCreateCommand,
+    VectorStoresUploadCommand,
   ],
 })
 export class CommandModule {}

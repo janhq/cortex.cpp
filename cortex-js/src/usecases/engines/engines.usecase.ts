@@ -24,6 +24,7 @@ import { ConfigsUsecases } from '../configs/configs.usecase';
 import { defaultInstallationOptions } from '@/utils/init';
 import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
+import { isEmpty } from 'lodash';
 @Injectable()
 export class EnginesUsecases {
   constructor(

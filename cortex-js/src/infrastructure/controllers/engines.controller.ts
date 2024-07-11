@@ -15,16 +15,12 @@ import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { EngineDto, InitEngineDto } from '../dtos/engines/engines.dto';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
-import { ConfigUpdateDto } from '../dtos/configs/config-update.dto';
 
 @ApiTags('Engines')
 @Controller('engines')
 @UseInterceptors(TransformInterceptor)
 export class EnginesController {
-  constructor(
-    private readonly enginesUsecases: EnginesUsecases,
-    private readonly initUsescases: EnginesUsecases,
-  ) {}
+  constructor(private readonly enginesUsecases: EnginesUsecases) {}
 
   @HttpCode(200)
   @ApiResponse({
@@ -86,7 +82,7 @@ export class EnginesController {
     @Res() res: Response,
   ) {
     try {
-      this.initUsescases.installEngine(body, name, true);
+      this.enginesUsecases.installEngine(body, name, true);
       res.json({
         message: 'Engine initialization started successfully.',
       });

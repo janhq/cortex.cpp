@@ -13,7 +13,6 @@ import { DownloadManagerModule } from '@/infrastructure/services/download-manage
     HttpModule,
     FileManagerModule,
     DownloadManagerModule,
-    ConfigsModule,
   ],
   controllers: [],
   providers: [EnginesUsecases],

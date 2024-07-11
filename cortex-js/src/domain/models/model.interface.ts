@@ -42,7 +42,7 @@ export interface ModelSettingParams {
   ngl?: number;
 
   /**
-   * Support embedding or not (legacy)
+   * It's an embedding model or not
    */
   embedding?: boolean;
 
@@ -60,11 +60,35 @@ export interface ModelSettingParams {
    * GGUF metadata: tokenizer.chat_template
    */
   prompt_template?: string;
+
+  /**
+   * llama.cpp system prompt
+   */
   system_prompt?: string;
+
+  /**
+   * llama.cpp ai prompt
+   */
   ai_prompt?: string;
+
+  /**
+   * llama.cpp user prompt
+   */
   user_prompt?: string;
+
+  /**
+   * gguf llama model path
+   */
   llama_model_path?: string;
+
+  /**
+   * Multimodal mmproj model
+   */
   mmproj?: string;
+
+  /**
+   * Enable cont_batching
+   */
   cont_batching?: boolean;
 
   /**

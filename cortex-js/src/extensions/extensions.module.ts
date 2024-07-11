@@ -11,6 +11,7 @@ import OpenRouterEngineExtension from './openrouter.engine';
 import CoHereEngineExtension from './cohere.engine';
 import MartianEngineExtension from './martian.engine';
 import NvidiaEngineExtension from './nvidia.engine';
+import LlamaIndexRagExtension from './llamaindex.extension';
 
 const provider = {
   provide: 'EXTENSIONS_PROVIDER',
@@ -28,6 +29,7 @@ const provider = {
     new CoHereEngineExtension(httpService, configUsecases, eventEmitter),
     new MartianEngineExtension(httpService, configUsecases, eventEmitter),
     new NvidiaEngineExtension(httpService, configUsecases, eventEmitter),
+    new LlamaIndexRagExtension(configUsecases, eventEmitter),
   ],
 };
 

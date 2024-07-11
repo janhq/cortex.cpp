@@ -36,6 +36,7 @@ export class FileManagerService {
   private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
   private configProfile = process.env.CORTEX_PROFILE || 'default';
+  private vectorStoresFolderName = 'vector_stores';
 
   /**
    * Get cortex configs
@@ -105,6 +106,10 @@ export class FileManagerService {
       dataFolderPath,
       this.cortexTelemetryFolderName,
     );
+    const vectorsStoresFolderPath = join(
+      dataFolderPath,
+      this.vectorStoresFolderName,
+    );
     if (!existsSync(modelFolderPath)) {
       await promises.mkdir(modelFolderPath, { recursive: true });
     }
@@ -113,6 +118,9 @@ export class FileManagerService {
     }
     if (!existsSync(cortexTelemetryFolderPath)) {
       await promises.mkdir(cortexTelemetryFolderPath, { recursive: true });
+    }
+    if (!existsSync(vectorsStoresFolderPath)) {
+      await promises.mkdir(vectorsStoresFolderPath, { recursive: true });
     }
   }
 
@@ -299,6 +307,14 @@ export class FileManagerService {
    */
   async getCortexCppEnginePath(): Promise<string> {
     return join(await this.getDataFolderPath(), this.cortexEnginesFolderName);
+  }
+
+  /**
+   * Get Cortex CPP engines folder path
+   * @returns the path to the cortex engines folder
+   */
+  async getVectorStoresFolderPath(): Promise<string> {
+    return join(await this.getDataFolderPath(), this.vectorStoresFolderName);
   }
 
   /**

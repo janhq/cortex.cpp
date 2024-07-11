@@ -24,6 +24,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './serve-stop.command';
 import ora from 'ora';
 import { EnginesSetCommand } from './engines/engines-set.command';
+import { VectorStoresCommand } from './vector_stores.command';
 
 type ServeOptions = {
   address?: string;
@@ -49,6 +50,7 @@ type ServeOptions = {
     EnginesCommand,
     ServeStopCommand,
     EnginesSetCommand,
+    VectorStoresCommand,
   ],
   description: 'Cortex CLI',
 })

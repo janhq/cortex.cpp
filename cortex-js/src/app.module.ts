@@ -28,6 +28,8 @@ import { ConfigsModule } from './usecases/configs/configs.module';
 import { EnginesModule } from './usecases/engines/engines.module';
 import { EnginesController } from './infrastructure/controllers/engines.controller';
 import { ResourceManagerModule } from './infrastructure/services/resources-manager/resources-manager.module';
+import { VectorStoresController } from './infrastructure/controllers/vector_stores.controller';
+import { VectorStoresModule } from './usecases/vector_stores/vector_stores.module';
 
 @Module({
   imports: [
@@ -53,6 +55,7 @@ import { ResourceManagerModule } from './infrastructure/services/resources-manag
     ConfigsModule,
     EnginesModule,
     ResourceManagerModule,
+    VectorStoresModule,
   ],
   controllers: [
     AssistantsController,
@@ -62,6 +65,7 @@ import { ResourceManagerModule } from './infrastructure/services/resources-manag
     ThreadsController,
     SystemController,
     EnginesController,
+    VectorStoresController,
   ],
   providers: [
     {
