@@ -19,6 +19,7 @@ set(THIRD_PARTY_INSTALL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build-deps/_install)
 #set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 #
 # Add the external project
+if(NOT APPLE)
 ExternalProject_Add(
     zlib
 	GIT_REPOSITORY https://github.com/madler/zlib.git
@@ -36,6 +37,7 @@ if(WIN32)
         COMMAND ${CMAKE_COMMAND} -E rm -f ${ZLIB_DYN_PATH}
 	    DEPENDEES install
     )
+endif()
 endif()
 
 ExternalProject_Add(
@@ -117,7 +119,11 @@ endif()
 include_directories(${THIRD_PARTY_INSTALL_PATH}/include)
 link_directories(${THIRD_PARTY_INSTALL_PATH}/lib)
 # Optionally link or add dependencies to your targets
-add_dependencies(drogon c-ares jsoncpp brotli zlib)
+add_dependencies(drogon c-ares jsoncpp brotli)
+
+if(NOT APPLE)
+    add_dependencies(drogon zlib)
+endif()
 
 # target_link_libraries(<your-target> ...)
 
