@@ -19,18 +19,22 @@ set(THIRD_PARTY_INSTALL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../build-deps/_install)
 #set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 #
 # Add the external project
-set(ZLIB_USE_STATIC_LIBS OFF)
-find_package(ZLIB)
-if(NOT ZLIB_FOUND)
-    set(ZLIB_USE_STATIC_LIBS ON)
-    ExternalProject_Add(
-        zlib
+ExternalProject_Add(
+    zlib
 	GIT_REPOSITORY https://github.com/madler/zlib.git
 	GIT_TAG v1.2.11
 	CMAKE_ARGS
 	    -DBUILD_SHARED_LIBS=OFF
 	    -DCMAKE_INSTALL_PREFIX=${THIRD_PARTY_INSTALL_PATH}
         -DCMAKE_BUILD_TYPE=RELEASE
+)
+
+if(WIN32)
+    SET(ZLIB_DYN_PATH "${THIRD_PARTY_INSTALL_PATH}/lib/zlib.lib")
+    ExternalProject_Add_Step(
+        zlib remove_dynamic_lib
+        COMMAND ${CMAKE_COMMAND} -E rm -f ${ZLIB_DYN_PATH}
+	    DEPENDEES install
     )
 endif()
 
@@ -76,7 +80,6 @@ ExternalProject_Add(
     CMAKE_ARGS
     -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
 	-DOPENSSL_USE_STATIC_LIBS=TRUE
-	-DZLIB_USE_STATIC_LIBS=${ZLIB_USE_STATIC_LIBS}
 	-DBUILD_ORM=OFF
 	-DBUILD_YAML_CONFIG=OFF
 	-DBUILD_EXAMPLES=OFF
@@ -114,10 +117,7 @@ endif()
 include_directories(${THIRD_PARTY_INSTALL_PATH}/include)
 link_directories(${THIRD_PARTY_INSTALL_PATH}/lib)
 # Optionally link or add dependencies to your targets
-add_dependencies(drogon c-ares jsoncpp brotli)
+add_dependencies(drogon c-ares jsoncpp brotli zlib)
 
-if(ZLIB_USE_STATIC_LIBS)
-    add_dependencies(drogon zlib)
-endif()
 # target_link_libraries(<your-target> ...)
 
