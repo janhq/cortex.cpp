@@ -40,7 +40,6 @@ pre-package:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex-cpp;"
 	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
-	@powershell -Command "cp build-deps\_install\bin\zlib.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
