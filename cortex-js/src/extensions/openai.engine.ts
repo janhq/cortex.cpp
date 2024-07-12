@@ -35,7 +35,5 @@ export default class OpenAIEngineExtension extends OAIEngineExtension {
       this.name,
     )) as unknown as { apiKey: string };
     this.apiKey = configs?.apiKey;
-    if (!configs?.apiKey)
-      await this.configsUsecases.saveConfig('apiKey', '', this.name);
   }
 }
