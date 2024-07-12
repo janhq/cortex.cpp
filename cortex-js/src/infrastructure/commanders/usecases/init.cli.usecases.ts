@@ -88,9 +88,7 @@ export class InitCliUsecases {
             ? '-mac'
             : '-linux',
         // CPU Instructions - CPU | GPU Non-Vulkan
-        options?.instructions &&
-        (options?.runMode === 'CPU' ||
-          (options?.runMode === 'GPU' && !isVulkan))
+        options?.instructions && !isVulkan
           ? `-${options?.instructions?.toLowerCase()}`
           : '',
         // Cuda
@@ -225,11 +223,10 @@ export class InitCliUsecases {
 
     let release = res?.data;
     if (Array.isArray(res?.data)) {
-      release = Array(res?.data)[0].find(
-        (e) => e.name === version.replace('v', ''),
-      );
+      release = Array(res?.data)[0]
+        .sort((a, b) => a.name.length - b.name.length) // Sort by length, sortest first - for matching accuracy
+        .find((e) => e.name === version.replace('v', ''));
     }
-
     // Find the asset for the current platform
     const toDownloadAsset = release.assets.find((asset: any) =>
       matchers.every((matcher) => asset.name.includes(matcher)),
