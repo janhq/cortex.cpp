@@ -11,22 +11,26 @@
 > ⚠️ **Cortex is currently in Development**: Expect breaking changes and bugs!
 
 ## About
-Cortex is an OpenAI-compatible AI engine that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and client libraries. It can be used as a standalone server or imported as a library. 
+Cortex is an OpenAI-compatible AI engine for building LLM apps. It features Docker-inspired CLI and client libraries and can be used as a standalone server or an importable library.
 
-Cortex currently supports 3 inference engines:
-
-- Llama.cpp
-- ONNX Runtime
-- TensorRT-LLM
+## Cortex Engines
+Cortex supports the following engines:
+- [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp): `cortex.llamacpp` library is a C++ inference tool that can be dynamically loaded by any server at runtime. We use this engine to support GGUF inference with GGUF models. The `llama.cpp` is optimized for performance on both CPU and GPU.
+- [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx): `cortex.onnx` is a C++ inference library for Windows that leverages `onnxruntime-genai` and uses DirectML to provide GPU acceleration across a wide range of hardware and drivers, including AMD, Intel, NVIDIA, and Qualcomm GPUs.
+- [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm): `cortex.tensorrt-llm` is a C++ inference library designed for NVIDIA GPUs. It incorporates NVIDIA’s TensorRT-LLM for GPU-accelerated inference.
 
 ## Quicklinks
 
 - [Homepage](https://cortex.so/)
 - [Docs](https://cortex.so/docs/)
+- [CLI Reference Docs](https://cortex.so/docs/cli)
 
 ## Quickstart
 ### Prerequisites
-Ensure that your system meets the following requirements to run Cortex:
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 22.04 and later.
 - **Dependencies**:
   - **Node.js**: Version 18 and above is required to run the installation.
   - **NPM**: Needed to manage packages.
@@ -35,16 +39,8 @@ Ensure that your system meets the following requirements to run Cortex:
     ```bash
     sudo apt install openmpi-bin libopenmpi-dev
     ```
-- **OS**:
-  - MacOSX 13.6 or higher.
-  - Windows 10 or higher.
-  - Ubuntu 22.04 and later.
-
-> Visit [Quickstart](https://cortex.so/docs/quickstart) to get started.
-
 
 ### NPM
-Install using NPM package:
 ``` bash
 # Install using NPM
 npm i -g cortexso
@@ -55,7 +51,6 @@ npm uninstall -g cortexso
 ```
 
 ### Homebrew
-Install using Homebrew:
 ``` bash
 # Install using Brew
 brew install cortexso
@@ -64,9 +59,10 @@ cortex run mistral
 # To uninstall using Brew
 brew uninstall cortexso
 ```
-> You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
+### Installer
+Download the Cortex installer on the [GitHub Releases](https://github.com/janhq/cortex/releases).
 
-To run Cortex as an API server:
+## Cortex Server
 ```bash
 cortex serve
 
@@ -102,43 +98,8 @@ chmod +x '[path-to]/cortex/cortex-js/dist/src/command.js'
 npm link
 ```
 
-## Cortex CLI Commands
-
-The following CLI commands are currently available.
-See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
-
-```bash
-
-  serve               Providing API endpoint for Cortex backend.
-  chat                Send a chat request to a model.
-  init|setup          Init settings and download cortex's dependencies.
-  ps                  Show running models and their status.
-  kill                Kill running cortex processes.
-  pull|download       Download a model. Working with HuggingFace model id.
-  run [options]       EXPERIMENTAL: Shortcut to start a model and chat.
-  models              Subcommands for managing models.
-  models list         List all available models.
-  models pull         Download a specified model.
-  models remove       Delete a specified model.
-  models get          Retrieve the configuration of a specified model.
-  models start        Start a specified model.
-  models stop         Stop a specified model.
-  models update       Update the configuration of a specified model.
-  benchmark           Benchmark and analyze the performance of a specific AI model using your system.
-  presets             Show all the available model presets within Cortex.
-  telemetry           Retrieve telemetry logs for monitoring and analysis.
-  embeddings          Creates an embedding vector representing the input text.
-  engines             Subcommands for managing engines.
-  engines get         Get an engine details.
-  engines list        Get all the available Cortex engines.
-  engines init        Setup and download the required dependencies to run cortex engines.
-  configs             Subcommands for managing configurations.
-  configs get         Get a configuration details.
-  configs list        Get all the available configurations.
-  configs set         Set a configuration.
-```
-
 ## Contact Support
 - For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
+
