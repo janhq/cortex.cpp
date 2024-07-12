@@ -22,7 +22,7 @@ env:
             
 jobs:
   openai-python-tests:
-    runs-on: [self-hosted, Linux, ubuntu-desktop]
+    runs-on: ubuntu-20-04-openai-api-collection-test
     steps:
       - name: Getting the repo
         uses: actions/checkout@v4
