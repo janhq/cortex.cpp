@@ -8,6 +8,8 @@
   "bin": {
     "cortex": "./dist/src/command.js"
   },
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
     "dev": "nest dev",
     "compile": "npx ncc build ./dist/src/command.js -o command",
