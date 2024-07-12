@@ -11,7 +11,7 @@
 > ⚠️ **Cortex is currently in Development**: Expect breaking changes and bugs!
 
 ## About
-Cortex is an OpenAI-compatible AI engine for building LLM apps. It features Docker-inspired CLI and client libraries and can be used as a standalone server or an importable library.
+Cortex is an OpenAI-compatible AI engine that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and client libraries. It can be used as a standalone server or imported as a library. 
 
 ## Cortex Engines
 Cortex supports the following engines:
@@ -23,7 +23,6 @@ Cortex supports the following engines:
 
 - [Homepage](https://cortex.so/)
 - [Docs](https://cortex.so/docs/)
-- [CLI Reference Docs](https://cortex.so/docs/cli)
 
 ## Quickstart
 ### Prerequisites
@@ -39,6 +38,8 @@ Cortex supports the following engines:
     ```bash
     sudo apt install openmpi-bin libopenmpi-dev
     ```
+
+> Visit [Quickstart](https://cortex.so/docs/quickstart) to get started.
 
 ### NPM
 ``` bash
@@ -59,8 +60,7 @@ cortex run mistral
 # To uninstall using Brew
 brew uninstall cortexso
 ```
-### Installer
-Download the Cortex installer on the [GitHub Releases](https://github.com/janhq/cortex/releases).
+> You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
 
 ## Cortex Server
 ```bash
@@ -98,8 +98,45 @@ chmod +x '[path-to]/cortex/cortex-js/dist/src/command.js'
 npm link
 ```
 
+## Cortex CLI Commands
+
+The following CLI commands are currently available.
+See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
+
+```bash
+
+  serve               Providing API endpoint for Cortex backend.
+  chat                Send a chat request to a model.
+  init|setup          Init settings and download cortex's dependencies.
+  ps                  Show running models and their status.
+  kill                Kill running cortex processes.
+  pull|download       Download a model. Working with HuggingFace model id.
+  run [options]       EXPERIMENTAL: Shortcut to start a model and chat.
+  models              Subcommands for managing models.
+  models list         List all available models.
+  models pull         Download a specified model.
+  models remove       Delete a specified model.
+  models get          Retrieve the configuration of a specified model.
+  models start        Start a specified model.
+  models stop         Stop a specified model.
+  models update       Update the configuration of a specified model.
+  benchmark           Benchmark and analyze the performance of a specific AI model using your system.
+  presets             Show all the available model presets within Cortex.
+  telemetry           Retrieve telemetry logs for monitoring and analysis.
+  embeddings          Creates an embedding vector representing the input text.
+  engines             Subcommands for managing engines.
+  engines get         Get an engine details.
+  engines list        Get all the available Cortex engines.
+  engines init        Setup and download the required dependencies to run cortex engines.
+  configs             Subcommands for managing configurations.
+  configs get         Get a configuration details.
+  configs list        Get all the available configurations.
+  configs set         Set a configuration.
+```
+
 ## Contact Support
-- For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
+- For support, please file a GitHub ticket.
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
+
 
