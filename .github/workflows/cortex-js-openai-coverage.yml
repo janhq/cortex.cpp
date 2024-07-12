@@ -38,13 +38,19 @@ jobs:
       - run: npm install -g yarn && yarn install && yarn build
         working-directory: ./cortex-js
 
+      - name: install python venv
+        run: |
+          sudo apt-get update
+          sudo apt-get install python3-venv -y
+          python3 -m venv /tmp/jan
+
       - name: Run test
         run: |
           node cortex-js/dist/src/command.js serve --address 127.0.0.1 --port 4010 > cortex.log & cortex_pid=$!
           sleep 3
           wget --no-verbose -O api.json http://127.0.0.1:4010/api-json
           cat api.json
-
+          source /tmp/jan/bin/activate
           # Clone openai-api-python repo
           git clone https://github.com/openai/openai-python.git -b $OPENAI_API_PYTHON_TAG
           cd openai-python
@@ -52,14 +58,15 @@ jobs:
           pip3 install -r requirements-dev.lock
           pip3 install pytest-reportportal pytest-html
           
-          mv ../coverage/conftest.py tests/conftest.py
-          mv ../coverage/endpoint_mapping.json tests/endpoints_mapping.json
-          mv ../coverage/pytest.ini pytest.ini
+          cat ../coverage/conftest.py >> tests/conftest.py
+          cat ../coverage/endpoint_mapping.json >> tests/endpoint_mapping.json
+          cat ../coverage/pytest.ini >> pytest.ini
           echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
 
           pytest --continue-on-collection-errors --endpoint "$ENDPOINTS" --reportportal --html=report.html -v || true
           kill $cortex_pid
+          deactivate
         env:
           ENDPOINTS: ${{ github.event.inputs.endpoints }}
 
