@@ -56,9 +56,10 @@ jobs:
           pip install -r requirements-dev.lock
           pip install pytest-reportportal pytest-html
           
-          mv ../coverage/conftest.py tests/conftest.py
-          mv ../coverage/endpoint_mapping.json tests/endpoints_mapping.json
-          mv ../coverage/pytest.ini pytest.ini
+          cat ../coverage/conftest.py >> tests/conftest.py
+          cat ../coverage/endpoints_mapping.json >> tests/endpoints_mapping.json
+          cat ../coverage/pytest.ini >> pytest.ini
+
           echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
 

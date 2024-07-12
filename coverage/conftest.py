@@ -1,18 +1,4 @@
 import json
-import pytest
-from openai import OpenAI, AsyncOpenAI
-
-# Fixture for synchronous OpenAI client
-@pytest.fixture
-def client():
-    api_key = "your_api_key_here"  # Test string for api_key
-    return OpenAI(api_key=api_key)
-
-# Fixture for asynchronous OpenAI client
-@pytest.fixture
-async def async_client():
-    api_key = "your_api_key_here"  # Test string for api_key
-    return AsyncOpenAI(api_key=api_key)
 
 def pytest_addoption(parser):
     parser.addoption(
