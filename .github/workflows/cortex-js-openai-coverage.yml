@@ -59,7 +59,7 @@ jobs:
           pip3 install pytest-reportportal pytest-html
           
           cat ../coverage/conftest.py >> tests/conftest.py
-          cat ../coverage/endpoint_mapping.json >> tests/endpoint_mapping.json
+          cat ../coverage/endpoint_mapping.json >> tests/endpoints_mapping.json
           cat ../coverage/pytest.ini >> pytest.ini
           echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
