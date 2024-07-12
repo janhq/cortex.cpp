@@ -64,7 +64,7 @@ jobs:
           echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
 
-          pytest --continue-on-collection-errors --endpoint "$ENDPOINTS" --reportportal --html=report.html -v || true
+          pytest --endpoint "$ENDPOINTS" --reportportal --html=report.html -v || true
           kill $cortex_pid
           deactivate
         env:
