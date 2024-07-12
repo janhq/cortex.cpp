@@ -135,7 +135,7 @@ See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
 ```
 
 ## Contact Support
-- For support, please file a GitHub ticket.
+- For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
 
