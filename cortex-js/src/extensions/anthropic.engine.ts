@@ -37,8 +37,6 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
       this.name,
     )) as unknown as { apiKey: string };
     this.apiKey = configs?.apiKey;
-    if (!configs?.apiKey)
-      await this.configsUsecases.saveConfig('apiKey', '', this.name);
   }
 
   override async inference(dto: any, headers: Record<string, string>): Promise<stream.Readable | any> {
