@@ -19,6 +19,9 @@ export const sqliteDatabaseProviders = [
         logging: false,
       });
       sequelize.addModels([ThreadEntity, MessageEntity, AssistantEntity]);
+      await ThreadEntity.sync();
+      await MessageEntity.sync();
+      await AssistantEntity.sync();
       return sequelize;
     },
   },
