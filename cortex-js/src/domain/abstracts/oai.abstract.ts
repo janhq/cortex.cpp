@@ -20,7 +20,12 @@ export abstract class OAIEngineExtension extends EngineExtension {
   ): Promise<stream.Readable | any> {
     const payload = this.transformPayload ? this.transformPayload(createChatDto) : createChatDto;
     const { stream: isStream } = payload;
-    const additionalHeaders = _.omit(headers, ['content-type', 'authorization']);
+    const contentType = headers['content-type'] ?? 'application/json';
+    const additionalHeaders = _.omit(headers, [
+      'content-type',
+      'authorization',
+      'content-length'
+    ]);
     const response = await firstValueFrom(
       this.httpService.post(this.apiUrl, payload, {
         headers: {
@@ -33,11 +38,11 @@ export abstract class OAIEngineExtension extends EngineExtension {
         responseType: isStream ? 'stream' : 'json',
       }),
     );
-    
+
     if (!response) {
       throw new Error('No response');
     }
-    if(!this.transformResponse) {
+    if (!this.transformResponse) {
       return response.data;
     }
     if (isStream) {
@@ -55,7 +60,7 @@ export abstract class OAIEngineExtension extends EngineExtension {
             }
           }
           callback(null, transformedLines.join(''));
-        }
+        },
       });
       return response.data.pipe(lineStream);
     }
