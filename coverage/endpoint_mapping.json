@@ -1,6 +1,6 @@
 {
     "/embeddings": [
-      "test_embedding.py"
+      "test_embeddings.py"
     ],
     "/audio/translations": [
       "test_translations.py"
