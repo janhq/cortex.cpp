@@ -13,11 +13,11 @@
 ## About
 Cortex is an OpenAI-compatible AI engine that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and client libraries. It can be used as a standalone server or imported as a library. 
 
-Cortex currently supports 3 inference engines:
-
-- Llama.cpp
-- ONNX Runtime
-- TensorRT-LLM
+## Cortex Engines
+Cortex supports the following engines:
+- [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp): `cortex.llamacpp` library is a C++ inference tool that can be dynamically loaded by any server at runtime. We use this engine to support GGUF inference with GGUF models. The `llama.cpp` is optimized for performance on both CPU and GPU.
+- [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx): `cortex.onnx` is a C++ inference library for Windows that leverages `onnxruntime-genai` and uses DirectML to provide GPU acceleration across a wide range of hardware and drivers, including AMD, Intel, NVIDIA, and Qualcomm GPUs.
+- [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm): `cortex.tensorrt-llm` is a C++ inference library designed for NVIDIA GPUs. It incorporates NVIDIA’s TensorRT-LLM for GPU-accelerated inference.
 
 ## Quicklinks
 
@@ -26,7 +26,10 @@ Cortex currently supports 3 inference engines:
 
 ## Quickstart
 ### Prerequisites
-Ensure that your system meets the following requirements to run Cortex:
+- **OS**:
+  - MacOSX 13.6 or higher.
+  - Windows 10 or higher.
+  - Ubuntu 22.04 and later.
 - **Dependencies**:
   - **Node.js**: Version 18 and above is required to run the installation.
   - **NPM**: Needed to manage packages.
@@ -35,16 +38,10 @@ Ensure that your system meets the following requirements to run Cortex:
     ```bash
     sudo apt install openmpi-bin libopenmpi-dev
     ```
-- **OS**:
-  - MacOSX 13.6 or higher.
-  - Windows 10 or higher.
-  - Ubuntu 22.04 and later.
 
 > Visit [Quickstart](https://cortex.so/docs/quickstart) to get started.
 
-
 ### NPM
-Install using NPM package:
 ``` bash
 # Install using NPM
 npm i -g cortexso
@@ -55,7 +52,6 @@ npm uninstall -g cortexso
 ```
 
 ### Homebrew
-Install using Homebrew:
 ``` bash
 # Install using Brew
 brew install cortexso
@@ -66,7 +62,7 @@ brew uninstall cortexso
 ```
 > You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
 
-To run Cortex as an API server:
+## Cortex Server
 ```bash
 cortex serve
 
@@ -139,6 +135,8 @@ See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
 ```
 
 ## Contact Support
-- For support, please file a GitHub ticket.
+- For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
+
+
