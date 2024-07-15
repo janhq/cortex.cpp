@@ -321,12 +321,14 @@ export class ModelsUsecases {
    * @param modelId
    */
   async pullModel(
-    modelId: string,
+    originModelId: string,
     inSequence: boolean = true,
     selection?: (
       siblings: HuggingFaceRepoSibling[],
     ) => Promise<HuggingFaceRepoSibling>,
+    persistedModelId?: string,
   ) {
+    const modelId = persistedModelId ?? originModelId;
     const existingModel = await this.findOne(modelId);
     if (isLocalModel(existingModel?.files)) {
       throw new BadRequestException('Model already exists');
@@ -341,10 +343,10 @@ export class ModelsUsecases {
     const modelFolder = join(modelsContainerDir, normalizeModelId(modelId));
     await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
 
-    let files = (await fetchJanRepoData(modelId)).siblings;
+    let files = (await fetchJanRepoData(originModelId)).siblings;
     
     // HuggingFace GGUF Repo - Only one file is downloaded
-    if (modelId.includes('/') && selection && files.length) {
+    if (originModelId.includes('/') && selection && files.length) {
       try {
       files = [await selection(files)];
       } catch (e) {
@@ -409,8 +411,6 @@ export class ModelsUsecases {
           model.model = modelId;
           if (!(await this.findOne(modelId))) await this.create(model);
         } else {
-          // Fallback if model.yml is not found & is a GGUF file
-          const data = await this.fetchModelMetadata(modelId);
           await this.populateHuggingFaceModel(modelId, files[0]);
           const model = await this.findOne(modelId);
           if (model) {
