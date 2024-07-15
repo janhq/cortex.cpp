@@ -326,9 +326,9 @@ export class ModelsUsecases {
     selection?: (
       siblings: HuggingFaceRepoSibling[],
     ) => Promise<HuggingFaceRepoSibling>,
-    customModelId?: string,
+    persistedModelId?: string,
   ) {
-    const modelId = customModelId ?? hfModelId;
+    const modelId = persistedModelId ?? hfModelId;
     const existingModel = await this.findOne(modelId);
     if (isLocalModel(existingModel?.files)) {
       throw new BadRequestException('Model already exists');
