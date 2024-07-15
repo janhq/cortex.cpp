@@ -120,7 +120,7 @@ export class ModelsController {
   })
 
   @Get('download/:modelId(*)')
-  downloadModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string) {
+  downloadModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string, @Query('customModelId') customModelId: string) {
     this.modelsUsecases.pullModel(modelId, false, (files) => {
       return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
         const file = files
@@ -130,7 +130,7 @@ export class ModelsController {
         }
         return resolve(file);
       });
-    }).then(() => this.telemetryUsecases.addEventToQueue({
+    }, customModelId).then(() => this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
     })
@@ -174,7 +174,7 @@ export class ModelsController {
     description: 'The unique identifier of the model.',
   })
   @Get('pull/:modelId(*)')
-  pullModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string) {
+  pullModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string, @Query('customModelId') customModelId: string) {
     this.modelsUsecases.pullModel(modelId, false, (files) => {
       return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
         const file = files
@@ -184,7 +184,7 @@ export class ModelsController {
         }
         return resolve(file);
       });
-    }).then(() => this.telemetryUsecases.addEventToQueue({
+    }, customModelId).then(() => this.telemetryUsecases.addEventToQueue({
       name: EventName.DOWNLOAD_MODEL,
       modelId,
     })

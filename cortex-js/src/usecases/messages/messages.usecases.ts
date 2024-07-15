@@ -28,19 +28,22 @@ export class MessagesUsecases {
       metadata: undefined,
       assistant_id: assistant_id ?? null,
     };
-    return this.messageRepository.create(message);
+    const messsage = await this.messageRepository.create(message)
+    return messsage.toJSON();
   }
 
   async findAll() {
-    return this.messageRepository.findAll();
+    const messages = await this.messageRepository.findAll();
+    return messages.map((message) => message.toJSON());
   }
 
   async findOne(id: string) {
-    return this.messageRepository.findOne({
+    const message = await this.messageRepository.findOne({
       where: {
         id,
       },
     });
+    return message?.toJSON();
   }
 
   async update(id: string, updateMessageDto: UpdateMessageDto) {
@@ -48,7 +51,7 @@ export class MessagesUsecases {
       where: { id },
       returning: true,
     });
-    return { numberOfAffectedRows, updatedMessage };
+    return { numberOfAffectedRows, updatedMessage: updatedMessage.toJSON() };
   }
 
   async remove(id: string) {
@@ -58,12 +61,13 @@ export class MessagesUsecases {
   }
 
   async getLastMessagesByThread(threadId: string, limit: number) {
-    return this.messageRepository.findAll({
+    const messages = await this.messageRepository.findAll({
       where: {
         thread_id: threadId,
       },
       order: [['created_at', 'DESC']],
       limit: limit,
     });
+    return messages.map((message) => message.toJSON());
   }
 }

@@ -48,14 +48,16 @@ export class ThreadsUsecases {
       metadata: null,
     };
 
-    return this.threadRepository.create(thread);
+    const thead = await this.threadRepository.create(thread);
+    return thead.toJSON();
   }
 
   async findAll(): Promise<Thread[]> {
-    return this.threadRepository.findAll({
+    const threads = await this.threadRepository.findAll({
       include: [{ all: true }],
       order: [['created_at', 'DESC']],
     });
+    return threads.map((thread) => thread.toJSON());
   }
 
   async getMessagesOfThread(
@@ -86,7 +88,7 @@ export class ThreadsUsecases {
     const firstId = messages[0]?.id ?? undefined;
     const lastId = messages[messages.length - 1]?.id ?? undefined;
 
-    return new PageDto(messages, hasMore, firstId, lastId);
+    return new PageDto(messages.map(message => message.toJSON()), hasMore, firstId, lastId);
   }
 
   async createMessageInThread(
@@ -121,8 +123,8 @@ export class ThreadsUsecases {
       incomplete_at: null,
     };
 
-    await this.messageRepository.create(message);
-    return message;
+    const createdMessage = await this.messageRepository.create(message);
+    return createdMessage.toJSON();
   }
 
   async updateMessage(
@@ -132,7 +134,8 @@ export class ThreadsUsecases {
   ) {
     await this.getThreadOrThrow(threadId);
     await this.messageRepository.update(updateMessageDto, { where: { id: messageId } });
-    return this.messageRepository.findOne({ where: { id: messageId } });
+    const updatedMessage =  await this.messageRepository.findOne({ where: { id: messageId } });
+    return updatedMessage?.toJSON();
   }
 
   private async getThreadOrThrow(threadId: string): Promise<Thread> {
@@ -140,7 +143,7 @@ export class ThreadsUsecases {
     if (!thread) {
       throw new NotFoundException(`Thread with id ${threadId} not found`);
     }
-    return thread;
+    return thread.toJSON();
   }
 
   private async getMessageOrThrow(messageId: string): Promise<Message> {
@@ -150,7 +153,7 @@ export class ThreadsUsecases {
     if (!message) {
       throw new NotFoundException(`Message with id ${messageId} not found`);
     }
-    return message;
+    return message.toJSON();
   }
 
   findOne(id: string) {
