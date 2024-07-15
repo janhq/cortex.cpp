@@ -41,8 +41,7 @@ export class AssistantsUsecases {
       throw err;
     }
 
-    const result = await this.findOne(id);
-    return result?.toJSON();
+    return this.findOne(id);
   }
 
   async listAssistants(
@@ -76,19 +75,17 @@ export class AssistantsUsecases {
     const firstId = assistants[0]?.id ?? undefined;
     const lastId = assistants[assistants.length - 1]?.id ?? undefined;
 
-    return new PageDto(assistants.map(assistant => assistant.toJSON()), hasMore, firstId, lastId);
+    return new PageDto(assistants, hasMore, firstId, lastId);
   }
 
   async findAll(): Promise<Assistant[]> {
-    const assistants = await this.assistantRepository.findAll();
-    return assistants.map((assistant) => assistant.toJSON());
+    return this.assistantRepository.findAll();
   }
 
   async findOne(id: string) {
-    const assistant = await this.assistantRepository.findOne({
+    return this.assistantRepository.findOne({
       where: { id },
     });
-    return assistant?.toJSON();
   }
 
   async remove(id: string) {
