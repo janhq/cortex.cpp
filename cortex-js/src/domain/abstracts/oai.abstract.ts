@@ -18,7 +18,9 @@ export abstract class OAIEngineExtension extends EngineExtension {
     createChatDto: any,
     headers: Record<string, string>,
   ): Promise<stream.Readable | any> {
-    const payload = this.transformPayload ? this.transformPayload(createChatDto) : createChatDto;
+    const payload = this.transformPayload
+      ? this.transformPayload(createChatDto)
+      : createChatDto;
     const { stream: isStream } = payload;
     const additionalHeaders = _.omit(headers, [
       'content-type',
