@@ -10,7 +10,7 @@ import {
 
 export class ModelDto implements Partial<Model> {
   @ApiProperty({
-    example: 'llama3',
+    example: 'mistral',
     description:
       'The model identifier, which can be referenced in the API endpoints.',
   })
@@ -19,7 +19,7 @@ export class ModelDto implements Partial<Model> {
 
   // Prompt Settings
   @ApiProperty({
-    example: 'system\n{system_message}\nuser\n{prompt}\nassistant',
+    example: `You are an expert in {subject}. Provide a detailed and thorough explanation on the topic of {topic}.`,
     description:
       "A predefined text or framework that guides the AI model's response generation.",
   })
@@ -28,7 +28,7 @@ export class ModelDto implements Partial<Model> {
 
   @ApiProperty({
     type: [String],
-    example: [],
+    example: ["End"],
     description:
       'Defines specific tokens or phrases that signal the model to stop producing further output.',
   })
@@ -116,6 +116,7 @@ export class ModelDto implements Partial<Model> {
 
   @ApiProperty({
     description: 'The prompt to use for internal configuration',
+    example: "You are an assistant with expert knowledge in {subject}. Please provide a detailed and accurate response to the following query: {query}. Ensure that your response is clear, concise, and informative."
   })
   @IsOptional()
   @IsString()

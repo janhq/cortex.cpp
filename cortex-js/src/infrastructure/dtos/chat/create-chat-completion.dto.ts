@@ -22,7 +22,7 @@ export class CreateChatCompletionDto {
 
   @ApiProperty({
     description: 'The unique identifier of the model.',
-    example: 'gpt-4',
+    example: 'mistral',
   })
   @IsString()
   model: string;
