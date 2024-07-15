@@ -5,10 +5,8 @@ import { Response } from 'express';
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { ChatCompletionResponseDto } from '../dtos/chat/chat-completion-response.dto';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
-import {
-  EventName,
-  TelemetrySource,
-} from '@/domain/telemetry/telemetry.interface';
+import { EventName } from '@/domain/telemetry/telemetry.interface';
+import { extractCommonHeaders } from '@/utils/request';
 
 @ApiTags('Inference')
 @Controller('chat')
@@ -20,7 +18,8 @@ export class ChatController {
 
   @ApiOperation({
     summary: 'Create chat completion',
-    description: 'Creates a model response for the given conversation. The following parameters are not working for the `TensorRT-LLM` engine:\n- `frequency_penalty`\n- `presence_penalty`\n- `top_p`',
+    description:
+      'Creates a model response for the given conversation. The following parameters are not working for the `TensorRT-LLM` engine:\n- `frequency_penalty`\n- `presence_penalty`\n- `top_p`',
   })
   @HttpCode(200)
   @ApiResponse({
@@ -38,7 +37,7 @@ export class ChatController {
 
     if (stream) {
       this.chatService
-        .inference(createChatDto, headers)
+        .inference(createChatDto, extractCommonHeaders(headers))
         .then((stream) => {
           res.header('Content-Type', 'text/event-stream');
           stream.pipe(res);
@@ -49,7 +48,7 @@ export class ChatController {
     } else {
       res.header('Content-Type', 'application/json');
       this.chatService
-        .inference(createChatDto, headers)
+        .inference(createChatDto, extractCommonHeaders(headers))
         .then((response) => {
           res.json(response);
         })
