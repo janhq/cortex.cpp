@@ -12,7 +12,7 @@
     "install": "prebuild-install --runtime napi --backend cmake-js --config Release || cmake-js rebuild --config Release",
     "build": "cmake-js configure --config Release && cmake-js build --config Release",
     "rebuild": "cmake-js rebuild --config Release",
-    "prebuild": "prebuild --runtime napi --backend cmake-js --all --strip --verbose --config Release",
+    "prebuild": "prebuild --runtime napi --backend cmake-js --all --strip --verbose --config Release --include-regex \"\\.(node|exp|lib|so)$\"",
     "upload": "prebuild --runtime napi --backend cmake-js --upload ${GITHUB_TOKEN}"
   },
   "author": "Jan <service@jan.ai>",
