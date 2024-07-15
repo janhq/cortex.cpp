@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEmbeddingsDto {
   @ApiProperty({
-    example: 'llama3',
+    example: 'mistral',
     description: 'The name of the embedding model to be used.',
     type: String,
   })

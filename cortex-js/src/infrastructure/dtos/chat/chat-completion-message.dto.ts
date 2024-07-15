@@ -8,6 +8,7 @@ export class ChatCompletionMessage {
 
   @ApiProperty({
     description: 'The role of the entity in the chat completion.',
+    example: 'user'
   })
   role: 'user' | 'assistant';
 }

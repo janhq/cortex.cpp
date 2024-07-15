@@ -33,7 +33,7 @@ export class CreateThreadAssistantDto implements Assistant {
   name: string;
 
   @ApiProperty({
-    example: 'llama3',
+    example: 'mistral',
     description: 'The model\'s unique identifier and settings.',
     type: 'string',
   })
