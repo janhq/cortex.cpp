@@ -11,6 +11,7 @@ import { Presets, SingleBar } from 'cli-progress';
 import { createWriteStream } from 'node:fs';
 import { basename } from 'node:path';
 import { firstValueFrom } from 'rxjs';
+import crypto from 'crypto';
 
 @Injectable()
 export class DownloadManagerService {
@@ -41,7 +42,13 @@ export class DownloadManagerService {
     downloadId: string,
     title: string,
     downloadType: DownloadType,
-    urlToDestination: Record<string, string>,
+    urlToDestination: Record<
+      string,
+      {
+        destination: string;
+        checksum?: string;
+      }
+    >,
     finishedCallback?: () => Promise<void>,
     inSequence: boolean = true,
   ) {
@@ -52,10 +59,10 @@ export class DownloadManagerService {
     ) {
       return;
     }
-
+    console.log('asdfsdf', urlToDestination);
     const downloadItems: DownloadItem[] = Object.keys(urlToDestination).map(
       (url) => {
-        const destination = urlToDestination[url];
+        const { destination, checksum } = urlToDestination[url];
         const downloadItem: DownloadItem = {
           id: destination,
           time: {
@@ -67,6 +74,7 @@ export class DownloadManagerService {
             transferred: 0,
           },
           status: DownloadStatus.Downloading,
+          checksum,
         };
 
         return downloadItem;
@@ -105,15 +113,15 @@ export class DownloadManagerService {
     if (!inSequence) {
       return Promise.all(
         Object.keys(urlToDestination).map((url) => {
-          const destination = urlToDestination[url];
-          return this.downloadFile(downloadId, url, destination);
+          const { destination, checksum } = urlToDestination[url];
+          return this.downloadFile(downloadId, url, destination, checksum);
         }),
       ).then(callBack);
     } else {
       // Download model file in sequence
       for (const url of Object.keys(urlToDestination)) {
-        const destination = urlToDestination[url];
-        await this.downloadFile(downloadId, url, destination);
+        const { destination, checksum } = urlToDestination[url];
+        await this.downloadFile(downloadId, url, destination, checksum);
       }
       return callBack();
     }
@@ -123,11 +131,18 @@ export class DownloadManagerService {
     downloadId: string,
     url: string,
     destination: string,
+    checksum?: string,
   ) {
+    console.log('Downloading', {
+      downloadId,
+      url,
+      destination,
+      checksum,
+    });
     const controller = new AbortController();
     // adding to abort controllers
     this.abortControllers[downloadId][destination] = controller;
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>(async (resolve) => {
       const response = await firstValueFrom(
         this.httpService.get(url, {
           responseType: 'stream',
@@ -141,6 +156,7 @@ export class DownloadManagerService {
       }
 
       const writer = createWriteStream(destination);
+      const hash = crypto.createHash('sha256');
       const totalBytes = Number(response.headers['content-length']);
 
       // update download state
@@ -177,8 +193,18 @@ export class DownloadManagerService {
           const downloadItem = currentDownloadState?.children.find(
             (downloadItem) => downloadItem.id === destination,
           );
+          const isFileBroken = checksum && checksum === hash.digest('hex');
           if (downloadItem) {
-            downloadItem.status = DownloadStatus.Downloaded;
+            downloadItem.status = isFileBroken
+              ? DownloadStatus.Error
+              : DownloadStatus.Downloaded;
+            if (isFileBroken) {
+              downloadItem.error = 'Checksum is not matched';
+            }
+          }
+          if (isFileBroken) {
+            currentDownloadState.status = DownloadStatus.Error;
+            currentDownloadState.error = 'Checksum is not matched';
           }
 
           this.eventEmitter.emit('download.event', this.allDownloadStates);
@@ -219,6 +245,7 @@ export class DownloadManagerService {
       });
 
       response.data.on('data', (chunk: any) => {
+        hash.update(chunk);
         transferredBytes += chunk.length;
 
         const currentDownloadState = this.allDownloadStates.find(

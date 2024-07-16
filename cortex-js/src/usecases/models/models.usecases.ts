@@ -344,11 +344,11 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
 
     let files = (await fetchJanRepoData(originModelId)).siblings;
-    
+
     // HuggingFace GGUF Repo - Only one file is downloaded
     if (originModelId.includes('/') && selection && files.length) {
       try {
-      files = [await selection(files)];
+        files = [await selection(files)];
       } catch (e) {
         const modelEvent: ModelEvent = {
           model: modelId,
@@ -363,14 +363,36 @@ export class ModelsUsecases {
     }
 
     // Start downloading the model
-    const toDownloads: Record<string, string> = files
+    console.log('Downloading model:', modelId, files);
+    const toDownloads: Record<
+      string,
+      {
+        destination: string;
+        checksum?: string;
+      }
+    > = files
       .filter((e) => this.validFileDownload(e))
-      .reduce((acc: Record<string, string>, file) => {
-        if (file.downloadUrl)
-          acc[file.downloadUrl] = join(modelFolder, file.rfilename);
-        return acc;
-      }, {});
-
+      .reduce(
+        (
+          acc: Record<
+            string,
+            {
+              destination: string;
+              checksum?: string;
+            }
+          >,
+          file,
+        ) => {
+          if (file.downloadUrl)
+            acc[file.downloadUrl] = {
+              destination: join(modelFolder, file.rfilename),
+              checksum: file.lfs.oid,
+            };
+          return acc;
+        },
+        {},
+      );
+    console.log('Downloading model:', toDownloads);
     return this.downloadManagerService.submitDownloadRequest(
       modelId,
       modelId,
