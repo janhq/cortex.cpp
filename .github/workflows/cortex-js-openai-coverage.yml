@@ -63,12 +63,13 @@ jobs:
           cat ../coverage/pytest.ini >> pytest.ini
           echo "rp_api_key = ${{ secrets.RP_API_KEY }}" >> pytest.ini
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
-
+          
           pytest --endpoint "$ENDPOINTS" --reportportal --html=report.html -v || true
           kill $cortex_pid
           deactivate
         env:
           ENDPOINTS: ${{ github.event.inputs.endpoints }}
+          TEST_API_BASE_URL: http://127.0.0.1:4010/v1
 
 
       - name: Collect RP artifacts
