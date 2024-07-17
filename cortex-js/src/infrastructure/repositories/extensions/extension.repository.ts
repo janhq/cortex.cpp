@@ -7,8 +7,10 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { existsSync } from 'fs';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
-import CortexProvider from '@/infrastructure/providers/cortex/cortex.provider';
 import { HttpService } from '@nestjs/axios';
+import LlamaCPPProvider from '@/infrastructure/providers/cortex/llamacpp.provider';
+import Onnxprovider from '@/infrastructure/providers/cortex/onnx.provider';
+import TensorrtLLMProvider from '@/infrastructure/providers/cortex/tensorrtllm.provider';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -44,7 +46,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   private async loadCoreExtensions() {
-    const llamaCPPEngine = new CortexProvider(
+    const llamaCPPEngine = new LlamaCPPProvider(
       this.httpService,
       this.fileManagerService,
     );
@@ -56,7 +58,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       ),
     );
 
-    const onnxEngine = new CortexProvider(
+    const onnxEngine = new Onnxprovider(
       this.httpService,
       this.fileManagerService,
     );
@@ -68,7 +70,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       ),
     );
 
-    const tensorrtLLMEngine = new CortexProvider(
+    const tensorrtLLMEngine = new TensorrtLLMProvider(
       this.httpService,
       this.fileManagerService,
     );
