@@ -7,9 +7,8 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
-  name: 'init',
+  name: '<name> init',
   description: 'Setup engine',
-  arguments: '<name>',
   argsDescription: {
     name: 'Engine name to setup',
   },
@@ -49,7 +48,7 @@ export class EnginesInitCommand extends CommandRunner {
         params,
         engine.includes('@') ? engine.split('@')[1] : 'latest',
         engine,
-        true
+        true,
       )
       .then(() => console.log('Engine installed successfully!'))
       .catch((e) =>
