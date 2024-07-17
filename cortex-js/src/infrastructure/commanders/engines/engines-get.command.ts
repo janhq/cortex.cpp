@@ -4,9 +4,8 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 
 @SubCommand({
-  name: 'get',
+  name: '<name> get',
   description: 'Get an engine',
-  arguments: '<name>',
   argsDescription: {
     name: 'Engine name to get',
   },

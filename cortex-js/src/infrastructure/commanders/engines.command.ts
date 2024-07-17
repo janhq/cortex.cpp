@@ -5,6 +5,8 @@ import { EnginesListCommand } from './engines/engines-list.command';
 import { EnginesGetCommand } from './engines/engines-get.command';
 import { EnginesInitCommand } from './engines/engines-init.command';
 import { ModuleRef } from '@nestjs/core';
+import { EngineNamesMap } from './types/engine.interface';
+import _ from 'lodash';
 
 @SubCommand({
   name: 'engines',
@@ -14,26 +16,33 @@ import { ModuleRef } from '@nestjs/core';
 })
 @SetCommandContext()
 export class EnginesCommand extends CommandRunner {
+  commandMap: { [key: string]: any } = {
+    list: EnginesListCommand,
+    get: EnginesGetCommand,
+    init: EnginesInitCommand,
+  };
+
   constructor(
     readonly contextService: ContextService,
     private readonly moduleRef: ModuleRef,
   ) {
     super();
   }
-
   async run(passedParam: string[]): Promise<void> {
     const [parameter, command] = passedParam;
-    if (command === 'init' && !parameter) {
-      console.error('Parameter is required for the init command.');
+    if (command !== 'list' && !parameter) {
+      console.error('Engine name is required.');
       return;
     }
 
     // Handle the commands accordingly
-    if (command === 'init') {
-      await this.runCommand(EnginesInitCommand, [parameter]);
-    } else {
+    const commandClass = this.commandMap[command as string];
+    if (!commandClass) {
       this.command?.help();
+      return;
     }
+    const engine = _.invert(EngineNamesMap)[parameter] || parameter;
+    await this.runCommand(commandClass, [engine]);
   }
 
   private async runCommand(commandClass: any, params: string[] = []) {
