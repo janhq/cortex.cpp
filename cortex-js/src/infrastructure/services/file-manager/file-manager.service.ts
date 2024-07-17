@@ -284,8 +284,6 @@ export class FileManagerService {
   }
   async writeFile(filePath: string, data: any): Promise<void> {
     try {
-      const dirPath = filePath.split('/').slice(0, -1).join('/');
-      await this.createFolderIfNotExistInDataFolder(dirPath);
       return promises.writeFile(filePath, data, {
         encoding: 'utf8',
         flag: 'w+',
