@@ -22,7 +22,6 @@ export class EnginesCommand extends CommandRunner {
   }
 
   async run(passedParam: string[]): Promise<void> {
-    console.log('Engines command');
     const [parameter, command] = passedParam;
     if (command === 'init' && !parameter) {
       console.error('Parameter is required for the init command.');
