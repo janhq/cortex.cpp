@@ -1,3 +1,4 @@
+import { invert } from 'lodash';
 import { CommandRunner, SubCommand } from 'nest-commander';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
@@ -6,7 +7,6 @@ import { EnginesGetCommand } from './engines/engines-get.command';
 import { EnginesInitCommand } from './engines/engines-init.command';
 import { ModuleRef } from '@nestjs/core';
 import { EngineNamesMap } from './types/engine.interface';
-import _ from 'lodash';
 
 @SubCommand({
   name: 'engines',
@@ -41,7 +41,7 @@ export class EnginesCommand extends CommandRunner {
       this.command?.help();
       return;
     }
-    const engine = _.invert(EngineNamesMap)[parameter] || parameter;
+    const engine = invert(EngineNamesMap)[parameter] || parameter;
     await this.runCommand(commandClass, [engine]);
   }
 
