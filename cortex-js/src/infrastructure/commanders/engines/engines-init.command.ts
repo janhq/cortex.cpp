@@ -1,10 +1,10 @@
 import { CommandRunner, Option, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 
 @SubCommand({
   name: '<name> init',
@@ -16,7 +16,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 @SetCommandContext()
 export class EnginesInitCommand extends CommandRunner {
   constructor(
-    private readonly initUsecases: InitCliUsecases,
+    private readonly engineUsecases: EnginesUsecases,
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileManagerService: FileManagerService,
     readonly contextService: ContextService,
@@ -31,7 +31,7 @@ export class EnginesInitCommand extends CommandRunner {
     const engine = passedParams[0];
     const params = passedParams.includes(Engines.llamaCPP)
       ? {
-          ...(await this.initUsecases.defaultInstallationOptions()),
+          ...(await this.engineUsecases.defaultInstallationOptions()),
           ...options,
         }
       : {};
@@ -43,7 +43,8 @@ export class EnginesInitCommand extends CommandRunner {
     if (await this.cortexUsecases.healthCheck(host, port)) {
       await this.cortexUsecases.stopCortex();
     }
-    return this.initUsecases
+    console.log(`Installing engine ${engine}...`);
+    return this.engineUsecases
       .installEngine(
         params,
         engine.includes('@') ? engine.split('@')[1] : 'latest',

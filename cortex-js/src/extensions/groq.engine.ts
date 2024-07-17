@@ -14,6 +14,7 @@ export default class GroqEngineExtension extends OAIEngineExtension {
   productName = 'Groq Inference Engine';
   description = 'This extension enables fast Groq chat completion API calls';
   version = '0.0.1';
+  initalized = true;
   apiKey?: string;
 
   constructor(

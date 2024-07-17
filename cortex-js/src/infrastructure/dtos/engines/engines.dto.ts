@@ -1,6 +1,6 @@
 import { Extension } from '@/domain/abstracts/extension.abstract';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class EngineDto implements Partial<Extension> {
   @ApiProperty({
@@ -38,4 +38,12 @@ export class EngineDto implements Partial<Extension> {
   @IsString()
   @IsOptional()
   version?: string;
+
+  @ApiProperty({
+    type: String,
+    example: true,
+    description: 'Whether the engine is initialized or not.',
+  })
+  @IsBoolean()
+  initalized?: boolean;
 }

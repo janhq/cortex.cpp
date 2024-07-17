@@ -14,6 +14,7 @@ export default class OpenAIEngineExtension extends OAIEngineExtension {
   productName = 'OpenAI Inference Engine';
   description = 'This extension enables OpenAI chat completion API calls';
   version = '0.0.1';
+  initalized = true;
   apiKey?: string;
 
   constructor(

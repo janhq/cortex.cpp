@@ -107,7 +107,6 @@ export class FileManagerService {
 
     return {
       dataFolderPath,
-      initialized: false,
       cortexCppHost: defaultCortexCppHost,
       cortexCppPort: defaultCortexCppPort,
     };

@@ -393,7 +393,7 @@ export class ModelsUsecases {
               llamaModelFile(model.files),
             );
             model.files = [fileUrl];
-            model.name = modelId.replace(':default', '');
+            model.name = modelId.replace(':main', '');
           } else if (model.engine === Engines.llamaCPP) {
             model.files = [
               join(
@@ -424,7 +424,7 @@ export class ModelsUsecases {
             );
             await this.update(modelId, {
               files: [fileUrl],
-              name: modelId.replace(':default', ''),
+              name: modelId.replace(':main', ''),
             });
           }
         }

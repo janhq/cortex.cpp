@@ -69,4 +69,5 @@ export interface DownloadStateEvent {
 export enum DownloadType {
   Model = 'model',
   Miscelanous = 'miscelanous',
+  Engine = 'engine'
 }
