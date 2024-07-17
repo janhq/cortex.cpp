@@ -27,7 +27,7 @@ export class EnginesGetCommand extends CommandRunner {
       } else {
         console.table({
           ...engine,
-          name: EngineNamesMap[engine.name as Engines],
+          name: EngineNamesMap[engine.name as Engines] || engine.name,
         });
       }
     });

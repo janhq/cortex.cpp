@@ -2,7 +2,7 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
-import { EngineNamesMap, Engines } from '../types/engine.interface';
+import { EngineNamesMap } from '../types/engine.interface';
 
 @SubCommand({
   name: 'list',
@@ -21,7 +21,7 @@ export class EnginesListCommand extends CommandRunner {
     return this.enginesUsecases.getEngines().then((engines) => {
       const enginesTable = engines.map((engine) => ({
         ...engine,
-        name: EngineNamesMap[engine.name as Engines],
+        name: EngineNamesMap[engine.name as string] || engine.name,
       }));
       console.table(enginesTable);
     });

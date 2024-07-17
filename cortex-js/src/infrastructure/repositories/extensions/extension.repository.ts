@@ -7,8 +7,10 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { existsSync } from 'fs';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
-import CortexProvider from '@/infrastructure/providers/cortex/cortex.provider';
 import { HttpService } from '@nestjs/axios';
+import LlamaCPPProvider from '@/infrastructure/providers/cortex/llamacpp.provider';
+import Onnxprovider from '@/infrastructure/providers/cortex/onnx.provider';
+import TensorrtLLMProvider from '@/infrastructure/providers/cortex/tensorrtllm.provider';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -44,11 +46,10 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   private async loadCoreExtensions() {
-    const llamaCPPEngine = new CortexProvider(
+    const llamaCPPEngine = new LlamaCPPProvider(
       this.httpService,
       this.fileManagerService,
     );
-    llamaCPPEngine.name = Engines.llamaCPP;
     llamaCPPEngine.initalized = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
@@ -56,11 +57,10 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       ),
     );
 
-    const onnxEngine = new CortexProvider(
+    const onnxEngine = new Onnxprovider(
       this.httpService,
       this.fileManagerService,
     );
-    onnxEngine.name = Engines.onnx;
     onnxEngine.initalized = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
@@ -68,11 +68,10 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       ),
     );
 
-    const tensorrtLLMEngine = new CortexProvider(
+    const tensorrtLLMEngine = new TensorrtLLMProvider(
       this.httpService,
       this.fileManagerService,
     );
-    tensorrtLLMEngine.name = Engines.tensorrtLLM;
     tensorrtLLMEngine.initalized = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
