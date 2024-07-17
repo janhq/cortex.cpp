@@ -13,9 +13,9 @@ import { ModelNotFoundException } from '@/infrastructure/exception/model-not-fou
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
+import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 
 type RunOptions = {
   threadId?: string;
@@ -38,7 +38,7 @@ export class RunCommand extends CommandRunner {
     private readonly chatCliUsecases: ChatCliUsecases,
     private readonly inquirerService: InquirerService,
     private readonly fileService: FileManagerService,
-    private readonly initUsecases: InitCliUsecases,
+    private readonly initUsecases: EnginesUsecases,
   ) {
     super();
   }

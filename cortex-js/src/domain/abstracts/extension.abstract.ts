@@ -21,6 +21,9 @@ export abstract class Extension {
   /** @type {string} Extension's version. */
   version?: string;
 
+  /** @type {boolean} Whether the extension is initialized or not. */
+  initalized: boolean;
+
   /**
    * Called when the extension is loaded.
    * Any initialization logic for the extension should be put here.

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { InitCliUsecases } from './init.cli.usecases';
 import { HttpModule } from '@nestjs/axios';
 import { ModelsCliUsecases } from './models.cli.usecases';
 import { ModelsModule } from '@/usecases/models/models.module';
@@ -13,6 +12,8 @@ import { FileManagerModule } from '@/infrastructure/services/file-manager/file-m
 import { PSCliUsecases } from './ps.cli.usecases';
 import { BenchmarkCliUsecases } from './benchmark.cli.usecases';
 import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
+import { DownloadManagerModule } from '@/infrastructure/services/download-manager/download-manager.module';
+import { EnginesModule } from '@/usecases/engines/engines.module';
 
 @Module({
   imports: [
@@ -25,16 +26,16 @@ import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
     MessagesModule,
     FileManagerModule,
     TelemetryModule,
+    DownloadManagerModule,
+    EnginesModule,
   ],
   providers: [
-    InitCliUsecases,
     ModelsCliUsecases,
     ChatCliUsecases,
     PSCliUsecases,
     BenchmarkCliUsecases,
   ],
   exports: [
-    InitCliUsecases,
     ModelsCliUsecases,
     ChatCliUsecases,
     PSCliUsecases,

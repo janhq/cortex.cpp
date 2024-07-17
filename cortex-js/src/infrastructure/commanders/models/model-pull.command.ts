@@ -12,9 +12,9 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { existsSync } from 'fs';
 import { join } from 'node:path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
+import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 
 @SubCommand({
   name: 'pull',
@@ -28,7 +28,7 @@ import { Engines } from '../types/engine.interface';
 export class ModelPullCommand extends CommandRunner {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
-    private readonly initUsecases: InitCliUsecases,
+    private readonly engineUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
@@ -60,7 +60,7 @@ export class ModelPullCommand extends CommandRunner {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      await this.engineUsecases.installEngine(undefined, 'latest', engine);
     }
     this.telemetryUsecases.sendEvent(
       [

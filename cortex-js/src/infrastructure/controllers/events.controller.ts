@@ -61,7 +61,7 @@ export class EventsController {
       'download.event',
     ).pipe(
       map((downloadState) => ({ data: downloadState })),
-      throttleTime(1000),
+      throttleTime(1000, undefined, { trailing: true }),
     );
 
     return merge(

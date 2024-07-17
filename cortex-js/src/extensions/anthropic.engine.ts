@@ -16,6 +16,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
   productName = 'Anthropic Inference Engine';
   description = 'This extension enables Anthropic chat completion API calls';
   version = '0.0.1';
+  initalized = true;
   apiKey?: string;
 
   constructor(
@@ -39,42 +40,45 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     this.apiKey = configs?.apiKey;
   }
 
-  override async inference(dto: any, headers: Record<string, string>): Promise<stream.Readable | any> {
-    headers['x-api-key'] = this.apiKey as string
-    headers['Content-Type'] = 'application/json'
-    headers['anthropic-version'] = '2023-06-01'
-    return super.inference(dto, headers)
+  override async inference(
+    dto: any,
+    headers: Record<string, string>,
+  ): Promise<stream.Readable | any> {
+    headers['x-api-key'] = this.apiKey as string;
+    headers['Content-Type'] = 'application/json';
+    headers['anthropic-version'] = '2023-06-01';
+    return super.inference(dto, headers);
   }
 
   transformPayload = (data: any): any => {
     return _.pick(data, ['messages', 'model', 'stream', 'max_tokens']);
-  }
+  };
 
   transformResponse = (data: any): string => {
     // handling stream response
     if (typeof data === 'string' && data.trim().length === 0) {
-        return '';
+      return '';
     }
     if (typeof data === 'string' && data.startsWith('event: ')) {
-        return ''
+      return '';
     }
     if (typeof data === 'string' && data.startsWith('data: ')) {
       data = data.replace('data: ', '');
       const parsedData = JSON.parse(data);
       if (parsedData.type !== 'content_block_delta') {
-        return ''
+        return '';
       }
       const text = parsedData.delta?.text;
       //convert to have this format data.choices[0]?.delta?.content
       return JSON.stringify({
         choices: [
-            {
-                delta: {
-                content: text
-                }
-            }
-        ]
-      })
+          {
+            delta: {
+              content: text,
+            },
+          },
+        ],
+      });
     }
     // non-stream response
     if (data.content && data.content.length > 0 && data.content[0].text) {
@@ -88,8 +92,8 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
         ],
       });
     }
-  
+
     console.error('Invalid response format:', data);
     return '';
-  }
+  };
 }

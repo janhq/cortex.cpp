@@ -4,17 +4,22 @@ import {
   Param,
   HttpCode,
   UseInterceptors,
+  Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { EngineDto } from '../dtos/engines/engines.dto';
+import { CommonResponseDto } from '../dtos/common/common-response.dto';
 
 @ApiTags('Engines')
 @Controller('engines')
 @UseInterceptors(TransformInterceptor)
 export class EnginesController {
-  constructor(private readonly enginesUsecases: EnginesUsecases) {}
+  constructor(
+    private readonly enginesUsecases: EnginesUsecases,
+    private readonly initUsescases: EnginesUsecases,
+  ) {}
 
   @HttpCode(200)
   @ApiResponse({
@@ -51,5 +56,29 @@ export class EnginesController {
   @Get(':name(*)')
   findOne(@Param('name') name: string) {
     return this.enginesUsecases.getEngine(name);
+  }
+
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: CommonResponseDto,
+  })
+  @ApiOperation({
+    summary: 'Initialize an engine',
+    description:
+      'Initializes an engine instance with the given name. It will download the engine if it is not available locally.',
+  })
+  @ApiParam({
+    name: 'name',
+    required: true,
+    description: 'The unique identifier of the engine.',
+  })
+  @Post(':name(*)/init')
+  initialize(@Param('name') name: string) {
+    this.initUsescases.installEngine(undefined, 'latest', name, true);
+    return {
+      message: 'Engine initialization started successfully.',
+    };
   }
 }

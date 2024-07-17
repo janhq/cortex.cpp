@@ -14,6 +14,7 @@ export default class MistralEngineExtension extends OAIEngineExtension {
   productName = 'Mistral Inference Engine';
   description = 'This extension enables Mistral chat completion API calls';
   version = '0.0.1';
+  initalized = true;
   apiKey?: string;
 
   constructor(

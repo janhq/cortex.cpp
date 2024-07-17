@@ -10,12 +10,12 @@ import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-import { InitCliUsecases } from '../usecases/init.cli.usecases';
 import { createReadStream, existsSync, statSync, watchFile } from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
+import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -36,7 +36,7 @@ export class ModelStartCommand extends CommandRunner {
     private readonly inquirerService: InquirerService,
     private readonly cortexUsecases: CortexUsecases,
     private readonly modelsCliUsecases: ModelsCliUsecases,
-    private readonly initUsecases: InitCliUsecases,
+    private readonly initUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {

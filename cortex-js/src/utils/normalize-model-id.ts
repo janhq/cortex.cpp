@@ -2,7 +2,7 @@ import { ModelArtifact } from '@/domain/models/model.interface';
 import { getGpuInfo } from './cuda';
 
 export const normalizeModelId = (modelId: string): string => {
-  return modelId.replace(':default', '').replace(/[:/]/g, '-');
+  return modelId.replace(':main', '').replace(/[:/]/g, '-');
 };
 
 export const isLocalModel = (

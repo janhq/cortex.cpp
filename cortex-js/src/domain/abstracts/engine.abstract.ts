@@ -10,6 +10,8 @@ export abstract class EngineExtension extends Extension {
 
   transformResponse?: Function;
 
+  initalized: boolean = false;
+
   abstract inference(
     dto: any,
     headers: Record<string, string>,
