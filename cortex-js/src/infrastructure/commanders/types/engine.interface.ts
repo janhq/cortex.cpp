@@ -9,3 +9,11 @@ export enum Engines {
   openai = 'openai',
   anthropic = 'anthropic',
 }
+
+export const EngineNamesMap: {
+  [key in string]: string;
+} = {
+  [Engines.llamaCPP]: 'llamacpp',
+  [Engines.onnx]: 'onnx',
+  [Engines.tensorrtLLM]: 'tensorrt-llm',
+};

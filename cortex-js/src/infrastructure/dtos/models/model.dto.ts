@@ -28,7 +28,7 @@ export class ModelDto implements Partial<Model> {
 
   @ApiProperty({
     type: [String],
-    example: ["End"],
+    example: ['End'],
     description:
       'Defines specific tokens or phrases that signal the model to stop producing further output.',
   })
@@ -116,7 +116,8 @@ export class ModelDto implements Partial<Model> {
 
   @ApiProperty({
     description: 'The prompt to use for internal configuration',
-    example: "You are an assistant with expert knowledge in {subject}. Please provide a detailed and accurate response to the following query: {query}. Ensure that your response is clear, concise, and informative."
+    example:
+      'You are an assistant with expert knowledge in {subject}. Please provide a detailed and accurate response to the following query: {query}. Ensure that your response is clear, concise, and informative.',
   })
   @IsOptional()
   @IsString()
