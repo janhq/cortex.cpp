@@ -2,6 +2,7 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { EngineNamesMap, Engines } from '../types/engine.interface';
 
 @SubCommand({
   name: '<name> get',
@@ -20,6 +21,15 @@ export class EnginesGetCommand extends CommandRunner {
   }
 
   async run(passedParams: string[]): Promise<void> {
-    return this.engineUsecases.getEngine(passedParams[0]).then(console.table);
+    return this.engineUsecases.getEngine(passedParams[0]).then((engine) => {
+      if (!engine) {
+        console.error('Engine not found.');
+      } else {
+        console.table({
+          ...engine,
+          name: EngineNamesMap[engine.name as Engines],
+        });
+      }
+    });
   }
 }

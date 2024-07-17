@@ -13,7 +13,7 @@ export enum Engines {
 export const EngineNamesMap = {
   [Engines.llamaCPP]: 'llamacpp',
   [Engines.onnx]: 'onnx',
-  [Engines.tensorrtLLM]: 'tensorrtLLM',
+  [Engines.tensorrtLLM]: 'tensorrt-llm',
   [Engines.groq]: 'groq',
   [Engines.mistral]: 'mistral',
   [Engines.openai]: 'openai',
