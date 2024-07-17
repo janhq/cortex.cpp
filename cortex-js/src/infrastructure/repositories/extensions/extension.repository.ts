@@ -50,7 +50,6 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       this.httpService,
       this.fileManagerService,
     );
-    llamaCPPEngine.name = Engines.llamaCPP;
     llamaCPPEngine.initalized = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
@@ -62,7 +61,6 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       this.httpService,
       this.fileManagerService,
     );
-    onnxEngine.name = Engines.onnx;
     onnxEngine.initalized = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
@@ -74,7 +72,6 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       this.httpService,
       this.fileManagerService,
     );
-    tensorrtLLMEngine.name = Engines.tensorrtLLM;
     tensorrtLLMEngine.initalized = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
