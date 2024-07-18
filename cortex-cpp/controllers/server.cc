@@ -32,7 +32,7 @@ server::~server() {}
 void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if(!HasFieldInReq(req, callback, "engine")) {
+  if (!HasFieldInReq(req, callback, "engine")) {
     return;
   }
 
@@ -95,7 +95,7 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if(!HasFieldInReq(req, callback, "engine")) {
+  if (!HasFieldInReq(req, callback, "engine")) {
     return;
   }
 
@@ -126,7 +126,7 @@ void server::UnloadModel(
 void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if(!HasFieldInReq(req, callback, "engine")) {
+  if (!HasFieldInReq(req, callback, "engine")) {
     return;
   }
 
@@ -174,7 +174,9 @@ void server::GetModels(const HttpRequestPtr& req,
     if (e->IsSupported("GetModels")) {
       e->GetModels(req->getJsonObject(),
                    [&resp_data](Json::Value status, Json::Value res) {
-                     resp_data.append(res);
+                     for (auto r : res["data"]) {
+                       resp_data.append(r);
+                     }
                    });
     }
   }
@@ -354,7 +356,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   };
 
   auto resp = cortex_utils::CreateCortexStreamResponse(chunked_content_provider,
-                                                "chat_completions.txt");
+                                                       "chat_completions.txt");
   cb(resp);
 }
 
