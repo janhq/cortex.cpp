@@ -10,6 +10,8 @@ import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { inspect } from 'util';
 import { ModelStat } from './types/model-stat.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from './base.command';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
@@ -26,16 +28,17 @@ interface EmbeddingCommandOptions {
       'Model to use for embedding. If not provided, it will prompt to select from running models.',
   },
 })
-export class EmbeddingCommand extends CommandRunner {
+export class EmbeddingCommand extends BaseCommand {
   constructor(
     private readonly chatCliUsecases: ChatCliUsecases,
     private readonly modelsUsecases: ModelsUsecases,
     private readonly psCliUsecases: PSCliUsecases,
     private readonly inquirerService: InquirerService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
-  async run(
+  async runCommand(
     passedParams: string[],
     options: EmbeddingCommandOptions,
   ): Promise<void> {

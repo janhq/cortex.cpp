@@ -2,6 +2,8 @@ import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from '../base.command';
 
 interface ConfigsSetOption {
   key: string;
@@ -14,15 +16,19 @@ interface ConfigsSetOption {
   description: 'Set a cortex configuration',
 })
 @SetCommandContext()
-export class ConfigsSetCommand extends CommandRunner {
+export class ConfigsSetCommand extends BaseCommand {
   constructor(
     private readonly configsUsecases: ConfigsUsecases,
     readonly contextService: ContextService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: ConfigsSetOption): Promise<void> {
+  async runCommand(
+    passedParams: string[],
+    options: ConfigsSetOption,
+  ): Promise<void> {
     return this.configsUsecases
       .saveConfig(options.key, options.value, options.group)
       .then(() => console.log('Set configuration successfully'));

@@ -1,10 +1,5 @@
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import {
-  CommandRunner,
-  SubCommand,
-  Option,
-  InquirerService,
-} from 'nest-commander';
+import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { exit } from 'node:process';
 import ora from 'ora';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
@@ -16,6 +11,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { BaseCommand } from '../base.command';
 
 type RunOptions = {
   threadId?: string;
@@ -31,7 +27,7 @@ type RunOptions = {
   },
   description: 'Shortcut to start a model and chat',
 })
-export class RunCommand extends CommandRunner {
+export class RunCommand extends BaseCommand {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly cortexUsecases: CortexUsecases,
@@ -40,10 +36,10 @@ export class RunCommand extends CommandRunner {
     private readonly fileService: FileManagerService,
     private readonly initUsecases: EnginesUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: RunOptions): Promise<void> {
+  async runCommand(passedParams: string[], options: RunOptions): Promise<void> {
     let modelId = passedParams[0];
     const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {

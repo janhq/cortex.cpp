@@ -1,8 +1,10 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
+import { BaseCommand } from '../base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @SubCommand({
   name: 'get',
@@ -13,15 +15,16 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
   },
 })
 @SetCommandContext()
-export class ModelGetCommand extends CommandRunner {
+export class ModelGetCommand extends BaseCommand {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
+    readonly cortexUseCases: CortexUsecases,
   ) {
-    super();
+    super(cortexUseCases);
   }
 
-  async run(passedParams: string[]): Promise<void> {
+  async runCommand(passedParams: string[]): Promise<void> {
     if (passedParams.length === 0) {
       console.error('Model ID is required');
       exit(1);

@@ -1,9 +1,4 @@
-import {
-  CommandRunner,
-  SubCommand,
-  Option,
-  InquirerService,
-} from 'nest-commander';
+import { SubCommand, Option, InquirerService } from 'nest-commander';
 import ora from 'ora';
 import { exit } from 'node:process';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
@@ -16,6 +11,7 @@ import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { BaseCommand } from '../base.command';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -31,7 +27,7 @@ type ModelStartOptions = {
   },
 })
 @SetCommandContext()
-export class ModelStartCommand extends CommandRunner {
+export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly cortexUsecases: CortexUsecases,
@@ -40,10 +36,13 @@ export class ModelStartCommand extends CommandRunner {
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: ModelStartOptions): Promise<void> {
+  async runCommand(
+    passedParams: string[],
+    options: ModelStartOptions,
+  ): Promise<void> {
     let modelId = passedParams[0];
     const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {

@@ -1,12 +1,13 @@
 import { CORTEX_JS_STOP_API_SERVER_URL } from '@/infrastructure/constants/cortex';
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
+import { BaseCommand } from '../base.command';
 
 @SubCommand({
   name: 'stop',
   description: 'Stop the API server',
 })
-export class ServeStopCommand extends CommandRunner {
-  async run(): Promise<void> {
+export class ServeStopCommand extends BaseCommand {
+  async runCommand(): Promise<void> {
     return this.stopServer().then(() => console.log('API server stopped'));
   }
 

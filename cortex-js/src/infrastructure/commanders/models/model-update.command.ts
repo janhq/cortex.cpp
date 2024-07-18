@@ -1,9 +1,11 @@
-import { CommandRunner, SubCommand, Option } from 'nest-commander';
+import { SubCommand, Option } from 'nest-commander';
 import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ContextService } from '@/infrastructure/services/context/context.service';
+import { BaseCommand } from '../base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 type UpdateOptions = {
   model?: string;
@@ -19,15 +21,19 @@ type UpdateOptions = {
   },
 })
 @SetCommandContext()
-export class ModelUpdateCommand extends CommandRunner {
+export class ModelUpdateCommand extends BaseCommand {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
+    readonly cortexUseCases: CortexUsecases,
   ) {
-    super();
+    super(cortexUseCases);
   }
 
-  async run(passedParams: string[], option: UpdateOptions): Promise<void> {
+  async runCommand(
+    passedParams: string[],
+    option: UpdateOptions,
+  ): Promise<void> {
     const modelId = option.model;
     if (!modelId) {
       console.error('Model Id is required');

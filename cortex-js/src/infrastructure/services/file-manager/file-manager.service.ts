@@ -41,7 +41,6 @@ export class FileManagerService {
   async getConfig(): Promise<Config & object> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
-
     if (!existsSync(configPath)) {
       const config = this.defaultConfig();
       await this.createFolderIfNotExist(config.dataFolderPath);

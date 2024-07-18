@@ -17,6 +17,8 @@ import {
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '../services/context/context.service';
+import { BaseCommand } from './base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 type ChatOptions = {
   threadId?: string;
@@ -35,7 +37,7 @@ type ChatOptions = {
   },
 })
 @SetCommandContext()
-export class ChatCommand extends CommandRunner {
+export class ChatCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly chatCliUsecases: ChatCliUsecases,
@@ -43,11 +45,15 @@ export class ChatCommand extends CommandRunner {
     private readonly psCliUsecases: PSCliUsecases,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: ChatOptions): Promise<void> {
+  async runCommand(
+    passedParams: string[],
+    options: ChatOptions,
+  ): Promise<void> {
     let modelId = passedParams[0];
     // First attempt to get message from input or options
     // Extract input from 1 to end of array
@@ -59,7 +65,7 @@ export class ChatCommand extends CommandRunner {
       // first input might be message input
       message = passedParams.length
         ? passedParams.join(' ')
-        : options.message ?? '';
+        : (options.message ?? '');
       // If model ID is not provided, prompt user to select from running models
       const models = await this.psCliUsecases.getModels();
       if (models.length === 1) {

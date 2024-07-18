@@ -3,7 +3,6 @@ import { ModelsModule } from './usecases/models/models.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { CortexModule } from './usecases/cortex/cortex.module';
-import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
@@ -44,7 +43,7 @@ import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-s
 import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
-
+import { ServerHealthCheckInterceptor } from './infrastructure/interceptors/server-health-check.interceptor';
 
 @Module({
   imports: [
@@ -73,7 +72,6 @@ import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-
   providers: [
     CortexCommand,
     ModelsCommand,
-    ServeCommand,
     ChatCommand,
     PSCommand,
     KillCommand,
@@ -113,6 +111,7 @@ import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-
     EnginesListCommand,
     EnginesGetCommand,
     EnginesInitCommand,
+    ServerHealthCheckInterceptor,
   ],
 })
 export class CommandModule {}

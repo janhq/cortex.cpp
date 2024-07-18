@@ -2,6 +2,8 @@ import { CommandRunner, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from '../base.command';
 
 @SubCommand({
   name: 'get',
@@ -12,15 +14,16 @@ import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
   },
 })
 @SetCommandContext()
-export class ConfigsGetCommand extends CommandRunner {
+export class ConfigsGetCommand extends BaseCommand {
   constructor(
     private readonly configsUsecases: ConfigsUsecases,
     readonly contextService: ContextService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[]): Promise<void> {
+  async runCommand(passedParams: string[]): Promise<void> {
     return this.configsUsecases
       .getGroupConfigs(passedParams[0])
       .then(console.table);
