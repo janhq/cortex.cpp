@@ -50,6 +50,8 @@ class server : public drogon::HttpController<server>,
   METHOD_ADD(server::ModelStatus, "modelstatus", Post);
   METHOD_ADD(server::GetModels, "models", Get);
   METHOD_ADD(server::GetEngines, "engines", Get);
+  METHOD_ADD(server::CreateTranscription, "transcriptions", Post);
+  METHOD_ADD(server::CreateTranslation, "translations", Post);
 
   // cortex.python API
   METHOD_ADD(server::FineTuning, "finetuning", Post);
@@ -58,6 +60,8 @@ class server : public drogon::HttpController<server>,
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
   ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
   ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Post);
+  ADD_METHOD_TO(server::CreateTranscription, "/v1/audio/transcriptions", Post);
+  ADD_METHOD_TO(server::CreateTranslation, "/v1/audio/translations", Post);
 
   // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
   // NOTE: prelight will be added back when browser support is properly planned
@@ -91,6 +95,12 @@ class server : public drogon::HttpController<server>,
   void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void CreateTranscription(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void CreateTranslation(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
@@ -99,7 +109,9 @@ class server : public drogon::HttpController<server>,
                            SyncQueue& q);
   bool IsEngineLoaded(const std::string& e);
 
-  void UnloadEngines();
+  void UnloadEngines(const std::string& e);
+
+  std::shared_ptr<Json::Value> ToAudioReqBody(const HttpRequestPtr& req);
 
  private:
   struct SyncQueue {
