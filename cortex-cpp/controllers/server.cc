@@ -32,6 +32,10 @@ server::~server() {}
 void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if(!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
   auto engine_type =
       (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
@@ -91,6 +95,10 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if(!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
   auto engine_type =
       (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
@@ -118,6 +126,10 @@ void server::UnloadModel(
 void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if(!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
   auto engine_type =
       (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
@@ -145,7 +157,7 @@ void server::ModelStatus(
 
 void server::GetModels(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded(cur_engine_type_)) {
+  if (engines_.empty()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::nitroHttpJsonResponse(res);
@@ -156,24 +168,22 @@ void server::GetModels(const HttpRequestPtr& req,
   }
 
   LOG_TRACE << "Start to get models";
-  auto& en = std::get<EngineI*>(engines_[cur_engine_type_].engine);
-  if (en->IsSupported("GetModels")) {
-    en->GetModels(
-        req->getJsonObject(),
-        [cb = std::move(callback)](Json::Value status, Json::Value res) {
-          auto resp = cortex_utils::nitroHttpJsonResponse(res);
-          resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
-              status["status_code"].asInt()));
-          cb(resp);
-        });
-  } else {
-    Json::Value res;
-    res["message"] = "Method is not supported yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
-    resp->setStatusCode(k500InternalServerError);
-    callback(resp);
-    LOG_WARN << "Method is not supported yet";
+  Json::Value resp_data(Json::arrayValue);
+  for (auto const& [k, v] : engines_) {
+    auto e = std::get<EngineI*>(v.engine);
+    if (e->IsSupported("GetModels")) {
+      e->GetModels(req->getJsonObject(),
+                   [&resp_data](Json::Value status, Json::Value res) {
+                     resp_data.append(res);
+                   });
+    }
   }
+  Json::Value root;
+  root["data"] = resp_data;
+  root["object"] = "list";
+  auto resp = cortex_utils::nitroHttpJsonResponse(root);
+  resp->setStatusCode(drogon::HttpStatusCode::k200OK);
+  callback(resp);
 
   LOG_TRACE << "Done get models";
 }
@@ -259,8 +269,6 @@ void server::LoadModel(const HttpRequestPtr& req,
 
   // We have not loaded engine yet, should load it before using it
   if (engines_.find(engine_type) == engines_.end()) {
-    // We only use single engine so unload all engines before load new engine
-    UnloadEngines();
     auto get_engine_path = [](std::string_view e) {
       if (e == kLlamaEngine) {
         return cortex_utils::kLlamaLibPath;
@@ -363,14 +371,20 @@ bool server::IsEngineLoaded(const std::string& e) {
   return engines_.find(e) != engines_.end();
 }
 
-void server::UnloadEngines() {
-  // We unload all engines except python engine
-  for (auto it = engines_.begin(); it != engines_.end();) {
-    if (it->first != kPythonRuntimeEngine) {
-      it = engines_.erase(it);
-    } else
-      it++;
+bool server::HasFieldInReq(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>& callback,
+    const std::string& field) {
+  if (auto o = req->getJsonObject(); !o || (*o)[field].isNull()) {
+    Json::Value res;
+    res["message"] = "No " + field + " field in request body";
+    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    resp->setStatusCode(k409Conflict);
+    callback(resp);
+    LOG_WARN << "No " << field << " field in request body";
+    return false;
   }
+  return true;
 }
 
 }  // namespace inferences
