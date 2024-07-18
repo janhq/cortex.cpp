@@ -16,6 +16,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Observable,
+  asyncScheduler,
   catchError,
   combineLatest,
   from,
@@ -50,25 +51,15 @@ export class EventsController {
     const latestDownloadState$: Observable<DownloadStateEvent> = of({
       data: this.downloadManagerService.getDownloadStates(),
     });
-
-    const downloadAbortEvent$ = fromEvent<DownloadState[]>(
-      this.eventEmitter,
-      'download.event.aborted',
-    ).pipe(map((downloadState) => ({ data: downloadState })));
-
     const downloadEvent$ = fromEvent<DownloadState[]>(
       this.eventEmitter,
       'download.event',
     ).pipe(
       map((downloadState) => ({ data: downloadState })),
-      throttleTime(1000, undefined, { leading: true, trailing: true }),
+      throttleTime(1000, asyncScheduler, { trailing: true }),
     );
 
-    return merge(
-      latestDownloadState$,
-      downloadEvent$,
-      downloadAbortEvent$,
-    ).pipe();
+    return merge(latestDownloadState$, downloadEvent$).pipe();
   }
 
   @ApiOperation({

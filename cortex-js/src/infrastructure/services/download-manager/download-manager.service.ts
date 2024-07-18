@@ -34,7 +34,7 @@ export class DownloadManagerService {
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
-    this.eventEmitter.emit('download.event.aborted', this.allDownloadStates);
+    this.eventEmitter.emit('download.event', this.allDownloadStates);
   }
 
   async submitDownloadRequest(
