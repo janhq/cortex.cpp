@@ -258,7 +258,7 @@ inline void nitro_logo() {
   std::cout << resetColor;  // Reset color at the endreturn;
 }
 
-inline drogon::HttpResponsePtr nitroHttpResponse() {
+inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
   auto resp = drogon::HttpResponse::newHttpResponse();
 #ifdef ALLOW_ALL_CORS
   LOG_INFO << "Respond for all cors!";
@@ -267,7 +267,7 @@ inline drogon::HttpResponsePtr nitroHttpResponse() {
   return resp;
 }
 
-inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value& data) {
+inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(const Json::Value& data) {
   auto resp = drogon::HttpResponse::newHttpJsonResponse(data);
 #ifdef ALLOW_ALL_CORS
   LOG_INFO << "Respond for all cors!";
@@ -277,7 +277,7 @@ inline drogon::HttpResponsePtr nitroHttpJsonResponse(const Json::Value& data) {
   return resp;
 };
 
-inline drogon::HttpResponsePtr nitroStreamResponse(
+inline drogon::HttpResponsePtr CreateCortexStreamResponse(
     const std::function<std::size_t(char*, std::size_t)>& callback,
     const std::string& attachmentFileName = "") {
   auto resp = drogon::HttpResponse::newStreamResponse(

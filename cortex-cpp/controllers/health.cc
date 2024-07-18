@@ -4,7 +4,7 @@
 void health::asyncHandleHttpRequest(
     const HttpRequestPtr &req,
     std::function<void(const HttpResponsePtr &)> &&callback) {
-  auto resp = cortex_utils::nitroHttpResponse();
+  auto resp = cortex_utils::CreateCortexHttpResponse();
   resp->setStatusCode(k200OK);
   resp->setContentTypeCode(CT_TEXT_HTML);
   resp->setBody("cortex-cpp is alive!!!");
