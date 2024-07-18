@@ -6,8 +6,6 @@ import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '../services/context/context.service';
 import { ModelStat } from './types/model-stat.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { UseInterceptors } from '@nestjs/common';
-import { ServerHealthCheckInterceptor } from '../interceptors/server-health-check.interceptor';
 import { BaseCommand } from './base.command';
 
 @SubCommand({
@@ -15,7 +13,6 @@ import { BaseCommand } from './base.command';
   description: 'Show running models and their status',
 })
 @SetCommandContext()
-@UseInterceptors(ServerHealthCheckInterceptor)
 export class PSCommand extends BaseCommand {
   constructor(
     private readonly usecases: PSCliUsecases,

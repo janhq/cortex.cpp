@@ -61,7 +61,6 @@ export class CortexCommand extends CommandRunner {
   }
 
   private async startServer(host: string, port: number, attach: boolean) {
-    console.log(attach);
     try {
       if (attach) {
         const app = await getApp();
@@ -80,7 +79,6 @@ export class CortexCommand extends CommandRunner {
         apiServerPort: port,
       });
     } catch (e) {
-      console.error(e);
       console.error(`Failed to start server. Is port ${port} in use?`);
     }
   }

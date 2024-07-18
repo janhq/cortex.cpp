@@ -43,7 +43,6 @@ import { ConfigsSetCommand } from './infrastructure/commanders/configs/configs-s
 import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
-import { ServerHealthCheckInterceptor } from './infrastructure/interceptors/server-health-check.interceptor';
 
 @Module({
   imports: [
@@ -111,7 +110,6 @@ import { ServerHealthCheckInterceptor } from './infrastructure/interceptors/serv
     EnginesListCommand,
     EnginesGetCommand,
     EnginesInitCommand,
-    ServerHealthCheckInterceptor,
   ],
 })
 export class CommandModule {}
