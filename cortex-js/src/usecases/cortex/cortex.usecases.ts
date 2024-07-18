@@ -174,7 +174,6 @@ export class CortexUsecases {
       const interval = setInterval(() => {
         this.isAPIServerOnline()
           .then((result) => {
-            console.log('Checking API server status...', result);
             if (result) {
               clearInterval(interval);
               clearTimeout(timeout);

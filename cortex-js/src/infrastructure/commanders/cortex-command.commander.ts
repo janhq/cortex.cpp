@@ -68,11 +68,6 @@ export class CortexCommand extends CommandRunner {
         await app.listen(port, host);
       } else {
         await this.cortexUseCases.startServerDetached(host, port);
-        console.log(
-          chalk.blue(
-            `Started server at http://${host}:${port} in detached mode`,
-          ),
-        );
       }
       console.log(chalk.blue(`Started server at http://${host}:${port}`));
       console.log(
