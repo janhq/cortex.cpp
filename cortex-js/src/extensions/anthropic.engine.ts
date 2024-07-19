@@ -54,7 +54,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     return _.pick(data, ['messages', 'model', 'stream', 'max_tokens']);
   };
 
-  transformResponse = (data: any): string => {
+  transformResponse = (data: any) => {
     // handling stream response
     if (typeof data === 'string' && data.trim().length === 0) {
       return '';
@@ -82,7 +82,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     }
     // non-stream response
     if (data.content && data.content.length > 0 && data.content[0].text) {
-      return JSON.stringify({
+      return {
         choices: [
           {
             delta: {
@@ -90,7 +90,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
             },
           },
         ],
-      });
+      };
     }
 
     console.error('Invalid response format:', data);
