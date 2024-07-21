@@ -193,8 +193,14 @@ export class FileManagerService {
       throw err;
     }
   }
-  readLines(filePath: string, callback: (line: string) => void) {
-    const fileStream = createReadStream(filePath);
+  readLines(
+    filePath: string,
+    callback: (line: string) => void,
+    start: number = 0,
+  ) {
+    const fileStream = createReadStream(filePath, {
+      start,
+    });
     const rl = createInterface({
       input: fileStream,
       crlfDelay: Infinity,

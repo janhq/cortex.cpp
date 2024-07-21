@@ -23,7 +23,7 @@ import { ServeStopCommand } from './sub-commands/serve-stop.command';
 type ServeOptions = {
   address?: string;
   port?: number;
-  attach?: boolean;
+  logs?: boolean;
 };
 
 @RootCommand({
@@ -57,9 +57,9 @@ export class CortexCommand extends CommandRunner {
   async run(passedParams: string[], options?: ServeOptions): Promise<void> {
     const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
-    const attach = options?.attach || false;
+    const showLogs = options?.logs || false;
 
-    return this.startServer(host, port, attach);
+    return this.startServer(host, port, showLogs);
   }
 
   private async startServer(host: string, port: number, attach: boolean) {
@@ -102,10 +102,10 @@ export class CortexCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-A, --attach',
-    description: 'Attach to the process',
+    flags: '-l, --logs',
+    description: 'Show logs',
   })
-  parseAttach() {
+  parseLogs() {
     return true;
   }
 }
