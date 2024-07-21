@@ -1,5 +1,5 @@
 import { invert } from 'lodash';
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { Option, SubCommand } from 'nest-commander';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { EnginesListCommand } from './engines/engines-list.command';
@@ -31,7 +31,7 @@ export class EnginesCommand extends BaseCommand {
   ) {
     super(cortexUsecases);
   }
-  async runCommand(passedParam: string[]): Promise<void> {
+  async runCommand(passedParam: string[], options: { vulkan: boolean }) {
     const [parameter, command] = passedParam;
     if (command !== 'list' && !parameter) {
       console.error('Engine name is required.');
@@ -45,15 +45,28 @@ export class EnginesCommand extends BaseCommand {
       return;
     }
     const engine = invert(EngineNamesMap)[parameter] || parameter;
-    await this.runEngineCommand(commandClass, [engine]);
+    await this.runEngineCommand(commandClass, [engine], options);
   }
 
-  private async runEngineCommand(commandClass: any, params: string[] = []) {
+  private async runEngineCommand(
+    commandClass: any,
+    params: string[] = [],
+    options?: { vulkan: boolean },
+  ) {
     const commandInstance = this.moduleRef.get(commandClass, { strict: false });
     if (commandInstance) {
-      await commandInstance.run(params);
+      await commandInstance.run(params, options);
     } else {
       console.error('Command not found.');
     }
+  }
+
+  @Option({
+    flags: '-vk, --vulkan',
+    description: 'Install Vulkan engine',
+    defaultValue: false,
+  })
+  parseVulkan() {
+    return true;
   }
 }

@@ -1,4 +1,4 @@
-import { CommandRunner, Option, SubCommand } from 'nest-commander';
+import { Option, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { Engines } from '../types/engine.interface';

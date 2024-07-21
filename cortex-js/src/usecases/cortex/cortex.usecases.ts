@@ -165,7 +165,7 @@ export class CortexUsecases {
     server.unref();
     // Await for the /healthz status ok
     return new Promise<boolean>((resolve, reject) => {
-      const TIMEOUT = 20000;
+      const TIMEOUT = 10 * 1000;
       const timeout = setTimeout(() => {
         clearInterval(interval);
         clearTimeout(timeout);
@@ -203,6 +203,20 @@ export class CortexUsecases {
     )
       .then((res) => res.status === HttpStatus.OK)
       .catch(() => false);
+  }
+
+  async stopApiServer() {
+    const {
+      apiServerHost: configApiServerHost,
+      apiServerPort: configApiServerPort,
+    } = await this.fileManagerService.getConfig();
+
+    // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
+    const apiServerHost = configApiServerHost || defaultCortexJsHost;
+    const apiServerPort = configApiServerPort || defaultCortexJsPort;
+    return fetch(CORTEX_JS_STOP_API_SERVER_URL(apiServerHost, apiServerPort), {
+      method: 'DELETE',
+    }).catch(() => {});
   }
 
   async updateApiServerConfig(host: string, port: number) {

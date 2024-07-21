@@ -18,6 +18,7 @@ import { defaultCortexJsHost, defaultCortexJsPort } from '../constants/cortex';
 import { getApp } from '@/app';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { ServeStopCommand } from './sub-commands/serve-stop.command';
 
 type ServeOptions = {
   address?: string;
@@ -39,6 +40,7 @@ type ServeOptions = {
     BenchmarkCommand,
     EnginesCommand,
     ConfigsCommand,
+    ServeStopCommand,
   ],
   description: 'Cortex CLI',
 })

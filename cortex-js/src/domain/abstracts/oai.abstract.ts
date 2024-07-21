@@ -25,7 +25,7 @@ export abstract class OAIEngineExtension extends EngineExtension {
     const additionalHeaders = _.omit(headers, [
       'content-type',
       'authorization',
-      'content-length'
+      'content-length',
     ]);
     const response = await firstValueFrom(
       this.httpService.post(this.apiUrl, payload, {

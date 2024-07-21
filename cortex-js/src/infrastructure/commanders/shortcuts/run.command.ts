@@ -16,6 +16,7 @@ import { BaseCommand } from '../base.command';
 type RunOptions = {
   threadId?: string;
   preset?: string;
+  chat?: boolean;
 };
 
 @SubCommand({
@@ -89,7 +90,12 @@ export class RunCommand extends BaseCommand {
     return this.cortexUsecases
       .startCortex()
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
-      .then(() => this.chatCliUsecases.chat(modelId, options.threadId));
+      .then(() => {
+        if (options.chat) {
+          return this.chatCliUsecases.chat(modelId, options.threadId);
+        }
+        return;
+      });
   }
 
   @Option({
@@ -106,6 +112,14 @@ export class RunCommand extends BaseCommand {
   })
   parseTemplate(value: string) {
     return value;
+  }
+
+  @Option({
+    flags: '-c, --chat',
+    description: 'Start a chat session after starting the model',
+  })
+  parseChat() {
+    return true;
   }
 
   modelInquiry = async () => {
