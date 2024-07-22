@@ -1,21 +1,22 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '../services/context/context.service';
+import { BaseCommand } from './base.command';
 
 @SubCommand({
   name: 'kill',
   description: 'Kill running cortex processes',
 })
 @SetCommandContext()
-export class KillCommand extends CommandRunner {
+export class KillCommand extends BaseCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
     readonly contextService: ContextService,
   ) {
-    super();
+    super(cortexUsecases);
   }
-  async run(): Promise<void> {
+  async runCommand(): Promise<void> {
     return this.cortexUsecases
       .stopCortex()
       .then(this.cortexUsecases.stopServe)

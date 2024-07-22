@@ -1,10 +1,11 @@
-import { CommandRunner, Option, SubCommand } from 'nest-commander';
+import { Option, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { BaseCommand } from '../base.command';
 
 @SubCommand({
   name: '<name> init',
@@ -14,17 +15,17 @@ import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
   },
 })
 @SetCommandContext()
-export class EnginesInitCommand extends CommandRunner {
+export class EnginesInitCommand extends BaseCommand {
   constructor(
     private readonly engineUsecases: EnginesUsecases,
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileManagerService: FileManagerService,
     readonly contextService: ContextService,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(
+  async runCommand(
     passedParams: string[],
     options: { vulkan: boolean },
   ): Promise<void> {

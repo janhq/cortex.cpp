@@ -1,26 +1,29 @@
 import ora from 'ora';
 import systeminformation from 'systeminformation';
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '../services/context/context.service';
 import { ModelStat } from './types/model-stat.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from './base.command';
 
 @SubCommand({
   name: 'ps',
   description: 'Show running models and their status',
 })
 @SetCommandContext()
-export class PSCommand extends CommandRunner {
+export class PSCommand extends BaseCommand {
   constructor(
     private readonly usecases: PSCliUsecases,
-    readonly contextService: ContextService,
+    private readonly contextService: ContextService,
+    private readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
-  async run(): Promise<void> {
+  async runCommand(): Promise<void> {
     const runningSpinner = ora('Running PS command...').start();
-    let checkingSpinner: ora.Ora
+    let checkingSpinner: ora.Ora;
     return this.usecases
       .getModels()
       .then((models: ModelStat[]) => {
@@ -29,13 +32,17 @@ export class PSCommand extends CommandRunner {
       })
       .then(() => {
         checkingSpinner = ora('Checking API server...').start();
-        return this.usecases.isAPIServerOnline();
+        return this.cortexUsecases.isAPIServerOnline();
       })
       .then((isOnline) => {
-        checkingSpinner.succeed(isOnline ? 'API server is online' : 'API server is offline');
+        checkingSpinner.succeed(
+          isOnline ? 'API server is online' : 'API server is offline',
+        );
       })
       .then(async () => {
-        const cpuUsage = (await systeminformation.currentLoad()).currentLoad.toFixed(2);
+        const cpuUsage = (
+          await systeminformation.currentLoad()
+        ).currentLoad.toFixed(2);
         const gpusLoad = [];
         const gpus = await systeminformation.graphics();
         for (const gpu of gpus.controllers) {
@@ -45,20 +52,28 @@ export class PSCommand extends CommandRunner {
           });
         }
         const memoryData = await systeminformation.mem();
-        const memoryUsage =  (memoryData.active / memoryData.total * 100).toFixed(2)
+        const memoryUsage = (
+          (memoryData.active / memoryData.total) *
+          100
+        ).toFixed(2);
         const consumedTable = {
           'CPU Usage': `${cpuUsage}%`,
           'Memory Usage': `${memoryUsage}%`,
         } as {
-          'CPU Usage': string,
-          'Memory Usage': string,
-          'VRAM'?: string,
-        }
-        
-        if(gpusLoad.length > 0 && gpusLoad.filter(gpu => gpu.totalVram > 0).length > 0) {
-          consumedTable['VRAM'] = gpusLoad.map(gpu => `${gpu.totalVram} MB`).join(', ');
+          'CPU Usage': string;
+          'Memory Usage': string;
+          VRAM?: string;
+        };
+
+        if (
+          gpusLoad.length > 0 &&
+          gpusLoad.filter((gpu) => gpu.totalVram > 0).length > 0
+        ) {
+          consumedTable['VRAM'] = gpusLoad
+            .map((gpu) => `${gpu.totalVram} MB`)
+            .join(', ');
         }
         console.table([consumedTable]);
-      })
+      });
   }
 }

@@ -1,22 +1,25 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
+import { BaseCommand } from '../base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @SubCommand({
   name: 'list',
   description: 'Get all cortex configurations',
 })
 @SetCommandContext()
-export class ConfigsListCommand extends CommandRunner {
+export class ConfigsListCommand extends BaseCommand {
   constructor(
     private readonly configsUsecases: ConfigsUsecases,
     readonly contextService: ContextService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(): Promise<void> {
+  async runCommand(): Promise<void> {
     return this.configsUsecases.getConfigs().then(console.table);
   }
 }

@@ -97,8 +97,6 @@ export class EnginesUsecases {
     if (!options && engine === Engines.llamaCPP) {
       options = await this.defaultInstallationOptions();
     }
-    const configs = await this.fileManagerService.getConfig();
-
     // Ship Llama.cpp engine by default
     if (
       !existsSync(

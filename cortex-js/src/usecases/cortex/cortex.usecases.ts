@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { ChildProcess, fork } from 'child_process';
 import { delimiter, join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
@@ -9,7 +9,10 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
+  CORTEX_JS_HEALTH_URL,
   CORTEX_JS_STOP_API_SERVER_URL,
+  defaultCortexJsHost,
+  defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { openSync } from 'fs';
 
@@ -39,7 +42,7 @@ export class CortexUsecases {
     }
 
     const engineDir = await this.fileManagerService.getCortexCppEnginePath();
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath()
+    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
 
     const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
     // go up one level to get the binary folder, have to also work on windows
@@ -139,5 +142,86 @@ export class CortexUsecases {
         return false;
       })
       .catch(() => false);
+  }
+
+  /**
+   * start the API server in detached mode
+   */
+  async startServerDetached(host: string, port: number) {
+    const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
+    const server = fork(join(__dirname, './../../main.js'), [], {
+      detached: true,
+      stdio: ['ignore', writer, writer, 'ipc'],
+      env: {
+        CORTEX_JS_HOST: host,
+        CORTEX_JS_PORT: port.toString(),
+      },
+    });
+    server.disconnect(); // closes the IPC channel
+    server.unref();
+    // Await for the /healthz status ok
+    return new Promise<boolean>((resolve, reject) => {
+      const TIMEOUT = 10 * 1000;
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+        reject();
+      }, TIMEOUT);
+      const interval = setInterval(() => {
+        this.isAPIServerOnline(host, port)
+          .then((result) => {
+            if (result) {
+              clearInterval(interval);
+              clearTimeout(timeout);
+              resolve(true);
+            }
+          })
+          .catch(reject);
+      }, 1000);
+    });
+  }
+  /**
+   * Check if the Cortex API server is online
+   * @returns
+   */
+
+  async isAPIServerOnline(host?: string, port?: number): Promise<boolean> {
+    const {
+      apiServerHost: configApiServerHost,
+      apiServerPort: configApiServerPort,
+    } = await this.fileManagerService.getConfig();
+
+    // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
+    const apiServerHost = host || configApiServerHost || defaultCortexJsHost;
+    const apiServerPort = port || configApiServerPort || defaultCortexJsPort;
+    return firstValueFrom(
+      this.httpService.get(CORTEX_JS_HEALTH_URL(apiServerHost, apiServerPort)),
+    )
+      .then((res) => res.status === HttpStatus.OK)
+      .catch(() => false);
+  }
+
+  async stopApiServer() {
+    const {
+      apiServerHost: configApiServerHost,
+      apiServerPort: configApiServerPort,
+    } = await this.fileManagerService.getConfig();
+
+    // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
+    const apiServerHost = configApiServerHost || defaultCortexJsHost;
+    const apiServerPort = configApiServerPort || defaultCortexJsPort;
+    await this.stopCortex();
+    return fetch(CORTEX_JS_STOP_API_SERVER_URL(apiServerHost, apiServerPort), {
+      method: 'DELETE',
+    }).catch(() => {});
+  }
+
+  async updateApiServerConfig(host: string, port: number) {
+    const config = await this.fileManagerService.getConfig();
+    await this.fileManagerService.writeConfigFile({
+      ...config,
+      cortexCppHost: host,
+      cortexCppPort: port,
+    });
   }
 }

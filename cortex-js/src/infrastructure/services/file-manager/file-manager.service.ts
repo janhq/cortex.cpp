@@ -38,13 +38,13 @@ export class FileManagerService {
    * Get cortex configs
    * @returns the config object
    */
-  async getConfig(): Promise<Config & object> {
+  async getConfig(dataFolderPath?: string): Promise<Config & object> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
-
-    if (!existsSync(configPath)) {
-      const config = this.defaultConfig();
-      await this.createFolderIfNotExist(config.dataFolderPath);
+    const config = this.defaultConfig();
+    const dataFolderPathUsed = dataFolderPath || config.dataFolderPath;
+    if (!existsSync(configPath) || !existsSync(dataFolderPathUsed)) {
+      await this.createFolderIfNotExist(dataFolderPathUsed);
       await this.writeConfigFile(config);
       return config;
     }
@@ -59,8 +59,7 @@ export class FileManagerService {
     } catch (error) {
       console.warn('Error reading config file. Using default config.');
       console.warn(error);
-      const config = this.defaultConfig();
-      await this.createFolderIfNotExist(config.dataFolderPath);
+      await this.createFolderIfNotExist(dataFolderPathUsed);
       await this.writeConfigFile(config);
       return config;
     }
@@ -194,8 +193,14 @@ export class FileManagerService {
       throw err;
     }
   }
-  readLines(filePath: string, callback: (line: string) => void) {
-    const fileStream = createReadStream(filePath);
+  readLines(
+    filePath: string,
+    callback: (line: string) => void,
+    start: number = 0,
+  ) {
+    const fileStream = createReadStream(filePath, {
+      start,
+    });
     const rl = createInterface({
       input: fileStream,
       crlfDelay: Infinity,

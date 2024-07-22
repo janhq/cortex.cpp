@@ -1,10 +1,5 @@
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import {
-  CommandRunner,
-  SubCommand,
-  Option,
-  InquirerService,
-} from 'nest-commander';
+import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { exit } from 'node:process';
 import ora from 'ora';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
@@ -16,10 +11,12 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { BaseCommand } from '../base.command';
 
 type RunOptions = {
   threadId?: string;
   preset?: string;
+  chat?: boolean;
 };
 
 @SubCommand({
@@ -31,7 +28,7 @@ type RunOptions = {
   },
   description: 'Shortcut to start a model and chat',
 })
-export class RunCommand extends CommandRunner {
+export class RunCommand extends BaseCommand {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly cortexUsecases: CortexUsecases,
@@ -40,10 +37,10 @@ export class RunCommand extends CommandRunner {
     private readonly fileService: FileManagerService,
     private readonly initUsecases: EnginesUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: RunOptions): Promise<void> {
+  async runCommand(passedParams: string[], options: RunOptions): Promise<void> {
     let modelId = passedParams[0];
     const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
@@ -93,7 +90,12 @@ export class RunCommand extends CommandRunner {
     return this.cortexUsecases
       .startCortex()
       .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
-      .then(() => this.chatCliUsecases.chat(modelId, options.threadId));
+      .then(() => {
+        if (options.chat) {
+          return this.chatCliUsecases.chat(modelId, options.threadId);
+        }
+        return;
+      });
   }
 
   @Option({
@@ -110,6 +112,14 @@ export class RunCommand extends CommandRunner {
   })
   parseTemplate(value: string) {
     return value;
+  }
+
+  @Option({
+    flags: '-c, --chat',
+    description: 'Start a chat session after starting the model',
+  })
+  parseChat() {
+    return true;
   }
 
   modelInquiry = async () => {

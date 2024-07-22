@@ -1,8 +1,10 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { EngineNamesMap, Engines } from '../types/engine.interface';
+import { BaseCommand } from '../base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @SubCommand({
   name: '<name> get',
@@ -12,15 +14,16 @@ import { EngineNamesMap, Engines } from '../types/engine.interface';
   },
 })
 @SetCommandContext()
-export class EnginesGetCommand extends CommandRunner {
+export class EnginesGetCommand extends BaseCommand {
   constructor(
     private readonly engineUsecases: EnginesUsecases,
     readonly contextService: ContextService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[]): Promise<void> {
+  async runCommand(passedParams: string[]): Promise<void> {
     return this.engineUsecases.getEngine(passedParams[0]).then((engine) => {
       if (!engine) {
         console.error('Engine not found.');

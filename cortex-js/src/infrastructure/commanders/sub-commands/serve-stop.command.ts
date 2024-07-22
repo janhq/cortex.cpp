@@ -1,18 +1,18 @@
-import { CORTEX_JS_STOP_API_SERVER_URL } from '@/infrastructure/constants/cortex';
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
+import { BaseCommand } from '../base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @SubCommand({
   name: 'stop',
   description: 'Stop the API server',
 })
-export class ServeStopCommand extends CommandRunner {
-  async run(): Promise<void> {
-    return this.stopServer().then(() => console.log('API server stopped'));
+export class ServeStopCommand extends BaseCommand {
+  constructor(private readonly cortexUsecases: CortexUsecases) {
+    super(cortexUsecases);
   }
-
-  private async stopServer() {
-    return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
-      method: 'DELETE',
-    }).catch(() => {});
+  async runCommand(): Promise<void> {
+    return this.cortexUsecases
+      .stopApiServer()
+      .then(() => console.log('API server stopped'));
   }
 }

@@ -1,10 +1,5 @@
-import {
-  CommandRunner,
-  SubCommand,
-  Option,
-  InquirerService,
-} from 'nest-commander';
-import ora from 'ora';
+import { existsSync } from 'fs';
+import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
 import { PSCliUsecases } from './usecases/ps.cli.usecases';
@@ -17,6 +12,14 @@ import {
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '../services/context/context.service';
+import { BaseCommand } from './base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { ModelsCliUsecases } from './usecases/models.cli.usecases';
+import { Engines } from './types/engine.interface';
+import { join } from 'path';
+import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { FileManagerService } from '../services/file-manager/file-manager.service';
+import { isLocalModel } from '@/utils/normalize-model-id';
 
 type ChatOptions = {
   threadId?: string;
@@ -35,7 +38,7 @@ type ChatOptions = {
   },
 })
 @SetCommandContext()
-export class ChatCommand extends CommandRunner {
+export class ChatCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly chatCliUsecases: ChatCliUsecases,
@@ -43,11 +46,18 @@ export class ChatCommand extends CommandRunner {
     private readonly psCliUsecases: PSCliUsecases,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
+    readonly cortexUsecases: CortexUsecases,
+    readonly modelsCliUsecases: ModelsCliUsecases,
+    private readonly fileService: FileManagerService,
+    private readonly initUsecases: EnginesUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: ChatOptions): Promise<void> {
+  async runCommand(
+    passedParams: string[],
+    options: ChatOptions,
+  ): Promise<void> {
     let modelId = passedParams[0];
     // First attempt to get message from input or options
     // Extract input from 1 to end of array
@@ -59,7 +69,7 @@ export class ChatCommand extends CommandRunner {
       // first input might be message input
       message = passedParams.length
         ? passedParams.join(' ')
-        : options.message ?? '';
+        : (options.message ?? '');
       // If model ID is not provided, prompt user to select from running models
       const models = await this.psCliUsecases.getModels();
       if (models.length === 1) {
@@ -71,14 +81,20 @@ export class ChatCommand extends CommandRunner {
       }
     }
 
+    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    if (!existingModel || !isLocalModel(existingModel.files)) {
+      process.exit(1);
+    }
+
+    const engine = existingModel.engine || Engines.llamaCPP;
+    // Pull engine if not exist
+    if (
+      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+    ) {
+      await this.initUsecases.installEngine(undefined, 'latest', engine);
+    }
+
     if (!message) options.attach = true;
-    const result = await this.chatCliUsecases.chat(
-      modelId,
-      options.threadId,
-      message, // Accept both message from inputs or arguments
-      options.attach,
-      false, // Do not stop cortex session or loaded model
-    );
     this.telemetryUsecases.sendEvent(
       [
         {
@@ -88,7 +104,18 @@ export class ChatCommand extends CommandRunner {
       ],
       TelemetrySource.CLI,
     );
-    return result;
+    return this.cortexUsecases
+      .startCortex()
+      .then(() => this.modelsCliUsecases.startModel(modelId))
+      .then(() =>
+        this.chatCliUsecases.chat(
+          modelId,
+          options.threadId,
+          message, // Accept both message from inputs or arguments
+          options.attach,
+          false, // Do not stop cortex session or loaded model
+        ),
+      );
   }
 
   modelInquiry = async (models: ModelStat[]) => {

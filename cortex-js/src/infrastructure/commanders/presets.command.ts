@@ -1,23 +1,26 @@
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { readdirSync } from 'fs';
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { join } from 'path';
 import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '../services/context/context.service';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from './base.command';
 
 @SubCommand({
   name: 'presets',
   description: 'Show all available presets',
 })
 @SetCommandContext()
-export class PresetCommand extends CommandRunner {
+export class PresetCommand extends BaseCommand {
   constructor(
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
-  async run(): Promise<void> {
+  async runCommand(): Promise<void> {
     return console.table(
       readdirSync(
         join(await this.fileService.getDataFolderPath(), `presets`),

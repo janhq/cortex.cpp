@@ -4,6 +4,8 @@ import {
   BenchmarkConfig,
   ParametersConfig,
 } from './types/benchmark-config.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from './base.command';
 
 @SubCommand({
   name: 'benchmark',
@@ -14,12 +16,15 @@ import {
   description:
     'Benchmark and analyze the performance of a specific AI model using a variety of system resources',
 })
-export class BenchmarkCommand extends CommandRunner {
-  constructor(private readonly benchmarkUsecases: BenchmarkCliUsecases) {
-    super();
+export class BenchmarkCommand extends BaseCommand {
+  constructor(
+    private readonly benchmarkUsecases: BenchmarkCliUsecases,
+    readonly cortexUsecases: CortexUsecases,
+  ) {
+    super(cortexUsecases);
   }
 
-  async run(
+  async runCommand(
     passedParams: string[],
     options?: Partial<BenchmarkConfig>,
   ): Promise<void> {

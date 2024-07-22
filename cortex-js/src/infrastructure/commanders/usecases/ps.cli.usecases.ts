@@ -1,16 +1,12 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import ora from 'ora';
-import {
-  CORTEX_CPP_MODELS_URL,
-  CORTEX_JS_HEALTH_URL,
-  defaultCortexJsHost,
-  defaultCortexJsPort,
-} from '@/infrastructure/constants/cortex';
+import { CORTEX_CPP_MODELS_URL } from '@/infrastructure/constants/cortex';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ModelStat } from '@commanders/types/model-stat.interface';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from '../types/engine.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 interface ModelStatResponse {
   object: string;
@@ -21,6 +17,7 @@ export class PSCliUsecases {
   constructor(
     private readonly httpService: HttpService,
     private readonly fileService: FileManagerService,
+    private readonly cortexUsecases: CortexUsecases,
   ) {}
   /**
    * Get models running in the Cortex C++ server
@@ -66,23 +63,6 @@ export class PSCliUsecases {
       runningSpinner.succeed('');
       return [];
     });
-  }
-
-  /**
-   * Check if the Cortex API server is online
-   * @param host Cortex host address
-   * @param port Cortex port address
-   * @returns
-   */
-  async isAPIServerOnline(
-    host: string = defaultCortexJsHost,
-    port: number = defaultCortexJsPort,
-  ): Promise<boolean> {
-    return firstValueFrom(
-      this.httpService.get(CORTEX_JS_HEALTH_URL(host, port)),
-    )
-      .then((res) => res.status === HttpStatus.OK)
-      .catch(() => false);
   }
 
   private formatDuration(milliseconds: number): string {

@@ -15,6 +15,8 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from '../base.command';
 
 @SubCommand({
   name: 'pull',
@@ -25,18 +27,19 @@ import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
     'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexso',
 })
 @SetCommandContext()
-export class ModelPullCommand extends CommandRunner {
+export class ModelPullCommand extends BaseCommand {
   constructor(
     private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly engineUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[]) {
+  async runCommand(passedParams: string[]) {
     if (passedParams.length < 1) {
       console.error('Model Id is required');
       exit(1);

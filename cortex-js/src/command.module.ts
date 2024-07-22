@@ -3,7 +3,6 @@ import { ModelsModule } from './usecases/models/models.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { CortexModule } from './usecases/cortex/cortex.module';
-import { ServeCommand } from './infrastructure/commanders/serve.command';
 import { ModelsCommand } from './infrastructure/commanders/models.command';
 import { ExtensionModule } from './infrastructure/repositories/extensions/extension.module';
 import { HttpModule } from '@nestjs/axios';
@@ -45,7 +44,6 @@ import { EnginesListCommand } from './infrastructure/commanders/engines/engines-
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -73,7 +71,6 @@ import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-
   providers: [
     CortexCommand,
     ModelsCommand,
-    ServeCommand,
     ChatCommand,
     PSCommand,
     KillCommand,
