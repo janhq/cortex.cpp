@@ -25,6 +25,7 @@ type ServeOptions = {
   address?: string;
   port?: number;
   logs?: boolean;
+  dataFolder?: string;
 };
 
 @RootCommand({
@@ -59,11 +60,18 @@ export class CortexCommand extends CommandRunner {
     const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
     const showLogs = options?.logs || false;
+    const dataFolderPath = options?.dataFolder;
 
-    return this.startServer(host, port, showLogs);
+    return this.startServer(host, port, showLogs, dataFolderPath);
   }
 
-  private async startServer(host: string, port: number, attach: boolean) {
+  private async startServer(
+    host: string,
+    port: number,
+    attach: boolean,
+    dataFolderPath?: string,
+  ) {
+    const config = await this.fileManagerService.getConfig();
     try {
       const startEngineSpinner = ora('Starting Cortex...');
       await this.cortexUseCases.startCortex().catch((e) => {
@@ -84,6 +92,14 @@ export class CortexCommand extends CommandRunner {
         );
         process.exit(0);
       }
+      if (dataFolderPath) {
+        await this.fileManagerService.writeConfigFile({
+          ...config,
+          dataFolderPath,
+        });
+        // load config again to create the data folder
+        await this.fileManagerService.getConfig(dataFolderPath);
+      }
       if (attach) {
         const app = await getApp();
         await app.listen(port, host);
@@ -94,14 +110,18 @@ export class CortexCommand extends CommandRunner {
       console.log(
         chalk.blue(`API Playground available at http://${host}:${port}/api`),
       );
-      const config = await this.fileManagerService.getConfig();
       await this.fileManagerService.writeConfigFile({
         ...config,
         apiServerHost: host,
         apiServerPort: port,
+        dataFolderPath: dataFolderPath || config.dataFolderPath,
       });
     } catch (e) {
       console.error(e);
+      // revert the data folder path if it was set
+      await await this.fileManagerService.writeConfigFile({
+        ...config,
+      });
       console.error(`Failed to start server. Is port ${port} in use?`);
     }
   }
@@ -128,5 +148,13 @@ export class CortexCommand extends CommandRunner {
   })
   parseLogs() {
     return true;
+  }
+
+  @Option({
+    flags: '--dataFolder <dataFolderPath>',
+    description: 'Set the data folder directory',
+  })
+  parseDataFolder(value: string) {
+    return value;
   }
 }

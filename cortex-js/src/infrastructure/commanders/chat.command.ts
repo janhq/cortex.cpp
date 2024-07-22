@@ -19,6 +19,7 @@ import { Engines } from './types/engine.interface';
 import { join } from 'path';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
+import { isLocalModel } from '@/utils/normalize-model-id';
 
 type ChatOptions = {
   threadId?: string;
@@ -81,11 +82,7 @@ export class ChatCommand extends BaseCommand {
     }
 
     const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (
-      !existingModel ||
-      !Array.isArray(existingModel.files) ||
-      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
-    ) {
+    if (!existingModel || !isLocalModel(existingModel.files)) {
       process.exit(1);
     }
 
