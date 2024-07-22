@@ -8,6 +8,7 @@ import { HttpModule } from '@nestjs/axios';
 import { DownloadManagerModule } from '@/infrastructure/services/download-manager/download-manager.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
+import { ModelsModule } from '../models/models.module';
 
 describe('ChatService', () => {
   let service: ChatUsecases;
@@ -24,6 +25,7 @@ describe('ChatService', () => {
         DownloadManagerModule,
         EventEmitterModule.forRoot(),
         FileManagerModule,
+        ModelsModule,
       ],
       providers: [ChatUsecases],
       exports: [ChatUsecases],

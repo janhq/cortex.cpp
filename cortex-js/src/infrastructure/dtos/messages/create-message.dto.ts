@@ -21,6 +21,7 @@ export class CreateMessageDto implements Partial<Message> {
     example: 'user',
     description: 'The sources of the messages.',
   })
+  @IsString()
   role: 'user' | 'assistant';
 
   @ApiProperty({

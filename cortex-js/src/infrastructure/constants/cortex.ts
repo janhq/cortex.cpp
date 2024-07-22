@@ -7,6 +7,8 @@ export const defaultCortexJsPort = 1337;
 
 export const defaultCortexCppHost = '127.0.0.1';
 export const defaultCortexCppPort = 3929;
+
+export const defaultEmbeddingModel = 'nomic-embed-text-v1';
 // CORTEX CPP
 export const CORTEX_CPP_EMBEDDINGS_URL = (
   host: string = defaultCortexCppHost,

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, HttpCode } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, Res } from '@nestjs/common';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { ApiOperation, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { CreateEmbeddingsDto } from '../dtos/embeddings/embeddings-request.dto';

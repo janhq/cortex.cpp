@@ -344,11 +344,11 @@ export class ModelsUsecases {
     await promises.mkdir(modelFolder, { recursive: true }).catch(() => {});
 
     let files = (await fetchJanRepoData(originModelId)).siblings;
-    
+
     // HuggingFace GGUF Repo - Only one file is downloaded
     if (originModelId.includes('/') && selection && files.length) {
       try {
-      files = [await selection(files)];
+        files = [await selection(files)];
       } catch (e) {
         const modelEvent: ModelEvent = {
           model: modelId,
@@ -496,6 +496,23 @@ export class ModelsUsecases {
    */
   getModelStatuses(): Record<ModelId, ModelStatus> {
     return this.activeModelStatuses;
+  }
+
+  /**
+   * Check whether the model is running in the Cortex C++ server
+   */
+  async isModelRunning(modelId: string): Promise<boolean> {
+    const model = await this.getModelOrThrow(modelId).catch((e) => undefined);
+
+    if (!model) return false;
+
+    const engine = (await this.extensionRepository.findOne(
+      model.engine ?? Engines.llamaCPP,
+    )) as EngineExtension | undefined;
+
+    if (!engine) return false;
+
+    return engine.isModelRunning(modelId);
   }
 
   /**

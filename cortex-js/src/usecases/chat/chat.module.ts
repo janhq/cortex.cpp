@@ -6,6 +6,7 @@ import { ModelRepositoryModule } from '@/infrastructure/repositories/models/mode
 import { HttpModule } from '@nestjs/axios';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { FileManagerModule } from '@/infrastructure/services/file-manager/file-manager.module';
+import { ModelsModule } from '../models/models.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { FileManagerModule } from '@/infrastructure/services/file-manager/file-m
     HttpModule,
     TelemetryModule,
     FileManagerModule,
+    ModelsModule,
   ],
   controllers: [],
   providers: [ChatUsecases],
