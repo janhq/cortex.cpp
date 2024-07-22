@@ -14,7 +14,7 @@
     "dev": "nest dev",
     "compile": "npx ncc build ./dist/src/command.js -o command",
     "build": "nest build",
-    "build:binary": "yarn build && yarn compile && npx -q patch-package && npx @yao-pkg/pkg . --options max-old-space-size=30720,tls-min-v1.0,expose-gc",
+    "build:binary": "yarn build && yarn compile && npx -q patch-package && npx @yao-pkg/pkg .",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "build:extensions": "run-script-os",
     "build:extensions:windows": "powershell -command \"$jobs = Get-ChildItem -Path './src/extensions' -Directory | ForEach-Object { Start-Job -Name ($_.Name) -ScriptBlock { param($_dir); try { Set-Location $_dir; yarn; yarn build; Write-Output 'Build successful in ' + $_dir } catch { Write-Error 'Error in ' + $_dir; throw } } -ArgumentList $_.FullName }; $jobs | Wait-Job; $jobs | ForEach-Object { Receive-Job -Job $_ -Keep } | ForEach-Object { Write-Host $_ }; $failed = $jobs | Where-Object { $_.State -ne 'Completed' -or $_.ChildJobs[0].JobStateInfo.State -ne 'Completed' }; if ($failed) { Exit 1 }\"",
@@ -145,7 +145,11 @@
       "command/*.node",
       "**/package.json",
       "node_modules/axios/**/*",
-      "node_modules/swagger-ui-dist/"
+      "node_modules/swagger-ui-dist/",
+      "**/main.js",
+      "node_modules/cortex-cpp/**/*",
+      "dist/src/utils/cortex-cpp/**/*",
+      "**/cortex-cpp.js"
     ],
     "outputPath": "dist"
   }
