@@ -8,7 +8,7 @@ export class ConfigUpdateDto {
   })
   @IsString()
   @IsOptional()
-  key: string;
+  config: string;
 
   // Prompt Settings
   @ApiProperty({
@@ -19,13 +19,4 @@ export class ConfigUpdateDto {
   @IsString()
   @IsOptional()
   value: string;
-
-  @ApiProperty({
-    type: String,
-    example: 'openai',
-    description: 'The name of the configuration.',
-  })
-  @IsString()
-  @IsOptional()
-  name?: string;
 }

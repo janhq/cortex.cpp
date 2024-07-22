@@ -13,23 +13,23 @@ export class ConfigsUsecases {
   /**
    * Save a configuration to the .cortexrc file.
    * @param key Configuration Key
-   * @param group Configuration Group where the key belongs
+   * @param engine The engine where the configs belongs
    */
   async saveConfig(
     key: string,
     value: string,
-    group?: string,
+    engine?: string,
   ): Promise<CommonResponseDto> {
     const configs = await this.fileManagerService.getConfig();
 
     const groupConfigs = configs[
-      group as keyof typeof configs
+      engine as keyof typeof configs
     ] as unknown as object;
     const newConfigs = {
       ...configs,
-      ...(group
+      ...(engine
         ? {
-            [group]: {
+            [engine]: {
               ...groupConfigs,
               [key]: value,
             },
@@ -40,9 +40,9 @@ export class ConfigsUsecases {
     return this.fileManagerService
       .writeConfigFile(newConfigs)
       .then(async () => {
-        if (group) {
+        if (engine) {
           this.eventEmitter.emit('config.updated', {
-            group,
+            engine,
             key,
             value,
           });

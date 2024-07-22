@@ -42,8 +42,8 @@ export class EngineDto implements Partial<Extension> {
   @ApiProperty({
     type: String,
     example: true,
-    description: 'Whether the engine is initialized or not.',
+    description: 'The status of the engine.',
   })
   @IsBoolean()
-  initalized?: boolean;
+  status?: string;
 }

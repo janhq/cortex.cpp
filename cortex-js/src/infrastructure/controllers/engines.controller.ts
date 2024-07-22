@@ -5,12 +5,15 @@ import {
   HttpCode,
   UseInterceptors,
   Post,
+  Body,
+  Patch,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { EngineDto } from '../dtos/engines/engines.dto';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
+import { ConfigUpdateDto } from '../dtos/configs/config-update.dto';
 
 @ApiTags('Engines')
 @Controller('engines')
@@ -80,5 +83,29 @@ export class EnginesController {
     return {
       message: 'Engine initialization started successfully.',
     };
+  }
+
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: CommonResponseDto,
+  })
+  @ApiOperation({
+    summary: 'Update the engine',
+    description: 'Updates the engine with configurations.',
+  })
+  @ApiParam({
+    name: 'name',
+    required: true,
+    description: 'The unique identifier of the engine.',
+  })
+  @Patch(':name(*)')
+  update(@Param('name') name: string, @Body() configs: ConfigUpdateDto) {
+    return this.enginesUsecases.updateConfigs(
+      configs.config,
+      configs.value,
+      name,
+    );
   }
 }

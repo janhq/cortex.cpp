@@ -94,17 +94,15 @@ describe('Helper commands', () => {
   // });
 
   test(
-    'Show / kill running models',
+    'Show stop running models',
     async () => {
       const tableMock = stubMethod(console, 'table');
 
       const logMock = stubMethod(console, 'log');
-      await CommandTestFactory.run(commandInstance, ['kill']);
+      await CommandTestFactory.run(commandInstance, ['stop']);
       await CommandTestFactory.run(commandInstance, ['ps']);
 
-      expect(logMock.firstCall?.args[0]).toEqual(
-        'Cortex processes stopped successfully!',
-      );
+      expect(logMock.firstCall?.args[0]).toEqual('API server stopped');
       expect(tableMock.firstCall?.args[0]).toBeInstanceOf(Array);
       expect(tableMock.firstCall?.args[0].length).toEqual(0);
     },

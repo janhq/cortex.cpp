@@ -11,6 +11,7 @@ import { HttpService } from '@nestjs/axios';
 import LlamaCPPProvider from '@/infrastructure/providers/cortex/llamacpp.provider';
 import Onnxprovider from '@/infrastructure/providers/cortex/onnx.provider';
 import TensorrtLLMProvider from '@/infrastructure/providers/cortex/tensorrtllm.provider';
+import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 
 @Injectable()
 export class ExtensionRepositoryImpl implements ExtensionRepository {
@@ -50,34 +51,40 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       this.httpService,
       this.fileManagerService,
     );
-    llamaCPPEngine.initalized = existsSync(
+    llamaCPPEngine.status = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
         Engines.llamaCPP,
       ),
-    );
+    )
+      ? EngineStatus.READY
+      : EngineStatus.NOT_INITIALIZED;
 
     const onnxEngine = new Onnxprovider(
       this.httpService,
       this.fileManagerService,
     );
-    onnxEngine.initalized = existsSync(
+    onnxEngine.status = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
         Engines.onnx,
       ),
-    );
+    )
+      ? EngineStatus.READY
+      : EngineStatus.NOT_INITIALIZED;
 
     const tensorrtLLMEngine = new TensorrtLLMProvider(
       this.httpService,
       this.fileManagerService,
     );
-    tensorrtLLMEngine.initalized = existsSync(
+    tensorrtLLMEngine.status = existsSync(
       join(
         await this.fileManagerService.getCortexCppEnginePath(),
         Engines.tensorrtLLM,
       ),
-    );
+    )
+      ? EngineStatus.READY
+      : EngineStatus.NOT_INITIALIZED;
 
     await llamaCPPEngine.onLoad();
     await onnxEngine.onLoad();
