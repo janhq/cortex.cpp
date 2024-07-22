@@ -64,6 +64,16 @@ export class CortexCommand extends CommandRunner {
 
   private async startServer(host: string, port: number, attach: boolean) {
     try {
+      const isServerOnline = await this.cortexUseCases.isAPIServerOnline(
+        host,
+        port,
+      );
+      if (isServerOnline) {
+        console.log(
+          chalk.blue(`Server is already running at http://${host}:${port}`),
+        );
+        process.exit(0);
+      }
       if (attach) {
         const app = await getApp();
         await app.listen(port, host);
