@@ -5,9 +5,9 @@ import { CommandModule } from '@/command.module';
 import { LogService } from '@/infrastructure/commanders/test/log.service';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
-import axios from 'axios';
 import { join } from 'path';
 import { rmSync } from 'fs';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 let commandInstance: TestingModule,
   exitSpy: Stub<typeof process.exit>,
@@ -36,8 +36,13 @@ beforeAll(
       await fileService.writeConfigFile({
         dataFolderPath: join(__dirname, 'test_data'),
         cortexCppHost: 'localhost',
-        cortexCppPort: 3929
+        cortexCppPort: 3929,
       });
+      const cortexUseCases =
+        await commandInstance.resolve<CortexUsecases>(CortexUsecases);
+      jest
+        .spyOn(cortexUseCases, 'isAPIServerOnline')
+        .mockImplementation(() => Promise.resolve(true));
       res();
     }),
 );
@@ -97,7 +102,9 @@ describe('Helper commands', () => {
       await CommandTestFactory.run(commandInstance, ['kill']);
       await CommandTestFactory.run(commandInstance, ['ps']);
 
-      expect(logMock.firstCall?.args[0]).toEqual("Cortex processes stopped successfully!");
+      expect(logMock.firstCall?.args[0]).toEqual(
+        'Cortex processes stopped successfully!',
+      );
       expect(tableMock.firstCall?.args[0]).toBeInstanceOf(Array);
       expect(tableMock.firstCall?.args[0].length).toEqual(0);
     },

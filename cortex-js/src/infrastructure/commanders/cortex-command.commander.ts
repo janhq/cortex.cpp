@@ -19,6 +19,7 @@ import { getApp } from '@/app';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
+import ora from 'ora';
 
 type ServeOptions = {
   address?: string;
@@ -64,13 +65,22 @@ export class CortexCommand extends CommandRunner {
 
   private async startServer(host: string, port: number, attach: boolean) {
     try {
-      const isServerOnline = await this.cortexUseCases.isAPIServerOnline(
-        host,
-        port,
-      );
+      const startEngineSpinner = ora('Starting Cortex...');
+      await this.cortexUseCases.startCortex().catch((e) => {
+        startEngineSpinner.fail('Failed to start Cortex');
+        throw e;
+      });
+      startEngineSpinner.succeed('Cortex started successfully');
+      const isServerOnline = await this.cortexUseCases.isAPIServerOnline();
       if (isServerOnline) {
+        const {
+          apiServerHost: configApiServerHost,
+          apiServerPort: configApiServerPort,
+        } = await this.fileManagerService.getConfig();
         console.log(
-          chalk.blue(`Server is already running at http://${host}:${port}`),
+          chalk.blue(
+            `Server is already running at http://${configApiServerHost}:${configApiServerPort}. Please use 'cortex stop' to stop the server.`,
+          ),
         );
         process.exit(0);
       }
@@ -91,6 +101,7 @@ export class CortexCommand extends CommandRunner {
         apiServerPort: port,
       });
     } catch (e) {
+      console.error(e);
       console.error(`Failed to start server. Is port ${port} in use?`);
     }
   }

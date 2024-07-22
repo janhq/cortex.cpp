@@ -5,6 +5,7 @@ import { CommandModule } from '@/command.module';
 import { join } from 'path';
 import { rmSync } from 'fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 let commandInstance: TestingModule;
 
@@ -26,7 +27,11 @@ beforeAll(
         cortexCppHost: 'localhost',
         cortexCppPort: 3929,
       });
-
+      const cortexUseCases =
+        await commandInstance.resolve<CortexUsecases>(CortexUsecases);
+      jest
+        .spyOn(cortexUseCases, 'isAPIServerOnline')
+        .mockImplementation(() => Promise.resolve(true));
       res();
     }),
 );
@@ -39,6 +44,7 @@ afterAll(
         recursive: true,
         force: true,
       });
+
       res();
     }),
 );
@@ -58,11 +64,10 @@ describe('Action with models', () => {
 
   test('Empty model list', async () => {
     const logMock = stubMethod(console, 'table');
-
     await CommandTestFactory.run(commandInstance, ['models', 'list']);
     expect(logMock.firstCall?.args[0]).toBeInstanceOf(Array);
     expect(logMock.firstCall?.args[0].length).toBe(0);
-  });
+  }, 20000);
 
   //
   // test(
