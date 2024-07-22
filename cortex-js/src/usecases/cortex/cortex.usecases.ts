@@ -149,10 +149,6 @@ export class CortexUsecases {
    */
   async startServerDetached(host: string, port: number) {
     const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
-    console.log(
-      'Starting server in detached mode...',
-      join(__dirname, './../../main.js'),
-    );
     const server = fork(join(__dirname, './../../main.js'), [], {
       detached: true,
       stdio: ['ignore', writer, writer, 'ipc'],
@@ -172,7 +168,7 @@ export class CortexUsecases {
         reject();
       }, TIMEOUT);
       const interval = setInterval(() => {
-        this.isAPIServerOnline()
+        this.isAPIServerOnline(host, port)
           .then((result) => {
             if (result) {
               clearInterval(interval);
@@ -189,15 +185,15 @@ export class CortexUsecases {
    * @returns
    */
 
-  async isAPIServerOnline(): Promise<boolean> {
+  async isAPIServerOnline(host?: string, port?: number): Promise<boolean> {
     const {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
     } = await this.fileManagerService.getConfig();
 
     // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
-    const apiServerHost = configApiServerHost || defaultCortexJsHost;
-    const apiServerPort = configApiServerPort || defaultCortexJsPort;
+    const apiServerHost = host || configApiServerHost || defaultCortexJsHost;
+    const apiServerPort = port || configApiServerPort || defaultCortexJsPort;
     return firstValueFrom(
       this.httpService.get(CORTEX_JS_HEALTH_URL(apiServerHost, apiServerPort)),
     )
@@ -214,6 +210,7 @@ export class CortexUsecases {
     // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
     const apiServerHost = configApiServerHost || defaultCortexJsHost;
     const apiServerPort = configApiServerPort || defaultCortexJsPort;
+    await this.stopCortex();
     return fetch(CORTEX_JS_STOP_API_SERVER_URL(apiServerHost, apiServerPort), {
       method: 'DELETE',
     }).catch(() => {});
