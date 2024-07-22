@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
 import { join } from 'path';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
 import {
+  CORTEX_CPP_MODELS_URL,
   defaultCortexCppHost,
   defaultCortexCppPort,
 } from '@/infrastructure/constants/cortex';
@@ -12,6 +13,11 @@ import { readdirSync } from 'node:fs';
 import { normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+
+export interface ModelStatResponse {
+  object: string;
+  data: any;
+}
 
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
@@ -28,11 +34,12 @@ export default class CortexProvider extends OAIEngineExtension {
 
   constructor(
     protected readonly httpService: HttpService,
-    private readonly fileManagerService: FileManagerService,
+    protected readonly fileManagerService: FileManagerService,
   ) {
     super(httpService);
   }
 
+  // Override the inference method to make an inference request to the engine
   override async loadModel(
     model: Model,
     settings?: ModelSettingParams,
@@ -90,6 +97,30 @@ export default class CortexProvider extends OAIEngineExtension {
     return firstValueFrom(
       this.httpService.post(this.unloadModelUrl, { model: modelId }),
     ).then(); // pipe error or void instead of throwing
+  }
+
+  // Override the isModelRunning method to check if the model is running
+  override async isModelRunning(modelId: string): Promise<boolean> {
+    const configs = await this.fileManagerService.getConfig();
+
+    return firstValueFrom(
+      this.httpService.get(
+        CORTEX_CPP_MODELS_URL(configs.cortexCppHost, configs.cortexCppPort),
+      ),
+    )
+      .then((res) => {
+        const data = res.data as ModelStatResponse;
+        if (
+          res.status === HttpStatus.OK &&
+          data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          return data.data.find((e) => e.id === modelId);
+        }
+        return false;
+      })
+      .catch(() => false);
   }
 
   private readonly promptTemplateConverter = (

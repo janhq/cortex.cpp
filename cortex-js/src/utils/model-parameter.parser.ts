@@ -16,6 +16,8 @@ export class ModelParameterParser {
     mmproj: 'string',
     cont_batching: 'boolean',
     pre_prompt: 'string',
+    model_type: 'string',
+    embedding: 'boolean',
   };
 
   private modelRuntimeParamTypes: { [key: string]: string } = {

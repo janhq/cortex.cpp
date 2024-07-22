@@ -35,27 +35,21 @@ export class ChatController {
   ) {
     const { stream } = createChatDto;
 
-    if (stream) {
-      this.chatService
-        .inference(createChatDto, extractCommonHeaders(headers))
-        .then((stream) => {
+    this.chatService
+      .inference(createChatDto, extractCommonHeaders(headers))
+      .then((response) => {
+        if (stream) {
           res.header('Content-Type', 'text/event-stream');
-          stream.pipe(res);
-        })
-        .catch((error) =>
-          res.status(error.statusCode ?? 400).send(error.message),
-        );
-    } else {
-      res.header('Content-Type', 'application/json');
-      this.chatService
-        .inference(createChatDto, extractCommonHeaders(headers))
-        .then((response) => {
+          response.pipe(res);
+        } else {
+          res.header('Content-Type', 'application/json');
           res.json(response);
-        })
-        .catch((error) =>
-          res.status(error.statusCode ?? 400).send(error.message),
-        );
-    }
+        }
+      })
+      .catch((error) =>
+        res.status(error.statusCode ?? 400).send(error.message),
+      );
+
     this.telemetryUsecases.addEventToQueue({
       name: EventName.CHAT,
       modelId: createChatDto.model,
