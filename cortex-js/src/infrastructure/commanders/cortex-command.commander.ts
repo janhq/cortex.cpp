@@ -119,7 +119,7 @@ export class CortexCommand extends CommandRunner {
     } catch (e) {
       console.error(e);
       // revert the data folder path if it was set
-      await await this.fileManagerService.writeConfigFile({
+      await this.fileManagerService.writeConfigFile({
         ...config,
       });
       console.error(`Failed to start server. Is port ${port} in use?`);
