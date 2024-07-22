@@ -8,7 +8,9 @@ import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
 import { TelemetrySource } from './domain/telemetry/telemetry.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 
-dependenciesSpinner.succeed('Dependencies loaded in ' + (Date.now() - time) + 'ms');
+dependenciesSpinner.succeed(
+  'Dependencies loaded in ' + (Date.now() - time) + 'ms',
+);
 
 process.removeAllListeners('warning');
 
@@ -17,6 +19,7 @@ async function bootstrap() {
   let contextService: ContextService | null = null;
   const app = await CommandFactory.createWithoutRunning(CommandModule, {
     logger: ['warn', 'error'],
+    enablePositionalOptions: true,
     errorHandler: async (error) => {
       await telemetryUseCase!.createCrashReport(error, TelemetrySource.CLI);
       console.error(error);
