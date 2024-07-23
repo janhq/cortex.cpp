@@ -1,3 +1,4 @@
+import pkg from '@/../package.json';
 import { RootCommand, CommandRunner, Option } from 'nest-commander';
 import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
@@ -20,12 +21,14 @@ import { FileManagerService } from '../services/file-manager/file-manager.servic
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
 import ora from 'ora';
+import { printSlogan } from '@/utils/logo';
 
 type ServeOptions = {
   address?: string;
   port?: number;
   logs?: boolean;
   dataFolder?: string;
+  version?: boolean;
 };
 
 @RootCommand({
@@ -60,8 +63,15 @@ export class CortexCommand extends CommandRunner {
     const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
     const showLogs = options?.logs || false;
+    const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;
-
+    if (showVersion) {
+      printSlogan();
+      console.log('\n');
+      console.log(`Cortex CLI - v${pkg.version}`);
+      console.log(chalk.blue(`Github: ${pkg.homepage}`));
+      return;
+    }
     return this.startServer(host, port, showLogs, dataFolderPath);
   }
 
@@ -131,6 +141,7 @@ export class CortexCommand extends CommandRunner {
     description: 'Address to use',
   })
   parseHost(value: string) {
+    console.log('valueeeee', value);
     return value;
   }
 
@@ -156,5 +167,13 @@ export class CortexCommand extends CommandRunner {
   })
   parseDataFolder(value: string) {
     return value;
+  }
+
+  @Option({
+    flags: '-v, --version',
+    description: 'Show version',
+  })
+  parseVersion() {
+    return true;
   }
 }
