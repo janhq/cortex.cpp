@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 
 import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
@@ -20,6 +20,10 @@ import { cpuInfo } from 'cpu-instructions';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 import { DownloadType } from '@/domain/models/download.interface';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
+import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EngineStatus } from '@/domain/abstracts/engine.abstract';
+import { ConfigsUsecases } from '../configs/configs.usecase';
 
 @Injectable()
 export class EnginesUsecases {
@@ -28,6 +32,8 @@ export class EnginesUsecases {
     private readonly fileManagerService: FileManagerService,
     private readonly downloadManagerService: DownloadManagerService,
     private readonly extensionRepository: ExtensionRepository,
+    private readonly configsUsecases: ConfigsUsecases,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -40,7 +46,7 @@ export class EnginesUsecases {
       description: engine.description,
       version: engine.version,
       productName: engine.productName,
-      initialized: engine.initalized,
+      status: engine.status?.toLowerCase(),
     }));
   }
 
@@ -57,7 +63,7 @@ export class EnginesUsecases {
             description: engine.description,
             version: engine.version,
             productName: engine.productName,
-            initialized: engine.initalized,
+            status: engine.status?.toLowerCase(),
           }
         : undefined,
     );
@@ -144,9 +150,37 @@ export class EnginesUsecases {
 
     // Update states
     await this.extensionRepository.findOne(engine).then((e) => {
-      if (e) e.initalized = true;
+      if (e) e.status = EngineStatus.READY;
     });
   };
+
+  /**
+   * Update engine's configurations
+   * @param config Configuration Key
+   * @param value Configuration Value
+   * @param engine Configuration Group where the key belongs
+   */
+  async updateConfigs(
+    config: string,
+    value: string,
+    engine: string,
+  ): Promise<CommonResponseDto> {
+    if (!engine || !(await this.extensionRepository.findOne(engine)))
+      throw new ForbiddenException('Engine not found');
+
+    return this.configsUsecases.saveConfig(config, value, engine);
+  }
+
+  /**
+   * Get the configurations of an engine.
+   * @param engine
+   * @returns
+   */
+  async getEngineConfigs(engine: string) {
+    if (!engine || !(await this.extensionRepository.findOne(engine)))
+      throw new ForbiddenException('Engine not found');
+    return this.configsUsecases.getGroupConfigs(engine);
+  }
 
   /**
    * Install CUDA Toolkit dependency (dll/so files)
