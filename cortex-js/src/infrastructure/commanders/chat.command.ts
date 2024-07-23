@@ -93,7 +93,6 @@ export class ChatCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      console.log('Engine not found, pulling engine...');
       await this.initUsecases.installEngine(undefined, 'latest', engine);
     }
 
