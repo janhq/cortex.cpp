@@ -104,18 +104,15 @@ export class ChatCommand extends BaseCommand {
       ],
       TelemetrySource.CLI,
     );
-    return this.cortexUsecases
-      .startCortex()
-      .then(() => this.cortex.models.start(modelId))
-      .then(() =>
-        this.chatCliUsecases.chat(
-          modelId,
-          options.threadId,
-          message, // Accept both message from inputs or arguments
-          options.attach,
-          false, // Do not stop cortex session or loaded model
-        ),
-      );
+    return this.cortex.models.start(modelId).then(() =>
+      this.chatCliUsecases.chat(
+        modelId,
+        options.threadId,
+        message, // Accept both message from inputs or arguments
+        options.attach,
+        false, // Do not stop cortex session or loaded model
+      ),
+    );
   }
 
   modelInquiry = async (models: ModelStat[]) => {

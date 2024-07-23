@@ -3,7 +3,6 @@ import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { exit } from 'node:process';
 import ora from 'ora';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
-import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
@@ -60,10 +59,9 @@ export class RunCommand extends BaseCommand {
     // Try Pull
     if (!(await this.cortex.models.retrieve(modelId))) {
       checkingSpinner.succeed();
+
       await this.cortex.models.download(modelId).catch((e: Error) => {
-        if (e instanceof ModelNotFoundException)
-          checkingSpinner.fail('Model does not exist.');
-        else checkingSpinner.fail(e.message ?? e);
+        checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
     }
@@ -85,14 +83,8 @@ export class RunCommand extends BaseCommand {
       await this.initUsecases.installEngine(undefined, 'latest', engine);
     }
 
-    return this.cortexUsecases
-      .startCortex()
-      .then(async () =>
-        this.cortex.models.start(
-          modelId,
-          await this.fileService.getPreset(options.preset),
-        ),
-      )
+    return this.cortex.models
+      .start(modelId, await this.fileService.getPreset(options.preset))
       .then(() => {
         if (options.chat) {
           return this.chatCliUsecases.chat(modelId, options.threadId);

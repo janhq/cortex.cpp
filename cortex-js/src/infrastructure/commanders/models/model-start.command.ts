@@ -88,9 +88,8 @@ export class ModelStartCommand extends BaseCommand {
 
     const parsedPreset = await this.fileService.getPreset(options.preset);
 
-    await this.cortexUsecases
-      .startCortex()
-      .then(() => this.cortex.models.start(modelId, parsedPreset))
+    await this.cortex.models
+      .start(modelId, parsedPreset)
       .then(() => options.attach && ora('Model is running...').start());
   }
 
