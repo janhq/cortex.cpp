@@ -1,12 +1,32 @@
 import { CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import Cortex from 'cortexso-node';
 import ora from 'ora';
+import { FileManagerService } from '../services/file-manager/file-manager.service';
+import { cortexNamespace, cortexServerAPI } from '../constants/cortex';
 
 @Injectable()
 export abstract class BaseCommand extends CommandRunner {
+  // Cortex client instance to communicate with cortex API server
+  cortex: Cortex;
+  serverConfigs: { host: string; port: number };
+
   constructor(readonly cortexUseCases: CortexUsecases) {
     super();
+    // No need to inject services, since there is no nested dependencies
+    const fileManagerService: FileManagerService = new FileManagerService();
+    this.serverConfigs = fileManagerService.getServerConfig();
+
+    // Instantiate cortex client, it will be use throughout the command
+    this.cortex = new Cortex({
+      apiKey: cortexNamespace,
+      baseURL: cortexServerAPI(
+        this.serverConfigs.host,
+        this.serverConfigs.port,
+      ),
+      timeout: 20 * 1000,
+    });
   }
   protected abstract runCommand(
     passedParam: string[],

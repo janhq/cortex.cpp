@@ -12,7 +12,7 @@ import {
 } from 'node:fs';
 import { promisify } from 'util';
 import yaml from 'js-yaml';
-import { write } from 'fs';
+import { readFileSync, write } from 'fs';
 import { createInterface } from 'readline';
 import {
   defaultCortexCppHost,
@@ -295,5 +295,25 @@ export class FileManagerService {
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Get the cortex server configurations
+   * It is supposed to be stored in the home directory > .cortexrc
+   * @returns the server configurations
+   */
+  getServerConfig(): { host: string; port: number } {
+    const homeDir = os.homedir();
+    const configPath = join(homeDir, this.configFile);
+    let config = this.defaultConfig();
+
+    try {
+      const content = readFileSync(configPath, 'utf8');
+      config = yaml.load(content) as Config;
+    } catch {}
+    return {
+      host: config.apiServerHost ?? 'localhost',
+      port: config.apiServerPort ?? 1337,
+    };
   }
 }

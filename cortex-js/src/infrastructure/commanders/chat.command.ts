@@ -70,7 +70,7 @@ export class ChatCommand extends BaseCommand {
       // first input might be message input
       message = passedParams.length
         ? passedParams.join(' ')
-        : (options.message ?? '');
+        : options.message ?? '';
       // If model ID is not provided, prompt user to select from running models
       const models = await this.psCliUsecases.getModels();
       if (models.length === 1) {
