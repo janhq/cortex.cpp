@@ -141,7 +141,6 @@ export class CortexCommand extends CommandRunner {
     description: 'Address to use',
   })
   parseHost(value: string) {
-    console.log('valueeeee', value);
     return value;
   }
 
