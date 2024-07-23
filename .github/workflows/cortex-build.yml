@@ -2,7 +2,7 @@ name: CI Cortex Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*"]
     paths: ["cortex-cpp/**", "cortex-js/**"]
   workflow_dispatch:
 
@@ -416,6 +416,14 @@ jobs:
           asset_path: ./cortex-js/cortexso.deb
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.deb
           asset_content_type: application/gzip
+      
+      # Upload artifact for package manager
+      - name: Upload Artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-linux
+          path: ./cortex
 
   update_release_draft:
     needs: [build-and-test, build-cortex-single-binary]
@@ -440,3 +448,53 @@ jobs:
         #   disable-autolabeler: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  # Add jobs with approval 
+  public_package_manager:
+    needs: [create-draft-release, update_release_draft]
+    runs-on: ubuntu-latest
+    environment: package-manager
+    permissions:
+      contents: read
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: cortex-linux
+          path: ./cortex
+      
+      - name: install dependencies
+        run: |
+          sudo apt-get install dput devscripts build-essential debhelper-compat pbuilder debootstrap devscripts -y
+
+      - name: import gpg key with subkey
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          gpg_private_key: ${{ secrets.HOMEBREW_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.HOMEBREW_GPG_PASSPHRASE }}
+          fingerprint: ${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
+
+      - run: |
+          cp ./cortex/cortex package-managers-template/launchpad/cortexso/
+          mv package-managers-template/launchpad/cortexso package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}
+      
+      - name: Get release notes
+        id: release_notes
+        run: |
+            RELEASE_NOTES=$(curl -s -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION} | jq -r '.body')
+            echo "RELEASE_NOTES=${RELEASE_NOTES}" >> $GITHUB_ENV
+      - name: Update change log
+        run: |
+          sed -i "s/VERSION/${{ needs.create-draft-release.outputs.version }}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
+          sed -i "s/CHANGELOG_HERE/${{ env.RELEASE_NOTES }}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
+          timestamp=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
+          sed -i "s/TIME_HERE/${timestamp}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
+      
+      - name: Build package
+        run: |
+          cd package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}
+          echo "y" | debuild -S -sa -k ${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
+          sudo sudo pbuilder build ../cortexso_${{ needs.create-draft-release.outputs.version }}.dsc
+          dput ppa:cortexlabs/cortex cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
+      
