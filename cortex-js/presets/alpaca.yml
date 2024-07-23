@@ -1,0 +1,16 @@
+version: 1.0
+# Model Settings
+prompt_template: |+
+  {system_message}
+  ### Instruction: {prompt}
+  ### Response:
+ctx_len: 2048
+
+# Results Preferences
+stop:
+  - </s>
+temperature: 0.7
+top_p: 0.95
+max_tokens: 2048
+frequency_penalty: 0
+presence_penalty: 0

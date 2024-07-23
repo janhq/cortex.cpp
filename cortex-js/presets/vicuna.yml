@@ -1,0 +1,20 @@
+version: 1.0
+# Model Settings
+prompt_template: |-
+  <｜begin_of_sentence｜>{system_prompt}
+  
+  User: {prompt}
+  
+  Assistant:
+  
+ctx_len: 2048
+
+# Results Preferences
+stop:
+  - </s>
+  - end_of_sentence
+temperature: 0.7
+top_p: 0.95
+max_tokens: 2048
+frequency_penalty: 0
+presence_penalty: 0
