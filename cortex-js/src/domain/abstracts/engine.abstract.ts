@@ -3,6 +3,13 @@ import stream from 'stream';
 import { Model, ModelSettingParams } from '../../domain/models/model.interface';
 import { Extension } from './extension.abstract';
 
+export enum EngineStatus {
+  READY = 'READY',
+  MISSING_CONFIGURATION = 'MISSING_CONFIGURATION',
+  NOT_INITIALIZED = 'NOT_INITIALIZED',
+  ERROR = 'ERROR',
+}
+
 /**
  * This class should be extended by any class that represents an engine extension.
  * It provides methods for loading and unloading models, and for making inference requests.
@@ -14,7 +21,7 @@ export abstract class EngineExtension extends Extension {
 
   transformResponse?: Function;
 
-  initalized: boolean = false;
+  status: EngineStatus = EngineStatus.READY;
 
   /**
    * Makes an inference request to the engine.
