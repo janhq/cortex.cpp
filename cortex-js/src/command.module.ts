@@ -15,7 +15,7 @@ import { ModelStartCommand } from './infrastructure/commanders/models/model-star
 import { ModelStopCommand } from './infrastructure/commanders/models/model-stop.command';
 import { ModelGetCommand } from './infrastructure/commanders/models/model-get.command';
 import { ModelRemoveCommand } from './infrastructure/commanders/models/model-remove.command';
-import { RunCommand } from './infrastructure/commanders/shortcuts/run.command';
+import { RunCommand } from './infrastructure/commanders/run.command';
 import { ModelUpdateCommand } from './infrastructure/commanders/models/model-update.command';
 import { AssistantsModule } from './usecases/assistants/assistants.module';
 import { MessagesModule } from './usecases/messages/messages.module';

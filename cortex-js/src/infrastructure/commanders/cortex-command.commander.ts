@@ -2,7 +2,7 @@ import pkg from '@/../package.json';
 import { RootCommand, CommandRunner, Option } from 'nest-commander';
 import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
-import { RunCommand } from './shortcuts/run.command';
+import { RunCommand } from './run.command';
 import { ModelPullCommand } from './models/model-pull.command';
 import { PSCommand } from './ps.command';
 import { PresetCommand } from './presets.command';

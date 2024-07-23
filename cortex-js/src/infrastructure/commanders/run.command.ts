@@ -7,10 +7,10 @@ import { ModelNotFoundException } from '@/infrastructure/exception/model-not-fou
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { Engines } from '../types/engine.interface';
+import { Engines } from './types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
-import { BaseCommand } from '../base.command';
+import { BaseCommand } from './base.command';
 import { readdirSync, readFileSync } from 'node:fs';
 import { load } from 'js-yaml';
 import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
