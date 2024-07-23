@@ -14,7 +14,6 @@ import {
 import { ContextService } from '../services/context/context.service';
 import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { ModelsCliUsecases } from './usecases/models.cli.usecases';
 import { Engines } from './types/engine.interface';
 import { join } from 'path';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
@@ -48,7 +47,6 @@ export class ChatCommand extends BaseCommand {
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
     readonly cortexUsecases: CortexUsecases,
-    readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly fileService: FileManagerService,
     private readonly initUsecases: EnginesUsecases,
   ) {
@@ -82,8 +80,8 @@ export class ChatCommand extends BaseCommand {
       }
     }
 
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (!existingModel || !isLocalModel(existingModel.files)) {
+    const existingModel = await this.cortex.models.retrieve(modelId);
+    if (!existingModel) {
       process.exit(1);
     }
 
@@ -108,7 +106,7 @@ export class ChatCommand extends BaseCommand {
     );
     return this.cortexUsecases
       .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
+      .then(() => this.cortex.models.start(modelId))
       .then(() =>
         this.chatCliUsecases.chat(
           modelId,

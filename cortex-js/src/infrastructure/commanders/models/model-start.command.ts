@@ -1,17 +1,24 @@
 import { SubCommand, Option, InquirerService } from 'nest-commander';
 import ora from 'ora';
 import { exit } from 'node:process';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-import { createReadStream, existsSync, statSync, watchFile } from 'node:fs';
+import {
+  createReadStream,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  watchFile,
+} from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { BaseCommand } from '../base.command';
+import { load } from 'js-yaml';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 
 type ModelStartOptions = {
@@ -32,7 +39,6 @@ export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly cortexUsecases: CortexUsecases,
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly initUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
@@ -55,12 +61,8 @@ export class ModelStartCommand extends BaseCommand {
       }
     }
 
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (
-      !existingModel ||
-      !Array.isArray(existingModel.files) ||
-      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
-    ) {
+    const existingModel = await this.cortex.models.retrieve(modelId);
+    if (!existingModel) {
       checkingSpinner.fail(
         `Model ${modelId} not found on filesystem.\nPlease try 'cortex pull ${modelId}' first.`,
       );
@@ -84,22 +86,24 @@ export class ModelStartCommand extends BaseCommand {
       this.attachLogWatch();
     }
 
+    const parsedPreset = await this.parsePreset(options.preset);
+
     await this.cortexUsecases
       .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
+      .then(() => this.cortex.models.start(modelId, parsedPreset))
       .then(() => options.attach && ora('Model is running...').start());
   }
 
   modelInquiry = async () => {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const { data: models } = await this.cortex.models.list();
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select a model to start:',
       choices: models.map((e) => ({
-        name: e.name,
-        value: e.model,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;
@@ -155,5 +159,30 @@ export class ModelStartCommand extends BaseCommand {
         });
       }
     });
+  }
+
+  /**
+   * Parse preset file
+   * TODO: Remove duplication
+   * @param preset
+   * @returns
+   */
+  private async parsePreset(preset?: string): Promise<object> {
+    const presetsFolder = await this.fileService.getPresetsPath();
+
+    if (!existsSync(presetsFolder)) return {};
+
+    const presetFile = readdirSync(presetsFolder).find(
+      (file) =>
+        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
+        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
+    );
+    if (!presetFile) return {};
+    const presetPath = join(presetsFolder, presetFile);
+
+    if (!preset || !existsSync(presetPath)) return {};
+    return preset
+      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
+      : {};
   }
 }

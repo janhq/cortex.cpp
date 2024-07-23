@@ -1,5 +1,4 @@
 import { SubCommand, Option } from 'nest-commander';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
@@ -12,7 +11,6 @@ interface ModelListOptions {
 @SetCommandContext()
 export class ModelListCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
   ) {
@@ -23,14 +21,12 @@ export class ModelListCommand extends BaseCommand {
     passedParams: string[],
     option: ModelListOptions,
   ): Promise<void> {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const { data: models } = await this.cortex.models.list();
     option.format === 'table'
       ? console.table(
           models.map((e) => ({
-            id: e.model,
-            name: e.name,
+            id: e.id,
             engine: e.engine,
-            version: e.version,
           })),
         )
       : console.log(models);

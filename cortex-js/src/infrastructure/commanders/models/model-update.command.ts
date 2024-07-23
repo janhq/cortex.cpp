@@ -1,5 +1,4 @@
 import { SubCommand, Option } from 'nest-commander';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
@@ -23,7 +22,6 @@ type UpdateOptions = {
 @SetCommandContext()
 export class ModelUpdateCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
   ) {
@@ -52,7 +50,7 @@ export class ModelUpdateCommand extends BaseCommand {
       const [key, stringValue] = option.split('=');
       Object.assign(toUpdate, { key, stringValue });
     });
-    this.modelsCliUsecases.updateModel(modelId, toUpdate);
+    this.cortex.models.update(modelId, toUpdate as any);
   }
 
   @Option({

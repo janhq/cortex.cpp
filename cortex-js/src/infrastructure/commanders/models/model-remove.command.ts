@@ -1,5 +1,4 @@
 import { SubCommand } from 'nest-commander';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
@@ -17,7 +16,6 @@ import { BaseCommand } from '../base.command';
 @SetCommandContext()
 export class ModelRemoveCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
   ) {
@@ -30,6 +28,6 @@ export class ModelRemoveCommand extends BaseCommand {
       exit(1);
     }
 
-    await this.modelsCliUsecases.removeModel(passedParams[0]).then(console.log);
+    await this.cortex.models.del(passedParams[0]).then(console.log);
   }
 }

@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
-import { ModelsCliUsecases } from './models.cli.usecases';
 import { ModelsModule } from '@/usecases/models/models.module';
 import { ChatCliUsecases } from './chat.cli.usecases';
 import { ChatModule } from '@/usecases/chat/chat.module';
@@ -28,7 +27,7 @@ import { EnginesModule } from '@/usecases/engines/engines.module';
     DownloadManagerModule,
     EnginesModule,
   ],
-  providers: [ModelsCliUsecases, ChatCliUsecases, PSCliUsecases],
-  exports: [ModelsCliUsecases, ChatCliUsecases, PSCliUsecases],
+  providers: [ChatCliUsecases, PSCliUsecases],
+  exports: [ChatCliUsecases, PSCliUsecases],
 })
 export class CliUsecasesModule {}

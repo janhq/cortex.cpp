@@ -3,7 +3,6 @@ import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { exit } from 'node:process';
 import ora from 'ora';
 import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -12,6 +11,8 @@ import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { BaseCommand } from '../base.command';
+import { readdirSync, readFileSync } from 'node:fs';
+import { load } from 'js-yaml';
 import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
 
 type RunOptions = {
@@ -31,7 +32,6 @@ type RunOptions = {
 })
 export class RunCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly cortexUsecases: CortexUsecases,
     private readonly chatCliUsecases: ChatCliUsecases,
     private readonly inquirerService: InquirerService,
@@ -58,9 +58,9 @@ export class RunCommand extends BaseCommand {
 
     // If not exist
     // Try Pull
-    if (!(await this.modelsCliUsecases.getModel(modelId))) {
+    if (!(await this.cortex.models.retrieve(modelId))) {
       checkingSpinner.succeed();
-      await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
+      await this.cortex.models.download(modelId).catch((e: Error) => {
         if (e instanceof ModelNotFoundException)
           checkingSpinner.fail('Model does not exist.');
         else checkingSpinner.fail(e.message ?? e);
@@ -69,8 +69,8 @@ export class RunCommand extends BaseCommand {
     }
 
     // Second check if model is available
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (!existingModel || !isLocalModel(existingModel.files)) {
+    const existingModel = await this.cortex.models.retrieve(modelId);
+    if (!existingModel) {
       checkingSpinner.fail(`Model is not available`);
       process.exit(1);
     }
@@ -87,7 +87,12 @@ export class RunCommand extends BaseCommand {
 
     return this.cortexUsecases
       .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
+      .then(async () =>
+        this.cortex.models.start(
+          modelId,
+          await this.parsePreset(options.preset),
+        ),
+      )
       .then(() => {
         if (options.chat) {
           return this.chatCliUsecases.chat(modelId, options.threadId);
@@ -121,17 +126,42 @@ export class RunCommand extends BaseCommand {
   }
 
   modelInquiry = async () => {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const { data: models } = await this.cortex.models.list();
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select a model to start:',
       choices: models.map((e) => ({
-        name: e.name,
-        value: e.model,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;
   };
+
+  /**
+   * Parse preset file
+   * TODO: Remove duplication
+   * @param preset
+   * @returns
+   */
+  private async parsePreset(preset?: string): Promise<object> {
+    const presetsFolder = await this.fileService.getPresetsPath();
+
+    if (!existsSync(presetsFolder)) return {};
+
+    const presetFile = readdirSync(presetsFolder).find(
+      (file) =>
+        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
+        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
+    );
+    if (!presetFile) return {};
+    const presetPath = join(presetsFolder, presetFile);
+
+    if (!preset || !existsSync(presetPath)) return {};
+    return preset
+      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
+      : {};
+  }
 }

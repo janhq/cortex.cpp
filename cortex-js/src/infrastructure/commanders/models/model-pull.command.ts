@@ -1,7 +1,6 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import {
@@ -29,7 +28,6 @@ import { BaseCommand } from '../base.command';
 @SetCommandContext()
 export class ModelPullCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly engineUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
@@ -48,14 +46,15 @@ export class ModelPullCommand extends BaseCommand {
 
     await checkModelCompatibility(modelId);
 
-    await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
+    // TODO: support pull from cortexjs
+    await this.cortex.models.download(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
         console.error('Model does not exist.');
       else console.error(e.message ?? e);
       exit(1);
     });
 
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    const existingModel = await this.cortex.models.retrieve(modelId);
     const engine = existingModel?.engine || Engines.llamaCPP;
 
     // Pull engine if not exist
@@ -63,6 +62,7 @@ export class ModelPullCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');
+      // TODO: support install engine from cortexjs
       await this.engineUsecases.installEngine(undefined, 'latest', engine);
     }
     this.telemetryUsecases.sendEvent(
