@@ -45,13 +45,8 @@ export class EnginesInitCommand extends BaseCommand {
       await this.cortexUsecases.stopCortex();
     }
     console.log(`Installing engine ${engine}...`);
-    return this.engineUsecases
-      .installEngine(
-        params,
-        engine.includes('@') ? engine.split('@')[1] : 'latest',
-        engine,
-        true,
-      )
+    return this.cortex.engines
+      .init(engine, params)
       .then(() => console.log('Engine installed successfully!'))
       .catch((e) =>
         console.error('Install engine failed with reason: %s', e.message ?? e),
