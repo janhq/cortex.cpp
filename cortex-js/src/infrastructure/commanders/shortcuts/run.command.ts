@@ -90,7 +90,7 @@ export class RunCommand extends BaseCommand {
       .then(async () =>
         this.cortex.models.start(
           modelId,
-          await this.parsePreset(options.preset),
+          await this.fileService.getPreset(options.preset),
         ),
       )
       .then(() => {
@@ -139,29 +139,4 @@ export class RunCommand extends BaseCommand {
     });
     return model;
   };
-
-  /**
-   * Parse preset file
-   * TODO: Remove duplication
-   * @param preset
-   * @returns
-   */
-  private async parsePreset(preset?: string): Promise<object> {
-    const presetsFolder = await this.fileService.getPresetsPath();
-
-    if (!existsSync(presetsFolder)) return {};
-
-    const presetFile = readdirSync(presetsFolder).find(
-      (file) =>
-        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
-        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
-    );
-    if (!presetFile) return {};
-    const presetPath = join(presetsFolder, presetFile);
-
-    if (!preset || !existsSync(presetPath)) return {};
-    return preset
-      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
-      : {};
-  }
 }

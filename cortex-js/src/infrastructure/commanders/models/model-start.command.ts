@@ -86,7 +86,7 @@ export class ModelStartCommand extends BaseCommand {
       this.attachLogWatch();
     }
 
-    const parsedPreset = await this.parsePreset(options.preset);
+    const parsedPreset = await this.fileService.getPreset(options.preset);
 
     await this.cortexUsecases
       .startCortex()
@@ -159,30 +159,5 @@ export class ModelStartCommand extends BaseCommand {
         });
       }
     });
-  }
-
-  /**
-   * Parse preset file
-   * TODO: Remove duplication
-   * @param preset
-   * @returns
-   */
-  private async parsePreset(preset?: string): Promise<object> {
-    const presetsFolder = await this.fileService.getPresetsPath();
-
-    if (!existsSync(presetsFolder)) return {};
-
-    const presetFile = readdirSync(presetsFolder).find(
-      (file) =>
-        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
-        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
-    );
-    if (!presetFile) return {};
-    const presetPath = join(presetsFolder, presetFile);
-
-    if (!preset || !existsSync(presetPath)) return {};
-    return preset
-      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
-      : {};
   }
 }

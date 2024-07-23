@@ -11,8 +11,8 @@ import {
   createReadStream,
 } from 'node:fs';
 import { promisify } from 'util';
-import yaml from 'js-yaml';
-import { readFileSync, write } from 'fs';
+import yaml, { load } from 'js-yaml';
+import { readdirSync, readFileSync, write } from 'fs';
 import { createInterface } from 'readline';
 import {
   defaultCortexCppHost,
@@ -226,6 +226,32 @@ export class FileManagerService {
   async getPresetsPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.presetFolderName);
+  }
+
+  /**
+   * Get the preset data
+   * Usually it is located at the home directory > cortex > presets > preset.yaml
+   * @returns the preset data
+   */
+  async getPreset(preset?: string): Promise<object | undefined> {
+    if (!preset) return undefined;
+
+    const dataFolderPath = await this.getDataFolderPath();
+    const presetsFolder = join(dataFolderPath, this.presetFolderName);
+    if (!existsSync(presetsFolder)) return {};
+
+    const presetFile = readdirSync(presetsFolder).find(
+      (file) =>
+        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
+        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
+    );
+    if (!presetFile) return {};
+    const presetPath = join(presetsFolder, presetFile);
+
+    if (!preset || !existsSync(presetPath)) return {};
+    return preset
+      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
+      : {};
   }
 
   /**
