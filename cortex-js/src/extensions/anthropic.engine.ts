@@ -4,6 +4,7 @@ import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import _ from 'lodash';
+import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -16,7 +17,6 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
   productName = 'Anthropic Inference Engine';
   description = 'This extension enables Anthropic chat completion API calls';
   version = '0.0.1';
-  initalized = true;
   apiKey?: string;
 
   constructor(
@@ -29,6 +29,10 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     eventEmmitter.on('config.updated', async (data) => {
       if (data.group === this.name) {
         this.apiKey = data.value;
+        this.status =
+          (this.apiKey?.length ?? 0) > 0
+            ? EngineStatus.READY
+            : EngineStatus.MISSING_CONFIGURATION;
       }
     });
   }
@@ -38,6 +42,10 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
       this.name,
     )) as unknown as { apiKey: string };
     this.apiKey = configs?.apiKey;
+    this.status =
+      (this.apiKey?.length ?? 0) > 0
+        ? EngineStatus.READY
+        : EngineStatus.MISSING_CONFIGURATION;
   }
 
   override async inference(

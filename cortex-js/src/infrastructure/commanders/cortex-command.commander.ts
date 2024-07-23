@@ -4,7 +4,6 @@ import { ModelsCommand } from './models.command';
 import { RunCommand } from './shortcuts/run.command';
 import { ModelPullCommand } from './models/model-pull.command';
 import { PSCommand } from './ps.command';
-import { KillCommand } from './kill.command';
 import { PresetCommand } from './presets.command';
 import { TelemetryCommand } from './telemetry.command';
 import { SetCommandContext } from './decorators/CommandContext';
@@ -13,13 +12,13 @@ import { BenchmarkCommand } from './benchmark.command';
 import chalk from 'chalk';
 import { ContextService } from '../services/context/context.service';
 import { EnginesCommand } from './engines.command';
-import { ConfigsCommand } from './configs.command';
 import { defaultCortexJsHost, defaultCortexJsPort } from '../constants/cortex';
 import { getApp } from '@/app';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
 import ora from 'ora';
+import { EnginesSetCommand } from './engines/engines-set.command';
 
 type ServeOptions = {
   address?: string;
@@ -35,14 +34,13 @@ type ServeOptions = {
     RunCommand,
     ModelPullCommand,
     PSCommand,
-    KillCommand,
     PresetCommand,
     TelemetryCommand,
     EmbeddingCommand,
     BenchmarkCommand,
     EnginesCommand,
-    ConfigsCommand,
     ServeStopCommand,
+    EnginesSetCommand,
   ],
   description: 'Cortex CLI',
 })
