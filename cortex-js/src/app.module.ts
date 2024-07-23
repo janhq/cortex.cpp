@@ -29,7 +29,6 @@ import { ContextModule } from './infrastructure/services/context/context.module'
 import { ExtensionsModule } from './extensions/extensions.module';
 import { ConfigsModule } from './usecases/configs/configs.module';
 import { EnginesModule } from './usecases/engines/engines.module';
-import { ConfigsController } from './infrastructure/controllers/configs.controller';
 import { EnginesController } from './infrastructure/controllers/engines.controller';
 import { ResourceManagerModule } from './infrastructure/services/resources-manager/resources-manager.module';
 
@@ -70,7 +69,6 @@ import { ResourceManagerModule } from './infrastructure/services/resources-manag
     StatusController,
     ProcessController,
     EventsController,
-    ConfigsController,
     EnginesController,
   ],
   providers: [

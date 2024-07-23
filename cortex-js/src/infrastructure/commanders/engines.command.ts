@@ -9,6 +9,7 @@ import { ModuleRef } from '@nestjs/core';
 import { EngineNamesMap } from './types/engine.interface';
 import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { EnginesSetCommand } from './engines/engines-set.command';
 
 @SubCommand({
   name: 'engines',
@@ -22,17 +23,18 @@ export class EnginesCommand extends BaseCommand {
     list: EnginesListCommand,
     get: EnginesGetCommand,
     init: EnginesInitCommand,
+    set: EnginesSetCommand,
   };
 
   constructor(
     readonly contextService: ContextService,
-    private readonly moduleRef: ModuleRef,
+    readonly moduleRef: ModuleRef,
     readonly cortexUsecases: CortexUsecases,
   ) {
     super(cortexUsecases);
   }
-  async runCommand(passedParam: string[], options: { vulkan: boolean }) {
-    const [parameter, command] = passedParam;
+  async runCommand(passedParams: string[], options: { vulkan: boolean }) {
+    const [parameter, command] = passedParams;
     if (command !== 'list' && !parameter) {
       console.error('Engine name is required.');
       return;
@@ -45,7 +47,11 @@ export class EnginesCommand extends BaseCommand {
       return;
     }
     const engine = invert(EngineNamesMap)[parameter] || parameter;
-    await this.runEngineCommand(commandClass, [engine], options);
+    await this.runEngineCommand(
+      commandClass,
+      [engine, ...passedParams.slice(2)],
+      options,
+    );
   }
 
   private async runEngineCommand(
