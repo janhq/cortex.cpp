@@ -19,12 +19,13 @@ import { Engines } from './types/engine.interface';
 import { join } from 'path';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
-import { isLocalModel } from '@/utils/normalize-model-id';
+import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
 
 type ChatOptions = {
   threadId?: string;
   message?: string;
   attach: boolean;
+  preset?: string;
 };
 
 @SubCommand({
@@ -89,8 +90,10 @@ export class ChatCommand extends BaseCommand {
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
+      !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
+      console.log('Engine not found, pulling engine...');
       await this.initUsecases.installEngine(undefined, 'latest', engine);
     }
 
@@ -106,7 +109,7 @@ export class ChatCommand extends BaseCommand {
     );
     return this.cortexUsecases
       .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId))
+      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
       .then(() =>
         this.chatCliUsecases.chat(
           modelId,
@@ -155,5 +158,13 @@ export class ChatCommand extends BaseCommand {
   })
   parseAttach() {
     return true;
+  }
+
+  @Option({
+    flags: '-p, --preset <preset>',
+    description: 'Apply a chat preset to the chat session',
+  })
+  parsePreset(value: string) {
+    return value;
   }
 }
