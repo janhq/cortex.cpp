@@ -19,7 +19,7 @@ export class EnginesListCommand extends BaseCommand {
   }
 
   async runCommand(): Promise<void> {
-    return this.cortex.engines.list().then((engines) => {
+    return this.cortex.engines.list().then(({ data: engines }) => {
       const enginesTable = engines.map((engine) => ({
         ...engine,
         name: EngineNamesMap[engine.name as string] || engine.name,
