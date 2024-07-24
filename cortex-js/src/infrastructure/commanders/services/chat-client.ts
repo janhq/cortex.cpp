@@ -3,11 +3,9 @@ import * as readline from 'node:readline/promises';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
 import { CreateThreadAssistantDto } from '@/infrastructure/dtos/threads/create-thread-assistant.dto';
-import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import { TextContentBlock } from '@/domain/models/message.interface';
 import { Cortex } from 'cortexso-node';
-import { ChatCompletionCreateParamsStreaming } from 'cortexso-node/dist/resources';
 
 export class ChatClient {
   private exitClause = 'exit()';
@@ -85,7 +83,7 @@ export class ChatClient {
     this.cortex.beta.threads.messages.create(threadId, createMessageDto);
 
     const parser = new ModelParameterParser();
-    const chatDto: ChatCompletionCreateParamsStreaming = {
+    const chatDto: Cortex.ChatCompletionCreateParamsStreaming = {
       // Default results params
       messages,
       model: modelId,

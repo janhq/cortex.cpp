@@ -22,7 +22,7 @@ export class EnginesGetCommand extends BaseCommand {
   }
 
   async runCommand(passedParams: string[]): Promise<void> {
-    return this.cortex.engines.get(passedParams[0]).then((engine) => {
+    return this.cortex.engines.retrieve(passedParams[0]).then((engine) => {
       if (!engine) {
         console.error('Engine not found.');
       } else {
