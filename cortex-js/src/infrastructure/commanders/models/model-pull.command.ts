@@ -28,7 +28,6 @@ import { BaseCommand } from '../base.command';
 @SetCommandContext()
 export class ModelPullCommand extends BaseCommand {
   constructor(
-    private readonly engineUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
@@ -46,7 +45,6 @@ export class ModelPullCommand extends BaseCommand {
 
     await checkModelCompatibility(modelId);
 
-    // TODO: support pull from cortexjs
     await this.cortex.models.download(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
         console.error('Model does not exist.');
@@ -62,8 +60,7 @@ export class ModelPullCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');
-      // TODO: support install engine from cortexjs
-      await this.engineUsecases.installEngine(undefined, 'latest', engine);
+      await this.cortex.engines.init(engine);
     }
     this.telemetryUsecases.sendEvent(
       [

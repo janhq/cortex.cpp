@@ -80,7 +80,7 @@ export class RunCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      await this.cortex.engines.init(engine);
     }
 
     return this.cortex.models

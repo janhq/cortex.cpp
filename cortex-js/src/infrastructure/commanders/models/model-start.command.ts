@@ -7,8 +7,6 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import {
   createReadStream,
   existsSync,
-  readdirSync,
-  readFileSync,
   statSync,
   watchFile,
 } from 'node:fs';
@@ -16,9 +14,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { BaseCommand } from '../base.command';
-import { load } from 'js-yaml';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 
 type ModelStartOptions = {
@@ -38,7 +34,7 @@ type ModelStartOptions = {
 export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly cortexUsecases: CortexUsecases,
+    readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {
