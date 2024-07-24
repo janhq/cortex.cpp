@@ -17,3 +17,10 @@ export const EngineNamesMap: {
   [Engines.onnx]: 'onnx',
   [Engines.tensorrtLLM]: 'tensorrt-llm',
 };
+
+export const RemoteEngines: Engines[] = [
+  Engines.groq,
+  Engines.mistral,
+  Engines.openai,
+  Engines.anthropic,
+];

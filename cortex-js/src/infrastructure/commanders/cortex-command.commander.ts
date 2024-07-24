@@ -59,7 +59,6 @@ export class CortexCommand extends CommandRunner {
     const port = options?.port || defaultCortexJsPort;
     const showLogs = options?.logs || false;
     const dataFolderPath = options?.dataFolder;
-
     return this.startServer(host, port, showLogs, dataFolderPath);
   }
 
@@ -114,6 +113,7 @@ export class CortexCommand extends CommandRunner {
         apiServerPort: port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
       });
+      process.exit(1);
     } catch (e) {
       console.error(e);
       // revert the data folder path if it was set
@@ -121,6 +121,7 @@ export class CortexCommand extends CommandRunner {
         ...config,
       });
       console.error(`Failed to start server. Is port ${port} in use?`);
+      process.exit(0);
     }
   }
 
