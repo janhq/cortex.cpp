@@ -50,7 +50,10 @@ export class ChatUsecases {
       throw new Error(`No engine found with name: ${model.engine}`);
     }
     try {
-      return await engine.inference(createChatDto, headers);
+      return await engine.inference(
+        { ...createChatDto, engine: model.engine },
+        headers,
+      );
     } catch (error) {
       await this.telemetryUseCases.createCrashReport(
         error,
