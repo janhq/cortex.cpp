@@ -1,0 +1,30 @@
+name: GitGuardian Scan
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [dev]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    paths: ["cortex-cpp/**", "cortex-js/**"]
+  pull_request:
+    branches: [dev]
+    types: [opened, reopened, synchronize]
+
+jobs:
+  scanning:
+    name: GitGuardian Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0 # fetch all history so multiple commits can be scanned
+
+      - name: GitGuardian Scan
+        uses: GitGuardian/ggshield-action@dc04958ed389f794f97e4e3e70e3744c331a87f0 # v1.29.0
+        env:
+          GITHUB_PUSH_BEFORE_SHA: ${{ github.event.before }}
+          GITHUB_PUSH_BASE_SHA: ${{ github.event.base }}
+          GITHUB_PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}

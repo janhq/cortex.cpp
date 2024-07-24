@@ -1,0 +1,91 @@
+name: Publish to WinGet
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  sync-repo:
+    name: Sync winget-pkgs repo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout janq/winget-pkgs repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          repository: janhq/winget-pkgs
+          ref: master
+
+      - name: Set up Git
+        run: |
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+
+      - name: Sync main branch with microsoft/winget-pkgs
+        run: |
+          git remote add upstream https://github.com/microsoft/winget-pkgs.git
+          git fetch upstream
+          git checkout master
+          git merge upstream/master --strategy-option=theirs
+          git push origin master
+
+  publish-winget:
+    name: Publish winget package
+    needs: sync-repo
+    runs-on: windows-latest
+    steps:
+      - name: Download wingetcreate
+        run: |
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+
+      - name: Fetch latest release from janhq/cortex
+        id: fetch-release
+        run: |
+          $github = Invoke-RestMethod -uri "https://api.github.com/repos/janhq/cortex/releases/latest"
+          if ($github.prerelease -eq $false) {
+            $packageVersion = $github.tag_name.TrimStart("v")
+            $installerUrl = "https://github.com/janhq/cortex/releases/download/v$packageVersion/cortex-installer-$packageVersion-amd64-windows.exe"
+            Write-Output "packageVersion=$packageVersion" >> $env:GITHUB_ENV
+            Write-Output "installerUrl=$installerUrl" >> $env:GITHUB_ENV
+          } else {
+            Write-Output "No non-pre-release found."
+            exit 1
+          }
+
+      - name: Check if manifest exists using wingetcreate
+        id: check-manifest
+        run: |
+          $packageId = "Homebrew.Cortexso"
+          $gitToken = "${{ secrets.WINGET_PAT }}"
+          
+          # Check if the manifest already exists
+          $manifestCheck = & .\wingetcreate.exe show $packageId --token $gitToken
+          if ($manifestCheck -match "Error:") {
+            Write-Output "Manifest does not exist or cannot be accessed."
+            echo "MANIFEST_EXISTS=false" >> $env:GITHUB_ENV
+          } else {
+            Write-Output "Manifest exists."
+            echo "MANIFEST_EXISTS=true" >> $env:GITHUB_ENV
+          }
+
+      - name: Create manifest for winget
+        if: env.MANIFEST_EXISTS == 'false'
+        run: |
+          $packageId = "Homebrew.Cortexso"
+          $packageVersion = $env:packageVersion
+          $installerUrl = $env:installerUrl
+          $gitToken = "${{ secrets.WINGET_PAT }}"
+
+          # Create a new manifest
+          .\wingetcreate.exe create $packageId --version $packageVersion --urls "$installerUrl" --submit --token $gitToken
+
+      - name: Update existing manifest for winget
+        if: env.MANIFEST_EXISTS == 'true'
+        run: |
+          $packageId = "Homebrew.Cortexso"
+          $packageVersion = $env:packageVersion
+          $installerUrl = $env:installerUrl
+          $gitToken = "${{ secrets.WINGET_PAT }}"
+
+          # Update the existing manifest
+          .\wingetcreate.exe update $packageId --version $packageVersion --urls "$installerUrl" --submit --token $gitToken
