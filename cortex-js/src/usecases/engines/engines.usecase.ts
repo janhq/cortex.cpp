@@ -14,9 +14,7 @@ import {
   CORTEX_ENGINE_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
 } from '@/infrastructure/constants/cortex';
-import { checkNvidiaGPUExist } from '@/utils/cuda';
 
-import { cpuInfo } from 'cpu-instructions';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 import { DownloadType } from '@/domain/models/download.interface';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
@@ -24,6 +22,7 @@ import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 import { ConfigsUsecases } from '../configs/configs.usecase';
+import { defaultInstallationOptions } from '@/utils/init';
 
 @Injectable()
 export class EnginesUsecases {
@@ -70,25 +69,6 @@ export class EnginesUsecases {
   }
 
   /**
-   * Default installation options base on the system
-   * @returns
-   */
-  defaultInstallationOptions = async (): Promise<InitOptions> => {
-    let options: InitOptions = {};
-
-    // Skip check if darwin
-    if (process.platform === 'darwin') {
-      return options;
-    }
-    // If Nvidia Driver is installed -> GPU
-    options.runMode = (await checkNvidiaGPUExist()) ? 'GPU' : 'CPU';
-    options.gpuType = 'Nvidia';
-    //CPU Instructions detection
-    options.instructions = await this.detectInstructions();
-    return options;
-  };
-
-  /**
    * Install Engine and Dependencies with given options
    * @param engineFileName
    * @param version
@@ -101,7 +81,7 @@ export class EnginesUsecases {
   ): Promise<any> => {
     // Use default option if not defined
     if (!options && engine === Engines.llamaCPP) {
-      options = await this.defaultInstallationOptions();
+      options = await defaultInstallationOptions();
     }
     // Ship Llama.cpp engine by default
     if (
@@ -216,14 +196,6 @@ export class EnginesUsecases {
         await rm(destination, { force: true });
       },
     );
-  };
-
-  private detectInstructions = (): Promise<
-    'AVX' | 'AVX2' | 'AVX512' | undefined
-  > => {
-    const cpuInstruction = cpuInfo.cpuInfo()[0] ?? 'AVX';
-    console.log(cpuInstruction, 'CPU instructions detected');
-    return Promise.resolve(cpuInstruction);
   };
 
   /**

@@ -13,7 +13,6 @@ import { join } from 'node:path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
 
