@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   Query,
   BadRequestException,
+  Patch,
 } from '@nestjs/common';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
@@ -302,7 +303,7 @@ export class ModelsController {
       },
     ],
   })
-  @Post(':model(*)/config')
+  @Patch(':model(*)')
   async update(
     @Param('model') model: string,
     @Body() updateModelDto: UpdateModelDto,

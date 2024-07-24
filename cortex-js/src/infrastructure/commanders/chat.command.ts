@@ -18,7 +18,7 @@ import { Engines } from './types/engine.interface';
 import { join } from 'path';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
-import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
 
 type ChatOptions = {
   threadId?: string;
@@ -104,7 +104,10 @@ export class ChatCommand extends BaseCommand {
       ],
       TelemetrySource.CLI,
     );
-    return this.cortex.models.start(modelId).then(() =>
+
+    const preset = await this.fileService.getPreset(options.preset);
+
+    return this.cortex.models.start(modelId, preset).then(() =>
       this.chatCliUsecases.chat(
         modelId,
         options.threadId,
