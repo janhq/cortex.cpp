@@ -21,12 +21,9 @@ import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { TelemetryCommand } from './infrastructure/commanders/telemetry.command';
 import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command';
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
-import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ServeStopCommand } from './infrastructure/commanders/serve-stop.command';
 import { ContextModule } from './infrastructure/services/context/context.module';
-import { CliUsecasesModule } from './infrastructure/commanders/usecases/usecases.module';
 import { EnginesCommand } from './infrastructure/commanders/engines.command';
-import { ConfigsModule } from './usecases/configs/configs.module';
 import { EnginesListCommand } from './infrastructure/commanders/engines/engines-list.command';
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
@@ -39,14 +36,11 @@ import { EnginesSetCommand } from './infrastructure/commanders/engines/engines-s
       envFilePath:
         process.env.NODE_ENV !== 'production' ? '.env.development' : '.env',
     }),
-    EventEmitterModule.forRoot(),
     CortexModule,
     HttpModule,
-    CliUsecasesModule,
     FileManagerModule,
     TelemetryModule,
     ContextModule,
-    ConfigsModule,
   ],
   providers: [
     CortexCommand,
