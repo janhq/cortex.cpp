@@ -73,19 +73,14 @@ export class ChatClient {
       role: 'user',
     });
 
-    const createMessageDto: CreateMessageDto = {
-      thread_id: threadId,
+    const createMessageDto: Cortex.Beta.Threads.Messages.MessageCreateParams = {
       role: 'user',
       content: [
         {
           type: 'text',
-          text: {
-            value: userInput,
-            annotations: [],
-          },
+          text: userInput,
         },
       ],
-      status: 'completed',
     };
     this.cortex.beta.threads.messages.create(threadId, createMessageDto);
 

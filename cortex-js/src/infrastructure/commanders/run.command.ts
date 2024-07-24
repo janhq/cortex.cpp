@@ -2,17 +2,14 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { exit } from 'node:process';
 import ora from 'ora';
-import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from './types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { BaseCommand } from './base.command';
-import { readdirSync, readFileSync } from 'node:fs';
-import { load } from 'js-yaml';
-import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { ChatClient } from './services/chat-client';
 
 type RunOptions = {
   threadId?: string;
@@ -30,14 +27,15 @@ type RunOptions = {
   description: 'Shortcut to start a model and chat',
 })
 export class RunCommand extends BaseCommand {
+  chatClient: ChatClient;
   constructor(
-    private readonly cortexUsecases: CortexUsecases,
-    private readonly chatCliUsecases: ChatCliUsecases,
+    protected readonly cortexUsecases: CortexUsecases,
     private readonly inquirerService: InquirerService,
     private readonly fileService: FileManagerService,
-    private readonly initUsecases: EnginesUsecases,
   ) {
     super(cortexUsecases);
+
+    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(passedParams: string[], options: RunOptions): Promise<void> {
@@ -87,7 +85,7 @@ export class RunCommand extends BaseCommand {
       .start(modelId, await this.fileService.getPreset(options.preset))
       .then(() => {
         if (options.chat) {
-          return this.chatCliUsecases.chat(modelId, options.threadId);
+          return this.chatClient.chat(modelId, options.threadId);
         }
         return;
       });
