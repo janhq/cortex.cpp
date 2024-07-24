@@ -1,3 +1,4 @@
+import pkg from '@/../package.json';
 import { RootCommand, CommandRunner, Option } from 'nest-commander';
 import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
@@ -18,6 +19,7 @@ import { FileManagerService } from '../services/file-manager/file-manager.servic
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './sub-commands/serve-stop.command';
 import ora from 'ora';
+import { printSlogan } from '@/utils/logo';
 import { EnginesSetCommand } from './engines/engines-set.command';
 
 type ServeOptions = {
@@ -25,6 +27,7 @@ type ServeOptions = {
   port?: number;
   logs?: boolean;
   dataFolder?: string;
+  version?: boolean;
 };
 
 @RootCommand({
@@ -58,8 +61,15 @@ export class CortexCommand extends CommandRunner {
     const host = options?.address || defaultCortexJsHost;
     const port = options?.port || defaultCortexJsPort;
     const showLogs = options?.logs || false;
+    const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;
-
+    if (showVersion) {
+      printSlogan();
+      console.log('\n');
+      console.log(`Cortex CLI - v${pkg.version}`);
+      console.log(chalk.blue(`Github: ${pkg.homepage}`));
+      return;
+    }
     return this.startServer(host, port, showLogs, dataFolderPath);
   }
 
@@ -114,6 +124,7 @@ export class CortexCommand extends CommandRunner {
         apiServerPort: port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
       });
+      process.exit(1);
     } catch (e) {
       console.error(e);
       // revert the data folder path if it was set
@@ -121,6 +132,7 @@ export class CortexCommand extends CommandRunner {
         ...config,
       });
       console.error(`Failed to start server. Is port ${port} in use?`);
+      process.exit(0);
     }
   }
 
@@ -154,5 +166,13 @@ export class CortexCommand extends CommandRunner {
   })
   parseDataFolder(value: string) {
     return value;
+  }
+
+  @Option({
+    flags: '-v, --version',
+    description: 'Show version',
+  })
+  parseVersion() {
+    return true;
   }
 }

@@ -93,7 +93,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
       return {
         choices: [
           {
-            delta: {
+            message: {
               content: data.content[0].text,
             },
           },

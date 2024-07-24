@@ -1,5 +1,9 @@
 import { ModelArtifact } from '@/domain/models/model.interface';
 import { getGpuInfo } from './cuda';
+import {
+  Engines,
+  RemoteEngines,
+} from '@/infrastructure/commanders/types/engine.interface';
 
 export const normalizeModelId = (modelId: string): string => {
   return modelId.replace(':main', '').replace(/[:/]/g, '-');
@@ -13,6 +17,10 @@ export const isLocalModel = (
     Array.isArray(modelFiles) &&
     !/^(http|https):\/\/[^/]+\/.*/.test(modelFiles[0])
   );
+};
+
+export const isRemoteEngine = (engine: string): boolean => {
+  return RemoteEngines.includes(engine as Engines);
 };
 
 /**
