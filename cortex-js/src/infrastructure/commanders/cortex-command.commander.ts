@@ -124,7 +124,7 @@ export class CortexCommand extends CommandRunner {
         apiServerPort: port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
       });
-      process.exit(0);
+      if (!attach) process.exit(0);
     } catch (e) {
       console.error(e);
       // revert the data folder path if it was set
