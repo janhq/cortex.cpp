@@ -12,6 +12,7 @@ import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { BaseCommand } from '../base.command';
+import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
 
 type RunOptions = {
   threadId?: string;
@@ -69,11 +70,7 @@ export class RunCommand extends BaseCommand {
 
     // Second check if model is available
     const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (
-      !existingModel ||
-      !Array.isArray(existingModel.files) ||
-      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
-    ) {
+    if (!existingModel || !isLocalModel(existingModel.files)) {
       checkingSpinner.fail(`Model is not available`);
       process.exit(1);
     }
@@ -82,6 +79,7 @@ export class RunCommand extends BaseCommand {
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
+      !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       await this.initUsecases.installEngine(undefined, 'latest', engine);

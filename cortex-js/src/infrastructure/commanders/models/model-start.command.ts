@@ -12,6 +12,7 @@ import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { BaseCommand } from '../base.command';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -72,6 +73,7 @@ export class ModelStartCommand extends BaseCommand {
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
+      !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       await this.initUsecases.installEngine(undefined, 'latest', engine);

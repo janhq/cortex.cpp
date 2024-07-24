@@ -5,6 +5,7 @@ import {
 } from '@/infrastructure/constants/cortex';
 import { getApp } from './app';
 import chalk from 'chalk';
+import { CortexUsecases } from './usecases/cortex/cortex.usecases';
 
 /**
  * Start the API server
@@ -17,6 +18,8 @@ export async function start(host?: string, port?: number) {
 
   try {
     await app.listen(sPort, sHost);
+    const cortexUsecases = await app.resolve(CortexUsecases);
+    await cortexUsecases.startCortex();
     console.log(chalk.blue(`Started server at http://${sHost}:${sPort}`));
     console.log(
       chalk.blue(`API Playground available at http://${sHost}:${sPort}/api`),
