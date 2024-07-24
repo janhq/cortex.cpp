@@ -1,9 +1,7 @@
 import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 
 @SubCommand({
   name: '<name> set <config> <value>',
@@ -14,11 +12,7 @@ import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 })
 @SetCommandContext()
 export class EnginesSetCommand extends BaseCommand {
-  constructor(
-    readonly contextService: ContextService,
-    readonly cortexUsecases: CortexUsecases,
-    readonly engineUsecases: EnginesUsecases,
-  ) {
+  constructor(readonly cortexUsecases: CortexUsecases) {
     super(cortexUsecases);
   }
 
@@ -26,8 +20,8 @@ export class EnginesSetCommand extends BaseCommand {
     const engineName = passedParams[0];
     const config = passedParams[1];
     const value = passedParams[2];
-    return this.engineUsecases
-      .updateConfigs(config, value, engineName)
+    return this.cortex.engines
+      .update(engineName, { config, value })
       .then(() => console.log('Update engine successfully'))
       .catch((error) => console.error(error.message ?? error));
   }

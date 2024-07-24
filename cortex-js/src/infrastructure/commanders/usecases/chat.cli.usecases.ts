@@ -3,18 +3,14 @@ import * as readline from 'node:readline/promises';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 import { CreateChatCompletionDto } from '@/infrastructure/dtos/chat/create-chat-completion.dto';
 import { Injectable } from '@nestjs/common';
-import { ThreadsUsecases } from '@/usecases/threads/threads.usecases';
-import { Thread } from '@/domain/models/thread.interface';
 import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto';
-import { AssistantsUsecases } from '@/usecases/assistants/assistants.usecases';
 import { CreateThreadAssistantDto } from '@/infrastructure/dtos/threads/create-thread-assistant.dto';
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import stream from 'stream';
 import { CreateMessageDto } from '@/infrastructure/dtos/messages/create-message.dto';
-import { MessagesUsecases } from '@/usecases/messages/messages.usecases';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import { ChatUsecases } from '@/usecases/chat/chat.usecases';
 import { TextContentBlock } from '@/domain/models/message.interface';
+import { Cortex } from 'cortexso-node';
 
 @Injectable()
 export class ChatCliUsecases {
@@ -23,11 +19,8 @@ export class ChatCliUsecases {
   private exitMessage = 'Bye!';
 
   constructor(
-    private readonly assistantUsecases: AssistantsUsecases,
-    private readonly threadUsecases: ThreadsUsecases,
+    readonly cortex: Cortex,
     private readonly chatUsecases: ChatUsecases,
-    private readonly modelsUsecases: ModelsUsecases,
-    private readonly messagesUsecases: MessagesUsecases,
   ) {}
 
   async chat(
@@ -40,8 +33,11 @@ export class ChatCliUsecases {
     if (attach) console.log(`In order to exit, type '${this.exitClause}'.`);
     const thread = await this.getOrCreateNewThread(modelId, threadId);
     const messages: ChatCompletionMessage[] = (
-      await this.messagesUsecases.getLastMessagesByThread(thread.id, 10)
-    ).map((message) => ({
+      await this.cortex.beta.threads.messages.list(thread.id, {
+        limit: 10,
+        order: 'desc',
+      })
+    ).data.map((message) => ({
       content: (message.content[0] as TextContentBlock).text.value,
       role: message.role,
     }));
@@ -55,7 +51,7 @@ export class ChatCliUsecases {
     if (attach) rl.prompt();
 
     rl.on('close', async () => {
-      if (stopModel) await this.modelsUsecases.stopModel(modelId);
+      if (stopModel) await this.cortex.models.stop(modelId);
       if (attach) console.log(this.exitMessage);
       exit(0);
     });
@@ -70,7 +66,7 @@ export class ChatCliUsecases {
         return;
       }
 
-      const model = await this.modelsUsecases.findOne(modelId);
+      const model = await this.cortex.models.retrieve(modelId);
 
       messages.push({
         content: userInput,
@@ -246,14 +242,14 @@ export class ChatCliUsecases {
   private async getOrCreateNewThread(
     modelId: string,
     threadId?: string,
-  ): Promise<Thread> {
+  ): Promise<Cortex.Beta.Thread> {
     if (threadId) {
-      const thread = await this.threadUsecases.findOne(threadId);
+      const thread = await this.cortex.beta.threads.retrieve(threadId);
       if (!thread) throw new Error(`Cannot find thread with id: ${threadId}`);
       return thread;
     }
 
-    const model = await this.modelsUsecases.findOne(modelId);
+    const model = await this.cortex.models.retrieve(modelId);
     if (!model) throw new Error(`Cannot find model with id: ${modelId}`);
 
     const assistantDto: CreateThreadAssistantDto = {
@@ -273,6 +269,6 @@ export class ChatCliUsecases {
       assistants: [assistantDto],
     };
 
-    return this.threadUsecases.create(createThreadDto);
+    return this.cortex.beta.threads.create(createThreadDto as any);
   }
 }

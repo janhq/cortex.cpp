@@ -39,7 +39,6 @@ export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly cortexUsecases: CortexUsecases,
-    private readonly initUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {
@@ -78,7 +77,7 @@ export class ModelStartCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      await this.cortex.engines.init(engine);
     }
 
     // Attached - stdout logs

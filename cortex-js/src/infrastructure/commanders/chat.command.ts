@@ -42,7 +42,6 @@ export class ChatCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly chatCliUsecases: ChatCliUsecases,
-    private readonly modelsUsecases: ModelsUsecases,
     private readonly psCliUsecases: PSCliUsecases,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
@@ -63,7 +62,7 @@ export class ChatCommand extends BaseCommand {
     let message = options.message ?? passedParams.slice(1).join(' ');
 
     // Check for model existing
-    if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
+    if (!modelId || !(await this.cortex.models.retrieve(modelId))) {
       // Model ID is not provided
       // first input might be message input
       message = passedParams.length

@@ -28,7 +28,7 @@ import { EmbeddingCommand } from './infrastructure/commanders/embeddings.command
 import { BenchmarkCommand } from './infrastructure/commanders/benchmark.command';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
-import { ServeStopCommand } from './infrastructure/commanders/sub-commands/serve-stop.command';
+import { ServeStopCommand } from './infrastructure/commanders/serve-stop.command';
 import { ContextModule } from './infrastructure/services/context/context.module';
 import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
 import { ExtensionsModule } from './extensions/extensions.module';

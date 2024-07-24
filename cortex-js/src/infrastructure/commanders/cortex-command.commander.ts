@@ -17,7 +17,7 @@ import { defaultCortexJsHost, defaultCortexJsPort } from '../constants/cortex';
 import { getApp } from '@/app';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { ServeStopCommand } from './sub-commands/serve-stop.command';
+import { ServeStopCommand } from './serve-stop.command';
 import ora from 'ora';
 import { printSlogan } from '@/utils/logo';
 import { EnginesSetCommand } from './engines/engines-set.command';

@@ -6,7 +6,6 @@ import { firstValueFrom } from 'rxjs';
 import { ModelStat } from '@commanders/types/model-stat.interface';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from '../types/engine.interface';
-import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 interface ModelStatResponse {
   object: string;
@@ -17,7 +16,6 @@ export class PSCliUsecases {
   constructor(
     private readonly httpService: HttpService,
     private readonly fileService: FileManagerService,
-    private readonly cortexUsecases: CortexUsecases,
   ) {}
   /**
    * Get models running in the Cortex C++ server
