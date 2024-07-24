@@ -423,7 +423,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: cortex-linux
-          path: ./cortex
+          path: ./cortex-js/cortex
 
   update_release_draft:
     needs: [build-and-test, build-cortex-single-binary]
