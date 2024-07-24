@@ -1,7 +1,7 @@
 #!/usr/bin/make -f
 %:
-        dh $@
+	dh $@
 override_dh_auto_install:
-        dh_install
+	dh_install
 override_dh_strip:
-        dh_strip --exclude=cortex
+	dh_strip --exclude=cortex

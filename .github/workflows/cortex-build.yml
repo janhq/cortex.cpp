@@ -423,7 +423,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: cortex-linux
-          path: ./cortex
+          path: ./cortex-js/cortex
 
   update_release_draft:
     needs: [build-and-test, build-cortex-single-binary]
@@ -458,14 +458,18 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
       - name: Download artifact
         uses: actions/download-artifact@v2
         with:
           name: cortex-linux
-          path: ./cortex
+          path: ./cortex-linux
       
       - name: install dependencies
         run: |
+          ls -al ./cortex-linux
           sudo apt-get install dput devscripts build-essential debhelper-compat pbuilder debootstrap devscripts -y
 
       - name: import gpg key with subkey
@@ -476,9 +480,10 @@ jobs:
           fingerprint: ${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
 
       - run: |
-          cp ./cortex/cortex package-managers-template/launchpad/cortexso/
-          mv package-managers-template/launchpad/cortexso package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}
-      
+          mkdir -p package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian
+          cp package-managers-template/launchpad/cortexso/debian/* package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/
+          cp ./cortex-linux/cortex package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/
+
       - name: Get release notes
         id: release_notes
         run: |
@@ -490,11 +495,12 @@ jobs:
           sed -i "s/CHANGELOG_HERE/${{ env.RELEASE_NOTES }}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
           timestamp=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
           sed -i "s/TIME_HERE/${timestamp}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
-      
+
       - name: Build package
         run: |
           cd package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}
-          echo "y" | debuild -S -sa -k ${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
+          echo "y" | debuild -S -sa -k${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
+          sudo pbuilder create --distribution jammy --debootstrapopts --variant=buildd
           sudo sudo pbuilder build ../cortexso_${{ needs.create-draft-release.outputs.version }}.dsc
           dput ppa:cortexlabs/cortex cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
       
