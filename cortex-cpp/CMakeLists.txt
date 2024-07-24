@@ -4,6 +4,11 @@ project(cortex-cpp C CXX)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
+  add_definitions(
+    -DV8_COMPRESS_POINTERS
+    -DV8_REVERSE_JSARGS
+    -DV8_COMPRESS_POINTERS_IN_ISOLATE_CAGE
+  )
   include_directories(${CMAKE_JS_INC})
 endif()
 
@@ -76,6 +81,16 @@ if(DEFINED CMAKE_JS_INC)
 
   add_library(${PROJECT_NAME} SHARED addon.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+    ${CMAKE_JS_SRC}
+  )
+
+  target_link_libraries(${PROJECT_NAME}
+    PRIVATE
+    msvcprt.lib
+    msvcrt.lib
+    vcruntime.lib
+    ucrt.lib
+    ${CMAKE_JS_LIB}
   )
 else() # Official build
   add_executable(${PROJECT_NAME} main.cc
