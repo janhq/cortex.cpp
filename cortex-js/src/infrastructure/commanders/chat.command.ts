@@ -1,11 +1,7 @@
 import { existsSync } from 'fs';
 import { SubCommand, Option, InquirerService } from 'nest-commander';
-import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
-import { PSCliUsecases } from './usecases/ps.cli.usecases';
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ModelStat } from './types/model-stat.interface';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import {
   EventName,
@@ -16,9 +12,10 @@ import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { Engines } from './types/engine.interface';
 import { join } from 'path';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { Cortex } from 'cortexso-node';
+import { ChatClient } from './services/chat-client';
 
 type ChatOptions = {
   threadId?: string;
@@ -39,17 +36,17 @@ type ChatOptions = {
 })
 @SetCommandContext()
 export class ChatCommand extends BaseCommand {
+  chatClient: ChatClient;
+
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly chatCliUsecases: ChatCliUsecases,
-    private readonly psCliUsecases: PSCliUsecases,
-    readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
-    readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
-    private readonly initUsecases: EnginesUsecases,
+    protected readonly cortexUsecases: CortexUsecases,
+    protected readonly contextService: ContextService,
   ) {
     super(cortexUsecases);
+    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(
@@ -69,9 +66,9 @@ export class ChatCommand extends BaseCommand {
         ? passedParams.join(' ')
         : options.message ?? '';
       // If model ID is not provided, prompt user to select from running models
-      const models = await this.psCliUsecases.getModels();
+      const { data: models } = await this.cortex.models.list();
       if (models.length === 1) {
-        modelId = models[0].modelId;
+        modelId = models[0].id;
       } else if (models.length > 0) {
         modelId = await this.modelInquiry(models);
       } else {
@@ -90,7 +87,7 @@ export class ChatCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      await this.cortex.engines.init(engine);
     }
 
     if (!message) options.attach = true;
@@ -107,24 +104,22 @@ export class ChatCommand extends BaseCommand {
     const preset = await this.fileService.getPreset(options.preset);
 
     return this.cortex.models.start(modelId, preset).then(() =>
-      this.chatCliUsecases.chat(
+      this.chatClient.chat(
         modelId,
         options.threadId,
         message, // Accept both message from inputs or arguments
-        options.attach,
-        false, // Do not stop cortex session or loaded model
       ),
     );
   }
 
-  modelInquiry = async (models: ModelStat[]) => {
+  modelInquiry = async (models: Cortex.Model[]) => {
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select running model to chat with:',
       choices: models.map((e) => ({
-        name: e.modelId,
-        value: e.modelId,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;

@@ -1,16 +1,9 @@
-import {
-  CommandRunner,
-  InquirerService,
-  Option,
-  SubCommand,
-} from 'nest-commander';
-import ora from 'ora';
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { PSCliUsecases } from './usecases/ps.cli.usecases';
+import { InquirerService, Option, SubCommand } from 'nest-commander';
 import { inspect } from 'util';
-import { ModelStat } from './types/model-stat.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
+import { Cortex } from 'cortexso-node';
+import ora from 'ora';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
@@ -29,7 +22,6 @@ interface EmbeddingCommandOptions {
 })
 export class EmbeddingCommand extends BaseCommand {
   constructor(
-    private readonly psCliUsecases: PSCliUsecases,
     private readonly inquirerService: InquirerService,
     readonly cortexUsecases: CortexUsecases,
   ) {
@@ -50,9 +42,9 @@ export class EmbeddingCommand extends BaseCommand {
       // first input might be message input
       input = passedParams ?? options.input;
       // If model ID is not provided, prompt user to select from running models
-      const models = await this.psCliUsecases.getModels();
+      const { data: models } = await this.cortex.models.list();
       if (models.length === 1) {
-        model = models[0].modelId;
+        model = models[0].id;
       } else if (models.length > 0) {
         model = await this.modelInquiry(models);
       } else {
@@ -73,14 +65,14 @@ export class EmbeddingCommand extends BaseCommand {
       .catch((e) => console.error(e.message ?? e));
   }
 
-  modelInquiry = async (models: ModelStat[]) => {
+  modelInquiry = async (models: Cortex.Model[]) => {
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select running model to chat with:',
       choices: models.map((e) => ({
-        name: e.modelId,
-        value: e.modelId,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;

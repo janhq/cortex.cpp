@@ -30,7 +30,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ServeStopCommand } from './infrastructure/commanders/serve-stop.command';
 import { ContextModule } from './infrastructure/services/context/context.module';
-import { CliUsecasesModule } from './infrastructure/commanders/usecases/cli.usecases.module';
+import { CliUsecasesModule } from './infrastructure/commanders/usecases/usecases.module';
 import { ExtensionsModule } from './extensions/extensions.module';
 import { EnginesCommand } from './infrastructure/commanders/engines.command';
 import { ConfigsModule } from './usecases/configs/configs.module';
