@@ -52,7 +52,7 @@ export class ChatUsecases {
     }
     const payload = {
       ...createChatDto,
-      ...(model.engine && isRemoteEngine(model.engine) && { engine: model.engine }),
+      ...(model.engine && !isRemoteEngine(model.engine) && { engine: model.engine }),
     };
     try {
       return await engine.inference(
