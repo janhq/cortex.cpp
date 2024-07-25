@@ -44,7 +44,7 @@ export class ModelPullCommand extends BaseCommand {
     const modelId = passedParams[0];
 
     await checkModelCompatibility(modelId);
-    if(await this.cortex.models.retrieve(modelId)){
+    if (await this.cortex.models.retrieve(modelId)) {
       console.error('Model already exists.');
       exit(1);
     }
@@ -55,19 +55,19 @@ export class ModelPullCommand extends BaseCommand {
       else console.error(e.message ?? e);
       exit(1);
     });
-    
-    const response = await this.cortex.models.downloadEvent()
-    
-    const  rl = require("readline").createInterface({
+
+    const response = await this.cortex.models.downloadEvent();
+
+    const rl = require('readline').createInterface({
       input: stdin,
       output: stdout,
     });
 
     rl.on('SIGINT', () => {
       console.log('\nStopping download...');
-      process.emit("SIGINT");
-    }); 
-    process.on('SIGINT', async() => {
+      process.emit('SIGINT');
+    });
+    process.on('SIGINT', async () => {
       await this.cortex.models.abortDownload(modelId);
       exit(1);
     });
@@ -75,22 +75,20 @@ export class ModelPullCommand extends BaseCommand {
     const progressBar = new SingleBar({}, Presets.shades_classic);
     progressBar.start(100, 0);
 
-    const readableStream = response.toReadableStream()
-    const decoder = new TextDecoder();
-    for await (const stream of readableStream) {
-      const part = JSON.parse(decoder.decode(stream))
-      console.log(part, );
-      if(part.length){
-        const data = part[0] as any
+    for await (const stream of response) {
+      if (stream.length) {
+        const data = stream[0] as any;
         let totalBytes = 0;
         let totalTransferred = 0;
-          data.children.forEach((child: any) => {
-            totalBytes+=child.size.total
-            totalTransferred+=child.size.transferred
-          })
-      progressBar.update(Math.floor((totalTransferred / totalBytes) * 100))
+        data.children.forEach((child: any) => {
+          totalBytes += child.size.total;
+          totalTransferred += child.size.transferred;
+        });
+        progressBar.update(Math.floor((totalTransferred / totalBytes) * 100));
+        if (data.status === 'downloaded') break;
       }
     }
+    progressBar.stop();
     rl.close();
 
     const existingModel = await this.cortex.models.retrieve(modelId);
@@ -113,11 +111,9 @@ export class ModelPullCommand extends BaseCommand {
       TelemetrySource.CLI,
     );
     console.log('\nDownload complete!');
-    
+
     exit(0);
   }
 
-  private async abortDownload(modelId: string) {
-
-  }
+  private async abortDownload(modelId: string) {}
 }
