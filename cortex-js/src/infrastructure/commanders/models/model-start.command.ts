@@ -74,6 +74,7 @@ export class ModelStartCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
+      console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
       await downloadModelProgress(this.cortex);
     }

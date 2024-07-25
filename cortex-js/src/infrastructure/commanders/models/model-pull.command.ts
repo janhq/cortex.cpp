@@ -66,6 +66,7 @@ export class ModelPullCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');
+      console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
       await downloadModelProgress(this.cortex);
     }
