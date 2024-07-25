@@ -1,5 +1,5 @@
+import { exit, stdin, stdout } from 'node:process';
 import { SubCommand } from 'nest-commander';
-import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
@@ -15,6 +15,7 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
+import { Presets, SingleBar } from 'cli-progress';
 
 @SubCommand({
   name: 'pull',
@@ -43,6 +44,10 @@ export class ModelPullCommand extends BaseCommand {
     const modelId = passedParams[0];
 
     await checkModelCompatibility(modelId);
+    if(await this.cortex.models.retrieve(modelId)){
+      console.error('Model already exists.');
+      exit(1);
+    }
 
     await this.cortex.models.download(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
@@ -50,6 +55,43 @@ export class ModelPullCommand extends BaseCommand {
       else console.error(e.message ?? e);
       exit(1);
     });
+    
+    const response = await this.cortex.models.downloadEvent()
+    
+    const  rl = require("readline").createInterface({
+      input: stdin,
+      output: stdout,
+    });
+
+    rl.on('SIGINT', () => {
+      console.log('\nStopping download...');
+      process.emit("SIGINT");
+    }); 
+    process.on('SIGINT', async() => {
+      await this.cortex.models.abortDownload(modelId);
+      exit(1);
+    });
+
+    const progressBar = new SingleBar({}, Presets.shades_classic);
+    progressBar.start(100, 0);
+
+    const readableStream = response.toReadableStream()
+    const decoder = new TextDecoder();
+    for await (const stream of readableStream) {
+      const part = JSON.parse(decoder.decode(stream))
+      console.log(part, );
+      if(part.length){
+        const data = part[0] as any
+        let totalBytes = 0;
+        let totalTransferred = 0;
+          data.children.forEach((child: any) => {
+            totalBytes+=child.size.total
+            totalTransferred+=child.size.transferred
+          })
+      progressBar.update(Math.floor((totalTransferred / totalBytes) * 100))
+      }
+    }
+    rl.close();
 
     const existingModel = await this.cortex.models.retrieve(modelId);
     const engine = existingModel?.engine || Engines.llamaCPP;
@@ -71,6 +113,11 @@ export class ModelPullCommand extends BaseCommand {
       TelemetrySource.CLI,
     );
     console.log('\nDownload complete!');
+    
     exit(0);
+  }
+
+  private async abortDownload(modelId: string) {
+
   }
 }
