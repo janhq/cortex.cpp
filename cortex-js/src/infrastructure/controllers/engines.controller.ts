@@ -78,7 +78,7 @@ export class EnginesController {
     description: 'The unique identifier of the engine.',
   })
   @Post(':name(*)/init')
-  initialize(@Param('name') name: string, @Body() body: InitEngineDto) {
+  initialize(@Param('name') name: string, @Body() body: InitEngineDto | undefined) {
     this.initUsescases.installEngine(body, 'latest', name, true);
     return {
       message: 'Engine initialization started successfully.',

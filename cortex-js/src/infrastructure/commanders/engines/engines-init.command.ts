@@ -1,3 +1,4 @@
+import { exit, stdin, stdout } from 'node:process';
 import { Option, SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
@@ -6,6 +7,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { BaseCommand } from '../base.command';
 import { defaultInstallationOptions } from '@/utils/init';
+import { Presets, SingleBar } from 'cli-progress';
 
 @SubCommand({
   name: '<name> init',
@@ -44,12 +46,29 @@ export class EnginesInitCommand extends BaseCommand {
       await this.cortexUsecases.stopCortex();
     }
     console.log(`Installing engine ${engine}...`);
-    return this.cortex.engines
+    await this.cortex.engines
       .init(engine, params)
-      .then(() => console.log('Engine installed successfully!'))
-      .catch((e) =>
-        console.error('Install engine failed with reason: %s', e.message ?? e),
-      );
+      const response = await this.cortex.models.downloadEvent()
+  
+      const progressBar = new SingleBar({}, Presets.shades_classic);
+      progressBar.start(100, 0);
+  
+      for await (const stream of response) {
+        if (stream.length) {
+          const data = stream[0] as any;
+          if (data.status === 'downloaded') break;
+          let totalBytes = 0;
+          let totalTransferred = 0;
+          data.children.forEach((child: any) => {
+            totalBytes += child.size.total;
+            totalTransferred += child.size.transferred;
+          });
+          progressBar.update(Math.floor((totalTransferred / totalBytes) * 100));
+        }
+      }
+      progressBar.stop();
+      console.log('Engine installed successfully');
+      process.exit(0);
   }
 
   @Option({
