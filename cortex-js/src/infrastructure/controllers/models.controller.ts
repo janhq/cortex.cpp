@@ -108,7 +108,7 @@ export class ModelsController {
       },
     ],
   })
-  @Delete('pull/:pull_id(*)')
+  @Delete(':pull_id(*)/pull')
   abortPullModel(@Param('pull_id') pullId: string) {
     return this.modelsUsecases.abortDownloadModel(pullId);
   }

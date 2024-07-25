@@ -16,6 +16,7 @@ import { FileManagerService } from '../services/file-manager/file-manager.servic
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from 'cortexso-node';
 import { ChatClient } from './services/chat-client';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 type ChatOptions = {
   threadId?: string;
@@ -88,6 +89,7 @@ export class ChatCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
 
     if (!message) options.attach = true;

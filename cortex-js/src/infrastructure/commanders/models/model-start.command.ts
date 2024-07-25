@@ -16,6 +16,7 @@ import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from '../base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -74,6 +75,7 @@ export class ModelStartCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
 
     // Attached - stdout logs

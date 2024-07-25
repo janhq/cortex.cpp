@@ -81,6 +81,7 @@ export class RunCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
 
     const startingSpinner = ora('Loading model...').start();

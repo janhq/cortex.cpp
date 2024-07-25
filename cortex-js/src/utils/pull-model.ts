@@ -2,7 +2,7 @@ import { Presets, SingleBar } from "cli-progress";
 import { Cortex } from "cortexso-node";
 import { exit, stdin, stdout } from 'node:process';
 
-export const downloadModelProgress = async (cortex: Cortex, modelId: string) => {
+export const downloadModelProgress = async (cortex: Cortex, downloadId?: string) => {
     const response = await cortex.events.downloadEvent();
 
     const rl = require('readline').createInterface({
@@ -15,7 +15,9 @@ export const downloadModelProgress = async (cortex: Cortex, modelId: string) => 
       process.emit('SIGINT');
     });
     process.on('SIGINT', async () => {
-      await cortex.models.abortDownload(modelId);
+      if (downloadId){
+        await cortex.models.abortDownload(downloadId);
+      }
       exit(1);
     });
 

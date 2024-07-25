@@ -67,6 +67,7 @@ export class ModelPullCommand extends BaseCommand {
     ) {
       console.log('\n');
       await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
     this.telemetryUsecases.sendEvent(
       [
