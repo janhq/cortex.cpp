@@ -15,6 +15,7 @@ import { CreateEmbeddingsDto } from '@/infrastructure/dtos/embeddings/embeddings
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { ModelsUsecases } from '../models/models.usecases';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
 
 @Injectable()
 export class ChatUsecases {
@@ -49,9 +50,13 @@ export class ChatUsecases {
     if (engine == null) {
       throw new Error(`No engine found with name: ${model.engine}`);
     }
+    const payload = {
+      ...createChatDto,
+      ...(model.engine && isRemoteEngine(model.engine) && { engine: model.engine }),
+    };
     try {
       return await engine.inference(
-        { ...createChatDto, engine: model.engine },
+        payload,
         headers,
       );
     } catch (error) {
