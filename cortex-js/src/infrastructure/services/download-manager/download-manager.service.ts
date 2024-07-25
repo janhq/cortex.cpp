@@ -95,12 +95,13 @@ export class DownloadManagerService {
       );
       if (currentDownloadState) {
         currentDownloadState.status = DownloadStatus.Downloaded;
+        this.eventEmitter.emit('download.event', this.allDownloadStates);
+
         // remove download state if all children is downloaded
         this.allDownloadStates = this.allDownloadStates.filter(
           (downloadState) => downloadState.id !== downloadId,
         );
-      }
-      this.eventEmitter.emit('download.event', this.allDownloadStates);
+      } else this.eventEmitter.emit('download.event', this.allDownloadStates);
     };
     if (!inSequence) {
       return Promise.all(
@@ -180,7 +181,6 @@ export class DownloadManagerService {
           if (downloadItem) {
             downloadItem.status = DownloadStatus.Downloaded;
           }
-
           this.eventEmitter.emit('download.event', this.allDownloadStates);
         } finally {
           bar.stop();
