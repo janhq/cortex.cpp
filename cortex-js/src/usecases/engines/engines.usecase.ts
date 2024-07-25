@@ -19,7 +19,6 @@ import { DownloadManagerService } from '@/infrastructure/services/download-manag
 import { DownloadType } from '@/domain/models/download.interface';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 import { ConfigsUsecases } from '../configs/configs.usecase';
 import { defaultInstallationOptions } from '@/utils/init';
@@ -32,7 +31,6 @@ export class EnginesUsecases {
     private readonly downloadManagerService: DownloadManagerService,
     private readonly extensionRepository: ExtensionRepository,
     private readonly configsUsecases: ConfigsUsecases,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -148,7 +146,14 @@ export class EnginesUsecases {
     if (!engine || !(await this.extensionRepository.findOne(engine)))
       throw new ForbiddenException('Engine not found');
 
-    return this.configsUsecases.saveConfig(config, value, engine);
+    return this.configsUsecases
+      .saveConfig(config, value, engine)
+      .then((res) => {
+        this.extensionRepository.findOne(engine).then((e) => {
+          if (e && value) e.status = EngineStatus.READY;
+        });
+        return res;
+      });
   }
 
   /**
