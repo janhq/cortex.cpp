@@ -48,7 +48,7 @@ export class EnginesInitCommand extends BaseCommand {
     console.log(`Installing engine ${engine}...`);
     await this.cortex.engines
       .init(engine, params)
-      const response = await this.cortex.models.downloadEvent()
+      const response = await this.cortex.events.downloadEvent()
   
       const progressBar = new SingleBar({}, Presets.shades_classic);
       progressBar.start(100, 0);
