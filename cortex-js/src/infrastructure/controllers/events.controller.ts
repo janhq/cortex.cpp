@@ -46,7 +46,7 @@ export class EventsController {
     summary: 'Get download status',
     description: "Retrieves the model's download status.",
   })
-  @Sse('download')
+  @Sse('pull')
   downloadEvent(): Observable<DownloadStateEvent> {
     const latestDownloadState$: Observable<DownloadStateEvent> = of({
       data: this.downloadManagerService.getDownloadStates(),
