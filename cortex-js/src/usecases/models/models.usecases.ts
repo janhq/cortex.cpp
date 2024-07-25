@@ -276,7 +276,7 @@ export class ModelsUsecases {
     this.eventEmitter.emit('model.event', modelEvent);
 
     return engine
-      .unloadModel(modelId)
+      .unloadModel(modelId, model.engine || Engines.llamaCPP)
       .then(() => {
         delete this.activeModelStatuses[modelId];
         const modelEvent: ModelEvent = {
