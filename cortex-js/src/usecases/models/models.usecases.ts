@@ -197,6 +197,11 @@ export class ModelsUsecases {
 
     return engine
       .loadModel(model, loadModelSettings)
+      .catch((e) => {
+        // Skip model already loaded error
+        if (e.code === AxiosError.ERR_BAD_REQUEST) return;
+        else throw e;
+      })
       .then(() => {
         this.activeModelStatuses[modelId] = {
           model: modelId,
@@ -226,13 +231,6 @@ export class ModelsUsecases {
           metadata: {},
         };
         this.eventEmitter.emit('model.event', modelEvent);
-        if (e.code === AxiosError.ERR_BAD_REQUEST) {
-          loadingModelSpinner.succeed('Model loaded');
-          return {
-            message: 'Model already loaded',
-            modelId,
-          };
-        }
         loadingModelSpinner.fail('Model loading failed');
         await this.telemetryUseCases.createCrashReport(
           e,
