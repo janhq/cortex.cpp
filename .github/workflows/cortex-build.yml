@@ -502,5 +502,5 @@ jobs:
           echo "y" | debuild -S -sa -k${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
           sudo pbuilder create --distribution jammy --debootstrapopts --variant=buildd
           sudo sudo pbuilder build ../cortexso_${{ needs.create-draft-release.outputs.version }}.dsc
-          dput ppa:cortexlabs/cortex cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
+          dput ppa:cortexlabs/cortex ../cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
       
