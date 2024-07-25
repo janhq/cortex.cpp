@@ -10,6 +10,7 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from './base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { ChatClient } from './services/chat-client';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 type RunOptions = {
   threadId?: string;
@@ -62,6 +63,7 @@ export class RunCommand extends BaseCommand {
         checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
+      await downloadModelProgress(this.cortex, modelId);
     }
 
     // Second check if model is available

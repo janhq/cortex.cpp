@@ -16,6 +16,7 @@ import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
 import { Presets, SingleBar } from 'cli-progress';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 @SubCommand({
   name: 'pull',
@@ -56,42 +57,7 @@ export class ModelPullCommand extends BaseCommand {
       exit(1);
     });
 
-    const response = await this.cortex.events.downloadEvent();
-
-    const rl = require('readline').createInterface({
-      input: stdin,
-      output: stdout,
-    });
-
-    rl.on('SIGINT', () => {
-      console.log('\nStopping download...');
-      process.emit('SIGINT');
-    });
-    process.on('SIGINT', async () => {
-      await this.cortex.models.abortDownload(modelId);
-      exit(1);
-    });
-
-    const progressBar = new SingleBar({}, Presets.shades_classic);
-    progressBar.start(100, 0);
-
-    for await (const stream of response) {
-      if (stream.length) {
-        const data = stream[0] as any;
-
-        if (data.status === 'downloaded') break;
-
-        let totalBytes = 0;
-        let totalTransferred = 0;
-        data.children.forEach((child: any) => {
-          totalBytes += child.size.total;
-          totalTransferred += child.size.transferred;
-        });
-        progressBar.update(Math.floor((totalTransferred / totalBytes) * 100));
-      }
-    }
-    progressBar.stop();
-    rl.close();
+    await downloadModelProgress(this.cortex, modelId);
 
     const existingModel = await this.cortex.models.retrieve(modelId);
     const engine = existingModel?.engine || Engines.llamaCPP;
