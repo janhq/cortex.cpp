@@ -83,13 +83,15 @@ export class RunCommand extends BaseCommand {
       await this.cortex.engines.init(engine);
     }
 
+    const startingSpinner = ora('Loading model...').start();
     return this.cortex.models
       .start(modelId, await this.fileService.getPreset(options.preset))
       .then(() => {
-        if (options.chat) {
-          return this.chatClient.chat(modelId, options.threadId);
-        }
-        return;
+        startingSpinner.succeed('Model loaded');
+        if (options.chat) this.chatClient.chat(modelId, options.threadId);
+      })
+      .catch((e) => {
+        startingSpinner.fail(e.message ?? e);
       });
   }
 

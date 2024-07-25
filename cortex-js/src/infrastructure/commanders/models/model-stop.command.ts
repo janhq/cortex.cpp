@@ -4,6 +4,7 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import ora from 'ora';
 
 @SubCommand({
   name: 'stop',
@@ -27,7 +28,12 @@ export class ModelStopCommand extends BaseCommand {
       console.error('Model ID is required');
       exit(1);
     }
-
-    await this.cortex.models.stop(passedParams[0]).then(console.log);
+    const loadingSpinner = ora('Unloading model...').start();
+    await this.cortex.models
+      .stop(passedParams[0])
+      .then(() => loadingSpinner.succeed('Model unloaded'))
+      .catch((e) =>
+        loadingSpinner.fail(`Failed to unload model: ${e.message ?? e}`),
+      );
   }
 }

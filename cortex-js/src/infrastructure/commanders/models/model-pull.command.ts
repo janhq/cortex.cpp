@@ -15,7 +15,6 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
-import { Presets, SingleBar } from 'cli-progress';
 import { downloadModelProgress } from '@/utils/pull-model';
 
 @SubCommand({
@@ -82,6 +81,4 @@ export class ModelPullCommand extends BaseCommand {
 
     exit(0);
   }
-
-  private async abortDownload(modelId: string) {}
 }
