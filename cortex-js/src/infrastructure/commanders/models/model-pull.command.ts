@@ -78,6 +78,9 @@ export class ModelPullCommand extends BaseCommand {
     for await (const stream of response) {
       if (stream.length) {
         const data = stream[0] as any;
+
+        if (data.status === 'downloaded') break;
+
         let totalBytes = 0;
         let totalTransferred = 0;
         data.children.forEach((child: any) => {
@@ -85,7 +88,6 @@ export class ModelPullCommand extends BaseCommand {
           totalTransferred += child.size.transferred;
         });
         progressBar.update(Math.floor((totalTransferred / totalBytes) * 100));
-        if (data.status === 'downloaded') break;
       }
     }
     progressBar.stop();

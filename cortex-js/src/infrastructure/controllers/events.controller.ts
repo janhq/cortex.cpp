@@ -16,9 +16,9 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import {
   Observable,
-  asyncScheduler,
   catchError,
   combineLatest,
+  distinctUntilChanged,
   from,
   fromEvent,
   interval,
@@ -27,7 +27,6 @@ import {
   of,
   startWith,
   switchMap,
-  throttleTime,
 } from 'rxjs';
 import { ResourcesManagerService } from '../services/resources-manager/resources-manager.service';
 import { ResourceEvent } from '@/domain/models/resource.interface';
@@ -56,7 +55,7 @@ export class EventsController {
       'download.event',
     ).pipe(
       map((downloadState) => ({ data: downloadState })),
-      throttleTime(1000, asyncScheduler, { trailing: true }),
+      distinctUntilChanged(),
     );
 
     return merge(latestDownloadState$, downloadEvent$).pipe();
