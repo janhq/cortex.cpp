@@ -10,7 +10,7 @@ import {
 } from '@/domain/telemetry/telemetry.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 import { v4 } from 'uuid';
 
 @Injectable({ scope: Scope.TRANSIENT })

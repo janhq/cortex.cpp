@@ -1,5 +1,5 @@
 import { Presets, SingleBar } from "cli-progress";
-import { Cortex } from "cortexso-node";
+import { Cortex } from "@cortexso/cortex.js";
 import { exit, stdin, stdout } from 'node:process';
 
 export const downloadModelProgress = async (cortex: Cortex, downloadId?: string) => {

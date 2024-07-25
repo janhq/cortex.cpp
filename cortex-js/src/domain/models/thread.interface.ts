@@ -1,5 +1,5 @@
 import { Assistant } from './assistant.interface';
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 
 export interface ThreadToolResources
   extends Cortex.Beta.Threads.Thread.ToolResources {}

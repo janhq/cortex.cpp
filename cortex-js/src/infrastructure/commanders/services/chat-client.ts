@@ -5,7 +5,7 @@ import { CreateThreadDto } from '@/infrastructure/dtos/threads/create-thread.dto
 import { CreateThreadAssistantDto } from '@/infrastructure/dtos/threads/create-thread-assistant.dto';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import { TextContentBlock } from '@/domain/models/message.interface';
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 
 export class ChatClient {
   private exitClause = 'exit()';

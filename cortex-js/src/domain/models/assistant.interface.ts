@@ -1,4 +1,4 @@
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 // TODO: Why we need to alias these?
 
 export interface Assistant extends Cortex.Beta.Assistant {

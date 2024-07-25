@@ -15,7 +15,7 @@ import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import { BenchmarkHardware } from '@/domain/telemetry/telemetry.interface';
 import { defaultBenchmarkConfiguration } from '../constants/benchmark';
 import { inspect } from 'util';
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 
 @SubCommand({
   name: 'benchmark',

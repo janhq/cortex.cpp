@@ -14,7 +14,7 @@ import { Engines } from './types/engine.interface';
 import { join } from 'path';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadModelProgress } from '@/utils/pull-model';
 

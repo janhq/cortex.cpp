@@ -1,4 +1,4 @@
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 
 export interface ApiConfig {
   base_url: string;

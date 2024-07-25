@@ -1,7 +1,7 @@
 import { CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import Cortex from 'cortexso-node';
+import Cortex from '@cortexso/cortex.js';
 import ora from 'ora';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { cortexNamespace, cortexServerAPI } from '../constants/cortex';

@@ -2,7 +2,7 @@ import { InquirerService, Option, SubCommand } from 'nest-commander';
 import { inspect } from 'util';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
-import { Cortex } from 'cortexso-node';
+import { Cortex } from '@cortexso/cortex.js';
 import ora from 'ora';
 
 interface EmbeddingCommandOptions {
