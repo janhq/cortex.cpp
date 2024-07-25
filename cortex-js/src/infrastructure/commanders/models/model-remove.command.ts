@@ -23,11 +23,6 @@ export class ModelRemoveCommand extends BaseCommand {
   }
 
   async runCommand(passedParams: string[]): Promise<void> {
-    if (passedParams.length === 0) {
-      console.error('Model ID is required');
-      exit(1);
-    }
-
     await this.cortex.models.del(passedParams[0]).then(console.log);
   }
 }

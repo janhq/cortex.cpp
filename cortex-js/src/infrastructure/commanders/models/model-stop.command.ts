@@ -24,10 +24,6 @@ export class ModelStopCommand extends BaseCommand {
   }
 
   async runCommand(passedParams: string[]): Promise<void> {
-    if (passedParams.length === 0) {
-      console.error('Model ID is required');
-      exit(1);
-    }
     const loadingSpinner = ora('Unloading model...').start();
     await this.cortex.models
       .stop(passedParams[0])

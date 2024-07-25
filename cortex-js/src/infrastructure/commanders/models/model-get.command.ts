@@ -23,11 +23,6 @@ export class ModelGetCommand extends BaseCommand {
   }
 
   async runCommand(passedParams: string[]): Promise<void> {
-    if (passedParams.length === 0) {
-      console.error('Model ID is required');
-      exit(1);
-    }
-
     const model = await this.cortex.models.retrieve(passedParams[0]);
     if (!model) console.error('Model not found');
     else console.log(model);
