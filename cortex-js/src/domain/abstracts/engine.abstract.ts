@@ -60,5 +60,5 @@ export abstract class EngineExtension extends Extension {
    * Unloads a model from the engine.
    * @param modelId
    */
-  async unloadModel(modelId: string): Promise<void> {}
+  async unloadModel(modelId: string, engine?: string): Promise<void> {}
 }

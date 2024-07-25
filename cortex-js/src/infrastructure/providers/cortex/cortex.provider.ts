@@ -93,9 +93,9 @@ export default class CortexProvider extends OAIEngineExtension {
     ).then(); // pipe error or void instead of throwing
   }
 
-  override async unloadModel(modelId: string): Promise<void> {
+  override async unloadModel(modelId: string, engine?: string): Promise<void> {
     return firstValueFrom(
-      this.httpService.post(this.unloadModelUrl, { model: modelId }),
+      this.httpService.post(this.unloadModelUrl, { model: modelId, engine }),
     ).then(); // pipe error or void instead of throwing
   }
 
