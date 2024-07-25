@@ -56,7 +56,7 @@ export class ModelPullCommand extends BaseCommand {
       exit(1);
     });
 
-    const response = await this.cortex.models.downloadEvent();
+    const response = await this.cortex.events.downloadEvent();
 
     const rl = require('readline').createInterface({
       input: stdin,
