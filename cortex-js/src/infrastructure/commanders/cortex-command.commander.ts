@@ -19,7 +19,6 @@ import { FileManagerService } from '../services/file-manager/file-manager.servic
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './serve-stop.command';
 import ora from 'ora';
-import { printSlogan } from '@/utils/logo';
 import { EnginesSetCommand } from './engines/engines-set.command';
 
 type ServeOptions = {
@@ -77,7 +76,6 @@ export class CortexCommand extends CommandRunner {
     const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;
     if (showVersion) {
-      printSlogan();
       console.log('\n');
       console.log(`Cortex CLI - v${pkg.version}`);
       console.log(chalk.blue(`Github: ${pkg.homepage}`));
