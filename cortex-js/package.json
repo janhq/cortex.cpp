@@ -55,7 +55,7 @@
     "class-validator": "^0.14.1",
     "cli-progress": "^3.12.0",
     "cortex-cpp": "0.4.34",
-    "@cortexso/cortex.js": "^0.0.11",
+    "@cortexso/cortex.js": "^0.1.1",
     "cpu-instructions": "^0.0.11",
     "decompress": "^4.2.1",
     "js-yaml": "^4.1.0",
