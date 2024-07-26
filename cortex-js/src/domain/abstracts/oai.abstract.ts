@@ -56,7 +56,7 @@ export abstract class OAIEngineExtension extends EngineExtension {
             if (line.trim().length > 0) {
               const transformedLine = transformResponse(line);
               if (transformedLine) {
-                transformedLines.push(transformedLine);
+                transformedLines.push(`data: ${transformedLine}\n\n`);
               }
             }
           }
