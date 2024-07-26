@@ -1,4 +1,8 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BeforeApplicationShutdown,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 import { ChildProcess, fork } from 'child_process';
 import { delimiter, join } from 'path';
 import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cortex-operation-successfully.dto';
@@ -16,7 +20,7 @@ import {
 import { openSync } from 'fs';
 
 @Injectable()
-export class CortexUsecases {
+export class CortexUsecases implements BeforeApplicationShutdown {
   private cortexProcess: ChildProcess | undefined;
 
   constructor(
@@ -44,6 +48,9 @@ export class CortexUsecases {
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
 
     const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
+
+    // Attempt to stop the process if it's already running
+    await this.stopCortex();
     // go up one level to get the binary folder, have to also work on windows
     this.cortexProcess = fork(join(__dirname, './../../utils/cortex-cpp'), [], {
       detached: true,
@@ -103,8 +110,6 @@ export class CortexUsecases {
           ),
         ),
       );
-    } catch (err) {
-      console.error(err.response.data);
     } finally {
       this.cortexProcess?.kill();
       return {
@@ -210,5 +215,10 @@ export class CortexUsecases {
       cortexCppHost: host,
       cortexCppPort: port,
     });
+  }
+
+  async beforeApplicationShutdown(signal: string) {
+    console.log(`Received ${signal}, performing pre-shutdown tasks.`);
+    await this.stopCortex();
   }
 }

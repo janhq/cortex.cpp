@@ -120,10 +120,11 @@ export class EnginesUsecases {
     }
 
     if (
-      (engine === Engines.llamaCPP || engine === Engines.tensorrtLLM) &&
-      options?.runMode === 'GPU' &&
-      options?.gpuType === 'Nvidia' &&
-      !options?.vulkan
+      engine === Engines.tensorrtLLM ||
+      (engine === Engines.llamaCPP &&
+        options?.runMode === 'GPU' &&
+        options?.gpuType === 'Nvidia' &&
+        !options?.vulkan)
     )
       await this.installCudaToolkitDependency(
         engine === Engines.tensorrtLLM
