@@ -11,9 +11,9 @@ import {
 } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { Controller, Sse } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   Observable,
   catchError,
@@ -31,9 +31,9 @@ import {
 import { ResourcesManagerService } from '../services/resources-manager/resources-manager.service';
 import { ResourceEvent } from '@/domain/models/resource.interface';
 
-@ApiTags('Events')
-@Controller('events')
-export class EventsController {
+@ApiTags('System')
+@Controller('system')
+export class SystemController {
   constructor(
     private readonly downloadManagerService: DownloadManagerService,
     private readonly modelsUsecases: ModelsUsecases,
@@ -42,10 +42,33 @@ export class EventsController {
   ) {}
 
   @ApiOperation({
+    summary: 'Terminate api server',
+    description: 'Terminates the Cortex API endpoint server for the detached mode.',
+  })
+  @Delete('process')
+  async delete() {
+    process.exit(0);
+  }
+
+  @ApiOperation({
+    summary: "Get health status",
+    description: "Retrieves the health status of your Cortex's system.",
+  })
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+  })
+  @Get('healthz')
+  async get() {
+    return 'OK';
+  }
+
+  @ApiOperation({
     summary: 'Get download status',
     description: "Retrieves the model's download status.",
   })
-  @Sse('download')
+  @Sse('events/download')
   downloadEvent(): Observable<DownloadStateEvent> {
     const latestDownloadState$: Observable<DownloadStateEvent> = of({
       data: this.downloadManagerService.getDownloadStates(),
@@ -65,7 +88,7 @@ export class EventsController {
     summary: 'Get model status',
     description: 'Retrieves all the available model statuses within Cortex.',
   })
-  @Sse('model')
+  @Sse('events/model')
   modelEvent(): Observable<ModelStatusAndEvent> {
     const latestModelStatus$: Observable<Record<ModelId, ModelStatus>> = of(
       this.modelsUsecases.getModelStatuses(),
@@ -85,7 +108,7 @@ export class EventsController {
     summary: 'Get resources status',
     description: 'Retrieves the resources status of the system.',
   })
-  @Sse('resources')
+  @Sse('events/resources')
   resourcesEvent(): Observable<ResourceEvent> {
     const initialData$ = from(
       this.resourcesManagerService.getResourceStatuses(),
