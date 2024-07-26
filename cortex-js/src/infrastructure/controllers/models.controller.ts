@@ -139,7 +139,7 @@ export class ModelsController {
     required: false,
     description: 'The unique identifier of the model in your local storage.',
   })
-  @Post('pull/:modelId(*)')
+  @Post(':modelId(*)/pull')
   pullModel(
     @Param('modelId') modelId: string,
     @Body() body?: {

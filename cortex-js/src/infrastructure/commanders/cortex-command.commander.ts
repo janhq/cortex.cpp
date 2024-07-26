@@ -49,6 +49,10 @@ type ServeOptions = {
 })
 @SetCommandContext()
 export class CortexCommand extends CommandRunner {
+  host: string;
+  port: number;
+  configHost: string;
+  configPort: number;
   constructor(
     readonly contextService: ContextService,
     readonly fileManagerService: FileManagerService,
@@ -58,8 +62,14 @@ export class CortexCommand extends CommandRunner {
   }
 
   async run(passedParams: string[], options?: ServeOptions): Promise<void> {
-    const host = options?.address || defaultCortexJsHost;
-    const port = options?.port || defaultCortexJsPort;
+    const {
+      apiServerHost: configApiServerHost,
+      apiServerPort: configApiServerPort,
+    } = await this.fileManagerService.getConfig();
+    this.configHost = configApiServerHost || defaultCortexJsHost;
+    this.configPort = configApiServerPort || defaultCortexJsPort;
+    this.host = options?.address || configApiServerHost || defaultCortexJsHost;
+    this.port = options?.port || configApiServerPort || defaultCortexJsPort;
     const showLogs = options?.logs || false;
     const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;
@@ -70,7 +80,7 @@ export class CortexCommand extends CommandRunner {
       console.log(chalk.blue(`Github: ${pkg.homepage}`));
       return;
     }
-    return this.startServer(host, port, showLogs, dataFolderPath);
+    return this.startServer(this.host, this.port, showLogs, dataFolderPath);
   }
 
   private async startServer(
@@ -89,13 +99,9 @@ export class CortexCommand extends CommandRunner {
       startEngineSpinner.succeed('Cortex started successfully');
       const isServerOnline = await this.cortexUseCases.isAPIServerOnline();
       if (isServerOnline) {
-        const {
-          apiServerHost: configApiServerHost,
-          apiServerPort: configApiServerPort,
-        } = await this.fileManagerService.getConfig();
         console.log(
           chalk.blue(
-            `Server is already running at http://${configApiServerHost}:${configApiServerPort}. Please use 'cortex stop' to stop the server.`,
+            `Server is already running at http://${this.configHost}:${this.configPort}. Please use 'cortex stop' to stop the server.`,
           ),
         );
         process.exit(0);
