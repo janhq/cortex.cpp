@@ -1,5 +1,5 @@
 import {
-  CORTEX_JS_STOP_API_SERVER_URL,
+  CORTEX_JS_SYSTEM_URL,
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
@@ -34,7 +34,7 @@ export async function start(host?: string, port?: number) {
  * @returns
  */
 export async function stop() {
-  return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
+  return fetch(CORTEX_JS_SYSTEM_URL(), {
     method: 'DELETE',
   }).catch(() => {});
 }
