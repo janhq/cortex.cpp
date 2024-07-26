@@ -17,6 +17,8 @@ import { createInterface } from 'readline';
 import {
   defaultCortexCppHost,
   defaultCortexCppPort,
+  defaultCortexJsHost,
+  defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 
 const readFileAsync = promisify(read);
@@ -108,6 +110,8 @@ export class FileManagerService {
       dataFolderPath,
       cortexCppHost: defaultCortexCppHost,
       cortexCppPort: defaultCortexCppPort,
+      apiServerHost: defaultCortexJsHost,
+      apiServerPort: defaultCortexJsPort,
     };
   }
 
