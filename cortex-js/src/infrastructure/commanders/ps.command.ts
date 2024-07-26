@@ -30,20 +30,11 @@ export class PSCommand extends BaseCommand {
   }
   async runCommand(): Promise<void> {
     const runningSpinner = ora('Running PS command...').start();
-    let checkingSpinner: ora.Ora;
     return this.getModels()
       .then((models: ModelStat[]) => {
         runningSpinner.succeed();
-        console.table(models);
-      })
-      .then(() => {
-        checkingSpinner = ora('Checking API server...').start();
-        return this.cortexUsecases.isAPIServerOnline();
-      })
-      .then((isOnline) => {
-        checkingSpinner.succeed(
-          isOnline ? 'API server is online' : 'API server is offline',
-        );
+        if (models.length) console.table(models);
+        else console.log('No models running');
       })
       .then(async () => {
         const cpuUsage = (

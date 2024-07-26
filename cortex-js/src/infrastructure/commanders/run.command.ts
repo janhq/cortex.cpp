@@ -92,6 +92,7 @@ export class RunCommand extends BaseSubCommand {
       .then(() => {
         startingSpinner.succeed('Model loaded');
         if (options.chat) this.chatClient.chat(modelId, options.threadId);
+        else console.log("To start a chat session, use the '--chat' flag");
       })
       .catch((e) => {
         startingSpinner.fail(e.message ?? e);

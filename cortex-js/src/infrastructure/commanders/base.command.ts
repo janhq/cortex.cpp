@@ -21,7 +21,7 @@ export abstract class BaseCommand extends CommandRunner {
     const checkingSpinner = ora('Checking API server online...').start();
     const result = await this.cortexUseCases.isAPIServerOnline();
     if (!result) {
-      checkingSpinner.fail('API server is offline');
+      checkingSpinner.fail('API server is offline. Please run "cortex" before running this command');
       process.exit(1);
     }
     checkingSpinner.succeed('API server is online');
