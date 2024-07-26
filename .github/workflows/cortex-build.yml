@@ -2,7 +2,7 @@ name: CI Cortex Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*", "!v[0-9]+.[0-9]+.[0-9]+-cortex-js"]
     paths: ["cortex-cpp/**", "cortex-js/**"]
   workflow_dispatch:
 
@@ -234,7 +234,7 @@ jobs:
 
           - os: "mac"
             name: "amd64"
-            runs-on: "macos-13"
+            runs-on: "macos-desktop"
 
           - os: "mac"
             name: "arm64"
@@ -279,6 +279,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - uses: actions/setup-python@v3
+        if: runner.os != 'macOS'
         with:
           python-version: "3.10"
 
@@ -487,8 +488,9 @@ jobs:
       - name: Get release notes
         id: release_notes
         run: |
-            RELEASE_NOTES=$(curl -s -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}' https://api.github.com/repos/${{ github.repository }}/releases/tags/${VERSION} | jq -r '.body')
+            RELEASE_NOTES="cortex update to version ${{ needs.create-draft-release.outputs.version }}"
             echo "RELEASE_NOTES=${RELEASE_NOTES}" >> $GITHUB_ENV
+
       - name: Update change log
         run: |
           sed -i "s/VERSION/${{ needs.create-draft-release.outputs.version }}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
@@ -501,6 +503,6 @@ jobs:
           cd package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}
           echo "y" | debuild -S -sa -k${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
           sudo pbuilder create --distribution jammy --debootstrapopts --variant=buildd
-          sudo sudo pbuilder build ../cortexso_${{ needs.create-draft-release.outputs.version }}.dsc
-          dput ppa:cortexlabs/cortex ../cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
+          sudo pbuilder build ../cortexso_${{ needs.create-draft-release.outputs.version }}.dsc
+          dput ppa:homebrew-computer/main ../cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
       
