@@ -66,10 +66,13 @@ export class CortexCommand extends CommandRunner {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
     } = await this.fileManagerService.getConfig();
+
     this.configHost = configApiServerHost || defaultCortexJsHost;
     this.configPort = configApiServerPort || defaultCortexJsPort;
+
     this.host = options?.address || configApiServerHost || defaultCortexJsHost;
     this.port = options?.port || configApiServerPort || defaultCortexJsPort;
+
     const showLogs = options?.logs || false;
     const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;
@@ -80,12 +83,10 @@ export class CortexCommand extends CommandRunner {
       console.log(chalk.blue(`Github: ${pkg.homepage}`));
       return;
     }
-    return this.startServer(this.host, this.port, showLogs, dataFolderPath);
+    return this.startServer(showLogs, dataFolderPath);
   }
 
   private async startServer(
-    host: string,
-    port: number,
     attach: boolean,
     dataFolderPath?: string,
   ) {
@@ -116,18 +117,18 @@ export class CortexCommand extends CommandRunner {
       }
       if (attach) {
         const app = await getApp();
-        await app.listen(port, host);
+        await app.listen(this.port, this.host);
       } else {
-        await this.cortexUseCases.startServerDetached(host, port);
+        await this.cortexUseCases.startServerDetached(this.host, this.port);
       }
-      console.log(chalk.blue(`Started server at http://${host}:${port}`));
+      console.log(chalk.blue(`Started server at http://${this.host}:${this.port}`));
       console.log(
-        chalk.blue(`API Playground available at http://${host}:${port}/api`),
+        chalk.blue(`API Playground available at http://${this.host}:${this.port}/api`),
       );
       await this.fileManagerService.writeConfigFile({
         ...config,
-        apiServerHost: host,
-        apiServerPort: port,
+        apiServerHost: this.host,
+        apiServerPort: this.port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
       });
       if (!attach) process.exit(0);
@@ -137,7 +138,7 @@ export class CortexCommand extends CommandRunner {
       await this.fileManagerService.writeConfigFile({
         ...config,
       });
-      console.error(`Failed to start server. Is port ${port} in use?`);
+      console.error(`Failed to start server. Is port ${this.port} in use?`);
       process.exit(1);
     }
   }
