@@ -335,11 +335,11 @@ export class FileManagerService {
 
     try {
       const content = readFileSync(configPath, 'utf8');
-      config = yaml.load(content) as Config;
+      config = (yaml.load(content) as Config) ?? this.defaultConfig();
     } catch {}
     return {
-      host: config.apiServerHost ?? 'localhost',
-      port: config.apiServerPort ?? 1337,
+      host: this.defaultConfig().apiServerHost ?? 'localhost',
+      port: this.defaultConfig().apiServerPort ?? 1337,
     };
   }
 }

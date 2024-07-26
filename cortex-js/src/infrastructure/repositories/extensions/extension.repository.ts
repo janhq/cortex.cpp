@@ -64,27 +64,33 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       this.httpService,
       this.fileManagerService,
     );
-    onnxEngine.status = existsSync(
-      join(
-        await this.fileManagerService.getCortexCppEnginePath(),
-        Engines.onnx,
-      ),
-    )
-      ? EngineStatus.READY
-      : EngineStatus.NOT_INITIALIZED;
+    onnxEngine.status =
+      existsSync(
+        join(
+          await this.fileManagerService.getCortexCppEnginePath(),
+          Engines.onnx,
+        ),
+      ) && process.platform === 'win32'
+        ? EngineStatus.READY
+        : process.platform !== 'win32'
+          ? EngineStatus.NOT_SUPPORTED
+          : EngineStatus.NOT_INITIALIZED;
 
     const tensorrtLLMEngine = new TensorrtLLMProvider(
       this.httpService,
       this.fileManagerService,
     );
-    tensorrtLLMEngine.status = existsSync(
-      join(
-        await this.fileManagerService.getCortexCppEnginePath(),
-        Engines.tensorrtLLM,
-      ),
-    )
-      ? EngineStatus.READY
-      : EngineStatus.NOT_INITIALIZED;
+    tensorrtLLMEngine.status =
+      existsSync(
+        join(
+          await this.fileManagerService.getCortexCppEnginePath(),
+          Engines.tensorrtLLM,
+        ),
+      ) && process.platform !== 'darwin'
+        ? EngineStatus.READY
+        : process.platform === 'darwin'
+          ? EngineStatus.NOT_SUPPORTED
+          : EngineStatus.NOT_INITIALIZED;
 
     await llamaCPPEngine.onLoad();
     await onnxEngine.onLoad();
