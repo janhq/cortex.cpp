@@ -4,12 +4,7 @@ import { exit } from 'node:process';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-import {
-  createReadStream,
-  existsSync,
-  statSync,
-  watchFile,
-} from 'node:fs';
+import { createReadStream, existsSync, statSync, watchFile } from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
@@ -17,7 +12,7 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from '../base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { downloadModelProgress } from '@/utils/pull-model';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -33,12 +28,13 @@ type ModelStartOptions = {
   },
 })
 @SetCommandContext()
-export class ModelStartCommand extends BaseSubCommand {
+export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

@@ -2,7 +2,7 @@ import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: '<name> set <config> <value>',
@@ -12,8 +12,11 @@ import { BaseSubCommand } from '../base.subcommand';
   },
 })
 @SetCommandContext()
-export class EnginesSetCommand extends BaseSubCommand {
-  constructor(readonly cortexUsecases: CortexUsecases) {
+export class EnginesSetCommand extends BaseCommand {
+  constructor(
+    readonly cortexUsecases: CortexUsecases,
+    private readonly cortex: CortexClient,
+  ) {
     super(cortexUsecases);
   }
 

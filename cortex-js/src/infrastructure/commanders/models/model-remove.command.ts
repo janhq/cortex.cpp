@@ -4,7 +4,7 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'remove',
@@ -15,10 +15,11 @@ import { BaseSubCommand } from '../base.subcommand';
   },
 })
 @SetCommandContext()
-export class ModelRemoveCommand extends BaseSubCommand {
+export class ModelRemoveCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUseCases);
   }

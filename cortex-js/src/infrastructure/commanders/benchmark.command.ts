@@ -16,7 +16,7 @@ import { BenchmarkHardware } from '@/domain/telemetry/telemetry.interface';
 import { defaultBenchmarkConfiguration } from '../constants/benchmark';
 import { inspect } from 'util';
 import { Cortex } from '@cortexso/cortex.js';
-import { BaseSubCommand } from './base.subcommand';
+import { CortexClient } from './services/cortex.client';
 
 @SubCommand({
   name: 'benchmark',
@@ -27,11 +27,12 @@ import { BaseSubCommand } from './base.subcommand';
   description:
     'Benchmark and analyze the performance of a specific AI model using a variety of system resources',
 })
-export class BenchmarkCommand extends BaseSubCommand {
+export class BenchmarkCommand extends BaseCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     private readonly telemetryUsecases: TelemetryUsecases,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

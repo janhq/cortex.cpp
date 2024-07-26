@@ -8,7 +8,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { BaseCommand } from '../base.command';
 import { defaultInstallationOptions } from '@/utils/init';
 import { Presets, SingleBar } from 'cli-progress';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: '<name> init',
@@ -18,11 +18,12 @@ import { BaseSubCommand } from '../base.subcommand';
   },
 })
 @SetCommandContext()
-export class EnginesInitCommand extends BaseSubCommand {
+export class EnginesInitCommand extends BaseCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileManagerService: FileManagerService,
     readonly contextService: ContextService,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }
@@ -47,29 +48,28 @@ export class EnginesInitCommand extends BaseSubCommand {
       await this.cortexUsecases.stopCortex();
     }
     console.log(`Installing engine ${engine}...`);
-    await this.cortex.engines
-      .init(engine, params)
-      const response = await this.cortex.events.downloadEvent()
-  
-      const progressBar = new SingleBar({}, Presets.shades_classic);
-      progressBar.start(100, 0);
-  
-      for await (const stream of response) {
-        if (stream.length) {
-          const data = stream[0] as any;
-          if (data.status === 'downloaded') break;
-          let totalBytes = 0;
-          let totalTransferred = 0;
-          data.children.forEach((child: any) => {
-            totalBytes += child.size.total;
-            totalTransferred += child.size.transferred;
-          });
-          progressBar.update(Math.floor((totalTransferred / totalBytes) * 100));
-        }
+    await this.cortex.engines.init(engine, params);
+    const response = await this.cortex.events.downloadEvent();
+
+    const progressBar = new SingleBar({}, Presets.shades_classic);
+    progressBar.start(100, 0);
+
+    for await (const stream of response) {
+      if (stream.length) {
+        const data = stream[0] as any;
+        if (data.status === 'downloaded') break;
+        let totalBytes = 0;
+        let totalTransferred = 0;
+        data.children.forEach((child: any) => {
+          totalBytes += child.size.total;
+          totalTransferred += child.size.transferred;
+        });
+        progressBar.update(Math.floor((totalTransferred / totalBytes) * 100));
       }
-      progressBar.stop();
-      console.log('Engine installed successfully');
-      process.exit(0);
+    }
+    progressBar.stop();
+    console.log('Engine installed successfully');
+    process.exit(0);
   }
 
   @Option({

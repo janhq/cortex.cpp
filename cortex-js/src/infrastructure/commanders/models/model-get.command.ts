@@ -1,10 +1,9 @@
 import { SubCommand } from 'nest-commander';
-import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'get',
@@ -15,10 +14,11 @@ import { BaseSubCommand } from '../base.subcommand';
   },
 })
 @SetCommandContext()
-export class ModelGetCommand extends BaseSubCommand {
+export class ModelGetCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUseCases);
   }

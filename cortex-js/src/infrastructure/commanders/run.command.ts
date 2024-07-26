@@ -11,7 +11,7 @@ import { BaseCommand } from './base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { ChatClient } from './services/chat-client';
 import { downloadModelProgress } from '@/utils/pull-model';
-import { BaseSubCommand } from './base.subcommand';
+import { CortexClient } from './services/cortex.client';
 
 type RunOptions = {
   threadId?: string;
@@ -28,12 +28,13 @@ type RunOptions = {
   },
   description: 'Shortcut to start a model and chat',
 })
-export class RunCommand extends BaseSubCommand {
+export class RunCommand extends BaseCommand {
   chatClient: ChatClient;
   constructor(
     protected readonly cortexUsecases: CortexUsecases,
     private readonly inquirerService: InquirerService,
     private readonly fileService: FileManagerService,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
 

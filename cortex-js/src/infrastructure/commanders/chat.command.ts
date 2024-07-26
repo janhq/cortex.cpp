@@ -17,7 +17,7 @@ import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadModelProgress } from '@/utils/pull-model';
-import { BaseSubCommand } from './base.subcommand';
+import { CortexClient } from './services/cortex.client';
 
 type ChatOptions = {
   threadId?: string;
@@ -37,7 +37,7 @@ type ChatOptions = {
   },
 })
 @SetCommandContext()
-export class ChatCommand extends BaseSubCommand {
+export class ChatCommand extends BaseCommand {
   chatClient: ChatClient;
 
   constructor(
@@ -46,6 +46,7 @@ export class ChatCommand extends BaseSubCommand {
     private readonly fileService: FileManagerService,
     protected readonly cortexUsecases: CortexUsecases,
     protected readonly contextService: ContextService,
+    protected readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
     this.chatClient = new ChatClient(this.cortex);
@@ -66,7 +67,7 @@ export class ChatCommand extends BaseSubCommand {
       // first input might be message input
       message = passedParams.length
         ? passedParams.join(' ')
-        : options.message ?? '';
+        : (options.message ?? '');
       // If model ID is not provided, prompt user to select from running models
       const { data: models } = await this.cortex.models.list();
       if (models.length === 1) {
