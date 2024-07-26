@@ -27,7 +27,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     super(httpService);
 
     eventEmmitter.on('config.updated', async (data) => {
-      if (data.group === this.name) {
+      if (data.engine === this.name) {
         this.apiKey = data.value;
         this.status =
           (this.apiKey?.length ?? 0) > 0
