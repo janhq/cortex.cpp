@@ -33,8 +33,8 @@ export async function start(host?: string, port?: number) {
  * Stop the API server
  * @returns
  */
-export async function stop() {
-  return fetch(CORTEX_JS_SYSTEM_URL(), {
+export async function stop(host?: string, port?: number) {
+  return fetch(CORTEX_JS_SYSTEM_URL(host, port), {
     method: 'DELETE',
   }).catch(() => {});
 }
