@@ -1,4 +1,5 @@
 import {
+  CORTEX_CPP_PROCESS_DESTROY_URL,
   CORTEX_JS_SYSTEM_URL,
   defaultCortexJsHost,
   defaultCortexJsPort,
@@ -36,5 +37,12 @@ export async function start(host?: string, port?: number) {
 export async function stop(host?: string, port?: number) {
   return fetch(CORTEX_JS_SYSTEM_URL(host, port), {
     method: 'DELETE',
-  }).catch(() => {});
+  })
+    .catch(() => {})
+    .then(() =>
+      fetch(CORTEX_CPP_PROCESS_DESTROY_URL(host, port), {
+        method: 'DELETE',
+      }),
+    )
+    .catch(() => {});
 }
