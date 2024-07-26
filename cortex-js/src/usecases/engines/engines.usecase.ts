@@ -125,7 +125,11 @@ export class EnginesUsecases {
       options?.gpuType === 'Nvidia' &&
       !options?.vulkan
     )
-      await this.installCudaToolkitDependency(options?.cudaVersion);
+      await this.installCudaToolkitDependency(
+        engine === Engines.tensorrtLLM
+          ? MIN_CUDA_VERSION
+          : options?.cudaVersion,
+      );
 
     // Update states
     await this.extensionRepository.findOne(engine).then((e) => {
