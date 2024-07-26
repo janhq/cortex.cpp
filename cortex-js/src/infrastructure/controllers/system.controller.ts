@@ -59,7 +59,7 @@ export class SystemController {
     status: 200,
     description: 'Ok',
   })
-  @Get('healthz')
+  @Get('health')
   async get() {
     return 'OK';
   }
