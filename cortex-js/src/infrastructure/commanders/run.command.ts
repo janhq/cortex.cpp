@@ -2,17 +2,15 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SubCommand, Option, InquirerService } from 'nest-commander';
 import { exit } from 'node:process';
 import ora from 'ora';
-import { ChatCliUsecases } from '@commanders/usecases/chat.cli.usecases';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
-import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { Engines } from '../types/engine.interface';
+import { Engines } from './types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
-import { BaseCommand } from '../base.command';
-import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
+import { BaseCommand } from './base.command';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { ChatClient } from './services/chat-client';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 type RunOptions = {
   threadId?: string;
@@ -30,15 +28,15 @@ type RunOptions = {
   description: 'Shortcut to start a model and chat',
 })
 export class RunCommand extends BaseCommand {
+  chatClient: ChatClient;
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
-    private readonly cortexUsecases: CortexUsecases,
-    private readonly chatCliUsecases: ChatCliUsecases,
+    protected readonly cortexUsecases: CortexUsecases,
     private readonly inquirerService: InquirerService,
     private readonly fileService: FileManagerService,
-    private readonly initUsecases: EnginesUsecases,
   ) {
     super(cortexUsecases);
+
+    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(passedParams: string[], options: RunOptions): Promise<void> {
@@ -58,19 +56,19 @@ export class RunCommand extends BaseCommand {
 
     // If not exist
     // Try Pull
-    if (!(await this.modelsCliUsecases.getModel(modelId))) {
+    if (!(await this.cortex.models.retrieve(modelId))) {
       checkingSpinner.succeed();
-      await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
-        if (e instanceof ModelNotFoundException)
-          checkingSpinner.fail('Model does not exist.');
-        else checkingSpinner.fail(e.message ?? e);
+
+      await this.cortex.models.download(modelId).catch((e: Error) => {
+        checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
+      await downloadModelProgress(this.cortex, modelId);
     }
 
     // Second check if model is available
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (!existingModel || !isLocalModel(existingModel.files)) {
+    const existingModel = await this.cortex.models.retrieve(modelId);
+    if (!existingModel) {
       checkingSpinner.fail(`Model is not available`);
       process.exit(1);
     }
@@ -82,17 +80,20 @@ export class RunCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      console.log('Downloading engine...');
+      await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
 
-    return this.cortexUsecases
-      .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
+    const startingSpinner = ora('Loading model...').start();
+    return this.cortex.models
+      .start(modelId, await this.fileService.getPreset(options.preset))
       .then(() => {
-        if (options.chat) {
-          return this.chatCliUsecases.chat(modelId, options.threadId);
-        }
-        return;
+        startingSpinner.succeed('Model loaded');
+        if (options.chat) this.chatClient.chat(modelId, options.threadId);
+      })
+      .catch((e) => {
+        startingSpinner.fail(e.message ?? e);
       });
   }
 
@@ -121,15 +122,15 @@ export class RunCommand extends BaseCommand {
   }
 
   modelInquiry = async () => {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const { data: models } = await this.cortex.models.list();
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select a model to start:',
       choices: models.map((e) => ({
-        name: e.name,
-        value: e.model,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;

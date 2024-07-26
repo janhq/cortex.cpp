@@ -1,11 +1,7 @@
 import { existsSync } from 'fs';
 import { SubCommand, Option, InquirerService } from 'nest-commander';
-import { ChatCliUsecases } from './usecases/chat.cli.usecases';
 import { exit } from 'node:process';
-import { PSCliUsecases } from './usecases/ps.cli.usecases';
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ModelStat } from './types/model-stat.interface';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import {
   EventName,
@@ -14,12 +10,13 @@ import {
 import { ContextService } from '../services/context/context.service';
 import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { ModelsCliUsecases } from './usecases/models.cli.usecases';
 import { Engines } from './types/engine.interface';
 import { join } from 'path';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
-import { isLocalModel, isRemoteEngine } from '@/utils/normalize-model-id';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { Cortex } from '@cortexso/cortex.js';
+import { ChatClient } from './services/chat-client';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 type ChatOptions = {
   threadId?: string;
@@ -40,19 +37,17 @@ type ChatOptions = {
 })
 @SetCommandContext()
 export class ChatCommand extends BaseCommand {
+  chatClient: ChatClient;
+
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly chatCliUsecases: ChatCliUsecases,
-    private readonly modelsUsecases: ModelsUsecases,
-    private readonly psCliUsecases: PSCliUsecases,
-    readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
-    readonly cortexUsecases: CortexUsecases,
-    readonly modelsCliUsecases: ModelsCliUsecases,
     private readonly fileService: FileManagerService,
-    private readonly initUsecases: EnginesUsecases,
+    protected readonly cortexUsecases: CortexUsecases,
+    protected readonly contextService: ContextService,
   ) {
     super(cortexUsecases);
+    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(
@@ -65,16 +60,16 @@ export class ChatCommand extends BaseCommand {
     let message = options.message ?? passedParams.slice(1).join(' ');
 
     // Check for model existing
-    if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
+    if (!modelId || !(await this.cortex.models.retrieve(modelId))) {
       // Model ID is not provided
       // first input might be message input
       message = passedParams.length
         ? passedParams.join(' ')
-        : (options.message ?? '');
+        : options.message ?? '';
       // If model ID is not provided, prompt user to select from running models
-      const models = await this.psCliUsecases.getModels();
+      const { data: models } = await this.cortex.models.list();
       if (models.length === 1) {
-        modelId = models[0].modelId;
+        modelId = models[0].id;
       } else if (models.length > 0) {
         modelId = await this.modelInquiry(models);
       } else {
@@ -82,8 +77,8 @@ export class ChatCommand extends BaseCommand {
       }
     }
 
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (!existingModel || !isLocalModel(existingModel.files)) {
+    const existingModel = await this.cortex.models.retrieve(modelId);
+    if (!existingModel) {
       process.exit(1);
     }
 
@@ -93,7 +88,9 @@ export class ChatCommand extends BaseCommand {
       !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      console.log('Downloading engine...');
+      await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
 
     if (!message) options.attach = true;
@@ -106,28 +103,26 @@ export class ChatCommand extends BaseCommand {
       ],
       TelemetrySource.CLI,
     );
-    return this.cortexUsecases
-      .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
-      .then(() =>
-        this.chatCliUsecases.chat(
-          modelId,
-          options.threadId,
-          message, // Accept both message from inputs or arguments
-          options.attach,
-          false, // Do not stop cortex session or loaded model
-        ),
-      );
+
+    const preset = await this.fileService.getPreset(options.preset);
+
+    return this.cortex.models.start(modelId, preset).then(() =>
+      this.chatClient.chat(
+        modelId,
+        options.threadId,
+        message, // Accept both message from inputs or arguments
+      ),
+    );
   }
 
-  modelInquiry = async (models: ModelStat[]) => {
+  modelInquiry = async (models: Cortex.Model[]) => {
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select running model to chat with:',
       choices: models.map((e) => ({
-        name: e.modelId,
-        value: e.modelId,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;

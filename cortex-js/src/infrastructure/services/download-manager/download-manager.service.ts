@@ -66,6 +66,7 @@ export class DownloadManagerService {
             total: 0,
             transferred: 0,
           },
+          progress: 0,
           status: DownloadStatus.Downloading,
         };
 
@@ -77,6 +78,7 @@ export class DownloadManagerService {
       id: downloadId,
       title: title,
       type: downloadType,
+      progress: 0,
       status: DownloadStatus.Downloading,
       children: downloadItems,
     };
@@ -95,6 +97,8 @@ export class DownloadManagerService {
       );
       if (currentDownloadState) {
         currentDownloadState.status = DownloadStatus.Downloaded;
+        this.eventEmitter.emit('download.event', this.allDownloadStates);
+
         // remove download state if all children is downloaded
         this.allDownloadStates = this.allDownloadStates.filter(
           (downloadState) => downloadState.id !== downloadId,
@@ -180,7 +184,6 @@ export class DownloadManagerService {
           if (downloadItem) {
             downloadItem.status = DownloadStatus.Downloaded;
           }
-
           this.eventEmitter.emit('download.event', this.allDownloadStates);
         } finally {
           bar.stop();
@@ -231,9 +234,21 @@ export class DownloadManagerService {
         );
         if (downloadItem) {
           downloadItem.size.transferred = transferredBytes;
-          bar.update(Math.floor((transferredBytes / totalBytes) * 100));
+          downloadItem.progress = Math.floor(
+            (transferredBytes / totalBytes) * 100,
+          );
+          bar.update(downloadItem.progress);
         }
-        this.eventEmitter.emit('download.event', this.allDownloadStates);
+        const lastProgress = currentDownloadState.progress;
+        currentDownloadState.progress = Math.floor(
+          currentDownloadState.children.reduce(
+            (pre, curr) => pre + curr.progress,
+            0,
+          ) / Math.max(currentDownloadState.children.length, 1),
+        );
+        // console.log(currentDownloadState.progress);
+        if (currentDownloadState.progress !== lastProgress)
+          this.eventEmitter.emit('download.event', this.allDownloadStates);
       });
 
       response.data.pipe(writer);

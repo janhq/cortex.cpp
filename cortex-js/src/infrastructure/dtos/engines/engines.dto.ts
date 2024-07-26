@@ -47,3 +47,47 @@ export class EngineDto implements Partial<Extension> {
   @IsBoolean()
   status?: string;
 }
+export class InitEngineDto {
+  @ApiProperty({
+    type: String,
+    example: 'CPU',
+    description: 'The mode that you want to run the engine.',
+  })
+  @IsString()
+  runMode?: 'CPU' | 'GPU';
+  @ApiProperty({
+    type: String,
+    example: 'Nvidia',
+    description: 'The type of GPU that you want to use.',
+  })
+  @IsString()
+  gpuType?: 'Nvidia' | 'Others (Vulkan)';
+  @ApiProperty({
+    type: String,
+    example: 'AVX',
+    description: 'The instructions that you want to use.',
+  })
+  @IsString()
+  instructions?: 'AVX' | 'AVX2' | 'AVX512' | undefined;
+  @ApiProperty({
+    type: String,
+    example: '11',
+    description: 'The version of CUDA that you want to use.',
+  })
+  @IsString()
+  cudaVersion?: '11' | '12';
+  @ApiProperty({
+    type: Boolean,
+    example: true,
+    description: 'Silent mode.',
+  })
+  @IsBoolean()
+  silent?: boolean;
+  @ApiProperty({
+    type: Boolean,
+    example: true,
+    description: 'Install Vulkan engine.',
+  })
+  @IsBoolean()
+  vulkan?: boolean;
+}

@@ -2,7 +2,7 @@ import pkg from '@/../package.json';
 import { RootCommand, CommandRunner, Option } from 'nest-commander';
 import { ChatCommand } from './chat.command';
 import { ModelsCommand } from './models.command';
-import { RunCommand } from './shortcuts/run.command';
+import { RunCommand } from './run.command';
 import { ModelPullCommand } from './models/model-pull.command';
 import { PSCommand } from './ps.command';
 import { PresetCommand } from './presets.command';
@@ -17,7 +17,7 @@ import { defaultCortexJsHost, defaultCortexJsPort } from '../constants/cortex';
 import { getApp } from '@/app';
 import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { ServeStopCommand } from './sub-commands/serve-stop.command';
+import { ServeStopCommand } from './serve-stop.command';
 import ora from 'ora';
 import { printSlogan } from '@/utils/logo';
 import { EnginesSetCommand } from './engines/engines-set.command';
@@ -124,7 +124,7 @@ export class CortexCommand extends CommandRunner {
         apiServerPort: port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
       });
-      process.exit(1);
+      if (!attach) process.exit(0);
     } catch (e) {
       console.error(e);
       // revert the data folder path if it was set
@@ -132,7 +132,7 @@ export class CortexCommand extends CommandRunner {
         ...config,
       });
       console.error(`Failed to start server. Is port ${port} in use?`);
-      process.exit(0);
+      process.exit(1);
     }
   }
 

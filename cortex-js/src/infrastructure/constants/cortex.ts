@@ -1,3 +1,5 @@
+export const cortexNamespace = 'cortex';
+
 export const databaseName = 'cortex';
 
 export const databaseFile = `${databaseName}.db`;
@@ -9,6 +11,10 @@ export const defaultCortexCppHost = '127.0.0.1';
 export const defaultCortexCppPort = 3929;
 
 export const defaultEmbeddingModel = 'nomic-embed-text-v1';
+
+export const cortexServerAPI = (host: string, port: number) =>
+  `http://${host}:${port}/v1/`;
+
 // CORTEX CPP
 export const CORTEX_CPP_EMBEDDINGS_URL = (
   host: string = defaultCortexCppHost,
@@ -34,6 +40,9 @@ export const CORTEX_JS_HEALTH_URL = (
   host: string = defaultCortexJsHost,
   port: number = defaultCortexJsPort,
 ) => `http://${host}:${port}/v1/health`;
+
+export const CORTEX_JS_HEALTH_URL_WITH_API_PATH = (apiUrl: string) =>
+  `${apiUrl}/v1/health`;
 
 export const CORTEX_JS_STOP_API_SERVER_URL = (
   host: string = defaultCortexJsHost,

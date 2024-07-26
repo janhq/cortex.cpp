@@ -11,7 +11,7 @@ import {
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
-import { EngineDto } from '../dtos/engines/engines.dto';
+import { EngineDto, InitEngineDto } from '../dtos/engines/engines.dto';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
 import { ConfigUpdateDto } from '../dtos/configs/config-update.dto';
 
@@ -78,8 +78,8 @@ export class EnginesController {
     description: 'The unique identifier of the engine.',
   })
   @Post(':name(*)/init')
-  initialize(@Param('name') name: string) {
-    this.initUsescases.installEngine(undefined, 'latest', name, true);
+  initialize(@Param('name') name: string, @Body() body: InitEngineDto | undefined) {
+    this.initUsescases.installEngine(body, 'latest', name, true);
     return {
       message: 'Engine initialization started successfully.',
     };

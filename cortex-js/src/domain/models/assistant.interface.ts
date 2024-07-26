@@ -1,10 +1,12 @@
-import { Assistant as OpenAiAssistant } from 'cortexso-node/resources/beta/assistants';
-import { AssistantResponseFormatOption as OpenAIAssistantResponseFormatOption } from 'cortexso-node/resources/beta/threads/threads';
+import { Cortex } from '@cortexso/cortex.js';
+// TODO: Why we need to alias these?
 
-export interface Assistant extends OpenAiAssistant {
+export interface Assistant extends Cortex.Beta.Assistant {
   avatar?: string;
 }
 
-export type AssistantResponseFormatOption = OpenAIAssistantResponseFormatOption;
+export type AssistantResponseFormatOption =
+  Cortex.Beta.Threads.AssistantResponseFormatOption;
 
-export interface AssistantToolResources extends OpenAiAssistant.ToolResources {}
+export interface AssistantToolResources
+  extends Cortex.Beta.Assistant.ToolResources {}

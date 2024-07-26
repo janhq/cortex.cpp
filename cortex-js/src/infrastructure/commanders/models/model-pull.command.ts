@@ -1,7 +1,6 @@
-import { CommandRunner, SubCommand } from 'nest-commander';
-import { exit } from 'node:process';
+import { exit, stdin, stdout } from 'node:process';
+import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import {
@@ -14,9 +13,9 @@ import { join } from 'node:path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
-import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
+import { downloadModelProgress } from '@/utils/pull-model';
 
 @SubCommand({
   name: 'pull',
@@ -29,8 +28,6 @@ import { BaseCommand } from '../base.command';
 @SetCommandContext()
 export class ModelPullCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
-    private readonly engineUsecases: EnginesUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
@@ -47,15 +44,21 @@ export class ModelPullCommand extends BaseCommand {
     const modelId = passedParams[0];
 
     await checkModelCompatibility(modelId);
+    if (await this.cortex.models.retrieve(modelId)) {
+      console.error('Model already exists.');
+      exit(1);
+    }
 
-    await this.modelsCliUsecases.pullModel(modelId).catch((e: Error) => {
+    await this.cortex.models.download(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
         console.error('Model does not exist.');
       else console.error(e.message ?? e);
       exit(1);
     });
 
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
+    await downloadModelProgress(this.cortex, modelId);
+
+    const existingModel = await this.cortex.models.retrieve(modelId);
     const engine = existingModel?.engine || Engines.llamaCPP;
 
     // Pull engine if not exist
@@ -63,7 +66,9 @@ export class ModelPullCommand extends BaseCommand {
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');
-      await this.engineUsecases.installEngine(undefined, 'latest', engine);
+      console.log('Downloading engine...');
+      await this.cortex.engines.init(engine);
+      await downloadModelProgress(this.cortex);
     }
     this.telemetryUsecases.sendEvent(
       [
@@ -75,6 +80,7 @@ export class ModelPullCommand extends BaseCommand {
       TelemetrySource.CLI,
     );
     console.log('\nDownload complete!');
+
     exit(0);
   }
 }

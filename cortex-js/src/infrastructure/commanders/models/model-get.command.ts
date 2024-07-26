@@ -1,5 +1,4 @@
 import { SubCommand } from 'nest-commander';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
@@ -17,7 +16,6 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 @SetCommandContext()
 export class ModelGetCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
   ) {
@@ -25,12 +23,7 @@ export class ModelGetCommand extends BaseCommand {
   }
 
   async runCommand(passedParams: string[]): Promise<void> {
-    if (passedParams.length === 0) {
-      console.error('Model ID is required');
-      exit(1);
-    }
-
-    const model = await this.modelsCliUsecases.getModel(passedParams[0]);
+    const model = await this.cortex.models.retrieve(passedParams[0]);
     if (!model) console.error('Model not found');
     else console.log(model);
   }

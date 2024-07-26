@@ -44,7 +44,7 @@ export abstract class TelemetryRepository {
     hardware: BenchmarkHardware;
     results: any;
     metrics: any;
-    model: ModelStat;
+    model: any;
     sessionId: string;
   }): Promise<void>;
 }

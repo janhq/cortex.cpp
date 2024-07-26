@@ -11,8 +11,8 @@ import {
   createReadStream,
 } from 'node:fs';
 import { promisify } from 'util';
-import yaml from 'js-yaml';
-import { write } from 'fs';
+import yaml, { load } from 'js-yaml';
+import { readdirSync, readFileSync, write } from 'fs';
 import { createInterface } from 'readline';
 import {
   defaultCortexCppHost,
@@ -229,6 +229,32 @@ export class FileManagerService {
   }
 
   /**
+   * Get the preset data
+   * Usually it is located at the home directory > cortex > presets > preset.yaml
+   * @returns the preset data
+   */
+  async getPreset(preset?: string): Promise<object | undefined> {
+    if (!preset) return undefined;
+
+    const dataFolderPath = await this.getDataFolderPath();
+    const presetsFolder = join(dataFolderPath, this.presetFolderName);
+    if (!existsSync(presetsFolder)) return {};
+
+    const presetFile = readdirSync(presetsFolder).find(
+      (file) =>
+        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
+        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
+    );
+    if (!presetFile) return {};
+    const presetPath = join(presetsFolder, presetFile);
+
+    if (!preset || !existsSync(presetPath)) return {};
+    return preset
+      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
+      : {};
+  }
+
+  /**
    * Get the extensions data folder path
    * Usually it is located at the home directory > cortex > extensions
    * @returns the path to the extensions folder
@@ -295,5 +321,25 @@ export class FileManagerService {
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Get the cortex server configurations
+   * It is supposed to be stored in the home directory > .cortexrc
+   * @returns the server configurations
+   */
+  getServerConfig(): { host: string; port: number } {
+    const homeDir = os.homedir();
+    const configPath = join(homeDir, this.configFile);
+    let config = this.defaultConfig();
+
+    try {
+      const content = readFileSync(configPath, 'utf8');
+      config = yaml.load(content) as Config;
+    } catch {}
+    return {
+      host: config.apiServerHost ?? 'localhost',
+      port: config.apiServerPort ?? 1337,
+    };
   }
 }

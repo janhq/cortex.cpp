@@ -7,8 +7,8 @@ import {
   Delete,
   HttpCode,
   UseInterceptors,
-  Query,
   BadRequestException,
+  Patch,
 } from '@nestjs/common';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
@@ -16,7 +16,6 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelDto } from '@/infrastructure/dtos/models/model.dto';
 import { ListModelsResponseDto } from '@/infrastructure/dtos/models/list-model-response.dto';
 import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-model.dto';
-import { DownloadModelResponseDto } from '@/infrastructure/dtos/models/download-model.dto';
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
@@ -97,91 +96,21 @@ export class ModelsController {
     return this.modelsUsecases.stopModel(modelId);
   }
 
-  @HttpCode(200)
-  @ApiResponse({
-    status: 200,
-    description: 'Ok',
-    type: DownloadModelResponseDto,
-  })
   @ApiOperation({
-    summary: 'Download model',
-    description: 'Downloads a specific model instance.',
+    summary: 'Abort model pull',
+    description: 'Abort the model pull operation.',
     parameters: [
       {
         in: 'path',
-        name: 'modelId',
+        name: 'pull_id',
         required: true,
-        description: 'The unique identifier of the model.',
+        description: 'The unique identifier of the pull.',
       },
     ],
   })
-  @ApiParam({
-    name: 'modelId',
-    required: true,
-    description: 'The unique identifier of the model.',
-  })
-  @ApiParam({
-    name: 'fileName',
-    required: false,
-    description: 'The file name of the model to download.',
-  })
-  @ApiParam({
-    name: 'persistedModelId',
-    required: false,
-    description: 'The unique identifier of the model in your local storage.',
-  })
-  @Get('download/:modelId(*)')
-  downloadModel(
-    @Param('modelId') modelId: string,
-    @Query('fileName') fileName: string,
-    @Query('persistedModelId') persistedModelId?: string,
-  ) {
-    this.modelsUsecases
-      .pullModel(
-        modelId,
-        false,
-        (files) => {
-          return new Promise<HuggingFaceRepoSibling>(
-            async (resolve, reject) => {
-              const file = files.find(
-                (e) =>
-                  e.quantization && (!fileName || e.rfilename === fileName),
-              );
-              if (!file) {
-                return reject(new BadRequestException('File not found'));
-              }
-              return resolve(file);
-            },
-          );
-        },
-        persistedModelId,
-      )
-      .then(() =>
-        this.telemetryUsecases.addEventToQueue({
-          name: EventName.DOWNLOAD_MODEL,
-          modelId,
-        }),
-      );
-    return {
-      message: 'Download model started successfully.',
-    };
-  }
-
-  @ApiOperation({
-    summary: 'Abort model download',
-    description: 'Abort the model download operation.',
-    parameters: [
-      {
-        in: 'path',
-        name: 'download_id',
-        required: true,
-        description: 'The unique identifier of the download.',
-      },
-    ],
-  })
-  @Get('abort-download/:download_id(*)')
-  abortDownloadModel(@Param('download_id') downloadId: string) {
-    return this.modelsUsecases.abortDownloadModel(downloadId);
+  @Delete(':pull_id(*)/pull')
+  abortPullModel(@Param('pull_id') pullId: string) {
+    return this.modelsUsecases.abortDownloadModel(pullId);
   }
 
   @HttpCode(200)
@@ -210,12 +139,15 @@ export class ModelsController {
     required: false,
     description: 'The unique identifier of the model in your local storage.',
   })
-  @Get('pull/:modelId(*)')
+  @Post('pull/:modelId(*)')
   pullModel(
     @Param('modelId') modelId: string,
-    @Query('fileName') fileName?: string,
-    @Query('persistedModelId') persistedModelId?: string,
+    @Body() body?: {
+      fileName?: string;
+      persistedModelId?: string;
+    }
   ) {
+    const { fileName, persistedModelId } = body || {};
     this.modelsUsecases
       .pullModel(
         modelId,
@@ -302,7 +234,7 @@ export class ModelsController {
       },
     ],
   })
-  @Post(':model(*)/config')
+  @Patch(':model(*)')
   async update(
     @Param('model') model: string,
     @Body() updateModelDto: UpdateModelDto,

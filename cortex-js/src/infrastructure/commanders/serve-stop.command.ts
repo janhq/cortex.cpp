@@ -1,5 +1,5 @@
 import { SubCommand } from 'nest-commander';
-import { BaseCommand } from '../base.command';
+import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @SubCommand({

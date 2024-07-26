@@ -1,7 +1,7 @@
-import { Model as OpenAiModel } from 'cortexso-node/resources/models';
+import { Cortex } from '@cortexso/cortex.js';
 
 export interface Model
-  extends OpenAiModel,
+  extends Cortex.Model,
     ModelSettingParams,
     ModelRuntimeParams {
   /**
