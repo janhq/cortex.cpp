@@ -45,7 +45,7 @@ export class SystemController {
     summary: 'Terminate api server',
     description: 'Terminates the Cortex API endpoint server for the detached mode.',
   })
-  @Delete('process')
+  @Delete()
   async delete() {
     process.exit(0);
   }
@@ -59,7 +59,7 @@ export class SystemController {
     status: 200,
     description: 'Ok',
   })
-  @Get('health')
+  @Get()
   async get() {
     return 'OK';
   }
