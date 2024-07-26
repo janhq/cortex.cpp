@@ -4,6 +4,7 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseSubCommand } from '../base.subcommand';
 
 @SubCommand({
   name: 'get',
@@ -14,7 +15,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
   },
 })
 @SetCommandContext()
-export class ModelGetCommand extends BaseCommand {
+export class ModelGetCommand extends BaseSubCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,

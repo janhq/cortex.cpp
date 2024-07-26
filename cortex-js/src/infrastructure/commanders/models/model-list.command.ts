@@ -3,13 +3,14 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseSubCommand } from '../base.subcommand';
 
 interface ModelListOptions {
   format: 'table' | 'json';
 }
 @SubCommand({ name: 'list', description: 'List all models locally.' })
 @SetCommandContext()
-export class ModelListCommand extends BaseCommand {
+export class ModelListCommand extends BaseSubCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,

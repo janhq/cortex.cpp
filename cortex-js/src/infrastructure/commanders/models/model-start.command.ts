@@ -17,6 +17,7 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from '../base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { downloadModelProgress } from '@/utils/pull-model';
+import { BaseSubCommand } from '../base.subcommand';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -32,7 +33,7 @@ type ModelStartOptions = {
   },
 })
 @SetCommandContext()
-export class ModelStartCommand extends BaseCommand {
+export class ModelStartCommand extends BaseSubCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     readonly cortexUsecases: CortexUsecases,

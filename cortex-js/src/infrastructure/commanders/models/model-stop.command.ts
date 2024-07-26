@@ -5,6 +5,7 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import ora from 'ora';
+import { BaseSubCommand } from '../base.subcommand';
 
 @SubCommand({
   name: 'stop',
@@ -15,7 +16,7 @@ import ora from 'ora';
   },
 })
 @SetCommandContext()
-export class ModelStopCommand extends BaseCommand {
+export class ModelStopCommand extends BaseSubCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,

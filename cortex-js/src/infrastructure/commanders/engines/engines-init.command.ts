@@ -8,6 +8,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { BaseCommand } from '../base.command';
 import { defaultInstallationOptions } from '@/utils/init';
 import { Presets, SingleBar } from 'cli-progress';
+import { BaseSubCommand } from '../base.subcommand';
 
 @SubCommand({
   name: '<name> init',
@@ -17,7 +18,7 @@ import { Presets, SingleBar } from 'cli-progress';
   },
 })
 @SetCommandContext()
-export class EnginesInitCommand extends BaseCommand {
+export class EnginesInitCommand extends BaseSubCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
     private readonly fileManagerService: FileManagerService,

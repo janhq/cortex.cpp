@@ -4,13 +4,14 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { EngineNamesMap } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
+import { BaseSubCommand } from '../base.subcommand';
 
 @SubCommand({
   name: 'list',
   description: 'Get all cortex engines',
 })
 @SetCommandContext()
-export class EnginesListCommand extends BaseCommand {
+export class EnginesListCommand extends BaseSubCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,

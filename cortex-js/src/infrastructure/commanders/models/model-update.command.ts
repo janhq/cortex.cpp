@@ -5,6 +5,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseSubCommand } from '../base.subcommand';
 
 type UpdateOptions = {
   model?: string;
@@ -20,7 +21,7 @@ type UpdateOptions = {
   },
 })
 @SetCommandContext()
-export class ModelUpdateCommand extends BaseCommand {
+export class ModelUpdateCommand extends BaseSubCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
