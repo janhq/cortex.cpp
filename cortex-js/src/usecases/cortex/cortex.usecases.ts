@@ -9,8 +9,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
-  CORTEX_JS_HEALTH_URL,
-  CORTEX_JS_STOP_API_SERVER_URL,
+  CORTEX_JS_SYSTEM_URL,
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
@@ -120,7 +119,7 @@ export class CortexUsecases {
    * @returns
    */
   async stopServe(): Promise<void> {
-    return fetch(CORTEX_JS_STOP_API_SERVER_URL(), {
+    return fetch(CORTEX_JS_SYSTEM_URL(), {
       method: 'DELETE',
     })
       .then(() => {})
@@ -195,7 +194,7 @@ export class CortexUsecases {
     const apiServerHost = host || configApiServerHost || defaultCortexJsHost;
     const apiServerPort = port || configApiServerPort || defaultCortexJsPort;
     return firstValueFrom(
-      this.httpService.get(CORTEX_JS_HEALTH_URL(apiServerHost, apiServerPort)),
+      this.httpService.get(CORTEX_JS_SYSTEM_URL(apiServerHost, apiServerPort)),
     )
       .then((res) => res.status === HttpStatus.OK)
       .catch(() => false);
@@ -211,7 +210,7 @@ export class CortexUsecases {
     const apiServerHost = configApiServerHost || defaultCortexJsHost;
     const apiServerPort = configApiServerPort || defaultCortexJsPort;
     await this.stopCortex();
-    return fetch(CORTEX_JS_STOP_API_SERVER_URL(apiServerHost, apiServerPort), {
+    return fetch(CORTEX_JS_SYSTEM_URL(apiServerHost, apiServerPort), {
       method: 'DELETE',
     }).catch(() => {});
   }

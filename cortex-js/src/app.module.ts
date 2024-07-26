@@ -16,14 +16,12 @@ import { TelemetryModule } from './usecases/telemetry/telemetry.module';
 import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from './infrastructure/exception/global.exception';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { EventsController } from './infrastructure/controllers/events.controller';
 import { AssistantsController } from './infrastructure/controllers/assistants.controller';
 import { ChatController } from './infrastructure/controllers/chat.controller';
 import { EmbeddingsController } from './infrastructure/controllers/embeddings.controller';
 import { ModelsController } from './infrastructure/controllers/models.controller';
 import { ThreadsController } from './infrastructure/controllers/threads.controller';
-import { StatusController } from './infrastructure/controllers/status.controller';
-import { ProcessController } from './infrastructure/controllers/process.controller';
+import { SystemController } from './infrastructure/controllers/system.controller';
 import { DownloadManagerModule } from './infrastructure/services/download-manager/download-manager.module';
 import { ContextModule } from './infrastructure/services/context/context.module';
 import { ExtensionsModule } from './extensions/extensions.module';
@@ -66,9 +64,7 @@ import { ResourceManagerModule } from './infrastructure/services/resources-manag
     EmbeddingsController,
     ModelsController,
     ThreadsController,
-    StatusController,
-    ProcessController,
-    EventsController,
+    SystemController,
     EnginesController,
   ],
   providers: [
