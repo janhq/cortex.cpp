@@ -39,7 +39,7 @@ export const CORTEX_CPP_MODELS_URL = (
 export const CORTEX_JS_HEALTH_URL = (
   host: string = defaultCortexJsHost,
   port: number = defaultCortexJsPort,
-) => `http://${host}:${port}/v1/system/health`;
+) => `http://${host}:${port}/v1/system`;
 
 export const CORTEX_JS_HEALTH_URL_WITH_API_PATH = (apiUrl: string) =>
   `${apiUrl}/v1/health`;
@@ -47,7 +47,7 @@ export const CORTEX_JS_HEALTH_URL_WITH_API_PATH = (apiUrl: string) =>
 export const CORTEX_JS_STOP_API_SERVER_URL = (
   host: string = defaultCortexJsHost,
   port: number = defaultCortexJsPort,
-) => `http://${host}:${port}/v1/system/process`;
+) => `http://${host}:${port}/v1/system`;
 
 // INITIALIZATION
 export const CORTEX_RELEASES_URL =
