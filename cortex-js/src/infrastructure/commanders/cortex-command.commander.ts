@@ -92,9 +92,9 @@ export class CortexCommand extends CommandRunner {
   ) {
     const config = await this.fileManagerService.getConfig();
     try {
-      const startEngineSpinner = ora('Starting Cortex...');
+      const startEngineSpinner = ora('Starting Cortex engine...');
       await this.cortexUseCases.startCortex().catch((e) => {
-        startEngineSpinner.fail('Failed to start Cortex');
+        startEngineSpinner.fail('Failed to start Cortex engine');
         throw e;
       });
       startEngineSpinner.succeed('Cortex started successfully');
