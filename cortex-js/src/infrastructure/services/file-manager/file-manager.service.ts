@@ -342,8 +342,8 @@ export class FileManagerService {
       config = (yaml.load(content) as Config) ?? this.defaultConfig();
     } catch {}
     return {
-      host: this.defaultConfig().apiServerHost ?? 'localhost',
-      port: this.defaultConfig().apiServerPort ?? 1337,
+      host: config.apiServerHost ?? 'localhost',
+      port: config.apiServerPort ?? 1337,
     };
   }
 }
