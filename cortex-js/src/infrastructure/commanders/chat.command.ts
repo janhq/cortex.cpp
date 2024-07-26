@@ -17,6 +17,7 @@ import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadModelProgress } from '@/utils/pull-model';
+import { BaseSubCommand } from './base.subcommand';
 
 type ChatOptions = {
   threadId?: string;
@@ -36,7 +37,7 @@ type ChatOptions = {
   },
 })
 @SetCommandContext()
-export class ChatCommand extends BaseCommand {
+export class ChatCommand extends BaseSubCommand {
   chatClient: ChatClient;
 
   constructor(

@@ -13,6 +13,7 @@ import { rm } from 'fs/promises';
 import {
   CORTEX_ENGINE_RELEASES_URL,
   CUDA_DOWNLOAD_URL,
+  MIN_CUDA_VERSION,
 } from '@/infrastructure/constants/cortex';
 
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
@@ -177,7 +178,7 @@ export class EnginesUsecases {
     const dataFolderPath = await this.fileManagerService.getDataFolderPath();
     const url = CUDA_DOWNLOAD_URL.replace(
       '<version>',
-      cudaVersion === '11' ? '11.7' : '12.3',
+      cudaVersion === '11' ? '11.7' : MIN_CUDA_VERSION,
     ).replace('<platform>', platform);
     const destination = join(dataFolderPath, 'cuda-toolkit.tar.gz');
 

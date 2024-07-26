@@ -4,6 +4,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
 import { Cortex } from '@cortexso/cortex.js';
 import ora from 'ora';
+import { BaseSubCommand } from './base.subcommand';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
@@ -20,7 +21,7 @@ interface EmbeddingCommandOptions {
       'Model to use for embedding. If not provided, it will prompt to select from running models.',
   },
 })
-export class EmbeddingCommand extends BaseCommand {
+export class EmbeddingCommand extends BaseSubCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     readonly cortexUsecases: CortexUsecases,

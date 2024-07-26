@@ -61,4 +61,4 @@ export const CUDA_DOWNLOAD_URL =
 
 export const telemetryServerUrl = 'https://telemetry.jan.ai';
 
-export const MIN_CUDA_VERSION = '12.3';
+export const MIN_CUDA_VERSION = '12.4';
