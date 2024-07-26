@@ -115,18 +115,6 @@ export class CortexUsecases {
   }
 
   /**
-   * Stop the API server
-   * @returns
-   */
-  async stopServe(): Promise<void> {
-    return fetch(CORTEX_JS_SYSTEM_URL(), {
-      method: 'DELETE',
-    })
-      .then(() => {})
-      .catch(() => {});
-  }
-
-  /**
    * Check whether the Cortex CPP is healthy
    * @param host
    * @param port

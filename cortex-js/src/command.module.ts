@@ -28,6 +28,7 @@ import { EnginesListCommand } from './infrastructure/commanders/engines/engines-
 import { EnginesGetCommand } from './infrastructure/commanders/engines/engines-get.command';
 import { EnginesInitCommand } from './infrastructure/commanders/engines/engines-init.command';
 import { EnginesSetCommand } from './infrastructure/commanders/engines/engines-set.command';
+import { CortexClientModule } from './infrastructure/commanders/services/cortex.client.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { EnginesSetCommand } from './infrastructure/commanders/engines/engines-s
     FileManagerModule,
     TelemetryModule,
     ContextModule,
+    CortexClientModule,
   ],
   providers: [
     CortexCommand,

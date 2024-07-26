@@ -1,11 +1,10 @@
 import { SubCommand } from 'nest-commander';
-import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import ora from 'ora';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'stop',
@@ -16,10 +15,11 @@ import { BaseSubCommand } from '../base.subcommand';
   },
 })
 @SetCommandContext()
-export class ModelStopCommand extends BaseSubCommand {
+export class ModelStopCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUseCases);
   }

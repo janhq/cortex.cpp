@@ -5,7 +5,7 @@ import OpenAIEngineExtension from './openai.engine';
 import { HttpModule, HttpService } from '@nestjs/axios';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { ConfigsModule } from '@/usecases/configs/configs.module';
-import { EventEmitter2, EventEmitterModule } from '@nestjs/event-emitter';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import AnthropicEngineExtension from './anthropic.engine';
 
 const provider = {

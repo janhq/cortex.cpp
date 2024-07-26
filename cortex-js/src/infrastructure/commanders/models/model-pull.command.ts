@@ -16,7 +16,7 @@ import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
 import { downloadModelProgress } from '@/utils/pull-model';
-import { BaseSubCommand } from '../base.subcommand';
+import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'pull',
@@ -27,11 +27,12 @@ import { BaseSubCommand } from '../base.subcommand';
     'Download a model from a registry. Working with HuggingFace repositories. For available models, please visit https://huggingface.co/cortexso',
 })
 @SetCommandContext()
-export class ModelPullCommand extends BaseSubCommand {
+export class ModelPullCommand extends BaseCommand {
   constructor(
     private readonly fileService: FileManagerService,
-    readonly contextService: ContextService,
     private readonly telemetryUsecases: TelemetryUsecases,
+    private readonly cortex: CortexClient,
+    readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
   ) {
     super(cortexUsecases);
