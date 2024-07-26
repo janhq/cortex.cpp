@@ -67,7 +67,7 @@ export class ModelsCommand extends BaseCommand {
   ) {
     const commandInstance = this.moduleRef.get(commandClass, { strict: false });
     if (commandInstance) {
-      await commandInstance.run(params, options);
+      await commandInstance.runCommand(params, options);
     } else {
       console.error('Command not found.');
     }
