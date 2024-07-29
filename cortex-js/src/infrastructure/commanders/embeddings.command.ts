@@ -71,7 +71,7 @@ export class EmbeddingCommand extends BaseCommand {
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
-      message: 'Select running model to chat with:',
+      message: 'Select model to chat with:',
       choices: models.map((e) => ({
         name: e.id,
         value: e.id,

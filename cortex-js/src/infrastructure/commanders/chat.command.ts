@@ -109,21 +109,19 @@ export class ChatCommand extends BaseCommand {
 
     const preset = await this.fileService.getPreset(options.preset);
       
-    return this.cortex.models.start(modelId, preset).then(() =>
-      this.chatClient.chat(
+    return this.chatClient.chat(
         modelId,
         options.threadId,
         message, // Accept both message from inputs or arguments
         preset ? preset : {},
-      ),
-    );
+      )
   }
 
   modelInquiry = async (models: Cortex.Model[]) => {
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
-      message: 'Select running model to chat with:',
+      message: 'Select a model to chat with:',
       choices: models.map((e) => ({
         name: e.id,
         value: e.id,
