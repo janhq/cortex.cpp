@@ -16,8 +16,9 @@ import { FileManagerService } from '../services/file-manager/file-manager.servic
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
-import { downloadModelProgress } from '@/utils/pull-model';
+import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from './services/cortex.client';
+import { DownloadType } from '@/domain/models/download.interface';
 
 type ChatOptions = {
   threadId?: string;
@@ -92,7 +93,7 @@ export class ChatCommand extends BaseCommand {
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
-      await downloadModelProgress(this.cortex);
+      await downloadProgress(this.cortex, undefined, DownloadType.Engine)
     }
 
     if (!message) options.attach = true;
@@ -107,7 +108,7 @@ export class ChatCommand extends BaseCommand {
     );
 
     const preset = await this.fileService.getPreset(options.preset);
-
+    
     return this.cortex.models.start(modelId, preset).then(() =>
       this.chatClient.chat(
         modelId,

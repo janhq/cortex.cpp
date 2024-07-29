@@ -1,8 +1,9 @@
 import { Presets, SingleBar } from "cli-progress";
 import { Cortex } from "@cortexso/cortex.js";
 import { exit, stdin, stdout } from 'node:process';
+import { DownloadType } from "@/domain/models/download.interface";
 
-export const downloadModelProgress = async (cortex: Cortex, downloadId?: string) => {
+export const downloadProgress = async (cortex: Cortex, downloadId?: string, downloadType?: DownloadType) => {
     const response = await cortex.events.downloadEvent();
 
     const rl = require('readline').createInterface({
@@ -27,7 +28,8 @@ export const downloadModelProgress = async (cortex: Cortex, downloadId?: string)
     for await (const stream of response) {
       if (stream.length) {
         const data = stream[0] as any;
-
+        if(downloadId && data.id !== downloadId) continue;
+        if (downloadType && data.type !== downloadType) continue;
         if (data.status === 'downloaded') break;
 
         let totalBytes = 0;

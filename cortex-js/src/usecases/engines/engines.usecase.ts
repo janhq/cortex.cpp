@@ -79,9 +79,11 @@ export class EnginesUsecases {
     force: boolean = false,
   ): Promise<any> => {
     // Use default option if not defined
+
     if (!options && engine === Engines.llamaCPP) {
       options = await defaultInstallationOptions();
     }
+    const installPackages = [];
     // Ship Llama.cpp engine by default
     if (
       !existsSync(
@@ -93,7 +95,7 @@ export class EnginesUsecases {
         engine === Engines.llamaCPP &&
         (options?.vulkan ||
           (options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'));
-      await this.installAcceleratedEngine(version, engine, [
+          installPackages.push(this.installAcceleratedEngine(version, engine, [
         process.platform === 'win32'
           ? '-windows'
           : process.platform === 'darwin'
@@ -116,7 +118,7 @@ export class EnginesUsecases {
             ? '-arm64'
             : '-amd64'
           : '',
-      ]);
+      ]));
     }
 
     if (
@@ -125,12 +127,12 @@ export class EnginesUsecases {
       options?.gpuType === 'Nvidia' &&
       !options?.vulkan
     )
-      await this.installCudaToolkitDependency(
+      installPackages.push(this.installCudaToolkitDependency(
         engine === Engines.tensorrtLLM
           ? MIN_CUDA_VERSION
           : options?.cudaVersion,
-      );
-
+      ));
+    await Promise.all(installPackages);
     // Update states
     await this.extensionRepository.findOne(engine).then((e) => {
       if (e) e.status = EngineStatus.READY;
@@ -253,7 +255,6 @@ export class EnginesUsecases {
       console.log(
         `Could not find engine file for platform ${process.platform}`,
       );
-      exit(1);
     }
 
     const engineDir = await this.fileManagerService.getCortexCppEnginePath();
