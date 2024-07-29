@@ -29,6 +29,7 @@ export class ModelListCommand extends BaseCommand {
           models.map((e) => ({
             id: e.id,
             engine: e.engine,
+            version: e.version,
           })),
         )
       : console.log(models);
