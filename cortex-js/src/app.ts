@@ -58,24 +58,12 @@ export const getApp = async () => {
       'Endpoint for creating and retrieving embedding vectors from text inputs using specified models.',
     )
     .addTag(
-      'Status',
-      "Endpoint for actively querying the health status of the Cortex's API server.",
-    )
-    .addTag(
-      'Processes',
-      'Endpoint for terminating the Cortex API server processes.',
-    )
-    .addTag(
-      'Events',
-      'Endpoints for observing Cortex statuses through event notifications.',
-    )
-    .addTag(
-      'Configurations',
-      "Endpoints for customizing the Cortex's configurations.",
-    )
-    .addTag(
       'Engines',
       'Endpoints for managing the available engines within Cortex.',
+    )
+    .addTag(
+      'System',
+      'Endpoints for stopping the Cortex API server, checking its status, and fetching system events.',
     )
     .addServer('http://localhost:1337')
     .build();

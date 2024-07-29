@@ -92,7 +92,7 @@ export class EnginesController {
     type: CommonResponseDto,
   })
   @ApiOperation({
-    summary: 'Update the engine',
+    summary: 'Update an engine',
     description: 'Updates the engine with configurations.',
   })
   @ApiParam({

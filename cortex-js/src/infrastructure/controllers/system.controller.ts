@@ -42,8 +42,8 @@ export class SystemController {
   ) {}
 
   @ApiOperation({
-    summary: 'Terminate api server',
-    description: 'Terminates the Cortex API endpoint server for the detached mode.',
+    summary: 'Stop api server',
+    description: 'Stops the Cortex API endpoint server for the detached mode.',
   })
   @Delete()
   async delete() {
