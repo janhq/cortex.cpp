@@ -63,7 +63,7 @@ export const getApp = async () => {
     )
     .addTag(
       'System',
-      'Endpoints for stopping the Cortex API server and retrieving the Cortex status.',
+      'Endpoints for stopping the Cortex API server, checking its status, and fetching system events.',
     )
     .addServer('http://localhost:1337')
     .build();
