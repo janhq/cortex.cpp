@@ -28,19 +28,46 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     this.loadCoreExtensions();
     this.loadExternalExtensions();
   }
+  /**
+   * Persist extension to the extensions map
+   * @param object 
+   * @returns 
+   */
   create(object: Extension): Promise<Extension> {
     this.extensions.set(object.name ?? '', object);
     return Promise.resolve(object);
   }
+
+  /**
+   * Find all extensions
+   * @returns 
+   */
   findAll(): Promise<Extension[]> {
     return Promise.resolve(Array.from(this.extensions.values()));
   }
+
+  /**
+   * Find one extension by id
+   * @param id 
+   * @returns 
+   */
   findOne(id: string): Promise<Extension | null> {
     return Promise.resolve(this.extensions.get(id) ?? null);
   }
+
+  /**
+   * Update extension
+   * It is not applicable
+   */
   update(): Promise<void> {
     throw new Error('Method not implemented.');
   }
+
+  /**
+   * Remove extension from the extensions map
+   * @param id 
+   * @returns 
+   */
   remove(id: string): Promise<void> {
     this.extensions.delete(id);
     return Promise.resolve();

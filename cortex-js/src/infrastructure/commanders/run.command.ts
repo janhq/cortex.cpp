@@ -57,9 +57,10 @@ export class RunCommand extends BaseCommand {
     // Check model compatibility on this machine
     await checkModelCompatibility(modelId, checkingSpinner);
 
+    let existingModel = await this.cortex.models.retrieve(modelId);
     // If not exist
     // Try Pull
-    if (!(await this.cortex.models.retrieve(modelId))) {
+    if (!existingModel) {
       checkingSpinner.succeed();
 
       console.log('Downloading model...');
@@ -68,16 +69,17 @@ export class RunCommand extends BaseCommand {
         exit(1);
       });
       await downloadProgress(this.cortex, modelId);
-    }
-    ora().succeed('Model downloaded');
+      checkingSpinner.succeed('Model downloaded');
 
-    // Second check if model is available
-    const existingModel = await this.cortex.models.retrieve(modelId);
-    if (!existingModel) {
-      checkingSpinner.fail(`Model is not available`);
-      process.exit(1);
+      // Second check if model is available
+      existingModel = await this.cortex.models.retrieve(modelId);
+      if (!existingModel) {
+        checkingSpinner.fail(`Model is not available`);
+        process.exit(1);
+      }
+    } else {
+      checkingSpinner.succeed('Model found');
     }
-    checkingSpinner.succeed('Model found');
 
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
