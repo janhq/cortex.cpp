@@ -34,11 +34,13 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { load } from 'js-yaml';
 import { llamaModelFile } from '@/utils/app-path';
+import { CortexUsecases } from '../cortex/cortex.usecases';
 
 @Injectable()
 export class ModelsUsecases {
   constructor(
     private readonly modelRepository: ModelRepository,
+    private readonly cortexUsecases: CortexUsecases,
     private readonly extensionRepository: ExtensionRepository,
     private readonly fileManagerService: FileManagerService,
     private readonly downloadManagerService: DownloadManagerService,
@@ -170,6 +172,10 @@ export class ModelsUsecases {
         modelId,
       };
     }
+
+    // Attempt to start cortex
+    await this.cortexUsecases.startCortex()
+
     const loadingModelSpinner = ora('Loading model...').start();
     // update states and emitting event
     this.activeModelStatuses[modelId] = {

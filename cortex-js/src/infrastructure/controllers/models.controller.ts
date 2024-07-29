@@ -19,7 +19,6 @@ import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-mode
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
-import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
 import { EventName } from '@/domain/telemetry/telemetry.interface';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
@@ -32,7 +31,6 @@ import { HuggingFaceRepoSibling } from '@/domain/models/huggingface.interface';
 export class ModelsController {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
-    private readonly cortexUsecases: CortexUsecases,
     private readonly telemetryUsecases: TelemetryUsecases,
   ) {}
 
@@ -71,9 +69,7 @@ export class ModelsController {
     @Param('modelId') modelId: string,
     @Body() params: ModelSettingsDto,
   ) {
-    return this.cortexUsecases
-      .startCortex()
-      .then(() => this.modelsUsecases.startModel(modelId, params));
+    return this.modelsUsecases.startModel(modelId, params);
   }
 
   @HttpCode(200)

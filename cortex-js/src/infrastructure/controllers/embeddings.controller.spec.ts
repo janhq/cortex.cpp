@@ -10,6 +10,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
 import { FileManagerModule } from '../services/file-manager/file-manager.module';
 import { ModelsModule } from '@/usecases/models/models.module';
+import { CortexModule } from '@/usecases/cortex/cortex.module';
 
 describe('EmbeddingsController', () => {
   let controller: EmbeddingsController;
@@ -27,6 +28,7 @@ describe('EmbeddingsController', () => {
         TelemetryModule,
         FileManagerModule,
         ModelsModule,
+        CortexModule,
       ],
       controllers: [EmbeddingsController],
       providers: [ChatUsecases],

@@ -73,6 +73,12 @@ export class CortexUsecases implements BeforeApplicationShutdown {
     });
     this.cortexProcess.unref();
 
+    // Handle process exit
+    this.cortexProcess.on('close', (code) => {
+      this.cortexProcess = undefined
+      console.log(`child process exited with code ${code}`);
+    }); 
+
     // Await for the /healthz status ok
     return new Promise<CortexOperationSuccessfullyDto>((resolve, reject) => {
       const interval = setInterval(() => {

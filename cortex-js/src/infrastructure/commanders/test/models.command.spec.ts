@@ -1,5 +1,4 @@
 import { TestingModule } from '@nestjs/testing';
-import { stubMethod } from 'hanbi';
 import { CommandTestFactory } from 'nest-commander-testing';
 import { CommandModule } from '@/command.module';
 import { join } from 'path';
