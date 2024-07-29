@@ -120,9 +120,9 @@ export class ModelsController {
     type: CommonResponseDto,
   })
   @ApiOperation({
-    summary: 'Download a remote model',
+    summary: 'Pull a model',
     description:
-      'Pulls a remote model template from cortex hub or huggingface and downloads it.',
+      'Pulls a model from cortex hub or huggingface and downloads it.',
   })
   @ApiParam({
     name: 'modelId',
