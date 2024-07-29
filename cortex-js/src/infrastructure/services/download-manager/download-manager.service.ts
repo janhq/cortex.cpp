@@ -5,20 +5,18 @@ import {
   DownloadType,
 } from '@/domain/models/download.interface';
 import { HttpService } from '@nestjs/axios';
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Presets, SingleBar } from 'cli-progress';
 import { createWriteStream } from 'node:fs';
 import { basename } from 'node:path';
 import { firstValueFrom } from 'rxjs';
 
-const abortControllers: Record<string, Record<string, AbortController>> = {};
-
-@Injectable({
-  scope: Scope.REQUEST,
-})
+@Injectable()
 export class DownloadManagerService {
   private allDownloadStates: DownloadState[] = [];
+  private abortControllers: Record<string, Record<string, AbortController>> =
+    {};
 
   constructor(
     private readonly httpService: HttpService,
@@ -26,13 +24,13 @@ export class DownloadManagerService {
   ) {}
 
   async abortDownload(downloadId: string) {
-    if (!abortControllers[downloadId]) {
+    if (!this.abortControllers[downloadId]) {
       return;
     }
-    Object.keys(abortControllers[downloadId]).forEach((destination) => {
-      abortControllers[downloadId][destination].abort();
+    Object.keys(this.abortControllers[downloadId]).forEach((destination) => {
+      this.abortControllers[downloadId][destination].abort();
     });
-    delete abortControllers[downloadId];
+    delete this.abortControllers[downloadId];
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
@@ -86,14 +84,14 @@ export class DownloadManagerService {
     };
 
     this.allDownloadStates.push(downloadState);
-    abortControllers[downloadId] = {};
+    this.abortControllers[downloadId] = {};
 
     const callBack = async () => {
       // Await post processing callback
       await finishedCallback?.();
 
       // Finished - update the current downloading states
-      delete abortControllers[downloadId];
+      delete this.abortControllers[downloadId];
       const currentDownloadState = this.allDownloadStates.find(
         (downloadState) => downloadState.id === downloadId,
       );
@@ -132,7 +130,7 @@ export class DownloadManagerService {
   ) {
     const controller = new AbortController();
     // adding to abort controllers
-    abortControllers[downloadId][destination] = controller;
+    this.abortControllers[downloadId][destination] = controller;
     return new Promise<void>(async (resolve, reject) => {
       const response = await firstValueFrom(
         this.httpService.get(url, {
@@ -173,7 +171,7 @@ export class DownloadManagerService {
       writer.on('finish', () => {
         try {
           // delete the abort controller
-          delete abortControllers[downloadId][destination];
+          delete this.abortControllers[downloadId][destination];
           const currentDownloadState = this.allDownloadStates.find(
             (downloadState) => downloadState.id === downloadId,
           );
@@ -195,7 +193,7 @@ export class DownloadManagerService {
 
       writer.on('error', (error) => {
         try {
-          delete abortControllers[downloadId][destination];
+          delete this.abortControllers[downloadId][destination];
           const currentDownloadState = this.allDownloadStates.find(
             (downloadState) => downloadState.id === downloadId,
           );
