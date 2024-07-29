@@ -18,6 +18,7 @@ import { BaseCommand } from '../base.command';
 import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
+import ora from 'ora';
 
 @SubCommand({
   name: 'pull',
@@ -52,12 +53,15 @@ export class ModelPullCommand extends BaseCommand {
       exit(1);
     }
 
+    console.log('Downloading model...');
     await this.cortex.models.download(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
         console.error('Model does not exist.');
       else console.error(e.message ?? e);
       exit(1);
     });
+
+    ora().succeed('Model downloaded');
 
     await downloadProgress(this.cortex, modelId);
 
