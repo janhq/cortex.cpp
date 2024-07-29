@@ -62,6 +62,7 @@ export class RunCommand extends BaseCommand {
     if (!(await this.cortex.models.retrieve(modelId))) {
       checkingSpinner.succeed();
 
+      console.log('Downloading model...');
       await this.cortex.models.download(modelId).catch((e: Error) => {
         checkingSpinner.fail(e.message ?? e);
         exit(1);

@@ -52,6 +52,7 @@ export class ModelPullCommand extends BaseCommand {
       exit(1);
     }
 
+    console.log('Downloading model...');
     await this.cortex.models.download(modelId).catch((e: Error) => {
       if (e instanceof ModelNotFoundException)
         console.error('Model does not exist.');
