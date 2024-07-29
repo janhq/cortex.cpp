@@ -18,6 +18,7 @@ export class ChatClient {
     modelId: string,
     threadId?: string,
     message?: string,
+    settings?: Partial<Cortex.ChatCompletionCreateParamsStreaming>,
   ): Promise<void> {
     console.log(`In order to exit, type '${this.exitClause}'.`);
     const thread = await this.getOrCreateNewThread(modelId, threadId);
@@ -36,8 +37,16 @@ export class ChatClient {
       output: stdout,
       prompt: this.userIndicator,
     });
+
     if (message)
-      this.sendCompletionMessage(message, messages, modelId, thread.id, rl);
+      this.sendCompletionMessage(
+        message,
+        messages,
+        modelId,
+        thread.id,
+        rl,
+        settings,
+      );
     rl.prompt();
 
     rl.on('close', async () => {
@@ -46,7 +55,7 @@ export class ChatClient {
     });
 
     rl.on('line', (input) =>
-      this.sendCompletionMessage(input, messages, modelId, thread.id, rl),
+      this.sendCompletionMessage(input, messages, modelId, thread.id, rl, settings),
     );
   }
 
@@ -56,12 +65,26 @@ export class ChatClient {
     modelId: string,
     threadId: string,
     rl: readline.Interface,
+    settings: Partial<Cortex.ChatCompletionCreateParamsStreaming> = {},
   ) {
     if (!userInput || userInput.trim() === '') return;
 
     if (userInput.trim() === this.exitClause) {
       rl.close();
       return;
+    }
+
+    if (
+      'pre_prompt' in settings &&
+      !messages.some((m) => m.role === 'system')
+    ) {
+      messages = [
+        {
+          content: settings.pre_prompt as string,
+          role: 'system',
+        },
+        ...messages,
+      ];
     }
 
     const model = await this.cortex.models.retrieve(modelId);
@@ -89,6 +112,7 @@ export class ChatClient {
       model: modelId,
       max_tokens: 4098,
       temperature: 0.7,
+      ...settings,
       // Override with model inference params
       ...parser.parseModelInferenceParams(model),
       stream: true,
