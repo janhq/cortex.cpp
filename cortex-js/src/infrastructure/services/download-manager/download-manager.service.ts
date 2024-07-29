@@ -234,17 +234,25 @@ export class DownloadManagerService {
         );
         if (downloadItem) {
           downloadItem.size.transferred = transferredBytes;
-          downloadItem.progress = Math.floor(
+          downloadItem.progress = Math.round(
             (transferredBytes / totalBytes) * 100,
           );
           bar.update(downloadItem.progress);
         }
         const lastProgress = currentDownloadState.progress;
-        currentDownloadState.progress = Math.floor(
-          currentDownloadState.children.reduce(
-            (pre, curr) => pre + curr.progress,
+        currentDownloadState.progress = Math.round(
+          (currentDownloadState.children.reduce(
+            (pre, curr) => pre + curr.size.transferred,
             0,
-          ) / Math.max(currentDownloadState.children.length, 1),
+          ) /
+            Math.max(
+              currentDownloadState.children.reduce(
+                (pre, curr) => pre + curr.size.total,
+                0,
+              ),
+              1,
+            )) *
+            100,
         );
         // console.log(currentDownloadState.progress);
         if (currentDownloadState.progress !== lastProgress)
