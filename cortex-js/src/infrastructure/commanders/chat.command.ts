@@ -108,12 +108,13 @@ export class ChatCommand extends BaseCommand {
     );
 
     const preset = await this.fileService.getPreset(options.preset);
-    
+      
     return this.cortex.models.start(modelId, preset).then(() =>
       this.chatClient.chat(
         modelId,
         options.threadId,
         message, // Accept both message from inputs or arguments
+        preset ? preset : {},
       ),
     );
   }
