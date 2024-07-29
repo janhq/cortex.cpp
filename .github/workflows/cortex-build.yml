@@ -362,6 +362,14 @@ jobs:
         name: Code Signing Windows
         if: runner.os == 'Windows'
 
+      - name: Update version in installer.iss using sed
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd cortex-js
+          sed -i "s/AppVersion=1.0/AppVersion=${{ needs.create-draft-release.outputs.version }}/g" installer.iss
+          cat installer.iss
+
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         if: runner.os == 'Windows'
