@@ -125,7 +125,7 @@ export class ModelsUsecases {
     )) as EngineExtension | undefined;
 
     if (engine) {
-      await engine.unloadModel(id, model.engine || Engines.llamaCPP);
+      await engine.unloadModel(id, model.engine || Engines.llamaCPP).catch(() => {});
     }
     return this.modelRepository
       .remove(id)

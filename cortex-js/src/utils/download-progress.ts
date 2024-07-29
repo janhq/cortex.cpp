@@ -28,8 +28,8 @@ export const downloadProgress = async (cortex: Cortex, downloadId?: string, down
     for await (const stream of response) {
       if (stream.length) {
         const data = stream[0] as any;
-        if(downloadId && data.id !== downloadId) continue;
-        if (downloadType && data.type !== downloadType) continue;
+        if (downloadId && data.id !== downloadId || downloadType && data.type !== downloadType) continue;
+
         if (data.status === 'downloaded') break;
 
         let totalBytes = 0;
