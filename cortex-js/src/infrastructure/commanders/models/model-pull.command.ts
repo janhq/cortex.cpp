@@ -18,6 +18,7 @@ import { BaseCommand } from '../base.command';
 import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
+import ora from 'ora';
 
 @SubCommand({
   name: 'pull',
@@ -59,6 +60,8 @@ export class ModelPullCommand extends BaseCommand {
       else console.error(e.message ?? e);
       exit(1);
     });
+
+    ora().succeed('Model downloaded');
 
     await downloadProgress(this.cortex, modelId);
 

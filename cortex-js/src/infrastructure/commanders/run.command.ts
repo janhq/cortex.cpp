@@ -69,6 +69,7 @@ export class RunCommand extends BaseCommand {
       });
       await downloadProgress(this.cortex, modelId);
     }
+    ora().succeed('Model downloaded');
 
     // Second check if model is available
     const existingModel = await this.cortex.models.retrieve(modelId);
