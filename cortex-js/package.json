@@ -34,9 +34,11 @@
     "build:dev": "yarn build && run-script-os && npm link",
     "build:dev:windows": "echo 'Windows build complete'",
     "build:dev:macos": "chmod +x ./dist/src/command.js",
-    "build:dev:linux": "chmod +x ./dist/src/command.js"
+    "build:dev:linux": "chmod +x ./dist/src/command.js",
+    "preuninstall": "node ./uninstall.js"
   },
   "dependencies": {
+    "@cortexso/cortex.js": "^0.1.3",
     "@huggingface/gguf": "^0.1.5",
     "@huggingface/hub": "^0.15.1",
     "@nestjs/axios": "^3.0.2",
@@ -55,7 +57,6 @@
     "class-validator": "^0.14.1",
     "cli-progress": "^3.12.0",
     "cortex-cpp": "0.4.34",
-    "@cortexso/cortex.js": "^0.1.3",
     "cpu-instructions": "^0.0.11",
     "decompress": "^4.2.1",
     "js-yaml": "^4.1.0",

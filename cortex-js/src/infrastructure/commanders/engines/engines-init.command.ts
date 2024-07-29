@@ -9,6 +9,7 @@ import { BaseCommand } from '../base.command';
 import { defaultInstallationOptions } from '@/utils/init';
 import { Presets, SingleBar } from 'cli-progress';
 import { CortexClient } from '../services/cortex.client';
+import ora from 'ora';
 
 @SubCommand({
   name: '<name> init',
@@ -44,9 +45,11 @@ export class EnginesInitCommand extends BaseCommand {
     const host = configs.cortexCppHost;
     const port = configs.cortexCppPort;
     // Should stop cortex before installing engine
+    const stopCortexSpinner = ora('Stopping cortex...').start();
     if (await this.cortexUsecases.healthCheck(host, port)) {
       await this.cortexUsecases.stopCortex();
     }
+    stopCortexSpinner.succeed('Cortex stopped');
     console.log(`Installing engine ${engine}...`);
     await this.cortex.engines.init(engine, params);
     const response = await this.cortex.events.downloadEvent();
@@ -68,6 +71,9 @@ export class EnginesInitCommand extends BaseCommand {
       }
     }
     progressBar.stop();
+    const startCortexSpinner = ora('Starting cortex...').start();
+    await this.cortexUsecases.startCortex();
+    startCortexSpinner.succeed('Cortex started');
     console.log('Engine installed successfully');
     process.exit(0);
   }

@@ -10,8 +10,9 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from './base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { ChatClient } from './services/chat-client';
-import { downloadModelProgress } from '@/utils/pull-model';
+import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from './services/cortex.client';
+import { DownloadType } from '@/domain/models/download.interface';
 
 type RunOptions = {
   threadId?: string;
@@ -65,7 +66,7 @@ export class RunCommand extends BaseCommand {
         checkingSpinner.fail(e.message ?? e);
         exit(1);
       });
-      await downloadModelProgress(this.cortex, modelId);
+      await downloadProgress(this.cortex, modelId);
     }
 
     // Second check if model is available
@@ -84,7 +85,7 @@ export class RunCommand extends BaseCommand {
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
-      await downloadModelProgress(this.cortex);
+      await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
 
     const startingSpinner = ora('Loading model...').start();

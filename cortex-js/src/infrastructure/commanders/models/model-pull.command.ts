@@ -15,8 +15,9 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
-import { downloadModelProgress } from '@/utils/pull-model';
+import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
+import { DownloadType } from '@/domain/models/download.interface';
 
 @SubCommand({
   name: 'pull',
@@ -58,7 +59,7 @@ export class ModelPullCommand extends BaseCommand {
       exit(1);
     });
 
-    await downloadModelProgress(this.cortex, modelId);
+    await downloadProgress(this.cortex, modelId);
 
     const existingModel = await this.cortex.models.retrieve(modelId);
     const engine = existingModel?.engine || Engines.llamaCPP;
@@ -70,7 +71,7 @@ export class ModelPullCommand extends BaseCommand {
       console.log('\n');
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
-      await downloadModelProgress(this.cortex);
+      await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
     this.telemetryUsecases.sendEvent(
       [

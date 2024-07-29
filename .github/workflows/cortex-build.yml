@@ -362,6 +362,14 @@ jobs:
         name: Code Signing Windows
         if: runner.os == 'Windows'
 
+      - name: Update version in installer.iss using sed
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd cortex-js
+          sed -i "s/AppVersion=1.0/AppVersion=${{ needs.create-draft-release.outputs.version }}/g" installer.iss
+          cat installer.iss
+
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         if: runner.os == 'Windows'
@@ -398,6 +406,17 @@ jobs:
           asset_path: ./cortex-js/cortex-installer.tar.gz
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
           asset_content_type: application/gzip
+
+      - name: Upload Cortex Installer
+        uses: actions/upload-release-asset@v1.0.1
+        if: runner.os == 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/setup.exe
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.exe
+          asset_content_type: application/octet-stream
 
       - uses: actions/upload-release-asset@v1.0.1
         env:
