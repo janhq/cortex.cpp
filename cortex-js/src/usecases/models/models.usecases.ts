@@ -119,7 +119,14 @@ export class ModelsUsecases {
     }
 
     const modelFolder = join(modelsContainerDir, normalizeModelId(id));
+    const model = await this.getModelOrThrow(id);
+    const engine = (await this.extensionRepository.findOne(
+      model!.engine ?? Engines.llamaCPP,
+    )) as EngineExtension | undefined;
 
+    if (engine) {
+      await engine.unloadModel(id, model.engine || Engines.llamaCPP).catch(() => {}); // Silent fail
+    }
     return this.modelRepository
       .remove(id)
       .then(

@@ -34,7 +34,8 @@
     "build:dev": "yarn build && run-script-os && npm link",
     "build:dev:windows": "echo 'Windows build complete'",
     "build:dev:macos": "chmod +x ./dist/src/command.js",
-    "build:dev:linux": "chmod +x ./dist/src/command.js"
+    "build:dev:linux": "chmod +x ./dist/src/command.js",
+    "preuninstall": "node ./uninstall.js"
   },
   "dependencies": {
     "@cortexso/cortex.js": "^0.1.3",

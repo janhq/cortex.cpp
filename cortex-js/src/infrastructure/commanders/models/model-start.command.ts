@@ -11,8 +11,9 @@ import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from '../base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
-import { downloadModelProgress } from '@/utils/pull-model';
+import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
+import { DownloadType } from '@/domain/models/download.interface';
 
 type ModelStartOptions = {
   attach: boolean;
@@ -73,7 +74,7 @@ export class ModelStartCommand extends BaseCommand {
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
-      await downloadModelProgress(this.cortex);
+      await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
 
     // Attached - stdout logs
