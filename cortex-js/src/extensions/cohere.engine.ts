@@ -5,6 +5,7 @@ import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import _ from 'lodash';
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
+import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 
 enum RoleType {
     user = 'USER',
@@ -66,13 +67,13 @@ export default class CoHereEngineExtension extends OAIEngineExtension {
       return {}
     }
 
-    const { messages, ...params } = payload
+    const { messages, ...params } = payload;
     const convertedData: CoherePayloadType = {
       ...params,
       chat_history: [],
       message: '',
-    }
-    (messages as any).forEach((item: any, index: number) => {
+    };
+    (messages as ChatCompletionMessage[]).forEach((item: ChatCompletionMessage, index: number) => {
       // Assign the message of the last item to the `message` property
       if (index === messages.length - 1) {
         convertedData.message = item.content as string
