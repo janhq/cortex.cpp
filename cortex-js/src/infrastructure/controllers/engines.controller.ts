@@ -82,7 +82,7 @@ export class EnginesController {
   @Post(':name(*)/init')
   initialize(@Param('name') name: string, @Body() body: InitEngineDto | undefined, @Res() res: Response) {
     try{
-    this.initUsescases.installEngine(body, 'latest', name, true);
+    this.initUsescases.installEngine(body, name, true);
     res.json({
         message: 'Engine initialization started successfully.',
     })

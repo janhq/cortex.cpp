@@ -74,7 +74,6 @@ export class EnginesUsecases {
    */
   installEngine = async (
     options?: InitOptions,
-    version: string = 'latest',
     engine: string = 'default',
     force: boolean = false,
   ): Promise<any> => {
@@ -95,30 +94,34 @@ export class EnginesUsecases {
         engine === Engines.llamaCPP &&
         (options?.vulkan ||
           (options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'));
-          installPackages.push(this.installAcceleratedEngine(version, engine, [
-        process.platform === 'win32'
-          ? '-windows'
-          : process.platform === 'darwin'
-            ? '-mac'
-            : '-linux',
-        // CPU Instructions - CPU | GPU Non-Vulkan
-        options?.instructions && !isVulkan
-          ? `-${options?.instructions?.toLowerCase()}`
-          : '',
-        // Cuda
-        options?.runMode === 'GPU' && options?.gpuType === 'Nvidia' && !isVulkan
-          ? `cuda-${options.cudaVersion ?? '12'}`
-          : '',
-        // Vulkan
-        isVulkan ? '-vulkan' : '',
+      installPackages.push(
+        this.installAcceleratedEngine(options?.version ?? 'latest', engine, [
+          process.platform === 'win32'
+            ? '-windows'
+            : process.platform === 'darwin'
+              ? '-mac'
+              : '-linux',
+          // CPU Instructions - CPU | GPU Non-Vulkan
+          options?.instructions && !isVulkan
+            ? `-${options?.instructions?.toLowerCase()}`
+            : '',
+          // Cuda
+          options?.runMode === 'GPU' &&
+          options?.gpuType === 'Nvidia' &&
+          !isVulkan
+            ? `cuda-${options.cudaVersion ?? '12'}`
+            : '',
+          // Vulkan
+          isVulkan ? '-vulkan' : '',
 
-        // Arch
-        engine !== Engines.tensorrtLLM
-          ? process.arch === 'arm64'
-            ? '-arm64'
-            : '-amd64'
-          : '',
-      ]));
+          // Arch
+          engine !== Engines.tensorrtLLM
+            ? process.arch === 'arm64'
+              ? '-arm64'
+              : '-amd64'
+            : '',
+        ]),
+      );
     }
 
     if (
@@ -128,11 +131,13 @@ export class EnginesUsecases {
         options?.gpuType === 'Nvidia' &&
         !options?.vulkan)
     )
-      installPackages.push(this.installCudaToolkitDependency(
-        engine === Engines.tensorrtLLM
-          ? MIN_CUDA_VERSION
-          : options?.cudaVersion,
-      ));
+      installPackages.push(
+        this.installCudaToolkitDependency(
+          engine === Engines.tensorrtLLM
+            ? MIN_CUDA_VERSION
+            : options?.cudaVersion,
+        ),
+      );
     await Promise.all(installPackages);
     // Update states
     await this.extensionRepository.findOne(engine).then((e) => {
@@ -251,6 +256,8 @@ export class EnginesUsecases {
       .find((asset: any) =>
         matchers.every((matcher) => asset.name.includes(matcher)),
       );
+
+    console.log('Downloading ', toDownloadAsset.name);
 
     if (!toDownloadAsset) {
       console.log(

@@ -5,4 +5,5 @@ export interface InitOptions {
   cudaVersion?: '11' | '12';
   silent?: boolean;
   vulkan?: boolean;
+  version?: string;
 }

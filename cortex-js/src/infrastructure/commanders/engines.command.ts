@@ -75,4 +75,12 @@ export class EnginesCommand extends BaseCommand {
   parseVulkan() {
     return true;
   }
+
+  @Option({
+    flags: '-v, --version <version>',
+    description: 'Select version to install',
+  })
+  parseVersion(value: string) {
+    return value;
+  }
 }

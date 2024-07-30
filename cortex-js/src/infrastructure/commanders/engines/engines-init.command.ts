@@ -1,5 +1,4 @@
-import { exit, stdin, stdout } from 'node:process';
-import { Option, SubCommand } from 'nest-commander';
+import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { Engines } from '../types/engine.interface';
@@ -10,6 +9,7 @@ import { defaultInstallationOptions } from '@/utils/init';
 import { Presets, SingleBar } from 'cli-progress';
 import { CortexClient } from '../services/cortex.client';
 import ora from 'ora';
+import { InitEngineDto } from '@/infrastructure/dtos/engines/engines.dto';
 
 @SubCommand({
   name: '<name> init',
@@ -31,7 +31,7 @@ export class EnginesInitCommand extends BaseCommand {
 
   async runCommand(
     passedParams: string[],
-    options: { vulkan: boolean },
+    options: InitEngineDto,
   ): Promise<void> {
     const engine = passedParams[0];
     const params = passedParams.includes(Engines.llamaCPP)
@@ -51,6 +51,7 @@ export class EnginesInitCommand extends BaseCommand {
     }
     stopCortexSpinner.succeed('Cortex stopped');
     console.log(`Installing engine ${engine}...`);
+
     await this.cortex.engines.init(engine, params);
     const response = await this.cortex.events.downloadEvent();
 
@@ -76,14 +77,5 @@ export class EnginesInitCommand extends BaseCommand {
     startCortexSpinner.succeed('Cortex started');
     console.log('Engine installed successfully');
     process.exit(0);
-  }
-
-  @Option({
-    flags: '-vk, --vulkan',
-    description: 'Install Vulkan engine',
-    defaultValue: false,
-  })
-  parseVulkan() {
-    return true;
   }
 }
