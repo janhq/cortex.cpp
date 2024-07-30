@@ -111,7 +111,8 @@ export class EnginesController {
     description: 'The unique identifier of the engine.',
   })
   @Patch(':name(*)')
-  update(@Param('name') name: string, @Body() configs: ConfigUpdateDto) {
+  update(@Param('name') name: string, @Body() configs?: any | undefined) {
+    console.log('configs', configs)
     return this.enginesUsecases.updateConfigs(
       configs.config,
       configs.value,

@@ -8,6 +8,8 @@ export enum Engines {
   mistral = 'mistral',
   openai = 'openai',
   anthropic = 'anthropic',
+  openrouter = 'openrouter',
+  cohere = 'cohere',
 }
 
 export const EngineNamesMap: {
@@ -23,4 +25,6 @@ export const RemoteEngines: Engines[] = [
   Engines.mistral,
   Engines.openai,
   Engines.anthropic,
+  Engines.openrouter,
+  Engines.cohere,
 ];
