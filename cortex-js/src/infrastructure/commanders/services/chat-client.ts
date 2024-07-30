@@ -55,7 +55,14 @@ export class ChatClient {
     });
 
     rl.on('line', (input) =>
-      this.sendCompletionMessage(input, messages, modelId, thread.id, rl, settings),
+      this.sendCompletionMessage(
+        input,
+        messages,
+        modelId,
+        thread.id,
+        rl,
+        settings,
+      ),
     );
   }
 

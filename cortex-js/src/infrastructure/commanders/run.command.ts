@@ -13,6 +13,8 @@ import { ChatClient } from './services/chat-client';
 import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from './services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
+import { isLocalFile } from '@/utils/urls';
+import { parse } from 'node:path';
 
 type RunOptions = {
   threadId?: string;
@@ -71,6 +73,12 @@ export class RunCommand extends BaseCommand {
       await downloadProgress(this.cortex, modelId);
       checkingSpinner.succeed('Model downloaded');
 
+      // Update to persisted modelId
+      // TODO: Should be retrieved from the request
+      if (isLocalFile(modelId)) {
+        modelId = parse(modelId).name;
+      }
+
       // Second check if model is available
       existingModel = await this.cortex.models.retrieve(modelId);
       if (!existingModel) {
@@ -93,6 +101,7 @@ export class RunCommand extends BaseCommand {
     }
 
     const startingSpinner = ora('Loading model...').start();
+
     return this.cortex.models
       .start(modelId, await this.fileService.getPreset(options.preset))
       .then(() => {

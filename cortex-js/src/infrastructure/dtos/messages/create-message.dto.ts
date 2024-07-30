@@ -28,8 +28,8 @@ export class CreateMessageDto implements Partial<Message> {
     example: [
       {
         type: 'text',
-        data: 'Hello, how can I help you today?'
-      }
+        data: 'Hello, how can I help you today?',
+      },
     ],
     description: 'The content of the messages.',
   })
@@ -44,7 +44,8 @@ export class CreateMessageDto implements Partial<Message> {
 
   @ApiProperty({
     example: { urgency: 'high', tags: ['customer_support'] },
-    description: 'Optional dictionary for additional unstructured message information.',
+    description:
+      'Optional dictionary for additional unstructured message information.',
   })
   metadata?: Record<string, unknown>;
 
@@ -55,4 +56,3 @@ export class CreateMessageDto implements Partial<Message> {
   @IsString()
   type?: string;
 }
-

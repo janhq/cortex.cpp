@@ -80,15 +80,19 @@ export class EnginesController {
     description: 'The unique identifier of the engine.',
   })
   @Post(':name(*)/init')
-  initialize(@Param('name') name: string, @Body() body: InitEngineDto | undefined, @Res() res: Response) {
-    try{
-    this.initUsescases.installEngine(body, name, true);
-    res.json({
+  initialize(
+    @Param('name') name: string,
+    @Body() body: InitEngineDto | undefined,
+    @Res() res: Response,
+  ) {
+    try {
+      this.initUsescases.installEngine(body, name, true);
+      res.json({
         message: 'Engine initialization started successfully.',
-    })
-  } catch (error) {
-    res.status(400).send(error.message);
-  }
+      });
+    } catch (error) {
+      res.status(400).send(error.message);
+    }
   }
 
   @HttpCode(200)

@@ -35,9 +35,9 @@ export const llamaModelFile = (
   }
   const path =
     'llama_model_path' in artifact
-      ? (artifact as ModelArtifact).llama_model_path ?? ''
+      ? ((artifact as ModelArtifact).llama_model_path ?? '')
       : 'model_path' in files
-        ? (artifact as ModelArtifact).model_path ?? ''
+        ? ((artifact as ModelArtifact).model_path ?? '')
         : (artifact as string[])[0];
   return basename(path);
 };

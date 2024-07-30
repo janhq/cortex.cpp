@@ -84,10 +84,7 @@ export class CortexCommand extends CommandRunner {
     return this.startServer(showLogs, dataFolderPath);
   }
 
-  private async startServer(
-    attach: boolean,
-    dataFolderPath?: string,
-  ) {
+  private async startServer(attach: boolean, dataFolderPath?: string) {
     const config = await this.fileManagerService.getConfig();
     try {
       const startEngineSpinner = ora('Starting Cortex engine...');
@@ -119,9 +116,13 @@ export class CortexCommand extends CommandRunner {
       } else {
         await this.cortexUseCases.startServerDetached(this.host, this.port);
       }
-      console.log(chalk.blue(`Started server at http://${this.host}:${this.port}`));
       console.log(
-        chalk.blue(`API Playground available at http://${this.host}:${this.port}/api`),
+        chalk.blue(`Started server at http://${this.host}:${this.port}`),
+      );
+      console.log(
+        chalk.blue(
+          `API Playground available at http://${this.host}:${this.port}/api`,
+        ),
       );
       await this.fileManagerService.writeConfigFile({
         ...config,
