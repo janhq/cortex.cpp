@@ -1,7 +1,7 @@
 import { Presets, SingleBar } from "cli-progress";
 import { Cortex } from "@cortexso/cortex.js";
 import { exit, stdin, stdout } from 'node:process';
-import { DownloadState, DownloadType } from "@/domain/models/download.interface";
+import { DownloadState, DownloadStatus, DownloadType } from "@/domain/models/download.interface";
 
 export const downloadProgress = async (cortex: Cortex, downloadId?: string, downloadType?: DownloadType) => {
     const response = await cortex.events.downloadEvent();
@@ -31,7 +31,13 @@ export const downloadProgress = async (cortex: Cortex, downloadId?: string, down
         if (!data) continue;
         if (downloadType && data.type !== downloadType) continue;
 
-        if (data.status === 'downloaded') break;
+        if (data.status === DownloadStatus.Downloaded) break;
+        if(data.status === DownloadStatus.Error) {
+          rl.close();
+          progressBar.stop();
+          console.log('\n Download failed: ', data.error);
+          exit(1);
+        }
 
         let totalBytes = 0;
         let totalTransferred = 0;

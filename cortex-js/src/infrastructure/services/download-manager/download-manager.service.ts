@@ -136,7 +136,7 @@ export class DownloadManagerService {
         this.httpService.get(url, {
           responseType: 'stream',
           signal: controller.signal,
-        }),
+        })
       );
 
       // check if response is success
@@ -164,6 +164,24 @@ export class DownloadManagerService {
 
       console.log('Downloading', basename(destination));
 
+      const timeout = 20000; // Timeout period for receiving new data
+      let timeoutId: NodeJS.Timeout;
+      const resetTimeout = () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          try{
+          this.handleError(
+            new Error('Download timeout'),
+            downloadId,
+            destination,
+          )
+        } finally {
+          bar.stop();
+          resolve();
+        }
+        }, timeout);
+      };
+
       let transferredBytes = 0;
       const bar = new SingleBar({}, Presets.shades_classic);
       bar.start(100, 0);
@@ -190,31 +208,9 @@ export class DownloadManagerService {
           resolve();
         }
       });
-
       writer.on('error', (error) => {
         try {
-          delete this.abortControllers[downloadId][destination];
-          const currentDownloadState = this.allDownloadStates.find(
-            (downloadState) => downloadState.id === downloadId,
-          );
-          if (!currentDownloadState) return;
-
-          const downloadItem = currentDownloadState?.children.find(
-            (downloadItem) => downloadItem.id === destination,
-          );
-          if (downloadItem) {
-            downloadItem.status = DownloadStatus.Error;
-            downloadItem.error = error.message;
-          }
-
-          currentDownloadState.status = DownloadStatus.Error;
-          currentDownloadState.error = error.message;
-
-          // remove download state if all children is downloaded
-          this.allDownloadStates = this.allDownloadStates.filter(
-            (downloadState) => downloadState.id !== downloadId,
-          );
-          this.eventEmitter.emit('download.event', this.allDownloadStates);
+          this.handleError(error, downloadId, destination);
         } finally {
           bar.stop();
           resolve();
@@ -222,6 +218,7 @@ export class DownloadManagerService {
       });
 
       response.data.on('data', (chunk: any) => {
+        resetTimeout();
         transferredBytes += chunk.length;
 
         const currentDownloadState = this.allDownloadStates.find(
@@ -265,5 +262,32 @@ export class DownloadManagerService {
 
   getDownloadStates() {
     return this.allDownloadStates;
+  }
+
+  private handleError(error: Error, downloadId: string, destination: string) {
+    console.log(this.allDownloadStates, downloadId, destination)
+    delete this.abortControllers[downloadId][destination];
+          const currentDownloadState = this.allDownloadStates.find(
+            (downloadState) => downloadState.id === downloadId,
+          );
+          if (!currentDownloadState) return;
+
+          const downloadItem = currentDownloadState?.children.find(
+            (downloadItem) => downloadItem.id === destination,
+          );
+          if (downloadItem) {
+            downloadItem.status = DownloadStatus.Error;
+            downloadItem.error = error.message;
+          }
+
+          currentDownloadState.status = DownloadStatus.Error;
+          currentDownloadState.error = error.message;
+
+          // remove download state if all children is downloaded
+          this.allDownloadStates = this.allDownloadStates.filter(
+            (downloadState) => downloadState.id !== downloadId,
+          );
+          this.eventEmitter.emit('download.event', [currentDownloadState]);
+          this.eventEmitter.emit('download.event', this.allDownloadStates);
   }
 }
