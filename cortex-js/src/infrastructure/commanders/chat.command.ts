@@ -93,7 +93,7 @@ export class ChatCommand extends BaseCommand {
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
-      await downloadProgress(this.cortex, undefined, DownloadType.Engine)
+      await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
 
     if (!message) options.attach = true;
@@ -108,13 +108,13 @@ export class ChatCommand extends BaseCommand {
     );
 
     const preset = await this.fileService.getPreset(options.preset);
-      
+
     return this.chatClient.chat(
-        modelId,
-        options.threadId,
-        message, // Accept both message from inputs or arguments
-        preset ? preset : {},
-      )
+      modelId,
+      options.threadId,
+      message, // Accept both message from inputs or arguments
+      preset ? preset : {},
+    );
   }
 
   modelInquiry = async (models: Cortex.Model[]) => {

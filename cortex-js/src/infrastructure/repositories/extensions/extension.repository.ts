@@ -30,8 +30,8 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
   /**
    * Persist extension to the extensions map
-   * @param object 
-   * @returns 
+   * @param object
+   * @returns
    */
   create(object: Extension): Promise<Extension> {
     this.extensions.set(object.name ?? '', object);
@@ -40,7 +40,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
 
   /**
    * Find all extensions
-   * @returns 
+   * @returns
    */
   findAll(): Promise<Extension[]> {
     return Promise.resolve(Array.from(this.extensions.values()));
@@ -48,8 +48,8 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
 
   /**
    * Find one extension by id
-   * @param id 
-   * @returns 
+   * @param id
+   * @returns
    */
   findOne(id: string): Promise<Extension | null> {
     return Promise.resolve(this.extensions.get(id) ?? null);
@@ -65,8 +65,8 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
 
   /**
    * Remove extension from the extensions map
-   * @param id 
-   * @returns 
+   * @param id
+   * @returns
    */
   remove(id: string): Promise<void> {
     this.extensions.delete(id);

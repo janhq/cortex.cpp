@@ -136,7 +136,7 @@ export class DownloadManagerService {
         this.httpService.get(url, {
           responseType: 'stream',
           signal: controller.signal,
-        })
+        }),
       );
 
       // check if response is success
@@ -169,16 +169,16 @@ export class DownloadManagerService {
       const resetTimeout = () => {
         if (timeoutId) clearTimeout(timeoutId);
         timeoutId = setTimeout(() => {
-          try{
-          this.handleError(
-            new Error('Download timeout'),
-            downloadId,
-            destination,
-          )
-        } finally {
-          bar.stop();
-          resolve();
-        }
+          try {
+            this.handleError(
+              new Error('Download timeout'),
+              downloadId,
+              destination,
+            );
+          } finally {
+            bar.stop();
+            resolve();
+          }
         }, timeout);
       };
 
@@ -265,29 +265,29 @@ export class DownloadManagerService {
   }
 
   private handleError(error: Error, downloadId: string, destination: string) {
-    console.log(this.allDownloadStates, downloadId, destination)
+    console.log(this.allDownloadStates, downloadId, destination);
     delete this.abortControllers[downloadId][destination];
-          const currentDownloadState = this.allDownloadStates.find(
-            (downloadState) => downloadState.id === downloadId,
-          );
-          if (!currentDownloadState) return;
+    const currentDownloadState = this.allDownloadStates.find(
+      (downloadState) => downloadState.id === downloadId,
+    );
+    if (!currentDownloadState) return;
 
-          const downloadItem = currentDownloadState?.children.find(
-            (downloadItem) => downloadItem.id === destination,
-          );
-          if (downloadItem) {
-            downloadItem.status = DownloadStatus.Error;
-            downloadItem.error = error.message;
-          }
+    const downloadItem = currentDownloadState?.children.find(
+      (downloadItem) => downloadItem.id === destination,
+    );
+    if (downloadItem) {
+      downloadItem.status = DownloadStatus.Error;
+      downloadItem.error = error.message;
+    }
 
-          currentDownloadState.status = DownloadStatus.Error;
-          currentDownloadState.error = error.message;
+    currentDownloadState.status = DownloadStatus.Error;
+    currentDownloadState.error = error.message;
 
-          // remove download state if all children is downloaded
-          this.allDownloadStates = this.allDownloadStates.filter(
-            (downloadState) => downloadState.id !== downloadId,
-          );
-          this.eventEmitter.emit('download.event', [currentDownloadState]);
-          this.eventEmitter.emit('download.event', this.allDownloadStates);
+    // remove download state if all children is downloaded
+    this.allDownloadStates = this.allDownloadStates.filter(
+      (downloadState) => downloadState.id !== downloadId,
+    );
+    this.eventEmitter.emit('download.event', [currentDownloadState]);
+    this.eventEmitter.emit('download.event', this.allDownloadStates);
   }
 }

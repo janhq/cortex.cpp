@@ -17,7 +17,7 @@ export class CreateThreadAssistantDto implements Assistant {
 
   @ApiProperty({
     example: 'https://example.com/avatar.png',
-    description: 'URL of the assistant\'s avatar image.',
+    description: "URL of the assistant's avatar image.",
     type: 'string',
   })
   @IsOptional()
@@ -34,23 +34,32 @@ export class CreateThreadAssistantDto implements Assistant {
 
   @ApiProperty({
     example: 'mistral',
-    description: 'The model\'s unique identifier and settings.',
+    description: "The model's unique identifier and settings.",
     type: 'string',
   })
   @IsString()
   model: string;
 
   @ApiProperty({
-    example: 'Assist with customer queries and provide information based on the company database.',
-    description: 'The assistant\'s specific instructions.',
+    example:
+      'Assist with customer queries and provide information based on the company database.',
+    description: "The assistant's specific instructions.",
     type: 'string',
   })
   @IsString()
   instructions: string;
 
   @ApiProperty({
-    example: [{ name: 'Knowledge Retrieval', settings: { source: 'internal', endpoint: 'https://api.example.com/knowledge' } }],
-    description: 'The thread\'s tool(Knowledge Retrieval) configurations.',
+    example: [
+      {
+        name: 'Knowledge Retrieval',
+        settings: {
+          source: 'internal',
+          endpoint: 'https://api.example.com/knowledge',
+        },
+      },
+    ],
+    description: "The thread's tool(Knowledge Retrieval) configurations.",
     type: 'array',
   })
   @IsOptional()
@@ -58,7 +67,8 @@ export class CreateThreadAssistantDto implements Assistant {
   tools: any;
 
   @ApiProperty({
-    example: 'This assistant helps with customer support by retrieving relevant information.',
+    example:
+      'This assistant helps with customer support by retrieving relevant information.',
     description: 'The description of the assistant.',
     type: 'string',
   })

@@ -7,7 +7,7 @@ import { checkNvidiaGPUExist } from './cuda';
  * @returns
  */
 export const defaultInstallationOptions = async (): Promise<InitOptions> => {
-  let options: InitOptions = {};
+  const options: InitOptions = {};
 
   // Skip check if darwin
   if (process.platform === 'darwin') {

@@ -1,11 +1,17 @@
-import { Table, Column, Model, PrimaryKey, DataType } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  PrimaryKey,
+  DataType,
+} from 'sequelize-typescript';
 import { Assistant } from '@/domain/models/assistant.interface';
 import type {
   AssistantToolResources,
   AssistantResponseFormatOption,
 } from '@/domain/models/assistant.interface';
 
-@Table({ tableName: 'assistants', timestamps: false})
+@Table({ tableName: 'assistants', timestamps: false })
 export class AssistantEntity extends Model implements Assistant {
   @PrimaryKey
   @Column({

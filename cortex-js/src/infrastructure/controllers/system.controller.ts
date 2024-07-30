@@ -51,7 +51,7 @@ export class SystemController {
   }
 
   @ApiOperation({
-    summary: "Get health status",
+    summary: 'Get health status',
     description: "Retrieves the health status of your Cortex's system.",
   })
   @HttpCode(200)

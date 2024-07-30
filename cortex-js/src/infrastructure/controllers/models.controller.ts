@@ -138,10 +138,11 @@ export class ModelsController {
   @Post(':modelId(*)/pull')
   pullModel(
     @Param('modelId') modelId: string,
-    @Body() body?: {
+    @Body()
+    body?: {
       fileName?: string;
       persistedModelId?: string;
-    }
+    },
   ) {
     const { fileName, persistedModelId } = body || {};
     this.modelsUsecases

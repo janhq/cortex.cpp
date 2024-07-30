@@ -97,11 +97,9 @@ describe('Helper commands', () => {
     'Show stop running models',
     async () => {
       // const tableMock = stubMethod(console, 'table');
-
       // const logMock = stubMethod(console, 'log');
       // await CommandTestFactory.run(commandInstance, ['stop']);
       // await CommandTestFactory.run(commandInstance, ['ps']);
-
       // expect(logMock.firstCall?.args[0]).toEqual('API server stopped');
       // expect(tableMock.firstCall?.args[0]).toBeInstanceOf(Array);
       // expect(tableMock.firstCall?.args[0].length).toEqual(0);
@@ -114,7 +112,6 @@ describe('Helper commands', () => {
     // expect(stdoutSpy.firstCall?.args).toBeInstanceOf(Array);
     // expect(stdoutSpy.firstCall?.args.length).toBe(1);
     // expect(stdoutSpy.firstCall?.args[0]).toContain('display help for command');
-
     // expect(exitSpy.callCount).toBeGreaterThan(1);
     // expect(exitSpy.firstCall?.args[0]).toBe(0);
   });

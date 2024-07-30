@@ -1,4 +1,10 @@
-import { Table, Column, Model, PrimaryKey, DataType } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  PrimaryKey,
+  DataType,
+} from 'sequelize-typescript';
 import type {
   Message,
   MessageContent,
@@ -6,7 +12,7 @@ import type {
   MessageAttachment,
 } from '@/domain/models/message.interface';
 
-@Table({ tableName: 'messages', timestamps: false})
+@Table({ tableName: 'messages', timestamps: false })
 export class MessageEntity extends Model implements Message {
   @PrimaryKey
   @Column({
