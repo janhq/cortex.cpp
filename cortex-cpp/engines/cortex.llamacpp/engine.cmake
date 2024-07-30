@@ -1,7 +1,7 @@
 # cortex.llamacpp release version
 set(VERSION 0.1.23-29.07.24)
 # vulka is unstable, we need to use a customized version
-set(VULKA_VERSION 0.1.12-25.06.24)
+set(VULKA_VERSION 0.1.23-29.07.24)
 
 set(ENGINE_VERSION v${VERSION})
 add_compile_definitions(CORTEX_LLAMACPP_VERSION="${VERSION}")
