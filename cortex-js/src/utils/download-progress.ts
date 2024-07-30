@@ -2,8 +2,12 @@ import { Presets, SingleBar } from "cli-progress";
 import { Cortex } from "@cortexso/cortex.js";
 import { exit, stdin, stdout } from 'node:process';
 import { DownloadState, DownloadStatus, DownloadType } from "@/domain/models/download.interface";
+import { isLocalFile } from "./urls";
 
 export const downloadProgress = async (cortex: Cortex, downloadId?: string, downloadType?: DownloadType) => {
+    // Do not update on local file symlink
+    if (downloadId && isLocalFile(downloadId)) return;
+
     const response = await cortex.events.downloadEvent();
 
     const rl = require('readline').createInterface({

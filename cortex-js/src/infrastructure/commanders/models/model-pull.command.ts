@@ -19,6 +19,7 @@ import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 import ora from 'ora';
+import { isLocalFile } from '@/utils/urls';
 
 @SubCommand({
   name: 'pull',
@@ -61,9 +62,8 @@ export class ModelPullCommand extends BaseCommand {
       exit(1);
     });
 
-    ora().succeed('Model downloaded');
-
     await downloadProgress(this.cortex, modelId);
+    ora().succeed('Model downloaded');
 
     const existingModel = await this.cortex.models.retrieve(modelId);
     const engine = existingModel?.engine || Engines.llamaCPP;

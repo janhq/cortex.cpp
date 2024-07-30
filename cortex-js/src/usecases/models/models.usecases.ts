@@ -4,7 +4,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
-import { basename, join } from 'path';
+import { basename, join, parse } from 'path';
 import { promises, existsSync, mkdirSync, readFileSync, rmSync } from 'fs';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
@@ -17,7 +17,6 @@ import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import {
-  HuggingFaceModelVersion,
   HuggingFaceRepoData,
   HuggingFaceRepoSibling,
 } from '@/domain/models/huggingface.interface';
@@ -26,7 +25,10 @@ import {
   fetchJanRepoData,
   getHFModelMetadata,
 } from '@/utils/huggingface';
-import { DownloadType } from '@/domain/models/download.interface';
+import {
+  DownloadStatus,
+  DownloadType,
+} from '@/domain/models/download.interface';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { ModelEvent, ModelId, ModelStatus } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
@@ -35,6 +37,7 @@ import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { load } from 'js-yaml';
 import { llamaModelFile } from '@/utils/app-path';
 import { CortexUsecases } from '../cortex/cortex.usecases';
+import { isLocalFile } from '@/utils/urls';
 
 @Injectable()
 export class ModelsUsecases {
@@ -127,7 +130,9 @@ export class ModelsUsecases {
     )) as EngineExtension | undefined;
 
     if (engine) {
-      await engine.unloadModel(id, model.engine || Engines.llamaCPP).catch(() => {}); // Silent fail
+      await engine
+        .unloadModel(id, model.engine || Engines.llamaCPP)
+        .catch(() => {}); // Silent fail
     }
     return this.modelRepository
       .remove(id)
@@ -174,7 +179,7 @@ export class ModelsUsecases {
     }
 
     // Attempt to start cortex
-    await this.cortexUsecases.startCortex()
+    await this.cortexUsecases.startCortex();
 
     const loadingModelSpinner = ora('Loading model...').start();
     // update states and emitting event
@@ -341,8 +346,24 @@ export class ModelsUsecases {
   ) {
     const modelId = persistedModelId ?? originModelId;
     const existingModel = await this.findOne(modelId);
+
     if (isLocalModel(existingModel?.files)) {
       throw new BadRequestException('Model already exists');
+    }
+
+    // Pull a local model file
+    if (isLocalFile(originModelId)) {
+      await this.populateHuggingFaceModel(originModelId, persistedModelId);
+      this.eventEmitter.emit('download.event', [
+        {
+          id: modelId,
+          type: DownloadType.Model,
+          status: DownloadStatus.Downloaded,
+          progress: 100,
+          children: [],
+        },
+      ]);
+      return;
     }
 
     const modelsContainerDir = await this.fileManagerService.getModelsPath();
@@ -422,22 +443,18 @@ export class ModelsUsecases {
           model.model = modelId;
           if (!(await this.findOne(modelId))) await this.create(model);
         } else {
-          await this.populateHuggingFaceModel(modelId, files[0]);
-          const model = await this.findOne(modelId);
-          if (model) {
-            const fileUrl = join(
-              await this.fileManagerService.getModelsPath(),
-              normalizeModelId(modelId),
-              basename(
-                files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
-                  files[0].rfilename,
-              ),
-            );
-            await this.update(modelId, {
-              files: [fileUrl],
-              name: modelId.replace(':main', ''),
-            });
-          }
+          const fileUrl = join(
+            await this.fileManagerService.getModelsPath(),
+            normalizeModelId(modelId),
+            basename(
+              files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
+                files[0].rfilename,
+            ),
+          );
+          await this.populateHuggingFaceModel(
+            fileUrl,
+            modelId.replace(':main', ''),
+          );
         }
         uploadModelMetadataSpiner.succeed('Model metadata updated');
         const modelEvent: ModelEvent = {
@@ -458,21 +475,18 @@ export class ModelsUsecases {
    * It could be a model from Jan's repo or other authors
    * @param modelId HuggingFace model id. e.g. "janhq/llama-3 or llama3:7b"
    */
-  async populateHuggingFaceModel(
-    modelId: string,
-    modelVersion: HuggingFaceModelVersion,
-  ) {
-    if (!modelVersion) throw 'No expected quantization found';
+  async populateHuggingFaceModel(ggufUrl: string, overridenId?: string) {
+    const metadata = await getHFModelMetadata(ggufUrl);
 
-    const tokenizer = await getHFModelMetadata(modelVersion.downloadUrl!);
+    const stopWords: string[] = metadata?.stopWord ? [metadata.stopWord] : [];
 
-    const stopWords: string[] = tokenizer?.stopWord ? [tokenizer.stopWord] : [];
-
+    const modelId =
+      overridenId ?? (isLocalFile(ggufUrl) ? parse(ggufUrl).name : ggufUrl);
     const model: CreateModelDto = {
-      files: [modelVersion.downloadUrl ?? ''],
+      files: [ggufUrl],
       model: modelId,
-      name: modelId,
-      prompt_template: tokenizer?.promptTemplate,
+      name: metadata?.name ?? modelId,
+      prompt_template: metadata?.promptTemplate,
       stop: stopWords,
 
       // Default Inference Params
