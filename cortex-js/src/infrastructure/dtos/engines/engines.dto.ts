@@ -55,6 +55,7 @@ export class InitEngineDto {
   })
   @IsString()
   runMode?: 'CPU' | 'GPU';
+
   @ApiProperty({
     type: String,
     example: 'Nvidia',
@@ -62,6 +63,7 @@ export class InitEngineDto {
   })
   @IsString()
   gpuType?: 'Nvidia' | 'Others (Vulkan)';
+
   @ApiProperty({
     type: String,
     example: 'AVX',
@@ -69,6 +71,7 @@ export class InitEngineDto {
   })
   @IsString()
   instructions?: 'AVX' | 'AVX2' | 'AVX512' | undefined;
+
   @ApiProperty({
     type: String,
     example: '11',
@@ -76,6 +79,7 @@ export class InitEngineDto {
   })
   @IsString()
   cudaVersion?: '11' | '12';
+
   @ApiProperty({
     type: Boolean,
     example: true,
@@ -83,6 +87,7 @@ export class InitEngineDto {
   })
   @IsBoolean()
   silent?: boolean;
+
   @ApiProperty({
     type: Boolean,
     example: true,
@@ -90,4 +95,12 @@ export class InitEngineDto {
   })
   @IsBoolean()
   vulkan?: boolean;
+
+  @ApiProperty({
+    type: String,
+    example: true,
+    description: 'Engine version.',
+  })
+  @IsBoolean()
+  version?: string;
 }
