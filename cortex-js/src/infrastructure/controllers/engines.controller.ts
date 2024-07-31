@@ -112,7 +112,7 @@ export class EnginesController {
   })
   @Patch(':name(*)')
   update(@Param('name') name: string, @Body() configs?: any | undefined) {
-    console.log('configs', configs)
+    console.log('configs', configs);
     return this.enginesUsecases.updateConfigs(
       configs.config,
       configs.value,

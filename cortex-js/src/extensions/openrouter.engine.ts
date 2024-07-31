@@ -50,9 +50,8 @@ export default class OpenRouterEngineExtension extends OAIEngineExtension {
 
   transformPayload = (data: any): any => {
     return {
-        ...data,
-        model:"openrouter/auto",
-    }
+      ...data,
+      model: 'openrouter/auto',
+    };
   };
-
 }

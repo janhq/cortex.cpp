@@ -8,16 +8,16 @@ import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 
 enum RoleType {
-    user = 'USER',
-    chatbot = 'CHATBOT',
-    system = 'SYSTEM',
-  }
-  
-  type CoherePayloadType = {
-    chat_history?: Array<{ role: RoleType; message: string }>
-    message?: string
-    preamble?: string
-  }
+  user = 'USER',
+  chatbot = 'CHATBOT',
+  system = 'SYSTEM',
+}
+
+type CoherePayloadType = {
+  chat_history?: Array<{ role: RoleType; message: string }>;
+  message?: string;
+  preamble?: string;
+};
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -62,9 +62,9 @@ export default class CoHereEngineExtension extends OAIEngineExtension {
   }
 
   transformPayload = (payload: any): CoherePayloadType => {
-    console.log('payload', payload)
+    console.log('payload', payload);
     if (payload.messages.length === 0) {
-      return {}
+      return {};
     }
 
     const { messages, ...params } = payload;
@@ -73,31 +73,34 @@ export default class CoHereEngineExtension extends OAIEngineExtension {
       chat_history: [],
       message: '',
     };
-    (messages as ChatCompletionMessage[]).forEach((item: ChatCompletionMessage, index: number) => {
-      // Assign the message of the last item to the `message` property
-      if (index === messages.length - 1) {
-        convertedData.message = item.content as string
-        return
-      }
-      if (item.role === 'user') {
-        convertedData.chat_history!!.push({
-          role: 'USER' as RoleType,
-          message: item.content as string,
-        })
-      } else if (item.role === 'assistant') {
-        convertedData.chat_history!!.push({
-          role: 'CHATBOT' as RoleType,
-          message: item.content as string,
-        })
-      } else if (item.role === 'system') {
-        convertedData.preamble = item.content as string
-      }
-    })
-    return convertedData
-  }
+    (messages as ChatCompletionMessage[]).forEach(
+      (item: ChatCompletionMessage, index: number) => {
+        // Assign the message of the last item to the `message` property
+        if (index === messages.length - 1) {
+          convertedData.message = item.content as string;
+          return;
+        }
+        if (item.role === 'user') {
+          convertedData.chat_history!.push({
+            role: 'USER' as RoleType,
+            message: item.content as string,
+          });
+        } else if (item.role === 'assistant') {
+          convertedData.chat_history!.push({
+            role: 'CHATBOT' as RoleType,
+            message: item.content as string,
+          });
+        } else if (item.role === 'system') {
+          convertedData.preamble = item.content as string;
+        }
+      },
+    );
+    return convertedData;
+  };
 
   transformResponse = (data: any) => {
-    const text =  typeof data === 'object' ? data.text : JSON.parse(data).text ?? ''
+    const text =
+      typeof data === 'object' ? data.text : (JSON.parse(data).text ?? '');
     return JSON.stringify({
       choices: [
         {
@@ -107,5 +110,5 @@ export default class CoHereEngineExtension extends OAIEngineExtension {
         },
       ],
     });
-  }
+  };
 }
