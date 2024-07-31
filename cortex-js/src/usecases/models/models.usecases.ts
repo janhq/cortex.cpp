@@ -293,6 +293,11 @@ export class ModelsUsecases {
 
     return engine
       .unloadModel(modelId, model.engine || Engines.llamaCPP)
+      .catch((e) => {
+        // Skip model already unloaded error
+        if (e.code === AxiosError.ERR_BAD_REQUEST) return;
+        else throw e;
+      })
       .then(() => {
         delete this.activeModelStatuses[modelId];
         const modelEvent: ModelEvent = {
@@ -498,8 +503,8 @@ export class ModelsUsecases {
       top_p: 0.7,
 
       // Default Model Settings
-      ctx_len: 4096,
-      ngl: 100,
+      ctx_len: metadata?.contextLength ?? 4096,
+      ngl: metadata?.ngl ?? 100,
       engine: Engines.llamaCPP,
     };
     if (!(await this.findOne(modelId))) await this.create(model);
