@@ -21,7 +21,7 @@ export class ResourcesManagerService {
     return {
       mem: memInfo,
       cpu: {
-        usage: cpuUsage.avgLoad,
+        usage: Number(cpuUsage.currentLoad.toFixed(2)),
       },
     };
   }
