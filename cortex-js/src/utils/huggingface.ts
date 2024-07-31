@@ -209,7 +209,6 @@ export async function getHFModelMetadata(
   ggufUrl: string,
 ): Promise<ModelMetadata | undefined> {
   try {
-    let metadata: any;
     const { ggufMetadata } = await import('hyllama');
     // Read first 10mb of gguf file
     const fd = openSync(ggufUrl, 'r');
@@ -218,16 +217,20 @@ export async function getHFModelMetadata(
     closeSync(fd);
 
     // Parse metadata and tensor info
-    ({ metadata } = ggufMetadata(buffer.buffer));
+    const { metadata } = ggufMetadata(buffer.buffer);
 
     const index = metadata['tokenizer.ggml.eos_token_id'];
     const hfChatTemplate = metadata['tokenizer.chat_template'];
     const promptTemplate = guessPromptTemplateFromHuggingFace(hfChatTemplate);
     const stopWord: string = metadata['tokenizer.ggml.tokens'][index] ?? '';
     const name = metadata['general.name'];
-
+    const contextLength = metadata['llama.context_length'] ?? 4096;
+    const ngl = (metadata['llama.block_count'] ?? 32) + 1
     const version: number = metadata['version'];
+    
     return {
+      contextLength,
+      ngl,
       stopWord,
       promptTemplate,
       version,
