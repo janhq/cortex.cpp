@@ -40,7 +40,6 @@ export abstract class OAIEngineExtension extends EngineExtension {
       }),
     );
 
-
     if (!response) {
       throw new Error('No response');
     }

@@ -33,8 +33,9 @@ export class ChatController {
     @Body() createChatDto: CreateChatCompletionDto,
     @Res() res: Response,
   ) {
-    const { stream } = createChatDto;
-
+    let { stream } = createChatDto;
+    stream = false;
+    createChatDto.stream = stream;
     this.chatService
       .inference(createChatDto, extractCommonHeaders(headers))
       .then((response) => {
@@ -46,9 +47,50 @@ export class ChatController {
           res.json(response);
         }
       })
-      .catch((error) =>
-        res.status(error.statusCode ?? 400).send(error.message),
-      );
+      .catch((error) => {
+        const statusCode = error.response?.status ?? 400;
+        let errorMessage;
+        if (!stream) {
+          const data = error.response?.data;
+          return res
+            .status(statusCode)
+            .send(
+              data.error?.message ||
+                data.message ||
+                error.message ||
+                'An error occurred',
+            );
+        }
+        const streamResponse = error.response?.data;
+        let data = '';
+
+        streamResponse.on('data', (chunk: any) => {
+          data += chunk;
+        });
+
+        streamResponse.on('end', () => {
+          try {
+            const jsonResponse = JSON.parse(data);
+            errorMessage =
+              jsonResponse.error?.message ||
+              jsonResponse.message ||
+              error.message ||
+              'An error occurred';
+          } catch (err) {
+            errorMessage = 'An error occurred while processing the response';
+          }
+          return res
+            .status(error.statusCode ?? 400)
+            .send(errorMessage || error.message || 'An error occurred');
+        });
+
+        streamResponse.on('error', (streamError: any) => {
+          errorMessage = streamError.message ?? 'An error occurred';
+          return res
+            .status(error.statusCode ?? 400)
+            .send(errorMessage || error.message || 'An error occurred');
+        });
+      });
 
     this.telemetryUsecases.addEventToQueue({
       name: EventName.CHAT,
