@@ -19,7 +19,7 @@ import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 import ora from 'ora';
-import { isLocalFile } from '@/utils/urls';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
 
 @SubCommand({
   name: 'pull',
@@ -70,6 +70,7 @@ export class ModelPullCommand extends BaseCommand {
 
     // Pull engine if not exist
     if (
+      !isRemoteEngine(engine) &&
       !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
     ) {
       console.log('\n');

@@ -7,6 +7,8 @@ import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { ConfigsModule } from '@/usecases/configs/configs.module';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import AnthropicEngineExtension from './anthropic.engine';
+import OpenRouterEngineExtension from './openrouter.engine';
+import CoHereEngineExtension from './cohere.engine';
 
 const provider = {
   provide: 'EXTENSIONS_PROVIDER',
@@ -20,6 +22,8 @@ const provider = {
     new GroqEngineExtension(httpService, configUsecases, eventEmitter),
     new MistralEngineExtension(httpService, configUsecases, eventEmitter),
     new AnthropicEngineExtension(httpService, configUsecases, eventEmitter),
+    new OpenRouterEngineExtension(httpService, configUsecases, eventEmitter),
+    new CoHereEngineExtension(httpService, configUsecases, eventEmitter),
   ],
 };
 

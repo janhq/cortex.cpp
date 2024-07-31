@@ -188,6 +188,7 @@ export class DownloadManagerService {
 
       writer.on('finish', () => {
         try {
+          if (timeoutId) clearTimeout(timeoutId);
           // delete the abort controller
           delete this.abortControllers[downloadId][destination];
           const currentDownloadState = this.allDownloadStates.find(
@@ -210,6 +211,7 @@ export class DownloadManagerService {
       });
       writer.on('error', (error) => {
         try {
+          if (timeoutId) clearTimeout(timeoutId);
           this.handleError(error, downloadId, destination);
         } finally {
           bar.stop();
