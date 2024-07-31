@@ -34,8 +34,6 @@ export class ChatController {
     @Res() res: Response,
   ) {
     let { stream } = createChatDto;
-    stream = false;
-    createChatDto.stream = stream;
     this.chatService
       .inference(createChatDto, extractCommonHeaders(headers))
       .then((response) => {
