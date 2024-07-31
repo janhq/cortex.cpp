@@ -46,7 +46,7 @@ jobs:
 
       - name: Run test
         run: |
-          node cortex-js/dist/src/command.js serve --address 127.0.0.1 --port 4010 > cortex.log & cortex_pid=$!
+          node cortex-js/dist/src/command.js --address 127.0.0.1 --port 4010 > cortex.log
           sleep 3
           wget --no-verbose -O api.json http://127.0.0.1:4010/api-json
           cat api.json
@@ -65,7 +65,6 @@ jobs:
           echo "rp_endpoint = ${{ secrets.RP_ENDPOINT }}" >> pytest.ini
           
           pytest --endpoint "$ENDPOINTS" --reportportal --html=report.html -v || true
-          kill $cortex_pid
           deactivate
         env:
           ENDPOINTS: ${{ github.event.inputs.endpoints }}
@@ -109,8 +108,8 @@ jobs:
       - name: Clean up
         if: always()
         run: |
+          node cortex-js/dist/src/command.js stop
           rm -rf /tmp/jan
           rm -rf openai-python
           rm -rf report.html
           rm -rf report.zip
-  
