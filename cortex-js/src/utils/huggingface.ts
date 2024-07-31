@@ -225,9 +225,9 @@ export async function getHFModelMetadata(
     const stopWord: string = metadata['tokenizer.ggml.tokens'][index] ?? '';
     const name = metadata['general.name'];
     const contextLength = metadata['llama.context_length'] ?? 4096;
-    const ngl = (metadata['llama.block_count'] ?? 32) + 1
+    const ngl = (metadata['llama.block_count'] ?? 32) + 1;
     const version: number = metadata['version'];
-    
+
     return {
       contextLength,
       ngl,

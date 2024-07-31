@@ -15,6 +15,7 @@ import { CortexClient } from './services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 import { isLocalFile } from '@/utils/urls';
 import { parse } from 'node:path';
+import { printLastErrorLines } from '@/utils/logs';
 
 type RunOptions = {
   threadId?: string;
@@ -109,8 +110,10 @@ export class RunCommand extends BaseCommand {
         if (options.chat) this.chatClient.chat(modelId, options.threadId);
         else console.log("To start a chat session, use the '--chat' flag");
       })
-      .catch((e) => {
+      .catch(async (e) => {
         startingSpinner.fail(e.message ?? e);
+
+        printLastErrorLines(await this.fileService.getLogPath());
       });
   }
 

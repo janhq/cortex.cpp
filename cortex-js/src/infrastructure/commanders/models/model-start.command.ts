@@ -4,7 +4,7 @@ import { exit } from 'node:process';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-import { createReadStream, existsSync, statSync, watchFile } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
@@ -14,11 +14,12 @@ import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { downloadProgress } from '@/utils/download-progress';
 import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
+import { printLastErrorLines } from '@/utils/logs';
 
 type ModelStartOptions = {
-  attach: boolean;
   preset?: string;
 };
+
 @SubCommand({
   name: 'start',
   description: 'Start a model by ID.',
@@ -77,16 +78,17 @@ export class ModelStartCommand extends BaseCommand {
       await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
 
-    // Attached - stdout logs
-    if (options.attach) {
-      this.attachLogWatch();
-    }
-
     const parsedPreset = await this.fileService.getPreset(options.preset);
+
+    const startingSpinner = ora('Loading model...').start();
 
     await this.cortex.models
       .start(modelId, parsedPreset)
-      .then(() => options.attach && ora('Model is running...').start());
+      .then(() => startingSpinner.succeed('Model loaded'))
+      .catch(async (error) => {
+        startingSpinner.fail(error.message ?? error);
+        printLastErrorLines(await this.fileService.getLogPath());
+      });
   }
 
   modelInquiry = async () => {
@@ -105,54 +107,10 @@ export class ModelStartCommand extends BaseCommand {
   };
 
   @Option({
-    flags: '-a, --attach',
-    description: 'Attach to interactive chat session',
-    defaultValue: false,
-    name: 'attach',
-  })
-  parseAttach() {
-    return true;
-  }
-
-  @Option({
     flags: '-p, --preset <preset>',
     description: 'Apply a chat preset to the chat session',
   })
   parseTemplate(value: string) {
     return value;
-  }
-
-  /**
-   * Attach to the log file and watch for changes
-   */
-  private async attachLogWatch() {
-    const logPath = await this.fileService.getLogPath();
-    const initialSize = statSync(logPath).size;
-    const logStream = createReadStream(logPath, {
-      start: initialSize,
-      encoding: 'utf-8',
-      autoClose: false,
-    });
-    logStream.on('data', (chunk) => {
-      console.log(chunk);
-    });
-    watchFile(logPath, (curr, prev) => {
-      // Check if the file size has increased
-      if (curr.size > prev.size) {
-        // Calculate the position to start reading from
-        const position = prev.size;
-
-        // Create a new read stream from the updated position
-        const updateStream = createReadStream(logPath, {
-          encoding: 'utf8',
-          start: position,
-        });
-
-        // Read the newly written content
-        updateStream.on('data', (chunk) => {
-          console.log(chunk);
-        });
-      }
-    });
   }
 }
