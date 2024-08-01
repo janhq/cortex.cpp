@@ -10,6 +10,8 @@ export enum Engines {
   anthropic = 'anthropic',
   openrouter = 'openrouter',
   cohere = 'cohere',
+  martian = 'martian',
+  nvidia = 'nvidia',
 }
 
 export const EngineNamesMap: {
@@ -27,4 +29,6 @@ export const RemoteEngines: Engines[] = [
   Engines.anthropic,
   Engines.openrouter,
   Engines.cohere,
+  Engines.martian,
+  Engines.nvidia,
 ];

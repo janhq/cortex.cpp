@@ -1,9 +1,7 @@
-import stream from 'stream';
 import { HttpService } from '@nestjs/axios';
 import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import _ from 'lodash';
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 import { ChatCompletionMessage } from '@/infrastructure/dtos/chat/chat-completion-message.dto';
 
@@ -98,17 +96,27 @@ export default class CoHereEngineExtension extends OAIEngineExtension {
     return convertedData;
   };
 
-  transformResponse = (data: any) => {
+  transformResponse = (data: any, stream: boolean) => {
     const text =
       typeof data === 'object' ? data.text : (JSON.parse(data).text ?? '');
-    return JSON.stringify({
-      choices: [
-        {
-          delta: {
-            content: text,
-          },
-        },
-      ],
-    });
+    return stream
+      ? JSON.stringify({
+          choices: [
+            {
+              delta: {
+                content: text,
+              },
+            },
+          ],
+        })
+      : {
+          choices: [
+            {
+              message: {
+                content: text,
+              },
+            },
+          ],
+        };
   };
 }
