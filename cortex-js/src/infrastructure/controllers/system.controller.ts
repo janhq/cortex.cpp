@@ -30,6 +30,7 @@ import {
 } from 'rxjs';
 import { ResourcesManagerService } from '../services/resources-manager/resources-manager.service';
 import { ResourceEvent } from '@/domain/models/resource.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @ApiTags('System')
 @Controller('system')
@@ -37,6 +38,7 @@ export class SystemController {
   constructor(
     private readonly downloadManagerService: DownloadManagerService,
     private readonly modelsUsecases: ModelsUsecases,
+    private readonly cortexUsecases: CortexUsecases,
     private readonly eventEmitter: EventEmitter2,
     private readonly resourcesManagerService: ResourcesManagerService,
   ) {}
@@ -47,6 +49,7 @@ export class SystemController {
   })
   @Delete()
   async delete() {
+    await this.cortexUsecases.stopCortex().catch(() => {});
     process.exit(0);
   }
 
