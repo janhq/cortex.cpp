@@ -8,7 +8,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Presets, SingleBar } from 'cli-progress';
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, unlinkSync } from 'node:fs';
 import { basename } from 'node:path';
 import { firstValueFrom } from 'rxjs';
 
@@ -17,6 +17,7 @@ export class DownloadManagerService {
   private allDownloadStates: DownloadState[] = [];
   private abortControllers: Record<string, Record<string, AbortController>> =
     {};
+  private timeouts: Record<string, NodeJS.Timeout> = {};
 
   constructor(
     private readonly httpService: HttpService,
@@ -27,13 +28,22 @@ export class DownloadManagerService {
     if (!this.abortControllers[downloadId]) {
       return;
     }
+    clearTimeout(this.timeouts[downloadId]);
     Object.keys(this.abortControllers[downloadId]).forEach((destination) => {
       this.abortControllers[downloadId][destination].abort();
     });
     delete this.abortControllers[downloadId];
+
+    const currentDownloadState = this.allDownloadStates.find(
+      (downloadState) => downloadState.id === downloadId,
+    );
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
+
+    if (currentDownloadState) {
+      this.deleteDownloadStateFiles(currentDownloadState);
+    }
     this.eventEmitter.emit('download.event', this.allDownloadStates);
   }
 
@@ -167,7 +177,10 @@ export class DownloadManagerService {
       const timeout = 20000; // Timeout period for receiving new data
       let timeoutId: NodeJS.Timeout;
       const resetTimeout = () => {
-        if (timeoutId) clearTimeout(timeoutId);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          delete this.timeouts[downloadId];
+        }
         timeoutId = setTimeout(() => {
           try {
             this.handleError(
@@ -180,6 +193,7 @@ export class DownloadManagerService {
             resolve();
           }
         }, timeout);
+        this.timeouts[downloadId] = timeoutId;
       };
 
       let transferredBytes = 0;
@@ -267,7 +281,6 @@ export class DownloadManagerService {
   }
 
   private handleError(error: Error, downloadId: string, destination: string) {
-    console.log(this.allDownloadStates, downloadId, destination);
     delete this.abortControllers[downloadId][destination];
     const currentDownloadState = this.allDownloadStates.find(
       (downloadState) => downloadState.id === downloadId,
@@ -289,7 +302,15 @@ export class DownloadManagerService {
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
+    this.deleteDownloadStateFiles(currentDownloadState);
     this.eventEmitter.emit('download.event', [currentDownloadState]);
     this.eventEmitter.emit('download.event', this.allDownloadStates);
+  }
+
+  private deleteDownloadStateFiles(downloadState: DownloadState) {
+    if (!downloadState.children?.length) return;
+    downloadState.children.forEach((child) => {
+      unlinkSync(child.id);
+    });
   }
 }

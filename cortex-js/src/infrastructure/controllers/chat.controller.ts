@@ -50,6 +50,9 @@ export class ChatController {
         let errorMessage;
         if (!stream) {
           const data = error.response?.data;
+          if (!data) {
+            return res.status(500).send(error.message || 'An error occurred');
+          }
           return res
             .status(statusCode)
             .send(
@@ -60,8 +63,10 @@ export class ChatController {
             );
         }
         const streamResponse = error.response?.data;
+        if (!streamResponse) {
+          return res.status(500).send(error.message || 'An error occurred');
+        }
         let data = '';
-
         streamResponse.on('data', (chunk: any) => {
           data += chunk;
         });

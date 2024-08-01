@@ -9,11 +9,11 @@ import { EngineStatus } from '@/domain/abstracts/engine.abstract';
  * The class provides methods for initializing and stopping a model, and for making inference requests.
  * It also subscribes to events emitted by the @janhq/core package and handles new message requests.
  */
-export default class OpenRouterEngineExtension extends OAIEngineExtension {
-  apiUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  name = 'openrouter';
-  productName = 'OpenRouter Inference Engine';
-  description = 'This extension enables OpenRouter chat completion API calls';
+export default class NvidiaEngineExtension extends OAIEngineExtension {
+  apiUrl = 'https://integrate.api.nvidia.com/v1/chat/completions';
+  name = 'nvidia';
+  productName = 'Nvidia Inference Engine';
+  description = 'This extension enables Nvidia chat completion API calls';
   version = '0.0.1';
   apiKey?: string;
 
@@ -39,17 +39,11 @@ export default class OpenRouterEngineExtension extends OAIEngineExtension {
     const configs = (await this.configsUsecases.getGroupConfigs(
       this.name,
     )) as unknown as { apiKey: string };
+
     this.apiKey = configs?.apiKey;
     this.status =
       (this.apiKey?.length ?? 0) > 0
         ? EngineStatus.READY
         : EngineStatus.MISSING_CONFIGURATION;
   }
-
-  transformPayload = (data: any): any => {
-    return {
-      ...data,
-      model: 'openrouter/auto',
-    };
-  };
 }

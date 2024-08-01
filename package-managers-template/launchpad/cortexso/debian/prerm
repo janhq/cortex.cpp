@@ -1,0 +1,6 @@
+#!/bin/sh
+set +e
+
+/usr/bin/cortex stop > /dev/null 2>&1
+
+exit 0

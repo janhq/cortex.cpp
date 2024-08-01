@@ -9,6 +9,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import AnthropicEngineExtension from './anthropic.engine';
 import OpenRouterEngineExtension from './openrouter.engine';
 import CoHereEngineExtension from './cohere.engine';
+import MartianEngineExtension from './martian.engine';
+import NvidiaEngineExtension from './nvidia.engine';
 
 const provider = {
   provide: 'EXTENSIONS_PROVIDER',
@@ -24,6 +26,8 @@ const provider = {
     new AnthropicEngineExtension(httpService, configUsecases, eventEmitter),
     new OpenRouterEngineExtension(httpService, configUsecases, eventEmitter),
     new CoHereEngineExtension(httpService, configUsecases, eventEmitter),
+    new MartianEngineExtension(httpService, configUsecases, eventEmitter),
+    new NvidiaEngineExtension(httpService, configUsecases, eventEmitter),
   ],
 };
 
