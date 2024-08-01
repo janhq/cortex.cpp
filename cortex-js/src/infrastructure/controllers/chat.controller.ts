@@ -33,7 +33,7 @@ export class ChatController {
     @Body() createChatDto: CreateChatCompletionDto,
     @Res() res: Response,
   ) {
-    let { stream } = createChatDto;
+    const { stream } = createChatDto;
     this.chatService
       .inference(createChatDto, extractCommonHeaders(headers))
       .then((response) => {

@@ -10,6 +10,7 @@ import {
   readdirSync,
   rmSync,
   writeFileSync,
+  watch,
 } from 'fs';
 import { load, dump } from 'js-yaml';
 import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
@@ -25,6 +26,12 @@ export class ModelRepositoryImpl implements ModelRepository {
 
   constructor(private readonly fileService: FileManagerService) {
     this.loadModels();
+    fileService.getModelsPath().then((path) => {
+      if (!existsSync(path)) mkdirSync(path);
+      watch(path, (eventType, filename) => {
+        this.loadModels(true);
+      });
+    });
   }
 
   /**
@@ -121,10 +128,13 @@ export class ModelRepositoryImpl implements ModelRepository {
    * This would load all the models from the models folder
    * @returns the list of models
    */
-  private async loadModels(): Promise<Model[]> {
-    if (this.loaded) return Array.from(this.models.values());
+  private async loadModels(forceReload: boolean = false): Promise<Model[]> {
+    if (this.loaded && !forceReload) return Array.from(this.models.values());
     const modelsPath =
       process.env.EXTENSIONS_PATH ?? (await this.fileService.getModelsPath());
+
+    this.models.clear();
+    this.fileModel.clear();
 
     if (!existsSync(modelsPath)) return [];
 
