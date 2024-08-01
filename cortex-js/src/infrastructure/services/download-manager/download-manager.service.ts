@@ -17,6 +17,7 @@ export class DownloadManagerService {
   private allDownloadStates: DownloadState[] = [];
   private abortControllers: Record<string, Record<string, AbortController>> =
     {};
+  private timeouts: Record<string, NodeJS.Timeout> = {};
 
   constructor(
     private readonly httpService: HttpService,
@@ -27,11 +28,12 @@ export class DownloadManagerService {
     if (!this.abortControllers[downloadId]) {
       return;
     }
+    clearTimeout(this.timeouts[downloadId]);
     Object.keys(this.abortControllers[downloadId]).forEach((destination) => {
       this.abortControllers[downloadId][destination].abort();
     });
     delete this.abortControllers[downloadId];
-    
+
     const currentDownloadState = this.allDownloadStates.find(
       (downloadState) => downloadState.id === downloadId,
     );
@@ -39,8 +41,8 @@ export class DownloadManagerService {
       (downloadState) => downloadState.id !== downloadId,
     );
 
-    if (currentDownloadState){
-    this.deleteDownloadStateFiles(currentDownloadState);
+    if (currentDownloadState) {
+      this.deleteDownloadStateFiles(currentDownloadState);
     }
     this.eventEmitter.emit('download.event', this.allDownloadStates);
   }
@@ -175,7 +177,10 @@ export class DownloadManagerService {
       const timeout = 20000; // Timeout period for receiving new data
       let timeoutId: NodeJS.Timeout;
       const resetTimeout = () => {
-        if (timeoutId) clearTimeout(timeoutId);
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          delete this.timeouts[downloadId];
+        }
         timeoutId = setTimeout(() => {
           try {
             this.handleError(
@@ -188,6 +193,7 @@ export class DownloadManagerService {
             resolve();
           }
         }, timeout);
+        this.timeouts[downloadId] = timeoutId;
       };
 
       let transferredBytes = 0;
@@ -302,7 +308,7 @@ export class DownloadManagerService {
   }
 
   private deleteDownloadStateFiles(downloadState: DownloadState) {
-    if(!downloadState.children?.length) return;
+    if (!downloadState.children?.length) return;
     downloadState.children.forEach((child) => {
       unlinkSync(child.id);
     });
