@@ -1,9 +1,7 @@
-import stream from 'stream';
 import { HttpService } from '@nestjs/axios';
 import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import _ from 'lodash';
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 
 /**

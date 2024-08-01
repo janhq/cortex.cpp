@@ -2,7 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { EngineExtension } from './engine.abstract';
 import stream, { Transform } from 'stream';
 import { firstValueFrom } from 'rxjs';
-import _ from 'lodash';
+import { omit } from 'lodash';
 
 export abstract class OAIEngineExtension extends EngineExtension {
   abstract apiUrl: string;
@@ -22,7 +22,7 @@ export abstract class OAIEngineExtension extends EngineExtension {
       ? this.transformPayload(createChatDto)
       : createChatDto;
     const { stream: isStream } = payload;
-    const additionalHeaders = _.omit(headers, [
+    const additionalHeaders = omit(headers, [
       'content-type',
       'authorization',
       'content-length',
