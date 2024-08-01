@@ -4,7 +4,7 @@ import { Extension } from '@/domain/abstracts/extension.abstract';
 import { readdir, lstat } from 'fs/promises';
 import { join } from 'path';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync, watch } from 'fs';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { HttpService } from '@nestjs/axios';
@@ -27,6 +27,16 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   ) {
     this.loadCoreExtensions();
     this.loadExternalExtensions();
+
+    // Watch engine folder only for now
+    fileService.getCortexCppEnginePath().then((path) => {
+      if (!existsSync(path)) mkdirSync(path);
+      watch(path, (eventType, filename) => {
+        this.extensions.clear();
+        this.loadCoreExtensions();
+        this.loadExternalExtensions();
+      });
+    });
   }
   /**
    * Persist extension to the extensions map

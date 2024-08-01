@@ -62,7 +62,7 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     const system = data.messages.find((m: any) => m.role === 'system');
     const messages = data.messages.filter((m: any) => m.role !== 'system');
     return {
-      system: system.content,
+      system: system?.content ?? '',
       messages,
       ...pick(data, ['model', 'stream', 'max_tokens']),
     };
