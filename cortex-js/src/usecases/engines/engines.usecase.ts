@@ -23,7 +23,7 @@ import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 import { ConfigsUsecases } from '../configs/configs.usecase';
 import { defaultInstallationOptions } from '@/utils/init';
-
+import { isEmpty } from "lodash"
 @Injectable()
 export class EnginesUsecases {
   constructor(
@@ -79,7 +79,7 @@ export class EnginesUsecases {
   ): Promise<any> => {
     // Use default option if not defined
 
-    if (!options && engine === Engines.llamaCPP) {
+    if ((!options || isEmpty(options)) && engine === Engines.llamaCPP) {
       options = await defaultInstallationOptions();
     }
     const installPackages = [];
