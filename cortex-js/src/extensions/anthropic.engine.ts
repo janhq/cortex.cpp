@@ -3,7 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import _ from 'lodash';
+import { pick } from 'lodash';
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 
 /**
@@ -59,7 +59,13 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
   }
 
   transformPayload = (data: any): any => {
-    return _.pick(data, ['messages', 'model', 'stream', 'max_tokens']);
+    const system = data.messages.find((m: any) => m.role === 'system');
+    const messages = data.messages.filter((m: any) => m.role !== 'system');
+    return {
+      system: system.content,
+      messages,
+      ...pick(data, ['model', 'stream', 'max_tokens']),
+    };
   };
 
   transformResponse = (data: any) => {

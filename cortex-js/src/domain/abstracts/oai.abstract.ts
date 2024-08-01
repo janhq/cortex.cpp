@@ -54,7 +54,7 @@ export abstract class OAIEngineExtension extends EngineExtension {
           const transformedLines = [];
           for (const line of lines) {
             if (line.trim().length > 0) {
-              const transformedLine = transformResponse(line);
+              const transformedLine = transformResponse(line, true);
               if (transformedLine) {
                 transformedLines.push(`data: ${transformedLine}\n\n`);
               }
@@ -65,6 +65,6 @@ export abstract class OAIEngineExtension extends EngineExtension {
       });
       return response.data.pipe(lineStream);
     }
-    return this.transformResponse(response.data);
+    return this.transformResponse(response.data, false);
   }
 }

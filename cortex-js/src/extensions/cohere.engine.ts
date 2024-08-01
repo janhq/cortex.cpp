@@ -98,17 +98,27 @@ export default class CoHereEngineExtension extends OAIEngineExtension {
     return convertedData;
   };
 
-  transformResponse = (data: any) => {
+  transformResponse = (data: any, stream: boolean) => {
     const text =
       typeof data === 'object' ? data.text : (JSON.parse(data).text ?? '');
-    return JSON.stringify({
-      choices: [
-        {
-          delta: {
-            content: text,
-          },
-        },
-      ],
-    });
+    return stream
+      ? JSON.stringify({
+          choices: [
+            {
+              delta: {
+                content: text,
+              },
+            },
+          ],
+        })
+      : {
+          choices: [
+            {
+              message: {
+                content: text,
+              },
+            },
+          ],
+        };
   };
 }
