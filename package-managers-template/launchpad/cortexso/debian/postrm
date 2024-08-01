@@ -1,0 +1,10 @@
+#!/bin/sh
+set +e
+
+for userdir in /home/*; do
+  if [ -d "$userdir/cortex" ]; then
+    rm -rf "$userdir/cortex" > /dev/null 2>&1
+  fi
+done
+
+exit 0
