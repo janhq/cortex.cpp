@@ -8,7 +8,7 @@ import { HttpService } from '@nestjs/axios';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Presets, SingleBar } from 'cli-progress';
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, unlinkSync } from 'node:fs';
 import { basename } from 'node:path';
 import { firstValueFrom } from 'rxjs';
 
@@ -31,9 +31,17 @@ export class DownloadManagerService {
       this.abortControllers[downloadId][destination].abort();
     });
     delete this.abortControllers[downloadId];
+    
+    const currentDownloadState = this.allDownloadStates.find(
+      (downloadState) => downloadState.id === downloadId,
+    );
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
+
+    if (currentDownloadState){
+    this.deleteDownloadStateFiles(currentDownloadState);
+    }
     this.eventEmitter.emit('download.event', this.allDownloadStates);
   }
 
@@ -267,7 +275,6 @@ export class DownloadManagerService {
   }
 
   private handleError(error: Error, downloadId: string, destination: string) {
-    console.log(this.allDownloadStates, downloadId, destination);
     delete this.abortControllers[downloadId][destination];
     const currentDownloadState = this.allDownloadStates.find(
       (downloadState) => downloadState.id === downloadId,
@@ -289,7 +296,15 @@ export class DownloadManagerService {
     this.allDownloadStates = this.allDownloadStates.filter(
       (downloadState) => downloadState.id !== downloadId,
     );
+    this.deleteDownloadStateFiles(currentDownloadState);
     this.eventEmitter.emit('download.event', [currentDownloadState]);
     this.eventEmitter.emit('download.event', this.allDownloadStates);
+  }
+
+  private deleteDownloadStateFiles(downloadState: DownloadState) {
+    if(!downloadState.children?.length) return;
+    downloadState.children.forEach((child) => {
+      unlinkSync(child.id);
+    });
   }
 }
