@@ -3,6 +3,7 @@
 [Setup]
 AppName=Cortexso
 AppVersion=1.0
+Publisher=Homebrew Computer Company Pte Ltd
 DefaultDirName={pf}\Cortexso
 DefaultGroupName=Cortexso
 OutputDir=.
