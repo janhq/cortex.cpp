@@ -1,0 +1,4 @@
+#!/bin/sh
+set -e
+
+/usr/bin/cortex stop
