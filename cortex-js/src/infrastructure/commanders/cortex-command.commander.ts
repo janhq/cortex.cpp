@@ -186,7 +186,6 @@ export class CortexCommand extends CommandRunner {
     description: 'Name of the process',
   })
   parseName(value: string) {
-    console.log(value);
     this.fileManagerService.setConfigProfile(value);
     return value;
   }
