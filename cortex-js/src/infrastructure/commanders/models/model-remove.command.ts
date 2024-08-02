@@ -1,10 +1,8 @@
 import { SubCommand } from 'nest-commander';
-import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'remove',
@@ -19,9 +17,8 @@ export class ModelRemoveCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    readonly fileService: FileManagerService,
   ) {
-    super(cortexUseCases, fileService);
+    super(cortexUseCases);
   }
 
   async runCommand(passedParams: string[]): Promise<void> {

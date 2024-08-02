@@ -2,7 +2,6 @@ import ora from 'ora';
 import systeminformation from 'systeminformation';
 import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from './decorators/CommandContext';
-import { ContextService } from '../services/context/context.service';
 import { ModelStat } from './types/model-stat.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
@@ -11,8 +10,8 @@ import { Engines } from './types/engine.interface';
 import { ModelStatResponse } from '../providers/cortex/cortex.provider';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { CORTEX_CPP_MODELS_URL } from '../constants/cortex';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'ps',
@@ -23,9 +22,8 @@ export class PSCommand extends BaseCommand {
   constructor(
     readonly cortexUsecases: CortexUsecases,
     private readonly httpService: HttpService,
-    private readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases, fileService);
+    super(cortexUsecases);
   }
   async runCommand(): Promise<void> {
     const runningSpinner = ora('Running PS command...').start();
@@ -77,7 +75,7 @@ export class PSCommand extends BaseCommand {
    * Get models running in the Cortex C++ server
    */
   async getModels(): Promise<ModelStat[]> {
-    const configs = await this.fileService.getConfig();
+    const configs = await fileManagerService.getConfig();
     const runningSpinner = ora('Getting models...').start();
     return new Promise<ModelStat[]>((resolve, reject) =>
       firstValueFrom(

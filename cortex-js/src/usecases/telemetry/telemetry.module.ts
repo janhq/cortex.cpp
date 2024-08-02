@@ -8,8 +8,7 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 
 export const telemetryProvider = {
   provide: 'TELEMETRY_REPOSITORY',
-  useFactory: (fileManagerService: FileManagerService) =>
-    new TelemetryRepositoryImpl(fileManagerService),
+  useFactory: () => new TelemetryRepositoryImpl(),
   inject: [FileManagerService],
 };
 

@@ -5,7 +5,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { existsSync } from 'node:fs';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
@@ -33,10 +33,9 @@ export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     readonly cortexUsecases: CortexUsecases,
-    private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
   ) {
-    super(cortexUsecases, fileService);
+    super(cortexUsecases);
   }
 
   async runCommand(
@@ -69,14 +68,16 @@ export class ModelStartCommand extends BaseCommand {
     // Pull engine if not exist
     if (
       !isRemoteEngine(engine) &&
-      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+      !existsSync(
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
+      )
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
       await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
 
-    const parsedPreset = await this.fileService.getPreset(options.preset);
+    const parsedPreset = await fileManagerService.getPreset(options.preset);
 
     const startingSpinner = ora('Loading model...').start();
 
@@ -85,7 +86,7 @@ export class ModelStartCommand extends BaseCommand {
       .then(() => startingSpinner.succeed('Model loaded'))
       .catch(async (error) => {
         startingSpinner.fail(error.message ?? error);
-        printLastErrorLines(await this.fileService.getLogPath());
+        printLastErrorLines(await fileManagerService.getLogPath());
       });
   }
 

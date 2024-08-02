@@ -359,3 +359,5 @@ export class FileManagerService {
     this.configProfile = profile;
   }
 }
+
+export const fileManagerService = new FileManagerService();

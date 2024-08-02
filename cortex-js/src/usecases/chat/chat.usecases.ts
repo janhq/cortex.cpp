@@ -12,10 +12,10 @@ import {
   defaultEmbeddingModel,
 } from '@/infrastructure/constants/cortex';
 import { CreateEmbeddingsDto } from '@/infrastructure/dtos/embeddings/embeddings-request.dto';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { ModelsUsecases } from '../models/models.usecases';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @Injectable()
 export class ChatUsecases {
@@ -24,7 +24,6 @@ export class ChatUsecases {
     private readonly telemetryUseCases: TelemetryUsecases,
     private readonly modelsUsescases: ModelsUsecases,
     private readonly httpService: HttpService,
-    private readonly fileService: FileManagerService,
   ) {}
 
   async inference(
@@ -94,7 +93,7 @@ export class ChatUsecases {
       });
     }
 
-    const configs = await this.fileService.getConfig();
+    const configs = await fileManagerService.getConfig();
 
     return firstValueFrom(
       this.httpService.post(

@@ -1,14 +1,11 @@
 import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ConfigsUsecases {
-  constructor(
-    private readonly fileManagerService: FileManagerService,
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly eventEmitter: EventEmitter2) {}
 
   /**
    * Save a configuration to the .cortexrc file.
@@ -20,7 +17,7 @@ export class ConfigsUsecases {
     value: string,
     engine?: string,
   ): Promise<CommonResponseDto> {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
 
     const groupConfigs = configs[
       engine as keyof typeof configs
@@ -37,7 +34,7 @@ export class ConfigsUsecases {
         : {}),
     };
 
-    return this.fileManagerService
+    return fileManagerService
       .writeConfigFile(newConfigs)
       .then(async () => {
         if (engine) {
@@ -61,7 +58,7 @@ export class ConfigsUsecases {
    * @returns
    */
   async getGroupConfigs(group: string) {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     return configs[group as keyof typeof configs] as unknown as object;
   }
 
@@ -71,7 +68,7 @@ export class ConfigsUsecases {
    * @returns
    */
   async getConfigs() {
-    return this.fileManagerService.getConfig();
+    return fileManagerService.getConfig();
   }
 
   /**
@@ -81,7 +78,7 @@ export class ConfigsUsecases {
    * @returns
    */
   async getKeyConfig(key: string) {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     return configs[key as keyof typeof configs];
   }
 }

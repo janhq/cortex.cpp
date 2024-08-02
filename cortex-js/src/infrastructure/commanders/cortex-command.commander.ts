@@ -15,7 +15,7 @@ import { ContextService } from '../services/context/context.service';
 import { EnginesCommand } from './engines.command';
 import { defaultCortexJsHost, defaultCortexJsPort } from '../constants/cortex';
 import { getApp } from '@/app';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ServeStopCommand } from './serve-stop.command';
 import ora from 'ora';
@@ -54,7 +54,6 @@ export class CortexCommand extends CommandRunner {
   configPort: number;
   constructor(
     readonly contextService: ContextService,
-    readonly fileManagerService: FileManagerService,
     readonly cortexUseCases: CortexUsecases,
   ) {
     super();
@@ -64,7 +63,7 @@ export class CortexCommand extends CommandRunner {
     const {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
-    } = await this.fileManagerService.getConfig();
+    } = await fileManagerService.getConfig();
 
     this.configHost = configApiServerHost || defaultCortexJsHost;
     this.configPort = configApiServerPort || defaultCortexJsPort;
@@ -85,7 +84,7 @@ export class CortexCommand extends CommandRunner {
   }
 
   private async startServer(attach: boolean, dataFolderPath?: string) {
-    const config = await this.fileManagerService.getConfig();
+    const config = await fileManagerService.getConfig();
     try {
       const startEngineSpinner = ora('Starting Cortex engine...');
       await this.cortexUseCases.startCortex().catch((e) => {
@@ -103,12 +102,12 @@ export class CortexCommand extends CommandRunner {
         process.exit(0);
       }
       if (dataFolderPath) {
-        await this.fileManagerService.writeConfigFile({
+        await fileManagerService.writeConfigFile({
           ...config,
           dataFolderPath,
         });
         // load config again to create the data folder
-        await this.fileManagerService.getConfig(dataFolderPath);
+        await fileManagerService.getConfig(dataFolderPath);
       }
       if (attach) {
         const app = await getApp();
@@ -124,7 +123,7 @@ export class CortexCommand extends CommandRunner {
           `API Playground available at http://${this.host}:${this.port}/api`,
         ),
       );
-      await this.fileManagerService.writeConfigFile({
+      await fileManagerService.writeConfigFile({
         ...config,
         apiServerHost: this.host,
         apiServerPort: this.port,
@@ -134,7 +133,7 @@ export class CortexCommand extends CommandRunner {
     } catch (e) {
       console.error(e);
       // revert the data folder path if it was set
-      await this.fileManagerService.writeConfigFile({
+      await fileManagerService.writeConfigFile({
         ...config,
       });
       console.error(`Failed to start server. Is port ${this.port} in use?`);
@@ -186,7 +185,7 @@ export class CortexCommand extends CommandRunner {
     description: 'Name of the process',
   })
   parseName(value: string) {
-    this.fileManagerService.setConfigProfile(value);
+    fileManagerService.setConfigProfile(value);
     return value;
   }
 }

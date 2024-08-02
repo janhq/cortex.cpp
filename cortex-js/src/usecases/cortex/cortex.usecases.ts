@@ -9,7 +9,7 @@ import { CortexOperationSuccessfullyDto } from '@/infrastructure/dtos/cortex/cor
 import { HttpService } from '@nestjs/axios';
 
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
@@ -23,10 +23,7 @@ import { openSync } from 'fs';
 export class CortexUsecases implements BeforeApplicationShutdown {
   private cortexProcess: ChildProcess | undefined;
 
-  constructor(
-    private readonly httpService: HttpService,
-    private readonly fileManagerService: FileManagerService,
-  ) {}
+  constructor(private readonly httpService: HttpService) {}
 
   /**
    * Start the Cortex CPP process
@@ -34,7 +31,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
    * @returns
    */
   async startCortex(): Promise<CortexOperationSuccessfullyDto> {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     const host = configs.cortexCppHost;
     const port = configs.cortexCppPort;
     if (this.cortexProcess || (await this.healthCheck(host, port))) {
@@ -44,10 +41,10 @@ export class CortexUsecases implements BeforeApplicationShutdown {
       };
     }
 
-    const engineDir = await this.fileManagerService.getCortexCppEnginePath();
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    const engineDir = await fileManagerService.getCortexCppEnginePath();
+    const dataFolderPath = await fileManagerService.getDataFolderPath();
 
-    const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
+    const writer = openSync(await fileManagerService.getLogPath(), 'a+');
 
     // Attempt to stop the process if it's already running
     await this.stopCortex();
@@ -93,7 +90,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
           .catch(reject);
       }, 1000);
     }).then((res) => {
-      this.fileManagerService.writeConfigFile({
+      fileManagerService.writeConfigFile({
         ...configs,
         cortexCppHost: host,
         cortexCppPort: port,
@@ -106,7 +103,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
    * Stop the Cortex CPP process
    */
   async stopCortex(): Promise<CortexOperationSuccessfullyDto> {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     try {
       await firstValueFrom(
         this.httpService.delete(
@@ -146,7 +143,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
    * start the API server in detached mode
    */
   async startServerDetached(host: string, port: number) {
-    const writer = openSync(await this.fileManagerService.getLogPath(), 'a+');
+    const writer = openSync(await fileManagerService.getLogPath(), 'a+');
     const server = fork(join(__dirname, './../../main.js'), [], {
       detached: true,
       stdio: ['ignore', writer, writer, 'ipc'],
@@ -187,7 +184,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
     const {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
-    } = await this.fileManagerService.getConfig();
+    } = await fileManagerService.getConfig();
 
     // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
     const apiServerHost = host || configApiServerHost || defaultCortexJsHost;
@@ -203,7 +200,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
     const {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
-    } = await this.fileManagerService.getConfig();
+    } = await fileManagerService.getConfig();
 
     // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
     const apiServerHost = configApiServerHost || defaultCortexJsHost;
@@ -215,8 +212,8 @@ export class CortexUsecases implements BeforeApplicationShutdown {
   }
 
   async updateApiServerConfig(host: string, port: number) {
-    const config = await this.fileManagerService.getConfig();
-    await this.fileManagerService.writeConfigFile({
+    const config = await fileManagerService.getConfig();
+    await fileManagerService.writeConfigFile({
       ...config,
       cortexCppHost: host,
       cortexCppPort: port,

@@ -4,7 +4,6 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import ora from 'ora';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'stop',
@@ -19,9 +18,8 @@ export class ModelStopCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    readonly fileService: FileManagerService,
   ) {
-    super(cortexUseCases, fileService);
+    super(cortexUseCases);
   }
 
   async runCommand(passedParams: string[]): Promise<void> {

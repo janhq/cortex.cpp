@@ -3,7 +3,6 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 interface ModelListOptions {
   format: 'table' | 'json';
@@ -14,9 +13,8 @@ export class ModelListCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    readonly fileService: FileManagerService,
   ) {
-    super(cortexUseCases, fileService);
+    super(cortexUseCases);
   }
 
   async runCommand(

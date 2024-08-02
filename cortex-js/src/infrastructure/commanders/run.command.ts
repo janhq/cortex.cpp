@@ -4,7 +4,6 @@ import { exit } from 'node:process';
 import ora from 'ora';
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from './types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from './base.command';
@@ -15,6 +14,7 @@ import { DownloadType } from '@/domain/models/download.interface';
 import { isLocalFile } from '@/utils/urls';
 import { parse } from 'node:path';
 import { printLastErrorLines } from '@/utils/logs';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 
 type RunOptions = {
   threadId?: string;
@@ -36,9 +36,8 @@ export class RunCommand extends BaseCommand {
   constructor(
     protected readonly cortexUsecases: CortexUsecases,
     private readonly inquirerService: InquirerService,
-    private readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases, fileService);
+    super(cortexUsecases);
 
     this.chatClient = new ChatClient(this.cortex);
   }
@@ -92,7 +91,9 @@ export class RunCommand extends BaseCommand {
     // Pull engine if not exist
     if (
       !isRemoteEngine(engine) &&
-      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+      !existsSync(
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
+      )
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
@@ -102,7 +103,7 @@ export class RunCommand extends BaseCommand {
     const startingSpinner = ora('Loading model...').start();
 
     return this.cortex.models
-      .start(modelId, await this.fileService.getPreset(options.preset))
+      .start(modelId, await fileManagerService.getPreset(options.preset))
       .then(() => {
         startingSpinner.succeed('Model loaded');
         if (options.chat) this.chatClient.chat(modelId, options.threadId);
@@ -111,7 +112,7 @@ export class RunCommand extends BaseCommand {
       .catch(async (e) => {
         startingSpinner.fail(e.message ?? e);
 
-        printLastErrorLines(await this.fileService.getLogPath());
+        printLastErrorLines(await fileManagerService.getLogPath());
       });
   }
 

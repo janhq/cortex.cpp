@@ -4,7 +4,6 @@ import { TelemetryOptions } from './types/telemetry-options.interface';
 import { SetCommandContext } from './decorators/CommandContext';
 import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'telemetry',
@@ -15,9 +14,8 @@ export class TelemetryCommand extends BaseCommand {
   constructor(
     private readonly telemetryUseCase: TelemetryUsecases,
     readonly cortexUseCases: CortexUsecases,
-    readonly fileService: FileManagerService,
   ) {
-    super(cortexUseCases, fileService);
+    super(cortexUseCases);
   }
 
   async runCommand(

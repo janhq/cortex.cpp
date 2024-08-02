@@ -6,7 +6,6 @@ import {
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
 import { join } from 'path';
 import yaml from 'js-yaml';
 import si from 'systeminformation';
@@ -16,6 +15,7 @@ import { BenchmarkHardware } from '@/domain/telemetry/telemetry.interface';
 import { defaultBenchmarkConfiguration } from '../constants/benchmark';
 import { inspect } from 'util';
 import { Cortex } from '@cortexso/cortex.js';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'benchmark',
@@ -29,10 +29,9 @@ import { Cortex } from '@cortexso/cortex.js';
 export class BenchmarkCommand extends BaseCommand {
   constructor(
     readonly cortexUsecases: CortexUsecases,
-    private readonly fileService: FileManagerService,
     private readonly telemetryUsecases: TelemetryUsecases,
   ) {
-    super(cortexUsecases, fileService);
+    super(cortexUsecases);
   }
 
   async runCommand(
@@ -106,7 +105,7 @@ export class BenchmarkCommand extends BaseCommand {
    * @returns the benchmark configuration
    */
   private async getBenchmarkConfig() {
-    const benchmarkFolder = await this.fileService.getBenchmarkPath();
+    const benchmarkFolder = await fileManagerService.getBenchmarkPath();
     const configurationPath = join(benchmarkFolder, 'config.yaml');
     if (existsSync(configurationPath)) {
       return yaml.load(
@@ -299,7 +298,7 @@ export class BenchmarkCommand extends BaseCommand {
     bar.stop();
 
     const outputFilePath = join(
-      await this.fileService.getBenchmarkPath(),
+      await fileManagerService.getBenchmarkPath(),
       'output.json',
     );
     await this.telemetryUsecases.sendBenchmarkEvent({

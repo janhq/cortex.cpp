@@ -12,7 +12,7 @@ import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { Engines } from './types/engine.interface';
 import { join } from 'path';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
@@ -43,11 +43,10 @@ export class ChatCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly telemetryUsecases: TelemetryUsecases,
-    private readonly fileService: FileManagerService,
     protected readonly cortexUsecases: CortexUsecases,
     protected readonly contextService: ContextService,
   ) {
-    super(cortexUsecases, fileService);
+    super(cortexUsecases);
     this.chatClient = new ChatClient(this.cortex);
   }
 
@@ -87,7 +86,9 @@ export class ChatCommand extends BaseCommand {
     // Pull engine if not exist
     if (
       !isRemoteEngine(engine) &&
-      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+      !existsSync(
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
+      )
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
@@ -105,7 +106,7 @@ export class ChatCommand extends BaseCommand {
       TelemetrySource.CLI,
     );
 
-    const preset = await this.fileService.getPreset(options.preset);
+    const preset = await fileManagerService.getPreset(options.preset);
 
     return this.chatClient.chat(
       modelId,

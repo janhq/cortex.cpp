@@ -1,4 +1,4 @@
-import { exit, stdin, stdout } from 'node:process';
+import { exit } from 'node:process';
 import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
@@ -10,7 +10,6 @@ import {
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { existsSync } from 'fs';
 import { join } from 'node:path';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { checkModelCompatibility } from '@/utils/model-check';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
@@ -19,6 +18,7 @@ import { downloadProgress } from '@/utils/download-progress';
 import { DownloadType } from '@/domain/models/download.interface';
 import ora from 'ora';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'pull',
@@ -31,12 +31,11 @@ import { isRemoteEngine } from '@/utils/normalize-model-id';
 @SetCommandContext()
 export class ModelPullCommand extends BaseCommand {
   constructor(
-    private readonly fileService: FileManagerService,
     private readonly telemetryUsecases: TelemetryUsecases,
     readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
   ) {
-    super(cortexUsecases, fileService);
+    super(cortexUsecases);
   }
 
   async runCommand(passedParams: string[]) {
@@ -69,7 +68,9 @@ export class ModelPullCommand extends BaseCommand {
     // Pull engine if not exist
     if (
       !isRemoteEngine(engine) &&
-      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+      !existsSync(
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
+      )
     ) {
       console.log('\n');
       console.log('Downloading engine...');

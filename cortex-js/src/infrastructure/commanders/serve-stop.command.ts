@@ -8,11 +8,8 @@ import { FileManagerService } from '../services/file-manager/file-manager.servic
   description: 'Stop the API server',
 })
 export class ServeStopCommand extends BaseCommand {
-  constructor(
-    private readonly cortexUsecases: CortexUsecases,
-    readonly fileService: FileManagerService,
-  ) {
-    super(cortexUsecases, fileService);
+  constructor(private readonly cortexUsecases: CortexUsecases) {
+    super(cortexUsecases);
   }
   async runCommand(): Promise<void> {
     return this.cortexUsecases
