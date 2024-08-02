@@ -1,5 +1,5 @@
 import { Config } from '@/domain/config/config.interface';
-import { Global, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import os from 'os';
 import { join } from 'node:path';
 import {
