@@ -2,10 +2,9 @@ import { Inject, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Repository } from 'sequelize-typescript';
 import { VectorStoreEntity } from '@/infrastructure/entities/vector_store.entity';
-import { RagExtension } from '@/domain/abstracts/rag.extension.abstract';
 import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { basename, join } from 'path';
-import { cpSync, mkdirSync } from 'fs';
+import { join } from 'path';
+import { mkdirSync } from 'fs';
 import { ulid } from 'ulid';
 
 @Injectable()
@@ -14,7 +13,7 @@ export class VectorStoresUsecases {
     private readonly extensionRepository: ExtensionRepository,
     private readonly fileStoreService: FileManagerService,
     @Inject('VECTOR_STORE_REPOSITORY')
-    private vectorStoreRepository: Repository<VectorStoreEntity>,
+    private readonly vectorStoreRepository: Repository<VectorStoreEntity>,
   ) {}
 
   /**
@@ -23,12 +22,18 @@ export class VectorStoresUsecases {
    * @returns
    */
   async create(entity: Partial<VectorStoreEntity>) {
-    if (!entity.name) throw new Error('Vector store name is required');
+    const vs = await this.vectorStoreRepository.create({
+      id: ulid(),
+      ...entity,
+      rag_extension: entity?.metadata?.rag_extension ?? 'llamaindex',
+      vector_database: entity?.metadata?.vector_database ?? 'default',
+    });
+
     // Create vector store folder
     mkdirSync(
       join(
         await this.fileStoreService.getVectorStoresFolderPath(),
-        entity.name,
+        vs.id,
       ),
       {
         recursive: true,
@@ -36,15 +41,12 @@ export class VectorStoresUsecases {
     );
 
     if (
-      entity.rag_extension &&
-      !(await this.extensionRepository.findOne(entity.rag_extension))
-    )
-      throw new Error('RAG extension not found');
-    // Persist vector store entity
-    return this.vectorStoreRepository.create({
-      id: ulid(),
-      ...entity,
-    });
+      entity?.metadata?.rag_extension &&
+        !(await this.extensionRepository.findOne(entity.metadata.rag_extension)
+        ))
+    throw new Error('RAG extension not found');
+    
+    return vs;
   }
 
   /**
@@ -52,21 +54,17 @@ export class VectorStoresUsecases {
    * @param id Vector store ID
    * @returns
    */
-  get(name: string) {
-    return this.vectorStoreRepository.findOne({
-      where: {
-        name,
-      },
-    });
+  get(id: string) {
+    return this.vectorStoreRepository.findByPk(id);
   }
 
   /**
    * Delete a vector store by id
    **/
-  remove(name: string) {
+  remove(id: string) {
     return this.vectorStoreRepository.destroy({
       where: {
-        name,
+        id,
       },
     });
   }
@@ -80,50 +78,11 @@ export class VectorStoresUsecases {
   }
 
   /**
-   * Upload files to a vector store
-   * @param files
-   * @param vectorStoreId
+   * Modifies a vector store
    */
-  async uploadFiles(vectorStoreId: string, files: string[]) {
-    const vectorStore = await this.get(vectorStoreId);
-    if (!vectorStore) {
-      throw new Error('Vector store not found');
-    }
-    const ragExtension = (await this.extensionRepository.findOne(
-      vectorStore.rag_extension,
-    )) as unknown as RagExtension | undefined;
-    if (!ragExtension) {
-      throw new Error('RAG extension not found');
-    }
-
-    // Persist files
-
-    // Create cache for additional operations before ingesting
-    const cacheDir = join(
-      await this.fileStoreService.getVectorStoresFolderPath(),
-      vectorStore.name,
-      'caches',
-      new Date().toISOString(),
-    );
-
-    mkdirSync(cacheDir, {
-      recursive: true,
+  update(id: string, entity: Partial<VectorStoreEntity>) {
+    return this.vectorStoreRepository.update(entity, {
+      where: { id }
     });
-
-    for (const file of files) {
-      cpSync(file, join(cacheDir, basename(file)));
-    }
-
-    // TODO: Scan for security threats
-
-    // Ingest the folder
-    await ragExtension.fromFiles(
-      [cacheDir],
-      join(
-        await this.fileStoreService.getVectorStoresFolderPath(),
-        vectorStore.name,
-      ),
-      vectorStore.vector_database,
-    );
   }
 }

@@ -6,12 +6,14 @@ import {
   Get,
   Param,
   Delete,
+  Patch,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { CreateVectorStoresDto } from '../dtos/vector_stores/create.vector_stores';
 import { VectorStoresUsecases } from '@/usecases/vector_stores/vector_stores.usecases';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
 import { VectorStoreDto } from '../dtos/vector_stores/vector-store';
+import { HttpStatusCode } from 'axios';
 
 @ApiTags('Vector Stores')
 @Controller('vector_stores')
@@ -25,8 +27,8 @@ export class VectorStoresController {
     type: [VectorStoreDto],
   })
   @ApiOperation({
-    summary: 'List created vector stores',
-    description: 'Lists created vector stores.',
+    summary: 'List vector stores',
+    description: 'Returns a list of vector stores.',
   })
   @Get()
   findAll() {
@@ -40,23 +42,23 @@ export class VectorStoresController {
     type: VectorStoreDto,
   })
   @ApiOperation({
-    summary: 'Get a vector store',
-    description: 'Retrieves a created vector store instance',
+    summary: 'Retrieve vector store',
+    description: 'Retrieves a vector store.',
   })
   @ApiParam({
     name: 'name',
     required: true,
     description: 'The unique identifier of the vector store.',
   })
-  @Get(':name(*)')
+  @Get(':name')
   findOne(@Param('name') name: string) {
     return this.usecases.get(name);
   }
 
   @ApiOperation({
-    summary: 'Create a vector store.',
+    summary: 'Create vector store',
     description:
-      'Vector stores are used to store files for use by the file_search tool.',
+    'Creates a vector store.',
   })
   @HttpCode(200)
   @ApiResponse({
@@ -70,8 +72,8 @@ export class VectorStoresController {
   }
 
   @ApiOperation({
-    summary: 'Delete a vector store.',
-    description: 'Delete a created vector store.',
+    summary: 'Delete vector store',
+    description: 'Delete a vector store.',
   })
   @HttpCode(200)
   @ApiResponse({
@@ -83,4 +85,23 @@ export class VectorStoresController {
   async delete(@Param('name') name: string) {
     return this.usecases.remove(name);
   }
+
+  @ApiOperation({
+    summary: 'Modify vector store',
+    description: 'Modifies a vector store',
+  })
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: CommonResponseDto,
+  })
+  @Post()
+  async update(@Param('id') id: string, @Body() body: any) {
+    return this.usecases.update( 
+      id,
+      body
+    )
+  }
+
 }

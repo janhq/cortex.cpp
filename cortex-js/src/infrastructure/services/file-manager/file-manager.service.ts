@@ -37,6 +37,7 @@ export class FileManagerService {
   private cortexTelemetryFolderName = 'telemetry';
   private configProfile = process.env.CORTEX_PROFILE || 'default';
   private vectorStoresFolderName = 'vector_stores';
+  private filesFolderName = 'files';
 
   /**
    * Get cortex configs
@@ -310,11 +311,19 @@ export class FileManagerService {
   }
 
   /**
-   * Get Cortex CPP engines folder path
-   * @returns the path to the cortex engines folder
+   * Get Cortex vector stores folder path
+   * @returns the path to the cortex vector stores folder
    */
   async getVectorStoresFolderPath(): Promise<string> {
     return join(await this.getDataFolderPath(), this.vectorStoresFolderName);
+  }
+
+  /**
+   * Get Cortex files folder path
+   * @returns the path to the cortex files folder
+   */
+  async getFilesFolderPath(): Promise<string> {
+    return join(await this.getDataFolderPath(), this.filesFolderName);
   }
 
   /**

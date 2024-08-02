@@ -6,6 +6,8 @@ import { AssistantEntity } from '../entities/assistant.entity';
 import { Sequelize } from 'sequelize-typescript';
 import { fileManagerService } from '../services/file-manager/file-manager.service';
 import { VectorStoreEntity } from '../entities/vector_store.entity';
+import { FileEntity } from '../entities/file.entity';
+import { FileBatchEntity } from '../entities/file_batch.entity';
 
 export const sqliteDatabaseProviders = [
   {
@@ -24,11 +26,15 @@ export const sqliteDatabaseProviders = [
         MessageEntity,
         AssistantEntity,
         VectorStoreEntity,
+        FileEntity,
+        FileBatchEntity,
       ]);
       await ThreadEntity.sync();
       await MessageEntity.sync();
       await AssistantEntity.sync();
       await VectorStoreEntity.sync();
+      await FileEntity.sync();
+      await FileBatchEntity.sync();
       return sequelize;
     },
   },

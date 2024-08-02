@@ -30,6 +30,10 @@ import { EnginesController } from './infrastructure/controllers/engines.controll
 import { ResourceManagerModule } from './infrastructure/services/resources-manager/resources-manager.module';
 import { VectorStoresController } from './infrastructure/controllers/vector_stores.controller';
 import { VectorStoresModule } from './usecases/vector_stores/vector_stores.module';
+import { FilesController } from './infrastructure/controllers/files.controllers';
+import { FilesModule } from './usecases/files/files.module';
+import { FileBatchesModule } from './usecases/vector_stores/file_batches.module';
+import { FileBatchesController } from './infrastructure/controllers/file_batches.controller';
 
 @Module({
   imports: [
@@ -56,6 +60,8 @@ import { VectorStoresModule } from './usecases/vector_stores/vector_stores.modul
     EnginesModule,
     ResourceManagerModule,
     VectorStoresModule,
+    FilesModule,
+    FileBatchesModule,
   ],
   controllers: [
     AssistantsController,
@@ -66,6 +72,8 @@ import { VectorStoresModule } from './usecases/vector_stores/vector_stores.modul
     SystemController,
     EnginesController,
     VectorStoresController,
+    FilesController,
+    FileBatchesController,
   ],
   providers: [
     {

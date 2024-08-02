@@ -1,11 +1,10 @@
 import { RagExtension } from '@/domain/abstracts/rag.extension.abstract';
 import {
-  defaultCortexCppHost,
-  defaultCortexCppPort,
+  defaultCortexJsHost,
+  defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
-import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 /**
  * Client parameters
@@ -18,7 +17,7 @@ const clientParams = {
   maxRetries: 1,
   apiKey: 'cortex',
   additionalSessionOptions: {
-    baseURL: `http://${defaultCortexCppHost}:${defaultCortexCppPort}/v1`,
+    baseURL: `http://${defaultCortexJsHost}:${defaultCortexJsPort}/v1`,
   },
 };
 /**
@@ -29,7 +28,7 @@ export default class LlamaIndexRagExtension extends RagExtension {
   // Extension name
   name: string = 'llamaindex';
   // Embedding model to use
-  model?: string;
+  model: string = 'cortexso/nomic-embed-text-v1';
   // Other metadata
   description?: string | undefined =
     'LlamaIndex is a framework for building context-augmented generative AI applications with LLMs';
@@ -49,7 +48,7 @@ export default class LlamaIndexRagExtension extends RagExtension {
     const configs = (await this.configsUsecases.getGroupConfigs(
       this.name,
     )) as unknown as { model: string };
-    this.model = configs?.model;
+    if (configs?.model) this.model = configs.model;
   }
 
   /**

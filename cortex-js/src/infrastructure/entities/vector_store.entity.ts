@@ -4,7 +4,6 @@ import {
   Model,
   PrimaryKey,
   DataType,
-  Unique,
 } from 'sequelize-typescript';
 
 @Table({ tableName: 'vector_stores', timestamps: true })
@@ -20,7 +19,6 @@ export class VectorStoreEntity extends Model {
   })
   file_ids: string[];
 
-  @Unique
   @Column({
     type: DataType.STRING,
   })

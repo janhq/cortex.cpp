@@ -4,10 +4,9 @@ import {
   Model,
   PrimaryKey,
   DataType,
-  Unique,
 } from 'sequelize-typescript';
 
-@Table({ tableName: 'vector_stores', timestamps: false })
+@Table({ tableName: 'files', timestamps: false })
 export class FileEntity extends Model {
   @PrimaryKey
   @Column({
@@ -15,19 +14,43 @@ export class FileEntity extends Model {
   })
   id: string;
 
-  @Unique
   @Column({
     type: DataType.STRING,
+    allowNull: true,
   })
-  name: string;
+  filename: string;
 
   @Column({
     type: DataType.STRING,
+  })
+  object: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  purpose: string;
+
+  @Column({
+    type: DataType.NUMBER,
+    allowNull: true,
+  })
+  bytes: number;
+
+  @Column({
+    type: DataType.DATE,
+  })
+  created_at: number;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
   })
   status: string;
 
   @Column({
     type: DataType.STRING,
+    allowNull: true,
   })
   sha: string;
 }

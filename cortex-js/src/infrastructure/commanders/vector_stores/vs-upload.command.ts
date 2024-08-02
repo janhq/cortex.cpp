@@ -2,6 +2,7 @@ import { CommandRunner, SubCommand, Option } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { CortexClient } from '../services/cortex.client';
 import { createReadStream } from 'fs';
+import { toFile } from '@cortexso/cortex.js';
 
 @SubCommand({
   name: 'upload',
@@ -26,7 +27,10 @@ export class VectorStoresUploadCommand extends CommandRunner {
       console.error('No files provided to upload');
       process.exit(0);
     }
-    const fileStreams = files.map((e) => createReadStream(e));
+
+    const fileStreams = await Promise.all(
+      files.map((e) => toFile(createReadStream(e))),
+    );
     this.cortex.beta.vectorStores.fileBatches
       .uploadAndPoll(passedParams[0], {
         files: fileStreams,
