@@ -289,20 +289,6 @@ jobs:
       - run: yarn install && yarn build:binary
         working-directory: ./cortex-js
 
-      - name: Get Cer for code signing
-        if: runner.os == 'macOS'
-        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
-        shell: bash
-        env:
-          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-
-      - uses: apple-actions/import-codesign-certs@v2
-        continue-on-error: true
-        if: runner.os == 'macOS'
-        with:
-          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
-
       - name: update app info
         run: |
           cd cortex-js
@@ -326,19 +312,26 @@ jobs:
           ./dist/cortexso-macos --help
           echo "--------"
           ./cortex --help
-          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+          # make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
-      - name: Create MacOS PKG Installer
+      - name: Upload Artifact
         if: runner.os == 'macOS'
-        run: |
-          cd cortex-js
-          echo "--------"
-          npx cpx ./cortex ./installer
-          ./installer/cortex --help
-          pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
-          make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-macos-${{ matrix.name}}
+          path: ./cortex-js/cortex
 
-      - name: Create MacOS PKG Installer
+      # - name: Create MacOS PKG Installer
+      #   if: runner.os == 'macOS'
+      #   run: |
+      #     cd cortex-js
+      #     echo "--------"
+      #     npx cpx ./cortex ./installer
+      #     ./installer/cortex --help
+      #     pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
+      #     make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - name: Create Linux deb Installer
         if: runner.os == 'Linux'
         run: |
           cd cortex-js
@@ -380,13 +373,14 @@ jobs:
         if: runner.os == 'Windows'
 
       - name: Post-Bundle
+        if: runner.os != 'macOS'
         run: |
           cd cortex-js
           make postbundle
 
       - name: Upload Cortex Installer
         uses: actions/upload-release-asset@v1.0.1
-        if: runner.os != 'Linux'
+        if: runner.os == 'Windows'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -407,6 +401,7 @@ jobs:
           asset_content_type: application/octet-stream
 
       - uses: actions/upload-release-asset@v1.0.1
+        if: runner.os != 'macOS'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -433,8 +428,83 @@ jobs:
           name: cortex-linux
           path: ./cortex-js/cortex
 
+  codesign_macos:
+    runs-on: ${{ matrix.runs-on }}
+    needs: [create-draft-release, build-and-test, build-cortex-single-binary]
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-13"
+
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-latest"
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        shell: bash
+        env:
+          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+
+      - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+        
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: cortex-macos-${{ matrix.name}}
+          path: ./cortex-macos-${{ matrix.name}}
+    
+      - name: Codesign
+        run: |
+          cp ./cortex-macos-${{ matrix.name}}/cortex ./cortex-js/
+          codesign -s "${{ secrets.DEVELOPER_ID }}" cortex
+          cd cortex-js
+          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+          cp ./cortex ./installer/
+
+          pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
+          make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - name: Post-Bundle
+        run: |
+          cd cortex-js
+          make postbundle
+
+      - name: Upload Cortex Installer
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex-installer.tar.gz
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
+      - uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/cortex.tar.gz
+          asset_name: cortex-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
+          asset_content_type: application/gzip
+
   update_release_draft:
-    needs: [build-and-test, build-cortex-single-binary]
+    needs: [build-and-test, build-cortex-single-binary, codesign_macos]
     permissions:
       # write permission is required to create a github release
       contents: write
