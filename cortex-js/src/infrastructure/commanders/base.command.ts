@@ -32,7 +32,9 @@ export abstract class BaseCommand extends CommandRunner {
       process.exit(1);
     }
     checkingSpinner.succeed('API server is online');
-    this.cortex = new CortexClient(this.fileManagerService);
+    if (!this.cortex) {
+      this.cortex = new CortexClient(this.fileManagerService);
+    }
     await this.runCommand(passedParam, options);
   }
 }
