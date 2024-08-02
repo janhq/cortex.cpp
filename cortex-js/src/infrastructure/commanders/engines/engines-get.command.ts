@@ -4,7 +4,7 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { EngineNamesMap, Engines } from '../types/engine.interface';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { CortexClient } from '../services/cortex.client';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: '<name> get',
@@ -18,9 +18,9 @@ export class EnginesGetCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
-    private readonly cortex: CortexClient,
+    readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
 
   async runCommand(passedParams: string[]): Promise<void> {

@@ -16,7 +16,6 @@ import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
 import { downloadProgress } from '@/utils/download-progress';
-import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 import ora from 'ora';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
@@ -34,11 +33,10 @@ export class ModelPullCommand extends BaseCommand {
   constructor(
     private readonly fileService: FileManagerService,
     private readonly telemetryUsecases: TelemetryUsecases,
-    private readonly cortex: CortexClient,
     readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
 
   async runCommand(passedParams: string[]) {

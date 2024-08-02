@@ -2,7 +2,7 @@ import { SubCommand } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { CortexClient } from '../services/cortex.client';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: '<name> set <config> <value>',
@@ -15,9 +15,9 @@ import { CortexClient } from '../services/cortex.client';
 export class EnginesSetCommand extends BaseCommand {
   constructor(
     readonly cortexUsecases: CortexUsecases,
-    private readonly cortex: CortexClient,
+    readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
 
   async runCommand(passedParams: string[]): Promise<void> {

@@ -11,7 +11,6 @@ import { BaseCommand } from './base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { ChatClient } from './services/chat-client';
 import { downloadProgress } from '@/utils/download-progress';
-import { CortexClient } from './services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 import { isLocalFile } from '@/utils/urls';
 import { parse } from 'node:path';
@@ -38,9 +37,8 @@ export class RunCommand extends BaseCommand {
     protected readonly cortexUsecases: CortexUsecases,
     private readonly inquirerService: InquirerService,
     private readonly fileService: FileManagerService,
-    private readonly cortex: CortexClient,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
 
     this.chatClient = new ChatClient(this.cortex);
   }

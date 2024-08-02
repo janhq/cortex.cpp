@@ -1,5 +1,5 @@
 import { Config } from '@/domain/config/config.interface';
-import { Injectable } from '@nestjs/common';
+import { Global, Injectable } from '@nestjs/common';
 import os from 'os';
 import { join } from 'node:path';
 import {
@@ -25,6 +25,7 @@ const readFileAsync = promisify(read);
 const openAsync = promisify(open);
 const closeAsync = promisify(close);
 const writeAsync = promisify(write);
+
 @Injectable()
 export class FileManagerService {
   private configFile = '.cortexrc';
@@ -35,6 +36,7 @@ export class FileManagerService {
   private benchmarkFoldername = 'benchmark';
   private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
+  private configProfile = 'default';
 
   /**
    * Get cortex configs
@@ -53,7 +55,8 @@ export class FileManagerService {
 
     try {
       const content = await promises.readFile(configPath, 'utf8');
-      const config = yaml.load(content) as Config;
+      const configs = yaml.load(content) as Record<string, Config>;
+      const config = configs?.[this.configProfile] ?? {};
       return {
         ...this.defaultConfig(),
         ...config,
@@ -72,7 +75,12 @@ export class FileManagerService {
     const configPath = join(homeDir, this.configFile);
 
     // write config to file as yaml
-    const configString = yaml.dump(config);
+    const content = await promises.readFile(configPath, 'utf8');
+    const currentConfig = yaml.load(content) as Record<string, Config>;
+    const configString = yaml.dump({
+      ...currentConfig,
+      [this.configProfile]: config,
+    });
     await promises.writeFile(configPath, configString, 'utf8');
   }
 
@@ -336,14 +344,18 @@ export class FileManagerService {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
     let config = this.defaultConfig();
-
     try {
       const content = readFileSync(configPath, 'utf8');
-      config = (yaml.load(content) as Config) ?? this.defaultConfig();
+      const configs = (yaml.load(content) as Record<string, Config>) ?? {};
+      config = configs?.[this.configProfile] ?? config;
     } catch {}
     return {
       host: config.apiServerHost ?? 'localhost',
       port: config.apiServerPort ?? 1337,
     };
+  }
+
+  public setConfigProfile(profile: string) {
+    this.configProfile = profile;
   }
 }

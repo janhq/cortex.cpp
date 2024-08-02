@@ -18,7 +18,7 @@ export class PresetCommand extends BaseCommand {
     readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
   async runCommand(): Promise<void> {
     return console.table(

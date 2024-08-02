@@ -10,6 +10,7 @@ import { EngineNamesMap } from './types/engine.interface';
 import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { EnginesSetCommand } from './engines/engines-set.command';
+import { FileManagerService } from '../services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'engines',
@@ -30,8 +31,9 @@ export class EnginesCommand extends BaseCommand {
     readonly contextService: ContextService,
     readonly moduleRef: ModuleRef,
     readonly cortexUsecases: CortexUsecases,
+    readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
   async runCommand(passedParams: string[], options: { vulkan: boolean }) {
     const [parameter, command] = passedParams;

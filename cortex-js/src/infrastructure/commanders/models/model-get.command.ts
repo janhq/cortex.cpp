@@ -3,7 +3,7 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { CortexClient } from '../services/cortex.client';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'get',
@@ -18,9 +18,9 @@ export class ModelGetCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    private readonly cortex: CortexClient,
+    readonly fileService: FileManagerService,
   ) {
-    super(cortexUseCases);
+    super(cortexUseCases, fileService);
   }
 
   async runCommand(passedParams: string[]): Promise<void> {

@@ -16,7 +16,6 @@ import { BenchmarkHardware } from '@/domain/telemetry/telemetry.interface';
 import { defaultBenchmarkConfiguration } from '../constants/benchmark';
 import { inspect } from 'util';
 import { Cortex } from '@cortexso/cortex.js';
-import { CortexClient } from './services/cortex.client';
 
 @SubCommand({
   name: 'benchmark',
@@ -29,12 +28,11 @@ import { CortexClient } from './services/cortex.client';
 })
 export class BenchmarkCommand extends BaseCommand {
   constructor(
-    private readonly cortexUsecases: CortexUsecases,
+    readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     private readonly telemetryUsecases: TelemetryUsecases,
-    private readonly cortex: CortexClient,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
 
   async runCommand(

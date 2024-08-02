@@ -12,7 +12,6 @@ import { checkModelCompatibility } from '@/utils/model-check';
 import { BaseCommand } from '../base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { downloadProgress } from '@/utils/download-progress';
-import { CortexClient } from '../services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 import { printLastErrorLines } from '@/utils/logs';
 
@@ -36,9 +35,8 @@ export class ModelStartCommand extends BaseCommand {
     readonly cortexUsecases: CortexUsecases,
     private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
-    private readonly cortex: CortexClient,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
 
   async runCommand(

@@ -8,8 +8,7 @@ import Cortex from '@cortexso/cortex.js';
 export class CortexClient extends Cortex {
   serverConfigs: { host: string; port: number };
 
-  constructor() {
-    const fileManagerService: FileManagerService = new FileManagerService();
+  constructor(fileManagerService: FileManagerService) {
     const configs = fileManagerService.getServerConfig();
     super({
       baseURL: cortexServerAPI(configs.host, configs.port),

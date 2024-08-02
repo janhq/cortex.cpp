@@ -181,4 +181,13 @@ export class CortexCommand extends CommandRunner {
   parseVersion() {
     return true;
   }
+  @Option({
+    flags: '-n, --name <name>',
+    description: 'Name of the process',
+  })
+  parseName(value: string) {
+    console.log(value);
+    this.fileManagerService.setConfigProfile(value);
+    return value;
+  }
 }

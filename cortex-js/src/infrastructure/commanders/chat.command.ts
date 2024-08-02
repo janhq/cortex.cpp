@@ -17,7 +17,6 @@ import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadProgress } from '@/utils/download-progress';
-import { CortexClient } from './services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
 
 type ChatOptions = {
@@ -47,9 +46,8 @@ export class ChatCommand extends BaseCommand {
     private readonly fileService: FileManagerService,
     protected readonly cortexUsecases: CortexUsecases,
     protected readonly contextService: ContextService,
-    protected readonly cortex: CortexClient,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
     this.chatClient = new ChatClient(this.cortex);
   }
 

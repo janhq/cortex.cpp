@@ -2,10 +2,18 @@ import { CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import ora from 'ora';
+import { CortexClient } from './services/cortex.client';
+import Module from 'module';
+import { ModuleRef } from '@nestjs/core';
+import { FileManagerService } from '../services/file-manager/file-manager.service';
 
 @Injectable()
 export abstract class BaseCommand extends CommandRunner {
-  constructor(readonly cortexUseCases: CortexUsecases) {
+  cortex: CortexClient;
+  constructor(
+    readonly cortexUseCases: CortexUsecases,
+    readonly fileManagerService: FileManagerService,
+  ) {
     super();
   }
   protected abstract runCommand(
@@ -26,6 +34,8 @@ export abstract class BaseCommand extends CommandRunner {
       process.exit(1);
     }
     checkingSpinner.succeed('API server is online');
+    console.log(options, passedParam);
+    this.cortex = new CortexClient(this.fileManagerService);
     await this.runCommand(passedParam, options);
   }
 }

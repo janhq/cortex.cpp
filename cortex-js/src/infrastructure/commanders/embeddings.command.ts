@@ -4,7 +4,7 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
 import { Cortex } from '@cortexso/cortex.js';
 import ora from 'ora';
-import { CortexClient } from './services/cortex.client';
+import { FileManagerService } from '../services/file-manager/file-manager.service';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
@@ -24,10 +24,10 @@ interface EmbeddingCommandOptions {
 export class EmbeddingCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly cortex: CortexClient,
     readonly cortexUsecases: CortexUsecases,
+    private readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
   async runCommand(
     passedParams: string[],

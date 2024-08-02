@@ -7,7 +7,6 @@ import { FileManagerService } from '@/infrastructure/services/file-manager/file-
 import { BaseCommand } from '../base.command';
 import { defaultInstallationOptions } from '@/utils/init';
 import { Presets, SingleBar } from 'cli-progress';
-import { CortexClient } from '../services/cortex.client';
 import ora from 'ora';
 import { InitEngineDto } from '@/infrastructure/dtos/engines/engines.dto';
 
@@ -22,11 +21,10 @@ import { InitEngineDto } from '@/infrastructure/dtos/engines/engines.dto';
 export class EnginesInitCommand extends BaseCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
-    private readonly fileManagerService: FileManagerService,
+    readonly fileManagerService: FileManagerService,
     readonly contextService: ContextService,
-    private readonly cortex: CortexClient,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileManagerService);
   }
 
   async runCommand(

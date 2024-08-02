@@ -21,12 +21,11 @@ import { CORTEX_CPP_MODELS_URL } from '../constants/cortex';
 @SetCommandContext()
 export class PSCommand extends BaseCommand {
   constructor(
-    private readonly contextService: ContextService,
-    private readonly cortexUsecases: CortexUsecases,
+    readonly cortexUsecases: CortexUsecases,
     private readonly httpService: HttpService,
     private readonly fileService: FileManagerService,
   ) {
-    super(cortexUsecases);
+    super(cortexUsecases, fileService);
   }
   async runCommand(): Promise<void> {
     const runningSpinner = ora('Running PS command...').start();

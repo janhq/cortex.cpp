@@ -5,7 +5,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { CortexClient } from '../services/cortex.client';
+import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 type UpdateOptions = {
   model?: string;
@@ -25,9 +25,9 @@ export class ModelUpdateCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    private readonly cortex: CortexClient,
+    readonly fileService: FileManagerService,
   ) {
-    super(cortexUseCases);
+    super(cortexUseCases, fileService);
   }
 
   async runCommand(
