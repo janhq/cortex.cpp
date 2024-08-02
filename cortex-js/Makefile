@@ -29,7 +29,7 @@ else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
 else
-	find "cortex" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
+	codesign --force -s "$(DEVELOPER_ID)" --options=runtime cortex;
 endif
 
 codesign-installer:
@@ -45,7 +45,7 @@ else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
 else
-	find "cortex" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
+	productsign --sign "Developer ID Installer: $(DEVELOPER_ID)"  cortex-installer.pkg;
 endif
 
 postbundle:
