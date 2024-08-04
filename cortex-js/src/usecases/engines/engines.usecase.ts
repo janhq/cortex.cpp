@@ -1,7 +1,7 @@
 import { isEmpty } from 'lodash';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
-import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { HttpService } from '@nestjs/axios';
 import decompress from 'decompress';
@@ -275,6 +275,7 @@ export class EnginesUsecases {
       engine,
       DownloadType.Engine,
       { [toDownloadAsset.browser_download_url]: destination },
+      // On completed - post processing
       async () => {
         try {
           await decompress(destination, engineDir);
@@ -287,9 +288,15 @@ export class EnginesUsecases {
         // Copy the additional files to the cortex-cpp directory
         for (const file of readdirSync(join(engineDir, engine))) {
           if (!file.includes('engine')) {
-            await cpSync(join(engineDir, engine, file), join(engineDir, file));
+            cpSync(join(engineDir, engine, file), join(engineDir, file));
           }
         }
+
+        writeFileSync(
+          join(engineDir, engine, 'version.txt'),
+          release.tag_name.replace(/^v/, ''),
+          'utf-8',
+        );
       },
     );
   }
