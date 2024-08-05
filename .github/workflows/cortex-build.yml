@@ -234,11 +234,11 @@ jobs:
 
           - os: "mac"
             name: "amd64"
-            runs-on: "macos-desktop"
+            runs-on: "macos-13"
 
           - os: "mac"
             name: "arm64"
-            runs-on: "macos-silicon"
+            runs-on: "macos-latest"
     steps:
       - name: Clone
         id: checkout
@@ -291,10 +291,10 @@ jobs:
 
       - name: Get Cer for code signing
         if: runner.os == 'macOS'
-        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        run: base64 -d <<< "$NOTARIZE_P8_BASE64" > /tmp/notary-key.p8
         shell: bash
         env:
-          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          NOTARIZE_P8_BASE64: ${{ secrets.NOTARIZE_P8_BASE64 }}
 
       - uses: apple-actions/import-codesign-certs@v2
         continue-on-error: true
@@ -328,6 +328,16 @@ jobs:
           ./cortex --help
           make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
+          # install quill
+          curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+
+          # Notarize the binary
+          quill notarize ./cortex
+        env:
+          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
+
       - name: Create MacOS PKG Installer
         if: runner.os == 'macOS'
         run: |
@@ -338,7 +348,10 @@ jobs:
           pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
           make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
-      - name: Create MacOS PKG Installer
+          # Notary the installer
+          xcrun notarytool submit cortex-installer.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+
+      - name: Create Linux DEB Installer
         if: runner.os == 'Linux'
         run: |
           cd cortex-js
