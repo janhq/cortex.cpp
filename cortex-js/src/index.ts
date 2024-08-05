@@ -7,7 +7,6 @@ import {
 import { getApp } from './app';
 import chalk from 'chalk';
 import { CortexUsecases } from './usecases/cortex/cortex.usecases';
-import { cleanLogs } from './utils/log';
 
 /**
  * Start the API server
@@ -19,8 +18,6 @@ export async function start(host?: string, port?: number) {
   const sPort = port || process.env.CORTEX_JS_PORT || defaultCortexJsPort;
 
   try {
-    // Clean log periodically
-    cleanLogs();
     await app.listen(sPort, sHost);
     const cortexUsecases = await app.resolve(CortexUsecases);
     await cortexUsecases.startCortex();
