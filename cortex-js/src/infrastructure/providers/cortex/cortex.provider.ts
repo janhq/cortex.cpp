@@ -165,6 +165,12 @@ export default class CortexProvider extends OAIEngineExtension {
     return { error: 'Cannot split prompt template' };
   };
 
+  public setUrls(host: string, port: number): void {
+    this.apiUrl = `http://${host}:${port}/inferences/server/chat_completion`;
+    this.loadModelUrl = `http://${host}:${port}/inferences/server/loadmodel`;
+    this.unloadModelUrl = `http://${host}:${port}/inferences/server/unloadmodel`;
+  }
+
   private persistEngineVersion = async () => {
     const versionFilePath = join(
       await fileManagerService.getCortexCppEnginePath(),
