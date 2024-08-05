@@ -27,6 +27,7 @@ type ServeOptions = {
   logs?: boolean;
   dataFolder?: string;
   version?: boolean;
+  name?: string;
 };
 
 @RootCommand({
@@ -60,6 +61,18 @@ export class CortexCommand extends CommandRunner {
   }
 
   async run(passedParams: string[], options?: ServeOptions): Promise<void> {
+    if (options?.name) {
+      const isProfileConfigExists = fileManagerService.profileConfigExists(
+        options.name,
+      );
+      if (!isProfileConfigExists) {
+        await fileManagerService.writeConfigFile({
+          ...fileManagerService.defaultConfig(),
+          apiServerHost: options?.address || defaultCortexJsHost,
+          apiServerPort: options?.port || defaultCortexJsPort,
+        });
+      }
+    }
     const {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
@@ -70,7 +83,6 @@ export class CortexCommand extends CommandRunner {
 
     this.host = options?.address || configApiServerHost || defaultCortexJsHost;
     this.port = options?.port || configApiServerPort || defaultCortexJsPort;
-
     const showLogs = options?.logs || false;
     const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;

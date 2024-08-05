@@ -109,7 +109,7 @@ export class FileManagerService {
     }
   }
 
-  private defaultConfig(): Config {
+  public defaultConfig(): Config {
     // default will store at home directory
     const homeDir = os.homedir();
     const dataFolderPath = join(homeDir, this.cortexDirectoryName);
@@ -357,6 +357,17 @@ export class FileManagerService {
 
   public setConfigProfile(profile: string) {
     this.configProfile = profile;
+  }
+  public profileConfigExists(profile: string): boolean {
+    const homeDir = os.homedir();
+    const configPath = join(homeDir, this.configFile);
+    try {
+      const content = readFileSync(configPath, 'utf8');
+      const configs = (yaml.load(content) as Record<string, Config>) ?? {};
+      return !!configs[profile];
+    } catch {
+      return false;
+    }
   }
 }
 

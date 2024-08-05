@@ -18,6 +18,7 @@ import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadProgress } from '@/utils/download-progress';
 import { DownloadType } from '@/domain/models/download.interface';
+import { CortexClient } from './services/cortex.client';
 
 type ChatOptions = {
   threadId?: string;
@@ -47,13 +48,13 @@ export class ChatCommand extends BaseCommand {
     protected readonly contextService: ContextService,
   ) {
     super(cortexUsecases);
-    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(
     passedParams: string[],
     options: ChatOptions,
   ): Promise<void> {
+    this.chatClient = new ChatClient(this.cortex);
     let modelId = passedParams[0];
     // First attempt to get message from input or options
     // Extract input from 1 to end of array

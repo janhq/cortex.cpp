@@ -185,7 +185,6 @@ export class CortexUsecases implements BeforeApplicationShutdown {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
     } = await fileManagerService.getConfig();
-
     // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
     const apiServerHost = host || configApiServerHost || defaultCortexJsHost;
     const apiServerPort = port || configApiServerPort || defaultCortexJsPort;

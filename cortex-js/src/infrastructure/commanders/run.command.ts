@@ -38,11 +38,10 @@ export class RunCommand extends BaseCommand {
     private readonly inquirerService: InquirerService,
   ) {
     super(cortexUsecases);
-
-    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(passedParams: string[], options: RunOptions): Promise<void> {
+    this.chatClient = new ChatClient(this.cortex);
     let modelId = passedParams[0];
     const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
