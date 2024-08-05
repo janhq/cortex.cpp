@@ -65,7 +65,7 @@ export const getApp = async () => {
       'System',
       'Endpoints for stopping the Cortex API server, checking its status, and fetching system events.',
     )
-    .addServer('http://localhost:1337')
+    .addServer('http://127.0.0.1:1337')
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
