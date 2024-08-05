@@ -10,7 +10,7 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
-import { fileManagerService, FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { AxiosError } from 'axios';
 import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
 import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
@@ -507,6 +507,7 @@ export class ModelsUsecases {
       engine: Engines.llamaCPP,
     };
     if (!(await this.findOne(modelId))) await this.create(model);
+    else throw 'Model already exists.';
   }
 
   /**
@@ -531,7 +532,7 @@ export class ModelsUsecases {
    * Check whether the model is running in the Cortex C++ server
    */
   async isModelRunning(modelId: string): Promise<boolean> {
-    const model = await this.getModelOrThrow(modelId).catch((e) => undefined);
+    const model = await this.getModelOrThrow(modelId).catch(() => undefined);
 
     if (!model) return false;
 

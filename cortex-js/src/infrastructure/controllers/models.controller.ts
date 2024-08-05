@@ -9,7 +9,10 @@ import {
   UseInterceptors,
   BadRequestException,
   Patch,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
@@ -137,6 +140,7 @@ export class ModelsController {
   })
   @Post(':modelId(*)/pull')
   pullModel(
+    @Res() res: Response,
     @Param('modelId') modelId: string,
     @Body()
     body?: {
@@ -145,7 +149,7 @@ export class ModelsController {
     },
   ) {
     const { fileName, persistedModelId } = body || {};
-    this.modelsUsecases
+    return this.modelsUsecases
       .pullModel(
         modelId,
         false,
@@ -170,10 +174,17 @@ export class ModelsController {
           name: EventName.DOWNLOAD_MODEL,
           modelId,
         }),
+      )
+      .then(() =>
+        res.status(HttpStatus.OK).json({
+          message: 'Download model started successfully.',
+        }),
+      )
+      .catch((e) =>
+        res
+          .status(HttpStatus.CONFLICT)
+          .json({ error: { message: e.message ?? e }, code: 409 }),
       );
-    return {
-      message: 'Download model started successfully.',
-    };
   }
 
   @HttpCode(200)

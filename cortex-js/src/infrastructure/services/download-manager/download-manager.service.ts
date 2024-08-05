@@ -117,7 +117,7 @@ export class DownloadManagerService {
       this.eventEmitter.emit('download.event', this.allDownloadStates);
     };
     if (!inSequence) {
-      return Promise.all(
+      Promise.all(
         Object.keys(urlToDestination).map((url) => {
           const destination = urlToDestination[url];
           return this.downloadFile(downloadId, url, destination);
@@ -141,7 +141,7 @@ export class DownloadManagerService {
     const controller = new AbortController();
     // adding to abort controllers
     this.abortControllers[downloadId][destination] = controller;
-    return new Promise<void>(async (resolve, reject) => {
+    return new Promise<void>(async (resolve) => {
       const response = await firstValueFrom(
         this.httpService.get(url, {
           responseType: 'stream',
