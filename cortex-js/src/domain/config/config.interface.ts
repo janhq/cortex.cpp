@@ -5,4 +5,5 @@ export interface Config {
   // todo: will remove optional when all command request api server
   apiServerPort?: number;
   apiServerHost?: string;
+  isDefault: boolean;
 }

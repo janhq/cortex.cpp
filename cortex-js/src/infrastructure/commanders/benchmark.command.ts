@@ -16,6 +16,7 @@ import { defaultBenchmarkConfiguration } from '../constants/benchmark';
 import { inspect } from 'util';
 import { Cortex } from '@cortexso/cortex.js';
 import { fileManagerService } from '../services/file-manager/file-manager.service';
+import { CortexClient } from './services/cortex.client';
 
 @SubCommand({
   name: 'benchmark',
@@ -30,6 +31,7 @@ export class BenchmarkCommand extends BaseCommand {
   constructor(
     readonly cortexUsecases: CortexUsecases,
     private readonly telemetryUsecases: TelemetryUsecases,
+    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

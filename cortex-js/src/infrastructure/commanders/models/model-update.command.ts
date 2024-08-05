@@ -5,6 +5,7 @@ import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { CortexClient } from '../services/cortex.client';
 
 type UpdateOptions = {
   model?: string;
@@ -24,6 +25,7 @@ export class ModelUpdateCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
+    readonly cortex: CortexClient,
   ) {
     super(cortexUseCases);
   }

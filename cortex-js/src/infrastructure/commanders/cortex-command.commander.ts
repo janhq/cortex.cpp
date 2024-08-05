@@ -62,16 +62,22 @@ export class CortexCommand extends CommandRunner {
 
   async run(passedParams: string[], options?: ServeOptions): Promise<void> {
     if (options?.name) {
-      const isProfileConfigExists = fileManagerService.profileConfigExists(
-        options.name,
-      );
-      if (!isProfileConfigExists) {
-        await fileManagerService.writeConfigFile({
+      const profileConfig = fileManagerService.getProfileConfig(options.name);
+      await fileManagerService.writeConfigFile(
+        {
           ...fileManagerService.defaultConfig(),
-          apiServerHost: options?.address || defaultCortexJsHost,
-          apiServerPort: options?.port || defaultCortexJsPort,
-        });
-      }
+          apiServerHost:
+            options?.address ||
+            profileConfig?.apiServerHost ||
+            defaultCortexJsHost,
+          apiServerPort:
+            options?.port ||
+            profileConfig?.apiServerPort ||
+            defaultCortexJsPort,
+          isDefault: true,
+        },
+        true,
+      );
     }
     const {
       apiServerHost: configApiServerHost,

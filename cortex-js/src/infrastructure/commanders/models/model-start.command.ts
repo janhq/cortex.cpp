@@ -14,6 +14,7 @@ import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { downloadProgress } from '@/utils/download-progress';
 import { DownloadType } from '@/domain/models/download.interface';
 import { printLastErrorLines } from '@/utils/logs';
+import { CortexClient } from '../services/cortex.client';
 
 type ModelStartOptions = {
   preset?: string;
@@ -34,6 +35,7 @@ export class ModelStartCommand extends BaseCommand {
     private readonly inquirerService: InquirerService,
     readonly cortexUsecases: CortexUsecases,
     readonly contextService: ContextService,
+    readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }
