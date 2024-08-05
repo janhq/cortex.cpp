@@ -1,17 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
 import { PromptTemplate } from '@/domain/models/prompt-template.interface';
 import { join } from 'path';
 import { Model, ModelSettingParams } from '@/domain/models/model.interface';
 import { HttpService } from '@nestjs/axios';
 import {
+  CORTEX_CPP_MODELS_URL,
   defaultCortexCppHost,
   defaultCortexCppPort,
 } from '@/infrastructure/constants/cortex';
 import { readdirSync } from 'node:fs';
 import { normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { existsSync, readFileSync } from 'fs';
+
+export interface ModelStatResponse {
+  object: string;
+  data: any;
+}
 
 @Injectable()
 export default class CortexProvider extends OAIEngineExtension {
@@ -26,18 +33,17 @@ export default class CortexProvider extends OAIEngineExtension {
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
   private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;
 
-  constructor(
-    protected readonly httpService: HttpService,
-    private readonly fileManagerService: FileManagerService,
-  ) {
+  constructor(protected readonly httpService: HttpService) {
     super(httpService);
+    this.persistEngineVersion();
   }
 
+  // Override the inference method to make an inference request to the engine
   override async loadModel(
     model: Model,
     settings?: ModelSettingParams,
   ): Promise<void> {
-    const modelsContainerDir = await this.fileManagerService.getModelsPath();
+    const modelsContainerDir = await fileManagerService.getModelsPath();
 
     let llama_model_path = settings?.llama_model_path;
     if (!llama_model_path) {
@@ -86,10 +92,34 @@ export default class CortexProvider extends OAIEngineExtension {
     ).then(); // pipe error or void instead of throwing
   }
 
-  override async unloadModel(modelId: string): Promise<void> {
+  override async unloadModel(modelId: string, engine?: string): Promise<void> {
     return firstValueFrom(
-      this.httpService.post(this.unloadModelUrl, { model: modelId }),
+      this.httpService.post(this.unloadModelUrl, { model: modelId, engine }),
     ).then(); // pipe error or void instead of throwing
+  }
+
+  // Override the isModelRunning method to check if the model is running
+  override async isModelRunning(modelId: string): Promise<boolean> {
+    const configs = await fileManagerService.getConfig();
+
+    return firstValueFrom(
+      this.httpService.get(
+        CORTEX_CPP_MODELS_URL(configs.cortexCppHost, configs.cortexCppPort),
+      ),
+    )
+      .then((res) => {
+        const data = res.data as ModelStatResponse;
+        if (
+          res.status === HttpStatus.OK &&
+          data &&
+          Array.isArray(data.data) &&
+          data.data.length > 0
+        ) {
+          return data.data.find((e) => e.id === modelId);
+        }
+        return false;
+      })
+      .catch(() => false);
   }
 
   private readonly promptTemplateConverter = (
@@ -133,5 +163,21 @@ export default class CortexProvider extends OAIEngineExtension {
 
     // Return an error if none of the conditions are met
     return { error: 'Cannot split prompt template' };
+  };
+
+  public setUrls(host: string, port: number): void {
+    this.apiUrl = `http://${host}:${port}/inferences/server/chat_completion`;
+    this.loadModelUrl = `http://${host}:${port}/inferences/server/loadmodel`;
+    this.unloadModelUrl = `http://${host}:${port}/inferences/server/unloadmodel`;
+  }
+
+  private persistEngineVersion = async () => {
+    const versionFilePath = join(
+      await fileManagerService.getCortexCppEnginePath(),
+      this.name,
+      'version.txt',
+    );
+    if (existsSync(versionFilePath))
+      this.version = readFileSync(versionFilePath, 'utf-8');
   };
 }

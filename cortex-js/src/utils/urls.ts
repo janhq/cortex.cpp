@@ -1,3 +1,5 @@
+import { isAbsolute } from 'path';
+
 /**
  * Check if a string is a valid URL.
  * @param input - The string to check.
@@ -12,3 +14,12 @@ export function isValidUrl(input: string | undefined): boolean {
     return false;
   }
 }
+
+/**
+ * Check if the URL is a lcoal file path
+ * @param modelFiles
+ * @returns
+ */
+export const isLocalFile = (path: string): boolean => {
+  return !/^(http|https):\/\/[^/]+\/.*/.test(path) && isAbsolute(path);
+};

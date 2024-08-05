@@ -3,29 +3,27 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   HttpCode,
   UseInterceptors,
-  Query,
   BadRequestException,
+  Patch,
+  Res,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
 import { CreateModelDto } from '@/infrastructure/dtos/models/create-model.dto';
 import { UpdateModelDto } from '@/infrastructure/dtos/models/update-model.dto';
 import { ModelDto } from '@/infrastructure/dtos/models/model.dto';
 import { ListModelsResponseDto } from '@/infrastructure/dtos/models/list-model-response.dto';
 import { DeleteModelResponseDto } from '@/infrastructure/dtos/models/delete-model.dto';
-import { DownloadModelResponseDto } from '@/infrastructure/dtos/models/download-model.dto';
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-success.dto';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
-import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { ModelSettingsDto } from '../dtos/models/model-settings.dto';
-import {
-  EventName,
-} from '@/domain/telemetry/telemetry.interface';
+import { EventName } from '@/domain/telemetry/telemetry.interface';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import { CommonResponseDto } from '../dtos/common/common-response.dto';
 import { HuggingFaceRepoSibling } from '@/domain/models/huggingface.interface';
@@ -36,7 +34,6 @@ import { HuggingFaceRepoSibling } from '@/domain/models/huggingface.interface';
 export class ModelsController {
   constructor(
     private readonly modelsUsecases: ModelsUsecases,
-    private readonly cortexUsecases: CortexUsecases,
     private readonly telemetryUsecases: TelemetryUsecases,
   ) {}
 
@@ -75,9 +72,7 @@ export class ModelsController {
     @Param('modelId') modelId: string,
     @Body() params: ModelSettingsDto,
   ) {
-    return this.cortexUsecases
-      .startCortex()
-      .then(() => this.modelsUsecases.startModel(modelId, params));
+    return this.modelsUsecases.startModel(modelId, params);
   }
 
   @HttpCode(200)
@@ -100,61 +95,21 @@ export class ModelsController {
     return this.modelsUsecases.stopModel(modelId);
   }
 
-  @HttpCode(200)
-  @ApiResponse({
-    status: 200,
-    description: 'Ok',
-    type: DownloadModelResponseDto,
-  })
   @ApiOperation({
-    summary: 'Download model',
-    description: 'Downloads a specific model instance.',
+    summary: 'Abort model pull',
+    description: 'Abort the model pull operation.',
     parameters: [
       {
         in: 'path',
-        name: 'modelId',
+        name: 'pull_id',
         required: true,
-        description: 'The unique identifier of the model.',
+        description: 'The unique identifier of the pull.',
       },
     ],
   })
-
-  @Get('download/:modelId(*)')
-  downloadModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string, @Query('persistedModelId') persistedModelId?: string) {
-    this.modelsUsecases.pullModel(modelId, false, (files) => {
-      return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
-        const file = files
-          .find((e) => e.quantization && e.rfilename === fileName)
-        if(!file) {
-          return reject(new BadRequestException('File not found'));
-        }
-        return resolve(file);
-      });
-    }, persistedModelId).then(() => this.telemetryUsecases.addEventToQueue({
-      name: EventName.DOWNLOAD_MODEL,
-      modelId,
-    })
-    );
-    return {
-      message: 'Download model started successfully.',
-    };
-  }
-
-  @ApiOperation({
-    summary: 'Abort model download',
-    description: 'Abort the model download operation.',
-    parameters: [
-      {
-        in: 'path',
-        name: 'download_id',
-        required: true,
-        description: 'The unique identifier of the download.',
-      },
-    ],
-  })
-  @Get('abort-download/:download_id(*)')
-  abortDownloadModel(@Param('download_id') downloadId: string) {
-    return this.modelsUsecases.abortDownloadModel(downloadId);
+  @Delete(':pull_id(*)/pull')
+  abortPullModel(@Param('pull_id') pullId: string) {
+    return this.modelsUsecases.abortDownloadModel(pullId);
   }
 
   @HttpCode(200)
@@ -164,34 +119,72 @@ export class ModelsController {
     type: CommonResponseDto,
   })
   @ApiOperation({
-    summary: 'Download a remote model',
+    summary: 'Pull a model',
     description:
-      'Pulls a remote model template from cortex hub or huggingface and downloads it.',
+      'Pulls a model from cortex hub or huggingface and downloads it.',
   })
   @ApiParam({
     name: 'modelId',
     required: true,
     description: 'The unique identifier of the model.',
   })
-  @Get('pull/:modelId(*)')
-  pullModel(@Param('modelId') modelId: string, @Query('fileName') fileName: string, @Query('persistedModelId') persistedModelId?: string) {
-    this.modelsUsecases.pullModel(modelId, false, (files) => {
-      return new Promise<HuggingFaceRepoSibling>(async (resolve, reject) => {
-        const file = files
-          .find((e) => e.quantization && e.rfilename === fileName)
-        if(!file) {
-          return reject(new BadRequestException('File not found'));
-        }
-        return resolve(file);
-      });
-    }, persistedModelId).then(() => this.telemetryUsecases.addEventToQueue({
-      name: EventName.DOWNLOAD_MODEL,
-      modelId,
-    })
-    );
-    return {
-      message: 'Download model started successfully.',
-    };
+  @ApiParam({
+    name: 'fileName',
+    required: false,
+    description: 'The file name of the model to download.',
+  })
+  @ApiParam({
+    name: 'persistedModelId',
+    required: false,
+    description: 'The unique identifier of the model in your local storage.',
+  })
+  @Post(':modelId(*)/pull')
+  pullModel(
+    @Res() res: Response,
+    @Param('modelId') modelId: string,
+    @Body()
+    body?: {
+      fileName?: string;
+      persistedModelId?: string;
+    },
+  ) {
+    const { fileName, persistedModelId } = body || {};
+    return this.modelsUsecases
+      .pullModel(
+        modelId,
+        false,
+        (files) => {
+          return new Promise<HuggingFaceRepoSibling>(
+            async (resolve, reject) => {
+              const file = files.find(
+                (e) =>
+                  e.quantization && (!fileName || e.rfilename === fileName),
+              );
+              if (!file) {
+                return reject(new BadRequestException('File not found'));
+              }
+              return resolve(file);
+            },
+          );
+        },
+        persistedModelId,
+      )
+      .then(() =>
+        this.telemetryUsecases.addEventToQueue({
+          name: EventName.DOWNLOAD_MODEL,
+          modelId,
+        }),
+      )
+      .then(() =>
+        res.status(HttpStatus.OK).json({
+          message: 'Download model started successfully.',
+        }),
+      )
+      .catch((e) =>
+        res
+          .status(HttpStatus.CONFLICT)
+          .json({ error: { message: e.message ?? e }, code: 409 }),
+      );
   }
 
   @HttpCode(200)
@@ -249,7 +242,7 @@ export class ModelsController {
       },
     ],
   })
-  @Post(':model(*)/config')
+  @Patch(':model(*)')
   async update(
     @Param('model') model: string,
     @Body() updateModelDto: UpdateModelDto,

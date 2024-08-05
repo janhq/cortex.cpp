@@ -11,13 +11,14 @@ import {
 } from '@/domain/models/model.event';
 import { DownloadManagerService } from '@/infrastructure/services/download-manager/download-manager.service';
 import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { Controller, Sse } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, Sse } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   Observable,
   catchError,
   combineLatest,
+  distinctUntilChanged,
   from,
   fromEvent,
   interval,
@@ -26,56 +27,71 @@ import {
   of,
   startWith,
   switchMap,
-  throttleTime,
 } from 'rxjs';
 import { ResourcesManagerService } from '../services/resources-manager/resources-manager.service';
 import { ResourceEvent } from '@/domain/models/resource.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
-@ApiTags('Events')
-@Controller('events')
-export class EventsController {
+@ApiTags('System')
+@Controller('system')
+export class SystemController {
   constructor(
     private readonly downloadManagerService: DownloadManagerService,
     private readonly modelsUsecases: ModelsUsecases,
+    private readonly cortexUsecases: CortexUsecases,
     private readonly eventEmitter: EventEmitter2,
     private readonly resourcesManagerService: ResourcesManagerService,
   ) {}
 
   @ApiOperation({
+    summary: 'Stop api server',
+    description: 'Stops the Cortex API endpoint server for the detached mode.',
+  })
+  @Delete()
+  async delete() {
+    await this.cortexUsecases.stopCortex().catch(() => {});
+    process.exit(0);
+  }
+
+  @ApiOperation({
+    summary: 'Get health status',
+    description: "Retrieves the health status of your Cortex's system.",
+  })
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+  })
+  @Get()
+  async get() {
+    return 'OK';
+  }
+
+  @ApiOperation({
     summary: 'Get download status',
     description: "Retrieves the model's download status.",
   })
-  @Sse('download')
+  @Sse('events/download')
   downloadEvent(): Observable<DownloadStateEvent> {
     const latestDownloadState$: Observable<DownloadStateEvent> = of({
       data: this.downloadManagerService.getDownloadStates(),
     });
-
-    const downloadAbortEvent$ = fromEvent<DownloadState[]>(
-      this.eventEmitter,
-      'download.event.aborted',
-    ).pipe(map((downloadState) => ({ data: downloadState })));
-
     const downloadEvent$ = fromEvent<DownloadState[]>(
       this.eventEmitter,
       'download.event',
     ).pipe(
       map((downloadState) => ({ data: downloadState })),
-      throttleTime(1000),
+      distinctUntilChanged(),
     );
 
-    return merge(
-      latestDownloadState$,
-      downloadEvent$,
-      downloadAbortEvent$,
-    ).pipe();
+    return merge(latestDownloadState$, downloadEvent$).pipe();
   }
 
   @ApiOperation({
     summary: 'Get model status',
     description: 'Retrieves all the available model statuses within Cortex.',
   })
-  @Sse('model')
+  @Sse('events/model')
   modelEvent(): Observable<ModelStatusAndEvent> {
     const latestModelStatus$: Observable<Record<ModelId, ModelStatus>> = of(
       this.modelsUsecases.getModelStatuses(),
@@ -95,7 +111,7 @@ export class EventsController {
     summary: 'Get resources status',
     description: 'Retrieves the resources status of the system.',
   })
-  @Sse('resources')
+  @Sse('events/resources')
   resourcesEvent(): Observable<ResourceEvent> {
     const initialData$ = from(
       this.resourcesManagerService.getResourceStatuses(),

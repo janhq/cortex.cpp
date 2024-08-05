@@ -11,18 +11,21 @@ import {
   createReadStream,
 } from 'node:fs';
 import { promisify } from 'util';
-import yaml from 'js-yaml';
-import { write } from 'fs';
+import yaml, { load } from 'js-yaml';
+import { readdirSync, readFileSync, write } from 'fs';
 import { createInterface } from 'readline';
 import {
   defaultCortexCppHost,
   defaultCortexCppPort,
+  defaultCortexJsHost,
+  defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 
 const readFileAsync = promisify(read);
 const openAsync = promisify(open);
 const closeAsync = promisify(close);
 const writeAsync = promisify(write);
+
 @Injectable()
 export class FileManagerService {
   private configFile = '.cortexrc';
@@ -33,25 +36,27 @@ export class FileManagerService {
   private benchmarkFoldername = 'benchmark';
   private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
+  private configProfile = process.env.CORTEX_PROFILE || 'default';
 
   /**
    * Get cortex configs
    * @returns the config object
    */
-  async getConfig(): Promise<Config & object> {
+  async getConfig(dataFolderPath?: string): Promise<Config & object> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
-
-    if (!existsSync(configPath)) {
-      const config = this.defaultConfig();
-      await this.createFolderIfNotExist(config.dataFolderPath);
+    const config = this.defaultConfig();
+    const dataFolderPathUsed = dataFolderPath || config.dataFolderPath;
+    if (!existsSync(configPath) || !existsSync(dataFolderPathUsed)) {
+      await this.createFolderIfNotExist(dataFolderPathUsed);
       await this.writeConfigFile(config);
       return config;
     }
 
     try {
       const content = await promises.readFile(configPath, 'utf8');
-      const config = yaml.load(content) as Config;
+      const configs = yaml.load(content) as Record<string, Config>;
+      const config = configs?.[this.configProfile] ?? {};
       return {
         ...this.defaultConfig(),
         ...config,
@@ -59,8 +64,7 @@ export class FileManagerService {
     } catch (error) {
       console.warn('Error reading config file. Using default config.');
       console.warn(error);
-      const config = this.defaultConfig();
-      await this.createFolderIfNotExist(config.dataFolderPath);
+      await this.createFolderIfNotExist(dataFolderPathUsed);
       await this.writeConfigFile(config);
       return config;
     }
@@ -71,7 +75,15 @@ export class FileManagerService {
     const configPath = join(homeDir, this.configFile);
 
     // write config to file as yaml
-    const configString = yaml.dump(config);
+    if (!existsSync(configPath)) {
+      await promises.writeFile(configPath, '', 'utf8');
+    }
+    const content = await promises.readFile(configPath, 'utf8');
+    const currentConfig = yaml.load(content) as Record<string, Config>;
+    const configString = yaml.dump({
+      ...currentConfig,
+      [this.configProfile]: config,
+    });
     await promises.writeFile(configPath, configString, 'utf8');
   }
 
@@ -100,16 +112,17 @@ export class FileManagerService {
     }
   }
 
-  private defaultConfig(): Config {
+  public defaultConfig(): Config {
     // default will store at home directory
     const homeDir = os.homedir();
     const dataFolderPath = join(homeDir, this.cortexDirectoryName);
 
     return {
       dataFolderPath,
-      initialized: false,
       cortexCppHost: defaultCortexCppHost,
       cortexCppPort: defaultCortexCppPort,
+      apiServerHost: defaultCortexJsHost,
+      apiServerPort: defaultCortexJsPort,
     };
   }
 
@@ -195,8 +208,14 @@ export class FileManagerService {
       throw err;
     }
   }
-  readLines(filePath: string, callback: (line: string) => void) {
-    const fileStream = createReadStream(filePath);
+  readLines(
+    filePath: string,
+    callback: (line: string) => void,
+    start: number = 0,
+  ) {
+    const fileStream = createReadStream(filePath, {
+      start,
+    });
     const rl = createInterface({
       input: fileStream,
       crlfDelay: Infinity,
@@ -222,6 +241,32 @@ export class FileManagerService {
   async getPresetsPath(): Promise<string> {
     const dataFolderPath = await this.getDataFolderPath();
     return join(dataFolderPath, this.presetFolderName);
+  }
+
+  /**
+   * Get the preset data
+   * Usually it is located at the home directory > cortex > presets > preset.yaml
+   * @returns the preset data
+   */
+  async getPreset(preset?: string): Promise<object | undefined> {
+    if (!preset) return undefined;
+
+    const dataFolderPath = await this.getDataFolderPath();
+    const presetsFolder = join(dataFolderPath, this.presetFolderName);
+    if (!existsSync(presetsFolder)) return {};
+
+    const presetFile = readdirSync(presetsFolder).find(
+      (file) =>
+        file.toLowerCase() === `${preset?.toLowerCase()}.yaml` ||
+        file.toLowerCase() === `${preset?.toLocaleLowerCase()}.yml`,
+    );
+    if (!presetFile) return {};
+    const presetPath = join(presetsFolder, presetFile);
+
+    if (!preset || !existsSync(presetPath)) return {};
+    return preset
+      ? (load(readFileSync(join(presetPath), 'utf-8')) as object)
+      : {};
   }
 
   /**
@@ -284,8 +329,6 @@ export class FileManagerService {
   }
   async writeFile(filePath: string, data: any): Promise<void> {
     try {
-      const dirPath = filePath.split('/').slice(0, -1).join('/');
-      await this.createFolderIfNotExistInDataFolder(dirPath);
       return promises.writeFile(filePath, data, {
         encoding: 'utf8',
         flag: 'w+',
@@ -294,4 +337,44 @@ export class FileManagerService {
       throw error;
     }
   }
+
+  /**
+   * Get the cortex server configurations
+   * It is supposed to be stored in the home directory > .cortexrc
+   * @returns the server configurations
+   */
+  getServerConfig(): { host: string; port: number } {
+    const homeDir = os.homedir();
+    const configPath = join(homeDir, this.configFile);
+    let config = this.defaultConfig();
+    try {
+      const content = readFileSync(configPath, 'utf8');
+      const configs = (yaml.load(content) as Record<string, Config>) ?? {};
+      config = configs?.[this.configProfile] ?? config;
+    } catch {}
+    return {
+      host: config.apiServerHost ?? '127.0.0.1',
+      port: config.apiServerPort ?? 1337,
+    };
+  }
+
+  public setConfigProfile(profile: string) {
+    this.configProfile = profile;
+  }
+  public getConfigProfile() {
+    return this.configProfile;
+  }
+  public profileConfigExists(profile: string): boolean {
+    const homeDir = os.homedir();
+    const configPath = join(homeDir, this.configFile);
+    try {
+      const content = readFileSync(configPath, 'utf8');
+      const configs = (yaml.load(content) as Record<string, Config>) ?? {};
+      return !!configs[profile];
+    } catch {
+      return false;
+    }
+  }
 }
+
+export const fileManagerService = new FileManagerService();

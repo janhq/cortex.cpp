@@ -28,7 +28,7 @@ export const defaultBenchmarkConfiguration: BenchmarkConfig = {
     min: 1024,
     max: 2048,
     samples: 10,
-  },  
+  },
   output: 'table',
   hardware: ['cpu', 'gpu', 'psu', 'chassis', 'ram'],
   concurrency: 1,

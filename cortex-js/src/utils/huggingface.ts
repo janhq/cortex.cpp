@@ -21,9 +21,9 @@ import {
   ZEPHYR,
   ZEPHYR_JINJA,
 } from '@/infrastructure/constants/prompt-constants';
-import { gguf } from '@huggingface/gguf';
 import axios from 'axios';
 import { parseModelHubEngineBranch } from './normalize-model-id';
+import { closeSync, openSync, readSync } from 'fs';
 
 // TODO: move this to somewhere else, should be reused by API as well. Maybe in a separate service / provider?
 export function guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
@@ -116,7 +116,7 @@ export async function fetchJanRepoData(
 ): Promise<HuggingFaceRepoData> {
   const repo = modelId.split(':')[0];
   const tree = await parseModelHubEngineBranch(
-    modelId.split(':')[1] ?? (!modelId.includes('/') ? 'default' : ''),
+    modelId.split(':')[1] ?? (!modelId.includes('/') ? 'main' : ''),
   );
   const url = getRepoModelsUrl(
     `${!modelId.includes('/') ? 'cortexso/' : ''}${repo}`,
@@ -213,20 +213,32 @@ export async function getHFModelMetadata(
   ggufUrl: string,
 ): Promise<ModelMetadata | undefined> {
   try {
-    const { metadata } = await gguf(ggufUrl);
-    // @ts-expect-error "tokenizer.ggml.eos_token_id"
+    const { ggufMetadata } = await import('hyllama');
+    // Read first 10mb of gguf file
+    const fd = openSync(ggufUrl, 'r');
+    const buffer = new Uint8Array(10_000_000);
+    readSync(fd, buffer, 0, 10_000_000, 0);
+    closeSync(fd);
+
+    // Parse metadata and tensor info
+    const { metadata } = ggufMetadata(buffer.buffer);
+
     const index = metadata['tokenizer.ggml.eos_token_id'];
-    // @ts-expect-error "tokenizer.ggml.eos_token_id"
     const hfChatTemplate = metadata['tokenizer.chat_template'];
     const promptTemplate = guessPromptTemplateFromHuggingFace(hfChatTemplate);
-    // @ts-expect-error "tokenizer.ggml.tokens"
     const stopWord: string = metadata['tokenizer.ggml.tokens'][index] ?? '';
-
+    const name = metadata['general.name'];
+    const contextLength = metadata['llama.context_length'] ?? 4096;
+    const ngl = (metadata['llama.block_count'] ?? 32) + 1;
     const version: number = metadata['version'];
+
     return {
+      contextLength,
+      ngl,
       stopWord,
       promptTemplate,
       version,
+      name,
     };
   } catch (err) {
     console.log('Failed to get model metadata:', err.message);

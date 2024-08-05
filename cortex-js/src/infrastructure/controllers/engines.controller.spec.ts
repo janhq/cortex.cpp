@@ -10,6 +10,7 @@ import { FileManagerModule } from '../services/file-manager/file-manager.module'
 import { EnginesController } from './engines.controller';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
 import { EnginesModule } from '@/usecases/engines/engines.module';
+import { ConfigsModule } from '@/usecases/configs/configs.module';
 
 describe('ConfigsController', () => {
   let controller: EnginesController;
@@ -27,6 +28,7 @@ describe('ConfigsController', () => {
         TelemetryModule,
         FileManagerModule,
         EnginesModule,
+        ConfigsModule,
       ],
       controllers: [EnginesController],
       providers: [EnginesUsecases],

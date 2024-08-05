@@ -25,6 +25,11 @@ export class DownloadState {
   error?: string;
 
   /**
+   * The progress of the download. It is a number between 0 and 100.
+   */
+  progress: number;
+
+  /**
    * The actual downloads. [DownloadState] is just a group to supporting for download multiple files.
    */
   children: DownloadItem[];
@@ -53,6 +58,8 @@ export class DownloadItem {
     transferred: number;
   };
 
+  progress: number;
+
   checksum?: string;
 
   status: DownloadStatus;
@@ -69,4 +76,5 @@ export interface DownloadStateEvent {
 export enum DownloadType {
   Model = 'model',
   Miscelanous = 'miscelanous',
+  Engine = 'engine',
 }

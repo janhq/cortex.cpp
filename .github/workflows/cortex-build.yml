@@ -2,7 +2,7 @@ name: CI Cortex Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*", "!v[0-9]+.[0-9]+.[0-9]+-cortex-js"]
     paths: ["cortex-cpp/**", "cortex-js/**"]
   workflow_dispatch:
 
@@ -43,28 +43,28 @@ jobs:
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04"
-            cmake-flags: ""
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}}"
             build-deps-cmake-flags: ""
             arch: "x64"
             platform: "linux"
           - os: "mac"
             name: "amd64"
             runs-on: "macos-13"
-            cmake-flags: ""
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}}"
             build-deps-cmake-flags: ""
             arch: "x64"
             platform: "darwin"
           - os: "mac"
             name: "arm64"
             runs-on: "macos-latest"
-            cmake-flags: "-DMAC_ARM64=ON"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}} -DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
             arch: "arm64"
             platform: "darwin"
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}} -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             arch: "x64"
             platform: "win32"
@@ -238,7 +238,7 @@ jobs:
 
           - os: "mac"
             name: "arm64"
-            runs-on: "macos-silicon"
+            runs-on: "macos-latest"
     steps:
       - name: Clone
         id: checkout
@@ -290,10 +290,10 @@ jobs:
 
       - name: Get Cer for code signing
         if: runner.os == 'macOS'
-        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        run: base64 -d <<< "$NOTARIZE_P8_BASE64" > /tmp/notary-key.p8
         shell: bash
         env:
-          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          NOTARIZE_P8_BASE64: ${{ secrets.NOTARIZE_P8_BASE64 }}
 
       - uses: apple-actions/import-codesign-certs@v2
         continue-on-error: true
@@ -327,6 +327,16 @@ jobs:
           ./cortex --help
           make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
+          # install quill
+          curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+
+          # Notarize the binary
+          quill notarize ./cortex
+        env:
+          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
+
       - name: Create MacOS PKG Installer
         if: runner.os == 'macOS'
         run: |
@@ -337,7 +347,10 @@ jobs:
           pkgbuild --identifier ai.cortex.pkg --install-location ./usr/local/bin/ --root ./installer cortex-installer.pkg
           make codesign-installer CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
 
-      - name: Create MacOS PKG Installer
+          # Notary the installer
+          xcrun notarytool submit cortex-installer.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+
+      - name: Create Linux DEB Installer
         if: runner.os == 'Linux'
         run: |
           cd cortex-js
@@ -347,19 +360,21 @@ jobs:
           cp cortex cortexso/usr/local/bin/cortex
           dpkg-deb --build cortexso
 
-      - uses: nick-fields/retry@v3
-        with:
-          continue_on_error: true
-          retry_wait_seconds: 10
-          timeout_minutes: 10
-          max_attempts: 3
-          shell: cmd
-          command: |
-            cd cortex-js
-            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign-binary CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+      - run: |
+          cd cortex-js
+          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+          make codesign-binary CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
+        shell: cmd
         if: runner.os == 'Windows'
+
+      - name: Update version in installer.iss using sed
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd cortex-js
+          sed -i "s/AppVersion=1.0/AppVersion=${{ needs.create-draft-release.outputs.version }}/g" installer.iss
+          cat installer.iss
 
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
@@ -368,18 +383,12 @@ jobs:
           path: cortex-js/installer.iss
           options: /O+
 
-      - uses: nick-fields/retry@v3
-        with:
-          continue_on_error: true
-          retry_wait_seconds: 10
-          timeout_minutes: 10
-          max_attempts: 3
-          shell: cmd
-          command: |
-            cd cortex-js
-            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign-installer CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+      - run: |
+          cd cortex-js
+          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+          make codesign-installer CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
+        shell: cmd
         if: runner.os == 'Windows'
 
       - name: Post-Bundle
@@ -397,6 +406,17 @@ jobs:
           asset_path: ./cortex-js/cortex-installer.tar.gz
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
           asset_content_type: application/gzip
+
+      - name: Upload Cortex Installer
+        uses: actions/upload-release-asset@v1.0.1
+        if: runner.os == 'Windows'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+          asset_path: ./cortex-js/setup.exe
+          asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.exe
+          asset_content_type: application/octet-stream
 
       - uses: actions/upload-release-asset@v1.0.1
         env:
@@ -416,6 +436,14 @@ jobs:
           asset_path: ./cortex-js/cortexso.deb
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.deb
           asset_content_type: application/gzip
+      
+      # Upload artifact for package manager
+      - name: Upload Artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-linux
+          path: ./cortex-js/cortex
 
   update_release_draft:
     needs: [build-and-test, build-cortex-single-binary]
@@ -440,3 +468,60 @@ jobs:
         #   disable-autolabeler: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  # Add jobs with approval 
+  public_package_manager:
+    needs: [create-draft-release, update_release_draft]
+    runs-on: ubuntu-latest
+    environment: package-manager
+    permissions:
+      contents: read
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: cortex-linux
+          path: ./cortex-linux
+      
+      - name: install dependencies
+        run: |
+          ls -al ./cortex-linux
+          sudo apt-get install dput devscripts build-essential debhelper-compat pbuilder debootstrap devscripts -y
+
+      - name: import gpg key with subkey
+        uses: crazy-max/ghaction-import-gpg@v4
+        with:
+          gpg_private_key: ${{ secrets.HOMEBREW_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.HOMEBREW_GPG_PASSPHRASE }}
+          fingerprint: ${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
+
+      - run: |
+          mkdir -p package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian
+          cp package-managers-template/launchpad/cortexso/debian/* package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/
+          cp ./cortex-linux/cortex package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/
+
+      - name: Get release notes
+        id: release_notes
+        run: |
+            RELEASE_NOTES="cortex update to version ${{ needs.create-draft-release.outputs.version }}"
+            echo "RELEASE_NOTES=${RELEASE_NOTES}" >> $GITHUB_ENV
+
+      - name: Update change log
+        run: |
+          sed -i "s/VERSION/${{ needs.create-draft-release.outputs.version }}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
+          sed -i "s/CHANGELOG_HERE/${{ env.RELEASE_NOTES }}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
+          timestamp=$(date -u +"%a, %d %b %Y %H:%M:%S +0000")
+          sed -i "s/TIME_HERE/${timestamp}/g" package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}/debian/changelog
+
+      - name: Build package
+        run: |
+          cd package-managers-template/launchpad/cortexso-${{ needs.create-draft-release.outputs.version }}
+          echo "y" | debuild -S -sa -k${{ secrets.HOMEBREW_GPG_FINGERPRINT }}
+          sudo pbuilder create --distribution jammy --debootstrapopts --variant=buildd
+          sudo pbuilder build ../cortexso_${{ needs.create-draft-release.outputs.version }}.dsc
+          dput ppa:homebrew-computer/main ../cortexso_${{ needs.create-draft-release.outputs.version }}_source.changes
+      

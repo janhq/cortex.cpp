@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios';
 import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -24,8 +25,12 @@ export default class MistralEngineExtension extends OAIEngineExtension {
     super(httpService);
 
     eventEmmitter.on('config.updated', async (data) => {
-      if (data.group === this.name) {
+      if (data.engine === this.name) {
         this.apiKey = data.value;
+        this.status =
+          (this.apiKey?.length ?? 0) > 0
+            ? EngineStatus.READY
+            : EngineStatus.MISSING_CONFIGURATION;
       }
     });
   }
@@ -35,5 +40,9 @@ export default class MistralEngineExtension extends OAIEngineExtension {
       this.name,
     )) as unknown as { apiKey: string };
     this.apiKey = configs?.apiKey;
+    this.status =
+      (this.apiKey?.length ?? 0) > 0
+        ? EngineStatus.READY
+        : EngineStatus.MISSING_CONFIGURATION;
   }
 }

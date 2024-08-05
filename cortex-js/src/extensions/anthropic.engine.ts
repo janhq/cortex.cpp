@@ -3,7 +3,8 @@ import { HttpService } from '@nestjs/axios';
 import { OAIEngineExtension } from '../domain/abstracts/oai.abstract';
 import { ConfigsUsecases } from '@/usecases/configs/configs.usecase';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import _ from 'lodash';
+import { pick } from 'lodash';
+import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 
 /**
  * A class that implements the InferenceExtension interface from the @janhq/core package.
@@ -26,8 +27,12 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
     super(httpService);
 
     eventEmmitter.on('config.updated', async (data) => {
-      if (data.group === this.name) {
+      if (data.engine === this.name) {
         this.apiKey = data.value;
+        this.status =
+          (this.apiKey?.length ?? 0) > 0
+            ? EngineStatus.READY
+            : EngineStatus.MISSING_CONFIGURATION;
       }
     });
   }
@@ -37,59 +42,72 @@ export default class AnthropicEngineExtension extends OAIEngineExtension {
       this.name,
     )) as unknown as { apiKey: string };
     this.apiKey = configs?.apiKey;
+    this.status =
+      (this.apiKey?.length ?? 0) > 0
+        ? EngineStatus.READY
+        : EngineStatus.MISSING_CONFIGURATION;
   }
 
-  override async inference(dto: any, headers: Record<string, string>): Promise<stream.Readable | any> {
-    headers['x-api-key'] = this.apiKey as string
-    headers['Content-Type'] = 'application/json'
-    headers['anthropic-version'] = '2023-06-01'
-    return super.inference(dto, headers)
+  override async inference(
+    dto: any,
+    headers: Record<string, string>,
+  ): Promise<stream.Readable | any> {
+    headers['x-api-key'] = this.apiKey as string;
+    headers['Content-Type'] = 'application/json';
+    headers['anthropic-version'] = '2023-06-01';
+    return super.inference(dto, headers);
   }
 
   transformPayload = (data: any): any => {
-    return _.pick(data, ['messages', 'model', 'stream', 'max_tokens']);
-  }
+    const system = data.messages.find((m: any) => m.role === 'system');
+    const messages = data.messages.filter((m: any) => m.role !== 'system');
+    return {
+      system: system?.content ?? '',
+      messages,
+      ...pick(data, ['model', 'stream', 'max_tokens']),
+    };
+  };
 
-  transformResponse = (data: any): string => {
+  transformResponse = (data: any) => {
     // handling stream response
     if (typeof data === 'string' && data.trim().length === 0) {
-        return '';
+      return '';
     }
     if (typeof data === 'string' && data.startsWith('event: ')) {
-        return ''
+      return '';
     }
     if (typeof data === 'string' && data.startsWith('data: ')) {
       data = data.replace('data: ', '');
       const parsedData = JSON.parse(data);
       if (parsedData.type !== 'content_block_delta') {
-        return ''
+        return '';
       }
       const text = parsedData.delta?.text;
       //convert to have this format data.choices[0]?.delta?.content
       return JSON.stringify({
         choices: [
-            {
-                delta: {
-                content: text
-                }
-            }
-        ]
-      })
-    }
-    // non-stream response
-    if (data.content && data.content.length > 0 && data.content[0].text) {
-      return JSON.stringify({
-        choices: [
           {
             delta: {
-              content: data.content[0].text,
+              content: text,
             },
           },
         ],
       });
     }
-  
+    // non-stream response
+    if (data.content && data.content.length > 0 && data.content[0].text) {
+      return {
+        choices: [
+          {
+            message: {
+              content: data.content[0].text,
+            },
+          },
+        ],
+      };
+    }
+
     console.error('Invalid response format:', data);
     return '';
-  }
+  };
 }

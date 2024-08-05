@@ -21,7 +21,7 @@ export class ThreadsUsecases {
     @Inject('THREAD_REPOSITORY')
     private threadRepository: Repository<ThreadEntity>,
     @Inject('MESSAGE_REPOSITORY')
-    private messageRepository:  Repository<MessageEntity>,
+    private messageRepository: Repository<MessageEntity>,
   ) {}
 
   async create(createThreadDto: CreateThreadDto): Promise<Thread> {
@@ -131,7 +131,9 @@ export class ThreadsUsecases {
     updateMessageDto: UpdateMessageDto,
   ) {
     await this.getThreadOrThrow(threadId);
-    await this.messageRepository.update(updateMessageDto, { where: { id: messageId } });
+    await this.messageRepository.update(updateMessageDto, {
+      where: { id: messageId },
+    });
     return this.messageRepository.findOne({ where: { id: messageId } });
   }
 
@@ -183,7 +185,10 @@ export class ThreadsUsecases {
     await this.threadRepository.destroy({ where: { id } });
   }
 
-  async deleteMessage(_threadId: string, messageId: string): Promise<DeleteMessageDto> {
+  async deleteMessage(
+    _threadId: string,
+    messageId: string,
+  ): Promise<DeleteMessageDto> {
     await this.getMessageOrThrow(messageId);
     await this.messageRepository.destroy({ where: { id: messageId } });
 
@@ -195,7 +200,7 @@ export class ThreadsUsecases {
   }
 
   async retrieveMessage(_threadId: string, messageId: string) {
-     // we still allow user to delete message even if the thread is not there
+    // we still allow user to delete message even if the thread is not there
     return this.getMessageOrThrow(messageId);
   }
 

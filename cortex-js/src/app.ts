@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { FileManagerService } from './infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 import { ValidationPipe } from '@nestjs/common';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
-export const getApp = async () => {
+import { cleanLogs } from './utils/logs';
+export const getApp = async (host?: string, port?: number) => {
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
     cors: true,
@@ -14,8 +15,7 @@ export const getApp = async () => {
   // Set the global prefix for the API /v1/
   app.setGlobalPrefix('v1');
 
-  const fileService = app.get(FileManagerService);
-  await fileService.getConfig();
+  await fileManagerService.getConfig();
 
   const telemetryService = await app.resolve(TelemetryUsecases);
   await telemetryService.initInterval();
@@ -26,7 +26,8 @@ export const getApp = async () => {
       enableDebugMessages: true,
     }),
   );
-
+  
+  cleanLogs();
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
     .setDescription(
@@ -58,26 +59,14 @@ export const getApp = async () => {
       'Endpoint for creating and retrieving embedding vectors from text inputs using specified models.',
     )
     .addTag(
-      'Status',
-      "Endpoint for actively querying the health status of the Cortex's API server.",
-    )
-    .addTag(
-      'Processes',
-      'Endpoint for terminating the Cortex API server processes.',
-    )
-    .addTag(
-      'Events',
-      'Endpoints for observing Cortex statuses through event notifications.',
-    )
-    .addTag(
-      'Configurations',
-      "Endpoints for customizing the Cortex's configurations.",
-    )
-    .addTag(
       'Engines',
       'Endpoints for managing the available engines within Cortex.',
     )
-    .addServer('http://localhost:1337')
+    .addTag(
+      'System',
+      'Endpoints for stopping the Cortex API server, checking its status, and fetching system events.',
+    )
+    .addServer(`http://${host || '127.0.0.1'}:${port || 1337}`)
     .build();
   const document = SwaggerModule.createDocument(app, config);
 

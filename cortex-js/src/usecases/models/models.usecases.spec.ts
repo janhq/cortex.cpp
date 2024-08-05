@@ -10,6 +10,7 @@ import { DownloadManagerModule } from '@/infrastructure/services/download-manage
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { ContextModule } from '@/infrastructure/services/context/context.module';
+import { CortexModule } from '../cortex/cortex.module';
 
 describe('ModelsService', () => {
   let service: ModelsUsecases;
@@ -30,6 +31,7 @@ describe('ModelsService', () => {
         TelemetryModule,
         TelemetryModule,
         ContextModule,
+        CortexModule,
       ],
       providers: [ModelsUsecases],
       exports: [ModelsUsecases],

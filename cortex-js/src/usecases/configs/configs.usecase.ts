@@ -1,35 +1,32 @@
 import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.dto';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class ConfigsUsecases {
-  constructor(
-    private readonly fileManagerService: FileManagerService,
-    private readonly eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly eventEmitter: EventEmitter2) {}
 
   /**
    * Save a configuration to the .cortexrc file.
    * @param key Configuration Key
-   * @param group Configuration Group where the key belongs
+   * @param engine The engine where the configs belongs
    */
   async saveConfig(
     key: string,
     value: string,
-    group?: string,
+    engine?: string,
   ): Promise<CommonResponseDto> {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
 
     const groupConfigs = configs[
-      group as keyof typeof configs
+      engine as keyof typeof configs
     ] as unknown as object;
     const newConfigs = {
       ...configs,
-      ...(group
+      ...(engine
         ? {
-            [group]: {
+            [engine]: {
               ...groupConfigs,
               [key]: value,
             },
@@ -37,12 +34,12 @@ export class ConfigsUsecases {
         : {}),
     };
 
-    return this.fileManagerService
+    return fileManagerService
       .writeConfigFile(newConfigs)
       .then(async () => {
-        if (group) {
+        if (engine) {
           this.eventEmitter.emit('config.updated', {
-            group,
+            engine,
             key,
             value,
           });
@@ -61,7 +58,7 @@ export class ConfigsUsecases {
    * @returns
    */
   async getGroupConfigs(group: string) {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     return configs[group as keyof typeof configs] as unknown as object;
   }
 
@@ -71,7 +68,7 @@ export class ConfigsUsecases {
    * @returns
    */
   async getConfigs() {
-    return this.fileManagerService.getConfig();
+    return fileManagerService.getConfig();
   }
 
   /**
@@ -81,7 +78,7 @@ export class ConfigsUsecases {
    * @returns
    */
   async getKeyConfig(key: string) {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     return configs[key as keyof typeof configs];
   }
 }

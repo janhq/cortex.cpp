@@ -19,8 +19,8 @@ import { join } from 'path';
 import packageJson from '@/../package.json';
 import axios from 'axios';
 import { telemetryServerUrl } from '@/infrastructure/constants/cortex';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { ModelStat } from '@/infrastructure/commanders/types/model-stat.interface';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 // refactor using convert to dto
 @Injectable()
@@ -34,13 +34,11 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
 
   private readonly crashReportFileName = 'crash-report.jsonl';
   private readonly anonymizedDataFileName = 'session.json';
-  constructor(private readonly fileManagerService: FileManagerService) {}
+  constructor() {}
 
   private async getTelemetryDirectory(): Promise<string> {
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
-    await this.fileManagerService.createFolderIfNotExistInDataFolder(
-      'telemetry',
-    );
+    const dataFolderPath = await fileManagerService.getDataFolderPath();
+    await fileManagerService.createFolderIfNotExistInDataFolder('telemetry');
     return join(dataFolderPath, 'telemetry');
   }
 
@@ -95,12 +93,12 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
 
   async markLastCrashReportAsSent(): Promise<void> {
     try {
-      const { data, position } = await this.fileManagerService.getLastLine(
+      const { data, position } = await fileManagerService.getLastLine(
         join(await this.getTelemetryDirectory(), this.crashReportFileName),
       );
       const Telemetry = JSON.parse(data) as Telemetry;
       Telemetry.metadata.sentAt = new Date().toISOString();
-      await this.fileManagerService.modifyLine(
+      await fileManagerService.modifyLine(
         join(await this.getTelemetryDirectory(), this.crashReportFileName),
         JSON.stringify(Telemetry),
         position,
@@ -109,7 +107,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   }
 
   async readCrashReports(callback: (Telemetry: Telemetry) => void) {
-    this.fileManagerService.readLines(
+    fileManagerService.readLines(
       join(await this.getTelemetryDirectory(), this.crashReportFileName),
       (line: string) => {
         const data = JSON.parse(line) as Telemetry;
@@ -120,10 +118,8 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
 
   async getLastCrashReport(): Promise<Telemetry | null> {
     try {
-      await this.fileManagerService.createFolderIfNotExistInDataFolder(
-        'telemetry',
-      );
-      const { data } = await this.fileManagerService.getLastLine(
+      await fileManagerService.createFolderIfNotExistInDataFolder('telemetry');
+      const { data } = await fileManagerService.getLastLine(
         join(await this.getTelemetryDirectory(), this.crashReportFileName),
       );
       if (!data) {
@@ -148,7 +144,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
       createdAt: new Date().toISOString(),
       sentAt: null,
     };
-    return this.fileManagerService.append(
+    return fileManagerService.append(
       join(await this.getTelemetryDirectory(), this.crashReportFileName),
       JSON.stringify({
         metadata,
@@ -226,9 +222,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
           logRecords: [
             {
               traceId: cypto.randomBytes(16).toString('hex'),
-              timeUnixNano: (
-                BigInt(Date.now()) * BigInt(1000000)
-              ).toString(),
+              timeUnixNano: (BigInt(Date.now()) * BigInt(1000000)).toString(),
               body: { stringValue: body },
               severityText: severity,
               attributes: telemetryLogAttributes,
@@ -261,7 +255,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   }
 
   async getAnonymizedData(): Promise<TelemetryAnonymized | null> {
-    const content = await this.fileManagerService.readFile(
+    const content = await fileManagerService.readFile(
       join(await this.getTelemetryDirectory(), this.anonymizedDataFileName),
     );
 
@@ -274,7 +268,7 @@ export class TelemetryRepositoryImpl implements TelemetryRepository {
   }
 
   async updateAnonymousData(data: TelemetryAnonymized): Promise<void> {
-    return this.fileManagerService.writeFile(
+    return fileManagerService.writeFile(
       join(await this.getTelemetryDirectory(), this.anonymizedDataFileName),
       JSON.stringify(data),
     );

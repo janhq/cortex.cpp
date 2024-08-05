@@ -1,26 +1,24 @@
-import {
-  CommandRunner,
-  SubCommand,
-  Option,
-  InquirerService,
-} from 'nest-commander';
+import { SubCommand, Option, InquirerService } from 'nest-commander';
 import ora from 'ora';
 import { exit } from 'node:process';
-import { ModelsCliUsecases } from '@commanders/usecases/models.cli.usecases';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
-import { InitCliUsecases } from '../usecases/init.cli.usecases';
-import { createReadStream, existsSync, statSync, watchFile } from 'node:fs';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { existsSync } from 'node:fs';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { join } from 'node:path';
 import { Engines } from '../types/engine.interface';
 import { checkModelCompatibility } from '@/utils/model-check';
+import { BaseCommand } from '../base.command';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { downloadProgress } from '@/utils/download-progress';
+import { DownloadType } from '@/domain/models/download.interface';
+import { printLastErrorLines } from '@/utils/logs';
 
 type ModelStartOptions = {
-  attach: boolean;
   preset?: string;
 };
+
 @SubCommand({
   name: 'start',
   description: 'Start a model by ID.',
@@ -31,19 +29,19 @@ type ModelStartOptions = {
   },
 })
 @SetCommandContext()
-export class ModelStartCommand extends CommandRunner {
+export class ModelStartCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly cortexUsecases: CortexUsecases,
-    private readonly modelsCliUsecases: ModelsCliUsecases,
-    private readonly initUsecases: InitCliUsecases,
-    private readonly fileService: FileManagerService,
+    readonly cortexUsecases: CortexUsecases,
     readonly contextService: ContextService,
   ) {
-    super();
+    super(cortexUsecases);
   }
 
-  async run(passedParams: string[], options: ModelStartOptions): Promise<void> {
+  async runCommand(
+    passedParams: string[],
+    options: ModelStartOptions,
+  ): Promise<void> {
     let modelId = passedParams[0];
     const checkingSpinner = ora('Checking model...').start();
     if (!modelId) {
@@ -55,12 +53,8 @@ export class ModelStartCommand extends CommandRunner {
       }
     }
 
-    const existingModel = await this.modelsCliUsecases.getModel(modelId);
-    if (
-      !existingModel ||
-      !Array.isArray(existingModel.files) ||
-      /^(http|https):\/\/[^/]+\/.*/.test(existingModel.files[0])
-    ) {
+    const existingModel = await this.cortex.models.retrieve(modelId);
+    if (!existingModel) {
       checkingSpinner.fail(
         `Model ${modelId} not found on filesystem.\nPlease try 'cortex pull ${modelId}' first.`,
       );
@@ -73,46 +67,43 @@ export class ModelStartCommand extends CommandRunner {
     const engine = existingModel.engine || Engines.llamaCPP;
     // Pull engine if not exist
     if (
-      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+      !isRemoteEngine(engine) &&
+      !existsSync(
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
+      )
     ) {
-      await this.initUsecases.installEngine(undefined, 'latest', engine);
+      console.log('Downloading engine...');
+      await this.cortex.engines.init(engine);
+      await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
 
-    // Attached - stdout logs
-    if (options.attach) {
-      this.attachLogWatch();
-    }
+    const parsedPreset = await fileManagerService.getPreset(options.preset);
 
-    await this.cortexUsecases
-      .startCortex()
-      .then(() => this.modelsCliUsecases.startModel(modelId, options.preset))
-      .then(() => options.attach && ora('Model is running...').start());
+    const startingSpinner = ora('Loading model...').start();
+
+    await this.cortex.models
+      .start(modelId, parsedPreset)
+      .then(() => startingSpinner.succeed('Model loaded'))
+      .catch(async (error) => {
+        startingSpinner.fail(error.message ?? error);
+        printLastErrorLines(await fileManagerService.getLogPath());
+      });
   }
 
   modelInquiry = async () => {
-    const models = await this.modelsCliUsecases.listAllModels();
+    const { data: models } = await this.cortex.models.list();
     if (!models.length) throw 'No models found';
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
       message: 'Select a model to start:',
       choices: models.map((e) => ({
-        name: e.name,
-        value: e.model,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;
   };
-
-  @Option({
-    flags: '-a, --attach',
-    description: 'Attach to interactive chat session',
-    defaultValue: false,
-    name: 'attach',
-  })
-  parseAttach() {
-    return true;
-  }
 
   @Option({
     flags: '-p, --preset <preset>',
@@ -120,39 +111,5 @@ export class ModelStartCommand extends CommandRunner {
   })
   parseTemplate(value: string) {
     return value;
-  }
-
-  /**
-   * Attach to the log file and watch for changes
-   */
-  private async attachLogWatch() {
-    const logPath = await this.fileService.getLogPath();
-    const initialSize = statSync(logPath).size;
-    const logStream = createReadStream(logPath, {
-      start: initialSize,
-      encoding: 'utf-8',
-      autoClose: false,
-    });
-    logStream.on('data', (chunk) => {
-      console.log(chunk);
-    });
-    watchFile(logPath, (curr, prev) => {
-      // Check if the file size has increased
-      if (curr.size > prev.size) {
-        // Calculate the position to start reading from
-        const position = prev.size;
-
-        // Create a new read stream from the updated position
-        const updateStream = createReadStream(logPath, {
-          encoding: 'utf8',
-          start: position,
-        });
-
-        // Read the newly written content
-        updateStream.on('data', (chunk) => {
-          console.log(chunk);
-        });
-      }
-    });
   }
 }

@@ -1,19 +1,27 @@
-import { CommandRunner, SubCommand, Option } from 'nest-commander';
+import { SubCommand, Option } from 'nest-commander';
 import { TelemetryUsecases } from '@/usecases/telemetry/telemetry.usecases';
 import { TelemetryOptions } from './types/telemetry-options.interface';
 import { SetCommandContext } from './decorators/CommandContext';
+import { BaseCommand } from './base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 @SubCommand({
   name: 'telemetry',
   description: 'Get telemetry logs',
 })
 @SetCommandContext()
-export class TelemetryCommand extends CommandRunner {
-  constructor(private readonly telemetryUseCase: TelemetryUsecases) {
-    super();
+export class TelemetryCommand extends BaseCommand {
+  constructor(
+    private readonly telemetryUseCase: TelemetryUsecases,
+    readonly cortexUseCases: CortexUsecases,
+  ) {
+    super(cortexUseCases);
   }
 
-  async run(_input: string[], options?: TelemetryOptions): Promise<void> {
+  async runCommand(
+    _input: string[],
+    options?: TelemetryOptions,
+  ): Promise<void> {
     if (options?.type === 'crash') {
       try {
         await this.telemetryUseCase.readCrashReports((telemetryEvent) => {

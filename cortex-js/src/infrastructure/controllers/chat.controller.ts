@@ -34,28 +34,67 @@ export class ChatController {
     @Res() res: Response,
   ) {
     const { stream } = createChatDto;
-
-    if (stream) {
-      this.chatService
-        .inference(createChatDto, extractCommonHeaders(headers))
-        .then((stream) => {
+    this.chatService
+      .inference(createChatDto, extractCommonHeaders(headers))
+      .then((response) => {
+        if (stream) {
           res.header('Content-Type', 'text/event-stream');
-          stream.pipe(res);
-        })
-        .catch((error) =>
-          res.status(error.statusCode ?? 400).send(error.message),
-        );
-    } else {
-      res.header('Content-Type', 'application/json');
-      this.chatService
-        .inference(createChatDto, extractCommonHeaders(headers))
-        .then((response) => {
+          response.pipe(res);
+        } else {
+          res.header('Content-Type', 'application/json');
           res.json(response);
-        })
-        .catch((error) =>
-          res.status(error.statusCode ?? 400).send(error.message),
-        );
-    }
+        }
+      })
+      .catch((error) => {
+        const statusCode = error.response?.status ?? 400;
+        let errorMessage;
+        if (!stream) {
+          const data = error.response?.data;
+          if (!data) {
+            return res.status(500).send(error.message || 'An error occurred');
+          }
+          return res
+            .status(statusCode)
+            .send(
+              data.error?.message ||
+                data.message ||
+                error.message ||
+                'An error occurred',
+            );
+        }
+        const streamResponse = error.response?.data;
+        if (!streamResponse) {
+          return res.status(500).send(error.message || 'An error occurred');
+        }
+        let data = '';
+        streamResponse.on('data', (chunk: any) => {
+          data += chunk;
+        });
+
+        streamResponse.on('end', () => {
+          try {
+            const jsonResponse = JSON.parse(data);
+            errorMessage =
+              jsonResponse.error?.message ||
+              jsonResponse.message ||
+              error.message ||
+              'An error occurred';
+          } catch (err) {
+            errorMessage = 'An error occurred while processing the response';
+          }
+          return res
+            .status(error.statusCode ?? 400)
+            .send(errorMessage || error.message || 'An error occurred');
+        });
+
+        streamResponse.on('error', (streamError: any) => {
+          errorMessage = streamError.message ?? 'An error occurred';
+          return res
+            .status(error.statusCode ?? 400)
+            .send(errorMessage || error.message || 'An error occurred');
+        });
+      });
+
     this.telemetryUsecases.addEventToQueue({
       name: EventName.CHAT,
       modelId: createChatDto.model,

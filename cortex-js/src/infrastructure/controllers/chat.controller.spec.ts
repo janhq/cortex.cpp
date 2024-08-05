@@ -9,6 +9,7 @@ import { DownloadManagerModule } from '@/infrastructure/services/download-manage
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { TelemetryModule } from '@/usecases/telemetry/telemetry.module';
 import { FileManagerModule } from '../services/file-manager/file-manager.module';
+import { ModelsModule } from '@/usecases/models/models.module';
 
 describe('ChatController', () => {
   let controller: ChatController;
@@ -25,6 +26,7 @@ describe('ChatController', () => {
         EventEmitterModule.forRoot(),
         TelemetryModule,
         FileManagerModule,
+        ModelsModule,
       ],
       controllers: [ChatController],
       providers: [ChatUsecases],

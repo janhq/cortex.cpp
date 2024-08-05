@@ -4,17 +4,27 @@ import {
   Param,
   HttpCode,
   UseInterceptors,
+  Post,
+  Body,
+  Patch,
+  Res,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags, ApiResponse } from '@nestjs/swagger';
+import { Response } from 'express';
 import { TransformInterceptor } from '../interceptors/transform.interceptor';
 import { EnginesUsecases } from '@/usecases/engines/engines.usecase';
-import { EngineDto } from '../dtos/engines/engines.dto';
+import { EngineDto, InitEngineDto } from '../dtos/engines/engines.dto';
+import { CommonResponseDto } from '../dtos/common/common-response.dto';
+import { ConfigUpdateDto } from '../dtos/configs/config-update.dto';
 
 @ApiTags('Engines')
 @Controller('engines')
 @UseInterceptors(TransformInterceptor)
 export class EnginesController {
-  constructor(private readonly enginesUsecases: EnginesUsecases) {}
+  constructor(
+    private readonly enginesUsecases: EnginesUsecases,
+    private readonly initUsescases: EnginesUsecases,
+  ) {}
 
   @HttpCode(200)
   @ApiResponse({
@@ -51,5 +61,62 @@ export class EnginesController {
   @Get(':name(*)')
   findOne(@Param('name') name: string) {
     return this.enginesUsecases.getEngine(name);
+  }
+
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: CommonResponseDto,
+  })
+  @ApiOperation({
+    summary: 'Initialize an engine',
+    description:
+      'Initializes an engine instance with the given name. It will download the engine if it is not available locally.',
+  })
+  @ApiParam({
+    name: 'name',
+    required: true,
+    description: 'The unique identifier of the engine.',
+  })
+  @Post(':name(*)/init')
+  initialize(
+    @Param('name') name: string,
+    @Body() body: InitEngineDto | undefined,
+    @Res() res: Response,
+  ) {
+    try {
+      this.initUsescases.installEngine(body, name, true);
+      res.json({
+        message: 'Engine initialization started successfully.',
+      });
+    } catch (error) {
+      res.status(400).send(error.message);
+    }
+  }
+
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
+    description: 'Ok',
+    type: CommonResponseDto,
+  })
+  @ApiOperation({
+    summary: 'Update an engine',
+    description: 'Updates the engine with configurations.',
+  })
+  @ApiParam({
+    name: 'name',
+    required: true,
+    description: 'The unique identifier of the engine.',
+  })
+  @Patch(':name(*)')
+  update(@Param('name') name: string, @Body() configs?: any | undefined) {
+    console.log('configs', configs);
+    return this.enginesUsecases.updateConfigs(
+      configs.config,
+      configs.value,
+      name,
+    );
   }
 }

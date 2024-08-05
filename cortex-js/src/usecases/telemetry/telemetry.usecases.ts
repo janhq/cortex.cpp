@@ -8,9 +8,9 @@ import {
   TelemetryAnonymized,
   TelemetrySource,
 } from '@/domain/telemetry/telemetry.interface';
-import { ModelStat } from '@/infrastructure/commanders/types/model-stat.interface';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { HttpException, Inject, Injectable, Scope } from '@nestjs/common';
+import { Cortex } from '@cortexso/cortex.js';
 import { v4 } from 'uuid';
 
 @Injectable({ scope: Scope.TRANSIENT })
@@ -218,7 +218,7 @@ export class TelemetryUsecases {
     hardware: BenchmarkHardware;
     results: any;
     metrics: any;
-    model: ModelStat;
+    model: Cortex.Models.Model;
   }): Promise<void> {
     try {
       if (!this.isBenchmarkEnabled()) return;

@@ -1,15 +1,9 @@
-import {
-  CommandRunner,
-  InquirerService,
-  Option,
-  SubCommand,
-} from 'nest-commander';
-import ora from 'ora';
-import { ModelsUsecases } from '@/usecases/models/models.usecases';
-import { PSCliUsecases } from './usecases/ps.cli.usecases';
-import { ChatCliUsecases } from './usecases/chat.cli.usecases';
+import { InquirerService, Option, SubCommand } from 'nest-commander';
 import { inspect } from 'util';
-import { ModelStat } from './types/model-stat.interface';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
+import { BaseCommand } from './base.command';
+import { Cortex } from '@cortexso/cortex.js';
+import ora from 'ora';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
@@ -26,43 +20,44 @@ interface EmbeddingCommandOptions {
       'Model to use for embedding. If not provided, it will prompt to select from running models.',
   },
 })
-export class EmbeddingCommand extends CommandRunner {
+export class EmbeddingCommand extends BaseCommand {
   constructor(
-    private readonly chatCliUsecases: ChatCliUsecases,
-    private readonly modelsUsecases: ModelsUsecases,
-    private readonly psCliUsecases: PSCliUsecases,
     private readonly inquirerService: InquirerService,
+    readonly cortexUsecases: CortexUsecases,
   ) {
-    super();
+    super(cortexUsecases);
   }
-  async run(
+  async runCommand(
     passedParams: string[],
     options: EmbeddingCommandOptions,
   ): Promise<void> {
-    let modelId = passedParams[0];
+    let model = passedParams[0];
     const checkingSpinner = ora('Checking model...').start();
     // First attempt to get message from input or options
     let input: string | string[] = options.input ?? passedParams.splice(1);
 
     // Check for model existing
-    if (!modelId || !(await this.modelsUsecases.findOne(modelId))) {
+    if (!model || !(await this.cortex.models.retrieve(model))) {
       // Model ID is not provided
       // first input might be message input
       input = passedParams ?? options.input;
       // If model ID is not provided, prompt user to select from running models
-      const models = await this.psCliUsecases.getModels();
+      const { data: models } = await this.cortex.models.list();
       if (models.length === 1) {
-        modelId = models[0].modelId;
+        model = models[0].id;
       } else if (models.length > 0) {
-        modelId = await this.modelInquiry(models);
+        model = await this.modelInquiry(models);
       } else {
         checkingSpinner.fail('Model ID is required');
         process.exit(1);
       }
     }
     checkingSpinner.succeed(`Model found`);
-    return this.chatCliUsecases
-      .embeddings(modelId, input)
+    return this.cortex.embeddings
+      .create({
+        input,
+        model,
+      })
       .then((res) =>
         inspect(res, { showHidden: false, depth: null, colors: true }),
       )
@@ -70,14 +65,14 @@ export class EmbeddingCommand extends CommandRunner {
       .catch((e) => console.error(e.message ?? e));
   }
 
-  modelInquiry = async (models: ModelStat[]) => {
+  modelInquiry = async (models: Cortex.Model[]) => {
     const { model } = await this.inquirerService.inquirer.prompt({
       type: 'list',
       name: 'model',
-      message: 'Select running model to chat with:',
+      message: 'Select model to chat with:',
       choices: models.map((e) => ({
-        name: e.modelId,
-        value: e.modelId,
+        name: e.id,
+        value: e.id,
       })),
     });
     return model;

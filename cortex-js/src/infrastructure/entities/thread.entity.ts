@@ -1,8 +1,17 @@
-import { Table, Column, Model, PrimaryKey, DataType } from 'sequelize-typescript';
-import type { Thread, ThreadToolResources } from '@/domain/models/thread.interface';
+import {
+  Table,
+  Column,
+  Model,
+  PrimaryKey,
+  DataType,
+} from 'sequelize-typescript';
+import type {
+  Thread,
+  ThreadToolResources,
+} from '@/domain/models/thread.interface';
 import { AssistantEntity } from './assistant.entity';
 
-@Table({ tableName: 'threads', timestamps: false})
+@Table({ tableName: 'threads', timestamps: false })
 export class ThreadEntity extends Model implements Thread {
   @PrimaryKey
   @Column({

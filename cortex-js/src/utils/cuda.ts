@@ -15,7 +15,6 @@ export type GpuSettingInfo = {
  * @returns CUDA Version 11 | 12
  */
 export const cudaVersion = async () => {
- 
   let filesCuda12: string[];
   let filesCuda11: string[];
   let paths: string[];
@@ -77,24 +76,27 @@ export const getCudaVersion = (): Promise<string> => {
     // Execute the nvidia-smi command
     exec('nvidia-smi', (error, stdout) => {
       if (!error) {
-        const cudaVersionLine = stdout.split('\n').find(line => line.includes('CUDA Version'));
-    
+        const cudaVersionLine = stdout
+          .split('\n')
+          .find((line) => line.includes('CUDA Version'));
+
         if (cudaVersionLine) {
-            // Extract the CUDA version number
-            const cudaVersionMatch = cudaVersionLine.match(/CUDA Version:\s+(\d+\.\d+)/);
-            if (cudaVersionMatch) {
-                const cudaVersion = cudaVersionMatch[1];
-                resolve(cudaVersion);
-            } else {
-                reject('CUDA Version not found.');
-            }
-        } else {
+          // Extract the CUDA version number
+          const cudaVersionMatch = cudaVersionLine.match(
+            /CUDA Version:\s+(\d+\.\d+)/,
+          );
+          if (cudaVersionMatch) {
+            const cudaVersion = cudaVersionMatch[1];
+            resolve(cudaVersion);
+          } else {
             reject('CUDA Version not found.');
+          }
+        } else {
+          reject('CUDA Version not found.');
         }
       } else {
         reject(error);
       }
-
     });
   });
 };

@@ -1,7 +1,7 @@
-import { Model as OpenAiModel } from 'cortexso-node/resources/models';
+import { Cortex } from '@cortexso/cortex.js';
 
 export interface Model
-  extends OpenAiModel,
+  extends Cortex.Model,
     ModelSettingParams,
     ModelRuntimeParams {
   /**
@@ -40,6 +40,10 @@ export interface ModelSettingParams {
    * The number of layers to load onto the GPU for acceleration.
    */
   ngl?: number;
+
+  /**
+   * Support embedding or not (legacy)
+   */
   embedding?: boolean;
 
   /**
@@ -117,6 +121,11 @@ export interface ModelSettingParams {
    * To enable mmap, default is true
    */
   use_mmap?: boolean;
+
+  /**
+   * Model type we want to use: llm or embedding, default value is llm (latest llama.cpp update)
+   */
+  model_type?: string;
 }
 
 /**

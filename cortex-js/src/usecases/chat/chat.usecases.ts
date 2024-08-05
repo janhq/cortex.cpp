@@ -4,23 +4,26 @@ import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { ModelNotFoundException } from '@/infrastructure/exception/model-not-found.exception';
 import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
 import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
-import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { CORTEX_CPP_EMBEDDINGS_URL } from '@/infrastructure/constants/cortex';
+import {
+  CORTEX_CPP_EMBEDDINGS_URL,
+  defaultEmbeddingModel,
+} from '@/infrastructure/constants/cortex';
 import { CreateEmbeddingsDto } from '@/infrastructure/dtos/embeddings/embeddings-request.dto';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
+import { ModelsUsecases } from '../models/models.usecases';
+import { isRemoteEngine } from '@/utils/normalize-model-id';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @Injectable()
 export class ChatUsecases {
   constructor(
-    private readonly modelRepository: ModelRepository,
     private readonly extensionRepository: ExtensionRepository,
     private readonly telemetryUseCases: TelemetryUsecases,
+    private readonly modelsUsescases: ModelsUsecases,
     private readonly httpService: HttpService,
-    private readonly fileService: FileManagerService,
   ) {}
 
   async inference(
@@ -28,18 +31,31 @@ export class ChatUsecases {
     headers: Record<string, string>,
   ): Promise<any> {
     const { model: modelId } = createChatDto;
-    const model = await this.modelRepository.findOne(modelId);
+    const model = await this.modelsUsescases.findOne(modelId);
     if (!model) {
       throw new ModelNotFoundException(modelId);
     }
+
+    const isModelRunning = await this.modelsUsescases.isModelRunning(modelId);
+    // If model is not running
+    // Start the model
+    if (!isModelRunning) {
+      await this.modelsUsescases.startModel(modelId);
+    }
+
     const engine = (await this.extensionRepository.findOne(
       model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
     if (engine == null) {
       throw new Error(`No engine found with name: ${model.engine}`);
     }
+    const payload = {
+      ...createChatDto,
+      ...(model.engine &&
+        !isRemoteEngine(model.engine) && { engine: model.engine }),
+    };
     try {
-      return await engine.inference(createChatDto, headers);
+      return await engine.inference(payload, headers);
     } catch (error) {
       await this.telemetryUseCases.createCrashReport(
         error,
@@ -59,7 +75,26 @@ export class ChatUsecases {
    * @returns Embedding vector.
    */
   async embeddings(dto: CreateEmbeddingsDto) {
-    const configs = await this.fileService.getConfig();
+    const modelId = dto.model ?? defaultEmbeddingModel;
+
+    if (modelId !== dto.model) dto = { ...dto, model: modelId };
+
+    if (!(await this.modelsUsescases.findOne(modelId))) {
+      await this.modelsUsescases.pullModel(modelId);
+    }
+
+    const isModelRunning = await this.modelsUsescases.isModelRunning(modelId);
+    // If model is not running
+    // Start the model
+    if (!isModelRunning) {
+      await this.modelsUsescases.startModel(modelId, {
+        embedding: true,
+        model_type: 'embedding',
+      });
+    }
+
+    const configs = await fileManagerService.getConfig();
+
     return firstValueFrom(
       this.httpService.post(
         CORTEX_CPP_EMBEDDINGS_URL(configs.cortexCppHost, configs.cortexCppPort),

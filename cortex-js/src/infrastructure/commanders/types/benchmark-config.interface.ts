@@ -1,4 +1,4 @@
-import { ChatCompletionMessageParam } from 'cortexso-node/resources';
+import { Cortex } from '@cortexso/cortex.js';
 
 export interface ApiConfig {
   base_url: string;
@@ -7,7 +7,7 @@ export interface ApiConfig {
 }
 
 export interface ParametersConfig {
-  messages: ChatCompletionMessageParam[];
+  messages: Cortex.ChatCompletionMessageParam[];
   model: string;
   stream?: boolean;
   max_tokens?: number;

@@ -15,13 +15,15 @@ export class EmbeddingsResponseDto {
   model: string;
 
   @ApiProperty({
-    description: 'The embedding vector represented as an array of floating-point numbers. ',
+    description:
+      'The embedding vector represented as an array of floating-point numbers. ',
     type: [Number],
   })
   embedding: [number];
 
   @ApiProperty({
-    description: 'Details of token usage, including prompt_tokens and total_tokens.',
+    description:
+      'Details of token usage, including prompt_tokens and total_tokens.',
     type: UsageDto,
   })
   usage: UsageDto;

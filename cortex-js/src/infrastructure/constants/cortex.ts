@@ -1,12 +1,20 @@
+export const cortexNamespace = 'cortex';
+
 export const databaseName = 'cortex';
 
 export const databaseFile = `${databaseName}.db`;
 
-export const defaultCortexJsHost = 'localhost';
+export const defaultCortexJsHost = '127.0.0.1';
 export const defaultCortexJsPort = 1337;
 
 export const defaultCortexCppHost = '127.0.0.1';
 export const defaultCortexCppPort = 3929;
+
+export const defaultEmbeddingModel = 'nomic-embed-text-v1';
+
+export const cortexServerAPI = (host: string, port: number) =>
+  `http://${host}:${port}/v1/`;
+
 // CORTEX CPP
 export const CORTEX_CPP_EMBEDDINGS_URL = (
   host: string = defaultCortexCppHost,
@@ -28,15 +36,13 @@ export const CORTEX_CPP_MODELS_URL = (
   port: number = defaultCortexCppPort,
 ) => `http://${host}:${port}/inferences/server/models`;
 
-export const CORTEX_JS_HEALTH_URL = (
+export const CORTEX_JS_SYSTEM_URL = (
   host: string = defaultCortexJsHost,
   port: number = defaultCortexJsPort,
-) => `http://${host}:${port}/v1/health`;
+) => `http://${host}:${port}/v1/system`;
 
-export const CORTEX_JS_STOP_API_SERVER_URL = (
-  host: string = defaultCortexJsHost,
-  port: number = defaultCortexJsPort,
-) => `http://${host}:${port}/v1/process`;
+export const CORTEX_JS_HEALTH_URL_WITH_API_PATH = (apiUrl: string) =>
+  `${apiUrl}/v1/system`;
 
 // INITIALIZATION
 export const CORTEX_RELEASES_URL =
@@ -50,4 +56,4 @@ export const CUDA_DOWNLOAD_URL =
 
 export const telemetryServerUrl = 'https://telemetry.jan.ai';
 
-export const MIN_CUDA_VERSION = '12.3';
+export const MIN_CUDA_VERSION = '12.4';

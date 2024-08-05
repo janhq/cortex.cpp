@@ -10,7 +10,7 @@ import { Repository } from 'sequelize-typescript';
 export class MessagesUsecases {
   constructor(
     @Inject('MESSAGE_REPOSITORY')
-    private messageRepository:  Repository<MessageEntity>,
+    private messageRepository: Repository<MessageEntity>,
   ) {}
 
   async create(createMessageDto: CreateMessageDto) {
@@ -44,10 +44,11 @@ export class MessagesUsecases {
   }
 
   async update(id: string, updateMessageDto: UpdateMessageDto) {
-    const [numberOfAffectedRows, [updatedMessage]] = await this.messageRepository.update(updateMessageDto, {
-      where: { id },
-      returning: true,
-    });
+    const [numberOfAffectedRows, [updatedMessage]] =
+      await this.messageRepository.update(updateMessageDto, {
+        where: { id },
+        returning: true,
+      });
     return { numberOfAffectedRows, updatedMessage };
   }
 

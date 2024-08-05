@@ -1,28 +1,31 @@
-import { CommandRunner, SubCommand, Option } from 'nest-commander';
-import { ModelsCliUsecases } from '../usecases/models.cli.usecases';
+import { SubCommand, Option } from 'nest-commander';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
+import { BaseCommand } from '../base.command';
+import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 
 interface ModelListOptions {
   format: 'table' | 'json';
 }
 @SubCommand({ name: 'list', description: 'List all models locally.' })
 @SetCommandContext()
-export class ModelListCommand extends CommandRunner {
+export class ModelListCommand extends BaseCommand {
   constructor(
-    private readonly modelsCliUsecases: ModelsCliUsecases,
     readonly contextService: ContextService,
+    readonly cortexUseCases: CortexUsecases,
   ) {
-    super();
+    super(cortexUseCases);
   }
 
-  async run(passedParams: string[], option: ModelListOptions): Promise<void> {
-    const models = await this.modelsCliUsecases.listAllModels();
+  async runCommand(
+    passedParams: string[],
+    option: ModelListOptions,
+  ): Promise<void> {
+    const { data: models } = await this.cortex.models.list();
     option.format === 'table'
       ? console.table(
           models.map((e) => ({
-            id: e.model,
-            name: e.name,
+            id: e.id,
             engine: e.engine,
             version: e.version,
           })),

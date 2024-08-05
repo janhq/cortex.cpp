@@ -74,9 +74,6 @@ int main(int argc, char* argv[]) {
 #else
   LOG_INFO << "cortex-cpp version: undefined";
 #endif
-#ifdef CORTEX_LLAMACPP_VERSION
-  LOG_INFO << "cortex.llamacpp version: " << CORTEX_LLAMACPP_VERSION;
-#endif
 
   LOG_INFO << "Server started, listening at: " << host << ":" << port;
   LOG_INFO << "Please load your model";

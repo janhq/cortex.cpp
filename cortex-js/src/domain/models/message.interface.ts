@@ -1,16 +1,13 @@
-import {
-  Message as OpenAiMessage,
-  MessageContent as OpenAiMessageContent,
-  TextContentBlock as OpenAiTextContentBlock,
-} from 'cortexso-node/resources/beta/threads/messages';
+import { Cortex } from '@cortexso/cortex.js';
 
-export interface Message extends OpenAiMessage {}
+export interface Message extends Cortex.Beta.Threads.Message {}
 
-export type MessageContent = OpenAiMessageContent;
+export type MessageContent = Cortex.Beta.Threads.MessageContent;
 
-export type TextContentBlock = OpenAiTextContentBlock;
+export type TextContentBlock = Cortex.Beta.Threads.TextContentBlock;
 
 export interface MessageIncompleteDetails
-  extends OpenAiMessage.IncompleteDetails {}
+  extends Cortex.Beta.Threads.Message.IncompleteDetails {}
 
-export interface MessageAttachment extends OpenAiMessage.Attachment {}
+export interface MessageAttachment
+  extends Cortex.Beta.Threads.Message.Attachment {}

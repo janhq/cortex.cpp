@@ -32,12 +32,16 @@ server::~server() {}
 void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
   auto engine_type =
       (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -69,7 +73,7 @@ void server::Embedding(const HttpRequestPtr& req,
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -91,12 +95,16 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
   auto engine_type =
       (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -107,7 +115,7 @@ void server::UnloadModel(
       ->UnloadModel(
           req->getJsonObject(),
           [cb = std::move(callback)](Json::Value status, Json::Value res) {
-            auto resp = cortex_utils::nitroHttpJsonResponse(res);
+            auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
             resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
                 status["status_code"].asInt()));
             cb(resp);
@@ -118,12 +126,16 @@ void server::UnloadModel(
 void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
   auto engine_type =
       (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -135,7 +147,7 @@ void server::ModelStatus(
       ->GetModelStatus(
           req->getJsonObject(),
           [cb = std::move(callback)](Json::Value status, Json::Value res) {
-            auto resp = cortex_utils::nitroHttpJsonResponse(res);
+            auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
             resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
                 status["status_code"].asInt()));
             cb(resp);
@@ -145,10 +157,10 @@ void server::ModelStatus(
 
 void server::GetModels(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!IsEngineLoaded(cur_engine_type_)) {
+  if (engines_.empty()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "Engine is not loaded yet";
@@ -156,24 +168,24 @@ void server::GetModels(const HttpRequestPtr& req,
   }
 
   LOG_TRACE << "Start to get models";
-  auto& en = std::get<EngineI*>(engines_[cur_engine_type_].engine);
-  if (en->IsSupported("GetModels")) {
-    en->GetModels(
-        req->getJsonObject(),
-        [cb = std::move(callback)](Json::Value status, Json::Value res) {
-          auto resp = cortex_utils::nitroHttpJsonResponse(res);
-          resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
-              status["status_code"].asInt()));
-          cb(resp);
-        });
-  } else {
-    Json::Value res;
-    res["message"] = "Method is not supported yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
-    resp->setStatusCode(k500InternalServerError);
-    callback(resp);
-    LOG_WARN << "Method is not supported yet";
+  Json::Value resp_data(Json::arrayValue);
+  for (auto const& [k, v] : engines_) {
+    auto e = std::get<EngineI*>(v.engine);
+    if (e->IsSupported("GetModels")) {
+      e->GetModels(req->getJsonObject(),
+                   [&resp_data](Json::Value status, Json::Value res) {
+                     for (auto r : res["data"]) {
+                       resp_data.append(r);
+                     }
+                   });
+    }
   }
+  Json::Value root;
+  root["data"] = resp_data;
+  root["object"] = "list";
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(root);
+  resp->setStatusCode(drogon::HttpStatusCode::k200OK);
+  callback(resp);
 
   LOG_TRACE << "Done get models";
 }
@@ -193,7 +205,7 @@ void server::GetEngines(
   res["object"] = "list";
   res["data"] = engine_array;
 
-  auto resp = cortex_utils::nitroHttpJsonResponse(res);
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
   callback(resp);
 }
 
@@ -218,7 +230,7 @@ void server::FineTuning(
 
       Json::Value res;
       res["message"] = "Could not load engine " + engine_type;
-      auto resp = cortex_utils::nitroHttpJsonResponse(res);
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
       resp->setStatusCode(k500InternalServerError);
       callback(resp);
       return;
@@ -236,7 +248,7 @@ void server::FineTuning(
     en->HandlePythonFileExecutionRequest(
         req->getJsonObject(),
         [cb = std::move(callback)](Json::Value status, Json::Value res) {
-          auto resp = cortex_utils::nitroHttpJsonResponse(res);
+          auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
           resp->setStatusCode(static_cast<drogon::HttpStatusCode>(
               status["status_code"].asInt()));
           cb(resp);
@@ -244,7 +256,7 @@ void server::FineTuning(
   } else {
     Json::Value res;
     res["message"] = "Method is not supported yet";
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k500InternalServerError);
     callback(resp);
     LOG_WARN << "Method is not supported yet";
@@ -259,8 +271,6 @@ void server::LoadModel(const HttpRequestPtr& req,
 
   // We have not loaded engine yet, should load it before using it
   if (engines_.find(engine_type) == engines_.end()) {
-    // We only use single engine so unload all engines before load new engine
-    UnloadEngines();
     auto get_engine_path = [](std::string_view e) {
       if (e == kLlamaEngine) {
         return cortex_utils::kLlamaLibPath;
@@ -291,7 +301,7 @@ void server::LoadModel(const HttpRequestPtr& req,
 
       Json::Value res;
       res["message"] = "Could not load engine " + engine_type;
-      auto resp = cortex_utils::nitroHttpJsonResponse(res);
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
       resp->setStatusCode(k500InternalServerError);
       callback(resp);
       return;
@@ -308,7 +318,7 @@ void server::LoadModel(const HttpRequestPtr& req,
   auto& en = std::get<EngineI*>(engines_[engine_type].engine);
   en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
                                           Json::Value status, Json::Value res) {
-    auto resp = cortex_utils::nitroHttpJsonResponse(res);
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(
         static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
     cb(resp);
@@ -345,15 +355,15 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
     return n;
   };
 
-  auto resp = cortex_utils::nitroStreamResponse(chunked_content_provider,
-                                                "chat_completions.txt");
+  auto resp = cortex_utils::CreateCortexStreamResponse(chunked_content_provider,
+                                                       "chat_completions.txt");
   cb(resp);
 }
 
 void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                  SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
-  auto resp = cortex_utils::nitroHttpJsonResponse(res);
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
   resp->setStatusCode(
       static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
   cb(resp);
@@ -363,14 +373,20 @@ bool server::IsEngineLoaded(const std::string& e) {
   return engines_.find(e) != engines_.end();
 }
 
-void server::UnloadEngines() {
-  // We unload all engines except python engine
-  for (auto it = engines_.begin(); it != engines_.end();) {
-    if (it->first != kPythonRuntimeEngine) {
-      it = engines_.erase(it);
-    } else
-      it++;
+bool server::HasFieldInReq(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>& callback,
+    const std::string& field) {
+  if (auto o = req->getJsonObject(); !o || (*o)[field].isNull()) {
+    Json::Value res;
+    res["message"] = "No " + field + " field in request body";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k409Conflict);
+    callback(resp);
+    LOG_WARN << "No " << field << " field in request body";
+    return false;
   }
+  return true;
 }
 
 }  // namespace inferences

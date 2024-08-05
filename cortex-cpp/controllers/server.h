@@ -99,7 +99,9 @@ class server : public drogon::HttpController<server>,
                            SyncQueue& q);
   bool IsEngineLoaded(const std::string& e);
 
-  void UnloadEngines();
+  bool HasFieldInReq(const HttpRequestPtr& req,
+                     std::function<void(const HttpResponsePtr&)>& callback,
+                     const std::string& field);
 
  private:
   struct SyncQueue {
