@@ -11,8 +11,10 @@ export class ChatClient {
   private exitClause = 'exit()';
   private userIndicator = '>> ';
   private exitMessage = 'Bye!';
-
-  constructor(readonly cortex: Cortex) {}
+  private cortex: Cortex;
+  constructor(readonly cortexInstance: Cortex) {
+    this.cortex = cortexInstance;
+  }
 
   async chat(
     modelId: string,

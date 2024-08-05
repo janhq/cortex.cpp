@@ -3,13 +3,12 @@ import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { Engines } from '../types/engine.interface';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { BaseCommand } from '../base.command';
 import { defaultInstallationOptions } from '@/utils/init';
 import { Presets, SingleBar } from 'cli-progress';
-import { CortexClient } from '../services/cortex.client';
 import ora from 'ora';
 import { InitEngineDto } from '@/infrastructure/dtos/engines/engines.dto';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 @SubCommand({
   name: '<name> init',
@@ -22,9 +21,7 @@ import { InitEngineDto } from '@/infrastructure/dtos/engines/engines.dto';
 export class EnginesInitCommand extends BaseCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
-    private readonly fileManagerService: FileManagerService,
     readonly contextService: ContextService,
-    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }
@@ -41,7 +38,7 @@ export class EnginesInitCommand extends BaseCommand {
         }
       : {};
 
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
     const host = configs.cortexCppHost;
     const port = configs.cortexCppPort;
     // Should stop cortex before installing engine

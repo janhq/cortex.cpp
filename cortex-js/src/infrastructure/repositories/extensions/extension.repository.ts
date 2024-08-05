@@ -3,7 +3,10 @@ import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { Extension } from '@/domain/abstracts/extension.abstract';
 import { readdir, lstat } from 'fs/promises';
 import { join } from 'path';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import {
+  fileManagerService,
+  FileManagerService,
+} from '@/infrastructure/services/file-manager/file-manager.service';
 import { existsSync, mkdirSync, watch } from 'fs';
 import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 import { OAIEngineExtension } from '@/domain/abstracts/oai.abstract';
@@ -19,17 +22,15 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   extensions = new Map<string, Extension>();
 
   constructor(
-    private readonly fileService: FileManagerService,
     @Inject('EXTENSIONS_PROVIDER')
     private readonly coreExtensions: OAIEngineExtension[],
     private readonly httpService: HttpService,
-    private readonly fileManagerService: FileManagerService,
   ) {
     this.loadCoreExtensions();
     this.loadExternalExtensions();
 
     // Watch engine folder only for now
-    fileService.getCortexCppEnginePath().then((path) => {
+    fileManagerService.getCortexCppEnginePath().then((path) => {
       if (!existsSync(path)) mkdirSync(path);
       watch(path, (eventType, filename) => {
         this.extensions.clear();
@@ -84,43 +85,28 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   private async loadCoreExtensions() {
-    const llamaCPPEngine = new LlamaCPPProvider(
-      this.httpService,
-      this.fileManagerService,
-    );
+    const llamaCPPEngine = new LlamaCPPProvider(this.httpService);
     llamaCPPEngine.status = existsSync(
-      join(
-        await this.fileManagerService.getCortexCppEnginePath(),
-        Engines.llamaCPP,
-      ),
+      join(await fileManagerService.getCortexCppEnginePath(), Engines.llamaCPP),
     )
       ? EngineStatus.READY
       : EngineStatus.NOT_INITIALIZED;
 
-    const onnxEngine = new Onnxprovider(
-      this.httpService,
-      this.fileManagerService,
-    );
+    const onnxEngine = new Onnxprovider(this.httpService);
     onnxEngine.status =
       existsSync(
-        join(
-          await this.fileManagerService.getCortexCppEnginePath(),
-          Engines.onnx,
-        ),
+        join(await fileManagerService.getCortexCppEnginePath(), Engines.onnx),
       ) && process.platform === 'win32'
         ? EngineStatus.READY
         : process.platform !== 'win32'
           ? EngineStatus.NOT_SUPPORTED
           : EngineStatus.NOT_INITIALIZED;
 
-    const tensorrtLLMEngine = new TensorrtLLMProvider(
-      this.httpService,
-      this.fileManagerService,
-    );
+    const tensorrtLLMEngine = new TensorrtLLMProvider(this.httpService);
     tensorrtLLMEngine.status =
       existsSync(
         join(
-          await this.fileManagerService.getCortexCppEnginePath(),
+          await fileManagerService.getCortexCppEnginePath(),
           Engines.tensorrtLLM,
         ),
       ) && process.platform !== 'darwin'
@@ -146,7 +132,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   private async loadExternalExtensions() {
     const extensionsPath =
       process.env.EXTENSIONS_PATH ??
-      (await this.fileService.getExtensionsPath());
+      (await fileManagerService.getExtensionsPath());
     this.loadExtensions(extensionsPath);
   }
 

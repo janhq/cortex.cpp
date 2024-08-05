@@ -4,7 +4,6 @@ import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
 import { Cortex } from '@cortexso/cortex.js';
 import ora from 'ora';
-import { CortexClient } from './services/cortex.client';
 
 interface EmbeddingCommandOptions {
   encoding_format?: string;
@@ -24,7 +23,6 @@ interface EmbeddingCommandOptions {
 export class EmbeddingCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
-    private readonly cortex: CortexClient,
     readonly cortexUsecases: CortexUsecases,
   ) {
     super(cortexUsecases);

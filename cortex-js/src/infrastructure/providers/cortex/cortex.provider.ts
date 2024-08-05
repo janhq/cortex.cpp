@@ -12,7 +12,7 @@ import {
 import { readdirSync } from 'node:fs';
 import { normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 
 export interface ModelStatResponse {
   object: string;
@@ -32,10 +32,7 @@ export default class CortexProvider extends OAIEngineExtension {
   private loadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/loadmodel`;
   private unloadModelUrl = `http://${defaultCortexCppHost}:${defaultCortexCppPort}/inferences/server/unloadmodel`;
 
-  constructor(
-    protected readonly httpService: HttpService,
-    protected readonly fileManagerService: FileManagerService,
-  ) {
+  constructor(protected readonly httpService: HttpService) {
     super(httpService);
   }
 
@@ -44,7 +41,7 @@ export default class CortexProvider extends OAIEngineExtension {
     model: Model,
     settings?: ModelSettingParams,
   ): Promise<void> {
-    const modelsContainerDir = await this.fileManagerService.getModelsPath();
+    const modelsContainerDir = await fileManagerService.getModelsPath();
 
     let llama_model_path = settings?.llama_model_path;
     if (!llama_model_path) {
@@ -101,7 +98,7 @@ export default class CortexProvider extends OAIEngineExtension {
 
   // Override the isModelRunning method to check if the model is running
   override async isModelRunning(modelId: string): Promise<boolean> {
-    const configs = await this.fileManagerService.getConfig();
+    const configs = await fileManagerService.getConfig();
 
     return firstValueFrom(
       this.httpService.get(

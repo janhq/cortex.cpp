@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { join, extname, basename } from 'path';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { Model } from '@/domain/models/model.interface';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import {
   existsSync,
   mkdirSync,
@@ -24,9 +24,9 @@ export class ModelRepositoryImpl implements ModelRepository {
   // Check whether the models have been loaded or not.
   loaded = false;
 
-  constructor(private readonly fileService: FileManagerService) {
+  constructor() {
     this.loadModels();
-    fileService.getModelsPath().then((path) => {
+    fileManagerService.getModelsPath().then((path) => {
       if (!existsSync(path)) mkdirSync(path);
       watch(path, (eventType, filename) => {
         this.loadModels(true);
@@ -42,13 +42,13 @@ export class ModelRepositoryImpl implements ModelRepository {
    */
   async create(object: Model): Promise<Model> {
     const modelsFolderPath = join(
-      await this.fileService.getDataFolderPath(),
+      await fileManagerService.getDataFolderPath(),
       'models',
     );
     const modelYaml = dump(object);
     if (!existsSync(modelsFolderPath)) mkdirSync(modelsFolderPath);
     const modelsPath =
-      process.env.EXTENSIONS_PATH ?? (await this.fileService.getModelsPath());
+      process.env.EXTENSIONS_PATH ?? (await fileManagerService.getModelsPath());
     writeFileSync(
       join(modelsPath, `${normalizeModelId(object.model)}.yaml`),
       modelYaml,
@@ -95,7 +95,7 @@ export class ModelRepositoryImpl implements ModelRepository {
 
     const modelYaml = dump(updatedModel);
     const modelsPath =
-      process.env.EXTENSIONS_PATH ?? (await this.fileService.getModelsPath());
+      process.env.EXTENSIONS_PATH ?? (await fileManagerService.getModelsPath());
 
     writeFileSync(
       join(
@@ -116,7 +116,7 @@ export class ModelRepositoryImpl implements ModelRepository {
   async remove(id: string): Promise<void> {
     this.models.delete(id);
     const yamlFilePath = join(
-      await this.fileService.getModelsPath(),
+      await fileManagerService.getModelsPath(),
       this.fileModel.get(id) ?? id,
     );
     if (existsSync(yamlFilePath)) rmSync(yamlFilePath);
@@ -131,7 +131,7 @@ export class ModelRepositoryImpl implements ModelRepository {
   private async loadModels(forceReload: boolean = false): Promise<Model[]> {
     if (this.loaded && !forceReload) return Array.from(this.models.values());
     const modelsPath =
-      process.env.EXTENSIONS_PATH ?? (await this.fileService.getModelsPath());
+      process.env.EXTENSIONS_PATH ?? (await fileManagerService.getModelsPath());
 
     this.models.clear();
     this.fileModel.clear();

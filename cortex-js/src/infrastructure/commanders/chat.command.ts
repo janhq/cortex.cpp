@@ -12,13 +12,13 @@ import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { Engines } from './types/engine.interface';
 import { join } from 'path';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadProgress } from '@/utils/download-progress';
-import { CortexClient } from './services/cortex.client';
 import { DownloadType } from '@/domain/models/download.interface';
+import { CortexClient } from './services/cortex.client';
 
 type ChatOptions = {
   threadId?: string;
@@ -44,19 +44,17 @@ export class ChatCommand extends BaseCommand {
   constructor(
     private readonly inquirerService: InquirerService,
     private readonly telemetryUsecases: TelemetryUsecases,
-    private readonly fileService: FileManagerService,
     protected readonly cortexUsecases: CortexUsecases,
     protected readonly contextService: ContextService,
-    protected readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
-    this.chatClient = new ChatClient(this.cortex);
   }
 
   async runCommand(
     passedParams: string[],
     options: ChatOptions,
   ): Promise<void> {
+    this.chatClient = new ChatClient(this.cortex);
     let modelId = passedParams[0];
     // First attempt to get message from input or options
     // Extract input from 1 to end of array
@@ -89,7 +87,9 @@ export class ChatCommand extends BaseCommand {
     // Pull engine if not exist
     if (
       !isRemoteEngine(engine) &&
-      !existsSync(join(await this.fileService.getCortexCppEnginePath(), engine))
+      !existsSync(
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
+      )
     ) {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
@@ -107,7 +107,7 @@ export class ChatCommand extends BaseCommand {
       TelemetrySource.CLI,
     );
 
-    const preset = await this.fileService.getPreset(options.preset);
+    const preset = await fileManagerService.getPreset(options.preset);
 
     return this.chatClient.chat(
       modelId,

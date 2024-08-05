@@ -1,4 +1,3 @@
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { readdirSync } from 'fs';
 import { SubCommand } from 'nest-commander';
 import { join } from 'path';
@@ -6,6 +5,7 @@ import { SetCommandContext } from './decorators/CommandContext';
 import { ContextService } from '../services/context/context.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from './base.command';
+import { fileManagerService } from '../services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'presets',
@@ -14,7 +14,6 @@ import { BaseCommand } from './base.command';
 @SetCommandContext()
 export class PresetCommand extends BaseCommand {
   constructor(
-    private readonly fileService: FileManagerService,
     readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
   ) {
@@ -23,7 +22,7 @@ export class PresetCommand extends BaseCommand {
   async runCommand(): Promise<void> {
     return console.table(
       readdirSync(
-        join(await this.fileService.getDataFolderPath(), `presets`),
+        join(await fileManagerService.getDataFolderPath(), `presets`),
       ).map((e) => ({
         preset: e.replace('.yaml', ''),
       })),

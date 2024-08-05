@@ -1,6 +1,6 @@
+import { isEmpty } from 'lodash';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
-
 import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { HttpService } from '@nestjs/axios';
@@ -8,7 +8,6 @@ import decompress from 'decompress';
 import { exit } from 'node:process';
 import { InitOptions } from '@commanders/types/init-options.interface';
 import { firstValueFrom } from 'rxjs';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { rm } from 'fs/promises';
 import {
   CORTEX_ENGINE_RELEASES_URL,
@@ -23,12 +22,12 @@ import { CommonResponseDto } from '@/infrastructure/dtos/common/common-response.
 import { EngineStatus } from '@/domain/abstracts/engine.abstract';
 import { ConfigsUsecases } from '../configs/configs.usecase';
 import { defaultInstallationOptions } from '@/utils/init';
-import { isEmpty } from "lodash"
+import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+
 @Injectable()
 export class EnginesUsecases {
   constructor(
     private readonly httpService: HttpService,
-    private readonly fileManagerService: FileManagerService,
     private readonly downloadManagerService: DownloadManagerService,
     private readonly extensionRepository: ExtensionRepository,
     private readonly configsUsecases: ConfigsUsecases,
@@ -86,7 +85,7 @@ export class EnginesUsecases {
     // Ship Llama.cpp engine by default
     if (
       !existsSync(
-        join(await this.fileManagerService.getCortexCppEnginePath(), engine),
+        join(await fileManagerService.getCortexCppEnginePath(), engine),
       ) ||
       force
     ) {
@@ -187,7 +186,7 @@ export class EnginesUsecases {
   private installCudaToolkitDependency = async (cudaVersion?: string) => {
     const platform = process.platform === 'win32' ? 'windows' : 'linux';
 
-    const dataFolderPath = await this.fileManagerService.getDataFolderPath();
+    const dataFolderPath = await fileManagerService.getDataFolderPath();
     const url = CUDA_DOWNLOAD_URL.replace(
       '<version>',
       cudaVersion === '11' ? '11.7' : MIN_CUDA_VERSION,
@@ -205,7 +204,7 @@ export class EnginesUsecases {
         try {
           await decompress(
             destination,
-            await this.fileManagerService.getCortexCppEnginePath(),
+            await fileManagerService.getCortexCppEnginePath(),
           );
         } catch (e) {
           console.log(e);
@@ -265,7 +264,7 @@ export class EnginesUsecases {
       );
     }
 
-    const engineDir = await this.fileManagerService.getCortexCppEnginePath();
+    const engineDir = await fileManagerService.getCortexCppEnginePath();
 
     if (!existsSync(engineDir)) mkdirSync(engineDir, { recursive: true });
 

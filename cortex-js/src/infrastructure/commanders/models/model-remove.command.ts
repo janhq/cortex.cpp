@@ -1,10 +1,8 @@
 import { SubCommand } from 'nest-commander';
-import { exit } from 'node:process';
 import { SetCommandContext } from '../decorators/CommandContext';
 import { ContextService } from '@/infrastructure/services/context/context.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import { BaseCommand } from '../base.command';
-import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'remove',
@@ -19,7 +17,6 @@ export class ModelRemoveCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    private readonly cortex: CortexClient,
   ) {
     super(cortexUseCases);
   }

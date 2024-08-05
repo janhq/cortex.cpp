@@ -10,7 +10,7 @@ import { StartModelSuccessDto } from '@/infrastructure/dtos/models/start-model-s
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
 import { EngineExtension } from '@/domain/abstracts/engine.abstract';
 import { isLocalModel, normalizeModelId } from '@/utils/normalize-model-id';
-import { FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { fileManagerService, FileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
 import { AxiosError } from 'axios';
 import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
 import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
@@ -45,7 +45,6 @@ export class ModelsUsecases {
     private readonly modelRepository: ModelRepository,
     private readonly cortexUsecases: CortexUsecases,
     private readonly extensionRepository: ExtensionRepository,
-    private readonly fileManagerService: FileManagerService,
     private readonly downloadManagerService: DownloadManagerService,
     private readonly telemetryUseCases: TelemetryUsecases,
     private readonly contextService: ContextService,
@@ -118,7 +117,7 @@ export class ModelsUsecases {
    * @returns Model removal status
    */
   async remove(id: string) {
-    const modelsContainerDir = await this.fileManagerService.getModelsPath();
+    const modelsContainerDir = await fileManagerService.getModelsPath();
     if (!existsSync(modelsContainerDir)) {
       return;
     }
@@ -371,7 +370,7 @@ export class ModelsUsecases {
       return;
     }
 
-    const modelsContainerDir = await this.fileManagerService.getModelsPath();
+    const modelsContainerDir = await fileManagerService.getModelsPath();
 
     if (!existsSync(modelsContainerDir)) {
       mkdirSync(modelsContainerDir, { recursive: true });
@@ -425,7 +424,7 @@ export class ModelsUsecases {
           ) as CreateModelDto;
           if (model.engine === Engines.llamaCPP && model.files) {
             const fileUrl = join(
-              await this.fileManagerService.getModelsPath(),
+              await fileManagerService.getModelsPath(),
               normalizeModelId(modelId),
               llamaModelFile(model.files),
             );
@@ -434,7 +433,7 @@ export class ModelsUsecases {
           } else if (model.engine === Engines.llamaCPP) {
             model.files = [
               join(
-                await this.fileManagerService.getModelsPath(),
+                await fileManagerService.getModelsPath(),
                 normalizeModelId(modelId),
                 basename(
                   files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
@@ -449,7 +448,7 @@ export class ModelsUsecases {
           if (!(await this.findOne(modelId))) await this.create(model);
         } else {
           const fileUrl = join(
-            await this.fileManagerService.getModelsPath(),
+            await fileManagerService.getModelsPath(),
             normalizeModelId(modelId),
             basename(
               files.find((e) => e.rfilename.endsWith('.gguf'))?.rfilename ??
