@@ -4,7 +4,6 @@ import { ContextService } from '@/infrastructure/services/context/context.servic
 import { BaseCommand } from '../base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import ora from 'ora';
-import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'stop',
@@ -19,7 +18,6 @@ export class ModelStopCommand extends BaseCommand {
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
-    readonly cortex: CortexClient,
   ) {
     super(cortexUseCases);
   }

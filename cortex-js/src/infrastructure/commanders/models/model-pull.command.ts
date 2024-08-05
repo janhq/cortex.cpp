@@ -19,7 +19,6 @@ import { DownloadType } from '@/domain/models/download.interface';
 import ora from 'ora';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: 'pull',
@@ -35,7 +34,6 @@ export class ModelPullCommand extends BaseCommand {
     private readonly telemetryUsecases: TelemetryUsecases,
     readonly contextService: ContextService,
     readonly cortexUsecases: CortexUsecases,
-    readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

@@ -9,7 +9,6 @@ import { Presets, SingleBar } from 'cli-progress';
 import ora from 'ora';
 import { InitEngineDto } from '@/infrastructure/dtos/engines/engines.dto';
 import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
-import { CortexClient } from '../services/cortex.client';
 
 @SubCommand({
   name: '<name> init',
@@ -23,7 +22,6 @@ export class EnginesInitCommand extends BaseCommand {
   constructor(
     private readonly cortexUsecases: CortexUsecases,
     readonly contextService: ContextService,
-    readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

@@ -15,7 +15,6 @@ import { isLocalFile } from '@/utils/urls';
 import { parse } from 'node:path';
 import { printLastErrorLines } from '@/utils/logs';
 import { fileManagerService } from '../services/file-manager/file-manager.service';
-import { CortexClient } from './services/cortex.client';
 
 type RunOptions = {
   threadId?: string;
@@ -37,7 +36,6 @@ export class RunCommand extends BaseCommand {
   constructor(
     protected readonly cortexUsecases: CortexUsecases,
     private readonly inquirerService: InquirerService,
-    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

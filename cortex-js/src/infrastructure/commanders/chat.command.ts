@@ -46,7 +46,6 @@ export class ChatCommand extends BaseCommand {
     private readonly telemetryUsecases: TelemetryUsecases,
     protected readonly cortexUsecases: CortexUsecases,
     protected readonly contextService: ContextService,
-    private readonly cortex: CortexClient,
   ) {
     super(cortexUsecases);
   }

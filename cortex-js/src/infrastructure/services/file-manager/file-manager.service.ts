@@ -45,59 +45,41 @@ export class FileManagerService {
   async getConfig(dataFolderPath?: string): Promise<Config & object> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
-    const defaultConfig = this.defaultConfig();
-    const dataFolderPathUsed = dataFolderPath || defaultConfig.dataFolderPath;
+    const config = this.defaultConfig();
+    const dataFolderPathUsed = dataFolderPath || config.dataFolderPath;
     if (!existsSync(configPath) || !existsSync(dataFolderPathUsed)) {
       await this.createFolderIfNotExist(dataFolderPathUsed);
-      await this.writeConfigFile(defaultConfig);
-      return defaultConfig;
+      await this.writeConfigFile(config);
+      return config;
     }
 
     try {
       const content = await promises.readFile(configPath, 'utf8');
-      const configs = (yaml.load(content) as Record<string, Config>) ?? {
-        [this.configProfile]: defaultConfig,
-      };
-      const configKey = Object.keys(configs).find(
-        (key) => configs[key]?.isDefault,
-      );
+      const configs = yaml.load(content) as Record<string, Config>;
+      const config = configs?.[this.configProfile] ?? {};
       return {
-        ...defaultConfig,
-        ...(configs[configKey || this.configProfile] ?? {}),
+        ...this.defaultConfig(),
+        ...config,
       };
     } catch (error) {
       console.warn('Error reading config file. Using default config.');
       console.warn(error);
       await this.createFolderIfNotExist(dataFolderPathUsed);
-      await this.writeConfigFile(defaultConfig);
-      return defaultConfig;
+      await this.writeConfigFile(config);
+      return config;
     }
   }
 
-  async writeConfigFile(
-    config: Config & object,
-    setDefault: boolean = false,
-  ): Promise<void> {
+  async writeConfigFile(config: Config & object): Promise<void> {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
 
     // write config to file as yaml
-    if (!existsSync(configPath)) {
-      await promises.writeFile(configPath, '', 'utf8');
-    }
     const content = await promises.readFile(configPath, 'utf8');
     const currentConfig = yaml.load(content) as Record<string, Config>;
-    if (setDefault) {
-      for (const key in currentConfig) {
-        currentConfig[key].isDefault = false;
-      }
-    }
     const configString = yaml.dump({
       ...currentConfig,
-      [this.configProfile]: {
-        ...config,
-        isDefault: setDefault,
-      },
+      [this.configProfile]: config,
     });
     await promises.writeFile(configPath, configString, 'utf8');
   }
@@ -131,13 +113,13 @@ export class FileManagerService {
     // default will store at home directory
     const homeDir = os.homedir();
     const dataFolderPath = join(homeDir, this.cortexDirectoryName);
+
     return {
       dataFolderPath,
       cortexCppHost: defaultCortexCppHost,
       cortexCppPort: defaultCortexCppPort,
       apiServerHost: defaultCortexJsHost,
       apiServerPort: defaultCortexJsPort,
-      isDefault: true,
     };
   }
 
@@ -365,31 +347,26 @@ export class FileManagerService {
     try {
       const content = readFileSync(configPath, 'utf8');
       const configs = (yaml.load(content) as Record<string, Config>) ?? {};
-      const defaultConfig = Object.values(configs).find(
-        (currentConfig) => currentConfig.isDefault,
-      );
-      if (defaultConfig) {
-        config = defaultConfig;
-      }
+      config = configs?.[this.configProfile] ?? config;
     } catch {}
     return {
-      host: config.apiServerHost ?? defaultCortexJsHost,
-      port: config.apiServerPort ?? defaultCortexJsPort,
+      host: config.apiServerHost ?? 'localhost',
+      port: config.apiServerPort ?? 1337,
     };
   }
 
   public setConfigProfile(profile: string) {
     this.configProfile = profile;
   }
-  public getProfileConfig(profile: string): (Config & object) | null {
+  public profileConfigExists(profile: string): boolean {
     const homeDir = os.homedir();
     const configPath = join(homeDir, this.configFile);
     try {
       const content = readFileSync(configPath, 'utf8');
       const configs = (yaml.load(content) as Record<string, Config>) ?? {};
-      return configs[profile];
+      return !!configs[profile];
     } catch {
-      return null;
+      return false;
     }
   }
 }
