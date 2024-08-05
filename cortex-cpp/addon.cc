@@ -24,10 +24,9 @@
 
 static Napi::Env* s_env = nullptr;
 
-void start() {
+void start(const int port = 3929) {
   int thread_num = 1;
   std::string host = "127.0.0.1";
-  int port = 3929;
   std::string uploads_folder_path;
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
@@ -66,7 +65,11 @@ Napi::Value Start(const Napi::CallbackInfo& info) {
   // Register exitCallback with atexit
   std::atexit(exitCallback);
 
-  start();
+
+  Napi::Number jsParam = info[0].As<Napi::Number>();
+  int port = jsParam.Int32Value();
+
+  start(port);
   return env.Undefined();
 }
 

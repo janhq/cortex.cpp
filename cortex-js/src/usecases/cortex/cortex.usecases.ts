@@ -62,6 +62,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
           delimiter,
           engineDir,
         ),
+        CORTEX_CPP_PORT: port.toString(),
         // // Vulkan - Support 1 device at a time for now
         // ...(executableOptions.vkVisibleDevices?.length > 0 && {
         //   GGML_VULKAN_DEVICE: executableOptions.vkVisibleDevices[0],
