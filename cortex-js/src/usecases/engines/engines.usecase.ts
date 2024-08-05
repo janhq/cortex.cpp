@@ -1,6 +1,6 @@
+import { isEmpty } from 'lodash';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ExtensionRepository } from '@/domain/repositories/extension.interface';
-
 import { cpSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { HttpService } from '@nestjs/axios';
@@ -78,7 +78,7 @@ export class EnginesUsecases {
   ): Promise<any> => {
     // Use default option if not defined
 
-    if (!options && engine === Engines.llamaCPP) {
+    if ((!options || isEmpty(options)) && engine === Engines.llamaCPP) {
       options = await defaultInstallationOptions();
     }
     const installPackages = [];

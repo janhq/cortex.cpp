@@ -105,12 +105,7 @@ export class ChatClient {
 
     const createMessageDto: Cortex.Beta.Threads.Messages.MessageCreateParams = {
       role: 'user',
-      content: [
-        {
-          type: 'text',
-          text: userInput,
-        },
-      ],
+      content: userInput,
     };
     this.cortex.beta.threads.messages.create(threadId, createMessageDto);
 
@@ -147,12 +142,7 @@ export class ChatClient {
       this.cortex.beta.threads.messages
         .create(threadId, {
           role: 'assistant',
-          content: [
-            {
-              type: 'text',
-              text: assistantResponse,
-            },
-          ],
+          content: assistantResponse,
         })
         .then(() => {
           assistantResponse = '';

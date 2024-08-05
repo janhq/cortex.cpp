@@ -348,18 +348,12 @@ jobs:
           cp cortex cortexso/usr/local/bin/cortex
           dpkg-deb --build cortexso
 
-      - uses: nick-fields/retry@v3
-        with:
-          continue_on_error: true
-          retry_wait_seconds: 10
-          timeout_minutes: 10
-          max_attempts: 3
-          shell: cmd
-          command: |
-            cd cortex-js
-            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign-binary CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+      - run: |
+          cd cortex-js
+          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+          make codesign-binary CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
+        shell: cmd
         if: runner.os == 'Windows'
 
       - name: Update version in installer.iss using sed
@@ -377,18 +371,12 @@ jobs:
           path: cortex-js/installer.iss
           options: /O+
 
-      - uses: nick-fields/retry@v3
-        with:
-          continue_on_error: true
-          retry_wait_seconds: 10
-          timeout_minutes: 10
-          max_attempts: 3
-          shell: cmd
-          command: |
-            cd cortex-js
-            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign-installer CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+      - run: |
+          cd cortex-js
+          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+          make codesign-installer CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
+        shell: cmd
         if: runner.os == 'Windows'
 
       - name: Post-Bundle
