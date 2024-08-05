@@ -129,7 +129,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
    * @param port
    * @returns
    */
-  healthCheck(host: string, port: number): Promise<boolean> {
+  async healthCheck(host: string, port: number): Promise<boolean> {
     return fetch(CORTEX_CPP_HEALTH_Z_URL(host, port))
       .then((res) => {
         if (res.ok) {
