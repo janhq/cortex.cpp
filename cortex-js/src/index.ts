@@ -13,7 +13,7 @@ import { cleanLogs } from './utils/log';
  * Start the API server
  */
 export async function start(host?: string, port?: number) {
-  const app = await getApp();
+  const app = await getApp(host, port);
   // getting port from env
   const sHost = host || process.env.CORTEX_JS_HOST || defaultCortexJsHost;
   const sPort = port || process.env.CORTEX_JS_PORT || defaultCortexJsPort;

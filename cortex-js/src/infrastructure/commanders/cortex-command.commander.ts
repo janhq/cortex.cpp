@@ -91,6 +91,9 @@ export class CortexCommand extends CommandRunner {
 
     this.host = options?.address || configApiServerHost || defaultCortexJsHost;
     this.port = options?.port || configApiServerPort || defaultCortexJsPort;
+    if(this.host === 'localhost') {
+      this.host = '127.0.0.1';
+    }
     this.enginePort =
       Number(options?.enginePort) ||
       configCortexCppPort ||
@@ -134,7 +137,7 @@ export class CortexCommand extends CommandRunner {
         await fileManagerService.getConfig(dataFolderPath);
       }
       if (attach) {
-        const app = await getApp();
+        const app = await getApp(this.host, this.port);
         await app.listen(this.port, this.host);
       } else {
         await this.cortexUseCases.startServerDetached(this.host, this.port);

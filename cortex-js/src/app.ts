@@ -4,7 +4,7 @@ import { AppModule } from './app.module';
 import { fileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 import { ValidationPipe } from '@nestjs/common';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
-export const getApp = async () => {
+export const getApp = async (host?: string, port?: number) => {
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
     cors: true,
@@ -64,7 +64,7 @@ export const getApp = async () => {
       'System',
       'Endpoints for stopping the Cortex API server, checking its status, and fetching system events.',
     )
-    .addServer('http://127.0.0.1:1337')
+    .addServer(`http://${host || '127.0.0.1'}:${port || 1337}`)
     .build();
   const document = SwaggerModule.createDocument(app, config);
 
