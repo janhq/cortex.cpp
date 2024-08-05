@@ -75,6 +75,9 @@ export class FileManagerService {
     const configPath = join(homeDir, this.configFile);
 
     // write config to file as yaml
+    if (!existsSync(configPath)) {
+      await promises.writeFile(configPath, '', 'utf8');
+    }
     const content = await promises.readFile(configPath, 'utf8');
     const currentConfig = yaml.load(content) as Record<string, Config>;
     const configString = yaml.dump({
