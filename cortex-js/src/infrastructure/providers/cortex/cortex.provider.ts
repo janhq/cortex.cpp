@@ -13,6 +13,7 @@ import { readdirSync } from 'node:fs';
 import { normalizeModelId } from '@/utils/normalize-model-id';
 import { firstValueFrom } from 'rxjs';
 import { fileManagerService } from '@/infrastructure/services/file-manager/file-manager.service';
+import { existsSync, readFileSync } from 'fs';
 
 export interface ModelStatResponse {
   object: string;
@@ -34,6 +35,7 @@ export default class CortexProvider extends OAIEngineExtension {
 
   constructor(protected readonly httpService: HttpService) {
     super(httpService);
+    this.persistEngineVersion();
   }
 
   // Override the inference method to make an inference request to the engine
@@ -168,4 +170,14 @@ export default class CortexProvider extends OAIEngineExtension {
     this.loadModelUrl = `http://${host}:${port}/inferences/server/loadmodel`;
     this.unloadModelUrl = `http://${host}:${port}/inferences/server/unloadmodel`;
   }
+
+  private persistEngineVersion = async () => {
+    const versionFilePath = join(
+      await fileManagerService.getCortexCppEnginePath(),
+      this.name,
+      'version.txt',
+    );
+    if (existsSync(versionFilePath))
+      this.version = readFileSync(versionFilePath, 'utf-8');
+  };
 }

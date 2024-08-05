@@ -32,7 +32,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
     // Watch engine folder only for now
     fileManagerService.getCortexCppEnginePath().then((path) => {
       if (!existsSync(path)) mkdirSync(path);
-      watch(path, (eventType, filename) => {
+      watch(path, () => {
         this.extensions.clear();
         this.loadCoreExtensions();
         this.loadExternalExtensions();
