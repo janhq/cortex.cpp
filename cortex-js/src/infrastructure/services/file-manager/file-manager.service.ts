@@ -36,7 +36,7 @@ export class FileManagerService {
   private benchmarkFoldername = 'benchmark';
   private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
-  private configProfile = 'default';
+  private configProfile = process.env.CORTEX_PROFILE || 'default';
 
   /**
    * Get cortex configs
@@ -353,13 +353,16 @@ export class FileManagerService {
       config = configs?.[this.configProfile] ?? config;
     } catch {}
     return {
-      host: config.apiServerHost ?? 'localhost',
+      host: config.apiServerHost ?? '127.0.0.1',
       port: config.apiServerPort ?? 1337,
     };
   }
 
   public setConfigProfile(profile: string) {
     this.configProfile = profile;
+  }
+  public getConfigProfile() {
+    return this.configProfile;
   }
   public profileConfigExists(profile: string): boolean {
     const homeDir = os.homedir();
