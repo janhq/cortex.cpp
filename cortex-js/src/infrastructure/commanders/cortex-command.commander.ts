@@ -13,7 +13,11 @@ import { BenchmarkCommand } from './benchmark.command';
 import chalk from 'chalk';
 import { ContextService } from '../services/context/context.service';
 import { EnginesCommand } from './engines.command';
-import { defaultCortexJsHost, defaultCortexJsPort } from '../constants/cortex';
+import {
+  defaultCortexCppPort,
+  defaultCortexJsHost,
+  defaultCortexJsPort,
+} from '../constants/cortex';
 import { getApp } from '@/app';
 import { fileManagerService } from '../services/file-manager/file-manager.service';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
@@ -28,6 +32,7 @@ type ServeOptions = {
   dataFolder?: string;
   version?: boolean;
   name?: string;
+  enginePort?: string;
 };
 
 @RootCommand({
@@ -53,6 +58,7 @@ export class CortexCommand extends CommandRunner {
   port: number;
   configHost: string;
   configPort: number;
+  enginePort: number;
   constructor(
     readonly contextService: ContextService,
     readonly cortexUseCases: CortexUsecases,
@@ -70,12 +76,14 @@ export class CortexCommand extends CommandRunner {
           ...fileManagerService.defaultConfig(),
           apiServerHost: options?.address || defaultCortexJsHost,
           apiServerPort: options?.port || defaultCortexJsPort,
+          cortexCppPort: Number(options?.enginePort) || defaultCortexCppPort,
         });
       }
     }
     const {
       apiServerHost: configApiServerHost,
       apiServerPort: configApiServerPort,
+      cortexCppPort: configCortexCppPort,
     } = await fileManagerService.getConfig();
 
     this.configHost = configApiServerHost || defaultCortexJsHost;
@@ -83,6 +91,10 @@ export class CortexCommand extends CommandRunner {
 
     this.host = options?.address || configApiServerHost || defaultCortexJsHost;
     this.port = options?.port || configApiServerPort || defaultCortexJsPort;
+    this.enginePort =
+      Number(options?.enginePort) ||
+      configCortexCppPort ||
+      defaultCortexCppPort;
     const showLogs = options?.logs || false;
     const showVersion = options?.version || false;
     const dataFolderPath = options?.dataFolder;
@@ -140,6 +152,7 @@ export class CortexCommand extends CommandRunner {
         apiServerHost: this.host,
         apiServerPort: this.port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
+        cortexCppPort: this.enginePort,
       });
       if (!attach) process.exit(0);
     } catch (e) {
@@ -178,7 +191,7 @@ export class CortexCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--dataFolder <dataFolderPath>',
+    flags: '-df, --dataFolder <dataFolderPath>',
     description: 'Set the data folder directory',
   })
   parseDataFolder(value: string) {
@@ -192,12 +205,21 @@ export class CortexCommand extends CommandRunner {
   parseVersion() {
     return true;
   }
+
   @Option({
     flags: '-n, --name <name>',
     description: 'Name of the process',
   })
   parseName(value: string) {
     fileManagerService.setConfigProfile(value);
+    return value;
+  }
+
+  @Option({
+    flags: '-ep, --engine-port <port>',
+    description: 'Port to serve the engine',
+  })
+  parseEnginePort(value: string) {
     return value;
   }
 }

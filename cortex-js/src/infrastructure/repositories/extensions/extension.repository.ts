@@ -85,7 +85,10 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
   }
 
   private async loadCoreExtensions() {
+    const { cortexCppPort, cortexCppHost } =
+      await fileManagerService.getConfig();
     const llamaCPPEngine = new LlamaCPPProvider(this.httpService);
+    llamaCPPEngine.setUrls(cortexCppHost, cortexCppPort);
     llamaCPPEngine.status = existsSync(
       join(await fileManagerService.getCortexCppEnginePath(), Engines.llamaCPP),
     )
@@ -93,6 +96,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
       : EngineStatus.NOT_INITIALIZED;
 
     const onnxEngine = new Onnxprovider(this.httpService);
+    onnxEngine.setUrls(cortexCppHost, cortexCppPort);
     onnxEngine.status =
       existsSync(
         join(await fileManagerService.getCortexCppEnginePath(), Engines.onnx),
@@ -103,6 +107,7 @@ export class ExtensionRepositoryImpl implements ExtensionRepository {
           : EngineStatus.NOT_INITIALIZED;
 
     const tensorrtLLMEngine = new TensorrtLLMProvider(this.httpService);
+    onnxEngine.setUrls(cortexCppHost, cortexCppPort);
     tensorrtLLMEngine.status =
       existsSync(
         join(
