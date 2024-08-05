@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { fileManagerService } from './infrastructure/services/file-manager/file-manager.service';
 import { ValidationPipe } from '@nestjs/common';
 import { TelemetryUsecases } from './usecases/telemetry/telemetry.usecases';
+import { cleanLogs } from './utils/logs';
 export const getApp = async (host?: string, port?: number) => {
   const app = await NestFactory.create(AppModule, {
     snapshot: true,
@@ -25,7 +26,8 @@ export const getApp = async (host?: string, port?: number) => {
       enableDebugMessages: true,
     }),
   );
-
+  
+  cleanLogs();
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
     .setDescription(
