@@ -37,3 +37,50 @@ Name: "quicklaunchicon"; Description: "Create a &Quick Launch icon"; GroupDescri
 [Icons]
 Name: "{commondesktop}\Cortexso"; Filename: "{app}\cortex.exe"; Tasks: desktopicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\Cortexso"; Filename: "{app}\cortex.exe"; Tasks: quicklaunchicon
+
+; Define the uninstall run section to execute commands before uninstallation
+[UninstallRun]
+Filename: "{app}\cortex.exe"; Parameters: "stop"; StatusMsg: "Stopping Cortexso service..."; Flags: runhidden
+
+; Use Pascal scripting to delete the directory for all users
+[Code]
+function GetUsersFolder: String;
+var
+  WinDir: String;
+begin
+  WinDir := ExpandConstant('{win}');
+  Result := Copy(WinDir, 1, Pos('\Windows', WinDir) - 1) + '\Users';
+end;
+
+procedure DeleteUserCortexFolder;
+var
+  UsersFolder: String;
+  FindRec: TFindRec;
+begin
+  UsersFolder := GetUsersFolder;
+  if FindFirst(UsersFolder + '\*', FindRec) then
+  begin
+    try
+      repeat
+        if (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY <> 0) and
+           (FindRec.Name <> '.') and (FindRec.Name <> '..') then
+        begin
+          if DirExists(UsersFolder + '\' + FindRec.Name + '\cortex') then
+          begin
+            DelTree(UsersFolder + '\' + FindRec.Name + '\cortex', True, True, True);
+          end;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usPostUninstall then
+  begin
+    DeleteUserCortexFolder;
+  end;
+end;
