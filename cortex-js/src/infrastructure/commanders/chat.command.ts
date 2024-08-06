@@ -18,7 +18,6 @@ import { Cortex } from '@cortexso/cortex.js';
 import { ChatClient } from './services/chat-client';
 import { downloadProgress } from '@/utils/download-progress';
 import { DownloadType } from '@/domain/models/download.interface';
-import { CortexClient } from './services/cortex.client';
 
 type ChatOptions = {
   threadId?: string;
@@ -94,6 +93,18 @@ export class ChatCommand extends BaseCommand {
       console.log('Downloading engine...');
       await this.cortex.engines.init(engine);
       await downloadProgress(this.cortex, undefined, DownloadType.Engine);
+    }
+
+    const { version: engineVersion } =
+      await this.cortex.engines.retrieve(engine);
+    if (
+      existingModel.engine_version &&
+      existingModel.engine_version > engineVersion
+    ) {
+      console.log(
+        `Model engine version ${existingModel.engine_version} is not compatible with engine version ${engineVersion}`,
+      );
+      process.exit(1);
     }
 
     if (!message) options.attach = true;

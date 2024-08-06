@@ -34,4 +34,7 @@ export abstract class BaseCommand extends CommandRunner {
     }
     await this.runCommand(passedParam, options);
   }
+  protected setCortex(cortex: CortexClient) {
+    this.cortex = cortex;
+  }
 }

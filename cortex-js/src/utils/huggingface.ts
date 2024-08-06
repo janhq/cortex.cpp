@@ -125,7 +125,6 @@ export async function fetchJanRepoData(
 
   const res = await fetch(url);
   const jsonData = await res.json();
-  console.log('Jan repo data:', jsonData);
   if ('siblings' in jsonData) {
     AllQuantizations.forEach((quantization) => {
       jsonData.siblings.forEach((sibling: HuggingFaceRepoSibling) => {
@@ -138,7 +137,6 @@ export async function fetchJanRepoData(
         }
       });
     });
-    console.log('Jan repo data:', jsonData);
     return jsonData as HuggingFaceRepoData;
   }
 
@@ -146,7 +144,7 @@ export async function fetchJanRepoData(
     | {
         path: string;
         size: number;
-        lfs?: { oid?: string };
+        oid?: string;
       }[]
     | { error: string } = jsonData;
 
@@ -162,7 +160,9 @@ export async function fetchJanRepoData(
             rfilename: e.path,
             downloadUrl: HUGGING_FACE_TREE_REF_URL(repo, tree, e.path),
             fileSize: e.size ?? 0,
-            lfs: e.lfs ?? { oid: '' },
+            lfs: {
+              oid: e.oid,
+            },
           };
         })
       : [],

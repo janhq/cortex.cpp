@@ -199,7 +199,7 @@ export class EnginesUsecases {
       url,
       'Cuda Toolkit Dependencies',
       DownloadType.Engine,
-      { [url]: destination },
+      { [url]: { destination } },
       async () => {
         try {
           await decompress(
@@ -274,7 +274,7 @@ export class EnginesUsecases {
       toDownloadAsset.browser_download_url,
       engine,
       DownloadType.Engine,
-      { [toDownloadAsset.browser_download_url]: destination },
+      { [toDownloadAsset.browser_download_url]: { destination } },
       // On completed - post processing
       async () => {
         try {

@@ -237,6 +237,11 @@ export class DownloadManagerService {
               : DownloadStatus.Downloaded;
             if (isFileBroken) {
               downloadItem.error = 'Checksum is not matched';
+              this.handleError(
+                new Error('Checksum is not matched'),
+                downloadId,
+                destination,
+              );
             }
           }
           if (isFileBroken) {

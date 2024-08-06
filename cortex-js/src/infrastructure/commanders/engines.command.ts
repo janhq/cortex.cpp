@@ -61,6 +61,7 @@ export class EnginesCommand extends BaseCommand {
   ) {
     const commandInstance = this.moduleRef.get(commandClass, { strict: false });
     if (commandInstance) {
+      commandInstance.setCortex(this.cortex);
       await commandInstance.runCommand(params, options);
     } else {
       console.error('Command not found.');

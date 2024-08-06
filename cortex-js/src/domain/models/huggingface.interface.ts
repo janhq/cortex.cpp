@@ -10,6 +10,7 @@ export interface HuggingFaceRepoSibling {
   downloadUrl?: string;
   fileSize?: number;
   quantization?: Quantization;
+  lfs?: { oid?: string };
 }
 export interface HuggingFaceRepoData {
   id: string;
@@ -27,6 +28,7 @@ export interface HuggingFaceRepoData {
   cardData: Record<CardDataKeys | string, unknown>;
   siblings: HuggingFaceRepoSibling[];
   createdAt: string;
+  verified?: boolean;
 }
 
 const CardDataKeys = [

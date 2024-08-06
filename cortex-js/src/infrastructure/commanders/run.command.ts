@@ -98,6 +98,11 @@ export class RunCommand extends BaseCommand {
       await this.cortex.engines.init(engine);
       await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
+    const { version: engineVersion } = await this.cortex.engines.retrieve(engine);
+    if(existingModel.engine_version && existingModel.engine_version > engineVersion) {
+      console.log(`Model engine version ${existingModel.engine_version} is not compatible with engine version ${engineVersion}`);
+      process.exit(1);
+    }
 
     const startingSpinner = ora('Loading model...').start();
 
