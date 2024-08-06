@@ -91,7 +91,7 @@ export class CortexCommand extends CommandRunner {
 
     this.host = options?.address || configApiServerHost || defaultCortexJsHost;
     this.port = options?.port || configApiServerPort || defaultCortexJsPort;
-    if(this.host === 'localhost') {
+    if (this.host === 'localhost') {
       this.host = '127.0.0.1';
     }
     this.enginePort =
@@ -122,9 +122,7 @@ export class CortexCommand extends CommandRunner {
       const isServerOnline = await this.cortexUseCases.isAPIServerOnline();
       if (isServerOnline) {
         console.log(
-          chalk.blue(
-            `Server is already running at http://${this.configHost}:${this.configPort}. Please use 'cortex stop' to stop the server.`,
-          ),
+          `Server is already running at http://${this.configHost}:${this.configPort}. Please use 'cortex stop' to stop the server.`,
         );
         process.exit(0);
       }
