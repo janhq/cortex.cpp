@@ -5,6 +5,8 @@ import {
 import { getApp } from './app';
 import chalk from 'chalk';
 
+process.title = 'Cortex API Server';
+
 async function bootstrap() {
   // getting port from env
   const host = process.env.CORTEX_JS_HOST || defaultCortexJsHost;

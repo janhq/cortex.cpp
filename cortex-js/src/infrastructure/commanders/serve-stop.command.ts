@@ -1,7 +1,6 @@
 import { SubCommand } from 'nest-commander';
 import { BaseCommand } from './base.command';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
-import { FileManagerService } from '../services/file-manager/file-manager.service';
 
 @SubCommand({
   name: 'stop',

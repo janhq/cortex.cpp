@@ -206,7 +206,6 @@ export class CortexUsecases implements BeforeApplicationShutdown {
     // for backward compatibility, we didn't have the apiServerHost and apiServerPort in the config file in the past
     const apiServerHost = configApiServerHost || defaultCortexJsHost;
     const apiServerPort = configApiServerPort || defaultCortexJsPort;
-    await this.stopCortex();
     return fetch(CORTEX_JS_SYSTEM_URL(apiServerHost, apiServerPort), {
       method: 'DELETE',
     }).catch(() => {});

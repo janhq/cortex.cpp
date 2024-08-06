@@ -13,6 +13,7 @@ dependenciesSpinner.succeed(
 );
 
 process.removeAllListeners('warning');
+process.title = 'Cortex Command Executor';
 
 async function bootstrap() {
   let telemetryUseCase: TelemetryUsecases | null = null;
