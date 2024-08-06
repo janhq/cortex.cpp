@@ -12,11 +12,10 @@ import { CortexUsecases } from './usecases/cortex/cortex.usecases';
  * Start the API server
  */
 export async function start(host?: string, port?: number) {
-  const app = await getApp(host, port);
   // getting port from env
   const sHost = host || process.env.CORTEX_JS_HOST || defaultCortexJsHost;
   const sPort = port || process.env.CORTEX_JS_PORT || defaultCortexJsPort;
-
+  const app = await getApp(sHost, Number(sPort));
   try {
     await app.listen(sPort, sHost);
     const cortexUsecases = await app.resolve(CortexUsecases);
