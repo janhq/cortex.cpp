@@ -3,7 +3,6 @@ import {
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { getApp } from './app';
-import chalk from 'chalk';
 
 process.title = 'Cortex API Server';
 
@@ -14,12 +13,10 @@ async function bootstrap() {
   const app = await getApp(host, Number(port));
   try {
     await app.listen(port, host);
-    console.log(chalk.blue(`Started server at http://${host}:${port}`));
-    console.log(
-      chalk.blue(`API Playground available at http://${host}:${port}/api`),
-    );
-  } catch {
-    console.error(`Failed to start server. Is port ${port} in use?`);
+    console.log(`Started server at http://${host}:${port}`);
+    console.log(`API Playground available at http://${host}:${port}/api`);
+  } catch (error) {
+    console.error(`Failed to start server. Is port ${port} in use? ${error}`);
   }
 }
 
