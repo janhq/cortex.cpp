@@ -26,7 +26,7 @@ export const getApp = async (host?: string, port?: number) => {
       enableDebugMessages: true,
     }),
   );
-  
+
   cleanLogs();
   const config = new DocumentBuilder()
     .setTitle('Cortex API')
