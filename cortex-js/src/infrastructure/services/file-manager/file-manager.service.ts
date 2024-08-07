@@ -28,7 +28,6 @@ const writeAsync = promisify(write);
 
 @Injectable()
 export class FileManagerService {
-  private configFile = '.cortexrc';
   private cortexDirectoryName = 'cortex';
   private modelFolderName = 'models';
   private presetFolderName = 'presets';
@@ -44,7 +43,7 @@ export class FileManagerService {
    */
   async getConfig(dataFolderPath?: string): Promise<Config & object> {
     const homeDir = os.homedir();
-    const configPath = join(homeDir, this.configFile);
+    const configPath = join(homeDir, this.getConfigFileName());
     const config = this.defaultConfig();
     const dataFolderPathUsed = dataFolderPath || config.dataFolderPath;
     if (!existsSync(configPath) || !existsSync(dataFolderPathUsed)) {
@@ -72,7 +71,7 @@ export class FileManagerService {
 
   async writeConfigFile(config: Config & object): Promise<void> {
     const homeDir = os.homedir();
-    const configPath = join(homeDir, this.configFile);
+    const configPath = join(homeDir, this.getConfigFileName());
 
     // write config to file as yaml
     if (!existsSync(configPath)) {
@@ -345,7 +344,7 @@ export class FileManagerService {
    */
   getServerConfig(): { host: string; port: number } {
     const homeDir = os.homedir();
-    const configPath = join(homeDir, this.configFile);
+    const configPath = join(homeDir, this.getConfigFileName());
     let config = this.defaultConfig();
     try {
       const content = readFileSync(configPath, 'utf8');
@@ -366,7 +365,7 @@ export class FileManagerService {
   }
   public profileConfigExists(profile: string): boolean {
     const homeDir = os.homedir();
-    const configPath = join(homeDir, this.configFile);
+    const configPath = join(homeDir, this.getConfigFileName());
     try {
       const content = readFileSync(configPath, 'utf8');
       const configs = (yaml.load(content) as Record<string, Config>) ?? {};
@@ -374,6 +373,13 @@ export class FileManagerService {
     } catch {
       return false;
     }
+  }
+
+  private getConfigFileName(): string {
+    if (this.configProfile === 'default') {
+      return '.cortexrc';
+    }
+    return `.${this.configProfile}rc`;
   }
 }
 
