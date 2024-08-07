@@ -421,7 +421,7 @@ export class ModelsUsecases {
           if (file.downloadUrl)
             acc[file.downloadUrl] = {
               destination: join(modelFolder, file.rfilename),
-              checksum: file.lfs.oid,
+              checksum: file?.lfs?.oid,
             };
           return acc;
         },
