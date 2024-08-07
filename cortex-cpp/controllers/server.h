@@ -66,6 +66,8 @@ class server : public drogon::HttpController<server>,
   // ADD_METHOD_TO(server::handlePrelight, "/v1/embeddings", Options);
 
   // PATH_ADD("/llama/chat_completion", Post);
+  METHOD_ADD(server::UnloadEngine, "unloadengine", Post);
+
   METHOD_LIST_END
   void ChatCompletion(
       const HttpRequestPtr& req,
@@ -91,6 +93,8 @@ class server : public drogon::HttpController<server>,
   void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void UnloadEngine(const HttpRequestPtr& req,
+                    std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,

@@ -19,12 +19,12 @@ constexpr static auto kOnnxEngine = "cortex.onnx";
 constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
 }  // namespace
 
-server::server(){
+server::server() {
 
-    // Some default values for now below
-    // log_disable();  // Disable the log to file feature, reduce bloat for
-    // target
-    // system ()
+  // Some default values for now below
+  // log_disable();  // Disable the log to file feature, reduce bloat for
+  // target
+  // system ()
 };
 
 server::~server() {}
@@ -324,6 +324,36 @@ void server::LoadModel(const HttpRequestPtr& req,
     cb(resp);
   });
   LOG_TRACE << "Done load model";
+}
+
+void server::UnloadEngine(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
+  auto engine_type =
+      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
+  if (!IsEngineLoaded(engine_type)) {
+    Json::Value res;
+    res["message"] = "Engine is not loaded yet";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k409Conflict);
+    callback(resp);
+    LOG_WARN << "Engine is not loaded yet";
+    return;
+  }
+
+  EngineI* e = std::get<EngineI*>(engines_[engine_type].engine);
+  delete e;
+  engines_.erase(engine_type);
+  LOG_INFO << "Unloaded engine " + engine_type;
+  Json::Value res;
+  res["message"] = "Unloaded engine " + engine_type;
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+  resp->setStatusCode(k200OK);
+  callback(resp);
 }
 
 void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
