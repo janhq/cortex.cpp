@@ -187,6 +187,13 @@ jobs:
           rm package.json
           mv package-tmp.json package.json
 
+      - name: Remove build build-deps and build folder for windows
+        if: runner.os == 'Windows'
+        run: |
+          cd cortex-cpp
+          Remove-Item -Recurse -Force build
+          Remove-Item -Recurse -Force build-deps
+
       # build prebuilds
       - name: Build Prebuilds
         working-directory: cortex-cpp
@@ -207,7 +214,7 @@ jobs:
           asset_content_type: application/gzip
 
       # Setup .npmrc file to publish to npm - upload only once
-      - run: npm publish --access public
+      - run: rm -rf build-deps && rm -rf build && rm -rf prebuilds && npm publish --access public
         continue-on-error: true
         if: runner.os == 'linux'
         env:
