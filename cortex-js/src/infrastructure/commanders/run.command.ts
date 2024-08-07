@@ -5,7 +5,7 @@ import ora from 'ora';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { Engines } from './types/engine.interface';
-import { checkModelCompatibility } from '@/utils/model-check';
+import { checkModelCompatibility, checkRequiredVersion } from '@/utils/model-check';
 import { BaseCommand } from './base.command';
 import { isRemoteEngine } from '@/utils/normalize-model-id';
 import { ChatClient } from './services/chat-client';
@@ -99,7 +99,7 @@ export class RunCommand extends BaseCommand {
       await downloadProgress(this.cortex, undefined, DownloadType.Engine);
     }
     const { version: engineVersion } = await this.cortex.engines.retrieve(engine);
-    if(existingModel.engine_version && existingModel.engine_version > engineVersion) {
+    if(existingModel.engine_version && !checkRequiredVersion(existingModel.engine_version, engineVersion)) {
       console.log(`Model engine version ${existingModel.engine_version} is not compatible with engine version ${engineVersion}`);
       process.exit(1);
     }
