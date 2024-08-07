@@ -10,6 +10,7 @@ export interface HuggingFaceRepoSibling {
   downloadUrl?: string;
   fileSize?: number;
   quantization?: Quantization;
+  lfs?: { oid?: string };
 }
 export interface HuggingFaceRepoData {
   id: string;

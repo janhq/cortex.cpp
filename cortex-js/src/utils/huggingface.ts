@@ -144,6 +144,7 @@ export async function fetchJanRepoData(
     | {
         path: string;
         size: number;
+        oid?: string;
       }[]
     | { error: string } = jsonData;
 
@@ -159,6 +160,9 @@ export async function fetchJanRepoData(
             rfilename: e.path,
             downloadUrl: HUGGING_FACE_TREE_REF_URL(repo, tree, e.path),
             fileSize: e.size ?? 0,
+            lfs: {
+              oid: e.oid,
+            },
           };
         })
       : [],
@@ -186,7 +190,6 @@ export async function fetchJanRepoData(
   });
 
   data.modelUrl = url;
-
   return data;
 }
 

@@ -45,3 +45,19 @@ export const checkModelCompatibility = async (
     }
   }
 };
+
+export const parseVersion = (version: string) => {
+  return version.split('.').map(Number);
+};
+
+export const checkRequiredVersion = (version: string, minVersion: string) => {
+  const [currentMajor, currentMinor, currentPatch] = parseVersion(version);
+  const [requiredMajor, requiredMinor, requiredPatch] =
+    parseVersion(minVersion);
+  return (
+    currentMajor > requiredMajor ||
+    (currentMajor === requiredMajor &&
+      (currentMinor > requiredMinor ||
+        (currentMinor === requiredMinor && currentPatch >= requiredPatch)))
+  );
+};

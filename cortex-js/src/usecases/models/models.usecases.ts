@@ -399,14 +399,34 @@ export class ModelsUsecases {
     }
 
     // Start downloading the model
-    const toDownloads: Record<string, string> = files
+    const toDownloads: Record<
+      string,
+      {
+        destination: string;
+        checksum?: string;
+      }
+    > = files
       .filter((e) => this.validFileDownload(e))
-      .reduce((acc: Record<string, string>, file) => {
-        if (file.downloadUrl)
-          acc[file.downloadUrl] = join(modelFolder, file.rfilename);
-        return acc;
-      }, {});
-
+      .reduce(
+        (
+          acc: Record<
+            string,
+            {
+              destination: string;
+              checksum?: string;
+            }
+          >,
+          file,
+        ) => {
+          if (file.downloadUrl)
+            acc[file.downloadUrl] = {
+              destination: join(modelFolder, file.rfilename),
+              checksum: file.lfs.oid,
+            };
+          return acc;
+        },
+        {},
+      );
     return this.downloadManagerService.submitDownloadRequest(
       modelId,
       modelId,

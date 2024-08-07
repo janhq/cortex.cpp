@@ -38,7 +38,7 @@
     "preuninstall": "node ./uninstall.js"
   },
   "dependencies": {
-    "@cortexso/cortex.js": "^0.1.5",
+    "@cortexso/cortex.js": "^0.1.7",
     "@nestjs/axios": "^3.0.2",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.2.2",
