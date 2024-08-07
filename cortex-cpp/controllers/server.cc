@@ -345,6 +345,8 @@ void server::UnloadEngine(
     return;
   }
 
+  EngineI* e = std::get<EngineI*>(engines_[engine_type].engine);
+  delete e;
   engines_.erase(engine_type);
   LOG_INFO << "Unloaded engine " + engine_type;
   Json::Value res;
