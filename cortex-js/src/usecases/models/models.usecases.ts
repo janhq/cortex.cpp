@@ -17,11 +17,9 @@ import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
 import {
-  HuggingFaceRepoData,
   HuggingFaceRepoSibling,
 } from '@/domain/models/huggingface.interface';
 import {
-  fetchHuggingFaceRepoData,
   fetchJanRepoData,
   getHFModelMetadata,
 } from '@/utils/huggingface';
@@ -528,16 +526,6 @@ export class ModelsUsecases {
     };
     if (!(await this.findOne(modelId))) await this.create(model);
     else throw 'Model already exists.';
-  }
-
-  /**
-   * Fetches the model data from HuggingFace
-   * @param modelId Model repo id. e.g. llama3, llama3:8b, janhq/llama3
-   * @returns Model metadata
-   */
-  fetchModelMetadata(modelId: string): Promise<HuggingFaceRepoData> {
-    if (modelId.includes('/')) return fetchHuggingFaceRepoData(modelId);
-    else return fetchJanRepoData(modelId);
   }
 
   /**
