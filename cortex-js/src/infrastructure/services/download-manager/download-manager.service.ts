@@ -69,7 +69,7 @@ export class DownloadManagerService {
     ) {
       return;
     }
-    console.log('asdfsdf', urlToDestination);
+
     const downloadItems: DownloadItem[] = Object.keys(urlToDestination).map(
       (url) => {
         const { destination, checksum } = urlToDestination[url];

@@ -190,7 +190,6 @@ export async function fetchJanRepoData(
   });
 
   data.modelUrl = url;
-  console.log('Jan repo data:', data);
   return data;
 }
 

@@ -399,7 +399,6 @@ export class ModelsUsecases {
     }
 
     // Start downloading the model
-    console.log('Downloading model:', modelId, files);
     const toDownloads: Record<
       string,
       {
@@ -428,7 +427,6 @@ export class ModelsUsecases {
         },
         {},
       );
-    console.log('Downloading model:', toDownloads);
     return this.downloadManagerService.submitDownloadRequest(
       modelId,
       modelId,
