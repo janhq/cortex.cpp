@@ -152,6 +152,7 @@ export class CortexUsecases implements BeforeApplicationShutdown {
         CORTEX_JS_HOST: host,
         CORTEX_JS_PORT: port.toString(),
         CORTEX_PROFILE: fileManagerService.getConfigProfile(),
+        ...process.env,
       },
     });
     server.disconnect(); // closes the IPC channel
