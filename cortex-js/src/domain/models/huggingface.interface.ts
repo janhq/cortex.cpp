@@ -28,7 +28,6 @@ export interface HuggingFaceRepoData {
   cardData: Record<CardDataKeys | string, unknown>;
   siblings: HuggingFaceRepoSibling[];
   createdAt: string;
-  verified?: boolean;
 }
 
 const CardDataKeys = [
