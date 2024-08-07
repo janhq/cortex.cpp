@@ -9,7 +9,7 @@
     "url": "git+https://github.com/janhq/cortex.git"
   },
   "scripts": {
-    "install": "prebuild-install --runtime napi --backend cmake-js --config Release || yarn build-deps && cmake-js rebuild --config Release",
+    "install": "prebuild-install --runtime napi --backend cmake-js --config Release || yarn rebuild",
     "build-deps": "cmake-js configure --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps && cmake-js build --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release",
     "build": "yarn build-deps && cmake-js configure --config Release && cmake-js build --config Release",
     "rebuild": "yarn build-deps && cmake-js rebuild --config Release",
