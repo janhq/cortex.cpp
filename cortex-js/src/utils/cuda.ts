@@ -109,6 +109,9 @@ export const getGpuInfo = async (): Promise<GpuSettingInfo[]> =>
   new Promise((resolve) => {
     exec(
       'nvidia-smi --query-gpu=index,memory.total,name --format=csv,noheader,nounits',
+      {
+        windowsHide: true,
+      },
       async (error, stdout) => {
         if (!error) {
           // Get GPU info and gpu has higher memory first

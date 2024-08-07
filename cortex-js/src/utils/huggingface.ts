@@ -61,52 +61,6 @@ export function guessPromptTemplateFromHuggingFace(jinjaCode?: string): string {
 }
 
 /**
- * Fetches the model data from HuggingFace API
- * @param repoId HuggingFace model id. e.g. "janhq/llama-3"
- * @returns
- */
-export async function fetchHuggingFaceRepoData(
-  repoId: string,
-): Promise<HuggingFaceRepoData> {
-  const sanitizedUrl = getRepoModelsUrl(repoId);
-
-  const { data: response } = await axios.get(sanitizedUrl);
-  if (response['error'] != null) {
-    throw new Error(response['error']);
-  }
-
-  const data = response as HuggingFaceRepoData;
-
-  if (data.tags.indexOf('gguf') === -1) {
-    throw `${repoId} is not supported. Only GGUF models are supported.`;
-  }
-
-  // fetching file sizes
-  const url = new URL(sanitizedUrl);
-  const paths = url.pathname.split('/').filter((e) => e.trim().length > 0);
-
-  for (let i = 0; i < data.siblings.length; i++) {
-    const downloadUrl = HUGGING_FACE_DOWNLOAD_FILE_MAIN_URL(
-      [paths[2], paths[3]].join('/'),
-      data.siblings[i].rfilename,
-    );
-    data.siblings[i].downloadUrl = downloadUrl;
-  }
-
-  //TODO: Very hacky? Let's say they don't name it properly
-  AllQuantizations.forEach((quantization) => {
-    data.siblings.forEach((sibling: any) => {
-      if (!sibling.quantization && sibling.rfilename.includes(quantization)) {
-        sibling.quantization = quantization;
-      }
-    });
-  });
-
-  data.modelUrl = HUGGING_FACE_REPO_URL(paths[2], paths[3]);
-  return data;
-}
-
-/**
  * Fetch the model data from Jan's repo
  * @param modelId HuggingFace model id. e.g. "llama-3:7b"
  * @returns
