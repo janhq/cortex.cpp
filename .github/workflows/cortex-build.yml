@@ -233,7 +233,7 @@ jobs:
         include:
           - os: "linux"
             name: "amd64"
-            runs-on: "ubuntu-latest"
+            runs-on: "ubuntu-20-04"
 
           - os: "windows"
             name: "amd64"
