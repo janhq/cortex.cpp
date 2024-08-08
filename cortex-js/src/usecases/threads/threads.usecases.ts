@@ -51,11 +51,69 @@ export class ThreadsUsecases {
     return this.threadRepository.create(thread);
   }
 
-  async findAll(): Promise<Thread[]> {
-    return this.threadRepository.findAll({
-      include: [{ all: true }],
-      order: [['created_at', 'DESC']],
+  async findAll(
+    limit: number,
+    order: 'asc' | 'desc',
+    after?: string,
+    before?: string,
+  ): Promise<PageDto<Thread>> {
+    const normalizedOrder = order === 'asc' ? 'ASC' : 'DESC';
+    let afterQuery = {};
+    let beforeQuery = {};
+    if (after) {
+      const [afterDate, afterId] = after.split('_');
+      const operator = order === 'asc' ? Op.gt : Op.lt;
+      afterQuery = {
+        [Op.or]: [
+          {
+            created_at: { [operator]: Number(afterDate) },
+          },
+          {
+            created_at: Number(afterDate),
+            id: { [operator]: afterId },
+          },
+        ],
+      };
+    }
+    if (before) {
+      const [beforeDate, beforeId] = before.split('_');
+      const operator = order === 'asc' ? Op.lt : Op.gt;
+      beforeQuery = {
+        [Op.or]: [
+          {
+            created_at: { [operator]: Number(beforeDate) },
+          },
+          {
+            created_at: Number(beforeDate),
+            id: { [operator]: beforeId },
+          },
+        ],
+      };
+    }
+    const threads = await this.threadRepository.findAll({
+      order: [
+        ['created_at', normalizedOrder],
+        ['id', normalizedOrder],
+      ],
+      limit: limit + 1,
+      where: {
+        [Op.and]: [afterQuery, beforeQuery],
+      },
     });
+    let hasMore = false;
+    if (threads.length > limit) {
+      hasMore = true;
+      threads.pop();
+    }
+    const firstItem = threads[0];
+    const lastItem = threads[threads.length - 1];
+    const firstId = firstItem
+      ? `${firstItem.created_at}_${firstItem.id}`
+      : undefined;
+    const lastId = lastItem
+      ? `${lastItem?.created_at}_${lastItem?.id}`
+      : undefined;
+    return new PageDto(threads, hasMore, firstId, lastId);
   }
 
   async getMessagesOfThread(

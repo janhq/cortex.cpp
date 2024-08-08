@@ -44,8 +44,13 @@ export class ThreadsController {
       'Lists all the available threads along with its configurations.',
   })
   @Get()
-  findAll() {
-    return this.threadsUsecases.findAll();
+  findAll(
+    @Query('limit', new DefaultValuePipe(20)) limit: number,
+    @Query('order', new DefaultValuePipe('desc')) order: 'asc' | 'desc',
+    @Query('after') after?: string,
+    @Query('before') before?: string,
+  ) {
+    return this.threadsUsecases.findAll(limit, order, after, before);
   }
 
   @ApiOperation({
