@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { CortexUsecases } from '@/usecases/cortex/cortex.usecases';
 import ora from 'ora';
 import { CortexClient } from './services/cortex.client';
-import { fileManagerService } from '../services/file-manager/file-manager.service';
 
 @Injectable()
 export abstract class BaseCommand extends CommandRunner {

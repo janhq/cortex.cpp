@@ -23,6 +23,7 @@ export async function start(
   dataFolder?: string,
 ) {
   if (name) {
+    fileManagerService.setConfigProfile(name);
     const isProfileConfigExists = fileManagerService.profileConfigExists(name);
     if (!isProfileConfigExists) {
       await fileManagerService.writeConfigFile({
