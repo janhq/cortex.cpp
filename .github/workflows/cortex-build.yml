@@ -226,7 +226,7 @@ jobs:
   build-cortex-single-binary:
     runs-on: ${{ matrix.runs-on }}
     needs: [create-draft-release, build-and-test]
-    timeout-minutes: 20
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
