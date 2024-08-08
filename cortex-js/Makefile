@@ -5,7 +5,7 @@ AZURE_TENANT_ID ?= xxxx
 AZURE_CLIENT_SECRET ?= xxxx
 AZURE_CERT_NAME ?= xxxx
 DEVELOPER_ID ?= xxxx
-CORTEX_EXE_IN ?= "dist/cortexso-win.exe"
+CORTEX_EXE_IN ?= "dist/cortexso.exe"
 CORTEX_EXE_OUT ?= "cortex.exe"
 CORTEX_VERSION ?= "0.0.0.1"
 
@@ -13,7 +13,7 @@ update-app-info:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command 'npx resedit --in $(CORTEX_EXE_IN) --out $(CORTEX_EXE_OUT) --icon "1,cortex.ico" --no-grow --company-name "Homebrew Computer Pte Ltd" --file-description "cortex cli" --file-version "$(CORTEX_VERSION)" --internal-name "cortex" --product-name "cortex" --product-version "$(CORTEX_VERSION)"'
 else ifeq ($(shell uname -s),Linux)
-	@cp ./dist/cortexso-linux ./cortex
+	@cp ./dist/cortexso ./cortex
 endif
 
 codesign-binary:
