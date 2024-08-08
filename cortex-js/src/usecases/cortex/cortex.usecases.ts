@@ -13,11 +13,13 @@ import { fileManagerService } from '@/infrastructure/services/file-manager/file-
 import {
   CORTEX_CPP_HEALTH_Z_URL,
   CORTEX_CPP_PROCESS_DESTROY_URL,
+  CORTEX_CPP_UNLOAD_ENGINE_URL,
   CORTEX_JS_SYSTEM_URL,
   defaultCortexJsHost,
   defaultCortexJsPort,
 } from '@/infrastructure/constants/cortex';
 import { openSync } from 'fs';
+import { Engines } from '@/infrastructure/commanders/types/engine.interface';
 
 @Injectable()
 export class CortexUsecases implements BeforeApplicationShutdown {
@@ -122,6 +124,29 @@ export class CortexUsecases implements BeforeApplicationShutdown {
       };
     }
   }
+
+  /**
+   * Unload the engine
+   */
+  async unloadCortexEngine(engine: Engines): Promise<CortexOperationSuccessfullyDto> {
+    const configs = await fileManagerService.getConfig();
+    try {
+      await firstValueFrom(
+        this.httpService.post(
+          CORTEX_CPP_UNLOAD_ENGINE_URL(
+            configs.cortexCppHost,
+            configs.cortexCppPort,
+          ),
+        ),
+      );
+    } finally {
+      return {
+        message: `${engine} unloaded successfully`,
+        status: 'success',
+      };
+    }
+  }
+
 
   /**
    * Check whether the Cortex CPP is healthy

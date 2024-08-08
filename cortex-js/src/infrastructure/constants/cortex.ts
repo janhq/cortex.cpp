@@ -26,6 +26,11 @@ export const CORTEX_CPP_PROCESS_DESTROY_URL = (
   port: number = defaultCortexCppPort,
 ) => `http://${host}:${port}/processmanager/destroy`;
 
+export const CORTEX_CPP_UNLOAD_ENGINE_URL = (
+  host: string = defaultCortexCppHost,
+  port: number = defaultCortexCppPort,
+) => `http://${host}:${port}/inferences/server/unloadengine`;
+
 export const CORTEX_CPP_HEALTH_Z_URL = (
   host: string = defaultCortexCppHost,
   port: number = defaultCortexCppPort,

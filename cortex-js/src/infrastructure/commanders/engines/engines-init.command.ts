@@ -41,12 +41,13 @@ export class EnginesInitCommand extends BaseCommand {
     const configs = await fileManagerService.getConfig();
     const host = configs.cortexCppHost;
     const port = configs.cortexCppPort;
-    // Should stop cortex before installing engine
-    const stopCortexSpinner = ora('Stopping cortex...').start();
+    // Should unload engine before installing engine
+    const unloadCortexEngineSpinner = ora('Unloading cortex...').start();
     if (await this.cortexUsecases.healthCheck(host, port)) {
-      await this.cortexUsecases.stopCortex();
+      await this.cortexUsecases.unloadCortexEngine(engine as Engines);
     }
-    stopCortexSpinner.succeed('Cortex stopped');
+
+    unloadCortexEngineSpinner.succeed('Cortex unloaded');
     console.log(`Installing engine ${engine}...`);
 
     await this.cortex.engines.init(engine, params);

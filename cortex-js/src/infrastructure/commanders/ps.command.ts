@@ -12,6 +12,7 @@ import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { CORTEX_CPP_MODELS_URL } from '../constants/cortex';
 import { fileManagerService } from '../services/file-manager/file-manager.service';
+import { getMemoryInformation } from '@/utils/system-resource';
 
 @SubCommand({
   name: 'ps',
@@ -45,9 +46,9 @@ export class PSCommand extends BaseCommand {
             totalVram,
           });
         }
-        const memoryData = await systeminformation.mem();
+        const { total, used } = await getMemoryInformation()
         const memoryUsage = (
-          (memoryData.active / memoryData.total) *
+          (used / total) *
           100
         ).toFixed(2);
         const consumedTable = {
