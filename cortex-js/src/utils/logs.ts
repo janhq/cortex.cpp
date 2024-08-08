@@ -74,7 +74,7 @@ export async function cleanLogs(
 
   // Schedule the next execution with doubled delays
   timeout = setTimeout(
-    () => this.cleanLogs(maxFileSizeBytes, daysToKeep),
+    () => cleanLogs(maxFileSizeBytes, daysToKeep),
     logCleaningInterval,
   );
 }
