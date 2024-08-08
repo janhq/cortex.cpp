@@ -15,7 +15,7 @@ export class ResourcesManagerService {
     const memory = results[1] as Systeminformation.MemData;
     const memInfo: UsedMemInfo = {
       total: memory.total,
-      used: memory.used,
+      used: memory.active,
     };
 
     return {
