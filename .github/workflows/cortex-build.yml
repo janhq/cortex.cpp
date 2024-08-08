@@ -233,7 +233,7 @@ jobs:
         include:
           - os: "linux"
             name: "amd64"
-            runs-on: "ubuntu-latest"
+            runs-on: "ubuntu-20-04"
 
           - os: "windows"
             name: "amd64"
@@ -322,14 +322,14 @@ jobs:
           which cp
           which mv
           npm install -g cpx
-          npx cpx ./dist/cortexso-macos ./
-          mv cortexso-macos cortex
+          npx cpx ./dist/cortexso ./
+          mv cortexso cortex
 
       - name: Code Signing macOS
         if: runner.os == 'macOS'
         run: |
           cd cortex-js
-          ./dist/cortexso-macos --help
+          ./dist/cortexso --help
           echo "--------"
           ./cortex --help
           make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
