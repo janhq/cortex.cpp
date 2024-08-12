@@ -30,4 +30,7 @@ COPY ./common/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
+HEALTHCHECK --interval=300s --timeout=30s --start-period=10s --retries=3 \
+  CMD curl -f http://127.0.0.1:1337/api/system || exit 1
+
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
