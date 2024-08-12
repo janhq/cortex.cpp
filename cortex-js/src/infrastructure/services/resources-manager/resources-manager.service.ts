@@ -25,7 +25,10 @@ export class ResourcesManagerService {
       },
       gpus: (await si.graphics()).controllers.map((gpu) => ({
         name: gpu.name,
-        vram: gpu.vram,
+        vram: {
+          total: gpu.vram ?? 0,
+          used: gpu.memoryUsed ?? 0,
+        }
       })),
     };
   }

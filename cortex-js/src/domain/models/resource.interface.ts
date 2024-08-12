@@ -17,5 +17,5 @@ export interface UsedMemInfo {
 
 export interface GpuInfo {
   name: string | undefined;
-  vram: number | null;
+  vram: UsedMemInfo;
 }
