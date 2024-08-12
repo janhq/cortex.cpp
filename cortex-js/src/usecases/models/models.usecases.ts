@@ -513,7 +513,7 @@ export class ModelsUsecases {
 
       // Default Inference Params
       stream: true,
-      max_tokens: 4098,
+      max_tokens: 4096,
       frequency_penalty: 0.7,
       presence_penalty: 0.7,
       temperature: 0.7,
