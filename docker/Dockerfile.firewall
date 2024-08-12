@@ -8,7 +8,7 @@ FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04 AS base
 FROM base AS devel
 
 # Install g++ 11
-RUN apt update && apt install -y gcc-11 g++-11 cpp-11 jq xsel curl gnupg make python3-dev && curl -sL https://deb.nodesource.com/setup_20.x | bash - && apt install nodejs -y && rm -rf /var/lib/apt/lists/*
+RUN apt update && apt install -y gcc-11 g++-11 cpp-11 jq xsel curl gnupg make python3-dev dnsmasq iptables iproute2 && curl -sL https://deb.nodesource.com/setup_20.x | bash - && apt install nodejs -y && rm -rf /var/lib/apt/lists/*
 
 # Update alternatives for GCC and related tools
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 \
@@ -20,13 +20,18 @@ RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 110 \
 
 RUN npm install -g yarn
 
+RUN mkdir -p /etc/dnsmasq.d/
+
 WORKDIR /app
 
 FROM devel AS release
 
 EXPOSE 1337
 
-COPY ./common/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY ./common/dnsmasq.conf /etc/dnsmasq.conf
+COPY ./common/blocked-domains.txt /etc/dnsmasq.d/blocked-domains.txt
+
+COPY ./common/entrypoint-firewall.sh /usr/local/bin/entrypoint.sh
 
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

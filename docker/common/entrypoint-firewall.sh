@@ -1,5 +1,10 @@
 #!/bin/sh
 
+echo "nameserver 127.0.0.1" > /etc/resolv.conf
+
+dnsmasq -k &
+
+npm install -g cortexso
 # Run cortex
 cortex  -a 0.0.0.0
 
