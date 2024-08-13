@@ -32,6 +32,7 @@ type ServeOptions = {
   dataFolder?: string;
   version?: boolean;
   name?: string;
+  configPath?: string;
   enginePort?: string;
 };
 
@@ -67,6 +68,12 @@ export class CortexCommand extends CommandRunner {
   }
 
   async run(passedParams: string[], options?: ServeOptions): Promise<void> {
+    if (options?.configPath) {
+      fileManagerService.setConfigPath(options.configPath);
+    }
+    if (options?.name) {
+      fileManagerService.setConfigProfile(options.name);
+    }
     if (options?.name) {
       const isProfileConfigExists = fileManagerService.profileConfigExists(
         options.name,
@@ -192,10 +199,18 @@ export class CortexCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-df, --dataFolder <dataFolderPath>',
+    flags: '-df, --dataFolder <dataFolder>',
     description: 'Set the data folder directory',
   })
   parseDataFolder(value: string) {
+    return value;
+  }
+
+  @Option({
+    flags: '-cp, --configPath <configPath>',
+    description: 'Set the config folder directory',
+  })
+  parseConfigFolder(value: string) {
     return value;
   }
 
@@ -212,7 +227,6 @@ export class CortexCommand extends CommandRunner {
     description: 'Name of the process',
   })
   parseName(value: string) {
-    fileManagerService.setConfigProfile(value);
     return value;
   }
 

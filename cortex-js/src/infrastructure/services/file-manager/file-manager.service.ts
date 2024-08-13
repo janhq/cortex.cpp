@@ -36,22 +36,26 @@ export class FileManagerService {
   private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
   private configProfile = process.env.CORTEX_PROFILE || 'default';
+  private configPath = process.env.CORTEX_CONFIG_PATH || os.homedir();
 
   /**
    * Get cortex configs
    * @returns the config object
    */
   async getConfig(dataFolderPath?: string): Promise<Config & object> {
-    const homeDir = os.homedir();
     const configPath = join(
-      homeDir,
+      this.configPath,
       this.getConfigFileName(this.configProfile),
     );
     const config = this.defaultConfig();
     const dataFolderPathUsed = dataFolderPath || config.dataFolderPath;
     if (!existsSync(configPath) || !existsSync(dataFolderPathUsed)) {
-      await this.createFolderIfNotExist(dataFolderPathUsed);
-      await this.writeConfigFile(config);
+      if (!existsSync(dataFolderPathUsed)) {
+        await this.createFolderIfNotExist(dataFolderPathUsed);
+      }
+      if (!existsSync(configPath)) {
+        await this.writeConfigFile(config);
+      }
       return config;
     }
 
@@ -72,9 +76,8 @@ export class FileManagerService {
   }
 
   async writeConfigFile(config: Config & object): Promise<void> {
-    const homeDir = os.homedir();
     const configPath = join(
-      homeDir,
+      this.configPath,
       this.getConfigFileName(this.configProfile),
     );
 
@@ -348,9 +351,8 @@ export class FileManagerService {
    * @returns the server configurations
    */
   getServerConfig(): { host: string; port: number } {
-    const homeDir = os.homedir();
     const configPath = join(
-      homeDir,
+      this.configPath,
       this.getConfigFileName(this.configProfile),
     );
     let config = this.defaultConfig();
@@ -370,12 +372,12 @@ export class FileManagerService {
   public setConfigProfile(profile: string) {
     this.configProfile = profile;
   }
+
   public getConfigProfile() {
     return this.configProfile;
   }
   public profileConfigExists(profile: string): boolean {
-    const homeDir = os.homedir();
-    const configPath = join(homeDir, this.getConfigFileName(profile));
+    const configPath = join(this.configPath, this.getConfigFileName(profile));
     try {
       const content = readFileSync(configPath, 'utf8');
       const config = yaml.load(content) as Config & object;
@@ -390,6 +392,14 @@ export class FileManagerService {
       return '.cortexrc';
     }
     return `.${configProfile}rc`;
+  }
+
+  public setConfigPath(configPath: string) {
+    this.configPath = configPath;
+  }
+
+  public getConfigPath(): string {
+    return this.configPath;
   }
 }
 
