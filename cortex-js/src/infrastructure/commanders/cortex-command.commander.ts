@@ -32,7 +32,7 @@ type ServeOptions = {
   dataFolder?: string;
   version?: boolean;
   name?: string;
-  configFolderPath?: string;
+  configPath?: string;
   enginePort?: string;
 };
 
@@ -68,8 +68,8 @@ export class CortexCommand extends CommandRunner {
   }
 
   async run(passedParams: string[], options?: ServeOptions): Promise<void> {
-    if (options?.configFolderPath) {
-      fileManagerService.setConfigFolderPath(options.configFolderPath);
+    if (options?.configPath) {
+      fileManagerService.setConfigPath(options.configPath);
     }
     if (options?.name) {
       fileManagerService.setConfigProfile(options.name);
@@ -207,7 +207,7 @@ export class CortexCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-cp, --configFolderPath <configFolder>',
+    flags: '-cp, --configPath <configPath>',
     description: 'Set the config folder directory',
   })
   parseConfigFolder(value: string) {

@@ -394,8 +394,8 @@ export class FileManagerService {
     return `.${configProfile}rc`;
   }
 
-  public setConfigFolderPath(configFolderPath: string) {
-    this.configPath = configFolderPath;
+  public setConfigPath(configPath: string) {
+    this.configPath = configPath;
   }
 
   public getConfigPath(): string {
