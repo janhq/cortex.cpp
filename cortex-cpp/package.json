@@ -10,7 +10,10 @@
   },
   "scripts": {
     "install": "prebuild-install --runtime napi --backend cmake-js --config Release || yarn rebuild",
-    "build-deps": "cmake-js configure --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release && cmake-js build --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release",
+    "build-deps": "run-script-os",
+    "build-deps:windows": "cmake-js configure --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release && cmake-js build --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release",
+    "build-deps:linux": "cmake-js configure --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release && cmake-js build --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release && rm -rf ./build-deps/cortex-cpp-deps && rm -rf ./build/CMakeCache.txt && rm -rf ./build/CMakeFiles && rm -rf ./build/compile_commands.json",
+    "build-deps:macos": "cmake-js configure --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release && cmake-js build --directory ./cortex-cpp-deps --out ./build-deps/cortex-cpp-deps --config Release && rm -rf ./build-deps/cortex-cpp-deps && rm -rf ./build/CMakeCache.txt && rm -rf ./build/CMakeFiles && rm -rf ./build/compile_commands.json",
     "build": "yarn build-deps && cmake-js configure --config Release && cmake-js build --config Release",
     "rebuild": "yarn build-deps && cmake-js rebuild --config Release",
     "prebuild": "yarn build-deps && prebuild --runtime napi --backend cmake-js --all --strip --verbose --config Release --include-regex \"\\.(node|exp|lib|so)$\"",
@@ -28,7 +31,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "run-script-os": "^1.1.6"
   },
   "binary": {
     "napi_versions": [
