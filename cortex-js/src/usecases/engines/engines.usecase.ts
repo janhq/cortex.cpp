@@ -101,7 +101,7 @@ export class EnginesUsecases {
               ? '-mac'
               : '-linux',
           // CPU Instructions - CPU | GPU Non-Vulkan
-          !isVulkan
+          !isVulkan && engine === Engines.llamaCPP
             ? `-noavx`
             : '',
           // Cuda
