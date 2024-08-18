@@ -89,6 +89,7 @@ export class EnginesUsecases {
       ) ||
       force
     ) {
+      const isMac = process.platform === 'darwin';
       const isVulkan =
         engine === Engines.llamaCPP &&
         (options?.vulkan ||
@@ -97,11 +98,11 @@ export class EnginesUsecases {
         this.installAcceleratedEngine(options?.version ?? 'latest', engine, [
           process.platform === 'win32'
             ? '-windows'
-            : process.platform === 'darwin'
+            : isMac
               ? '-mac'
               : '-linux',
           // CPU Instructions - CPU | GPU Non-Vulkan
-          !isVulkan && engine === Engines.llamaCPP
+          !isMac && !isVulkan && engine === Engines.llamaCPP
             ? `-noavx`
             : '',
           // Cuda
