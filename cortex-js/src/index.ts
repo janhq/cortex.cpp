@@ -21,7 +21,11 @@ export async function start(
   portNumber?: number,
   enginePortNumber?: number,
   dataFolder?: string,
+  logPath?: string,
 ) {
+  if (logPath) {
+    fileManagerService.setLogPath(logPath);
+  }
   if (name) {
     fileManagerService.setConfigProfile(name);
     const isProfileConfigExists = fileManagerService.profileConfigExists(name);
@@ -49,10 +53,10 @@ export async function start(
     Number(enginePortNumber) || configCortexCppPort || defaultCortexCppPort;
   const dataFolderPath = dataFolder;
 
-  return startServer(dataFolderPath);
+  return startServer(dataFolderPath, logPath);
 }
 
-async function startServer(dataFolderPath?: string) {
+async function startServer(dataFolderPath?: string, logPath?: string) {
   const config = await fileManagerService.getConfig();
   try {
     if (dataFolderPath) {
@@ -80,6 +84,7 @@ async function startServer(dataFolderPath?: string) {
       apiServerHost: host,
       apiServerPort: port,
       dataFolderPath: dataFolderPath || config.dataFolderPath,
+      logPath: logPath || config.logPath,
       cortexCppPort: enginePort,
     });
   } catch (e) {
