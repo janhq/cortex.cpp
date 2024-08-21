@@ -37,7 +37,7 @@ export class FileManagerService {
   private cortexTelemetryFolderName = 'telemetry';
   private configProfile = process.env.CORTEX_PROFILE || 'default';
   private configPath = process.env.CORTEX_CONFIG_PATH || os.homedir();
-
+  private customLogPath = process.env.CORTEX_LOG_PATH || '';
   /**
    * Get cortex configs
    * @returns the config object
@@ -309,6 +309,9 @@ export class FileManagerService {
    * @returns the path to the cortex engines folder
    */
   async getLogPath(): Promise<string> {
+    if (this.customLogPath) {
+      return this.customLogPath;
+    }
     return join(await this.getDataFolderPath(), 'cortex.log');
   }
 
@@ -400,6 +403,10 @@ export class FileManagerService {
 
   public getConfigPath(): string {
     return this.configPath;
+  }
+
+  public setLogPath(logPath: string) {
+    this.customLogPath = logPath;
   }
 }
 

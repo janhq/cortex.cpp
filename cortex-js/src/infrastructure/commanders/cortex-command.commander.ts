@@ -34,6 +34,7 @@ type ServeOptions = {
   name?: string;
   configPath?: string;
   enginePort?: string;
+  logsPath?: string;
 };
 
 @RootCommand({
@@ -73,6 +74,9 @@ export class CortexCommand extends CommandRunner {
     }
     if (options?.name) {
       fileManagerService.setConfigProfile(options.name);
+    }
+    if (options?.logsPath) {
+      fileManagerService.setLogPath(options.logsPath);
     }
     if (options?.name) {
       const isProfileConfigExists = fileManagerService.profileConfigExists(
@@ -235,6 +239,14 @@ export class CortexCommand extends CommandRunner {
     description: 'Port to serve the engine',
   })
   parseEnginePort(value: string) {
+    return value;
+  }
+
+  @Option({
+    flags: '-lp, --logs-path <logsPath>',
+    description: 'Path to the logs folder',
+  })
+  parseLogsPath(value: string) {
     return value;
   }
 }
