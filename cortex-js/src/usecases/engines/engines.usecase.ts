@@ -93,15 +93,17 @@ export class EnginesUsecases {
         engine === Engines.llamaCPP &&
         (options?.vulkan ||
           (options?.runMode === 'GPU' && options?.gpuType !== 'Nvidia'));
+      const platformMatcher =
+        process.platform === 'win32'
+          ? '-windows'
+          : process.platform === 'darwin'
+            ? '-mac'
+            : '-linux';
       installPackages.push(
         this.installAcceleratedEngine(options?.version ?? 'latest', engine, [
-          process.platform === 'win32'
-            ? '-windows'
-            : process.platform === 'darwin'
-              ? '-mac'
-              : '-linux',
+          platformMatcher,
           // CPU Instructions - CPU | GPU Non-Vulkan
-          !isVulkan && engine === Engines.llamaCPP
+          !isVulkan && engine === Engines.llamaCPP && platformMatcher !== '-mac'
             ? `-noavx`
             : '',
           // Cuda

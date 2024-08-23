@@ -82,6 +82,7 @@ async function startServer(dataFolderPath?: string) {
       dataFolderPath: dataFolderPath || config.dataFolderPath,
       cortexCppPort: enginePort,
     });
+    return app;
   } catch (e) {
     console.error(e);
     // revert the data folder path if it was set
