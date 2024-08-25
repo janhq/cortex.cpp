@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "nest dev",
     "compile": "npx ncc build ./dist/src/command.js -o command",
-    "build": "nest build",
+    "build": "yarn add sqlite3 --build-from-source && nest build",
     "build:binary": "yarn build && yarn compile && npx -q patch-package && run-script-os",
     "build:binary:windows": "npx @yao-pkg/pkg . --targets node20-win",
     "build:binary:linux": "npx @yao-pkg/pkg . --targets node20-linux",
