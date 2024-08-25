@@ -78,6 +78,37 @@ export class ModelsController {
   @HttpCode(200)
   @ApiResponse({
     status: 200,
+    description: 'The model has been successfully started.',
+    type: StartModelSuccessDto,
+  })
+  @ApiOperation({
+    summary: 'Start model by file path',
+    description:
+      'Starts a model operation defined by a model `id` with a file path.',
+  })
+  @ApiParam({
+    name: 'modelId',
+    required: true,
+    description: 'The unique identifier of the model.',
+  })
+  @Post(':modelId(*)/start-by-file')
+  startModelByFilePath(
+    @Param('modelId') modelId: string,
+    @Body()
+    params: ModelSettingsDto & { filePath: string; metadataPath: string },
+  ) {
+    const { filePath, metadataPath, ...settings } = params;
+    return this.modelsUsecases.startModel(
+      modelId,
+      settings,
+      filePath,
+      metadataPath,
+    );
+  }
+
+  @HttpCode(200)
+  @ApiResponse({
+    status: 200,
     description: 'The model has been successfully stopped.',
     type: StartModelSuccessDto,
   })
