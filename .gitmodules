@@ -1,0 +1,3 @@
+[submodule "engine/vcpkg"]
+	path = engine/vcpkg
+	url = https://github.com/microsoft/vcpkg.git

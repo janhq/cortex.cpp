@@ -18,3 +18,4 @@ cortex-js/package-lock.json
 .vscode
 cortex-js/command
 cortex-js/src/infrastructure/commanders/test/test_data
+**/vcpkg_installed
