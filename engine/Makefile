@@ -20,14 +20,14 @@ all:
 
 configure-vcpkg:
 ifeq ($(OS),Windows_NT)
-	@cd engine/vcpkg && bootstrap-vcpkg.bat;
-	@cd engine/vcpkg && vcpkg install
+	@cd vcpkg && bootstrap-vcpkg.bat;
+	@cd vcpkg && vcpkg install
 else ifeq ($(shell uname -s),Linux) 
-	@cd engine/vcpkg && ./bootstrap-vcpkg.sh;
-	@cd engine/vcpkg && ./vcpkg install;
+	@cd vcpkg && ./bootstrap-vcpkg.sh;
+	@cd vcpkg && ./vcpkg install;
 else
-	@cd engine/vcpkg && ./bootstrap-vcpkg.sh;
-	@cd engine/vcpkg && ./vcpkg install;
+	@cd vcpkg && ./bootstrap-vcpkg.sh;
+	@cd vcpkg && ./vcpkg install;
 endif
 
 # Build the Cortex engine

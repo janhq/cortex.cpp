@@ -71,6 +71,7 @@ jobs:
 
       - name: Configure vcpkg
         run: |
+          cd engine
           make configure-vcpkg
       
       - name: Build
