@@ -11,7 +11,7 @@
 > ⚠️ **Cortex is currently in Development**: Expect breaking changes and bugs!
 
 ## About
-Cortex is a C++ based AI engine that is packaged with a Docker-inspired command-line interface and client libraries. Cortex can run AI models using `ONNX` and `TensorRT-LLM`, in addition to the `llama.cpp`. It can be used as a standalone server or imported as a library. 
+Cortex is a C++ AI engine that comes with a Docker-like command-line interface and client libraries. It supports running AI models using `ONNX`, `TensorRT-LLM`, and `llama.cpp` engines. Cortex can function as a standalone server or be integrated as a library.
 
 ## Cortex Engines
 Cortex supports the following engines:
@@ -139,7 +139,6 @@ cortex embeddings [options] [model_id] [message]
 ### Pull a Model
 ```bash
 cortex pull <model_id>
-
 ```
 > This command can also pulls Hugging Face's models.
 ### Download and Start a Model
