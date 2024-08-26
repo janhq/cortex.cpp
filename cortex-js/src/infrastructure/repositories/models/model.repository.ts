@@ -159,4 +159,36 @@ export class ModelRepositoryImpl implements ModelRepository {
     this.loaded = true;
     return Array.from(this.models.values());
   }
+
+  /**
+   * Load a model by file
+   * This would load a model from a file
+   * @returns the model
+   */
+  async loadModelByFile(
+    modelId: string,
+    modelPath: string,
+    modelFile: string,
+  ): Promise<Model | null> {
+    const checkExists = await this.findOne(modelId);
+    if (checkExists) return checkExists;
+    if (!existsSync(modelPath)) return null;
+
+    const model = readFileSync(modelPath, 'utf8');
+    const yamlObject = load(model) as Model;
+    const fileName = basename(modelId);
+    const modelObject = {
+      ...yamlObject,
+      model: modelId,
+      llama_model_path: modelFile,
+      model_path: modelFile,
+      files: [modelFile],
+    };
+    if (modelObject) {
+      this.fileModel.set(modelId, fileName);
+      this.models.set(modelId, modelObject);
+    }
+    this.loaded = true;
+    return modelObject;
+  }
 }

@@ -16,13 +16,8 @@ import { TelemetryUsecases } from '../telemetry/telemetry.usecases';
 import { TelemetrySource } from '@/domain/telemetry/telemetry.interface';
 import { ModelRepository } from '@/domain/repositories/model.interface';
 import { ModelParameterParser } from '@/utils/model-parameter.parser';
-import {
-  HuggingFaceRepoSibling,
-} from '@/domain/models/huggingface.interface';
-import {
-  fetchJanRepoData,
-  getHFModelMetadata,
-} from '@/utils/huggingface';
+import { HuggingFaceRepoSibling } from '@/domain/models/huggingface.interface';
+import { fetchJanRepoData, getHFModelMetadata } from '@/utils/huggingface';
 import {
   DownloadStatus,
   DownloadType,
@@ -162,8 +157,22 @@ export class ModelsUsecases {
   async startModel(
     modelId: string,
     settings?: ModelSettingParams,
+    filePath?: string,
+    metadataPath?: string,
   ): Promise<StartModelSuccessDto> {
-    const model = await this.getModelOrThrow(modelId);
+    let model: Model | null;
+    if (filePath) {
+      model = await this.modelRepository.loadModelByFile(
+        modelId,
+        metadataPath!,
+        filePath,
+      );
+      if (!existsSync(filePath) || !model) {
+        throw new ModelNotFoundException(model?.id ?? filePath);
+      }
+    } else {
+      model = await this.getModelOrThrow(modelId);
+    }
     const engine = (await this.extensionRepository.findOne(
       model!.engine ?? Engines.llamaCPP,
     )) as EngineExtension | undefined;
@@ -209,7 +218,6 @@ export class ModelsUsecases {
       ...parser.parseModelEngineSettings(model),
       ...parser.parseModelEngineSettings(settings ?? {}),
     };
-
     return engine
       .loadModel(model, loadModelSettings)
       .catch((e) => {
