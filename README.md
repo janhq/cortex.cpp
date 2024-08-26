@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <a href="https://jan.ai/cortex">Documentation</a> - <a href="https://jan.ai/api-reference">API Reference</a> 
+  <a href="https://cortex.so/docs/">Documentation</a> - <a href="https://cortex.so/api-reference">API Reference</a> 
   - <a href="https://github.com/janhq/cortex/releases">Changelog</a> - <a href="https://github.com/janhq/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
@@ -120,6 +120,8 @@ Here are example of models that you can use based on each supported engine:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
 ## Cortex CLI Commands
+> **Note**:
+> For a more detailed CLI Reference documentation, please see [here](https://cortex.so/docs/cli).
 ### Start Cortex Server
 ```bash
 cortex 
@@ -130,10 +132,6 @@ cortex chat [options] [model_id] [message]
 ```
 ### Embeddings
 ```bash
-# With a model started
-cortex models start [model_id]
-cortex embeddings [options] [message]
-# Without any started models
 cortex embeddings [options] [model_id] [message]
 ```
 ### Pull a Model
@@ -143,11 +141,7 @@ cortex pull <model_id>
 > This command can also pulls Hugging Face's models.
 ### Download and Start a Model
 ```bash
-cortex run [options] [model_id]
-# With a specified engine
 cortex run [options] [model_id]:[engine]
-# Start chatting once the model started
-cortex run [options] [model_id]:[engine] -c
 ```
 ### Get a Model Details
 ```bash
@@ -163,14 +157,7 @@ cortex models remove <model_id>
 ```
 ### Start a Model
 ```bash
-# Start a model
 cortex models start [model_id]
-
-# Start a model with a preset
-cortex models start [model_id] [options]
-
-# Start with a specified engine
-cortex models start [model_id]:[engine] [options]
 ```
 ### Stop a Model
 ```bash
