@@ -31,7 +31,7 @@ jobs:
           
           - os: "linux"
             name: "amd64-vulkan"
-            runs-on: "ubuntu-20-04-cuda-11-7"
+            runs-on: "ubuntu-20-04"
             cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
             build-deps-cmake-flags: ""
             run-e2e: false
