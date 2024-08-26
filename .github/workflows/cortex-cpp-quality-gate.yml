@@ -24,7 +24,7 @@ jobs:
           - os: "linux"
             name: "amd64-noavx"
             runs-on: "ubuntu-20-04"
-            cmake-flags: "-DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DLLAMA_NATIVE=OFF"
             build-deps-cmake-flags: ""
             run-e2e: false
             ccache-dir: ''
@@ -32,7 +32,7 @@ jobs:
           - os: "linux"
             name: "amd64-vulkan"
             runs-on: "ubuntu-20-04"
-            cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF"
             build-deps-cmake-flags: ""
             run-e2e: false
             ccache-dir: ''
@@ -40,7 +40,7 @@ jobs:
           - os: "linux"
             name: "amd64-noavx-cuda-11-7"
             runs-on: "ubuntu-20-04-cuda-11-7"
-            cmake-flags: "-DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCUDA_11_7=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
             build-deps-cmake-flags: ""
             run-e2e: false
             ccache-dir: ''
@@ -48,7 +48,7 @@ jobs:
           - os: "linux"
             name: "amd64-noavx-cuda-12-0"
             runs-on: "ubuntu-20-04-cuda-12-0"
-            cmake-flags: "-DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCUDA_12_0=ON -DLLAMA_NATIVE=OFF -DLLAMA_CUDA=ON"
             build-deps-cmake-flags: ""
             run-e2e: false
             ccache-dir: ''
@@ -56,7 +56,7 @@ jobs:
           - os: "mac"
             name: "amd64"
             runs-on: "macos-13"
-            cmake-flags: ""
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}}"
             build-deps-cmake-flags: ""
             run-e2e: false
             ccache-dir: ''
@@ -64,7 +64,7 @@ jobs:
           - os: "mac"
             name: "arm64"
             runs-on: "mac-silicon"
-            cmake-flags: "-DMAC_ARM64=ON"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DMAC_ARM64=ON"
             build-deps-cmake-flags: ""
             run-e2e: false
             ccache-dir: ''
@@ -72,7 +72,7 @@ jobs:
           - os: "windows"
             name: "amd64-noavx"
             runs-on: "windows-cuda-11-7"
-            cmake-flags: "-DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DLLAMA_BLAS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
@@ -80,7 +80,7 @@ jobs:
           - os: "windows"
             name: "amd64-vulkan"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DLLAMA_VULKAN=ON -DLLAMA_NATIVE=OFF -DLLAMA_BUILD_SERVER=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
@@ -88,7 +88,7 @@ jobs:
           - os: "windows"
             name: "amd64-noavx-cuda-12-0"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DLLAMA_NATIVE=OFF -DCUDA_12_0=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
@@ -96,7 +96,7 @@ jobs:
           - os: "windows"
             name: "amd64-noavx-cuda-11-7"
             runs-on: "windows-cuda-11-7"
-            cmake-flags: "-DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DLLAMA_NATIVE=OFF -DCUDA_11_7=ON -DLLAMA_BUILD_SERVER=ON -DLLAMA_CUDA=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             run-e2e: false
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
