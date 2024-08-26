@@ -23,7 +23,7 @@ jobs:
         include:
           - os: "linux"
             name: "amd64"
-            runs-on: "ubuntu-20-04"
+            runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ''
@@ -35,7 +35,7 @@ jobs:
             ccache-dir: ''
           - os: "mac"
             name: "arm64"
-            runs-on: "mac-silicon"
+            runs-on: "macos-latest"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ''
