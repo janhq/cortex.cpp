@@ -2,6 +2,7 @@
 #include "commands/engine_init_cmd.h"
 #include "commands/model_pull_cmd.h"
 #include "commands/model_list_cmd.h"
+#include "commands/model_get_cmd.h"
 #include "commands/start_model_cmd.h"
 #include "commands/stop_model_cmd.h"
 #include "commands/stop_server_cmd.h"
@@ -46,6 +47,14 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
         models_cmd->add_subcommand("list", "List all models locally");
     list_models_cmd->callback([](){
       commands::ModelListCmd command;
+      command.Exec();
+    });
+
+    auto get_models_cmd =
+        models_cmd->add_subcommand("get", "Get info of {model_id} locally");
+    get_models_cmd->add_option("model_id", model_id, "");
+    get_models_cmd->callback([&model_id](){
+      commands::ModelGetCmd command(model_id);
       command.Exec();
     });
 
