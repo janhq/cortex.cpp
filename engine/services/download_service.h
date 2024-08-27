@@ -1,8 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <optional>
 #include <vector>
-#include "httplib.h"
 
 enum class DownloadType { Model, Engine, Miscellaneous };
 
@@ -24,20 +24,12 @@ struct DownloadItem {
 
   std::string path;
 
-  uint64_t totalSize;
-
-  uint64_t transferredSize;
-
-  DownloadStatus status;
-
   std::optional<std::string> checksum;
 };
 
 struct DownloadTask {
   std::string id;
   DownloadType type;
-  float percentage;
-  DownloadStatus status;
   std::optional<std::string> error;
   std::vector<DownloadItem> items;
 };
@@ -50,9 +42,12 @@ class DownloadService {
   * @param task 
   */
   using DownloadItemCb = std::function<void(const std::string&)>;
-  void AddDownloadTask(const DownloadTask& task);
+  void AddDownloadTask(const DownloadTask& task,
+                       std::optional<DownloadItemCb> callback = std::nullopt);
 
-  void AddAsyncDownloadTask(const DownloadTask& task);
+  void AddAsyncDownloadTask(
+      const DownloadTask& task,
+      std::optional<DownloadItemCb> callback = std::nullopt);
 
   // TODO: [NamH] implement the following methods
   //  void removeTask(const std::string &id);
@@ -63,9 +58,7 @@ class DownloadService {
  private:
   void StartDownloadItem(const std::string& downloadId,
                          const DownloadItem& item,
-                         const DownloadItemCb& callback = nullptr);
-
-  const std::string GetContainerFolderPath(DownloadType type);
+                         std::optional<DownloadItemCb> callback = std::nullopt);
 
   // store tasks so we can abort it later
   std::vector<DownloadTask> tasks;

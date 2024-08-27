@@ -41,22 +41,17 @@ inline std::optional<DownloadTask> getDownloadTask(
           downloadItem.fileName = path;
           downloadItem.type = DownloadType::Model;
           downloadItem.path = downloadUrl;
-          downloadItem.totalSize = value["size"].get<int>();
-          downloadItem.transferredSize = 0;
-          downloadItem.status = DownloadStatus::Pending;
           downloadItems.push_back(downloadItem);
         }
 
         DownloadTask downloadTask{};
         downloadTask.id = modelId;
         downloadTask.type = DownloadType::Model;
-        downloadTask.percentage = 0.0f;
-        downloadTask.status = DownloadStatus::Pending;
         downloadTask.error = std::nullopt;
         downloadTask.items = downloadItems;
 
         return downloadTask;
-      } catch (const nlohmann::json::parse_error& e) {
+      } catch (const json::parse_error& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
       }
     }

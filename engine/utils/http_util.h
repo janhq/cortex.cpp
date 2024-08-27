@@ -6,9 +6,9 @@ using namespace drogon;
 
 namespace http_util {
 
-bool HasFieldInReq(const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>& callback,
-                   const std::string& field) {
+inline bool HasFieldInReq(const HttpRequestPtr& req,
+                          std::function<void(const HttpResponsePtr&)>& callback,
+                          const std::string& field) {
   if (auto o = req->getJsonObject(); !o || (*o)[field].isNull()) {
     Json::Value res;
     res["message"] = "No " + field + " field in request body";

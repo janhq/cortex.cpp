@@ -1,5 +1,7 @@
 #include "command_line_parser.h"
+#include "commands/engine_init_cmd.h"
 #include "commands/model_pull_cmd.h"
+#include "commands/model_list_cmd.h"
 #include "commands/start_model_cmd.h"
 #include "commands/stop_model_cmd.h"
 #include "commands/stop_server_cmd.h"
@@ -42,8 +44,11 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto list_models_cmd =
         models_cmd->add_subcommand("list", "List all models locally");
+    list_models_cmd->callback([](){
+      commands::ModelListCmd command;
+      command.Exec();
+    });
 
-    //// Models group commands
     auto model_pull_cmd =
         app_.add_subcommand("pull",
                             "Download a model from a registry. Working with "
@@ -60,7 +65,6 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto update_cmd =
         models_cmd->add_subcommand("update", "Update configuration of a model");
   }
-  //// End of Models group commands
 
   auto chat_cmd = app_.add_subcommand("chat", "Send a chat request to a model");
 
@@ -71,11 +75,27 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       "embeddings", "Creates an embedding vector representing the input text");
 
   // engines group commands
-  auto engines_cmd = app_.add_subcommand("engines", "Get cortex engines");
-  auto list_engines_cmd =
-      engines_cmd->add_subcommand("list", "List all cortex engines");
-  auto get_engine_cmd = engines_cmd->add_subcommand("get", "Get an engine");
-  auto init_cmd = engines_cmd->add_subcommand("init", "Setup engine");
+  {
+    auto engines_cmd = app_.add_subcommand("engines", "Get cortex engines");
+    auto list_engines_cmd =
+        engines_cmd->add_subcommand("list", "List all cortex engines");
+    auto get_engine_cmd = engines_cmd->add_subcommand("get", "Get an engine");
+
+    {  // Engine init command
+      auto init_cmd = engines_cmd->add_subcommand("init", "Initialize engine");
+      std::string engine_name;
+      std::string version = "latest";
+
+      init_cmd->add_option("-n,--name", engine_name,
+                           "Engine name. E.g: cortex.llamacpp");
+      init_cmd->add_option("-v,--version", version,
+                           "Engine version. Default will be latest");
+      init_cmd->callback([&engine_name, &version]() {
+        commands::EngineInitCmd eic(engine_name, version);
+        eic.Exec();
+      });
+    }
+  }
 
   auto run_cmd =
       app_.add_subcommand("run", "Shortcut to start a model and chat");
