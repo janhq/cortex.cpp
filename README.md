@@ -35,6 +35,8 @@ sudo apt install cortex-engine
 ### Docker
 
 ### Libraries
+- [cortex.js](https://github.com/janhq/cortex.js)
+- [cortex.py](https://github.com/janhq/cortex-python)
 
 ### Build from Source
 
