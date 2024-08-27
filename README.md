@@ -196,6 +196,8 @@ cortex benchmark [options] [model_id]
 ## REST API
 Cortex has a REST API that runs at `localhost:1337`.
 
+> **Note**: Check our [API documentation](https://cortex.so/api-reference) for a full list of available endpoints.
+
 ## Contact Support
 - For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
