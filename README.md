@@ -79,7 +79,7 @@ and the Swagger UI at `http://localhost:1337/api`.
 To install Cortex from the source, follow the steps below:
 
 1. Clone the Cortex repository [here](https://github.com/janhq/cortex/tree/dev).
-2. Navigate to the `cortex-js` folder.
+2. Navigate to the `platform` folder.
 3. Open the terminal and run the following command to build the Cortex project:
 
 ```bash
@@ -89,7 +89,7 @@ npx nest build
 4. Make the `command.js` executable:
 
 ```bash
-chmod +x '[path-to]/cortex/cortex-js/dist/src/command.js'
+chmod +x '[path-to]/cortex/platform/dist/src/command.js'
 ```
 
 5. Link the package globally:

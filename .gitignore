@@ -1,5 +1,5 @@
-# cortex-js
-cortex-js/cortex.db
+# platform
+platform/cortex.db
 dist
 *.lock
 node_modules
@@ -13,8 +13,8 @@ prism.log
 api.json
 openai-python/*
 build
-cortex-js/cortex.exe
-cortex-js/package-lock.json
+platform/cortex.exe
+platform/package-lock.json
 .vscode
-cortex-js/command
-cortex-js/src/infrastructure/commanders/test/test_data
+platform/command
+platform/src/infrastructure/commanders/test/test_data

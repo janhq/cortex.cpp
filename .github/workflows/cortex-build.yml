@@ -2,8 +2,8 @@ name: CI Cortex Release
 
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*", "!v[0-9]+.[0-9]+.[0-9]+-cortex-js", "!v[0-9]+.[0-9]+.[0-9]+-[0-9]+-cortex-js"]
-    paths: ["cortex-cpp/**", "cortex-js/**"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+", "v[0-9]+.[0-9]+.[0-9]+-*", "!v[0-9]+.[0-9]+.[0-9]+-platform", "!v[0-9]+.[0-9]+.[0-9]+-[0-9]+-platform"]
+    paths: ["cortex-cpp/**", "platform/**"]
   workflow_dispatch:
 
 jobs:
@@ -267,7 +267,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: "Update version by tag"
-        working-directory: cortex-js
+        working-directory: platform
         shell: bash
         run: |
           echo "Version: ${{ needs.create-draft-release.outputs.version }}"
@@ -293,7 +293,7 @@ jobs:
         if: runner.os == 'macOS'
 
       - run: yarn install && yarn build:binary
-        working-directory: ./cortex-js
+        working-directory: ./platform
 
       - name: Get Cer for code signing
         if: runner.os == 'macOS'
@@ -311,13 +311,13 @@ jobs:
 
       - name: update app info
         run: |
-          cd cortex-js
+          cd platform
           make update-app-info
 
       - name: copy bin file macos
         if: runner.os == 'macOS'
         run: |
-          cd cortex-js
+          cd platform
           mkdir -p installer
           which cp
           which mv
@@ -328,7 +328,7 @@ jobs:
       - name: Code Signing macOS
         if: runner.os == 'macOS'
         run: |
-          cd cortex-js
+          cd platform
           ./dist/cortexso --help
           echo "--------"
           ./cortex --help
@@ -347,7 +347,7 @@ jobs:
       - name: Create MacOS PKG Installer
         if: runner.os == 'macOS'
         run: |
-          cd cortex-js
+          cd platform
           echo "--------"
           npx cpx ./cortex ./installer
           ./installer/cortex --help
@@ -360,7 +360,7 @@ jobs:
       - name: Create Linux DEB Installer
         if: runner.os == 'Linux'
         run: |
-          cd cortex-js
+          cd platform
           mkdir -p cortexso/DEBIAN
           mkdir -p cortexso/usr/local/bin
           sed "s/Version:/Version: ${{ needs.create-draft-release.outputs.version }}/g" control.template > cortexso/DEBIAN/control
@@ -368,7 +368,7 @@ jobs:
           dpkg-deb --build cortexso
 
       - run: |
-          cd cortex-js
+          cd platform
           set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
           make codesign-binary CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
@@ -379,7 +379,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          cd cortex-js
+          cd platform
           sed -i "s/AppVersion=1.0/AppVersion=${{ needs.create-draft-release.outputs.version }}/g" installer.iss
           cat installer.iss
 
@@ -387,11 +387,11 @@ jobs:
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         if: runner.os == 'Windows'
         with:
-          path: cortex-js/installer.iss
+          path: platform/installer.iss
           options: /O+
 
       - run: |
-          cd cortex-js
+          cd platform
           set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
           make codesign-installer CODE_SIGN=true CORTEX_VERSION="0.${{ needs.create-draft-release.outputs.version }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
         name: Code Signing Windows
@@ -400,7 +400,7 @@ jobs:
 
       - name: Post-Bundle
         run: |
-          cd cortex-js
+          cd platform
           make postbundle
 
       - name: Upload Cortex Installer
@@ -410,7 +410,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-js/cortex-installer.tar.gz
+          asset_path: ./platform/cortex-installer.tar.gz
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
           asset_content_type: application/gzip
 
@@ -421,7 +421,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-js/setup.exe
+          asset_path: ./platform/setup.exe
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.exe
           asset_content_type: application/octet-stream
 
@@ -430,7 +430,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-js/cortex.tar.gz
+          asset_path: ./platform/cortex.tar.gz
           asset_name: cortex-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.tar.gz
           asset_content_type: application/gzip
 
@@ -440,7 +440,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-js/cortexso.deb
+          asset_path: ./platform/cortexso.deb
           asset_name: cortex-installer-${{ needs.create-draft-release.outputs.version }}-${{ matrix.name }}-${{ matrix.os }}.deb
           asset_content_type: application/gzip
       
@@ -450,7 +450,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: cortex-linux
-          path: ./cortex-js/cortex
+          path: ./platform/cortex
 
   update_release_draft:
     needs: [build-and-test, build-cortex-single-binary]
