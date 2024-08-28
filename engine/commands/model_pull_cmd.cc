@@ -6,18 +6,20 @@
 #include "utils/model_callback_utils.h"
 
 namespace commands {
-ModelPullCmd::ModelPullCmd(std::string modelHandle)
-    : modelHandle_(std::move(modelHandle)) {}
+ModelPullCmd::ModelPullCmd(std::string model_handle, std::string branch)
+    : model_handle_(std::move(model_handle)), branch_(std::move(branch)) {}
 
-void ModelPullCmd::Exec() {
-  auto downloadTask = cortexso_parser::getDownloadTask(modelHandle_);
+bool ModelPullCmd::Exec() {
+  auto downloadTask = cortexso_parser::getDownloadTask(model_handle_, branch_);
   if (downloadTask.has_value()) {
     DownloadService downloadService;
     downloadService.AddDownloadTask(downloadTask.value(),
                                     model_callback_utils::DownloadModelCb);
     std::cout << "Download finished" << std::endl;
+    return true;
   } else {
     std::cout << "Model not found" << std::endl;
+    return false;
   }
 }
 

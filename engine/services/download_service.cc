@@ -72,8 +72,8 @@ void DownloadService::StartDownloadItem(
         outputFile.write(data, data_length);
         return true;
       },
-      [&last, &outputFile, &callback, outputFilePath, this](uint64_t current,
-                                                            uint64_t total) {
+      [&item, &last, &outputFile, &callback, outputFilePath, this](
+          uint64_t current, uint64_t total) {
         if (current - last > kUpdateProgressThreshold) {
           last = current;
           LOG_INFO << "Downloading: " << current << " / " << total;
@@ -83,7 +83,9 @@ void DownloadService::StartDownloadItem(
           LOG_INFO << "Done download: "
                    << static_cast<double>(total) / 1024 / 1024 << " MiB";
           if (callback.has_value()) {
-            callback.value()(outputFilePath.string());
+            auto need_parse_gguf =
+                item.path.find("cortexso") == std::string::npos;
+            callback.value()(outputFilePath.string(), need_parse_gguf);
           }
           return false;
         }

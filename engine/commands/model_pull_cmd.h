@@ -6,10 +6,11 @@ namespace commands {
 
 class ModelPullCmd {
  public:
-  ModelPullCmd(std::string modelHandle);
-  void Exec();
+explicit  ModelPullCmd(std::string model_handle, std::string branch);
+  bool Exec();
 
  private:
-  std::string modelHandle_;
+  std::string model_handle_;
+  std::string branch_;
 };
 }  // namespace commands

@@ -14,10 +14,10 @@ namespace commands {
 EngineInitCmd::EngineInitCmd(std::string engineName, std::string version)
     : engineName_(std::move(engineName)), version_(std::move(version)) {}
 
-void EngineInitCmd::Exec() const {
+bool EngineInitCmd::Exec() const {
   if (engineName_.empty()) {
     LOG_ERROR << "Engine name is required";
-    return;
+    return false;
   }
 
   // Check if the architecture and OS are supported
@@ -26,7 +26,7 @@ void EngineInitCmd::Exec() const {
       system_info.os == system_info_utils::kUnsupported) {
     LOG_ERROR << "Unsupported OS or architecture: " << system_info.os << ", "
               << system_info.arch;
-    return;
+    return false;
   }
   LOG_INFO << "OS: " << system_info.os << ", Arch: " << system_info.arch;
 
@@ -34,7 +34,7 @@ void EngineInitCmd::Exec() const {
   if (std::find(supportedEngines_.begin(), supportedEngines_.end(),
                 engineName_) == supportedEngines_.end()) {
     LOG_ERROR << "Engine not supported";
-    return;
+    return false;
   }
 
   constexpr auto gitHubHost = "https://api.github.com";
@@ -78,7 +78,7 @@ void EngineInitCmd::Exec() const {
         LOG_INFO << "Matched variant: " << matched_variant;
         if (matched_variant.empty()) {
           LOG_ERROR << "No variant found for " << os_arch;
-          return;
+          return false;
         }
 
         for (auto& asset : assets) {
@@ -103,36 +103,45 @@ void EngineInitCmd::Exec() const {
                                                  .path = path,
                                              }}};
 
-            DownloadService().AddDownloadTask(
-                downloadTask, [](const std::string& absolute_path) {
-                  // try to unzip the downloaded file
-                  std::filesystem::path downloadedEnginePath{absolute_path};
-                  LOG_INFO << "Downloaded engine path: "
-                           << downloadedEnginePath.string();
+            DownloadService().AddDownloadTask(downloadTask, [](const std::string&
+                                                                   absolute_path,
+                                                               bool unused) {
+              // try to unzip the downloaded file
+              std::filesystem::path downloadedEnginePath{absolute_path};
+              LOG_INFO << "Downloaded engine path: "
+                       << downloadedEnginePath.string();
 
-                  archive_utils::ExtractArchive(
-                      downloadedEnginePath.string(),
-                      downloadedEnginePath.parent_path()
-                          .parent_path()
-                          .string());
+              archive_utils::ExtractArchive(
+                  downloadedEnginePath.string(),
+                  downloadedEnginePath.parent_path().parent_path().string());
 
-                  // remove the downloaded file
-                  std::filesystem::remove(absolute_path);
-                  LOG_INFO << "Finished!";
-                });
+              // remove the downloaded file
+              // TODO(any) Could not delete file on Windows because it is currently hold by httplib(?)
+              // Not sure about other platforms
+              try {
+                std::filesystem::remove(absolute_path);
+              } catch (const std::exception& e) {
+                LOG_ERROR << "Could not delete file: " << e.what();
+              }
+              LOG_INFO << "Finished!";
+            });
 
-            return;
+            return false;
           }
         }
       } catch (const json::parse_error& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
+        return false;
       }
     } else {
       LOG_ERROR << "HTTP error: " << res->status;
+      return false;
     }
   } else {
     auto err = res.error();
     LOG_ERROR << "HTTP error: " << httplib::to_string(err);
+    return false;
   }
+  return true;
 }
 };  // namespace commands

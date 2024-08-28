@@ -5,10 +5,10 @@
 
 namespace commands {
 
-class StartModelCmd{
+class ModelStartCmd{
  public:
-  StartModelCmd(std::string host, int port, const config::ModelConfig& mc);
-  void Exec();
+  explicit ModelStartCmd(std::string host, int port, const config::ModelConfig& mc);
+  bool Exec();
 
  private:
   std::string host_;

@@ -20,7 +20,7 @@
 #error "Unsupported platform!"
 #endif
 
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) { 
   
   // Check if this process is for python execution
   if (argc > 1) {
