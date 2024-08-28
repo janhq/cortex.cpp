@@ -196,6 +196,67 @@ cortex benchmark [options] [model_id]
 ## REST API
 Cortex has a REST API that runs at `localhost:1337`.
 
+### Pull a Model
+```json
+curl --request POST \
+  --url http://localhost:1337/v1/models/{model_id}/pull
+```
+
+### Start a Model
+```json
+curl --request POST \
+  --url http://localhost:1337/v1/models/{model_id}/start \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "prompt_template": "system\n{system_message}\nuser\n{prompt}\nassistant",
+  "stop": [],
+  "ngl": 4096,
+  "ctx_len": 4096,
+  "cpu_threads": 10,
+  "n_batch": 2048,
+  "caching_enabled": true,
+  "grp_attn_n": 1,
+  "grp_attn_w": 512,
+  "mlock": false,
+  "flash_attn": true,
+  "cache_type": "f16",
+  "use_mmap": true,
+  "engine": "cortex.llamacpp"
+}'
+```
+
+### Chat with a Model
+```json
+curl http://localhost:1337/v1/chat/completions \
+-H "Content-Type: application/json" \
+-d '{
+  "model": "",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello"
+    },
+  ],
+  "model": "mistral",
+  "stream": true,
+  "max_tokens": 1,
+  "stop": [
+      null
+  ],
+  "frequency_penalty": 1,
+  "presence_penalty": 1,
+  "temperature": 1,
+  "top_p": 1
+}'
+```
+
+### Stop a Model
+```json
+curl --request POST \
+  --url http://localhost:1337/v1/models/mistral/stop
+```
+
+
 > **Note**: Check our [API documentation](https://cortex.so/api-reference) for a full list of available endpoints.
 
 ## Contact Support
