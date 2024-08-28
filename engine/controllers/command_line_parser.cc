@@ -12,13 +12,14 @@
 CommandLineParser::CommandLineParser() : app_("Cortex.cpp CLI") {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
+  std::string model_id;
+  
   // Models group commands
   {
     auto models_cmd =
         app_.add_subcommand("models", "Subcommands for managing models");
 
     auto start_cmd = models_cmd->add_subcommand("start", "Start a model by ID");
-    std::string model_id;
     start_cmd->add_option("model_id", model_id, "");
     start_cmd->callback([&model_id]() {
       // TODO(sang) switch to <model_id>.yaml when implement model manager
@@ -67,12 +68,12 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
         models_cmd->add_subcommand("update", "Update configuration of a model");
   }
 
+  std::string msg;
   {
     auto chat_cmd =
         app_.add_subcommand("chat", "Send a chat request to a model");
-    std::string model_id;
+    
     chat_cmd->add_option("model_id", model_id, "");
-    std::string msg;
     chat_cmd->add_option("-m,--message", msg,
                            "Message to chat with model");
 
@@ -92,15 +93,17 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   auto embeddings_cmd = app_.add_subcommand(
       "embeddings", "Creates an embedding vector representing the input text");
 
+  // Default version is latest
+  std::string version{"latest"};
   {  // engines group commands
     auto engines_cmd = app_.add_subcommand("engines", "Get cortex engines");
     auto list_engines_cmd =
         engines_cmd->add_subcommand("list", "List all cortex engines");
     auto get_engine_cmd = engines_cmd->add_subcommand("get", "Get an engine");
 
-    EngineInstall(engines_cmd, "cortex.llamacpp");
-    EngineInstall(engines_cmd, "cortex.onnx");
-    EngineInstall(engines_cmd, "cortex.tensorrt-llm");
+    EngineInstall(engines_cmd, "cortex.llamacpp", version);
+    EngineInstall(engines_cmd, "cortex.onnx", version);
+    EngineInstall(engines_cmd, "cortex.tensorrt-llm", version);
   }
 
   auto run_cmd =
@@ -119,17 +122,15 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 }
 
 void CommandLineParser::EngineInstall(CLI::App* parent,
-                                      const std::string& engine_name) {
+                                      const std::string& engine_name, std::string& version) {
   auto engine_cmd =
       parent->add_subcommand(engine_name, "Manage " + engine_name + " engine");
 
-  // Default version is latest
-  std::string version{"latest"};
   auto install_cmd = engine_cmd->add_subcommand(
       "install", "Install " + engine_name + " engine");
   install_cmd->add_option("-v, --version", version,
                           "Engine version. Default will be latest");
-  install_cmd->callback([&engine_name, &version] {
+  install_cmd->callback([engine_name, &version] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });
