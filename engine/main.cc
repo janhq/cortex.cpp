@@ -81,12 +81,11 @@ void fork_process() {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-
+  std::string cmds = cortex_utils::GetCurrentPath() + "/cortex-cpp.exe --start-server";
   // Create child process
   if (!CreateProcess(
-          NULL,  // No module name (use command line)
-          cortex_utils::GetCurrentPath() +
-              "/cortex-cpp.exe --start-server",  // Command line (replace with your actual executable)
+          _T(cmds),  // No module name (use command line)
+          const_cast<char*>(cmds.c_str()),  // Command line (replace with your actual executable)
           NULL,                   // Process handle not inheritable
           NULL,                   // Thread handle not inheritable
           FALSE,                  // Set handle inheritance to FALSE
