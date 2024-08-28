@@ -22,7 +22,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto start_cmd = models_cmd->add_subcommand("start", "Start a model by ID");
     start_cmd->add_option("model_id", model_id, "");
-    start_cmd->callback([model_id]() {
+    start_cmd->callback([&model_id]() {
       // TODO(sang) switch to <model_id>.yaml when implement model manager
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
@@ -35,7 +35,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto stop_model_cmd =
         models_cmd->add_subcommand("stop", "Stop a model by ID");
     stop_model_cmd->add_option("model_id", model_id, "");
-    stop_model_cmd->callback([model_id]() {
+    stop_model_cmd->callback([&model_id]() {
       // TODO(sang) switch to <model_id>.yaml when implement model manager
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
@@ -55,7 +55,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto get_models_cmd =
         models_cmd->add_subcommand("get", "Get info of {model_id} locally");
     get_models_cmd->add_option("model_id", model_id, "");
-    get_models_cmd->callback([model_id](){
+    get_models_cmd->callback([&model_id](){
       commands::ModelGetCmd command(model_id);
       command.Exec();
     });
@@ -66,7 +66,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
                             "HuggingFace repositories. For available models, "
                             "please visit https://huggingface.co/cortexso");
     model_pull_cmd->add_option("model_id", model_id, "");
-    model_pull_cmd->callback([model_id]() {
+    model_pull_cmd->callback([&model_id]() {
       commands::ModelPullCmd command(model_id);
       command.Exec();
     });
