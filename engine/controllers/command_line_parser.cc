@@ -1,11 +1,13 @@
 #include "command_line_parser.h"
 #include "commands/engine_init_cmd.h"
-#include "commands/model_pull_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_get_cmd.h"
+
+#include "commands/model_pull_cmd.h"
 #include "commands/start_model_cmd.h"
 #include "commands/stop_model_cmd.h"
 #include "commands/stop_server_cmd.h"
+#include "commands/chat_cmd.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
 
@@ -45,7 +47,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto list_models_cmd =
         models_cmd->add_subcommand("list", "List all models locally");
-    list_models_cmd->callback([](){
+    list_models_cmd->callback([]() {
       commands::ModelListCmd command;
       command.Exec();
     });
@@ -75,7 +77,24 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
         models_cmd->add_subcommand("update", "Update configuration of a model");
   }
 
-  auto chat_cmd = app_.add_subcommand("chat", "Send a chat request to a model");
+  {
+    auto chat_cmd =
+        app_.add_subcommand("chat", "Send a chat request to a model");
+    std::string model_id;
+    chat_cmd->add_option("model_id", model_id, "");
+    std::string msg;
+    chat_cmd->add_option("-m,--message", msg,
+                           "Message to chat with model");
+
+    chat_cmd->callback([&model_id, &msg] {
+      // TODO(sang) switch to <model_id>.yaml when implement model manager
+      config::YamlHandler yaml_handler;
+      yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
+                                       "/models/" + model_id + "/model.yml");
+      commands::ChatCmd cc("127.0.0.1", 3928, yaml_handler.GetModelConfig());
+      cc.Exec(msg);
+    });
+  }
 
   auto ps_cmd =
       app_.add_subcommand("ps", "Show running models and their status");
@@ -83,27 +102,15 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   auto embeddings_cmd = app_.add_subcommand(
       "embeddings", "Creates an embedding vector representing the input text");
 
-  // engines group commands
-  {
+  {  // engines group commands
     auto engines_cmd = app_.add_subcommand("engines", "Get cortex engines");
     auto list_engines_cmd =
         engines_cmd->add_subcommand("list", "List all cortex engines");
     auto get_engine_cmd = engines_cmd->add_subcommand("get", "Get an engine");
 
-    {  // Engine init command
-      auto init_cmd = engines_cmd->add_subcommand("init", "Initialize engine");
-      std::string engine_name;
-      std::string version = "latest";
-
-      init_cmd->add_option("-n,--name", engine_name,
-                           "Engine name. E.g: cortex.llamacpp");
-      init_cmd->add_option("-v,--version", version,
-                           "Engine version. Default will be latest");
-      init_cmd->callback([&engine_name, &version]() {
-        commands::EngineInitCmd eic(engine_name, version);
-        eic.Exec();
-      });
-    }
+    EngineInstall(engines_cmd, "cortex.llamacpp");
+    EngineInstall(engines_cmd, "cortex.onnx");
+    EngineInstall(engines_cmd, "cortex.tensorrt-llm");
   }
 
   auto run_cmd =
@@ -119,4 +126,21 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   CLI11_PARSE(app_, argc, argv);
   return true;
+}
+
+void CommandLineParser::EngineInstall(CLI::App* parent,
+                                      const std::string& engine_name) {
+  auto engine_cmd =
+      parent->add_subcommand(engine_name, "Manage " + engine_name + " engine");
+
+  // Default version is latest
+  std::string version{"latest"};
+  auto install_cmd = engine_cmd->add_subcommand(
+      "install", "Install " + engine_name + " engine");
+  install_cmd->add_option("-v, --version", version,
+                          "Engine version. Default will be latest");
+  install_cmd->callback([&engine_name, &version] {
+    commands::EngineInitCmd eic(engine_name, version);
+    eic.Exec();
+  });
 }
