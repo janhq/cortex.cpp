@@ -197,13 +197,13 @@ cortex benchmark [options] [model_id]
 Cortex has a REST API that runs at `localhost:1337`.
 
 ### Pull a Model
-```json
+```bash
 curl --request POST \
   --url http://localhost:1337/v1/models/{model_id}/pull
 ```
 
 ### Start a Model
-```json
+```bash
 curl --request POST \
   --url http://localhost:1337/v1/models/{model_id}/start \
   --header 'Content-Type: application/json' \
@@ -226,7 +226,7 @@ curl --request POST \
 ```
 
 ### Chat with a Model
-```json
+```bash
 curl http://localhost:1337/v1/chat/completions \
 -H "Content-Type: application/json" \
 -d '{
@@ -251,7 +251,7 @@ curl http://localhost:1337/v1/chat/completions \
 ```
 
 ### Stop a Model
-```json
+```bash
 curl --request POST \
   --url http://localhost:1337/v1/models/mistral/stop
 ```
