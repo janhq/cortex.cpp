@@ -5,6 +5,7 @@
 #include "commands/start_model_cmd.h"
 #include "commands/stop_model_cmd.h"
 #include "commands/stop_server_cmd.h"
+#include "commands/chat_cmd.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
 
@@ -66,7 +67,24 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
         models_cmd->add_subcommand("update", "Update configuration of a model");
   }
 
-  auto chat_cmd = app_.add_subcommand("chat", "Send a chat request to a model");
+  {
+    auto chat_cmd =
+        app_.add_subcommand("chat", "Send a chat request to a model");
+    std::string model_id;
+    chat_cmd->add_option("model_id", model_id, "");
+    std::string msg;
+    chat_cmd->add_option("-m,--message", msg,
+                           "Message to chat with model");
+
+    chat_cmd->callback([&model_id, &msg] {
+      // TODO(sang) switch to <model_id>.yaml when implement model manager
+      config::YamlHandler yaml_handler;
+      yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
+                                       "/models/" + model_id + "/model.yml");
+      commands::ChatCmd cc("127.0.0.1", 3928, yaml_handler.GetModelConfig());
+      cc.Exec(msg);
+    });
+  }
 
   auto ps_cmd =
       app_.add_subcommand("ps", "Show running models and their status");
