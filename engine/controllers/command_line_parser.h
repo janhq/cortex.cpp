@@ -9,7 +9,8 @@ class CommandLineParser {
   bool SetupCommand(int argc, char** argv);
 
  private:
-  void EngineInstall(CLI::App* parent, const std::string& engine_name);
+  void EngineInstall(CLI::App* parent, const std::string& engine_name,
+                     std::string& version);
 
   CLI::App app_;
 };
