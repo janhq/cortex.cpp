@@ -7,6 +7,7 @@
 #include "utils/archive_utils.h"   
 #include "utils/system_info_utils.h"
 // clang-format on
+#include "utils/engine_matcher_utils.h"
 
 namespace commands {
 
@@ -27,6 +28,7 @@ void EngineInitCmd::Exec() const {
               << system_info.arch;
     return;
   }
+  LOG_INFO << "OS: " << system_info.os << ", Arch: " << system_info.arch;
 
   // check if engine is supported
   if (std::find(supportedEngines_.begin(), supportedEngines_.end(),
@@ -36,11 +38,11 @@ void EngineInitCmd::Exec() const {
   }
 
   constexpr auto gitHubHost = "https://api.github.com";
-
+  std::string version = version_.empty() ? "latest" : version_;
   std::ostringstream engineReleasePath;
   engineReleasePath << "/repos/janhq/" << engineName_ << "/releases/"
-                    << version_;
-
+                    << version;
+  LOG_INFO << "Engine release path: " << gitHubHost << engineReleasePath.str();
   using namespace nlohmann;
 
   httplib::Client cli(gitHubHost);
@@ -51,9 +53,37 @@ void EngineInitCmd::Exec() const {
         auto assets = jsonResponse["assets"];
         auto os_arch{system_info.os + "-" + system_info.arch};
 
+        std::vector<std::string> variants;
+        for (auto& asset : assets) {
+          auto asset_name = asset["name"].get<std::string>();
+          variants.push_back(asset_name);
+        }
+
+        auto cuda_version = system_info_utils::GetCudaVersion();
+        LOG_INFO << "engineName_: " << engineName_;
+        LOG_INFO << "CUDA version: " << cuda_version;
+        std::string matched_variant = "";
+        if (engineName_ == "cortex.tensorrt-llm") {
+          matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
+              variants, system_info.os, cuda_version);
+        } else if (engineName_ == "cortex.onnx") {
+          matched_variant = engine_matcher_utils::ValidateOnnx(
+              variants, system_info.os, system_info.arch);
+        } else if (engineName_ == "cortex.llamacpp") {
+          auto suitable_avx = engine_matcher_utils::GetSuitableAvxVariant();
+          matched_variant = engine_matcher_utils::Validate(
+              variants, system_info.os, system_info.arch, suitable_avx,
+              cuda_version);
+        }
+        LOG_INFO << "Matched variant: " << matched_variant;
+        if (matched_variant.empty()) {
+          LOG_ERROR << "No variant found for " << os_arch;
+          return;
+        }
+
         for (auto& asset : assets) {
           auto assetName = asset["name"].get<std::string>();
-          if (assetName.find(os_arch) != std::string::npos) {
+          if (assetName == matched_variant) {
             std::string host{"https://github.com"};
 
             auto full_url = asset["browser_download_url"].get<std::string>();
@@ -74,8 +104,7 @@ void EngineInitCmd::Exec() const {
                                              }}};
 
             DownloadService().AddDownloadTask(
-                downloadTask,
-                [&downloadTask](const std::string& absolute_path) {
+                downloadTask, [](const std::string& absolute_path) {
                   // try to unzip the downloaded file
                   std::filesystem::path downloadedEnginePath{absolute_path};
                   LOG_INFO << "Downloaded engine path: "
@@ -95,15 +124,15 @@ void EngineInitCmd::Exec() const {
             return;
           }
         }
-        LOG_ERROR << "No asset found for " << os_arch;
       } catch (const json::parse_error& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
       }
+    } else {
+      LOG_ERROR << "HTTP error: " << res->status;
     }
   } else {
     auto err = res.error();
     LOG_ERROR << "HTTP error: " << httplib::to_string(err);
   }
 }
-
 };  // namespace commands

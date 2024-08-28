@@ -1,12 +1,11 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <climits>  // for PATH_MAX
-#include <iostream>
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
+#include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
-#include "utils/archive_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
