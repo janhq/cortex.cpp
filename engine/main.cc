@@ -1,12 +1,11 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <climits>  // for PATH_MAX
-#include <iostream>
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
+#include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
-#include "utils/archive_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -22,18 +21,7 @@
 #endif
 
 int main(int argc, char* argv[]) {
-  // Create logs/ folder and setup log to file
-  std::filesystem::create_directory(cortex_utils::logs_folder);
-  trantor::AsyncFileLogger asyncFileLogger;
-  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
-  asyncFileLogger.startLogging();
-  trantor::Logger::setOutputFunction(
-      [&](const char* msg, const uint64_t len) {
-        asyncFileLogger.output(msg, len);
-      },
-      [&]() { asyncFileLogger.flush(); });
-  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
-
+  
   // Check if this process is for python execution
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {
@@ -60,6 +48,18 @@ int main(int argc, char* argv[]) {
     clp.SetupCommand(argc, argv);
     return 0;
   }
+
+  // Create logs/ folder and setup log to file
+  std::filesystem::create_directory(cortex_utils::logs_folder);
+  trantor::AsyncFileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+  asyncFileLogger.startLogging();
+  trantor::Logger::setOutputFunction(
+      [&](const char* msg, const uint64_t len) {
+        asyncFileLogger.output(msg, len);
+      },
+      [&]() { asyncFileLogger.flush(); });
+  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
 
   int thread_num = 1;
   std::string host = "127.0.0.1";
