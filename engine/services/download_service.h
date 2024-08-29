@@ -4,7 +4,7 @@
 #include <optional>
 #include <vector>
 
-enum class DownloadType { Model, Engine, Miscellaneous };
+enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit };
 
 enum class DownloadStatus {
   Pending,

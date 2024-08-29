@@ -22,53 +22,53 @@
 #error "Unsupported platform!"
 #endif
 
-void RunServer(){
+void RunServer() {
   // Create logs/ folder and setup log to file
-      std::filesystem::create_directory(cortex_utils::logs_folder);
-      trantor::AsyncFileLogger asyncFileLogger;
-      asyncFileLogger.setFileName(cortex_utils::logs_base_name);
-      asyncFileLogger.startLogging();
-      trantor::Logger::setOutputFunction(
-          [&](const char* msg, const uint64_t len) {
-            asyncFileLogger.output(msg, len);
-          },
-          [&]() { asyncFileLogger.flush(); });
-      asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
-      // Number of cortex.cpp threads
-      // if (argc > 1) {
-      //   thread_num = std::atoi(argv[1]);
-      // }
+  std::filesystem::create_directory(cortex_utils::logs_folder);
+  trantor::AsyncFileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+  asyncFileLogger.startLogging();
+  trantor::Logger::setOutputFunction(
+      [&](const char* msg, const uint64_t len) {
+        asyncFileLogger.output(msg, len);
+      },
+      [&]() { asyncFileLogger.flush(); });
+  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
+  // Number of cortex.cpp threads
+  // if (argc > 1) {
+  //   thread_num = std::atoi(argv[1]);
+  // }
 
-      // // Check for host argument
-      // if (argc > 2) {
-      //   host = argv[2];
-      // }
+  // // Check for host argument
+  // if (argc > 2) {
+  //   host = argv[2];
+  // }
 
-      // // Check for port argument
-      // if (argc > 3) {
-      //   port = std::atoi(argv[3]);  // Convert string argument to int
-      // }
-      int thread_num = 1;
-      std::string host = "127.0.0.1";
-      int port = 3928;
+  // // Check for port argument
+  // if (argc > 3) {
+  //   port = std::atoi(argv[3]);  // Convert string argument to int
+  // }
+  int thread_num = 1;
+  std::string host = "127.0.0.1";
+  int port = 3928;
 
-      int logical_cores = std::thread::hardware_concurrency();
-      int drogon_thread_num = std::max(thread_num, logical_cores);
-      // cortex_utils::nitro_logo();
+  int logical_cores = std::thread::hardware_concurrency();
+  int drogon_thread_num = std::max(thread_num, logical_cores);
+  // cortex_utils::nitro_logo();
 #ifdef CORTEX_CPP_VERSION
-      LOG_INFO << "cortex.cpp version: " << CORTEX_CPP_VERSION;
+  LOG_INFO << "cortex.cpp version: " << CORTEX_CPP_VERSION;
 #else
-      LOG_INFO << "cortex.cpp version: undefined";
+  LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-      LOG_INFO << "Server started, listening at: " << host << ":" << port;
-      LOG_INFO << "Please load your model";
-      drogon::app().addListener(host, port);
-      drogon::app().setThreadNum(drogon_thread_num);
-      LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
+  LOG_INFO << "Server started, listening at: " << host << ":" << port;
+  LOG_INFO << "Please load your model";
+  drogon::app().addListener(host, port);
+  drogon::app().setThreadNum(drogon_thread_num);
+  LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
-      drogon::app().run();
-      // return 0;
+  drogon::app().run();
+  // return 0;
 }
 
 void ForkProcess() {
@@ -80,19 +80,21 @@ void ForkProcess() {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-  std::string cmds = cortex_utils::GetCurrentPath() + "/cortex-cpp.exe --start-server";
+  std::string cmds =
+      cortex_utils::GetCurrentPath() + "/cortex-cpp.exe --start-server";
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          const_cast<char*>(cmds.c_str()),  // Command line (replace with your actual executable)
-          NULL,                   // Process handle not inheritable
-          NULL,                   // Thread handle not inheritable
-          FALSE,                  // Set handle inheritance to FALSE
-          0,                      // No creation flags
-          NULL,                   // Use parent's environment block
-          NULL,                   // Use parent's starting directory
-          &si,                    // Pointer to STARTUPINFO structure
-          &pi))                   // Pointer to PROCESS_INFORMATION structure
+          const_cast<char*>(
+              cmds.c_str()),  // Command line (replace with your actual executable)
+          NULL,               // Process handle not inheritable
+          NULL,               // Thread handle not inheritable
+          FALSE,              // Set handle inheritance to FALSE
+          0,                  // No creation flags
+          NULL,               // Use parent's environment block
+          NULL,               // Use parent's starting directory
+          &si,                // Pointer to STARTUPINFO structure
+          &pi))               // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
   } else {

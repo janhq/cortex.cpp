@@ -1,4 +1,5 @@
 # cortex-js
+.DS_Store
 cortex-js/cortex.db
 dist
 *.lock
