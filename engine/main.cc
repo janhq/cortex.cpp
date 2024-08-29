@@ -72,7 +72,7 @@ void RunServer(){
       // return 0;
 }
 
-void fork_process() {
+void ForkProcess() {
 #if defined(_WIN32) || defined(_WIN64)
   // Windows-specific code to create a new process
   STARTUPINFO si;
@@ -152,6 +152,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  fork_process();
+  ForkProcess();
   return 0;
 }
