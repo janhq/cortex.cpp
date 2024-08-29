@@ -71,7 +71,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     model_pull_cmd->callback([&model_id]() {
       commands::CmdInfo ci(model_id);
-      commands::ModelPullCmd command(ci.name, ci.branch);
+      commands::ModelPullCmd command(ci.model_name, ci.branch);
       command.Exec();
     });
 

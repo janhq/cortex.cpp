@@ -27,8 +27,8 @@ CmdInfo::CmdInfo(std::string model_id) {
 
 void CmdInfo::Parse(std::string model_id) {
   if (model_id.find(kDelimiter) == std::string::npos) {
-    engine = "cortex.llamacpp";
-    name = std::move(model_id);
+    engine_name = "cortex.llamacpp";
+    model_name = std::move(model_id);
     branch = "main";
   } else {
     auto res = split(model_id, kDelimiter);
@@ -36,16 +36,16 @@ void CmdInfo::Parse(std::string model_id) {
       LOG_ERROR << "model_id does not valid";
       return;
     } else {
-      name = std::move(res[0]);
+      model_name = std::move(res[0]);
       branch = std::move(res[1]);
       if (branch.find("onnx") != std::string::npos) {
-        engine = "cortex.onnx";
+        engine_name = "cortex.onnx";
       } else if (branch.find("tensorrt") != std::string::npos) {
-        engine = "cortex.tensorrt-llm";
+        engine_name = "cortex.tensorrt-llm";
       } else if (branch.find("gguf") != std::string::npos) {
-        engine = "cortex.llamacpp";
+        engine_name = "cortex.llamacpp";
       } else {
-        LOG_ERROR << "Not a valid branch name " << branch;
+        LOG_ERROR << "Not a valid branch model_name " << branch;
       }
     }
   }

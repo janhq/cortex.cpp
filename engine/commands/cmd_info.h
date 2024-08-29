@@ -4,8 +4,8 @@ namespace commands {
 struct CmdInfo {
   explicit CmdInfo(std::string model_id);
 
-  std::string engine;
-  std::string name;
+  std::string engine_name;
+  std::string model_name;
   std::string branch;
 
  private:

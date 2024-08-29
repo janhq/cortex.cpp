@@ -18,12 +18,12 @@ void RunCmd::Exec() {
   auto address = host_ + ":" + std::to_string(port_);
   CmdInfo ci(model_id_);
   std::string model_file =
-      ci.branch == "main" ? ci.name : ci.name + "-" + ci.branch;
+      ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
   // TODO should we clean all resource if something fails?
   // Check if model existed. If not, download it
   {
     if (!IsModelExisted(model_file)) {
-      ModelPullCmd model_pull_cmd(ci.name, ci.branch);
+      ModelPullCmd model_pull_cmd(ci.model_name, ci.branch);
       if (!model_pull_cmd.Exec()) {
         return;
       }
@@ -32,8 +32,8 @@ void RunCmd::Exec() {
 
   // Check if engine existed. If not, download it
   {
-    if (!IsEngineExisted(ci.engine)) {
-      EngineInitCmd eic(ci.engine, "");
+    if (!IsEngineExisted(ci.engine_name)) {
+      EngineInitCmd eic(ci.engine_name, "");
       if (!eic.Exec())
         return;
     }
