@@ -7,6 +7,7 @@
 #include "utils/archive_utils.h"   
 #include "utils/system_info_utils.h"
 // clang-format on
+#include "utils/cuda_toolkit_utils.h"
 #include "utils/engine_matcher_utils.h"
 
 namespace commands {
@@ -103,9 +104,10 @@ bool EngineInitCmd::Exec() const {
                                                  .path = path,
                                              }}};
 
-            DownloadService().AddDownloadTask(downloadTask, [](const std::string&
-                                                                   absolute_path,
-                                                               bool unused) {
+            DownloadService download_service;
+            download_service.AddDownloadTask(downloadTask, [](const std::string&
+                                                                  absolute_path,
+                                                              bool unused) {
               // try to unzip the downloaded file
               std::filesystem::path downloadedEnginePath{absolute_path};
               LOG_INFO << "Downloaded engine path: "
@@ -125,6 +127,58 @@ bool EngineInitCmd::Exec() const {
               }
               LOG_INFO << "Finished!";
             });
+            if (system_info.os == "mac" || engineName_ == "cortex.onnx") {
+              return false;
+            }
+            // download cuda toolkit
+            const std::string jan_host = "https://catalog.jan.ai";
+            const std::string cuda_toolkit_file_name = "cuda.tar.gz";
+            const std::string download_id = "cuda";
+
+            auto gpu_driver_version = system_info_utils::GetDriverVersion();
+
+            auto cuda_runtime_version =
+                cuda_toolkit_utils::GetCompatibleCudaToolkitVersion(
+                    gpu_driver_version, system_info.os, engineName_);
+
+            std::ostringstream cuda_toolkit_path;
+            cuda_toolkit_path << "dist/cuda-dependencies/" << 11.7 << "/"
+                              << system_info.os << "/"
+                              << cuda_toolkit_file_name;
+
+            LOG_DEBUG << "Cuda toolkit download url: " << jan_host
+                      << cuda_toolkit_path.str();
+
+            auto downloadCudaToolkitTask = DownloadTask{
+                .id = download_id,
+                .type = DownloadType::CudaToolkit,
+                .error = std::nullopt,
+                .items = {DownloadItem{
+                    .id = download_id,
+                    .host = jan_host,
+                    .fileName = cuda_toolkit_file_name,
+                    .type = DownloadType::CudaToolkit,
+                    .path = cuda_toolkit_path.str(),
+                }},
+            };
+
+            download_service.AddDownloadTask(
+                downloadCudaToolkitTask,
+                [](const std::string& absolute_path, bool unused) {
+                  LOG_DEBUG << "Downloaded cuda path: " << absolute_path;
+                  // try to unzip the downloaded file
+                  std::filesystem::path downloaded_path{absolute_path};
+
+                  archive_utils::ExtractArchive(
+                      absolute_path,
+                      downloaded_path.parent_path().parent_path().string());
+
+                  try {
+                    std::filesystem::remove(absolute_path);
+                  } catch (std::exception& e) {
+                    LOG_ERROR << "Error removing downloaded file: " << e.what();
+                  }
+                });
 
             return true;
           }

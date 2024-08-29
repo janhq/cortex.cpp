@@ -126,6 +126,11 @@ export interface ModelSettingParams {
    * Model type we want to use: llm or embedding, default value is llm (latest llama.cpp update)
    */
   model_type?: string;
+
+  /**
+   * The model path.
+   */
+  model_path?: string;
 }
 
 /**

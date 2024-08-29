@@ -12,6 +12,7 @@ namespace system_info_utils {
 
 constexpr static auto kUnsupported{"Unsupported"};
 constexpr static auto kCudaVersionRegex{R"(CUDA Version:\s*([\d\.]+))"};
+constexpr static auto kDriverVersionRegex{R"(Driver Version:\s*(\d+\.\d+))"};
 constexpr static auto kGpuQueryCommand{
     "nvidia-smi --query-gpu=index,memory.total,name,compute_cap "
     "--format=csv,noheader,nounits"};
@@ -177,6 +178,31 @@ inline bool IsNvidiaSmiAvailable() {
 #endif
 }
 
+inline std::string GetDriverVersion() {
+  if (!IsNvidiaSmiAvailable()) {
+    LOG_INFO << "nvidia-smi is not available!";
+    return "";
+  }
+  try {
+    CommandExecutor cmd("nvidia-smi");
+    auto output = cmd.execute();
+
+    const std::regex driver_version_reg(kDriverVersionRegex);
+    std::smatch match;
+
+    if (std::regex_search(output, match, driver_version_reg)) {
+      LOG_INFO << "Gpu Driver Version: " << match[1].str();
+      return match[1].str();
+    } else {
+      LOG_ERROR << "Gpu Driver not found!";
+      return "";
+    }
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Error: " << e.what();
+    return "";
+  }
+}
+
 inline std::string GetCudaVersion() {
   if (!IsNvidiaSmiAvailable()) {
     LOG_INFO << "nvidia-smi is not available!";
@@ -207,6 +233,9 @@ struct GpuInfo {
   std::string vram;
   std::string name;
   std::string arch;
+  // nvidia driver version. Haven't checked for AMD GPU.
+  std::optional<std::string> driver_version;
+  std::optional<std::string> cuda_driver_version;
   std::optional<std::string> compute_cap;
 };
 
@@ -271,6 +300,10 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
   std::vector<GpuInfo> gpuInfoList;
 
   try {
+    // TODO: improve by parsing both in one command execution
+    auto driver_version = GetDriverVersion();
+    auto cuda_version = GetCudaVersion();
+
     CommandExecutor cmd(kGpuQueryCommand);
     auto output = cmd.execute();
 
@@ -285,6 +318,8 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
           match[2].str(),              // vram
           match[3].str(),              // name
           GetGpuArch(match[3].str()),  // arch
+          driver_version,              // driver_version
+          cuda_version,                // cuda_driver_version
           match[4].str()               // compute_cap
       };
       gpuInfoList.push_back(gpuInfo);
