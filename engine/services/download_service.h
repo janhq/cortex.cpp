@@ -41,7 +41,7 @@ class DownloadService {
   * 
   * @param task 
   */
-  using DownloadItemCb = std::function<void(const std::string&)>;
+  using DownloadItemCb = std::function<void(const std::string&, bool)>;
   void AddDownloadTask(const DownloadTask& task,
                        std::optional<DownloadItemCb> callback = std::nullopt);
 

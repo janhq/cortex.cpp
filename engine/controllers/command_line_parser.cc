@@ -1,12 +1,14 @@
 #include "command_line_parser.h"
+#include "commands/chat_cmd.h"
+#include "commands/cmd_info.h"
 #include "commands/engine_init_cmd.h"
-#include "commands/model_list_cmd.h"
 #include "commands/model_get_cmd.h"
+#include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
-#include "commands/start_model_cmd.h"
+#include "commands/model_start_cmd.h"
+#include "commands/run_cmd.h"
 #include "commands/stop_model_cmd.h"
 #include "commands/stop_server_cmd.h"
-#include "commands/chat_cmd.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
 
@@ -14,7 +16,7 @@ CommandLineParser::CommandLineParser() : app_("Cortex.cpp CLI") {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   std::string model_id;
-  
+
   // Models group commands
   {
     auto models_cmd =
@@ -27,9 +29,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
                                        "/models/" + model_id + "/model.yml");
-      commands::StartModelCmd smc("127.0.0.1", 3928,
+      commands::ModelStartCmd msc("127.0.0.1", 3928,
                                   yaml_handler.GetModelConfig());
-      smc.Exec();
+      msc.Exec();
     });
 
     auto stop_model_cmd =
@@ -55,7 +57,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto get_models_cmd =
         models_cmd->add_subcommand("get", "Get info of {model_id} locally");
     get_models_cmd->add_option("model_id", model_id, "");
-    get_models_cmd->callback([&model_id](){
+    get_models_cmd->callback([&model_id]() {
       commands::ModelGetCmd command(model_id);
       command.Exec();
     });
@@ -66,8 +68,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
                             "HuggingFace repositories. For available models, "
                             "please visit https://huggingface.co/cortexso");
     model_pull_cmd->add_option("model_id", model_id, "");
+
     model_pull_cmd->callback([&model_id]() {
-      commands::ModelPullCmd command(model_id);
+      commands::CmdInfo ci(model_id);
+      commands::ModelPullCmd command(ci.model_name, ci.branch);
       command.Exec();
     });
 
@@ -81,10 +85,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   {
     auto chat_cmd =
         app_.add_subcommand("chat", "Send a chat request to a model");
-    
+
     chat_cmd->add_option("model_id", model_id, "");
-    chat_cmd->add_option("-m,--message", msg,
-                           "Message to chat with model");
+    chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
 
     chat_cmd->callback([&model_id, &msg] {
       // TODO(sang) switch to <model_id>.yaml when implement model manager
@@ -115,8 +118,17 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     EngineInstall(engines_cmd, "cortex.tensorrt-llm", version);
   }
 
-  auto run_cmd =
-      app_.add_subcommand("run", "Shortcut to start a model and chat");
+  {
+    // cortex run tinyllama:gguf
+    auto run_cmd =
+        app_.add_subcommand("run", "Shortcut to start a model and chat");
+    std::string model_id;
+    run_cmd->add_option("model_id", model_id, "");
+    run_cmd->callback([&model_id] {
+      commands::RunCmd rc("127.0.0.1", 3928, model_id);
+      rc.Exec();
+    });
+  }
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
@@ -131,7 +143,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 }
 
 void CommandLineParser::EngineInstall(CLI::App* parent,
-                                      const std::string& engine_name, std::string& version) {
+                                      const std::string& engine_name,
+                                      std::string& version) {
   auto engine_cmd =
       parent->add_subcommand(engine_name, "Manage " + engine_name + " engine");
 

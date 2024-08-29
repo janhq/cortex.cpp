@@ -57,7 +57,7 @@ void ChatCmd::Exec(std::string msg) {
     }
   }
   // Some instruction for user here
-  std::cout << "Inorder to exit, type exit()" << std::endl;
+  std::cout << "Inorder to exit, type `exit()`" << std::endl;
   // Model is loaded, start to chat
   {
     while (true) {

@@ -22,7 +22,6 @@
 #error "Unsupported platform!"
 #endif
 
-
 void RunServer(){
   // Create logs/ folder and setup log to file
       std::filesystem::create_directory(cortex_utils::logs_folder);
@@ -119,7 +118,6 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
-
   // Check if this process is for python execution
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {

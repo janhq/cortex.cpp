@@ -10,7 +10,7 @@
 #include "utils/file_manager_utils.h"
 
 namespace model_callback_utils {
-inline void DownloadModelCb(const std::string& path) {
+inline void DownloadModelCb(const std::string& path, bool need_parse_gguf) {
 
   std::filesystem::path path_obj(path);
   std::string filename(path_obj.filename().string());
@@ -29,7 +29,7 @@ inline void DownloadModelCb(const std::string& path) {
   // currently, only handle downloaded model with only 1 .gguf file
   // TODO: handle multipart gguf file or different model in 1 repo.
   else if (path_obj.extension().string().compare(".gguf") == 0) {
-
+    if(!need_parse_gguf) return;    
     config::GGUFHandler gguf_handler;
     config::YamlHandler yaml_handler;
     gguf_handler.Parse(path);
@@ -40,10 +40,11 @@ inline void DownloadModelCb(const std::string& path) {
     std::string yml_path(path_obj.parent_path().parent_path().string() + "/" +
                          model_config.id + ".yaml");
     std::string yaml_path(path_obj.parent_path().string() + "/model.yml");
-    if (!std::filesystem::exists(yml_path)) { // if model.yml doesn't exsited
+    if (!std::filesystem::exists(yml_path)) {  // if model.yml doesn't exist
       yaml_handler.WriteYamlFile(yml_path);
     }
-    if (!std::filesystem::exists(yaml_path)) {// if <model_id>.yaml doesn't exsited
+    if (!std::filesystem::exists(
+            yaml_path)) {  // if <model_id>.yaml doesn't exist
       yaml_handler.WriteYamlFile(yaml_path);
     }
   }

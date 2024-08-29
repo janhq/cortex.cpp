@@ -68,7 +68,7 @@ void Engines::InitEngine(const HttpRequestPtr& req,
                                              }}};
 
             DownloadService().AddAsyncDownloadTask(
-                downloadTask, [](const std::string& absolute_path) {
+                downloadTask, [](const std::string& absolute_path, bool unused) {
                   // try to unzip the downloaded file
                   std::filesystem::path downloadedEnginePath{absolute_path};
                   LOG_INFO << "Downloaded engine path: "

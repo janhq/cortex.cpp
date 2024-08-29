@@ -9,7 +9,7 @@ class EngineInitCmd {
  public:
   EngineInitCmd(std::string engineName, std::string version);
 
-  void Exec() const;
+  bool Exec() const;
 
  private:
   std::string engineName_;
