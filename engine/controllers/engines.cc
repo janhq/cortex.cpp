@@ -68,7 +68,8 @@ void Engines::InitEngine(const HttpRequestPtr& req,
                                              }}};
 
             DownloadService().AddAsyncDownloadTask(
-                downloadTask, [](const std::string& absolute_path, bool unused) {
+                downloadTask,
+                [](const std::string& absolute_path, bool unused) {
                   // try to unzip the downloaded file
                   std::filesystem::path downloadedEnginePath{absolute_path};
                   LOG_INFO << "Downloaded engine path: "
@@ -108,4 +109,67 @@ void Engines::InitEngine(const HttpRequestPtr& req,
     auto err = res.error();
     LOG_ERROR << "HTTP error: " << httplib::to_string(err);
   }
+}
+
+void Engines::ListEngine(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  Json::Value ret;
+  ret["object"] = "list";
+  Json::Value data(Json::arrayValue);
+  Json::Value obj_onnx, obj_llamacpp, obj_tensorrt;
+  obj_onnx["name"] = "cortex.onnx";
+  obj_onnx["description"] =
+      "This extension enables chat completion API calls using the Onnx engine";
+  obj_onnx["version"] = "0.0.1";
+  obj_onnx["productName"] = "Onnx Inference Engine";
+
+  obj_llamacpp["name"] = "cortex.llamacpp";
+  obj_llamacpp["description"] =
+      "This extension enables chat completion API calls using the LlamaCPP "
+      "engine";
+  obj_llamacpp["version"] = "0.0.1";
+  obj_llamacpp["productName"] = "LlamaCPP Inference Engine";
+
+  obj_tensorrt["name"] = "cortex.tensorrt-llm";
+  obj_tensorrt["description"] =
+      "This extension enables chat completion API calls using the TensorrtLLM "
+      "engine";
+  obj_tensorrt["version"] = "0.0.1";
+  obj_tensorrt["productName"] = "TensorrtLLM Inference Engine";
+
+#ifdef _WIN32
+  if (std::filesystem::exists(std::filesystem::current_path().string() +
+                              cortex_utils::kOnnxLibPath)) {
+    obj_onnx["status"] = "ready";
+  } else {
+    obj_onnx["status"] = "not_initialized";
+  }
+#else
+  obj_onnx["status"] = "not_supported";
+#endif
+  // lllamacpp
+  if (std::filesystem::exists(std::filesystem::current_path().string() +
+                              cortex_utils::kLlamaLibPath)) {
+
+    obj_llamacpp["status"] = "ready";
+  } else {
+    obj_llamacpp["status"] = "not_initialized";
+  }
+  // tensorrt llm
+  if (std::filesystem::exists(std::filesystem::current_path().string() +
+                              cortex_utils::kTensorrtLlmPath)) {
+    obj_tensorrt["status"] = "ready";
+  } else {
+    obj_tensorrt["status"] = "not_initialized";
+  }
+
+  data.append(std::move(obj_onnx));
+  data.append(std::move(obj_llamacpp));
+  data.append(std::move(obj_tensorrt));
+  ret["data"] = data;
+  ret["result"] = "OK";
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  resp->setStatusCode(k200OK);
+  callback(resp);
 }

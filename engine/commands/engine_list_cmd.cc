@@ -1,10 +1,11 @@
 #include "engine_list_cmd.h"
 #include <filesystem>
+// clang-format off
 #include <tabulate/table.hpp>
 #include <utility>
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
-
+// clang-format on
 namespace commands {
 
 bool EngineListCmd::Exec() {
@@ -13,11 +14,6 @@ bool EngineListCmd::Exec() {
       {"(Index)", "name", "description", "version", "product name", "status"});
   table.format().font_color(tabulate::Color::green);
 #ifdef _WIN32
-  table.add_row(
-      {"1", "cortex.onnx",
-       "This extension enables chat completion API calls using the Onnx engine",
-       "0.0.1", "Onnx Inference Engine", "not_supported"});
-#else
   if (std::filesystem::exists(std::filesystem::current_path().string() +
                               cortex_utils::kOnnxLibPath)) {
     table.add_row({"1", "cortex.onnx",
@@ -30,6 +26,12 @@ bool EngineListCmd::Exec() {
                    "Onnx engine",
                    "0.0.1", "Onnx Inference Engine", "not_initialized"});
   }
+
+#else
+  table.add_row(
+      {"1", "cortex.onnx",
+       "This extension enables chat completion API calls using the Onnx engine",
+       "0.0.1", "Onnx Inference Engine", "not_supported"});
 #endif
   // lllamacpp
   if (std::filesystem::exists(std::filesystem::current_path().string() +
