@@ -7,6 +7,7 @@
 #include "utils/cortex_utils.h"
 
 namespace commands {
+
 ModelGetCmd::ModelGetCmd(std::string model_handle)
     : model_handle_(std::move(model_handle)) {}
 
@@ -17,6 +18,7 @@ void ModelGetCmd::Exec() {
     // Iterate through directory
     for (const auto& entry :
          std::filesystem::directory_iterator(cortex_utils::models_folder)) {
+
       if (entry.is_regular_file() && entry.path().stem() == model_handle_ &&
           entry.path().extension() == ".yaml") {
         try {
@@ -60,6 +62,7 @@ void ModelGetCmd::Exec() {
           if (!std::isnan(static_cast<double>(model_config.max_tokens)))
             std::cout << "max_tokens: " << model_config.max_tokens << "\n";
           if (!std::isnan(static_cast<double>(model_config.stream)))
+
             std::cout << "stream: " << std::boolalpha << model_config.stream
                       << "\n";
           if (!std::isnan(static_cast<double>(model_config.ngl)))
@@ -71,6 +74,7 @@ void ModelGetCmd::Exec() {
           if (!model_config.engine.empty())
             std::cout << "engine: " << model_config.engine << "\n";
           if (!model_config.prompt_template.empty())
+
             std::cout << "prompt_template: " << model_config.prompt_template
                       << "\n";
           if (!model_config.system_template.empty())
@@ -86,6 +90,7 @@ void ModelGetCmd::Exec() {
           if (!model_config.gpu_arch.empty())
             std::cout << "gpu_arch: " << model_config.gpu_arch << "\n";
           if (!model_config.quantization_method.empty())
+
             std::cout << "quantization_method: "
                       << model_config.quantization_method << "\n";
           if (!model_config.precision.empty())
@@ -96,6 +101,7 @@ void ModelGetCmd::Exec() {
 
           // Print non-null strings
           if (!model_config.trtllm_version.empty())
+
             std::cout << "trtllm_version: " << model_config.trtllm_version
                       << "\n";
           if (!std::isnan(static_cast<double>(model_config.text_model)))

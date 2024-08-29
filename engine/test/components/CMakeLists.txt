@@ -8,7 +8,7 @@ add_executable(${PROJECT_NAME} ${SRCS})
 find_package(Drogon CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gmock 
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gtest_main 
                                               ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 

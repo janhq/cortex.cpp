@@ -81,7 +81,10 @@ endif()
 
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 
-# add_subdirectory(test)
+option(CMAKE_BUILD_TEST "Enable testing" OFF)
+if(CMAKE_BUILD_TEST)
+  add_subdirectory(test)
+endif()
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)

@@ -2,7 +2,6 @@
 #include "commands/engine_init_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_get_cmd.h"
-
 #include "commands/model_pull_cmd.h"
 #include "commands/start_model_cmd.h"
 #include "commands/stop_model_cmd.h"
@@ -140,6 +139,7 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
       "install", "Install " + engine_name + " engine");
   install_cmd->add_option("-v, --version", version,
                           "Engine version. Default will be latest");
+
   install_cmd->callback([engine_name, &version] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
