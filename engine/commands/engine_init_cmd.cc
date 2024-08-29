@@ -126,7 +126,7 @@ bool EngineInitCmd::Exec() const {
               LOG_INFO << "Finished!";
             });
 
-            return false;
+            return true;
           }
         }
       } catch (const json::parse_error& e) {
