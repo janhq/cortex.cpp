@@ -1,9 +1,9 @@
 #include "command_line_parser.h"
 #include "commands/chat_cmd.h"
-#include "commands/engine_init_cmd.h"
-#include "commands/model_list_cmd.h"
-#include "commands/model_get_cmd.h"
 #include "commands/cmd_info.h"
+#include "commands/engine_init_cmd.h"
+#include "commands/model_get_cmd.h"
+#include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/run_cmd.h"
@@ -57,7 +57,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto get_models_cmd =
         models_cmd->add_subcommand("get", "Get info of {model_id} locally");
     get_models_cmd->add_option("model_id", model_id, "");
-    get_models_cmd->callback([&model_id](){
+    get_models_cmd->callback([&model_id]() {
       commands::ModelGetCmd command(model_id);
       command.Exec();
     });
@@ -152,6 +152,7 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
       "install", "Install " + engine_name + " engine");
   install_cmd->add_option("-v, --version", version,
                           "Engine version. Default will be latest");
+
   install_cmd->callback([engine_name, &version] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
