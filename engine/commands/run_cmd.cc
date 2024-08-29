@@ -70,7 +70,6 @@ bool RunCmd::IsModelExisted(const std::string& model_id) {
         try {
           config::YamlHandler handler;
           handler.ModelConfigFromFile(entry.path().string());
-          std::cout << entry.path().stem().string() << std::endl;
           if (entry.path().stem().string() == model_id) {
             return true;
           }
