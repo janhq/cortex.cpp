@@ -44,8 +44,8 @@ inline std::optional<DownloadTask> getDownloadTask(
           downloadItems.push_back(downloadItem);
         }
 
-        DownloadTask downloadTask{};        
-        downloadTask.id = branch == "main" ? modelId : modelId + "-" + branch;        
+        DownloadTask downloadTask{};
+        downloadTask.id = branch == "main" ? modelId : modelId + "-" + branch;
         downloadTask.type = DownloadType::Model;
         downloadTask.error = std::nullopt;
         downloadTask.items = downloadItems;

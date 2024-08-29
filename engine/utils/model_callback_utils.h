@@ -40,11 +40,11 @@ inline void DownloadModelCb(const std::string& path, bool need_parse_gguf) {
     std::string yml_path(path_obj.parent_path().parent_path().string() + "/" +
                          model_config.id + ".yaml");
     std::string yaml_path(path_obj.parent_path().string() + "/model.yml");
-    if (!std::filesystem::exists(yml_path)) {  // if model.yml doesn't exsited
+    if (!std::filesystem::exists(yml_path)) {  // if model.yml doesn't exist
       yaml_handler.WriteYamlFile(yml_path);
     }
     if (!std::filesystem::exists(
-            yaml_path)) {  // if <model_id>.yaml doesn't exsited
+            yaml_path)) {  // if <model_id>.yaml doesn't exist
       yaml_handler.WriteYamlFile(yaml_path);
     }
   }
