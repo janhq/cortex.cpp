@@ -23,7 +23,7 @@
 #endif
 
 
-void run_server(){
+void RunServer(){
   // Create logs/ folder and setup log to file
       std::filesystem::create_directory(cortex_utils::logs_folder);
       trantor::AsyncFileLogger asyncFileLogger;
@@ -110,7 +110,7 @@ void fork_process() {
     return;
   } else if (pid == 0) {
     // Child process
-    run_server();
+    RunServer();
   } else {
     // Parent process
     std::cout << "Server started" << std::endl;
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
 
   if (argc > 1) {
     if (strcmp(argv[1], "--start-server") == 0) {
-      run_server();
+      RunServer();
       return 0;
     } else {
       CommandLineParser clp;
@@ -153,4 +153,5 @@ int main(int argc, char* argv[]) {
   }
 
   fork_process();
+  return 0;
 }
