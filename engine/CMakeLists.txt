@@ -33,9 +33,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build-deps/_install)
+# set(CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/build-deps/_install)
 # This is the critical line for installing another package
 
+if(MSVC)
+  add_compile_options(
+      $<$<CONFIG:>:/MT> #---------|
+      $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
+      $<$<CONFIG:Release>:/MT> #--|
+  )
+endif()
+ 
 if(LLAMA_CUDA)
   cmake_minimum_required(VERSION 3.17)
 
@@ -73,7 +81,20 @@ endif()
 
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 
-# add_subdirectory(test)
+option(CMAKE_BUILD_TEST "Enable testing" OFF)
+if(CMAKE_BUILD_TEST)
+  add_subdirectory(test)
+endif()
+
+find_package(jsoncpp CONFIG REQUIRED)
+find_package(Drogon CONFIG REQUIRED)
+find_package(yaml-cpp CONFIG REQUIRED)
+find_package(jinja2cpp CONFIG REQUIRED)
+find_package(httplib CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(CLI11 CONFIG REQUIRED)
+find_package(unofficial-minizip CONFIG REQUIRED)
+find_package(LibArchive REQUIRED)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
@@ -109,8 +130,12 @@ endif()
 #
 # and comment out the following lines
 
-find_package(Drogon CONFIG REQUIRED)
-
+target_link_libraries(${PROJECT_NAME} PRIVATE httplib::httplib)
+target_link_libraries(${PROJECT_NAME} PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(${PROJECT_NAME} PRIVATE jinja2cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE CLI11::CLI11)
+target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::minizip::minizip)
+target_link_libraries(${PROJECT_NAME} PRIVATE LibArchive::LibArchive)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
@@ -124,7 +149,7 @@ if(DEFINED CMAKE_JS_INC)
     execute_process(COMMAND ${CMAKE_AR} /def:${CMAKE_JS_NODELIB_DEF} /out:${CMAKE_JS_NODELIB_TARGET} ${CMAKE_STATIC_LINKER_FLAGS})
   endif()
 else()
-  target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon
+  target_link_libraries(${PROJECT_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
 endif()
 # ##############################################################################
@@ -141,21 +166,13 @@ else()
 endif()
 
 aux_source_directory(controllers CTL_SRC)
+aux_source_directory(services SERVICES_SRC)
 aux_source_directory(common COMMON_SRC)
 aux_source_directory(models MODEL_SRC)
 aux_source_directory(cortex-common CORTEX_COMMON)
-# aux_source_directory(filters FILTER_SRC) aux_source_directory(plugins
-# PLUGIN_SRC) 
-
-# drogon_create_views(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/views
-# ${CMAKE_CURRENT_BINARY_DIR}) use the following line to create views with
-# namespaces. drogon_create_views(${PROJECT_NAME}
-# ${CMAKE_CURRENT_SOURCE_DIR}/views ${CMAKE_CURRENT_BINARY_DIR} TRUE)
+aux_source_directory(config CONFIG_SRC)
+aux_source_directory(commands COMMANDS_SRC)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
-# ${CMAKE_CURRENT_SOURCE_DIR}/models)
-target_sources(${PROJECT_NAME} PRIVATE ${CTL_SRC} ${COMMON_SRC})
-# ${FILTER_SRC} ${PLUGIN_SRC} ${MODEL_SRC})
-# ##############################################################################
-# uncomment the following line for dynamically loading views set_property(TARGET
-# ${PROJECT_NAME} PROPERTY ENABLE_EXPORTS ON)
+
+target_sources(${PROJECT_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC})
