@@ -564,3 +564,4 @@ build-deps
 .DS_Store
 
 uploads/**
+CMakePresets.json
