@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/logging_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -21,6 +22,7 @@
 #else
 #error "Unsupported platform!"
 #endif
+
 
 void RunServer() {
   // Create logs/ folder and setup log to file
@@ -120,6 +122,7 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
+  // log_verbose = true;
   // Check if this process is for python execution
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {

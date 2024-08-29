@@ -29,7 +29,7 @@ bool EngineInitCmd::Exec() const {
               << system_info.arch;
     return false;
   }
-  LOG_INFO << "OS: " << system_info.os << ", Arch: " << system_info.arch;
+  CTLOG_INFO("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // check if engine is supported
   if (std::find(supportedEngines_.begin(), supportedEngines_.end(),
@@ -43,7 +43,7 @@ bool EngineInitCmd::Exec() const {
   std::ostringstream engineReleasePath;
   engineReleasePath << "/repos/janhq/" << engineName_ << "/releases/"
                     << version;
-  LOG_INFO << "Engine release path: " << gitHubHost << engineReleasePath.str();
+  CTLOG_INFO("Engine release path: " << gitHubHost << engineReleasePath.str());
   using namespace nlohmann;
 
   httplib::Client cli(gitHubHost);
@@ -61,8 +61,8 @@ bool EngineInitCmd::Exec() const {
         }
 
         auto cuda_version = system_info_utils::GetCudaVersion();
-        LOG_INFO << "engineName_: " << engineName_;
-        LOG_INFO << "CUDA version: " << cuda_version;
+        CTLOG_INFO("engineName_: " << engineName_);
+        CTLOG_INFO("CUDA version: " << cuda_version);
         std::string matched_variant = "";
         if (engineName_ == "cortex.tensorrt-llm") {
           matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
@@ -76,7 +76,7 @@ bool EngineInitCmd::Exec() const {
               variants, system_info.os, system_info.arch, suitable_avx,
               cuda_version);
         }
-        LOG_INFO << "Matched variant: " << matched_variant;
+        CTLOG_INFO("Matched variant: " << matched_variant);
         if (matched_variant.empty()) {
           LOG_ERROR << "No variant found for " << os_arch;
           return false;
@@ -91,7 +91,7 @@ bool EngineInitCmd::Exec() const {
             std::string path = full_url.substr(host.length());
 
             auto fileName = asset["name"].get<std::string>();
-            LOG_INFO << "URL: " << full_url;
+            CTLOG_INFO("URL: " << full_url);
 
             auto downloadTask = DownloadTask{.id = engineName_,
                                              .type = DownloadType::Engine,
@@ -110,8 +110,8 @@ bool EngineInitCmd::Exec() const {
                                                               bool unused) {
               // try to unzip the downloaded file
               std::filesystem::path downloadedEnginePath{absolute_path};
-              LOG_INFO << "Downloaded engine path: "
-                       << downloadedEnginePath.string();
+              CTLOG_INFO("Downloaded engine path: "
+                       << downloadedEnginePath.string());
 
               archive_utils::ExtractArchive(
                   downloadedEnginePath.string(),
@@ -123,9 +123,9 @@ bool EngineInitCmd::Exec() const {
               try {
                 std::filesystem::remove(absolute_path);
               } catch (const std::exception& e) {
-                LOG_ERROR << "Could not delete file: " << e.what();
+                CTLOG_WARN("Could not delete file: " << e.what());
               }
-              LOG_INFO << "Finished!";
+              CTLOG_INFO("Finished!");
             });
             if (system_info.os == "mac" || engineName_ == "cortex.onnx") {
               return false;
@@ -135,12 +135,13 @@ bool EngineInitCmd::Exec() const {
             const std::string cuda_toolkit_file_name = "cuda.tar.gz";
             const std::string download_id = "cuda";
 
-            auto gpu_driver_version = system_info_utils::GetDriverVersion();
+            auto gpu_driver_version = system_info_utils::GetDriverVersion();       
+            if(gpu_driver_version.empty()) return true;     
 
             auto cuda_runtime_version =
                 cuda_toolkit_utils::GetCompatibleCudaToolkitVersion(
                     gpu_driver_version, system_info.os, engineName_);
-
+            LOG_INFO << "abc";
             std::ostringstream cuda_toolkit_path;
             cuda_toolkit_path << "dist/cuda-dependencies/" << 11.7 << "/"
                               << system_info.os << "/"

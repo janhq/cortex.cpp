@@ -2,6 +2,7 @@
 #include "httplib.h"
 
 #include "trantor/utils/Logger.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 namespace {
@@ -48,12 +49,12 @@ void ChatCmd::Exec(std::string msg) {
                         data_str.data(), data_str.size(), "application/json");
     if (res) {
       if (res->status != httplib::StatusCode::OK_200) {
-        LOG_INFO << res->body;
+        CTLOG_ERROR(res->body);
         return;
       }
     } else {
       auto err = res.error();
-      LOG_WARN << "HTTP error: " << httplib::to_string(err);
+      CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
       return;
     }
   }

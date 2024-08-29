@@ -5,9 +5,9 @@
 
 namespace commands {
 
-class StopModelCmd{
+class ModelStopCmd{
  public:
-  StopModelCmd(std::string host, int port, const config::ModelConfig& mc);
+  ModelStopCmd(std::string host, int port, const config::ModelConfig& mc);
   void Exec();
 
  private:

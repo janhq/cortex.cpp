@@ -34,8 +34,10 @@ void RunCmd::Exec() {
   {
     if (!IsEngineExisted(ci.engine_name)) {
       EngineInitCmd eic(ci.engine_name, "");
-      if (!eic.Exec())
+      if (!eic.Exec()) {
+        LOG_INFO << "Failed to install engine";
         return;
+        }
     }
   }
 

@@ -8,6 +8,7 @@
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 
 namespace model_callback_utils {
 inline void DownloadModelCb(const std::string& path, bool need_parse_gguf) {
@@ -21,7 +22,7 @@ inline void DownloadModelCb(const std::string& path, bool need_parse_gguf) {
     config::ModelConfig model_config = handler.GetModelConfig();
     model_config.id = path_obj.parent_path().filename().string();
 
-    LOG_INFO << "Updating model config in " << path;
+    CTLOG_INFO("Updating model config in " << path);
     handler.UpdateModelConfig(model_config);
     handler.WriteYamlFile(path_obj.parent_path().parent_path().string() + "/" +
                           model_config.id + ".yaml");

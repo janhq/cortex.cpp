@@ -8,8 +8,8 @@
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/run_cmd.h"
-#include "commands/stop_model_cmd.h"
-#include "commands/stop_server_cmd.h"
+#include "commands/model_stop_cmd.h"
+#include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
 
@@ -47,7 +47,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
                                        "/models/" + model_file + ".yaml");
-      commands::StopModelCmd smc("127.0.0.1", 3928,
+      commands::ModelStopCmd smc("127.0.0.1", 3928,
                                  yaml_handler.GetModelConfig());
       smc.Exec();
     });
@@ -146,7 +146,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   stop_cmd->callback([] {
     // TODO get info from config file
-    commands::StopServerCmd ssc("127.0.0.1", 3928);
+    commands::ServerStopCmd ssc("127.0.0.1", 3928);
     ssc.Exec();
   });
 

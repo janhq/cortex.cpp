@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include "utils/cpuid/cpu_info.h"
+#include "utils/logging_utils.h"
 
 namespace engine_matcher_utils {
 // for testing purpose
@@ -48,7 +49,7 @@ const std::vector<std::string> cortex_tensorrt_variants{
 inline std::string GetSuitableAvxVariant() {
   cortex::cpuid::CpuInfo cpu_info;
 
-  LOG_INFO << "GetSuitableAvxVariant:" << "\n" << cpu_info.to_string();
+  CTLOG_INFO("GetSuitableAvxVariant:" << "\n" << cpu_info.to_string());
 
   if (cpu_info.has_avx512_f())
     return "avx512";

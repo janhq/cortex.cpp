@@ -2,6 +2,7 @@
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "trantor/utils/Logger.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 ModelStartCmd::ModelStartCmd(std::string host, int port,
@@ -32,11 +33,11 @@ bool ModelStartCmd::Exec() {
                       data_str.data(), data_str.size(), "application/json");
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      LOG_INFO << res->body;
+      CLI_LOG("Model loaded!");
     }
   } else {
     auto err = res.error();
-    LOG_WARN << "HTTP error: " << httplib::to_string(err);
+    CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
     return false;
   }
   return true;

@@ -8,6 +8,7 @@
 #include <vector>
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
+#include "utils/logging_utils.h"
 namespace commands {
 
 void ModelListCmd::Exec() {
@@ -30,8 +31,8 @@ void ModelListCmd::Exec() {
           table.add_row({std::to_string(count), model_config.id,
                          model_config.engine, model_config.version});
         } catch (const std::exception& e) {
-          LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                    << "': " << e.what();
+          CTLOG_ERROR("Error reading yaml file '" << entry.path().string()
+                    << "': " << e.what());
         }
       }
     }

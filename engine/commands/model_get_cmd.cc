@@ -2,9 +2,11 @@
 #include <filesystem>
 #include <iostream>
 #include <vector>
+#include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 
@@ -14,12 +16,15 @@ ModelGetCmd::ModelGetCmd(std::string model_handle)
 void ModelGetCmd::Exec() {
   if (std::filesystem::exists(cortex_utils::models_folder) &&
       std::filesystem::is_directory(cortex_utils::models_folder)) {
+    CmdInfo ci(model_handle_);
+    std::string model_file =
+        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
     bool found_model = false;
     // Iterate through directory
     for (const auto& entry :
          std::filesystem::directory_iterator(cortex_utils::models_folder)) {
 
-      if (entry.is_regular_file() && entry.path().stem() == model_handle_ &&
+      if (entry.is_regular_file() && entry.path().stem() == model_file &&
           entry.path().extension() == ".yaml") {
         try {
           config::YamlHandler handler;
@@ -131,11 +136,16 @@ void ModelGetCmd::Exec() {
           found_model = true;
           break;
         } catch (const std::exception& e) {
-          LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                    << "': " << e.what();
+          CTLOG_ERROR("Error reading yaml file '" << entry.path().string()
+                    << "': " << e.what());
         }
       }
     }
+    if (!found_model) {
+      CLI_LOG("Model not found!");
+    }
+  } else {
+    CLI_LOG("Model not found!");
   }
 }
 };  // namespace commands

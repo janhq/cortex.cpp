@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include "logging_utils.h"
 
 namespace archive_utils {
 inline bool UnzipFile(const std::string& input_zip_path,
@@ -139,8 +140,8 @@ inline bool UntarFile(const std::string& input_tar_path,
   }
 
   archive_read_free(tar_archive);
-  LOG_INFO << "Extracted successfully " << input_tar_path << " to "
-           << destination_path << "\n";
+  CTLOG_INFO("Extracted successfully " << input_tar_path << " to "
+           << destination_path << "\n");
   return true;
 }
 }  // namespace archive_utils
