@@ -1,3 +1,6 @@
+// clang-format off
+#include "utils/cortex_utils.h"
+// clang-format on
 #include "model_list_cmd.h"
 #include <filesystem>
 #include <iostream>
@@ -5,7 +8,6 @@
 #include <vector>
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
-#include "utils/cortex_utils.h"
 namespace commands {
 
 void ModelListCmd::Exec() {
@@ -41,14 +43,14 @@ void ModelListCmd::Exec() {
           .font_align(tabulate::FontAlign::center);
     }
     for (int i = 1; i <= count; i++) {
-    table[i][0] //index value
-        .format()
-        .font_color(tabulate::Color::white)  // Set font color
-        .font_align(tabulate::FontAlign::center);
-    table[i][3] //version value
-        .format()
-        .font_align(tabulate::FontAlign::center);
-  }
+      table[i][0]  //index value
+          .format()
+          .font_color(tabulate::Color::white)  // Set font color
+          .font_align(tabulate::FontAlign::center);
+      table[i][3]  //version value
+          .format()
+          .font_align(tabulate::FontAlign::center);
+    }
     std::cout << table << std::endl;
   }
 }

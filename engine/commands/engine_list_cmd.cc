@@ -1,11 +1,12 @@
+// clang-format off
+#include "utils/cortex_utils.h"
+// clang-format on
 #include "engine_list_cmd.h"
 #include <filesystem>
-// clang-format off
 #include <tabulate/table.hpp>
 #include <utility>
 #include "trantor/utils/Logger.h"
-#include "utils/cortex_utils.h"
-// clang-format on
+
 namespace commands {
 
 bool EngineListCmd::Exec() {
