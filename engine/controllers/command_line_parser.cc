@@ -2,6 +2,7 @@
 #include "commands/chat_cmd.h"
 #include "commands/cmd_info.h"
 #include "commands/engine_init_cmd.h"
+#include "commands/engine_list_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
@@ -111,6 +112,11 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto engines_cmd = app_.add_subcommand("engines", "Get cortex engines");
     auto list_engines_cmd =
         engines_cmd->add_subcommand("list", "List all cortex engines");
+    list_engines_cmd->callback([]() {
+      commands::EngineListCmd command;
+      command.Exec();
+    });
+
     auto get_engine_cmd = engines_cmd->add_subcommand("get", "Get an engine");
 
     EngineInstall(engines_cmd, "cortex.llamacpp", version);
