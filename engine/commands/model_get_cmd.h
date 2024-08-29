@@ -1,15 +1,17 @@
 #pragma once
 
+
+#include <cmath>  // For std::isnan
 #include <string>
-#include <cmath>    // For std::isnan
 namespace commands {
 
 class ModelGetCmd {
  public:
-  ModelGetCmd(std::string modelHandle);
+
+  ModelGetCmd(std::string model_handle);
   void Exec();
 
  private:
-  std::string modelHandle_;
+  std::string model_handle_;
 };
 }  // namespace commands
