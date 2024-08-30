@@ -172,11 +172,11 @@ cortex models update [options] <model_id>
 ```
 ### Get an Engine Details
 ```bash
-cortex engines <name> get
+cortex engines get <engine_name>
 ```
 ### Install an Engine
 ```bash
-cortex engines <name> install [options]
+cortex engines install <engine_name> [options]
 ```
 ### List Engines
 ```bash
@@ -184,15 +184,11 @@ cortex engines list [options]
 ```
 ### Set an Engine Config
 ```bash
-cortex engines <name> set <config> <value>
+cortex engines set <engine_name> <config> <value>
 ```
 ### Show Model Information
 ```bash
 cortex ps
-```
-### Benchmark the System
-```bash
-cortex benchmark [options] [model_id]
 ```
 ## REST API
 Cortex has a REST API that runs at `localhost:1337`.
