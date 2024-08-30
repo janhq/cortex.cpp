@@ -18,19 +18,27 @@ DEVELOPER_ID ?= xxxx
 all:
 	@echo "Specify a target to run"
 
+configure-vcpkg:
+ifeq ($(OS),Windows_NT)
+	@cd vcpkg && bootstrap-vcpkg.bat;
+	@cd vcpkg && vcpkg install
+else ifeq ($(shell uname -s),Linux) 
+	@cd vcpkg && ./bootstrap-vcpkg.sh;
+	@cd vcpkg && ./vcpkg install;
+else
+	@cd vcpkg && ./bootstrap-vcpkg.sh;
+	@cd vcpkg && ./vcpkg install;
+endif
+
 # Build the Cortex engine
 build:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "cmake -S ./cortex-cpp-deps -B ./build-deps/cortex-cpp-deps $(BUILD_DEPS_CMAKE_EXTRA_FLAGS);"
-	@powershell -Command "cmake --build ./build-deps/cortex-cpp-deps --config Release -j4;"
 	@powershell -Command "mkdir -p build; cd build; cmake .. $(CMAKE_EXTRA_FLAGS); cmake --build . --config Release -j4;"
 else ifeq ($(shell uname -s),Linux)
-	@./install_deps.sh;
 	@mkdir -p build && cd build; \
 	cmake .. $(CMAKE_EXTRA_FLAGS); \
 	make -j4;
 else
-	@./install_deps.sh;
 	@mkdir -p build && cd build; \
 	cmake .. $(CMAKE_EXTRA_FLAGS); \
 	make -j4;
