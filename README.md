@@ -176,7 +176,7 @@ cortex engines <name> get
 ```
 ### Initialize an Engine
 ```bash
-cortex engines <name> init [options]
+cortex engines <name> install [options]
 ```
 ### List Engines
 ```bash
