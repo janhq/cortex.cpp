@@ -12,6 +12,7 @@
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
+#include "utils/logging_utils.h"
 
 CommandLineParser::CommandLineParser() : app_("Cortex.cpp CLI") {}
 
@@ -149,6 +150,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     commands::ServerStopCmd ssc("127.0.0.1", 3928);
     ssc.Exec();
   });
+
+  app_.add_flag("--verbose", log_verbose, "Verbose logging");
 
   CLI11_PARSE(app_, argc, argv);
   return true;

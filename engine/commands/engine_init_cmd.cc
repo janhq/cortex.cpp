@@ -20,7 +20,7 @@ EngineInitCmd::EngineInitCmd(std::string engineName, std::string version)
 
 bool EngineInitCmd::Exec() const {
   if (engineName_.empty()) {
-    LOG_ERROR << "Engine name is required";
+    CTLOG_ERROR("Engine name is required");
     return false;
   }
 
@@ -28,8 +28,8 @@ bool EngineInitCmd::Exec() const {
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
       system_info.os == system_info_utils::kUnsupported) {
-    LOG_ERROR << "Unsupported OS or architecture: " << system_info.os << ", "
-              << system_info.arch;
+    CTLOG_ERROR("Unsupported OS or architecture: " << system_info.os << ", "
+              << system_info.arch);
     return false;
   }
   CTLOG_INFO("OS: " << system_info.os << ", Arch: " << system_info.arch);
@@ -37,7 +37,7 @@ bool EngineInitCmd::Exec() const {
   // check if engine is supported
   if (std::find(supportedEngines_.begin(), supportedEngines_.end(),
                 engineName_) == supportedEngines_.end()) {
-    LOG_ERROR << "Engine not supported";
+    CTLOG_ERROR("Engine not supported");
     return false;
   }
 
@@ -82,7 +82,7 @@ bool EngineInitCmd::Exec() const {
         }
         CTLOG_INFO("Matched variant: " << matched_variant);
         if (matched_variant.empty()) {
-          LOG_ERROR << "No variant found for " << os_arch;
+          CTLOG_ERROR("No variant found for " << os_arch);
           return false;
         }
 
@@ -192,9 +192,9 @@ bool EngineInitCmd::Exec() const {
             // cuda driver version should be greater than toolkit version to ensure compatibility
             if (semantic_version_utils::CompareSemanticVersion(
                     cuda_driver_version, suitable_toolkit_version) < 0) {
-              LOG_ERROR << "Your Cuda driver version " << cuda_driver_version
+              CTLOG_ERROR("Your Cuda driver version " << cuda_driver_version
                         << " is not compatible with cuda toolkit version "
-                        << suitable_toolkit_version;
+                        << suitable_toolkit_version);
               return false;
             }
 
@@ -233,7 +233,7 @@ bool EngineInitCmd::Exec() const {
                   try {
                     std::filesystem::remove(absolute_path);
                   } catch (std::exception& e) {
-                    LOG_ERROR << "Error removing downloaded file: " << e.what();
+                    CTLOG_ERROR("Error removing downloaded file: " << e.what());
                   }
                 });
 
@@ -245,12 +245,12 @@ bool EngineInitCmd::Exec() const {
         return false;
       }
     } else {
-      LOG_ERROR << "HTTP error: " << res->status;
+      CTLOG_ERROR("HTTP error: " << res->status);
       return false;
     }
   } else {
     auto err = res.error();
-    LOG_ERROR << "HTTP error: " << httplib::to_string(err);
+    CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
     return false;
   }
   return true;

@@ -122,7 +122,6 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
-  // log_verbose = true;
   // Check if this process is for python execution
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {

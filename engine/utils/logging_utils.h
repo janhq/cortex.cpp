@@ -6,23 +6,25 @@
 inline bool log_verbose = false;
 
 #define CTLOG_INFO(msg) \
-if(log_verbose) { \
-LOG_INFO << msg;  \
-}                 
+  if (log_verbose) {    \
+    LOG_INFO << msg;    \
+  }
 
 #define CTLOG_WARN(msg) \
-if(log_verbose) { \
-LOG_WARN << msg;  \
-}                 
+  if (log_verbose) {    \
+    LOG_WARN << msg;    \
+  }
 
-#define CTLOG_ERROR(msg) \
-if(log_verbose) { \
-LOG_ERROR << msg; \
-}                 \
-std::cout << msg << std::endl;
+#define CTLOG_ERROR(msg)           \
+  if (log_verbose) {               \
+    LOG_ERROR << msg;              \
+  } else {                         \
+    std::cout << msg << std::endl; \
+  }
 
-#define CLI_LOG(msg) \
-if(log_verbose) { \
-LOG_INFO << msg;  \
-}                 \
-std::cout << msg << std::endl;
+#define CLI_LOG(msg)               \
+  if (log_verbose) {               \
+    LOG_INFO << msg;               \
+  } else {                         \
+    std::cout << msg << std::endl; \
+  }
