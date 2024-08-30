@@ -34,6 +34,7 @@ type ServeOptions = {
   name?: string;
   configPath?: string;
   enginePort?: string;
+  logPath?: string;
 };
 
 @RootCommand({
@@ -73,6 +74,9 @@ export class CortexCommand extends CommandRunner {
     }
     if (options?.name) {
       fileManagerService.setConfigProfile(options.name);
+    }
+    if (options?.logPath) {
+      fileManagerService.setLogPath(options.logPath);
     }
     if (options?.name) {
       const isProfileConfigExists = fileManagerService.profileConfigExists(
@@ -114,10 +118,14 @@ export class CortexCommand extends CommandRunner {
       console.log(chalk.blue(`Github: ${pkg.homepage}`));
       return;
     }
-    return this.startServer(showLogs, dataFolderPath);
+    return this.startServer(showLogs, dataFolderPath, options?.logPath);
   }
 
-  private async startServer(attach: boolean, dataFolderPath?: string) {
+  private async startServer(
+    attach: boolean,
+    dataFolderPath?: string,
+    logPath?: string,
+  ) {
     const config = await fileManagerService.getConfig();
     try {
       const startEngineSpinner = ora('Starting Cortex engine...');
@@ -155,11 +163,13 @@ export class CortexCommand extends CommandRunner {
           `API Playground available at http://${this.host}:${this.port}/api`,
         ),
       );
+
       await fileManagerService.writeConfigFile({
         ...config,
         apiServerHost: this.host,
         apiServerPort: this.port,
         dataFolderPath: dataFolderPath || config.dataFolderPath,
+        logPath: logPath || config.logPath,
         cortexCppPort: this.enginePort,
       });
       if (!attach) process.exit(0);
@@ -235,6 +245,14 @@ export class CortexCommand extends CommandRunner {
     description: 'Port to serve the engine',
   })
   parseEnginePort(value: string) {
+    return value;
+  }
+
+  @Option({
+    flags: '-lp, --logPath <logPath>',
+    description: 'Path to the logs folder',
+  })
+  parseLogPath(value: string) {
     return value;
   }
 }

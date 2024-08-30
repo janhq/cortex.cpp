@@ -35,9 +35,10 @@ export class FileManagerService {
   private benchmarkFoldername = 'benchmark';
   private cortexEnginesFolderName = 'engines';
   private cortexTelemetryFolderName = 'telemetry';
+  private logFileName = 'cortex.log';
   private configProfile = process.env.CORTEX_PROFILE || 'default';
   private configPath = process.env.CORTEX_CONFIG_PATH || os.homedir();
-
+  private customLogPath = process.env.CORTEX_LOG_PATH || '';
   /**
    * Get cortex configs
    * @returns the config object
@@ -309,7 +310,10 @@ export class FileManagerService {
    * @returns the path to the cortex engines folder
    */
   async getLogPath(): Promise<string> {
-    return join(await this.getDataFolderPath(), 'cortex.log');
+    if (this.customLogPath) {
+      return this.customLogPath + `/${this.logFileName}`;
+    }
+    return join(await this.getDataFolderPath(), this.logFileName);
   }
 
   async createFolderIfNotExistInDataFolder(folderName: string): Promise<void> {
@@ -400,6 +404,10 @@ export class FileManagerService {
 
   public getConfigPath(): string {
     return this.configPath;
+  }
+
+  public setLogPath(logPath: string) {
+    this.customLogPath = logPath;
   }
 }
 
