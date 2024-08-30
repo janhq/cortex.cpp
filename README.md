@@ -174,7 +174,7 @@ cortex models update [options] <model_id>
 ```bash
 cortex engines <name> get
 ```
-### Initialize an Engine
+### Install an Engine
 ```bash
 cortex engines <name> install [options]
 ```
