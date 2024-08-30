@@ -1,44 +1,61 @@
+#include <trantor/utils/Logger.h>
 #include <sstream>
-#include <vector>
 
 namespace semantic_version_utils {
-inline std::vector<int> SplitVersion(const std::string& version) {
-  std::vector<int> parts;
+struct SemVer {
+  int major;
+  int minor;
+  int patch;
+};
+
+inline SemVer SplitVersion(const std::string& version) {
+  if (version.empty()) {
+    LOG_WARN << "Passed in version is empty!";
+  }
+  SemVer semVer = {0, 0, 0};  // default value
   std::stringstream ss(version);
   std::string part;
 
-  while (std::getline(ss, part, '.')) {
-    parts.push_back(std::stoi(part));
+  int index = 0;
+  while (std::getline(ss, part, '.') && index < 3) {
+    int value = std::stoi(part);
+    switch (index) {
+      case 0:
+        semVer.major = value;
+        break;
+      case 1:
+        semVer.minor = value;
+        break;
+      case 2:
+        semVer.patch = value;
+        break;
+    }
+    ++index;
   }
 
-  while (parts.size() < 3) {
-    parts.push_back(0);
-  }
-
-  return parts;
+  return semVer;
 }
 
 inline int CompareSemanticVersion(const std::string& version1,
                                   const std::string& version2) {
-  std::vector<int> v1 = SplitVersion(version1);
-  std::vector<int> v2 = SplitVersion(version2);
+  SemVer v1 = SplitVersion(version1);
+  SemVer v2 = SplitVersion(version2);
 
-  for (size_t i = 0; i < 3; ++i) {
-    if (v1[i] < v2[i])
-      return -1;
-    if (v1[i] > v2[i])
-      return 1;
-  }
+  if (v1.major < v2.major)
+    return -1;
+  if (v1.major > v2.major)
+    return 1;
+
+  if (v1.minor < v2.minor)
+    return -1;
+  if (v1.minor > v2.minor)
+    return 1;
+
+  if (v1.patch < v2.patch)
+    return -1;
+  if (v1.patch > v2.patch)
+    return 1;
+
   return 0;
-}
-
-// convert 11.7 to 11-7 for compatible to download url
-inline std::string ConvertToPath(const std::string& version) {
-  std::string result = version;
-  int pos = result.find('.');
-  if (pos != std::string::npos) {
-    result[pos] = '-';
-  }
-  return result;
 }
 }  // namespace semantic_version_utils

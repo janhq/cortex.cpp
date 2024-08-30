@@ -93,9 +93,19 @@ inline std::string GetSuitableCudaVariant(
           bestMatchMinor = variantMinor;
         }
       }
-    } else if (cuda_version.empty() && selectedVariant.empty()) {
-      // If no CUDA version is provided, select the variant without any CUDA in the name
-      selectedVariant = variant;
+    }
+  }
+
+  // If no CUDA version is provided, select the variant without any CUDA in the name
+  if (selectedVariant.empty()) {
+    LOG_WARN
+        << "No suitable CUDA variant found, selecting a variant without CUDA";
+    for (const auto& variant : variants) {
+      if (variant.find("cuda") == std::string::npos) {
+        selectedVariant = variant;
+        LOG_INFO << "Found variant without CUDA: " << selectedVariant << "\n";
+        break;
+      }
     }
   }
 

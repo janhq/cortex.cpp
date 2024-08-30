@@ -9,6 +9,9 @@
 // clang-format on
 #include "utils/cuda_toolkit_utils.h"
 #include "utils/engine_matcher_utils.h"
+#if defined(_WIN32) || defined(__linux__)
+#include "utils/file_manager_utils.h"
+#endif
 
 namespace commands {
 
@@ -106,17 +109,46 @@ bool EngineInitCmd::Exec() const {
                                              }}};
 
             DownloadService download_service;
-            download_service.AddDownloadTask(downloadTask, [](const std::string&
-                                                                  absolute_path,
-                                                              bool unused) {
+            download_service.AddDownloadTask(downloadTask, [this](
+                                                               const std::string&
+                                                                   absolute_path,
+                                                               bool unused) {
               // try to unzip the downloaded file
               std::filesystem::path downloadedEnginePath{absolute_path};
               LOG_INFO << "Downloaded engine path: "
                        << downloadedEnginePath.string();
 
-              archive_utils::ExtractArchive(
-                  downloadedEnginePath.string(),
-                  downloadedEnginePath.parent_path().parent_path().string());
+              std::filesystem::path extract_path =
+                  downloadedEnginePath.parent_path().parent_path();
+
+              archive_utils::ExtractArchive(downloadedEnginePath.string(),
+                                            extract_path.string());
+#if defined(_WIN32) || defined(__linux__)
+              // FIXME: hacky try to copy the file. Remove this when we are able to set the library path
+              auto engine_path = extract_path / engineName_;
+              LOG_INFO << "Source path: " << engine_path.string();
+              auto executable_path =
+                  file_manager_utils::GetExecutableFolderContainerPath();
+              for (const auto& entry :
+                   std::filesystem::recursive_directory_iterator(engine_path)) {
+                if (entry.is_regular_file() &&
+                    entry.path().extension() != ".gz") {
+                  std::filesystem::path relative_path =
+                      std::filesystem::relative(entry.path(), engine_path);
+                  std::filesystem::path destFile =
+                      executable_path / relative_path;
+
+                  std::filesystem::create_directories(destFile.parent_path());
+                  std::filesystem::copy_file(
+                      entry.path(), destFile,
+                      std::filesystem::copy_options::overwrite_existing);
+
+                  std::cout << "Copied: " << entry.path().filename().string()
+                            << " to " << destFile.string() << std::endl;
+                }
+              }
+              std::cout << "DLL copying completed successfully." << std::endl;
+#endif
 
               // remove the downloaded file
               // TODO(any) Could not delete file on Windows because it is currently hold by httplib(?)
@@ -138,7 +170,7 @@ bool EngineInitCmd::Exec() const {
             const std::string cuda_toolkit_file_name = "cuda.tar.gz";
             const std::string download_id = "cuda";
 
-            // TODO: we don't have API to retrieve list of cuda toolkit dependencies atm
+            // TODO: we don't have API to retrieve list of cuda toolkit dependencies atm because we hosting it at jan
             // will have better logic after https://github.com/janhq/cortex/issues/1046 finished
             // for now, assume that we have only 11.7 and 12.4
             auto suitable_toolkit_version = "";
@@ -147,9 +179,11 @@ bool EngineInitCmd::Exec() const {
               suitable_toolkit_version = "12.4";
             } else {
               // llamacpp
-              if (cuda_driver_version.starts_with("11.")) {
+              auto cuda_driver_semver =
+                  semantic_version_utils::SplitVersion(cuda_driver_version);
+              if (cuda_driver_semver.major == 11) {
                 suitable_toolkit_version = "11.7";
-              } else if (cuda_driver_version.starts_with("12.")) {
+              } else if (cuda_driver_semver.major == 12) {
                 suitable_toolkit_version = "12.4";
               }
             }
@@ -164,16 +198,10 @@ bool EngineInitCmd::Exec() const {
               return false;
             }
 
-            std::string cuda_version_path{""};
-            if (!cuda_driver_version.empty()) {
-              cuda_version_path = semantic_version_utils::ConvertToPath(
-                  suitable_toolkit_version);
-            }
-
             std::ostringstream cuda_toolkit_path;
-            cuda_toolkit_path << "dist/cuda-dependencies/" << cuda_version_path
-                              << "/" << system_info.os << "/"
-                              << cuda_toolkit_file_name;
+            cuda_toolkit_path << "dist/cuda-dependencies/"
+                              << cuda_driver_version << "/" << system_info.os
+                              << "/" << cuda_toolkit_file_name;
 
             LOG_DEBUG << "Cuda toolkit download url: " << jan_host
                       << cuda_toolkit_path.str();
