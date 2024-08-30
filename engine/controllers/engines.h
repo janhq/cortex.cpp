@@ -13,9 +13,12 @@ class Engines : public drogon::HttpController<Engines> {
  public:
   METHOD_LIST_BEGIN
   METHOD_ADD(Engines::InitEngine, "/{1}/init", Post);
+  METHOD_ADD(Engines::ListEngine, "/list", Get);
   METHOD_LIST_END
 
   void InitEngine(const HttpRequestPtr& req,
                   std::function<void(const HttpResponsePtr&)>&& callback,
                   const std::string& engine) const;
+  void ListEngine(const HttpRequestPtr& req,
+                  std::function<void(const HttpResponsePtr&)>&& callback) const;
 };

@@ -95,6 +95,7 @@ find_package(nlohmann_json CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
+find_package(tabulate CONFIG REQUIRED)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
@@ -136,6 +137,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE jinja2cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE CLI11::CLI11)
 target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${PROJECT_NAME} PRIVATE LibArchive::LibArchive)
+target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
