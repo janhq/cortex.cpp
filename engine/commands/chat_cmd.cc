@@ -34,7 +34,8 @@ ChatCmd::ChatCmd(std::string host, int port, const config::ModelConfig& mc)
 void ChatCmd::Exec(std::string msg) {
   auto address = host_ + ":" + std::to_string(port_);
   // Check if model is loaded
-  {
+  // TODO(sang) only llamacpp support modelstatus for now
+  if (mc_.engine.find("llamacpp") != std::string::npos) {
     httplib::Client cli(address);
     nlohmann::json json_data;
     json_data["model"] = mc_.name;
@@ -56,6 +57,7 @@ void ChatCmd::Exec(std::string msg) {
       return;
     }
   }
+
   // Some instruction for user here
   std::cout << "Inorder to exit, type `exit()`" << std::endl;
   // Model is loaded, start to chat
