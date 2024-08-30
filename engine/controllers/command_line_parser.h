@@ -1,6 +1,5 @@
 #pragma once
 
-#include <vector>
 #include "CLI/CLI.hpp"
 
 class CommandLineParser {
@@ -11,6 +10,8 @@ class CommandLineParser {
  private:
   void EngineInstall(CLI::App* parent, const std::string& engine_name,
                      std::string& version);
+
+  void SysInfo(CLI::App* parent);
 
   CLI::App app_;
 };

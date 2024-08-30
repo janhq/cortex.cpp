@@ -3,7 +3,9 @@
 #include <trantor/utils/Logger.h>
 #include <regex>
 #include <vector>
+#include "sstream"
 #include "utils/command_executor.h"
+#include "optional"
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -24,6 +26,12 @@ struct SystemInfo {
   std::string arch;
 };
 
+const std::unordered_map<std::string, std::string> kGpuArchMap{
+    {"10.0", "blackwell"}, {"9.0", "hopper"}, {"8.9", "ada"},
+    {"8.6", "ampere"},     {"8.7", "ampere"}, {"8.0", "ampere"},
+    {"7.5", "turing"},     {"7.2", "volta"},  {"7.0", "volta"},
+    {"6.2", "pascal"},     {"6.1", "pascal"}, {"6.0", "pascal"}};
+
 /**
  * @brief Get the Gpu Arch. Currently we only support Ampere and Ada.
  * Might need to come up with better way to detect the GPU architecture.
@@ -31,8 +39,9 @@ struct SystemInfo {
  * @param gpuName E.g. NVIDIA GeForce RTX 4090
  * @return corresponding GPU arch. E.g. ampere, ada.
  */
-inline std::string GetGpuArch(const std::string& gpuName) {
-  std::string lowerGpuName = gpuName;
+inline std::string GetGpuArch(const std::string& gpu_name,
+                              const std::string& compute_cap) {
+  std::string lowerGpuName = gpu_name;
   std::transform(lowerGpuName.begin(), lowerGpuName.end(), lowerGpuName.begin(),
                  ::tolower);
 
@@ -40,10 +49,9 @@ inline std::string GetGpuArch(const std::string& gpuName) {
     return "unknown";
   }
 
-  if (gpuName.find("30") != std::string::npos) {
-    return "ampere";
-  } else if (gpuName.find("40") != std::string::npos) {
-    return "ada";
+  auto it = kGpuArchMap.find(compute_cap);
+  if (it != kGpuArchMap.end()) {
+    return it->second;
   } else {
     return "unknown";
   }
@@ -232,7 +240,7 @@ struct GpuInfo {
   std::string id;
   std::string vram;
   std::string name;
-  std::string arch;
+  std::optional<std::string> arch;
   // nvidia driver version. Haven't checked for AMD GPU.
   std::optional<std::string> driver_version;
   std::optional<std::string> cuda_driver_version;
@@ -277,13 +285,10 @@ inline std::vector<GpuInfo> GetGpuInfoListVulkan() {
         std::string key = (*field_iter)[1].str();
         std::string value = (*field_iter)[2].str();
 
-        if (key == "deviceName")
+        if (key == "deviceName") {
           gpuInfo.name = value;
-        else if (key == "apiVersion")
-          gpuInfo.compute_cap = value;
-
+        }
         gpuInfo.vram = "";  // not available
-        gpuInfo.arch = GetGpuArch(gpuInfo.name);
 
         ++field_iter;
       }
@@ -314,13 +319,13 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
     while (
         std::regex_search(search_start, output.cend(), match, gpu_info_reg)) {
       GpuInfo gpuInfo = {
-          match[1].str(),              // id
-          match[2].str(),              // vram
-          match[3].str(),              // name
-          GetGpuArch(match[3].str()),  // arch
-          driver_version,              // driver_version
-          cuda_version,                // cuda_driver_version
-          match[4].str()               // compute_cap
+          match[1].str(),                              // id
+          match[2].str(),                              // vram
+          match[3].str(),                              // name
+          GetGpuArch(match[3].str(), match[4].str()),  // arch
+          driver_version,                              // driver_version
+          cuda_version,                                // cuda_driver_version
+          match[4].str()                               // compute_cap
       };
       gpuInfoList.push_back(gpuInfo);
       search_start = match.suffix().first;

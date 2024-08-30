@@ -10,6 +10,7 @@
 #include "commands/run_cmd.h"
 #include "commands/stop_model_cmd.h"
 #include "commands/stop_server_cmd.h"
+#include "commands/sys_info.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
 
@@ -130,6 +131,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     EngineInstall(engines_cmd, "cortex.tensorrt-llm", version);
   }
 
+  SysInfo(&app_);
+
   {
     // cortex run tinyllama:gguf
     auto run_cmd =
@@ -168,5 +171,13 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
   install_cmd->callback([engine_name, &version] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
+  });
+}
+
+void CommandLineParser::SysInfo(CLI::App* parent) {
+  auto sys_info_cmd = parent->add_subcommand("sysinfo", "Get system info");
+  sys_info_cmd->callback([] {
+    commands::SysInfoCmd cmd;
+    cmd.Exec();
   });
 }
