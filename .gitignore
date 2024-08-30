@@ -1,4 +1,5 @@
 # platform
+.DS_Store
 platform/cortex.db
 dist
 *.lock
@@ -18,3 +19,4 @@ platform/package-lock.json
 .vscode
 platform/command
 platform/src/infrastructure/commanders/test/test_data
+**/vcpkg_installed

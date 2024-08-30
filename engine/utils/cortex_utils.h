@@ -7,13 +7,16 @@
 #include <ostream>
 #include <regex>
 #include <vector>
-#include "cstdio"
-#include "random"
-#include "string"
+#include <random>
+#include <string>
+#include <sys/stat.h>
+
 // Include platform-specific headers
 #ifdef _WIN32
 #include <windows.h>
 #include <winsock2.h>
+#include <direct.h>
+#define mkdir _mkdir
 #else
 #include <dirent.h>
 #include <unistd.h>
@@ -31,6 +34,9 @@ constexpr static auto kOnnxLibPath = "/engines/cortex.onnx";
 constexpr static auto kTensorrtLlmPath = "/engines/cortex.tensorrt-llm";
 
 inline std::string models_folder = "./models";
+inline std::string logs_folder = "./logs";
+inline std::string logs_base_name = "./logs/cortex";
+inline size_t log_file_size_limit = 20000000; // ~20 mb
 
 inline std::string extractBase64(const std::string& input) {
   std::regex pattern("base64,(.*)");
