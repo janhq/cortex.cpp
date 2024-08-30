@@ -31,4 +31,14 @@ inline int CompareSemanticVersion(const std::string& version1,
   }
   return 0;
 }
+
+// convert 11.7 to 11-7 for compatible to download url
+inline std::string ConvertToPath(const std::string& version) {
+  std::string result = version;
+  int pos = result.find('.');
+  if (pos != std::string::npos) {
+    result[pos] = '-';
+  }
+  return result;
+}
 }  // namespace semantic_version_utils
