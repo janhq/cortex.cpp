@@ -20,7 +20,7 @@ EngineInitCmd::EngineInitCmd(std::string engineName, std::string version)
 
 bool EngineInitCmd::Exec() const {
   if (engineName_.empty()) {
-    CTLOG_ERROR("Engine name is required");
+    CTL_ERR("Engine name is required");
     return false;
   }
 
@@ -28,16 +28,16 @@ bool EngineInitCmd::Exec() const {
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
       system_info.os == system_info_utils::kUnsupported) {
-    CTLOG_ERROR("Unsupported OS or architecture: " << system_info.os << ", "
+    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
               << system_info.arch);
     return false;
   }
-  CTLOG_INFO("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // check if engine is supported
   if (std::find(supportedEngines_.begin(), supportedEngines_.end(),
                 engineName_) == supportedEngines_.end()) {
-    CTLOG_ERROR("Engine not supported");
+    CTL_ERR("Engine not supported");
     return false;
   }
 
@@ -46,7 +46,7 @@ bool EngineInitCmd::Exec() const {
   std::ostringstream engineReleasePath;
   engineReleasePath << "/repos/janhq/" << engineName_ << "/releases/"
                     << version;
-  CTLOG_INFO("Engine release path: " << gitHubHost << engineReleasePath.str());
+  CTL_INF("Engine release path: " << gitHubHost << engineReleasePath.str());
   using namespace nlohmann;
 
   httplib::Client cli(gitHubHost);
@@ -64,8 +64,8 @@ bool EngineInitCmd::Exec() const {
         }
 
         auto cuda_driver_version = system_info_utils::GetCudaVersion();
-        CTLOG_INFO("engineName_: " << engineName_);
-        CTLOG_INFO("CUDA version: " << cuda_driver_version);
+        CTL_INF("engineName_: " << engineName_);
+        CTL_INF("CUDA version: " << cuda_driver_version);
         std::string matched_variant = "";
 
         if (engineName_ == "cortex.tensorrt-llm") {
@@ -80,9 +80,9 @@ bool EngineInitCmd::Exec() const {
               variants, system_info.os, system_info.arch, suitable_avx,
               cuda_driver_version);
         }
-        CTLOG_INFO("Matched variant: " << matched_variant);
+        CTL_INF("Matched variant: " << matched_variant);
         if (matched_variant.empty()) {
-          CTLOG_ERROR("No variant found for " << os_arch);
+          CTL_ERR("No variant found for " << os_arch);
           return false;
         }
 
@@ -95,7 +95,7 @@ bool EngineInitCmd::Exec() const {
             std::string path = full_url.substr(host.length());
 
             auto fileName = asset["name"].get<std::string>();
-            CTLOG_INFO("URL: " << full_url);
+            CTL_INF("URL: " << full_url);
 
             auto downloadTask = DownloadTask{.id = engineName_,
                                              .type = DownloadType::Engine,
@@ -115,7 +115,7 @@ bool EngineInitCmd::Exec() const {
                                                                bool unused) {
               // try to unzip the downloaded file
               std::filesystem::path downloadedEnginePath{absolute_path};
-              CTLOG_INFO(
+              CTL_INF(
                   "Downloaded engine path: " << downloadedEnginePath.string());
 
               std::filesystem::path extract_path =
@@ -156,9 +156,9 @@ bool EngineInitCmd::Exec() const {
               try {
                 std::filesystem::remove(absolute_path);
               } catch (const std::exception& e) {
-                CTLOG_WARN("Could not delete file: " << e.what());
+                CTL_WRN("Could not delete file: " << e.what());
               }
-              CTLOG_INFO("Finished!");
+              CTL_INF("Finished!");
             });
             if (system_info.os == "mac" || engineName_ == "cortex.onnx") {
               // mac and onnx engine does not require cuda toolkit
@@ -192,7 +192,7 @@ bool EngineInitCmd::Exec() const {
             // cuda driver version should be greater than toolkit version to ensure compatibility
             if (semantic_version_utils::CompareSemanticVersion(
                     cuda_driver_version, suitable_toolkit_version) < 0) {
-              CTLOG_ERROR("Your Cuda driver version " << cuda_driver_version
+              CTL_ERR("Your Cuda driver version " << cuda_driver_version
                         << " is not compatible with cuda toolkit version "
                         << suitable_toolkit_version);
               return false;
@@ -233,7 +233,7 @@ bool EngineInitCmd::Exec() const {
                   try {
                     std::filesystem::remove(absolute_path);
                   } catch (std::exception& e) {
-                    CTLOG_ERROR("Error removing downloaded file: " << e.what());
+                    CTL_ERR("Error removing downloaded file: " << e.what());
                   }
                 });
 
@@ -245,12 +245,12 @@ bool EngineInitCmd::Exec() const {
         return false;
       }
     } else {
-      CTLOG_ERROR("HTTP error: " << res->status);
+      CTL_ERR("HTTP error: " << res->status);
       return false;
     }
   } else {
     auto err = res.error();
-    CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
     return false;
   }
   return true;

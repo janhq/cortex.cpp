@@ -14,7 +14,7 @@ void ServerStopCmd::Exec() {
     CLI_LOG("Server stopped!");
   } else {
     auto err = res.error();
-    CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
   }
 }
 

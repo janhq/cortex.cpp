@@ -26,7 +26,7 @@ void ModelStopCmd::Exec() {
     }
   } else {
     auto err = res.error();
-    CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
   }
 }
 

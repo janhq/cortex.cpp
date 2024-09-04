@@ -181,7 +181,7 @@ inline bool IsNvidiaSmiAvailable() {
 
 inline std::string GetDriverVersion() {
   if (!IsNvidiaSmiAvailable()) {
-    CTLOG_INFO("nvidia-smi is not available!");
+    CTL_INF("nvidia-smi is not available!");
     return "";
   }
   try {
@@ -206,7 +206,7 @@ inline std::string GetDriverVersion() {
 
 inline std::string GetCudaVersion() {
   if (!IsNvidiaSmiAvailable()) {
-    CTLOG_INFO("nvidia-smi is not available!");
+    CTL_INF("nvidia-smi is not available!");
     return "";
   }
   try {

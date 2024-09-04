@@ -42,7 +42,7 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
   // TODO: haven't tested
   char buffer[MAX_PATH];
   GetModuleFileNameA(NULL, buffer, MAX_PATH);
-  CTLOG_INFO("Executable path: " << buffer);
+  CTL_INF("Executable path: " << buffer);
   return std::filesystem::path{buffer}.parent_path();
 #else
   LOG_ERROR << "Unsupported platform!";
@@ -66,7 +66,7 @@ inline std::filesystem::path GetContainerFolderPath(
   }
 
   if (!std::filesystem::exists(container_folder_path)) {
-    CTLOG_INFO("Creating folder: " << container_folder_path.string() << "\n");
+    CTL_INF("Creating folder: " << container_folder_path.string() << "\n");
     std::filesystem::create_directory(container_folder_path);
   }
 

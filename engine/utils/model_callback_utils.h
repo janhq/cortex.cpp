@@ -22,7 +22,7 @@ inline void DownloadModelCb(const std::string& path, bool need_parse_gguf) {
     config::ModelConfig model_config = handler.GetModelConfig();
     model_config.id = path_obj.parent_path().filename().string();
 
-    CTLOG_INFO("Updating model config in " << path);
+    CTL_INF("Updating model config in " << path);
     handler.UpdateModelConfig(model_config);
     handler.WriteYamlFile(path_obj.parent_path().parent_path().string() + "/" +
                           model_config.id + ".yaml");

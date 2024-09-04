@@ -49,7 +49,7 @@ const std::vector<std::string> cortex_tensorrt_variants{
 inline std::string GetSuitableAvxVariant() {
   cortex::cpuid::CpuInfo cpu_info;
 
-  CTLOG_INFO("GetSuitableAvxVariant:" << "\n" << cpu_info.to_string());
+  CTL_INF("GetSuitableAvxVariant:" << "\n" << cpu_info.to_string());
 
   if (cpu_info.has_avx512_f())
     return "avx512";

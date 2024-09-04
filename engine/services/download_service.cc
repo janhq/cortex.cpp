@@ -33,22 +33,22 @@ void DownloadService::AddAsyncDownloadTask(
 void DownloadService::StartDownloadItem(
     const std::string& downloadId, const DownloadItem& item,
     std::optional<DownloadItemCb> callback) {
-  CTLOG_INFO("Downloading item: " << downloadId);
+  CTL_INF("Downloading item: " << downloadId);
 
   auto containerFolderPath{file_manager_utils::GetContainerFolderPath(
       file_manager_utils::downloadTypeToString(item.type))};
-  CTLOG_INFO("Container folder path: " << containerFolderPath.string()
+  CTL_INF("Container folder path: " << containerFolderPath.string()
                                         << "\n");
 
   auto itemFolderPath{containerFolderPath / std::filesystem::path(downloadId)};
-  CTLOG_INFO("itemFolderPath: " << itemFolderPath.string());
+  CTL_INF("itemFolderPath: " << itemFolderPath.string());
   if (!std::filesystem::exists(itemFolderPath)) {
-    CTLOG_INFO("Creating " << itemFolderPath.string());
+    CTL_INF("Creating " << itemFolderPath.string());
     std::filesystem::create_directory(itemFolderPath);
   }
 
   auto outputFilePath{itemFolderPath / std::filesystem::path(item.fileName)};
-  CTLOG_INFO("Absolute file output: " << outputFilePath.string());
+  CTL_INF("Absolute file output: " << outputFilePath.string());
 
   uint64_t last = 0;
   uint64_t tot = 0;

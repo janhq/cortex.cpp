@@ -5,17 +5,17 @@
 // if not verbose only log result to console
 inline bool log_verbose = false;
 
-#define CTLOG_INFO(msg) \
+#define CTL_INF(msg) \
   if (log_verbose) {    \
     LOG_INFO << msg;    \
   }
 
-#define CTLOG_WARN(msg) \
+#define CTL_WRN(msg) \
   if (log_verbose) {    \
     LOG_WARN << msg;    \
   }
 
-#define CTLOG_ERROR(msg)           \
+#define CTL_ERR(msg)           \
   if (log_verbose) {               \
     LOG_ERROR << msg;              \
   } else {                         \

@@ -49,12 +49,12 @@ void ChatCmd::Exec(std::string msg) {
                         data_str.data(), data_str.size(), "application/json");
     if (res) {
       if (res->status != httplib::StatusCode::OK_200) {
-        CTLOG_ERROR(res->body);
+        CTL_ERR(res->body);
         return;
       }
     } else {
       auto err = res.error();
-      CTLOG_ERROR("HTTP error: " << httplib::to_string(err));
+      CTL_ERR("HTTP error: " << httplib::to_string(err));
       return;
     }
   }

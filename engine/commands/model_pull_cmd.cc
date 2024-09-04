@@ -16,10 +16,10 @@ bool ModelPullCmd::Exec() {
     DownloadService downloadService;
     downloadService.AddDownloadTask(downloadTask.value(),
                                     model_callback_utils::DownloadModelCb);
-    CTLOG_INFO("Download finished");
+    CTL_INF("Download finished");
     return true;
   } else {
-    CTLOG_ERROR("Model not found");
+    CTL_ERR("Model not found");
     return false;
   }
 }

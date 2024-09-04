@@ -140,7 +140,7 @@ inline bool UntarFile(const std::string& input_tar_path,
   }
 
   archive_read_free(tar_archive);
-  CTLOG_INFO("Extracted successfully " << input_tar_path << " to "
+  CTL_INF("Extracted successfully " << input_tar_path << " to "
            << destination_path << "\n");
   return true;
 }

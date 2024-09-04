@@ -136,7 +136,7 @@ void ModelGetCmd::Exec() {
           found_model = true;
           break;
         } catch (const std::exception& e) {
-          CTLOG_ERROR("Error reading yaml file '" << entry.path().string()
+          CTL_ERR("Error reading yaml file '" << entry.path().string()
                     << "': " << e.what());
         }
       }
