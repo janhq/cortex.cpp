@@ -1,16 +1,19 @@
 #include "command_line_parser.h"
 #include "commands/chat_cmd.h"
 #include "commands/cmd_info.h"
+#include "commands/engine_get_cmd.h"
 #include "commands/engine_init_cmd.h"
 #include "commands/engine_list_cmd.h"
+#include "commands/engine_uninstall_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
-#include "commands/run_cmd.h"
 #include "commands/model_stop_cmd.h"
+#include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
+#include "services/engine_service.h"
 #include "utils/cortex_utils.h"
 #include "utils/logging_utils.h"
 
@@ -124,11 +127,11 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
-    auto get_engine_cmd = engines_cmd->add_subcommand("get", "Get an engine");
+    EngineManagement(engines_cmd, "cortex.llamacpp", version);
+    EngineManagement(engines_cmd, "cortex.onnx", version);
+    EngineManagement(engines_cmd, "cortex.tensorrt-llm", version);
 
-    EngineInstall(engines_cmd, "cortex.llamacpp", version);
-    EngineInstall(engines_cmd, "cortex.onnx", version);
-    EngineInstall(engines_cmd, "cortex.tensorrt-llm", version);
+    EngineGet(engines_cmd);
   }
 
   {
@@ -157,9 +160,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   return true;
 }
 
-void CommandLineParser::EngineInstall(CLI::App* parent,
-                                      const std::string& engine_name,
-                                      std::string& version) {
+void CommandLineParser::EngineManagement(CLI::App* parent,
+                                         const std::string& engine_name,
+                                         std::string& version) {
   auto engine_cmd =
       parent->add_subcommand(engine_name, "Manage " + engine_name + " engine");
 
@@ -172,4 +175,27 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });
+
+  auto uninstall_desc{"Uninstall " + engine_name + " engine"};
+  auto uninstall_cmd = engine_cmd->add_subcommand("uninstall", uninstall_desc);
+  uninstall_cmd->callback([engine_name] {
+    commands::EngineUninstallCmd cmd(engine_name);
+    cmd.Exec();
+  });
+}
+
+void CommandLineParser::EngineGet(CLI::App* parent) {
+  auto get_cmd = parent->add_subcommand("get", "Get an engine info");
+  auto engine_service = EngineService();
+
+  for (auto& engine : engine_service.kSupportEngines) {
+    std::string engine_name{engine};
+    std::string desc = "Get " + engine_name + " status";
+
+    auto engine_get_cmd = get_cmd->add_subcommand(engine_name, desc);
+    engine_get_cmd->callback([engine_name] {
+      commands::EngineGetCmd cmd(engine_name);
+      cmd.Exec();
+    });
+  }
 }

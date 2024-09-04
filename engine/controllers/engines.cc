@@ -1,11 +1,17 @@
 #include "engines.h"
+#include <filesystem>
+#include <sstream>
+#include <stdexcept>
+#include <utility>
+#include "services/engine_service.h"
 #include "utils/archive_utils.h"
-#include "utils/file_manager_utils.h"
+#include "utils/cortex_utils.h"
 #include "utils/system_info_utils.h"
 
-void Engines::InitEngine(const HttpRequestPtr& req,
-                         std::function<void(const HttpResponsePtr&)>&& callback,
-                         const std::string& engine) const {
+void Engines::InstallEngine(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& engine) const {
   LOG_DEBUG << "InitEngine, Engine: " << engine;
   if (engine.empty()) {
     Json::Value res;
@@ -114,62 +120,88 @@ void Engines::InitEngine(const HttpRequestPtr& req,
 void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
+  auto engine_service = EngineService();
+  auto status_list = engine_service.GetEngineInfoList();
+
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-  Json::Value obj_onnx, obj_llamacpp, obj_tensorrt;
-  obj_onnx["name"] = "cortex.onnx";
-  obj_onnx["description"] =
-      "This extension enables chat completion API calls using the Onnx engine";
-  obj_onnx["version"] = "0.0.1";
-  obj_onnx["productName"] = "Onnx Inference Engine";
+  for (auto& status : status_list) {
+    Json::Value ret;
+    ret["name"] = status.name;
+    ret["description"] = status.description;
+    ret["version"] = status.version;
+    ret["productName"] = status.product_name;
+    ret["status"] = status.status;
 
-  obj_llamacpp["name"] = "cortex.llamacpp";
-  obj_llamacpp["description"] =
-      "This extension enables chat completion API calls using the LlamaCPP "
-      "engine";
-  obj_llamacpp["version"] = "0.0.1";
-  obj_llamacpp["productName"] = "LlamaCPP Inference Engine";
-
-  obj_tensorrt["name"] = "cortex.tensorrt-llm";
-  obj_tensorrt["description"] =
-      "This extension enables chat completion API calls using the TensorrtLLM "
-      "engine";
-  obj_tensorrt["version"] = "0.0.1";
-  obj_tensorrt["productName"] = "TensorrtLLM Inference Engine";
-
-#ifdef _WIN32
-  if (std::filesystem::exists(std::filesystem::current_path().string() +
-                              cortex_utils::kOnnxLibPath)) {
-    obj_onnx["status"] = "ready";
-  } else {
-    obj_onnx["status"] = "not_initialized";
-  }
-#else
-  obj_onnx["status"] = "not_supported";
-#endif
-  // lllamacpp
-  if (std::filesystem::exists(std::filesystem::current_path().string() +
-                              cortex_utils::kLlamaLibPath)) {
-
-    obj_llamacpp["status"] = "ready";
-  } else {
-    obj_llamacpp["status"] = "not_initialized";
-  }
-  // tensorrt llm
-  if (std::filesystem::exists(std::filesystem::current_path().string() +
-                              cortex_utils::kTensorrtLlmPath)) {
-    obj_tensorrt["status"] = "ready";
-  } else {
-    obj_tensorrt["status"] = "not_initialized";
+    data.append(std::move(ret));
   }
 
-  data.append(std::move(obj_onnx));
-  data.append(std::move(obj_llamacpp));
-  data.append(std::move(obj_tensorrt));
   ret["data"] = data;
   ret["result"] = "OK";
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);
+}
+
+void Engines::GetEngine(const HttpRequestPtr& req,
+                        std::function<void(const HttpResponsePtr&)>&& callback,
+                        const std::string& engine) const {
+  auto engine_service = EngineService();
+  try {
+    auto status = engine_service.GetEngineInfo(engine);
+    Json::Value ret;
+    ret["name"] = status.name;
+    ret["description"] = status.description;
+    ret["version"] = status.version;
+    ret["productName"] = status.product_name;
+    ret["status"] = status.status;
+
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  } catch (const std::runtime_error e) {
+    Json::Value ret;
+    ret["message"] = e.what();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } catch (const std::exception& e) {
+    Json::Value ret;
+    ret["message"] = e.what();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k500InternalServerError);
+    callback(resp);
+  }
+}
+
+void Engines::UninstallEngine(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& engine) const {
+  LOG_INFO << "[Http] Uninstall engine " << engine;
+  auto engine_service = EngineService();
+
+  Json::Value ret;
+  try {
+    // TODO: Unload the model which is currently running on engine_
+    // TODO: Unload engine if is loaded
+    engine_service.UninstallEngine(engine);
+
+    ret["message"] = "Engine " + engine + " uninstalled successfully!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  } catch (const std::runtime_error& e) {
+    CLI_LOG("Runtime exception");
+    ret["message"] = "Engine " + engine + " is not installed!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } catch (const std::exception& e) {
+    ret["message"] = "Engine " + engine + " failed to uninstall: " + e.what();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  }
 }
