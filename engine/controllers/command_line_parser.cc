@@ -1,14 +1,15 @@
 #include "command_line_parser.h"
 #include "commands/chat_cmd.h"
 #include "commands/cmd_info.h"
+#include "commands/cortex_upd_cmd.h"
 #include "commands/engine_init_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
-#include "commands/run_cmd.h"
 #include "commands/model_stop_cmd.h"
+#include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
 #include "utils/cortex_utils.h"
@@ -152,6 +153,18 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   });
 
   app_.add_flag("--verbose", log_verbose, "Verbose logging");
+
+  std::string cortex_version;
+  {
+    // cortex run tinyllama:gguf
+    auto update_cmd = app_.add_subcommand("update", "Update cortex version");
+
+    update_cmd->add_option("-v", cortex_version, "");
+    update_cmd->callback([&cortex_version] {
+      commands::CortexUpdCmd cuc;
+      cuc.Exec();
+    });
+  }
 
   CLI11_PARSE(app_, argc, argv);
   return true;
