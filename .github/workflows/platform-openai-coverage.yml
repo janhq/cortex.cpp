@@ -36,7 +36,7 @@ jobs:
           node-version: 20
 
       - run: npm install -g yarn && yarn install && yarn build
-        working-directory: ./cortex-js
+        working-directory: ./platform
 
       - name: install python venv
         run: |
@@ -46,7 +46,7 @@ jobs:
 
       - name: Run test
         run: |
-          node cortex-js/dist/src/command.js --address 127.0.0.1 --port 4010 > cortex.log
+          node platform/dist/src/command.js --address 127.0.0.1 --port 4010 > cortex.log
           sleep 3
           wget --no-verbose -O api.json http://127.0.0.1:4010/api-json
           cat api.json
@@ -108,7 +108,7 @@ jobs:
       - name: Clean up
         if: always()
         run: |
-          node cortex-js/dist/src/command.js stop
+          node platform/dist/src/command.js stop
           rm -rf /tmp/jan
           rm -rf openai-python
           rm -rf report.html

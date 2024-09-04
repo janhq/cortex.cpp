@@ -1,10 +1,10 @@
 name: Publish cortex js Package to npmjs
 on:
   push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+-cortex-js", "v[0-9]+.[0-9]+.[0-9]+-[0-9]+-cortex-js"]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+-platform", "v[0-9]+.[0-9]+.[0-9]+-[0-9]+-platform"]
     paths:
       [
-        "cortex-js/**",
+        "platform/**",
       ]
 jobs:
   build-and-publish-plugins:
@@ -19,11 +19,11 @@ jobs:
 
       - name: "Update version by tag"
         run: |
-          cd cortex-js
+          cd platform
           # Remove the v prefix
           tag_version=${GITHUB_REF#refs/tags/v}
-          # Remove the -cortex-js suffix
-          new_version=${tag_version%-cortex-js}
+          # Remove the -platform suffix
+          new_version=${tag_version%-platform}
 
           # Replace the old version with the new version in package.json
           jq --arg version "$new_version" '.version = $version' ./package.json > /tmp/package.json && mv /tmp/package.json ./package.json
@@ -37,8 +37,8 @@ jobs:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
       - run: yarn install && yarn build
-        working-directory: ./cortex-js
+        working-directory: ./platform
       - run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        working-directory: ./cortex-js
+        working-directory: ./platform

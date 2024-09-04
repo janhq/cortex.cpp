@@ -1,9 +1,9 @@
-name: CI test for cortex-js
+name: CI test for platform
 on:
   pull_request:
     paths:
-      - "cortex-js/**"
-      - .github/workflows/cortex-js-quality-gate.yml
+      - "platform/**"
+      - .github/workflows/platform-quality-gate.yml
   workflow_dispatch:
 jobs:
   build-and-publish-plugins:
@@ -19,7 +19,7 @@ jobs:
           node-version: "20.x"
           registry-url: "https://registry.npmjs.org"
       - run: yarn install && yarn build
-        working-directory: ./cortex-js
+        working-directory: ./platform
       - run: yarn test
         name: run tests
-        working-directory: ./cortex-js
+        working-directory: ./platform
