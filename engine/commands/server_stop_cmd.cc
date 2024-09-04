@@ -1,19 +1,20 @@
-#include "stop_server_cmd.h"
+#include "server_stop_cmd.h"
 #include "httplib.h"
 #include "trantor/utils/Logger.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
-StopServerCmd::StopServerCmd(std::string host, int port)
+ServerStopCmd::ServerStopCmd(std::string host, int port)
     : host_(std::move(host)), port_(port) {}
 
-void StopServerCmd::Exec() {
+void ServerStopCmd::Exec() {
   httplib::Client cli(host_ + ":" + std::to_string(port_));
   auto res = cli.Delete("/processManager/destroy");
   if (res) {
-    LOG_INFO << res->body;
+    CLI_LOG("Server stopped!");
   } else {
     auto err = res.error();
-    LOG_WARN << "HTTP error: " << httplib::to_string(err);
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
   }
 }
 

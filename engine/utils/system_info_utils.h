@@ -4,6 +4,7 @@
 #include <regex>
 #include <vector>
 #include "utils/command_executor.h"
+#include "utils/logging_utils.h"
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -180,7 +181,7 @@ inline bool IsNvidiaSmiAvailable() {
 
 inline std::string GetDriverVersion() {
   if (!IsNvidiaSmiAvailable()) {
-    LOG_INFO << "nvidia-smi is not available!";
+    CTL_INF("nvidia-smi is not available!");
     return "";
   }
   try {
@@ -205,7 +206,7 @@ inline std::string GetDriverVersion() {
 
 inline std::string GetCudaVersion() {
   if (!IsNvidiaSmiAvailable()) {
-    LOG_INFO << "nvidia-smi is not available!";
+    CTL_INF("nvidia-smi is not available!");
     return "";
   }
   try {

@@ -7,6 +7,7 @@
 
 #include "download_service.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 
 void DownloadService::AddDownloadTask(const DownloadTask& task,
                                       std::optional<DownloadItemCb> callback) {
@@ -32,28 +33,29 @@ void DownloadService::AddAsyncDownloadTask(
 void DownloadService::StartDownloadItem(
     const std::string& downloadId, const DownloadItem& item,
     std::optional<DownloadItemCb> callback) {
-  LOG_INFO << "Downloading item: " << downloadId;
+  CTL_INF("Downloading item: " << downloadId);
 
   auto containerFolderPath{file_manager_utils::GetContainerFolderPath(
       file_manager_utils::downloadTypeToString(item.type))};
-  LOG_INFO << "Container folder path: " << containerFolderPath.string() << "\n";
+  CTL_INF("Container folder path: " << containerFolderPath.string()
+                                        << "\n");
 
   auto itemFolderPath{containerFolderPath / std::filesystem::path(downloadId)};
-  LOG_INFO << "itemFolderPath: " << itemFolderPath.string();
+  CTL_INF("itemFolderPath: " << itemFolderPath.string());
   if (!std::filesystem::exists(itemFolderPath)) {
-    LOG_INFO << "Creating " << itemFolderPath.string();
+    CTL_INF("Creating " << itemFolderPath.string());
     std::filesystem::create_directory(itemFolderPath);
   }
 
   auto outputFilePath{itemFolderPath / std::filesystem::path(item.fileName)};
-  LOG_INFO << "Absolute file output: " << outputFilePath.string();
+  CTL_INF("Absolute file output: " << outputFilePath.string());
 
   uint64_t last = 0;
   uint64_t tot = 0;
   std::ofstream outputFile(outputFilePath, std::ios::binary);
 
   auto downloadUrl{item.host + "/" + item.path};
-  LOG_INFO << "Downloading url: " << downloadUrl;
+  CLI_LOG("Downloading url: " << downloadUrl);
 
   httplib::Client client(item.host);
 
@@ -76,12 +78,12 @@ void DownloadService::StartDownloadItem(
           uint64_t current, uint64_t total) {
         if (current - last > kUpdateProgressThreshold) {
           last = current;
-          LOG_INFO << "Downloading: " << current << " / " << total;
+          CLI_LOG("Downloading: " << current << " / " << total);
         }
         if (current == total) {
           outputFile.flush();
-          LOG_INFO << "Done download: "
-                   << static_cast<double>(total) / 1024 / 1024 << " MiB";
+          CLI_LOG("Done download: "
+                      << static_cast<double>(total) / 1024 / 1024 << " MiB");
           if (callback.has_value()) {
             auto need_parse_gguf =
                 item.path.find("cortexso") == std::string::npos;

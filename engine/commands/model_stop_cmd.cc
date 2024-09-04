@@ -1,14 +1,15 @@
-#include "stop_model_cmd.h"
+#include "model_stop_cmd.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "trantor/utils/Logger.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
-StopModelCmd::StopModelCmd(std::string host, int port,
+ModelStopCmd::ModelStopCmd(std::string host, int port,
                            const config::ModelConfig& mc)
     : host_(std::move(host)), port_(port), mc_(mc) {}
 
-void StopModelCmd::Exec() {
+void ModelStopCmd::Exec() {
   httplib::Client cli(host_ + ":" + std::to_string(port_));
   nlohmann::json json_data;
   json_data["model"] = mc_.name;
@@ -20,11 +21,12 @@ void StopModelCmd::Exec() {
                       data_str.data(), data_str.size(), "application/json");
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      LOG_INFO << res->body;
+      // LOG_INFO << res->body;
+      CLI_LOG("Model unloaded!");
     }
   } else {
     auto err = res.error();
-    LOG_WARN << "HTTP error: " << httplib::to_string(err);
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
   }
 }
 

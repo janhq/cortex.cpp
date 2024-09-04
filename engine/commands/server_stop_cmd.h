@@ -3,9 +3,9 @@
 
 namespace commands {
 
-class StopServerCmd{
+class ServerStopCmd{
  public:
-  StopServerCmd(std::string host, int port);
+  ServerStopCmd(std::string host, int port);
   void Exec();
 
  private:

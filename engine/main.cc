@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/logging_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -21,6 +22,7 @@
 #else
 #error "Unsupported platform!"
 #endif
+
 
 void RunServer() {
   // Create logs/ folder and setup log to file

@@ -1,6 +1,7 @@
 #include "cmd_info.h"
 #include <vector>
 #include "trantor/utils/Logger.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 namespace {
@@ -33,7 +34,7 @@ void CmdInfo::Parse(std::string model_id) {
   } else {
     auto res = split(model_id, kDelimiter);
     if (res.size() != 2) {
-      LOG_ERROR << "model_id does not valid";
+      CTL_ERR("<model_id> does not valid");
       return;
     } else {
       model_name = std::move(res[0]);
@@ -45,7 +46,7 @@ void CmdInfo::Parse(std::string model_id) {
       } else if (branch.find("gguf") != std::string::npos) {
         engine_name = "cortex.llamacpp";
       } else {
-        LOG_ERROR << "Not a valid branch model_name " << branch;
+        CTL_ERR("Not a valid branch model_name " << branch);
       }
     }
   }

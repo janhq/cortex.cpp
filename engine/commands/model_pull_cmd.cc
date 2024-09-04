@@ -4,6 +4,7 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortexso_parser.h"
 #include "utils/model_callback_utils.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 ModelPullCmd::ModelPullCmd(std::string model_handle, std::string branch)
@@ -15,10 +16,10 @@ bool ModelPullCmd::Exec() {
     DownloadService downloadService;
     downloadService.AddDownloadTask(downloadTask.value(),
                                     model_callback_utils::DownloadModelCb);
-    std::cout << "Download finished" << std::endl;
+    CTL_INF("Download finished");
     return true;
   } else {
-    std::cout << "Model not found" << std::endl;
+    CTL_ERR("Model not found");
     return false;
   }
 }
