@@ -12,12 +12,14 @@
 #include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
+#include "httplib.h"
 #include "utils/cortex_utils.h"
 #include "utils/logging_utils.h"
 
 CommandLineParser::CommandLineParser() : app_("Cortex.cpp CLI") {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
+
   std::string model_id;
 
   // Models group commands
@@ -154,9 +156,18 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   app_.add_flag("--verbose", log_verbose, "Verbose logging");
 
+  // cortex version
+  auto cb = [&](int c) {
+#ifdef CORTEX_CPP_VERSION
+    CLI_LOG(CORTEX_CPP_VERSION);
+#else
+    CLI_LOG("default");
+#endif
+  };
+  app_.add_flag_function("-v", cb, "Cortex version");
+
   std::string cortex_version;
   {
-    // cortex run tinyllama:gguf
     auto update_cmd = app_.add_subcommand("update", "Update cortex version");
 
     update_cmd->add_option("-v", cortex_version, "");
@@ -167,6 +178,39 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   }
 
   CLI11_PARSE(app_, argc, argv);
+
+  // Check new update, only check for stable release for now
+#ifdef CORTEX_CPP_VERSION
+  constexpr auto github_host = "https://api.github.com";
+  std::ostringstream release_path;
+  release_path << "/repos/janhq/cortex.cpp/releases/latest";
+  CTL_INF("Engine release path: " << github_host << release_path.str());
+
+  httplib::Client cli(github_host);
+  if (auto res = cli.Get(release_path.str())) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      try {
+        auto json_res = nlohmann::json::parse(res->body);
+        std::string latest_version = json_res["tag_name"].get<std::string>();
+        std::string current_version = CORTEX_CPP_VERSION;
+        if (current_version != latest_version) {
+          CLI_LOG("\nA new release of cortex is available: "
+                  << current_version << " -> " << latest_version);
+          CLI_LOG("To upgrade, run: cortex update");
+          CLI_LOG(json_res["html_url"].get<std::string>());
+        }
+      } catch (const nlohmann::json::parse_error& e) {
+        CTL_INF("JSON parse error: " << e.what());
+      }
+    } else {
+      CTL_INF("HTTP error: " << res->status);
+    }
+  } else {
+    auto err = res.error();
+    CTL_INF("HTTP error: " << httplib::to_string(err));
+  }
+#endif
+
   return true;
 }
 
