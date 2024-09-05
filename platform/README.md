@@ -39,47 +39,49 @@ Cortex Platform supports the following engines:
 **Coming Soon!**
 
 ## Model Library
-Cortex supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
+Cortex Platform supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
 
 Here are example of models that you can use based on each supported engine:
 ### `llama.cpp`
-| Model ID         | Variant (Branch) | Model size        | CLI command                        |
-|------------------|------------------|-------------------|------------------------------------|
-| codestral        | 22b-gguf         | 22B               | `cortex run codestral:22b-gguf`    |
-| command-r        | 35b-gguf         | 35B               | `cortex run command-r:35b-gguf`    |
-| gemma            | 7b-gguf          | 7B                | `cortex run gemma:7b-gguf`         |
-| llama3           | gguf             | 8B                | `cortex run llama3:gguf`           |
-| llama3.1         | gguf             | 8B                | `cortex run llama3.1:gguf`         |
-| mistral          | 7b-gguf          | 7B                | `cortex run mistral:7b-gguf`       |
-| mixtral          | 7x8b-gguf        | 46.7B             | `cortex run mixtral:7x8b-gguf`     |
-| openhermes-2.5   | 7b-gguf          | 7B                | `cortex run openhermes-2.5:7b-gguf`|
-| phi3             | medium-gguf      | 14B - 4k ctx len  | `cortex run phi3:medium-gguf`      |
-| phi3             | mini-gguf        | 3.82B - 4k ctx len| `cortex run phi3:mini-gguf`        |
-| qwen2            | 7b-gguf          | 7B                | `cortex run qwen2:7b-gguf`         |
-| tinyllama        | 1b-gguf          | 1.1B              | `cortex run tinyllama:1b-gguf`     |
+| Model ID         | Variant (Branch) | Model size        |
+|------------------|------------------|-------------------|
+| codestral        | 22b-gguf         | 22B               |
+| command-r        | 35b-gguf         | 35B               |
+| gemma            | 7b-gguf          | 7B                |
+| llama3           | gguf             | 8B                |
+| llama3.1         | gguf             | 8B                |
+| mistral          | 7b-gguf          | 7B                |
+| mixtral          | 7x8b-gguf        | 46.7B             |
+| openhermes-2.5   | 7b-gguf          | 7B                |
+| phi3             | medium-gguf      | 14B - 4k ctx len  |
+| phi3             | mini-gguf        | 3.82B - 4k ctx len|
+| qwen2            | 7b-gguf          | 7B                |
+| tinyllama        | 1b-gguf          | 1.1B              |
+
 ### `ONNX`
-| Model ID         | Variant (Branch) | Model size        | CLI command                        |
-|------------------|------------------|-------------------|------------------------------------|
-| gemma            | 7b-onnx          | 7B                | `cortex run gemma:7b-onnx`         |
-| llama3           | onnx             | 8B                | `cortex run llama3:onnx`           |
-| mistral          | 7b-onnx          | 7B                | `cortex run mistral:7b-onnx`       |
-| openhermes-2.5   | 7b-onnx          | 7B                | `cortex run openhermes-2.5:7b-onnx`|
-| phi3             | mini-onnx        | 3.82B - 4k ctx len| `cortex run phi3:mini-onnx`        |
-| phi3             | medium-onnx      | 14B - 4k ctx len  | `cortex run phi3:medium-onnx`      |
+| Model ID         | Variant (Branch) | Model size        |
+|------------------|------------------|-------------------|
+| gemma            | 7b-onnx          | 7B                |
+| llama3           | onnx             | 8B                |
+| mistral          | 7b-onnx          | 7B                |
+| openhermes-2.5   | 7b-onnx          | 7B                |
+| phi3             | mini-onnx        | 3.82B - 4k ctx len|
+| phi3             | medium-onnx      | 14B - 4k ctx len  |
+
 ### `TensorRT-LLM`
-| Model ID         | Variant (Branch)              | Model size        | CLI command                        |
-|------------------|-------------------------------|-------------------|------------------------------------|
-| llama3           | 8b-tensorrt-llm-windows-ampere       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ampere`   |
-| llama3           | 8b-tensorrt-llm-linux-ampere     | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ampere` |
-| llama3           | 8b-tensorrt-llm-linux-ada   | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ada`|
-| llama3           | 8b-tensorrt-llm-windows-ada       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ada`   |
-| mistral          | 7b-tensorrt-llm-linux-ampere     | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ampere`|
-| mistral          | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ampere`  |
-| mistral          | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ada`|
-| mistral          | 7b-tensorrt-llm-windows-ada       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ada`  |
-| openhermes-2.5   | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ampere`|
-| openhermes-2.5   | 7b-tensorrt-llm-windows-ada     | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ada`|
-| openhermes-2.5   | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-linux-ada`|
+| Model ID         | Variant (Branch)              | Model size        |
+|------------------|-------------------------------|-------------------|
+| llama3           | 8b-tensorrt-llm-windows-ampere | 8B                |
+| llama3           | 8b-tensorrt-llm-linux-ampere   | 8B                |
+| llama3           | 8b-tensorrt-llm-linux-ada      | 8B                |
+| llama3           | 8b-tensorrt-llm-windows-ada    | 8B                |
+| mistral          | 7b-tensorrt-llm-linux-ampere   | 7B                |
+| mistral          | 7b-tensorrt-llm-windows-ampere | 7B                |
+| mistral          | 7b-tensorrt-llm-linux-ada      | 7B                |
+| mistral          | 7b-tensorrt-llm-windows-ada    | 7B                |
+| openhermes-2.5   | 7b-tensorrt-llm-windows-ampere | 7B                |
+| openhermes-2.5   | 7b-tensorrt-llm-windows-ada    | 7B                |
+| openhermes-2.5   | 7b-tensorrt-llm-linux-ada      | 7B                |
 
 > **Note**:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
