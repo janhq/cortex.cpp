@@ -11,7 +11,7 @@
 > ⚠️ **Cortex Platform is Coming Soon!**
 
 ## About
-Cortex Platform is a fully database-driven application built on top of [`cortex.cpp`](), designed as an OpenAI API equivalent. It supports multiple engines, multi-user functionality, and operates entirely through an API.
+Cortex Platform is a fully database-driven application built on top of [`cortex.cpp`](https://github.com/janhq/cortex.cpp), designed as an OpenAI API equivalent. It supports multiple engines, multi-user functionality, and operates entirely through stateful API endpoints.
 
 ## Cortex Engines
 Cortex Platform supports the following engines:
