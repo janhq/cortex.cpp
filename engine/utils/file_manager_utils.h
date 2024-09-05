@@ -1,8 +1,8 @@
 #pragma once
-#include "logging_utils.h"
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include "logging_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -61,6 +61,8 @@ inline std::filesystem::path GetContainerFolderPath(
     container_folder_path = current_path / "engines";
   } else if (type == "CudaToolkit") {
     container_folder_path = current_path;
+  } else if (type == "Cortex") {
+    container_folder_path = current_path / "cortex";
   } else {
     container_folder_path = current_path / "misc";
   }
@@ -83,6 +85,8 @@ inline std::string downloadTypeToString(DownloadType type) {
       return "Misc";
     case DownloadType::CudaToolkit:
       return "CudaToolkit";
+    case DownloadType::Cortex:
+      return "Cortex";
     default:
       return "UNKNOWN";
   }

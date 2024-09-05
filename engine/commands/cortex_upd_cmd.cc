@@ -13,10 +13,14 @@
 #endif
 
 namespace commands {
+
+namespace {
+    const std::string kCortexBinary = "cortex-cpp";
+}   
+
 CortexUpdCmd::CortexUpdCmd() {}
 
 void CortexUpdCmd::Exec() {
-  std::cout << "1" << std::endl;
   // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
@@ -122,19 +126,19 @@ void CortexUpdCmd::Exec() {
     return;
   }
 #if defined(_WIN32)
-  std::string temp = ".\\cortex-cpp_tmp.exe";
+  std::string temp = ".\\cortex_tmp.exe";
   remove(temp.c_str());  // ignore return code
 
-  std::string src = ".\\misc\\cortex-cpp\\cortex-cpp.exe";
-  std::string dst = ".\\cortex-cpp.exe";
+  std::string src = ".\\Cortex\\" + kCortexBinary + "\\" + kCortexBinary + ".exe";
+  std::string dst = ".\\" + kCortexBinary + ".exe";
   // Rename
   rename(dst.c_str(), temp.c_str());
   // Update
   CopyFile(const_cast<char*>(src.c_str()), const_cast<char*>(dst.c_str()),
            false);
 #else
-  std::string src = "./misc/cortex-cpp/cortex-cpp";
-  std::string dst = "./cortex-cpp";
+  std::string src = "./Cortex/" + kCortexBinary + "/" + kCortexBinary;
+  std::string dst = "./" + kCortexBinary;
   std::filesystem::copy_file(src, dst,
                              std::filesystem::copy_options::overwrite_existing);
 #endif
