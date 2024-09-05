@@ -7,7 +7,7 @@ namespace commands {
 class CortexUpdCmd{
  public:
   CortexUpdCmd();
-  void Exec();
+  void Exec(std::string version);
 
  private:
 };

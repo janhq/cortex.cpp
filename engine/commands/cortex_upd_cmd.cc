@@ -20,7 +20,7 @@ const std::string kCortexBinary = "cortex-cpp";
 
 CortexUpdCmd::CortexUpdCmd() {}
 
-void CortexUpdCmd::Exec() {
+void CortexUpdCmd::Exec(std::string v) {
   // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
@@ -33,7 +33,8 @@ void CortexUpdCmd::Exec() {
 
   // Download file
   constexpr auto github_host = "https://api.github.com";
-  //   std::string version = version_.empty() ? "latest" : version_;
+  //   std::string version = v.empty() ? "latest" : std::move(v);
+  // TODO(sang): support download with version
   std::string version = "latest";
   std::ostringstream release_path;
   release_path << "/repos/janhq/cortex.cpp/releases/" << version;

@@ -174,7 +174,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     update_cmd->add_option("-v", cortex_version, "");
     update_cmd->callback([&cortex_version, &check_update] {
       commands::CortexUpdCmd cuc;
-      cuc.Exec();
+      cuc.Exec(cortex_version);
       check_update = false;
     });
   }
