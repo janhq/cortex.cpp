@@ -15,8 +15,8 @@
 namespace commands {
 
 namespace {
-    const std::string kCortexBinary = "cortex-cpp";
-}   
+const std::string kCortexBinary = "cortex-cpp";
+}
 
 CortexUpdCmd::CortexUpdCmd() {}
 
@@ -129,18 +129,37 @@ void CortexUpdCmd::Exec() {
   std::string temp = ".\\cortex_tmp.exe";
   remove(temp.c_str());  // ignore return code
 
-  std::string src = ".\\Cortex\\" + kCortexBinary + "\\" + kCortexBinary + ".exe";
+  std::string src =
+      ".\\cortex\\" + kCortexBinary + "\\" + kCortexBinary + ".exe";
   std::string dst = ".\\" + kCortexBinary + ".exe";
   // Rename
   rename(dst.c_str(), temp.c_str());
   // Update
   CopyFile(const_cast<char*>(src.c_str()), const_cast<char*>(dst.c_str()),
            false);
+  remove(".\\cortex");
+  remove(temp.c_str());
 #else
-  std::string src = "./Cortex/" + kCortexBinary + "/" + kCortexBinary;
+  std::string temp = "./cortex_tmp";
+  std::string src = "./cortex/" + kCortexBinary + "/" + kCortexBinary;
   std::string dst = "./" + kCortexBinary;
-  std::filesystem::copy_file(src, dst,
-                             std::filesystem::copy_options::overwrite_existing);
+  if (std::rename(dst.c_str(), temp.c_str())) {
+    CTL_ERR("Failed to rename from " << dst << " to " << temp);
+    return;
+  }
+  try {
+    std::filesystem::copy_file(
+        src, dst, std::filesystem::copy_options::overwrite_existing);
+    std::filesystem::permissions(dst, std::filesystem::perms::owner_all |
+                                          std::filesystem::perms::group_all |
+                                          std::filesystem::perms::others_read |
+                                          std::filesystem::perms::others_exec);
+    std::filesystem::remove(temp);
+    std::filesystem::remove_all("./cortex/");
+  } catch (const std::exception& e) {
+    CTL_WRN("Something wrong happened: " << e.what());
+    return;
+  }
 #endif
   CLI_LOG("Update cortex sucessfully");
 }
