@@ -1,15 +1,15 @@
-; Inno Setup Script
 ; Define the application name, version, and other details
 [Setup]
-AppName=Cortexso
+AppName=cortexcpp
 AppVersion=1.0
-DefaultDirName={pf}\Cortexso
-DefaultGroupName=Cortexso
+DefaultDirName={localappdata}\cortexcpp
+DefaultGroupName=cortexcpp
 OutputDir=.
 OutputBaseFilename=setup
 Compression=lzma
 SolidCompression=yes
-PrivilegesRequired=admin
+PrivilegesRequired=lowest
+AllowNoIcons=yes
 
 ; Define the languages section
 [Languages]
@@ -18,61 +18,88 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Define the files to be installed
 [Files]
 Source: "cortex.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Define the icons to be created
 [Icons]
-Name: "{group}\Cortexso"; Filename: "{app}\cortex.exe"
+Name: "{group}\cortexcpp"; Filename: "{app}\cortex.exe"
 
 ; Define the run section to execute the application after installation
 [Run]
-Filename: "cmd"; Parameters: "/c setx PATH ""%PATH%;{app}"""; StatusMsg: "Updating system PATH environment variable..."; Flags: runhidden
-Filename: "{app}\cortex.exe"; Description: "{cm:LaunchProgram,Cortexso}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\cortex.exe"; Parameters: "--help"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
+[Code]
+procedure AddToUserPath;
+var
+  ExpandedAppDir: String;
+  CmdLine: String;
+  ResultCode: Integer;
+begin
+  ExpandedAppDir := ExpandConstant('{app}');
+  
+  CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
+  
+  if Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
+  begin
+    if ResultCode = 0 then
+      MsgBox('Successfully added to user PATH.', mbInformation, MB_OK)
+    else
+      MsgBox('Failed to update user PATH. Error code: ' + IntToStr(ResultCode), mbError, MB_OK);
+  end
+  else
+  begin
+    MsgBox('Failed to execute setx command.', mbError, MB_OK);
+  end;
+end;
 
-; Define the tasks section (optional, for additional tasks like creating desktop icons)
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    AddToUserPath;
+  end;
+end;
+
 [Tasks]
 Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; Flags: unchecked
 Name: "quicklaunchicon"; Description: "Create a &Quick Launch icon"; GroupDescription: "Additional icons:"; Flags: unchecked
 
 ; Define icons for the additional tasks
 [Icons]
-Name: "{commondesktop}\Cortexso"; Filename: "{app}\cortex.exe"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\Cortexso"; Filename: "{app}\cortex.exe"; Tasks: quicklaunchicon
+Name: "{commondesktop}\cortexcpp"; Filename: "{app}\cortex.exe"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\cortexcpp"; Filename: "{app}\cortex.exe"; Tasks: quicklaunchicon
 
 ; Define the uninstall run section to execute commands before uninstallation
 [UninstallRun]
-Filename: "{app}\cortex.exe"; Parameters: "stop"; StatusMsg: "Stopping Cortexso service..."; Flags: runhidden
+Filename: "{app}\cortex.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp service..."; Flags: runhidden
 
-; Use Pascal scripting to delete the directory for all users
+; Use Pascal scripting to ask user if they want to delete the .cortex folder and .cortexrc file
 [Code]
-function GetUsersFolder: String;
+procedure DeleteCurrentUserCortexFolderAndConfig;
 var
-  WinDir: String;
+  UserCortexFolder: String;
+  UserCortexConfig: String;
+  ShouldDelete: Integer;
 begin
-  WinDir := ExpandConstant('{win}');
-  Result := Copy(WinDir, 1, Pos('\Windows', WinDir) - 1) + '\Users';
-end;
-
-procedure DeleteUserCortexFolder;
-var
-  UsersFolder: String;
-  FindRec: TFindRec;
-begin
-  UsersFolder := GetUsersFolder;
-  if FindFirst(UsersFolder + '\*', FindRec) then
+  UserCortexFolder := ExpandConstant('{%USERPROFILE}\.cortex');
+  UserCortexConfig := ExpandConstant('{%USERPROFILE}\.cortexrc');
+  
+  if DirExists(UserCortexFolder) or FileExists(UserCortexConfig) then
   begin
-    try
-      repeat
-        if (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY <> 0) and
-           (FindRec.Name <> '.') and (FindRec.Name <> '..') then
-        begin
-          if DirExists(UsersFolder + '\' + FindRec.Name + '\cortex') then
-          begin
-            DelTree(UsersFolder + '\' + FindRec.Name + '\cortex', True, True, True);
-          end;
-        end;
-      until not FindNext(FindRec);
-    finally
-      FindClose(FindRec);
+    ShouldDelete := MsgBox('Do you want to delete the application data in .cortex and the .cortexrc config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
+    
+    if ShouldDelete = idYes then
+    begin
+      if DirExists(UserCortexFolder) then
+      begin
+        DelTree(UserCortexFolder, True, True, True);
+      end;
+
+      if FileExists(UserCortexConfig) then
+      begin
+        DeleteFile(UserCortexConfig);
+      end;
     end;
   end;
 end;
@@ -81,6 +108,6 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usPostUninstall then
   begin
-    DeleteUserCortexFolder;
+    DeleteCurrentUserCortexFolderAndConfig;
   end;
 end;
