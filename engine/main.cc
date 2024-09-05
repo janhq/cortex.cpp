@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <climits>  // for PATH_MAX
+#include <iostream>
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/archive_utils.h"
@@ -17,15 +18,49 @@
 #include <sys/types.h>
 #include <unistd.h>  // for readlink()
 #elif defined(_WIN32)
+#include <afunix.h>
 #include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #undef max
 #else
 #error "Unsupported platform!"
 #endif
 
+#ifdef _WIN32
+#pragma comment(lib, "Ws2_32.lib")
+#define SOCKET_PATH \
+  R"(\\.\pipe\cortex_socket)"  // Use Windows AF_UNIX equivalent path
 
-void RunServer() {
-  // Create logs/ folder and setup log to file
+void WriteLogWindows(SOCKET client_socket) {
+  char buffer[1024];
+  int recv_size;
+  std::string message;
+
+  while (true) {
+    recv_size = recv(client_socket, buffer, sizeof(buffer), 0);
+    if (recv_size > 0) {
+      message = std::string(buffer, recv_size);
+      // std::cout << "Received message: " << message << std::endl;
+
+      if (message == "<|stop-server|>") {
+        std::cout << "Stopping server." << std::endl;
+        break;
+      }
+      LOG_RAW << message;
+      // Echo message back to client
+      // send(client_socket, message.c_str(), recv_size, 0);
+    } else if (recv_size == 0 || recv_size == SOCKET_ERROR) {
+      std::cout << "Client disconnected." << std::endl;
+      break;
+    }
+  }
+
+  closesocket(client_socket);
+}
+
+int SocketProcessWindows() {
+  // this process will write log to file
   std::filesystem::create_directory(cortex_utils::logs_folder);
   trantor::AsyncFileLogger asyncFileLogger;
   asyncFileLogger.setFileName(cortex_utils::logs_base_name);
@@ -36,6 +71,80 @@ void RunServer() {
       },
       [&]() { asyncFileLogger.flush(); });
   asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
+
+  WSADATA wsaData;
+  SOCKET serverSocket = INVALID_SOCKET, client_socket = INVALID_SOCKET;
+  sockaddr_in server_addr{}, clientAddr{};
+  int clientAddrSize = sizeof(clientAddr);
+
+  WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+  serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (serverSocket == INVALID_SOCKET) {
+    std::cerr << "Error creating socket." << std::endl;
+    WSACleanup();
+    return 1;
+  }
+
+  server_addr.sin_family = AF_UNIX;
+  strncpy_s(reinterpret_cast<char*>(server_addr.sin_addr.S_un.S_un_b),
+            sizeof(server_addr.sin_addr.S_un.S_un_b), SOCKET_PATH,
+            strlen(SOCKET_PATH));
+
+  if (bind(serverSocket, reinterpret_cast<sockaddr*>(&server_addr),
+           sizeof(server_addr)) == SOCKET_ERROR) {
+    std::cerr << "Bind failed." << std::endl;
+    closesocket(serverSocket);
+    WSACleanup();
+    return 1;
+  }
+
+  if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
+    std::cerr << "Listen failed." << std::endl;
+    closesocket(serverSocket);
+    WSACleanup();
+    return 1;
+  }
+
+  std::cout << "Server is running and waiting for connections..." << std::endl;
+
+  while (true) {
+    client_socket =
+        accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddr),
+               &clientAddrSize);
+    if (client_socket == INVALID_SOCKET) {
+      std::cerr << "Error accepting client." << std::endl;
+      continue;
+    }
+
+    std::cout << "Client connected." << std::endl;
+    std::thread client_thread(WriteLogWindows, client_socket);
+    client_thread.detach();  // Handle multiple clients concurrently
+  }
+
+  closesocket(serverSocket);
+  WSACleanup();
+  return 0;
+}
+#endif
+
+void RunServer() {
+// Create logs/ folder and setup log to file
+#ifdef _WIN32
+  // if windows, we will create client socket to send to log process
+
+#else
+  std::filesystem::create_directory(cortex_utils::logs_folder);
+  trantor::AsyncFileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+  asyncFileLogger.startLogging();
+  trantor::Logger::setOutputFunction(
+      [&](const char* msg, const uint64_t len) {
+        asyncFileLogger.output(msg, len);
+      },
+      [&]() { asyncFileLogger.flush(); });
+  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
+#endif
   // Number of cortex.cpp threads
   // if (argc > 1) {
   //   thread_num = std::atoi(argv[1]);
@@ -148,6 +257,7 @@ int main(int argc, char* argv[]) {
       RunServer();
       return 0;
     } else {
+      
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
       return 0;
