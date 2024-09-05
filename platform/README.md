@@ -8,7 +8,7 @@
   - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Cortex Platform is Coming Soon!**
+> ⚠️ **Cortex Platform is under development**
 
 ## About
 Cortex Platform is a fully database-driven application built on top of [`cortex.cpp`](https://github.com/janhq/cortex.cpp), designed as an OpenAI API equivalent. It supports multiple engines, multi-user functionality, and operates entirely through stateful API endpoints.
@@ -87,8 +87,13 @@ Here are example of models that you can use based on each supported engine:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
 ## Cortex Platfrom API
-Cortex Platform has the stateful API that runs at `localhost:1337`.
+Cortex Platform only support the following stateful API endpoints:
 
+- Messages
+- Threads
+- Assistants
+
+Here are some examples of the available stateful endpoints:
 ### Create Message
 ```bash
 curl --request POST \
