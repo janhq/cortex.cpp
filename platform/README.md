@@ -1,138 +1,168 @@
 # Cortex
-<p align="center">
+<!-- <p align="center">
   <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex/dev/assets/cortex-banner.png">
-</p>
+</p> -->
 
 <p align="center">
-  <a href="https://jan.ai/cortex">Documentation</a> - <a href="https://jan.ai/api-reference">API Reference</a> 
-  - <a href="https://github.com/janhq/cortex/releases">Changelog</a> - <a href="https://github.com/janhq/cortex/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
+  <a href="https://cortex.so/docs/cortex-platform/">Documentation</a> - <a href="https://cortex.so/api-reference">API Reference</a> 
+  - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Cortex is currently in Development**: Expect breaking changes and bugs!
+> ⚠️ **Cortex Platform is Coming Soon!**
 
 ## About
-Cortex is an OpenAI-compatible AI engine that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and client libraries. It can be used as a standalone server or imported as a library. 
+Cortex Platform is a fully database-driven application built on top of [`cortex.cpp`](), designed as an OpenAI API equivalent. It supports multiple engines, multi-user functionality, and operates entirely through an API.
 
 ## Cortex Engines
-Cortex supports the following engines:
+Cortex Platform supports the following engines:
 - [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp): `cortex.llamacpp` library is a C++ inference tool that can be dynamically loaded by any server at runtime. We use this engine to support GGUF inference with GGUF models. The `llama.cpp` is optimized for performance on both CPU and GPU.
 - [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx): `cortex.onnx` is a C++ inference library for Windows that leverages `onnxruntime-genai` and uses DirectML to provide GPU acceleration across a wide range of hardware and drivers, including AMD, Intel, NVIDIA, and Qualcomm GPUs.
 - [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm): `cortex.tensorrt-llm` is a C++ inference library designed for NVIDIA GPUs. It incorporates NVIDIA’s TensorRT-LLM for GPU-accelerated inference.
 
-## Quicklinks
+## Installation
+### Docker
+**Coming Soon!**
 
-- [Homepage](https://cortex.so/)
-- [Docs](https://cortex.so/docs/)
+### Helm
+**Coming Soon!**
+
+### Yarn
+**Coming Soon!**
+
+### Libraries
+**Coming Soon!**
+
+### Build from Source
+**Coming Soon!**
 
 ## Quickstart
-### Prerequisites
-- **OS**:
-  - MacOSX 13.6 or higher.
-  - Windows 10 or higher.
-  - Ubuntu 22.04 and later.
-- **Dependencies**:
-  - **Node.js**: Version 18 and above is required to run the installation.
-  - **NPM**: Needed to manage packages.
-  - **CPU Instruction Sets**: Available for download from the [Cortex GitHub Releases](https://github.com/janhq/cortex/releases) page.
-  - **OpenMPI**: Required for Linux. Install by using the following command:
-    ```bash
-    sudo apt install openmpi-bin libopenmpi-dev
-    ```
+**Coming Soon!**
 
-> Visit [Quickstart](https://cortex.so/docs/quickstart) to get started.
+## Model Library
+Cortex supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
 
-### NPM
-``` bash
-# Install using NPM
-npm i -g cortexso
-# Run model
-cortex run mistral
-# To uninstall globally using NPM
-npm uninstall -g cortexso
-```
+Here are example of models that you can use based on each supported engine:
+### `llama.cpp`
+| Model ID         | Variant (Branch) | Model size        | CLI command                        |
+|------------------|------------------|-------------------|------------------------------------|
+| codestral        | 22b-gguf         | 22B               | `cortex run codestral:22b-gguf`    |
+| command-r        | 35b-gguf         | 35B               | `cortex run command-r:35b-gguf`    |
+| gemma            | 7b-gguf          | 7B                | `cortex run gemma:7b-gguf`         |
+| llama3           | gguf             | 8B                | `cortex run llama3:gguf`           |
+| llama3.1         | gguf             | 8B                | `cortex run llama3.1:gguf`         |
+| mistral          | 7b-gguf          | 7B                | `cortex run mistral:7b-gguf`       |
+| mixtral          | 7x8b-gguf        | 46.7B             | `cortex run mixtral:7x8b-gguf`     |
+| openhermes-2.5   | 7b-gguf          | 7B                | `cortex run openhermes-2.5:7b-gguf`|
+| phi3             | medium-gguf      | 14B - 4k ctx len  | `cortex run phi3:medium-gguf`      |
+| phi3             | mini-gguf        | 3.82B - 4k ctx len| `cortex run phi3:mini-gguf`        |
+| qwen2            | 7b-gguf          | 7B                | `cortex run qwen2:7b-gguf`         |
+| tinyllama        | 1b-gguf          | 1.1B              | `cortex run tinyllama:1b-gguf`     |
+### `ONNX`
+| Model ID         | Variant (Branch) | Model size        | CLI command                        |
+|------------------|------------------|-------------------|------------------------------------|
+| gemma            | 7b-onnx          | 7B                | `cortex run gemma:7b-onnx`         |
+| llama3           | onnx             | 8B                | `cortex run llama3:onnx`           |
+| mistral          | 7b-onnx          | 7B                | `cortex run mistral:7b-onnx`       |
+| openhermes-2.5   | 7b-onnx          | 7B                | `cortex run openhermes-2.5:7b-onnx`|
+| phi3             | mini-onnx        | 3.82B - 4k ctx len| `cortex run phi3:mini-onnx`        |
+| phi3             | medium-onnx      | 14B - 4k ctx len  | `cortex run phi3:medium-onnx`      |
+### `TensorRT-LLM`
+| Model ID         | Variant (Branch)              | Model size        | CLI command                        |
+|------------------|-------------------------------|-------------------|------------------------------------|
+| llama3           | 8b-tensorrt-llm-windows-ampere       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ampere`   |
+| llama3           | 8b-tensorrt-llm-linux-ampere     | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ampere` |
+| llama3           | 8b-tensorrt-llm-linux-ada   | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ada`|
+| llama3           | 8b-tensorrt-llm-windows-ada       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ada`   |
+| mistral          | 7b-tensorrt-llm-linux-ampere     | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ampere`|
+| mistral          | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ampere`  |
+| mistral          | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ada`|
+| mistral          | 7b-tensorrt-llm-windows-ada       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ada`  |
+| openhermes-2.5   | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ampere`|
+| openhermes-2.5   | 7b-tensorrt-llm-windows-ada     | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ada`|
+| openhermes-2.5   | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-linux-ada`|
 
-### Homebrew
-``` bash
-# Install using Brew
-brew install cortexso
-# Run model
-cortex run mistral
-# To uninstall using Brew
-brew uninstall cortexso
-```
-> You can also install Cortex using the Cortex Installer available on [GitHub Releases](https://github.com/janhq/cortex/releases).
+> **Note**:
+> You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
-## Cortex Server
+## Cortex Platfrom API
+Cortex Platform has the stateful API that runs at `localhost:1337`.
+
+### Create Message
 ```bash
-cortex serve
-
-# Output
-# Started server at http://localhost:1337
-# Swagger UI available at http://localhost:1337/api
+curl --request POST \
+  --url http://127.0.0.1:1337/v1/threads/__THREAD_ID__/messages \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "role": "user",
+  "content": "Tell me a joke"
+}'
 ```
 
-You can now access the Cortex API server at `http://localhost:1337`,
-and the Swagger UI at `http://localhost:1337/api`.
-
-## Build from Source
-
-To install Cortex from the source, follow the steps below:
-
-1. Clone the Cortex repository [here](https://github.com/janhq/cortex/tree/dev).
-2. Navigate to the `cortex-js` folder.
-3. Open the terminal and run the following command to build the Cortex project:
-
+### Create Assistant
 ```bash
-npx nest build
+curl --request POST \
+  --url http://127.0.0.1:1337/v1/assistants \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "id": "jan",
+  "avatar": "",
+  "name": "Jan",
+  "description": "A default assistant that can use all downloaded models",
+  "model": "",
+  "instructions": "",
+  "tools": [],
+  "metadata": {},
+  "top_p": "0.7",
+  "temperature": "0.7"
+}'
 ```
 
-4. Make the `command.js` executable:
-
+### Create Thread
 ```bash
-chmod +x '[path-to]/cortex/cortex-js/dist/src/command.js'
+curl --request POST \
+  --url http://127.0.0.1:1337/v1/threads \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "assistants": [
+    {
+      "id": "thread_123",
+      "avatar": "https://example.com/avatar.png",
+      "name": "Virtual Helper",
+      "model": "mistral",
+      "instructions": "Assist with customer queries and provide information based on the company database.",
+      "tools": [
+        {
+          "name": "Knowledge Retrieval",
+          "settings": {
+            "source": "internal",
+            "endpoint": "https://api.example.com/knowledge"
+          }
+        }
+      ],
+      "description": "This assistant helps with customer support by retrieving relevant information.",
+      "metadata": {
+        "department": "support",
+        "version": "1.0"
+      },
+      "object": "assistant",
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "created_at": 1622470423,
+      "response_format": {
+        "format": "json"
+      },
+      "tool_resources": {
+        "resources": [
+          "database1",
+          "database2"
+        ]
+      }
+    }
+  ]
+}'
 ```
 
-5. Link the package globally:
-
-```bash
-npm link
-```
-
-## Cortex CLI Commands
-
-The following CLI commands are currently available.
-See [CLI Reference Docs](https://cortex.so/docs/cli) for more information.
-
-```bash
-
-  serve               Providing API endpoint for Cortex backend.
-  chat                Send a chat request to a model.
-  init|setup          Init settings and download cortex's dependencies.
-  ps                  Show running models and their status.
-  kill                Kill running cortex processes.
-  pull|download       Download a model. Working with HuggingFace model id.
-  run [options]       EXPERIMENTAL: Shortcut to start a model and chat.
-  models              Subcommands for managing models.
-  models list         List all available models.
-  models pull         Download a specified model.
-  models remove       Delete a specified model.
-  models get          Retrieve the configuration of a specified model.
-  models start        Start a specified model.
-  models stop         Stop a specified model.
-  models update       Update the configuration of a specified model.
-  benchmark           Benchmark and analyze the performance of a specific AI model using your system.
-  presets             Show all the available model presets within Cortex.
-  telemetry           Retrieve telemetry logs for monitoring and analysis.
-  embeddings          Creates an embedding vector representing the input text.
-  engines             Subcommands for managing engines.
-  engines get         Get an engine details.
-  engines list        Get all the available Cortex engines.
-  engines init        Setup and download the required dependencies to run cortex engines.
-  configs             Subcommands for managing configurations.
-  configs get         Get a configuration details.
-  configs list        Get all the available configurations.
-  configs set         Set a configuration.
-```
+> **Note**: Check our [API documentation](https://cortex.so/api-reference) for a full list of available stateful endpoints.
 
 ## Contact Support
 - For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
