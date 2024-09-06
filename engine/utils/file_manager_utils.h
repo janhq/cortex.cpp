@@ -15,7 +15,7 @@
 #endif
 
 namespace file_manager_utils {
-constexpr std::string_view kCortexConfigurationFileName = "cortexrc";
+constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
 constexpr std::string_view kDefaultConfigurationPath = "user_home";
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
