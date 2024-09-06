@@ -3,7 +3,6 @@
 #include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "engine_init_cmd.h"
-#include "httplib.h"
 #include "model_pull_cmd.h"
 #include "model_start_cmd.h"
 #include "trantor/utils/Logger.h"
@@ -37,7 +36,7 @@ void RunCmd::Exec() {
       if (!eic.Exec()) {
         LOG_INFO << "Failed to install engine";
         return;
-        }
+      }
     }
   }
 

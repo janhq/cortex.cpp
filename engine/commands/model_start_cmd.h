@@ -1,13 +1,13 @@
 #pragma once
 #include <string>
-#include <optional>
 #include "config/model_config.h"
 
 namespace commands {
 
-class ModelStartCmd{
+class ModelStartCmd {
  public:
-  explicit ModelStartCmd(std::string host, int port, const config::ModelConfig& mc);
+  explicit ModelStartCmd(std::string host, int port,
+                         const config::ModelConfig& mc);
   bool Exec();
 
  private:
