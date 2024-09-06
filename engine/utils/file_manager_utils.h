@@ -17,6 +17,9 @@
 namespace file_manager_utils {
 constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
 constexpr std::string_view kDefaultConfigurationPath = "user_home";
+constexpr std::string_view kProdVariant = "prod";
+constexpr std::string_view kBetaVariant = "beta";
+constexpr std::string_view kNightlyVariant = "nightly";
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
 #if defined(__APPLE__) && defined(__MACH__)
@@ -75,13 +78,34 @@ inline std::filesystem::path GetHomeDirectoryPath() {
 }
 
 inline std::filesystem::path GetConfigurationPath() {
+#ifndef CORTEX_CONFIG_FILE_PATH
+#define CORTEX_CONFIG_FILE_PATH kDefaultConfigurationPath
+#endif
+
+#ifndef CORTEX_VARIANT
+#define CORTEX_VARIANT kProdVariant
+#endif
   std::string config_file_path{CORTEX_CONFIG_FILE_PATH};
 
   if (config_file_path != kDefaultConfigurationPath) {
+    CTL_INF("Config file path: " + config_file_path);
     return std::filesystem::path(config_file_path);
   }
+
+  std::string variant{CORTEX_VARIANT};
+  std::string env_postfix{""};
+  if (variant == kBetaVariant) {
+    env_postfix.append("-").append(kBetaVariant);
+  } else if (variant == kNightlyVariant) {
+    env_postfix.append("-").append(kNightlyVariant);
+  }
+
+  std::string config_file_name{kCortexConfigurationFileName};
+  config_file_name.append(env_postfix);
+  CTL_INF("Config file name: " + config_file_name);
+
   auto home_path = GetHomeDirectoryPath();
-  auto configuration_path = home_path / kCortexConfigurationFileName;
+  auto configuration_path = home_path / config_file_name;
   return configuration_path;
 }
 
@@ -91,15 +115,30 @@ inline void CreateConfigFileIfNotExist() {
     // already exists
     return;
   }
+#ifndef CORTEX_VARIANT
+#define CORTEX_VARIANT "prod"
+#endif
+  std::string default_data_folder_name{config_yaml_utils::kCortexFolderName};
+
+  std::string variant{CORTEX_VARIANT};
+  std::string env_postfix{""};
+  if (variant == kBetaVariant) {
+    env_postfix.append("-").append(kBetaVariant);
+  } else if (variant == kNightlyVariant) {
+    env_postfix.append("-").append(kNightlyVariant);
+  }
+  default_data_folder_name.append(env_postfix);
+
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto defaultDataFolderPath =
-      file_manager_utils::GetHomeDirectoryPath() / config_yaml_utils::kCortexFolderName;
+      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
+  CTL_INF("Default data folder path: " + defaultDataFolderPath.string());
+
   auto config = config_yaml_utils::CortexConfig{
       .dataFolderPath = defaultDataFolderPath.string(),
       .host = config_yaml_utils::kDefaultHost,
       .port = config_yaml_utils::kDefaultPort,
   };
-  std::cout << "config: " << config.dataFolderPath << "\n";
   DumpYamlConfig(config, config_path.string());
 }
 
@@ -116,8 +155,7 @@ inline std::filesystem::path GetCortexDataPath() {
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {
-    data_folder_path =
-        std::filesystem::path(config.dataFolderPath);
+    data_folder_path = std::filesystem::path(config.dataFolderPath);
   } else {
     auto home_path = GetHomeDirectoryPath();
     data_folder_path = home_path / config_yaml_utils::kCortexFolderName;
