@@ -1,7 +1,11 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
+#include <winsock.h>
 #include <climits>  // for PATH_MAX
+#include <cstddef>
+#include <exception>
 #include <iostream>
+#include <ostream>
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/archive_utils.h"
@@ -22,107 +26,110 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <thread>
+
 #undef max
 #else
 #error "Unsupported platform!"
 #endif
 
 #ifdef _WIN32
-#pragma comment(lib, "Ws2_32.lib")
-#define SOCKET_PATH \
-  R"(\\.\pipe\cortex_socket)"  // Use Windows AF_UNIX equivalent path
 
-void WriteLogWindows(SOCKET client_socket) {
-  char buffer[1024];
-  int recv_size;
-  std::string message;
+#define SOCKET_PATH "cortex_socket"
+#define BUFFER_SIZE 1024
 
-  while (true) {
-    recv_size = recv(client_socket, buffer, sizeof(buffer), 0);
-    if (recv_size > 0) {
-      message = std::string(buffer, recv_size);
-      // std::cout << "Received message: " << message << std::endl;
+void handle_client(int client_fd) {
+  char buffer[BUFFER_SIZE];
 
-      if (message == "<|stop-server|>") {
-        std::cout << "Stopping server." << std::endl;
-        break;
-      }
-      LOG_RAW << message;
-      // Echo message back to client
-      // send(client_socket, message.c_str(), recv_size, 0);
-    } else if (recv_size == 0 || recv_size == SOCKET_ERROR) {
-      std::cout << "Client disconnected." << std::endl;
-      break;
-    }
+  // Receive message from client
+  size_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+  if (bytes_read > 0) {
+    LOG_RAW << std::string(buffer, bytes_read);
+    std::ofstream out("output.txt", std::ios_base::app);
+    out << "received : " << std::string(buffer, bytes_read);
+    out.close();
   }
-
-  closesocket(client_socket);
+  closesocket(client_fd);
 }
 
 int SocketProcessWindows() {
   // this process will write log to file
-  std::filesystem::create_directory(cortex_utils::logs_folder);
-  trantor::AsyncFileLogger asyncFileLogger;
-  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
-  asyncFileLogger.startLogging();
-  trantor::Logger::setOutputFunction(
-      [&](const char* msg, const uint64_t len) {
-        asyncFileLogger.output(msg, len);
-      },
-      [&]() { asyncFileLogger.flush(); });
-  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
+  std::cout << "Socket creating" << std::endl;
+  cortex_utils::DefineFileLogger();
 
   WSADATA wsaData;
-  SOCKET serverSocket = INVALID_SOCKET, client_socket = INVALID_SOCKET;
-  sockaddr_in server_addr{}, clientAddr{};
-  int clientAddrSize = sizeof(clientAddr);
+  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+    std::cerr << "WSAStartup failed.\n";
+    return 1;
+  }
 
-  WSAStartup(MAKEWORD(2, 2), &wsaData);
+  // Create Unix domain socket for Windows
+  SOCKET server_fd;
+  struct sockaddr_un server_addr {};
 
-  serverSocket = socket(AF_UNIX, SOCK_STREAM, 0);
-  if (serverSocket == INVALID_SOCKET) {
-    std::cerr << "Error creating socket." << std::endl;
+  if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+    perror("Socket creation failed");
     WSACleanup();
     return 1;
   }
 
-  server_addr.sin_family = AF_UNIX;
-  strncpy_s(reinterpret_cast<char*>(server_addr.sin_addr.S_un.S_un_b),
-            sizeof(server_addr.sin_addr.S_un.S_un_b), SOCKET_PATH,
-            strlen(SOCKET_PATH));
+  memset(&server_addr, 0, sizeof(server_addr));
+  server_addr.sun_family = AF_UNIX;
+  strncpy_s(server_addr.sun_path, SOCKET_PATH,
+            sizeof(server_addr.sun_path) - 1);
+  _unlink(SOCKET_PATH);  // Ensure the socket file does not already exist
 
-  if (bind(serverSocket, reinterpret_cast<sockaddr*>(&server_addr),
-           sizeof(server_addr)) == SOCKET_ERROR) {
-    std::cerr << "Bind failed." << std::endl;
-    closesocket(serverSocket);
+  if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) <
+      0) {
+    perror("Bind socket failed");
+    closesocket(server_fd);
     WSACleanup();
     return 1;
   }
 
-  if (listen(serverSocket, SOMAXCONN) == SOCKET_ERROR) {
-    std::cerr << "Listen failed." << std::endl;
-    closesocket(serverSocket);
+  if (listen(server_fd, 5) < 0) {
+    perror("Listen failed");
+    closesocket(server_fd);
     WSACleanup();
     return 1;
   }
 
-  std::cout << "Server is running and waiting for connections..." << std::endl;
-
+  std::cout << "Server waiting for connections on Unix domain socket..."
+            << std::endl;
+  // std::vector<std::thread> client_threads;
   while (true) {
-    client_socket =
-        accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddr),
-               &clientAddrSize);
-    if (client_socket == INVALID_SOCKET) {
-      std::cerr << "Error accepting client." << std::endl;
+    SOCKET client_fd;
+    if ((client_fd = accept(server_fd, nullptr, nullptr)) < 0) {
+      perror("Accept failed");
       continue;
     }
+    {
+      char buffer[BUFFER_SIZE];
 
-    std::cout << "Client connected." << std::endl;
-    std::thread client_thread(WriteLogWindows, client_socket);
-    client_thread.detach();  // Handle multiple clients concurrently
+      // Receive message from client
+      std::cout << "client fd" << client_fd << std::endl;
+      int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+      if (bytes_read > 0) {
+        LOG_RAW << std::string(buffer, bytes_read);
+        std::ofstream out("output.txt", std::ios_base::app);
+        out << "received : " << std::string(buffer, bytes_read);
+        out.close();
+      }
+      shutdown(client_fd, SD_BOTH);
+      closesocket(client_fd);
+    }
+    // std::cout << "Client connected." << std::endl;
+    // client_threads.emplace_back(std::thread(handle_client, client_fd));
+    // Create a new thread for each client connection
+    // std::thread client_thread(handle_client, client_fd);
+    // client_thread.detach();
   }
-
-  closesocket(serverSocket);
+  // for (std::thread& th : client_threads) {
+  //   if (th.joinable()) {
+  //     th.join();
+  //   }
+  // }
+  closesocket(server_fd);
   WSACleanup();
   return 0;
 }
@@ -131,34 +138,71 @@ int SocketProcessWindows() {
 void RunServer() {
 // Create logs/ folder and setup log to file
 #ifdef _WIN32
-  // if windows, we will create client socket to send to log process
+  // if windows, we will create client socket to send to log process, create thread to run log process
+  std::thread socket_thread(SocketProcessWindows);
+  std::cout << "Starting server ... \n";
+  Sleep(3000);
+
+  // Send message to server
+  // size_t bytes_sent = send(sock_fd, message, strlen(message), 0);
+  // if (bytes_sent < 0) {
+  //   perror("Send failed");
+  // } else {
+  //   std::cout << "Message sent: " << message << std::endl;
+  // }
+  bool socket_live = true;
+  if (socket_live) {
+    trantor::Logger::setOutputFunction(
+        [](const char* msg, const uint64_t len) {
+          // Send message to server
+          // send(client_socket, msg, len, 0);
+
+          bool socket_live = true;
+          WSADATA wsaData;
+          if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+            std::cerr << "WSAStartup failed.\n";
+            socket_live = false;
+          }
+
+          // Create Unix domain socket for Windows
+          SOCKET sock_fd;
+          struct sockaddr_un server_addr;
+          sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+          if (sock_fd == INVALID_SOCKET) {
+            perror("Socket creation failed");
+            WSACleanup();
+            socket_live = false;
+          }
+
+          memset(&server_addr, 0, sizeof(server_addr));
+          server_addr.sun_family = AF_UNIX;
+          strncpy_s(server_addr.sun_path, SOCKET_PATH,
+                    sizeof(server_addr.sun_path) - 1);
+
+          if (connect(sock_fd, (struct sockaddr*)&server_addr,
+                      sizeof(server_addr)) < 0) {
+            perror("Connect failed");
+            closesocket(sock_fd);
+            WSACleanup();
+
+            socket_live = false;
+          }
+          if (socket_live) {
+            std::cout << "len message " << len << std::endl;
+            int bytes_sent = send(sock_fd, msg, len, 0);
+          }
+
+          closesocket(sock_fd);
+          WSACleanup();
+        },
+        []() {});
+  } else {
+    cortex_utils::DefineFileLogger();
+  }
 
 #else
-  std::filesystem::create_directory(cortex_utils::logs_folder);
-  trantor::AsyncFileLogger asyncFileLogger;
-  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
-  asyncFileLogger.startLogging();
-  trantor::Logger::setOutputFunction(
-      [&](const char* msg, const uint64_t len) {
-        asyncFileLogger.output(msg, len);
-      },
-      [&]() { asyncFileLogger.flush(); });
-  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
+  cortex_utils::DefineFileLogger();
 #endif
-  // Number of cortex.cpp threads
-  // if (argc > 1) {
-  //   thread_num = std::atoi(argv[1]);
-  // }
-
-  // // Check for host argument
-  // if (argc > 2) {
-  //   host = argv[2];
-  // }
-
-  // // Check for port argument
-  // if (argc > 3) {
-  //   port = std::atoi(argv[3]);  // Convert string argument to int
-  // }
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
@@ -179,7 +223,12 @@ void RunServer() {
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
   drogon::app().run();
-  // return 0;
+// return 0;
+#ifdef _WIN32
+  // closesocket(sock_fd);
+  // WSACleanup();
+  // std::terminate();
+#endif
 }
 
 void ForkProcess() {
@@ -257,9 +306,76 @@ int main(int argc, char* argv[]) {
       RunServer();
       return 0;
     } else {
-      
+      // if --verbose flag log all to terminal
+      bool verbose = false;
+      for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--verbose") == 0) {
+          verbose = true;
+          break;
+        }
+      }
+      if (!verbose) {  // if no flag verbose, set up to write log to file
+#ifdef _WIN32
+        // std::cout << "Client connected to server." << std::endl;
+        bool socket_live = true;
+        if (socket_live) {
+          trantor::Logger::setOutputFunction(
+              [&](const char* msg, const uint64_t len) {
+                // Send message to server
+                // send(client_socket, msg, len, 0);
+                bool socket_live = true;
+                WSADATA wsaData;
+                if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+                  std::cerr << "WSAStartup failed.\n";
+                  socket_live = false;
+                }
+                // Create Unix domain socket for Windows
+                SOCKET sock_fd;
+                struct sockaddr_un server_addr;
+                sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+                if (sock_fd == INVALID_SOCKET) {
+                  perror("Socket creation failed");
+                  WSACleanup();
+                  socket_live = false;
+                }
+
+                memset(&server_addr, 0, sizeof(server_addr));
+                server_addr.sun_family = AF_UNIX;
+                strncpy_s(server_addr.sun_path, SOCKET_PATH,
+                          sizeof(server_addr.sun_path) - 1);
+
+                if (connect(sock_fd, (struct sockaddr*)&server_addr,
+                            sizeof(server_addr)) < 0) {
+                  perror("Connect failed");
+                  closesocket(sock_fd);
+                  WSACleanup();
+                  socket_live = false;
+                }
+                if (socket_live) {
+                  size_t bytes_sent = send(sock_fd, msg, len, 0);
+                }
+                shutdown(sock_fd, SD_BOTH);
+                closesocket(sock_fd);
+                WSACleanup();
+              },
+              [&]() {});
+        } else {
+          cortex_utils::DefineFileLogger();
+        }
+
+#else  // linux and mac, write directly to log file
+        cortex_utils::DefineFileLogger();
+#endif
+      }
+
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
+      // #ifdef _WIN32
+      //       if (!verbose) {
+      //         closesocket(client_socket);
+      //         WSACleanup();
+      //       }
+      // #endif
       return 0;
     }
   }
