@@ -15,6 +15,7 @@
 
 namespace file_manager_utils {
 constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
+constexpr std::string_view kDefaultConfigurationPath = "user_home";
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
 #if defined(__APPLE__) && defined(__MACH__)
@@ -73,6 +74,11 @@ inline std::filesystem::path GetHomeDirectoryPath() {
 }
 
 inline std::filesystem::path GetConfigurationPath() {
+  std::string config_file_path{CORTEX_CONFIG_FILE_PATH};
+
+  if (config_file_path != kDefaultConfigurationPath) {
+    return std::filesystem::path(config_file_path);
+  }
   auto home_path = GetHomeDirectoryPath();
   auto configuration_path = home_path / kCortexConfigurationFileName;
   return configuration_path;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CLI/CLI.hpp"
+#include "services/engine_service.h"
 
 class CommandLineParser {
  public:
@@ -14,4 +15,5 @@ class CommandLineParser {
   void EngineGet(CLI::App* parent);
 
   CLI::App app_;
+  EngineService engine_service_;
 };

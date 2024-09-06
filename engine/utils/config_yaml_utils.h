@@ -54,7 +54,7 @@ inline void CreateConfigFileIfNotExist() {
       .port = kDefaultPort,
   };
   std::cout << "config: " << config.dataFolderPath << "\n";
-  DumpYamlConfig(config, config_path);
+  DumpYamlConfig(config, config_path.string());
 }
 
 inline CortexConfig FromYaml(const std::string& path,

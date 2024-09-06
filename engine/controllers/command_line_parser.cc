@@ -17,7 +17,8 @@
 #include "utils/cortex_utils.h"
 #include "utils/logging_utils.h"
 
-CommandLineParser::CommandLineParser() : app_("Cortex.cpp CLI") {}
+CommandLineParser::CommandLineParser()
+    : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   std::string model_id;
@@ -127,9 +128,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
-    EngineManagement(engines_cmd, "cortex.llamacpp", version);
-    EngineManagement(engines_cmd, "cortex.onnx", version);
-    EngineManagement(engines_cmd, "cortex.tensorrt-llm", version);
+    for (auto& engine : engine_service_.kSupportEngines) {
+      std::string engine_name{engine};
+      EngineManagement(engines_cmd, engine_name, version);
+    }
 
     EngineGet(engines_cmd);
   }
@@ -186,9 +188,8 @@ void CommandLineParser::EngineManagement(CLI::App* parent,
 
 void CommandLineParser::EngineGet(CLI::App* parent) {
   auto get_cmd = parent->add_subcommand("get", "Get an engine info");
-  auto engine_service = EngineService();
 
-  for (auto& engine : engine_service.kSupportEngines) {
+  for (auto& engine : engine_service_.kSupportEngines) {
     std::string engine_name{engine};
     std::string desc = "Get " + engine_name + " status";
 
