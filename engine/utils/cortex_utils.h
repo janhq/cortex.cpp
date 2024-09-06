@@ -1,21 +1,21 @@
 #pragma once
 #include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
+#include <sys/stat.h>
 #include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <ostream>
-#include <regex>
-#include <vector>
 #include <random>
+#include <regex>
 #include <string>
-#include <sys/stat.h>
+#include <vector>
 
 // Include platform-specific headers
 #ifdef _WIN32
+#include <direct.h>
 #include <windows.h>
 #include <winsock2.h>
-#include <direct.h>
 #define mkdir _mkdir
 #else
 #include <dirent.h>
@@ -23,7 +23,6 @@
 #endif
 
 #if __APPLE__
-#include <limits.h>
 #include <mach-o/dyld.h>
 #endif
 
@@ -36,7 +35,7 @@ constexpr static auto kTensorrtLlmPath = "/engines/cortex.tensorrt-llm";
 inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex";
-inline size_t log_file_size_limit = 20000000; // ~20 mb
+inline size_t log_file_size_limit = 20000000;  // ~20 mb
 
 inline std::string extractBase64(const std::string& input) {
   std::regex pattern("base64,(.*)");
@@ -273,7 +272,8 @@ inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
   return resp;
 }
 
-inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(const Json::Value& data) {
+inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
+    const Json::Value& data) {
   auto resp = drogon::HttpResponse::newHttpJsonResponse(data);
 #ifdef ALLOW_ALL_CORS
   LOG_INFO << "Respond for all cors!";
