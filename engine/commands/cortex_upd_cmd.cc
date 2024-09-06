@@ -6,11 +6,9 @@
 #include "nlohmann/json.hpp"
 #include "services/download_service.h"
 #include "utils/archive_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
-#if defined(_WIN32) || defined(__linux__)
-#include "utils/file_manager_utils.h"
-#endif
 
 namespace commands {
 

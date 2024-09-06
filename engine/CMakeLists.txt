@@ -59,8 +59,8 @@ if(DEBUG)
   add_compile_definitions(ALLOW_ALL_CORS)
 endif()
 
-if(CORTEX_CPP_VERSION)
-  add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
+if(NOT DEFINED CORTEX_CPP_VERSION)
+  set(CORTEX_CPP_VERSION "default_version")
 endif()
 
 if(APPLE)
