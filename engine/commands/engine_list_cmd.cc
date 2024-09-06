@@ -1,65 +1,24 @@
-// clang-format off
-#include "utils/cortex_utils.h"
-// clang-format on
 #include "engine_list_cmd.h"
-#include <filesystem>
 #include <tabulate/table.hpp>
-#include <utility>
-#include "trantor/utils/Logger.h"
+#include "services/engine_service.h"
 
 namespace commands {
 
 bool EngineListCmd::Exec() {
+  auto engine_service = EngineService();
+  auto status_list = engine_service.GetEngineInfoList();
+
   tabulate::Table table;
+  table.format().font_color(tabulate::Color::green);
   table.add_row(
       {"(Index)", "name", "description", "version", "product name", "status"});
-  table.format().font_color(tabulate::Color::green);
-#ifdef _WIN32
-  if (std::filesystem::exists(std::filesystem::current_path().string() +
-                              cortex_utils::kOnnxLibPath)) {
-    table.add_row({"1", "cortex.onnx",
-                   "This extension enables chat completion API calls using the "
-                   "Onnx engine",
-                   "0.0.1", "Onnx Inference Engine", "ready"});
-  } else {
-    table.add_row({"1", "cortex.onnx",
-                   "This extension enables chat completion API calls using the "
-                   "Onnx engine",
-                   "0.0.1", "Onnx Inference Engine", "not_initialized"});
+  for (int i = 0; i < status_list.size(); i++) {
+    auto status = status_list[i];
+    std::string index = std::to_string(i + 1);
+    table.add_row({index, status.name, status.description, status.version,
+                   status.product_name, status.status});
   }
 
-#else
-  table.add_row(
-      {"1", "cortex.onnx",
-       "This extension enables chat completion API calls using the Onnx engine",
-       "0.0.1", "Onnx Inference Engine", "not_supported"});
-#endif
-  // lllamacpp
-  if (std::filesystem::exists(std::filesystem::current_path().string() +
-                              cortex_utils::kLlamaLibPath)) {
-    table.add_row({"2", "cortex.llamacpp",
-                   "This extension enables chat completion API calls using the "
-                   "LlamaCPP engine",
-                   "0.0.1", "LlamaCPP Inference Engine", "ready"});
-  } else {
-    table.add_row({"2", "cortex.llamacpp",
-                   "This extension enables chat completion API calls using the "
-                   "LlamaCPP engine",
-                   "0.0.1", "LlamaCPP Inference Engine", "not_initialized"});
-  }
-  // tensorrt llm
-  if (std::filesystem::exists(std::filesystem::current_path().string() +
-                              cortex_utils::kTensorrtLlmPath)) {
-    table.add_row({"3", "cortex.tensorrt-llm",
-                   "This extension enables chat completion API calls using the "
-                   "TensorrtLLM engine",
-                   "0.0.1", "TensorrtLLM Inference Engine", "ready"});
-  } else {
-    table.add_row({"3", "cortex.tensorrt-llm",
-                   "This extension enables chat completion API calls using the "
-                   "TensorrtLLM engine",
-                   "0.0.1", "TensorrtLLM Inference Engine", "not_initialized"});
-  }
   for (int i = 0; i < 6; i++) {
     table[0][i]
         .format()
@@ -77,5 +36,4 @@ bool EngineListCmd::Exec() {
   std::cout << table << std::endl;
   return true;
 }
-
 };  // namespace commands
