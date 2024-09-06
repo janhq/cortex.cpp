@@ -8,7 +8,6 @@
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/archive_utils.h"
-#include "utils/config_yaml_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
 #include "utils/file_manager_utils.h"
@@ -145,7 +144,7 @@ int SocketProcessWindows() {
 #endif
 
 void RunServer() {
-  auto config = config_yaml_utils::GetCortexConfig();
+  auto config = file_manager_utils::GetCortexConfig();
   LOG_INFO << "Host: " << config.host << " Port: " << config.port << "\n";
 #ifdef _WIN32
   // if windows, we will create client socket to send to log process, create thread to run log process
@@ -241,7 +240,7 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
-  { config_yaml_utils::CreateConfigFileIfNotExist(); }
+  { file_manager_utils::CreateConfigFileIfNotExist(); }
 
   // Check if this process is for python execution
   if (argc > 1) {
