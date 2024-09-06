@@ -37,8 +37,7 @@ void DownloadService::StartDownloadItem(
 
   auto containerFolderPath{file_manager_utils::GetContainerFolderPath(
       file_manager_utils::downloadTypeToString(item.type))};
-  CTL_INF("Container folder path: " << containerFolderPath.string()
-                                        << "\n");
+  CTL_INF("Container folder path: " << containerFolderPath.string() << "\n");
 
   auto itemFolderPath{containerFolderPath / std::filesystem::path(downloadId)};
   CTL_INF("itemFolderPath: " << itemFolderPath.string());
@@ -82,8 +81,8 @@ void DownloadService::StartDownloadItem(
         }
         if (current == total) {
           outputFile.flush();
-          CLI_LOG("Done download: "
-                      << static_cast<double>(total) / 1024 / 1024 << " MiB");
+          CLI_LOG("Done download: " << static_cast<double>(total) / 1024 / 1024
+                                    << " MiB");
           if (callback.has_value()) {
             auto need_parse_gguf =
                 item.path.find("cortexso") == std::string::npos;
