@@ -22,15 +22,15 @@ Cortex supports the following engines:
 ## Installation
 ### MacOs
 ```bash
-brew install cortex-engine
+brew install cortex.cpp
 ```
 ### Windows
 ```bash
-winget install cortex-engine
+winget install cortex.cpp
 ```
 ### Linux
 ```bash
-sudo apt install cortex-engine
+sudo apt install cortex.cpp
 ```
 ### Docker
 **Coming Soon!**
