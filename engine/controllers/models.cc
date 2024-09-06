@@ -50,8 +50,7 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-  std::filesystem::path models_path =
-      file_manager_utils::GetCortexDataPath() / cortex_utils::models_folder;
+  auto models_path = file_manager_utils::GetModelsContainerPath();
   if (std::filesystem::exists(models_path) &&
       std::filesystem::is_directory(models_path)) {
     // Iterate through directory

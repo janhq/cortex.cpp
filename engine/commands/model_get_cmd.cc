@@ -15,8 +15,7 @@ ModelGetCmd::ModelGetCmd(std::string model_handle)
     : model_handle_(std::move(model_handle)) {}
 
 void ModelGetCmd::Exec() {
-  std::filesystem::path models_path =
-      file_manager_utils::GetCortexDataPath() / cortex_utils::models_folder;
+  auto models_path = file_manager_utils::GetModelsContainerPath();
   if (std::filesystem::exists(models_path) &&
       std::filesystem::is_directory(models_path)) {
     CmdInfo ci(model_handle_);

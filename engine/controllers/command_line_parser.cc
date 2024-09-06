@@ -40,7 +40,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(
-          file_manager_utils::GetCortexDataPath().string() + "/models/" +
+          file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
       commands::ModelStartCmd msc("127.0.0.1", 3928,
                                   yaml_handler.GetModelConfig());
@@ -56,7 +56,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(
-          file_manager_utils::GetCortexDataPath().string() + "/models/" +
+          file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
       commands::ModelStopCmd smc("127.0.0.1", 3928,
                                  yaml_handler.GetModelConfig());
@@ -111,7 +111,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
       config::YamlHandler yaml_handler;
       yaml_handler.ModelConfigFromFile(
-          file_manager_utils::GetCortexDataPath().string() + "/models/" +
+          file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
       commands::ChatCmd cc("127.0.0.1", 3928, yaml_handler.GetModelConfig());
       cc.Exec(msg);

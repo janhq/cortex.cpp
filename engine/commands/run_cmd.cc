@@ -44,8 +44,8 @@ void RunCmd::Exec() {
   // Start model
   config::YamlHandler yaml_handler;
   yaml_handler.ModelConfigFromFile(
-      file_manager_utils::GetCortexDataPath().string() +
-      cortex_utils::models_folder + model_file + ".yaml");
+      file_manager_utils::GetModelsContainerPath().string() + "/" + model_file +
+      ".yaml");
   {
     ModelStartCmd msc(host_, port_, yaml_handler.GetModelConfig());
     if (!msc.Exec()) {
@@ -61,14 +61,11 @@ void RunCmd::Exec() {
 }
 
 bool RunCmd::IsModelExisted(const std::string& model_id) {
-  if (std::filesystem::exists(file_manager_utils::GetCortexDataPath() /
-                              cortex_utils::models_folder) &&
-      std::filesystem::is_directory(file_manager_utils::GetCortexDataPath() /
-                                    cortex_utils::models_folder)) {
+  auto models_path = file_manager_utils::GetModelsContainerPath();
+  if (std::filesystem::exists(models_path) &&
+      std::filesystem::is_directory(models_path)) {
     // Iterate through directory
-    for (const auto& entry : std::filesystem::directory_iterator(
-             file_manager_utils::GetCortexDataPath() /
-             cortex_utils::models_folder)) {
+    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
       if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
         try {
           config::YamlHandler handler;
@@ -87,10 +84,9 @@ bool RunCmd::IsModelExisted(const std::string& model_id) {
 }
 
 bool RunCmd::IsEngineExisted(const std::string& e) {
-  if (std::filesystem::exists(file_manager_utils::GetCortexDataPath().string() +
-                              "/" + "engines") &&
-      std::filesystem::exists(file_manager_utils::GetCortexDataPath().string() +
-                              "/" + "engines/" + e)) {
+  auto engines_path = file_manager_utils::GetEnginesContainerPath();
+  if (std::filesystem::exists(engines_path) &&
+      std::filesystem::exists(engines_path.string() + "/" + e)) {
     return true;
   }
   return false;
