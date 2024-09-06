@@ -15,7 +15,7 @@
 #endif
 
 namespace file_manager_utils {
-constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
+constexpr std::string_view kCortexConfigurationFileName = "cortexrc";
 constexpr std::string_view kDefaultConfigurationPath = "user_home";
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
@@ -112,15 +112,15 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
 inline std::filesystem::path GetCortexDataPath() {
   // TODO: We will need to support user to move the data folder to other place.
   // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
-  // currently we will store cortex data at ~/.cortexcpp
+  // currently we will store cortex data at ~/cortexcpp
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {
     data_folder_path =
-        std::filesystem::path(config.dataFolderPath) / ".cortexcpp";
+        std::filesystem::path(config.dataFolderPath);
   } else {
     auto home_path = GetHomeDirectoryPath();
-    data_folder_path = home_path / ".cortexcpp";
+    data_folder_path = home_path / config_yaml_utils::kCortexFolderName;
   }
 
   if (!std::filesystem::exists(data_folder_path)) {

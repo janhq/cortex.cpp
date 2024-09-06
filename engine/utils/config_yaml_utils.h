@@ -13,7 +13,7 @@ struct CortexConfig {
   std::string port;
 };
 
-const std::string kCortexFolderName = ".cortexcpp";
+const std::string kCortexFolderName = "cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
 const std::string kDefaultPort{"3928"};
 
