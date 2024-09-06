@@ -136,6 +136,8 @@ inline std::filesystem::path GetContainerFolderPath(
     container_folder_path = GetEnginesContainerPath();
   } else if (type == "CudaToolkit") {
     container_folder_path = current_path;
+  } else if (type == "Cortex") {
+    container_folder_path = current_path / "cortex";
   } else {
     container_folder_path = current_path / "misc";
   }
@@ -158,6 +160,8 @@ inline std::string downloadTypeToString(DownloadType type) {
       return "Misc";
     case DownloadType::CudaToolkit:
       return "CudaToolkit";
+    case DownloadType::Cortex:
+      return "Cortex";
     default:
       return "UNKNOWN";
   }
