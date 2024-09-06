@@ -8,7 +8,7 @@
   - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Cortex Platform is under development**
+> ⚠️ **Cortex Platform is under development. This documentation outlines the intended behavior of Cortex Platform, which may not yet be fully implemented in the codebase.**
 
 ## About
 Cortex Platform is a fully database-driven application built on top of [`cortex.cpp`](https://github.com/janhq/cortex.cpp), designed as an OpenAI API equivalent. It supports multiple engines, multi-user functionality, and operates entirely through stateful API endpoints.
