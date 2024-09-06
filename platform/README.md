@@ -1,7 +1,7 @@
 # Cortex
-<!-- <p align="center">
+<p align="center">
   <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex/dev/assets/cortex-banner.png">
-</p> -->
+</p>
 
 <p align="center">
   <a href="https://cortex.so/docs/cortex-platform/">Documentation</a> - <a href="https://cortex.so/api-reference">API Reference</a> 
