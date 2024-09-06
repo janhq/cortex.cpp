@@ -38,6 +38,42 @@
 #define BUFFER_SIZE 1024
 std::atomic<bool> server_running(true);
 
+void CLISendLogMessage(const char* msg, const uint64_t len) {
+  bool socket_live = true;
+  WSADATA wsaData;
+  if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+    std::cerr << "WSAStartup failed.\n";
+    socket_live = false;
+  }
+  // Create Unix domain socket for Windows
+  SOCKET sock_fd;
+  struct sockaddr_un server_addr;
+  sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (sock_fd == INVALID_SOCKET) {
+    perror("Socket creation failed");
+    WSACleanup();
+    socket_live = false;
+  }
+
+  memset(&server_addr, 0, sizeof(server_addr));
+  server_addr.sun_family = AF_UNIX;
+  strncpy_s(server_addr.sun_path, SOCKET_PATH,
+            sizeof(server_addr.sun_path) - 1);
+
+  if (connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) <
+      0) {
+    perror("Connect failed");
+    closesocket(sock_fd);
+    WSACleanup();
+    socket_live = false;
+  }
+  if (socket_live) {
+    size_t bytes_sent = send(sock_fd, msg, len, 0);
+  }
+  shutdown(sock_fd, SD_BOTH);
+  closesocket(sock_fd);
+  WSACleanup();
+}
 int SocketProcessWindows() {
   // this process will write log to file
   std::cout << "Socket creating" << std::endl;
@@ -218,11 +254,7 @@ int main(int argc, char* argv[]) {
       auto e = func();
       e->ExecutePythonFile(argv[0], argv[2], py_home_path);
       return 0;
-    }
-  }
-
-  if (argc > 1) {
-    if (strcmp(argv[1], "--start-server") == 0) {
+    } else if (strcmp(argv[1], "--start-server") == 0) {
       RunServer();
       return 0;
     } else {
@@ -236,62 +268,12 @@ int main(int argc, char* argv[]) {
       }
       if (!verbose) {  // if no flag verbose, set up to write log to file
 #ifdef _WIN32
-        // std::cout << "Client connected to server." << std::endl;
-        bool socket_live = true;
-        if (socket_live) {
-          trantor::Logger::setOutputFunction(
-              [](const char* msg, const uint64_t len) {
-                // Send message to server
-                // send(client_socket, msg, len, 0);
-                bool socket_live = true;
-                WSADATA wsaData;
-                if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-                  std::cerr << "WSAStartup failed.\n";
-                  socket_live = false;
-                }
-                // Create Unix domain socket for Windows
-                SOCKET sock_fd;
-                struct sockaddr_un server_addr;
-                sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-                if (sock_fd == INVALID_SOCKET) {
-                  perror("Socket creation failed");
-                  WSACleanup();
-                  socket_live = false;
-                }
-
-                memset(&server_addr, 0, sizeof(server_addr));
-                server_addr.sun_family = AF_UNIX;
-                strncpy_s(server_addr.sun_path, SOCKET_PATH,
-                          sizeof(server_addr.sun_path) - 1);
-
-                if (connect(sock_fd, (struct sockaddr*)&server_addr,
-                            sizeof(server_addr)) < 0) {
-                  perror("Connect failed");
-                  closesocket(sock_fd);
-                  WSACleanup();
-                  socket_live = false;
-                }
-                if (socket_live) {
-                  size_t bytes_sent = send(sock_fd, msg, len, 0);
-                }
-                shutdown(sock_fd, SD_BOTH);
-                closesocket(sock_fd);
-                WSACleanup();
-              },
-              []() {});
-        } else {
-          std::filesystem::create_directory(cortex_utils::logs_folder);
-          // auto asyncFileLogger = std::make_shared<trantor::AsyncFileLogger>();
-          trantor::AsyncFileLogger asyncFileLogger;
-          asyncFileLogger.setFileName(cortex_utils::logs_base_name);
-          asyncFileLogger.startLogging();
-          trantor::Logger::setOutputFunction(
-              [&](const char* msg, const uint64_t len) {
-                asyncFileLogger.output(msg, len);
-              },
-              [&]() { asyncFileLogger.flush(); });
-          asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
-        }
+        trantor::Logger::setOutputFunction(
+            [](const char* msg, const uint64_t len) {
+              // Send message to server
+              CLISendLogMessage(msg, len);
+            },
+            []() {});
 
 #else  // linux and mac, write directly to log file
         std::filesystem::create_directory(cortex_utils::logs_folder);
