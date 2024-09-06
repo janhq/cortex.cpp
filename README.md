@@ -36,8 +36,8 @@ sudo apt install cortex-engine
 **Coming Soon!**
 
 ### Libraries
-- [cortex.js](https://github.com/janhq/cortex.js)
-- [cortex.py](https://github.com/janhq/cortex-python)
+- [cortex.cpp.js](https://github.com/janhq/cortex.js)
+- [cortex.cpp.py](https://github.com/janhq/cortex-python)
 
 ### Build from Source
 

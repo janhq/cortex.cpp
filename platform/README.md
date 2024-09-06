@@ -20,17 +20,29 @@ Cortex Platform supports the following engines:
 - [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm): `cortex.tensorrt-llm` is a C++ inference library designed for NVIDIA GPUs. It incorporates NVIDIA’s TensorRT-LLM for GPU-accelerated inference.
 
 ## Installation
+
+> **Note**:
+> To install the Cortex Platform, clone our [repository](). It includes everything you need for installation using Docker and Helm.
+
 ### Docker
-**Coming Soon!**
+```bash
+docker compose up
+```
 
 ### Helm
-**Coming Soon!**
+```bash
+helm install cortex-platform
+```
 
 ### Yarn
-**Coming Soon!**
+```bash
+yarn install cortex-platform
+```
 
 ### Libraries
-**Coming Soon!**
+- [cortex.js]()
+- [cortex.py]()
+
 
 ### Build from Source
 **Coming Soon!**
