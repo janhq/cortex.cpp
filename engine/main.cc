@@ -34,13 +34,13 @@
 #endif
 
 #ifdef _WIN32
-
-#define BUFFER_SIZE 1024
+constexpr char SOCKET_PATH[] = "./cortex_socket";
+constexpr int BUFFER_SIZE = 1024;
 std::atomic<bool> server_running(true);
 
 void CLISendLogMessage(const char* msg, const uint64_t len) {
-  std::string socket_path =
-      file_manager_utils::GetCortexDataPath().string() + "/cortex_socket";
+  std::string socket_path = file_manager_utils::GetCortexDataPath().string() +
+                            std::string(SOCKET_PATH);
   bool socket_live = true;
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -79,8 +79,8 @@ void CLISendLogMessage(const char* msg, const uint64_t len) {
 int SocketProcessWindows() {
   // this process will write log to file
   std::cout << "Socket creating" << std::endl;
-  std::string socket_path =
-      file_manager_utils::GetCortexDataPath().string() + "/cortex_socket";
+  std::string socket_path = file_manager_utils::GetCortexDataPath().string() +
+                            std::string(SOCKET_PATH);
 
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
