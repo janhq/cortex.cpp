@@ -42,20 +42,6 @@ inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex";
 inline size_t log_file_size_limit = 20000000;  // ~20 mb
 
-inline void DefineFileLogger() {
-  std::filesystem::create_directory(cortex_utils::logs_folder);
-  auto asyncFileLogger = std::make_shared<trantor::AsyncFileLogger>();
-  // trantor::AsyncFileLogger asyncFileLogger;
-  asyncFileLogger->setFileName(cortex_utils::logs_base_name);
-  asyncFileLogger->startLogging();
-  trantor::Logger::setOutputFunction(
-      [&](const char* msg, const uint64_t len) {
-        asyncFileLogger->output(msg, len);
-      },
-      [&]() { asyncFileLogger->flush(); });
-  asyncFileLogger->setFileSizeLimit(cortex_utils::log_file_size_limit);
-}
-
 inline std::string extractBase64(const std::string& input) {
   std::regex pattern("base64,(.*)");
   std::smatch match;

@@ -1,6 +1,5 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
-#include <winsock.h>
 #include <climits>  // for PATH_MAX
 #include <cstddef>
 #include <exception>
@@ -37,25 +36,11 @@
 
 #define SOCKET_PATH "cortex_socket"
 #define BUFFER_SIZE 1024
-
-void handle_client(int client_fd) {
-  char buffer[BUFFER_SIZE];
-
-  // Receive message from client
-  size_t bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-  if (bytes_read > 0) {
-    LOG_RAW << std::string(buffer, bytes_read);
-    std::ofstream out("output.txt", std::ios_base::app);
-    out << "received : " << std::string(buffer, bytes_read);
-    out.close();
-  }
-  closesocket(client_fd);
-}
+std::atomic<bool> server_running(true);
 
 int SocketProcessWindows() {
   // this process will write log to file
   std::cout << "Socket creating" << std::endl;
-  cortex_utils::DefineFileLogger();
 
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -96,8 +81,7 @@ int SocketProcessWindows() {
 
   std::cout << "Server waiting for connections on Unix domain socket..."
             << std::endl;
-  // std::vector<std::thread> client_threads;
-  while (true) {
+  while (server_running) {
     SOCKET client_fd;
     if ((client_fd = accept(server_fd, nullptr, nullptr)) < 0) {
       perror("Accept failed");
@@ -107,28 +91,15 @@ int SocketProcessWindows() {
       char buffer[BUFFER_SIZE];
 
       // Receive message from client
-      std::cout << "client fd" << client_fd << std::endl;
       int bytes_read = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
       if (bytes_read > 0) {
         LOG_RAW << std::string(buffer, bytes_read);
-        std::ofstream out("output.txt", std::ios_base::app);
-        out << "received : " << std::string(buffer, bytes_read);
-        out.close();
       }
       shutdown(client_fd, SD_BOTH);
       closesocket(client_fd);
     }
-    // std::cout << "Client connected." << std::endl;
-    // client_threads.emplace_back(std::thread(handle_client, client_fd));
-    // Create a new thread for each client connection
-    // std::thread client_thread(handle_client, client_fd);
-    // client_thread.detach();
   }
-  // for (std::thread& th : client_threads) {
-  //   if (th.joinable()) {
-  //     th.join();
-  //   }
-  // }
+
   closesocket(server_fd);
   WSACleanup();
   return 0;
@@ -140,69 +111,20 @@ void RunServer() {
 #ifdef _WIN32
   // if windows, we will create client socket to send to log process, create thread to run log process
   std::thread socket_thread(SocketProcessWindows);
+  socket_thread.detach();
   std::cout << "Starting server ... \n";
-  Sleep(3000);
-
-  // Send message to server
-  // size_t bytes_sent = send(sock_fd, message, strlen(message), 0);
-  // if (bytes_sent < 0) {
-  //   perror("Send failed");
-  // } else {
-  //   std::cout << "Message sent: " << message << std::endl;
-  // }
-  bool socket_live = true;
-  if (socket_live) {
-    trantor::Logger::setOutputFunction(
-        [](const char* msg, const uint64_t len) {
-          // Send message to server
-          // send(client_socket, msg, len, 0);
-
-          bool socket_live = true;
-          WSADATA wsaData;
-          if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
-            std::cerr << "WSAStartup failed.\n";
-            socket_live = false;
-          }
-
-          // Create Unix domain socket for Windows
-          SOCKET sock_fd;
-          struct sockaddr_un server_addr;
-          sock_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-          if (sock_fd == INVALID_SOCKET) {
-            perror("Socket creation failed");
-            WSACleanup();
-            socket_live = false;
-          }
-
-          memset(&server_addr, 0, sizeof(server_addr));
-          server_addr.sun_family = AF_UNIX;
-          strncpy_s(server_addr.sun_path, SOCKET_PATH,
-                    sizeof(server_addr.sun_path) - 1);
-
-          if (connect(sock_fd, (struct sockaddr*)&server_addr,
-                      sizeof(server_addr)) < 0) {
-            perror("Connect failed");
-            closesocket(sock_fd);
-            WSACleanup();
-
-            socket_live = false;
-          }
-          if (socket_live) {
-            std::cout << "len message " << len << std::endl;
-            int bytes_sent = send(sock_fd, msg, len, 0);
-          }
-
-          closesocket(sock_fd);
-          WSACleanup();
-        },
-        []() {});
-  } else {
-    cortex_utils::DefineFileLogger();
-  }
-
-#else
-  cortex_utils::DefineFileLogger();
 #endif
+  std::filesystem::create_directory(cortex_utils::logs_folder);
+  // auto asyncFileLogger = std::make_shared<trantor::AsyncFileLogger>();
+  trantor::AsyncFileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+  asyncFileLogger.startLogging();
+  trantor::Logger::setOutputFunction(
+      [&](const char* msg, const uint64_t len) {
+        asyncFileLogger.output(msg, len);
+      },
+      [&]() { asyncFileLogger.flush(); });
+  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
   int thread_num = 1;
   std::string host = "127.0.0.1";
   int port = 3928;
@@ -223,11 +145,9 @@ void RunServer() {
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
   drogon::app().run();
-// return 0;
 #ifdef _WIN32
-  // closesocket(sock_fd);
-  // WSACleanup();
-  // std::terminate();
+  server_running = false;
+  std::cout << "socket closed" << std::endl;
 #endif
 }
 
@@ -320,7 +240,7 @@ int main(int argc, char* argv[]) {
         bool socket_live = true;
         if (socket_live) {
           trantor::Logger::setOutputFunction(
-              [&](const char* msg, const uint64_t len) {
+              [](const char* msg, const uint64_t len) {
                 // Send message to server
                 // send(client_socket, msg, len, 0);
                 bool socket_live = true;
@@ -358,24 +278,37 @@ int main(int argc, char* argv[]) {
                 closesocket(sock_fd);
                 WSACleanup();
               },
-              [&]() {});
+              []() {});
         } else {
-          cortex_utils::DefineFileLogger();
+          std::filesystem::create_directory(cortex_utils::logs_folder);
+          // auto asyncFileLogger = std::make_shared<trantor::AsyncFileLogger>();
+          trantor::AsyncFileLogger asyncFileLogger;
+          asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+          asyncFileLogger.startLogging();
+          trantor::Logger::setOutputFunction(
+              [&](const char* msg, const uint64_t len) {
+                asyncFileLogger.output(msg, len);
+              },
+              [&]() { asyncFileLogger.flush(); });
+          asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
         }
 
 #else  // linux and mac, write directly to log file
-        cortex_utils::DefineFileLogger();
+        std::filesystem::create_directory(cortex_utils::logs_folder);
+        // auto asyncFileLogger = std::make_shared<trantor::AsyncFileLogger>();
+        trantor::AsyncFileLogger asyncFileLogger;
+        asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+        asyncFileLogger.startLogging();
+        trantor::Logger::setOutputFunction(
+            [&](const char* msg, const uint64_t len) {
+              asyncFileLogger.output(msg, len);
+            },
+            [&]() { asyncFileLogger.flush(); });
+        asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
 #endif
       }
-
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
-      // #ifdef _WIN32
-      //       if (!verbose) {
-      //         closesocket(client_socket);
-      //         WSACleanup();
-      //       }
-      // #endif
       return 0;
     }
   }
