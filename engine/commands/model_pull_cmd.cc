@@ -1,10 +1,9 @@
 #include "model_pull_cmd.h"
 #include <utility>
 #include "services/download_service.h"
-#include "trantor/utils/Logger.h"
 #include "utils/cortexso_parser.h"
-#include "utils/model_callback_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/model_callback_utils.h"
 
 namespace commands {
 ModelPullCmd::ModelPullCmd(std::string model_handle, std::string branch)

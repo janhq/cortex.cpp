@@ -2,6 +2,7 @@
 
 #include <trantor/utils/Logger.h>
 #include <regex>
+#include <sstream>
 #include <vector>
 #include "utils/command_executor.h"
 #include "utils/logging_utils.h"
@@ -292,7 +293,9 @@ inline std::vector<GpuInfo> GetGpuInfoListVulkan() {
       gpuInfoList.push_back(gpuInfo);
       ++iter;
     }
-  } catch (const std::exception& e) {}
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Error: " << e.what();
+  }
 
   return gpuInfoList;
 }
