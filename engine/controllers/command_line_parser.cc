@@ -17,6 +17,7 @@
 #include "httplib.h"
 #include "services/engine_service.h"
 #include "utils/cortex_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 CommandLineParser::CommandLineParser()
@@ -38,8 +39,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
       config::YamlHandler yaml_handler;
-      yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
-                                       "/models/" + model_file + ".yaml");
+      yaml_handler.ModelConfigFromFile(
+          file_manager_utils::GetModelsContainerPath().string() + "/" +
+          model_file + ".yaml");
       commands::ModelStartCmd msc("127.0.0.1", 3928,
                                   yaml_handler.GetModelConfig());
       msc.Exec();
@@ -53,8 +55,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
       config::YamlHandler yaml_handler;
-      yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
-                                       "/models/" + model_file + ".yaml");
+      yaml_handler.ModelConfigFromFile(
+          file_manager_utils::GetModelsContainerPath().string() + "/" +
+          model_file + ".yaml");
       commands::ModelStopCmd smc("127.0.0.1", 3928,
                                  yaml_handler.GetModelConfig());
       smc.Exec();
@@ -107,8 +110,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
       config::YamlHandler yaml_handler;
-      yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() +
-                                       "/models/" + model_file + ".yaml");
+      yaml_handler.ModelConfigFromFile(
+          file_manager_utils::GetModelsContainerPath().string() + "/" +
+          model_file + ".yaml");
       commands::ChatCmd cc("127.0.0.1", 3928, yaml_handler.GetModelConfig());
       cc.Exec(msg);
     });
