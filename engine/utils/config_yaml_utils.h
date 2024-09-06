@@ -1,8 +1,8 @@
+#pragma once
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
-#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "yaml-cpp/yaml.h"
 
@@ -13,7 +13,7 @@ struct CortexConfig {
   std::string port;
 };
 
-const std::string kCortexFolderName = "cortexcpp";
+const std::string kCortexFolderName = ".cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
 const std::string kDefaultPort{"3928"};
 
@@ -39,24 +39,6 @@ inline void DumpYamlConfig(const CortexConfig& config,
   }
 }
 
-inline void CreateConfigFileIfNotExist() {
-  auto config_path = file_manager_utils::GetConfigurationPath();
-  if (std::filesystem::exists(config_path)) {
-    // already exists
-    return;
-  }
-  CLI_LOG("Config file not found. Creating one at " + config_path.string());
-  auto defaultDataFolderPath =
-      file_manager_utils::GetHomeDirectoryPath() / kCortexFolderName;
-  auto config = CortexConfig{
-      .dataFolderPath = defaultDataFolderPath.string(),
-      .host = kDefaultHost,
-      .port = kDefaultPort,
-  };
-  std::cout << "config: " << config.dataFolderPath << "\n";
-  DumpYamlConfig(config, config_path.string());
-}
-
 inline CortexConfig FromYaml(const std::string& path,
                              const std::string& variant) {
   std::filesystem::path config_file_path{path};
@@ -78,9 +60,5 @@ inline CortexConfig FromYaml(const std::string& path,
   }
 }
 
-inline CortexConfig GetCortexConfig() {
-  auto config_path = file_manager_utils::GetConfigurationPath();
-  std::string variant = "";  // TODO: empty for now
-  return FromYaml(config_path.string(), variant);
-}
+
 }  // namespace config_yaml_utils

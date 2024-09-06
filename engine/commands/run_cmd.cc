@@ -7,6 +7,7 @@
 #include "model_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/file_manager_utils.h"
 
 namespace commands {
 
@@ -42,8 +43,9 @@ void RunCmd::Exec() {
 
   // Start model
   config::YamlHandler yaml_handler;
-  yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() + "/models/" +
-                                   model_file + ".yaml");
+  yaml_handler.ModelConfigFromFile(
+      file_manager_utils::GetCortexDataPath().string() +
+      cortex_utils::models_folder + model_file + ".yaml");
   {
     ModelStartCmd msc(host_, port_, yaml_handler.GetModelConfig());
     if (!msc.Exec()) {
@@ -59,13 +61,13 @@ void RunCmd::Exec() {
 }
 
 bool RunCmd::IsModelExisted(const std::string& model_id) {
-  if (std::filesystem::exists(cortex_utils::GetCurrentPath() + "/" +
+  if (std::filesystem::exists(file_manager_utils::GetCortexDataPath() /
                               cortex_utils::models_folder) &&
-      std::filesystem::is_directory(cortex_utils::GetCurrentPath() + "/" +
+      std::filesystem::is_directory(file_manager_utils::GetCortexDataPath() /
                                     cortex_utils::models_folder)) {
     // Iterate through directory
     for (const auto& entry : std::filesystem::directory_iterator(
-             cortex_utils::GetCurrentPath() + "/" +
+             file_manager_utils::GetCortexDataPath() /
              cortex_utils::models_folder)) {
       if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
         try {
@@ -85,10 +87,10 @@ bool RunCmd::IsModelExisted(const std::string& model_id) {
 }
 
 bool RunCmd::IsEngineExisted(const std::string& e) {
-  if (std::filesystem::exists(cortex_utils::GetCurrentPath() + "/" +
-                              "engines") &&
-      std::filesystem::exists(cortex_utils::GetCurrentPath() + "/" +
-                              "engines/" + e)) {
+  if (std::filesystem::exists(file_manager_utils::GetCortexDataPath().string() +
+                              "/" + "engines") &&
+      std::filesystem::exists(file_manager_utils::GetCortexDataPath().string() +
+                              "/" + "engines/" + e)) {
     return true;
   }
   return false;
