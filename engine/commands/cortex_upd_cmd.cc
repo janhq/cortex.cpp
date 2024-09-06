@@ -21,6 +21,7 @@ const std::string kCortexBinary = "cortex-cpp";
 CortexUpdCmd::CortexUpdCmd() {}
 
 void CortexUpdCmd::Exec(std::string v) {
+  // TODO(sang) stop server if it is running
   // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
@@ -127,25 +128,29 @@ void CortexUpdCmd::Exec(std::string v) {
     return;
   }
 #if defined(_WIN32)
-  std::string temp = ".\\cortex_tmp.exe";
-  remove(temp.c_str());  // ignore return code
+  auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
+  auto temp = executable_path / "cortex_tmp.exe";
+  remove(temp.string().c_str());  // ignore return code
 
-  std::string src =
-      ".\\cortex\\" + kCortexBinary + "\\" + kCortexBinary + ".exe";
-  std::string dst = ".\\" + kCortexBinary + ".exe";
+  auto src =
+      executable_path / "cortex" / kCortexBinary / (kCortexBinary + ".exe");
+  auto dst = executable_path / (kCortexBinary + ".exe");
   // Rename
-  rename(dst.c_str(), temp.c_str());
+  rename(dst.string().c_str(), temp.string().c_str());
   // Update
-  CopyFile(const_cast<char*>(src.c_str()), const_cast<char*>(dst.c_str()),
-           false);
-  remove(".\\cortex");
-  remove(temp.c_str());
+  CopyFile(const_cast<char*>(src.string().c_str()),
+           const_cast<char*>(dst.string().c_str()), false);
+  auto download_folder = executable_path / "cortex";
+  remove(download_folder);
+  remove(temp.string().c_str());
 #else
-  std::string temp = "./cortex_tmp";
-  std::string src = "./cortex/" + kCortexBinary + "/" + kCortexBinary;
-  std::string dst = "./" + kCortexBinary;
-  if (std::rename(dst.c_str(), temp.c_str())) {
-    CTL_ERR("Failed to rename from " << dst << " to " << temp);
+  auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
+  auto temp = executable_path / "cortex_tmp";
+  auto src = executable_path / "cortex" / kCortexBinary / kCortexBinary;
+  auto dst = executable_path / kCortexBinary;
+  if (std::rename(dst.string().c_str(), temp.string().c_str())) {
+    CTL_ERR("Failed to rename from " << dst.string() << " to "
+                                     << temp.string());
     return;
   }
   try {
@@ -156,7 +161,8 @@ void CortexUpdCmd::Exec(std::string v) {
                                           std::filesystem::perms::others_read |
                                           std::filesystem::perms::others_exec);
     std::filesystem::remove(temp);
-    std::filesystem::remove_all("./cortex/");
+    auto download_folder = executable_path / "cortex/";
+    std::filesystem::remove_all(download_folder);
   } catch (const std::exception& e) {
     CTL_WRN("Something wrong happened: " << e.what());
     return;
