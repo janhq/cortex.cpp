@@ -35,11 +35,12 @@
 
 #ifdef _WIN32
 
-#define SOCKET_PATH "cortex_socket"
 #define BUFFER_SIZE 1024
 std::atomic<bool> server_running(true);
 
 void CLISendLogMessage(const char* msg, const uint64_t len) {
+  std::string socket_path =
+      file_manager_utils::GetCortexDataPath().string() + "/cortex_socket";
   bool socket_live = true;
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -58,7 +59,7 @@ void CLISendLogMessage(const char* msg, const uint64_t len) {
 
   memset(&server_addr, 0, sizeof(server_addr));
   server_addr.sun_family = AF_UNIX;
-  strncpy_s(server_addr.sun_path, SOCKET_PATH,
+  strncpy_s(server_addr.sun_path, socket_path.c_str(),
             sizeof(server_addr.sun_path) - 1);
 
   if (connect(sock_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) <
@@ -78,6 +79,8 @@ void CLISendLogMessage(const char* msg, const uint64_t len) {
 int SocketProcessWindows() {
   // this process will write log to file
   std::cout << "Socket creating" << std::endl;
+  std::string socket_path =
+      file_manager_utils::GetCortexDataPath().string() + "/cortex_socket";
 
   WSADATA wsaData;
   if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
@@ -97,9 +100,10 @@ int SocketProcessWindows() {
 
   memset(&server_addr, 0, sizeof(server_addr));
   server_addr.sun_family = AF_UNIX;
-  strncpy_s(server_addr.sun_path, SOCKET_PATH,
+  strncpy_s(server_addr.sun_path, socket_path.c_str(),
             sizeof(server_addr.sun_path) - 1);
-  _unlink(SOCKET_PATH);  // Ensure the socket file does not already exist
+  _unlink(
+      socket_path.c_str());  // Ensure the socket file does not already exist
 
   if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) <
       0) {
