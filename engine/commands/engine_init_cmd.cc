@@ -75,7 +75,9 @@ bool EngineInitCmd::Exec() const {
           matched_variant = engine_matcher_utils::ValidateOnnx(
               variants, system_info.os, system_info.arch);
         } else if (engineName_ == "cortex.llamacpp") {
-          auto suitable_avx = engine_matcher_utils::GetSuitableAvxVariant();
+          cortex::cpuid::CpuInfo cpu_info;
+          auto suitable_avx =
+              engine_matcher_utils::GetSuitableAvxVariant(cpu_info);
           matched_variant = engine_matcher_utils::Validate(
               variants, system_info.os, system_info.arch, suitable_avx,
               cuda_driver_version);
