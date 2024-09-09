@@ -6,6 +6,7 @@
 #include <services/download_service.h>
 #include <nlohmann/json.hpp>
 #include "httplib.h"
+#include "utils/file_manager_utils.h"
 
 namespace cortexso_parser {
 constexpr static auto kHuggingFaceHost = "https://huggingface.co";
@@ -28,27 +29,32 @@ inline std::optional<DownloadTask> getDownloadTask(
         auto jsonResponse = json::parse(res->body);
 
         std::vector<DownloadItem> downloadItems{};
+        std::filesystem::path model_container_path =
+            file_manager_utils::GetModelsContainerPath() / modelId;
+        file_manager_utils::CreateDirectoryRecursively(
+            model_container_path.string());
+
         for (auto& [key, value] : jsonResponse.items()) {
           std::ostringstream downloadUrlOutput;
           auto path = value["path"].get<std::string>();
-          downloadUrlOutput << repoAndModelIdStr << "/resolve/" << branch << "/"
-                            << path;
-          const std::string downloadUrl = downloadUrlOutput.str();
+          if (path == ".gitattributes" || path == ".gitignore" ||
+              path == "README.md") {
+            continue;
+          }
+          downloadUrlOutput << kHuggingFaceHost << "/" << repoAndModelIdStr
+                            << "/resolve/" << branch << "/" << path;
+          const std::string download_url = downloadUrlOutput.str();
+          auto local_path = model_container_path / path;
 
-          DownloadItem downloadItem{};
-          downloadItem.id = path;
-          downloadItem.host = kHuggingFaceHost;
-          downloadItem.fileName = path;
-          downloadItem.type = DownloadType::Model;
-          downloadItem.path = downloadUrl;
-          downloadItems.push_back(downloadItem);
+          downloadItems.push_back(DownloadItem{.id = path,
+                                               .downloadUrl = download_url,
+                                               .localPath = local_path});
         }
 
-        DownloadTask downloadTask{};
-        downloadTask.id = branch == "main" ? modelId : modelId + "-" + branch;
-        downloadTask.type = DownloadType::Model;
-        downloadTask.error = std::nullopt;
-        downloadTask.items = downloadItems;
+        DownloadTask downloadTask{
+            .id = branch == "main" ? modelId : modelId + "-" + branch,
+            .type = DownloadType::Model,
+            .items = downloadItems};
 
         return downloadTask;
       } catch (const json::parse_error& e) {

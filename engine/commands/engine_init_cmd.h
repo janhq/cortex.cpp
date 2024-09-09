@@ -14,8 +14,5 @@ class EngineInitCmd {
  private:
   std::string engineName_;
   std::string version_;
-
-  static constexpr std::array<const char*, 3> supportedEngines_ = {
-      "cortex.llamacpp", "cortex.onnx", "cortex.tensorrt-llm"};
 };
 }  // namespace commands

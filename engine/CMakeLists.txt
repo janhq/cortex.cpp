@@ -106,6 +106,7 @@ find_package(CLI11 CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(tabulate CONFIG REQUIRED)
+find_package(CURL REQUIRED)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
@@ -150,6 +151,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE CLI11::CLI11)
 target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${PROJECT_NAME} PRIVATE LibArchive::LibArchive)
 target_link_libraries(${PROJECT_NAME} PRIVATE tabulate::tabulate)
+target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)

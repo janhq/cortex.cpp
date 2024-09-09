@@ -1,6 +1,3 @@
-// clang-format off
-#include "utils/cortex_utils.h"
-// clang-format on
 #include "cortex_upd_cmd.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
@@ -10,10 +7,9 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/url_parser.h"
 
 namespace commands {
-
-CortexUpdCmd::CortexUpdCmd() {}
 
 void CortexUpdCmd::Exec(std::string v) {
   {
@@ -38,14 +34,7 @@ void CortexUpdCmd::Exec(std::string v) {
 }
 
 bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
-  // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-                                               << system_info.arch);
-    return false;
-  }
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // Download file
@@ -84,38 +73,35 @@ bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
         for (auto& asset : assets) {
           auto asset_name = asset["name"].get<std::string>();
           if (asset_name == matched_variant) {
-            std::string host{"https://github.com"};
+            auto download_url =
+                asset["browser_download_url"].get<std::string>();
+            auto file_name = asset["name"].get<std::string>();
+            CTL_INF("Download url: " << download_url);
 
-            auto full_url = asset["browser_download_url"].get<std::string>();
-            std::string path = full_url.substr(host.length());
+            auto local_path =
+                file_manager_utils::GetExecutableFolderContainerPath() /
+                "cortex" / asset_name;
+            auto download_task{DownloadTask{.id = "cortex",
+                                            .type = DownloadType::Cortex,
+                                            .items = {DownloadItem{
+                                                .id = "cortex",
+                                                .downloadUrl = download_url,
+                                                .localPath = local_path,
+                                            }}}};
 
-            auto fileName = asset["name"].get<std::string>();
-            CTL_INF("URL: " << full_url);
-
-            auto download_task = DownloadTask{.id = "cortex",
-                                              .type = DownloadType::Cortex,
-                                              .error = std::nullopt,
-                                              .items = {DownloadItem{
-                                                  .id = "cortex",
-                                                  .host = host,
-                                                  .fileName = fileName,
-                                                  .type = DownloadType::Cortex,
-                                                  .path = path,
-                                              }}};
-
-            DownloadService download_service;
-            download_service.AddDownloadTask(
-                download_task,
-                [this](const std::string& absolute_path, bool unused) {
+            DownloadService().AddDownloadTask(
+                download_task, [](const DownloadTask& finishedTask) {
                   // try to unzip the downloaded file
-                  std::filesystem::path download_path{absolute_path};
-                  CTL_INF("Downloaded engine path: " << download_path.string());
+                  CTL_INF("Downloaded engine path: "
+                          << finishedTask.items[0].localPath.string());
 
-                  std::filesystem::path extract_path =
-                      download_path.parent_path().parent_path();
+                  auto extract_path = finishedTask.items[0]
+                                          .localPath.parent_path()
+                                          .parent_path();
 
-                  archive_utils::ExtractArchive(download_path.string(),
-                                                extract_path.string());
+                  archive_utils::ExtractArchive(
+                      finishedTask.items[0].localPath.string(),
+                      extract_path.string());
 
                   CTL_INF("Finished!");
                 });
@@ -145,56 +131,59 @@ bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
 }
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
-  // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-                                               << system_info.arch);
-    return false;
-  }
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // Download file
   std::string version = v.empty() ? "latest" : std::move(v);
-  std::ostringstream release_path;
-  release_path << "cortex/" << version << "/" << system_info.os << "-"
-               << system_info.arch << "/" << kNightlyFileName;
-  CTL_INF("Engine release path: " << kNightlyHost << "/" << release_path.str());
+  std::string os_arch{system_info.os + "-" + system_info.arch};
+  const char* paths[] = {
+      "cortex",
+      version.c_str(),
+      os_arch.c_str(),
+      kNightlyFileName,
+  };
+  std::vector<std::string> path_list(paths, std::end(paths));
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = kNightlyHost,
+      .pathParams = path_list,
+  };
 
-  auto download_task = DownloadTask{.id = "cortex",
-                                    .type = DownloadType::Cortex,
-                                    .error = std::nullopt,
-                                    .items = {DownloadItem{
-                                        .id = "cortex",
-                                        .host = kNightlyHost,
-                                        .fileName = kNightlyFileName,
-                                        .type = DownloadType::Cortex,
-                                        .path = release_path.str(),
-                                    }}};
+  CTL_INF("Engine release path: " << url_parser::FromUrl(url_obj));
 
-  DownloadService download_service;
-  download_service.AddDownloadTask(
-      download_task, [this](const std::string& absolute_path, bool unused) {
+  std::filesystem::path localPath =
+      file_manager_utils::GetExecutableFolderContainerPath() / "cortex" /
+      path_list.back();
+  auto download_task =
+      DownloadTask{.id = "cortex",
+                   .type = DownloadType::Cortex,
+                   .items = {DownloadItem{
+                       .id = "cortex",
+                       .downloadUrl = url_parser::FromUrl(url_obj),
+                       .localPath = localPath,
+                   }}};
+
+  DownloadService().AddDownloadTask(
+      download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
-        std::filesystem::path download_path{absolute_path};
-        CTL_INF("Downloaded engine path: " << download_path.string());
+        CTL_INF("Downloaded engine path: "
+                << finishedTask.items[0].localPath.string());
 
-        std::filesystem::path extract_path =
-            download_path.parent_path().parent_path();
+        auto extract_path =
+            finishedTask.items[0].localPath.parent_path().parent_path();
 
-        archive_utils::ExtractArchive(download_path.string(),
+        archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                       extract_path.string());
 
         CTL_INF("Finished!");
       });
 
-  // Replace binay file
+  // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
   auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
              GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }
-
 }  // namespace commands

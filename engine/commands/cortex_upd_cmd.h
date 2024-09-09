@@ -1,5 +1,4 @@
 #pragma once
-#include <optional>
 #include <string>
 
 #include "httplib.h"
@@ -11,7 +10,7 @@ namespace commands {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT file_manager_utils::kProdVariant
 #endif
-constexpr const auto kNightlyHost = "https://delta.jan.ai";
+constexpr const auto kNightlyHost = "delta.jan.ai";
 constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
 
@@ -113,12 +112,10 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
 
 class CortexUpdCmd {
  public:
-  CortexUpdCmd();
   void Exec(std::string version);
 
  private:
   bool GetStableAndBeta(const std::string& v);
   bool GetNightly(const std::string& v);
 };
-
 }  // namespace commands

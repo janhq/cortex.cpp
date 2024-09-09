@@ -110,7 +110,7 @@ inline std::filesystem::path GetConfigurationPath() {
 }
 
 inline void CreateConfigFileIfNotExist() {
-  auto config_path = file_manager_utils::GetConfigurationPath();
+  auto config_path = GetConfigurationPath();
   if (std::filesystem::exists(config_path)) {
     // already exists
     return;
@@ -192,6 +192,15 @@ inline std::filesystem::path GetCortexLogPath() {
   return log_folder_path;
 }
 
+inline void CreateDirectoryRecursively(const std::string& path) {
+  // Create the directories if they don't exist
+  if (std::filesystem::create_directories(path)) {
+    CTL_INF(path + " successfully created!");
+  } else {
+    CTL_INF(path + " already exist!");
+  }
+}
+
 inline std::filesystem::path GetModelsContainerPath() {
   auto cortex_path = GetCortexDataPath();
   auto models_container_path = cortex_path / "models";
@@ -243,7 +252,7 @@ inline std::filesystem::path GetContainerFolderPath(
   return container_folder_path;
 }
 
-inline std::string downloadTypeToString(DownloadType type) {
+inline std::string DownloadTypeToString(DownloadType type) {
   switch (type) {
     case DownloadType::Model:
       return "Model";
