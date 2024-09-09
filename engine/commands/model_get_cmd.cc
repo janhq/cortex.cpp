@@ -6,6 +6,7 @@
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -14,15 +15,15 @@ ModelGetCmd::ModelGetCmd(std::string model_handle)
     : model_handle_(std::move(model_handle)) {}
 
 void ModelGetCmd::Exec() {
-  if (std::filesystem::exists(cortex_utils::models_folder) &&
-      std::filesystem::is_directory(cortex_utils::models_folder)) {
+  auto models_path = file_manager_utils::GetModelsContainerPath();
+  if (std::filesystem::exists(models_path) &&
+      std::filesystem::is_directory(models_path)) {
     CmdInfo ci(model_handle_);
     std::string model_file =
         ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
     bool found_model = false;
     // Iterate through directory
-    for (const auto& entry :
-         std::filesystem::directory_iterator(cortex_utils::models_folder)) {
+    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
 
       if (entry.is_regular_file() && entry.path().stem() == model_file &&
           entry.path().extension() == ".yaml") {
@@ -137,7 +138,7 @@ void ModelGetCmd::Exec() {
           break;
         } catch (const std::exception& e) {
           CTL_ERR("Error reading yaml file '" << entry.path().string()
-                    << "': " << e.what());
+                                              << "': " << e.what());
         }
       }
     }

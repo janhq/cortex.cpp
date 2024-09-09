@@ -2,6 +2,7 @@
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/model_callback_utils.h"
 
 void Models::PullModel(
@@ -49,11 +50,11 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-  if (std::filesystem::exists(cortex_utils::models_folder) &&
-      std::filesystem::is_directory(cortex_utils::models_folder)) {
+  auto models_path = file_manager_utils::GetModelsContainerPath();
+  if (std::filesystem::exists(models_path) &&
+      std::filesystem::is_directory(models_path)) {
     // Iterate through directory
-    for (const auto& entry :
-         std::filesystem::directory_iterator(cortex_utils::models_folder)) {
+    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
       if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
         try {
           config::YamlHandler handler;
