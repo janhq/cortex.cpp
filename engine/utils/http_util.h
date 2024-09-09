@@ -1,6 +1,7 @@
 #pragma once
 
 #include <drogon/HttpController.h>
+#include "utils/cortex_utils.h"
 
 using namespace drogon;
 

@@ -16,7 +16,6 @@
 #include "config/yaml_config.h"
 #include "httplib.h"
 #include "services/engine_service.h"
-#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
@@ -135,9 +134,19 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
+    auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
+    install_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
     for (auto& engine : engine_service_.kSupportEngines) {
       std::string engine_name{engine};
-      EngineManagement(engines_cmd, engine_name, version);
+      EngineInstall(install_cmd, engine_name, version);
+    }
+
+    auto uninstall_cmd =
+        engines_cmd->add_subcommand("uninstall", "Uninstall engine");
+    uninstall_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
+    for (auto& engine : engine_service_.kSupportEngines) {
+      std::string engine_name{engine};
+      EngineUninstall(uninstall_cmd, engine_name);
     }
 
     EngineGet(engines_cmd);
@@ -200,25 +209,22 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   return true;
 }
 
-void CommandLineParser::EngineManagement(CLI::App* parent,
-                                         const std::string& engine_name,
-                                         std::string& version) {
-  auto engine_cmd =
-      parent->add_subcommand(engine_name, "Manage " + engine_name + " engine");
+void CommandLineParser::EngineInstall(CLI::App* parent,
+                                      const std::string& engine_name,
+                                      std::string& version) {
+  auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  auto install_cmd = engine_cmd->add_subcommand(
-      "install", "Install " + engine_name + " engine");
-  install_cmd->add_option("-v, --version", version,
-                          "Engine version. Default will be latest");
-
-  install_cmd->callback([engine_name, &version] {
+  install_engine_cmd->callback([&] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });
+}
 
-  auto uninstall_desc{"Uninstall " + engine_name + " engine"};
-  auto uninstall_cmd = engine_cmd->add_subcommand("uninstall", uninstall_desc);
-  uninstall_cmd->callback([engine_name] {
+void CommandLineParser::EngineUninstall(CLI::App* parent,
+                                        const std::string& engine_name) {
+  auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
+
+  uninstall_engine_cmd->callback([&] {
     commands::EngineUninstallCmd cmd(engine_name);
     cmd.Exec();
   });
