@@ -193,34 +193,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
   if (check_update) {
-    constexpr auto github_host = "https://api.github.com";
-    std::ostringstream release_path;
-    release_path << "/repos/janhq/cortex.cpp/releases/latest";
-    CTL_INF("Engine release path: " << github_host << release_path.str());
-
-    httplib::Client cli(github_host);
-    if (auto res = cli.Get(release_path.str())) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        try {
-          auto json_res = nlohmann::json::parse(res->body);
-          std::string latest_version = json_res["tag_name"].get<std::string>();
-          std::string current_version = CORTEX_CPP_VERSION;
-          if (current_version != latest_version) {
-            CLI_LOG("\nA new release of cortex is available: "
-                    << current_version << " -> " << latest_version);
-            CLI_LOG("To upgrade, run: cortex update");
-            CLI_LOG(json_res["html_url"].get<std::string>());
-          }
-        } catch (const nlohmann::json::parse_error& e) {
-          CTL_INF("JSON parse error: " << e.what());
-        }
-      } else {
-        CTL_INF("HTTP error: " << res->status);
-      }
-    } else {
-      auto err = res.error();
-      CTL_INF("HTTP error: " << httplib::to_string(err));
-    }
+    commands::CheckNewUpdate();
   }
 #endif
 
