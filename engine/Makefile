@@ -46,17 +46,17 @@ endif
 
 pre-package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "mkdir -p cortex-cpp;"
-	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
-	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
-	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
-	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
+	@powershell -Command "mkdir -p cortex;"
+	@powershell -Command "cp build\cortex.exe .\cortex\;"
+	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
 else ifeq ($(shell uname -s),Linux)
-	@mkdir -p cortex-cpp; \
-	cp build/cortex-cpp cortex-cpp/;
+	@mkdir -p cortex; \
+	cp build/cortex cortex/;
 else
-	@mkdir -p cortex-cpp; \
-	cp build/cortex-cpp cortex-cpp/;
+	@mkdir -p cortex; \
+	cp build/cortex cortex/;
 endif
 
 codesign:
@@ -67,29 +67,29 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
-	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex-cpp\cortex-cpp.exe";'
-	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex-cpp\engines\cortex.llamacpp\engine.dll";'
+	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\cortex.exe";'
+	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\engines\cortex.llamacpp\engine.dll";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
 else
-	find "cortex-cpp" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
+	find "cortex" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
 endif
 
 package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "7z a -ttar temp.tar cortex-cpp\*; 7z a -tgzip cortex-cpp.tar.gz temp.tar;"
+	@powershell -Command "7z a -ttar temp.tar cortex\*; 7z a -tgzip cortex.tar.gz temp.tar;"
 else ifeq ($(shell uname -s),Linux)
-	tar -czvf cortex-cpp.tar.gz cortex-cpp;
+	tar -czvf cortex.tar.gz cortex;
 else
-	tar -czvf cortex-cpp.tar.gz cortex-cpp;
+	tar -czvf cortex.tar.gz cortex;
 endif
 
 clean:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;"
+	@powershell -Command "rm -rf build; rm -rf build-deps; rm -rf cortex; rm -rf cortex.tar.gz;"
 else ifeq ($(shell uname -s),Linux)
-	@rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;
+	@rm -rf build; rm -rf build-deps; rm -rf cortex; rm -rf cortex.tar.gz;
 else
-	@rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;
+	@rm -rf build; rm -rf build-deps; rm -rf cortex; rm -rf cortex.tar.gz;
 endif

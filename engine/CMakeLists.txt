@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(cortex-cpp C CXX)
+project(cortex C CXX)
 
 # Build using CMAKE-JS
 if(DEFINED CMAKE_JS_INC)
