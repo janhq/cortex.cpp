@@ -1,4 +1,4 @@
-# Cortex
+# CortexCPP
 <p align="center">
   <img alt="cortex-cpplogo" src="https://raw.githubusercontent.com/janhq/cortex/dev/assets/cortex-banner.png">
 </p>
@@ -8,31 +8,22 @@
   - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **CortexCPP is currently in Development. This documentation outlines the intended behavior of Cortex Platform, which may not yet be fully implemented in the codebase.**
+> ⚠️ **CortexCPP is currently in Development. This documentation outlines the intended behavior of CortexCPP, which may not yet be fully implemented in the codebase.**
 
 ## About
-Cortex is a C++ AI engine that comes with a Docker-like command-line interface and client libraries. Cortex can function as a standalone server or be integrated as a library.
+CortexCPP is a C++ AI engine featuring a Docker-like command-line interface and client libraries. It can run as a standalone server or be embedded as a library, allowing you to run AI locally on your computer.
 
-Cortex supports the following engines:
+CortexCPP supports the following engines:
 - [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp)
 - [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx)
 - [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
-### MacOs
-```bash
-brew install cortex.cpp
-```
-### Windows
-```bash
-winget install cortex.cpp
-```
-### Linux
-```bash
-sudo apt install cortex.cpp
-```
-### Docker
-**Coming Soon!**
+To install CortexCPP, download the installer for your operating system from the following options:
+- Stable Version
+- Beta Version
+- Nightly Version
+
 
 ### Libraries
 - [cortex.js](https://github.com/janhq/cortex.js)
@@ -40,20 +31,24 @@ sudo apt install cortex.cpp
 
 ### Build from Source
 
-To install Cortex from the source, follow the steps below:
+To install CortexCPP from the source, follow the steps below:
 
-1. Clone the Cortex repository [here](https://github.com/janhq/cortex/tree/dev).
-2. Navigate to the `platform` folder.
-3. Open the terminal and run the following command to build the Cortex project:
+1. Clone the CortexCPP repository [here](https://github.com/janhq/cortex.cpp).
+2. Navigate to the `engine > vcpkg` folder.
+3. Configure the vpkg:
 
 ```bash
-npx nest build
+cd vcpkg
+./bootstrap-vcpkg.bat
+vcpkg install
 ```
-
-4. Make the `command.js` executable:
+4. Use Visual Studio with the C++ development kit to build the project using the files generated in the `vcpkg` folder.
+5. Build the CortexCPP inside the `engine` folder:
 
 ```bash
-chmod +x '[path-to]/cortex/platform/dist/src/command.js'
+mkdir build
+cd build
+cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
 ```
 
 5. Link the package globally:
@@ -64,16 +59,16 @@ npm link
 
 
 ## Quickstart
-To run and chat with a model in Cortex:
+To run and chat with a model in CortexCPP:
 ```bash
-# Start the Cortex server
+# Start the CortexCPP server
 cortex
 
 # Start a model
 cortex run [model_id]
 ```
 ## Model Library
-Cortex supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
+CortexCPP supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
 
 Here are example of models that you can use based on each supported engine:
 ### `llama.cpp`
@@ -118,11 +113,11 @@ Here are example of models that you can use based on each supported engine:
 > **Note**:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
-## Cortex CLI Commands
+## CortexCPP CLI Commands
 
 | Command Description                | Command Example                                                     |
 |------------------------------------|---------------------------------------------------------------------|
-| **Start Cortex Server**            | `cortex`                                                            |
+| **Start CortexCPP Server**            | `cortex`                                                            |
 | **Chat with a Model**              | `cortex chat [options] [model_id] [message]`                        |
 | **Embeddings**                     | `cortex embeddings [options] [model_id] [message]`                  |
 | **Pull a Model**                   | `cortex pull <model_id>`                                            |
@@ -138,13 +133,13 @@ Here are example of models that you can use based on each supported engine:
 | **List Engines**                   | `cortex engines list [options]`                                     |
 | **Uninnstall an Engine**              | `cortex engines uninstall <engine_name> [options]`                 |
 | **Show Model Information**         | `cortex ps`                                                         |
-| **Update Cortex**         | `cortex update [options]`                                                         |
+| **Update CortexCPP**         | `cortex update [options]`                                                         |
 
 > **Note**:
 > For a more detailed CLI Reference documentation, please see [here](https://cortex.so/docs/cli).
 
 ## REST API
-Cortex has a REST API that runs at `localhost:1337`.
+CortexCPP has a REST API that runs at `localhost:3928`.
 
 ### Pull a Model
 ```bash
