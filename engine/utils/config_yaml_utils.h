@@ -8,6 +8,7 @@
 
 namespace config_yaml_utils {
 struct CortexConfig {
+  std::string logFolderPath;
   std::string dataFolderPath;
   std::string host;
   std::string port;
@@ -27,6 +28,7 @@ inline void DumpYamlConfig(const CortexConfig& config,
       throw std::runtime_error("Failed to open output file.");
     }
     YAML::Node node;
+    node["logFolderPath"] = config.logFolderPath;
     node["dataFolderPath"] = config.dataFolderPath;
     node["host"] = config.host;
     node["port"] = config.port;
@@ -49,6 +51,7 @@ inline CortexConfig FromYaml(const std::string& path,
   try {
     auto node = YAML::LoadFile(config_file_path.string());
     CortexConfig config = {
+        .logFolderPath = node["logFolderPath"].as<std::string>(),
         .dataFolderPath = node["dataFolderPath"].as<std::string>(),
         .host = node["host"].as<std::string>(),
         .port = node["port"].as<std::string>(),
@@ -59,6 +62,5 @@ inline CortexConfig FromYaml(const std::string& path,
     throw;
   }
 }
-
 
 }  // namespace config_yaml_utils

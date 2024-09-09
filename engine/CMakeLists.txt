@@ -115,6 +115,7 @@ if(DEFINED CMAKE_JS_INC)
 
   add_library(${PROJECT_NAME} SHARED addon.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
     ${CMAKE_JS_SRC}
   )
 
@@ -131,6 +132,7 @@ if(DEFINED CMAKE_JS_INC)
 else() # Official build
   add_executable(${PROJECT_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
   )
 endif()
 

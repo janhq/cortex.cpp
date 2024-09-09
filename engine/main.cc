@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
@@ -29,16 +30,19 @@ void RunServer() {
   LOG_INFO << "Host: " << config.host << " Port: " << config.port << "\n";
 
   // Create logs/ folder and setup log to file
-  std::filesystem::create_directory(cortex_utils::logs_folder);
-  trantor::AsyncFileLogger asyncFileLogger;
-  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+  std::filesystem::create_directory(config.logFolderPath + "/" +
+                                    cortex_utils::logs_folder);
+  trantor::FileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(config.logFolderPath + "/" +
+                              cortex_utils::logs_base_name);
+  asyncFileLogger.setMaxLines(
+      cortex_utils::log_file_max_lines);  // Keep last 100000 lines
   asyncFileLogger.startLogging();
   trantor::Logger::setOutputFunction(
       [&](const char* msg, const uint64_t len) {
-        asyncFileLogger.output(msg, len);
+        asyncFileLogger.output_(msg, len);
       },
       [&]() { asyncFileLogger.flush(); });
-  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
   // Number of cortex.cpp threads
   // if (argc > 1) {
   //   thread_num = std::atoi(argv[1]);
@@ -154,6 +158,18 @@ int main(int argc, char* argv[]) {
       RunServer();
       return 0;
     } else {
+      auto config = file_manager_utils::GetCortexConfig();
+      trantor::FileLogger asyncFileLogger;
+      asyncFileLogger.setFileName(config.logFolderPath + "/" +
+                                  cortex_utils::logs_cli_base_name);
+      asyncFileLogger.setMaxLines(
+          cortex_utils::log_file_max_lines);  // Keep last 1 million lines
+      asyncFileLogger.startLogging();
+      trantor::Logger::setOutputFunction(
+          [&](const char* msg, const uint64_t len) {
+            asyncFileLogger.output_(msg, len);
+          },
+          [&]() { asyncFileLogger.flush(); });
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
       return 0;
