@@ -51,12 +51,6 @@ cd build
 cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
 ```
 
-5. Link the package globally:
-
-```bash
-npm link
-```
-
 
 ## Quickstart
 To run and chat with a model in CortexCPP:
