@@ -11,7 +11,7 @@
 > ⚠️ **CortexCPP is currently in Development. This documentation outlines the intended behavior of CortexCPP, which may not yet be fully implemented in the codebase.**
 
 ## About
-CortexCPP is a C++ AI engine featuring a Docker-like command-line interface and client libraries. It can run as a standalone server or be embedded as a library, allowing you to run AI locally on your computer.
+CortexCPP is a Local AI engine that is used to run and customize LLMs. CortexCPP can be deployed as a standalone server, or integrated into apps like [Jan.ai](https://jan.ai/).
 
 CortexCPP supports the following engines:
 - [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp)
@@ -67,7 +67,7 @@ cortex
 # Start a model
 cortex run [model_id]
 ```
-## Model Library
+## Built-in Model Library
 CortexCPP supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
 
 Here are example of models that you can use based on each supported engine:
