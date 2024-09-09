@@ -8,16 +8,15 @@
   - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Cortex is currently in Development**: Expect breaking changes and bugs!
+> ⚠️ **CortexCPP is currently in Development. This documentation outlines the intended behavior of Cortex Platform, which may not yet be fully implemented in the codebase.**
 
 ## About
-Cortex is a C++ AI engine that comes with a Docker-like command-line interface and client libraries. It supports running AI models using `ONNX`, `TensorRT-LLM`, and `llama.cpp` engines. Cortex can function as a standalone server or be integrated as a library.
+Cortex is a C++ AI engine that comes with a Docker-like command-line interface and client libraries. Cortex can function as a standalone server or be integrated as a library.
 
-## Cortex Engines
 Cortex supports the following engines:
-- [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp): `cortex.llamacpp` library is a C++ inference tool that can be dynamically loaded by any server at runtime. We use this engine to support GGUF inference with GGUF models. The `llama.cpp` is optimized for performance on both CPU and GPU.
-- [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx): `cortex.onnx` is a C++ inference library for Windows that leverages `onnxruntime-genai` and uses DirectML to provide GPU acceleration across a wide range of hardware and drivers, including AMD, Intel, NVIDIA, and Qualcomm GPUs.
-- [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm): `cortex.tensorrt-llm` is a C++ inference library designed for NVIDIA GPUs. It incorporates NVIDIA’s TensorRT-LLM for GPU-accelerated inference.
+- [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp)
+- [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx)
+- [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
 ### MacOs
@@ -36,8 +35,8 @@ sudo apt install cortex.cpp
 **Coming Soon!**
 
 ### Libraries
-- [cortex.cpp.js](https://github.com/janhq/cortex.js)
-- [cortex.cpp.py](https://github.com/janhq/cortex-python)
+- [cortex.js](https://github.com/janhq/cortex.js)
+- [cortex.py](https://github.com/janhq/cortex-python)
 
 ### Build from Source
 
@@ -72,9 +71,6 @@ cortex
 
 # Start a model
 cortex run [model_id]
-
-# Chat with a model
-cortex chat [model_id]
 ```
 ## Model Library
 Cortex supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
@@ -123,73 +119,30 @@ Here are example of models that you can use based on each supported engine:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
 ## Cortex CLI Commands
+
+| Command Description                | Command Example                                                     |
+|------------------------------------|---------------------------------------------------------------------|
+| **Start Cortex Server**            | `cortex`                                                            |
+| **Chat with a Model**              | `cortex chat [options] [model_id] [message]`                        |
+| **Embeddings**                     | `cortex embeddings [options] [model_id] [message]`                  |
+| **Pull a Model**                   | `cortex pull <model_id>`                                            |
+| **Download and Start a Model**     | `cortex run [options] [model_id]:[engine]`                          |
+| **Get Model Details**              | `cortex models get <model_id>`                                      |
+| **List Models**                    | `cortex models list [options]`                                      |
+| **Delete a Model**                 | `cortex models delete <model_id>`                                   |
+| **Start a Model**                  | `cortex models start [model_id]`                                    |
+| **Stop a Model**                   | `cortex models stop <model_id>`                                     |
+| **Update a Model**            | `cortex models update [options] <model_id>`                         |
+| **Get Engine Details**             | `cortex engines get <engine_name>`                                  |
+| **Install an Engine**              | `cortex engines install <engine_name> [options]`                    |
+| **List Engines**                   | `cortex engines list [options]`                                     |
+| **Uninnstall an Engine**              | `cortex engines uninstall <engine_name> [options]`                 |
+| **Show Model Information**         | `cortex ps`                                                         |
+| **Update Cortex**         | `cortex update [options]`                                                         |
+
 > **Note**:
 > For a more detailed CLI Reference documentation, please see [here](https://cortex.so/docs/cli).
-### Start Cortex Server
-```bash
-cortex 
-```
-### Chat with a Model
-```bash
-cortex chat [options] [model_id] [message]
-```
-### Embeddings
-```bash
-cortex embeddings [options] [model_id] [message]
-```
-### Pull a Model
-```bash
-cortex pull <model_id>
-```
-> This command can also pulls Hugging Face's models.
-### Download and Start a Model
-```bash
-cortex run [options] [model_id]:[engine]
-```
-### Get a Model Details
-```bash
-cortex models get <model_id>
-```
-### List Models
-```bash
-cortex models list [options]
-```
-### Remove a Model
-```bash
-cortex models remove <model_id>
-```
-### Start a Model
-```bash
-cortex models start [model_id]
-```
-### Stop a Model
-```bash
-cortex models stop <model_id>
-```
-### Update a Model Config
-```bash
-cortex models update [options] <model_id>
-```
-### Get an Engine Details
-```bash
-cortex engines get <engine_name>
-```
-### Install an Engine
-```bash
-cortex engines install <engine_name> [options]
-```
-### List Engines
-```bash
-cortex engines list [options]
-```
-### Set an Engine Config
-```bash
-cortex engines set <engine_name> <config> <value>
-```
-### Show Model Information
-```bash
-cortex ps
-```
+
 ## REST API
 Cortex has a REST API that runs at `localhost:1337`.
 
