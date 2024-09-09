@@ -21,8 +21,20 @@ CortexCPP supports the following engines:
 ## Installation
 To install CortexCPP, download the installer for your operating system from the following options:
 - Stable Version
+  - Windows
+  - Mac
+  - Linux (Debian)
+  - Linux (Fedora)
 - Beta Version
+  - Windows
+  - Mac
+  - Linux (Debian)
+  - Linux (Fedora)
 - Nightly Version
+  - Windows
+  - Mac
+  - Linux (Debian)
+  - Linux (Fedora)
 
 
 ### Libraries
