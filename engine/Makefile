@@ -14,6 +14,15 @@ AZURE_CLIENT_SECRET ?= xxxx
 AZURE_CERT_NAME ?= xxxx
 DEVELOPER_ID ?= xxxx
 
+# Arguments for build installer
+PACKAGE_NAME ?= cortexcpp
+VERSION ?= 0.1.1
+SOURCE_BINARY_PATH ?= ../../cortex/cortex
+DESTINATION_BINARY_NAME ?= cortex
+DATA_FOLDER_NAME ?= .cortex
+CONFIGURATION_FILE_NAME ?= .cortexrc
+UNINSTALLER_FILE_NAME ?= cortex-uninstall.sh
+
 # Default target, does nothing
 all:
 	@echo "Specify a target to run"
@@ -59,7 +68,7 @@ else
 	cp build/cortex cortex/;
 endif
 
-codesign:
+codesign-binary:
 ifeq ($(CODE_SIGN),false)
 	@echo "Skipping Code Sign"
 	@exit 0
@@ -68,12 +77,11 @@ endif
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
 	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\cortex.exe";'
-	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\engines\cortex.llamacpp\engine.dll";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
 else
-	find "cortex" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
+	codesign --force -s "$(DEVELOPER_ID)" --options=runtime --entitlements="./templates/macos/entitlements.plist" ./cortex/cortex;
 endif
 
 package:
@@ -83,6 +91,25 @@ else ifeq ($(shell uname -s),Linux)
 	tar -czvf cortex.tar.gz cortex;
 else
 	tar -czvf cortex.tar.gz cortex;
+endif
+
+build-installer:
+ifeq ($(OS),Windows_NT)
+	@echo "Building installer for linux"; \
+	cp cortex/* templates/windows/; \
+	mv templates/windows/cortex.exe templates/windows/$(DESTINATION_BINARY_NAME).exe;
+else ifeq ($(shell uname -s),Linux)
+	@echo "Building installer for linux"; \
+	cd templates/linux; \
+	chmod +x create_deb.sh; \
+	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME);
+	cp $(PACKAGE_NAME).deb ../../
+else
+	@echo "Building installer for linux"; \
+	cd templates/macos; \
+	chmod +x create_pkg.sh; \
+	./create_pkg.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME) $(UNINSTALLER_FILE_NAME);
+	cp $(PACKAGE_NAME).pkg ../../
 endif
 
 clean:

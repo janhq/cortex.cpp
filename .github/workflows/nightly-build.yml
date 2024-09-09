@@ -86,10 +86,34 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$NOTARIZE_P8_BASE64" > /tmp/notary-key.p8
+        shell: bash
+        env:
+          NOTARIZE_P8_BASE64: ${{ secrets.NOTARIZE_P8_BASE64 }}
+
+      - name: Install gettext-bast linux
+        if: runner.os == 'Linux'
+        run: sudo apt update && sudo apt install gettext-base -y
+
+      - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
       - name: Install choco on Windows
         if: runner.os == 'Windows'
         run: |
           choco install make pkgconfiglite ccache awscli 7zip ninja -y
+          dotnet tool install --global AzureSignTool
 
       - name: Download ccache from s3
         if: runner.os == 'Windows'
@@ -117,7 +141,54 @@ jobs:
         run: |
           cd engine
           make pre-package
+      
+      - name: Code Signing binaries
+        run: |
+          cd engine
+          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+
+      - name: Notary macOS Binary
+        if: runner.os == 'macOS'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+          cd engine/cortex
+          # Notarize the binary
+          quill notarize ./cortex
+        env:
+          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
+
+      - name: Build Installers
+        shell: bash
+        run: |
+          cd engine
+          make build-installer PACKAGE_NAME=cortexcpp-nightly VERSION=${{ needs.get-update-version.outputs.new_version }} SOURCE_BINARY_PATH="../../cortex/cortex" DESTINATION_BINARY_NAME="cortex-nightly" DATA_FOLDER_NAME=".cortex-nightly" CONFIGURATION_FILE_NAME=".cortexrc-nightly" UNINSTALLER_FILE_NAME="cortex-nightly-uninstall.sh"
+
+      - name: Codesign and notary for macos installer
+        if: runner.os == 'macOS'
+        run: |
+          cd engine
+          productsign --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}-signed.pkg
+          rm cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg
+          mv cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}-signed.pkg cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg
+          xcrun notarytool submit cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+
+      - name: Compile .ISS to .EXE Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        if: runner.os == 'Windows'
+        with:
+          path: engine/templates/windows/installer-nightly.iss
+          options: /O+
+
+      - name: Codesign for windows installer
+        if: runner.os == 'Windows'
+        run: |
+          cd engine
           
+          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
+          azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\templates\windows\setup.exe";' 
+
       - name: Package
         run: |
           cd engine
@@ -128,6 +199,27 @@ jobs:
         with:
           name: cortex-${{ matrix.os }}-${{ matrix.name }}
           path: ./engine/cortex
+
+      - name: Upload windwos installer
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-${{ matrix.os }}-installer-${{ matrix.name }}
+          path: ./engine/templates/windows/setup.exe
+      
+      - name: Upload macos installer
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-${{ matrix.os }}-installer-${{ matrix.name }}
+          path: ./engine/cortexcpp-nightly.pkg
+
+      - name: Upload linux installer
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-${{ matrix.os }}-installer-${{ matrix.name }}
+          path: ./engine/cortexcpp-nightly.deb
 
       - name: Upload ccache to s3
         continue-on-error: true

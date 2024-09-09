@@ -1,9 +1,9 @@
 ; Define the application name, version, and other details
 [Setup]
-AppName=cortexcpp
+AppName=cortexcpp-nightly
 AppVersion=1.0
-DefaultDirName={localappdata}\cortexcpp
-DefaultGroupName=cortexcpp
+DefaultDirName={localappdata}\cortexcpp-nightly
+DefaultGroupName=cortexcpp-nightly
 OutputDir=.
 OutputBaseFilename=setup
 Compression=lzma
@@ -17,18 +17,18 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 ; Define the files to be installed
 [Files]
-Source: "cortex.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cortex-nightly.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Define the icons to be created
 [Icons]
-Name: "{group}\cortexcpp"; Filename: "{app}\cortex.exe"
+Name: "{group}\cortexcpp-nightly"; Filename: "{app}\cortex-nightly.exe"
 
 ; Define the run section to execute the application after installation
 [Run]
-Filename: "{app}\cortex.exe"; Parameters: "engines cortex.llamacpp install"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
+Filename: "{app}\cortex-nightly.exe"; Parameters: "engines cortex.llamacpp install"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
 [Code]
 procedure AddToUserPath;
 var
@@ -67,14 +67,14 @@ Name: "quicklaunchicon"; Description: "Create a &Quick Launch icon"; GroupDescri
 
 ; Define icons for the additional tasks
 [Icons]
-Name: "{commondesktop}\cortexcpp"; Filename: "{app}\cortex.exe"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\cortexcpp"; Filename: "{app}\cortex.exe"; Tasks: quicklaunchicon
+Name: "{commondesktop}\cortexcpp-nightly"; Filename: "{app}\cortex-nightly.exe"; Tasks: desktopicon
+Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\cortexcpp-nightly"; Filename: "{app}\cortex-nightly.exe"; Tasks: quicklaunchicon
 
 ; Define the uninstall run section to execute commands before uninstallation
 [UninstallRun]
-Filename: "{app}\cortex.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp service..."; Flags: runhidden
+Filename: "{app}\cortex-nightly.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp-nightly service..."; Flags: runhidden
 
-; Use Pascal scripting to ask user if they want to delete the .cortex folder and .cortexrc file
+; Use Pascal scripting to ask user if they want to delete the .cortex-nightly folder and .cortexrc-nightly file
 [Code]
 procedure DeleteCurrentUserCortexFolderAndConfig;
 var
@@ -82,12 +82,12 @@ var
   UserCortexConfig: String;
   ShouldDelete: Integer;
 begin
-  UserCortexFolder := ExpandConstant('{%USERPROFILE}\.cortex');
-  UserCortexConfig := ExpandConstant('{%USERPROFILE}\.cortexrc');
+  UserCortexFolder := ExpandConstant('{%USERPROFILE}\.cortex-nightly');
+  UserCortexConfig := ExpandConstant('{%USERPROFILE}\.cortexrc-nightly');
   
   if DirExists(UserCortexFolder) or FileExists(UserCortexConfig) then
   begin
-    ShouldDelete := MsgBox('Do you want to delete the application data in .cortex and the .cortexrc config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
+    ShouldDelete := MsgBox('Do you want to delete the application data in .cortex-nightly and the .cortexrc-nightly config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
     
     if ShouldDelete = idYes then
     begin
