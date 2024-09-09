@@ -4,23 +4,29 @@
 #include "cortex_upd_cmd.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
+#include "server_stop_cmd.h"
 #include "services/download_service.h"
 #include "utils/archive_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
-#include "server_stop_cmd.h"
 
 namespace commands {
 
 CortexUpdCmd::CortexUpdCmd() {}
 
 void CortexUpdCmd::Exec(std::string v) {
-  // TODO(sang) check if server is running - if yes, stop it
-  // {
-  //   commands::ServerStopCmd ssc("127.0.0.1", 3928);
-  //   ssc.Exec();
-  // }
+  {
+    auto config = file_manager_utils::GetCortexConfig();
+    httplib::Client cli(config.apiServerHost + ":" + config.apiServerPort);
+    auto res = cli.Get("/health/healthz");
+    if (res) {
+      CLI_LOG("Server is running. Stopping server before updating!");
+      commands::ServerStopCmd ssc(config.apiServerHost,
+                                  std::stoi(config.apiServerPort));
+      ssc.Exec();
+    }
+  }
   if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
     if (!GetNightly(v))
       return;
@@ -130,7 +136,7 @@ bool CortexUpdCmd::GetProAndBeta(const std::string& v) {
     return false;
   }
 
-// Replace binay file
+  // Replace binay file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
   auto src = executable_path / "cortex" / "cortex-cpp" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
@@ -167,21 +173,20 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
                                     }}};
 
   DownloadService download_service;
-  download_service.AddDownloadTask(download_task, [this](const std::string&
-                                                             absolute_path,
-                                                         bool unused) {
-    // try to unzip the downloaded file
-    std::filesystem::path download_path{absolute_path};
-    CTL_INF("Downloaded engine path: " << download_path.string());
+  download_service.AddDownloadTask(
+      download_task, [this](const std::string& absolute_path, bool unused) {
+        // try to unzip the downloaded file
+        std::filesystem::path download_path{absolute_path};
+        CTL_INF("Downloaded engine path: " << download_path.string());
 
-    std::filesystem::path extract_path =
-        download_path.parent_path().parent_path();
+        std::filesystem::path extract_path =
+            download_path.parent_path().parent_path();
 
-    archive_utils::ExtractArchive(download_path.string(),
-                                  extract_path.string());
+        archive_utils::ExtractArchive(download_path.string(),
+                                      extract_path.string());
 
-    CTL_INF("Finished!");
-  });
+        CTL_INF("Finished!");
+      });
 
   // Replace binay file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
