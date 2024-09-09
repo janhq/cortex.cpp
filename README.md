@@ -149,13 +149,13 @@ CortexCPP has a REST API that runs at `localhost:3928`.
 ### Pull a Model
 ```bash
 curl --request POST \
-  --url http://localhost:1337/v1/models/{model_id}/pull
+  --url http://localhost:3928/v1/models/{model_id}/pull
 ```
 
 ### Start a Model
 ```bash
 curl --request POST \
-  --url http://localhost:1337/v1/models/{model_id}/start \
+  --url http://localhost:3928/v1/models/{model_id}/start \
   --header 'Content-Type: application/json' \
   --data '{
   "prompt_template": "system\n{system_message}\nuser\n{prompt}\nassistant",
@@ -177,7 +177,7 @@ curl --request POST \
 
 ### Chat with a Model
 ```bash
-curl http://localhost:1337/v1/chat/completions \
+curl http://localhost:3928/v1/chat/completions \
 -H "Content-Type: application/json" \
 -d '{
   "model": "",
@@ -203,7 +203,7 @@ curl http://localhost:1337/v1/chat/completions \
 ### Stop a Model
 ```bash
 curl --request POST \
-  --url http://localhost:1337/v1/models/mistral/stop
+  --url http://localhost:3928/v1/models/mistral/stop
 ```
 
 
