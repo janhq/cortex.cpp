@@ -54,15 +54,14 @@ cd vcpkg
 ./bootstrap-vcpkg.bat
 vcpkg install
 ```
-4. Use Visual Studio with the C++ development kit to build the project using the files generated in the `vcpkg` folder.
-5. Build the CortexCPP inside the `engine` folder:
+4. Build the CortexCPP inside the `build` folder:
 
 ```bash
 mkdir build
 cd build
 cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
 ```
-
+5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
 
 ## Quickstart
 To run and chat with a model in CortexCPP:
