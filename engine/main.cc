@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
@@ -23,8 +24,10 @@
 #error "Unsupported platform!"
 #endif
 
-
 void RunServer() {
+  auto config = file_manager_utils::GetCortexConfig();
+  LOG_INFO << "Host: " << config.host << " Port: " << config.port << "\n";
+
   // Create logs/ folder and setup log to file
   std::filesystem::create_directory(cortex_utils::logs_folder);
   trantor::AsyncFileLogger asyncFileLogger;
@@ -51,8 +54,8 @@ void RunServer() {
   //   port = std::atoi(argv[3]);  // Convert string argument to int
   // }
   int thread_num = 1;
-  std::string host = "127.0.0.1";
-  int port = 3928;
+  // std::string host = "127.0.0.1";
+  // int port = 3928;
 
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
@@ -63,9 +66,10 @@ void RunServer() {
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-  LOG_INFO << "Server started, listening at: " << host << ":" << port;
+  LOG_INFO << "Server started, listening at: " << config.host << ":"
+           << config.port;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(host, port);
+  drogon::app().addListener(config.host, std::stoi(config.port));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
@@ -122,6 +126,8 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
+  { file_manager_utils::CreateConfigFileIfNotExist(); }
+
   // Check if this process is for python execution
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {

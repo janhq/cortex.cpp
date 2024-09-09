@@ -8,6 +8,7 @@
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/logging_utils.h"
+#include "utils/file_manager_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -290,8 +291,9 @@ void server::LoadModel(const HttpRequestPtr& req,
 
       std::string abs_path =
           (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
-                                 : cortex_utils::GetCurrentPath()) +
+                                 : file_manager_utils::GetCortexDataPath().string()) +
           get_engine_path(engine_type);
+      std::cout << abs_path << std::endl;
       engines_[engine_type].dl =
           std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
 

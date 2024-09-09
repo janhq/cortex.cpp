@@ -59,6 +59,14 @@ if(DEBUG)
   add_compile_definitions(ALLOW_ALL_CORS)
 endif()
 
+if(NOT DEFINED CORTEX_VARIANT)
+  set(CORTEX_VARIANT "prod")
+endif()
+
+if(NOT DEFINED CORTEX_CONFIG_FILE_PATH)
+  set(CORTEX_CONFIG_FILE_PATH "user_home")
+endif()
+
 if(NOT DEFINED CORTEX_CPP_VERSION)
   set(CORTEX_CPP_VERSION "default_version")
 endif()
@@ -79,7 +87,9 @@ if(DEFINED CMAKE_JS_INC)
   add_compile_definitions(NAPI_VERSION=8)
 endif()
 
+add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
+add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 option(CMAKE_BUILD_TEST "Enable testing" OFF)
 if(CMAKE_BUILD_TEST)

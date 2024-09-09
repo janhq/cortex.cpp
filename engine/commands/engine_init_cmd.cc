@@ -29,7 +29,7 @@ bool EngineInitCmd::Exec() const {
   if (system_info.arch == system_info_utils::kUnsupported ||
       system_info.os == system_info_utils::kUnsupported) {
     CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-              << system_info.arch);
+                                               << system_info.arch);
     return false;
   }
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
@@ -192,9 +192,10 @@ bool EngineInitCmd::Exec() const {
             // cuda driver version should be greater than toolkit version to ensure compatibility
             if (semantic_version_utils::CompareSemanticVersion(
                     cuda_driver_version, suitable_toolkit_version) < 0) {
-              CTL_ERR("Your Cuda driver version " << cuda_driver_version
-                        << " is not compatible with cuda toolkit version "
-                        << suitable_toolkit_version);
+              CTL_ERR("Your Cuda driver version "
+                      << cuda_driver_version
+                      << " is not compatible with cuda toolkit version "
+                      << suitable_toolkit_version);
               return false;
             }
 

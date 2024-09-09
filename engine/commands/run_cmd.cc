@@ -3,11 +3,11 @@
 #include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "engine_init_cmd.h"
-#include "httplib.h"
 #include "model_pull_cmd.h"
 #include "model_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/file_manager_utils.h"
 
 namespace commands {
 
@@ -37,14 +37,15 @@ void RunCmd::Exec() {
       if (!eic.Exec()) {
         LOG_INFO << "Failed to install engine";
         return;
-        }
+      }
     }
   }
 
   // Start model
   config::YamlHandler yaml_handler;
-  yaml_handler.ModelConfigFromFile(cortex_utils::GetCurrentPath() + "/models/" +
-                                   model_file + ".yaml");
+  yaml_handler.ModelConfigFromFile(
+      file_manager_utils::GetModelsContainerPath().string() + "/" + model_file +
+      ".yaml");
   {
     ModelStartCmd msc(host_, port_, yaml_handler.GetModelConfig());
     if (!msc.Exec()) {
@@ -60,14 +61,11 @@ void RunCmd::Exec() {
 }
 
 bool RunCmd::IsModelExisted(const std::string& model_id) {
-  if (std::filesystem::exists(cortex_utils::GetCurrentPath() + "/" +
-                              cortex_utils::models_folder) &&
-      std::filesystem::is_directory(cortex_utils::GetCurrentPath() + "/" +
-                                    cortex_utils::models_folder)) {
+  auto models_path = file_manager_utils::GetModelsContainerPath();
+  if (std::filesystem::exists(models_path) &&
+      std::filesystem::is_directory(models_path)) {
     // Iterate through directory
-    for (const auto& entry : std::filesystem::directory_iterator(
-             cortex_utils::GetCurrentPath() + "/" +
-             cortex_utils::models_folder)) {
+    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
       if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
         try {
           config::YamlHandler handler;
@@ -86,10 +84,9 @@ bool RunCmd::IsModelExisted(const std::string& model_id) {
 }
 
 bool RunCmd::IsEngineExisted(const std::string& e) {
-  if (std::filesystem::exists(cortex_utils::GetCurrentPath() + "/" +
-                              "engines") &&
-      std::filesystem::exists(cortex_utils::GetCurrentPath() + "/" +
-                              "engines/" + e)) {
+  auto engines_path = file_manager_utils::GetEnginesContainerPath();
+  if (std::filesystem::exists(engines_path) &&
+      std::filesystem::exists(engines_path.string() + "/" + e)) {
     return true;
   }
   return false;
