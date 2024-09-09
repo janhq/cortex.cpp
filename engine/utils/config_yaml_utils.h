@@ -12,11 +12,13 @@ struct CortexConfig {
   std::string dataFolderPath;
   std::string host;
   std::string port;
+  int maxLogLines;
 };
 
 const std::string kCortexFolderName = "cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
 const std::string kDefaultPort{"3928"};
+const int kDefaultMaxLines{100000};
 
 inline void DumpYamlConfig(const CortexConfig& config,
                            const std::string& path) {
@@ -32,6 +34,7 @@ inline void DumpYamlConfig(const CortexConfig& config,
     node["dataFolderPath"] = config.dataFolderPath;
     node["host"] = config.host;
     node["port"] = config.port;
+    node["maxLogLines"] = config.maxLogLines;
 
     out_file << node;
     out_file.close();
@@ -50,11 +53,18 @@ inline CortexConfig FromYaml(const std::string& path,
 
   try {
     auto node = YAML::LoadFile(config_file_path.string());
+    int max_lines_;
+    if (!node["maxLogLines"]) {
+      max_lines_ = kDefaultMaxLines;
+    } else {
+      max_lines_ = node["maxLogLines"].as<int>();
+    }
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"].as<std::string>(),
         .dataFolderPath = node["dataFolderPath"].as<std::string>(),
         .host = node["host"].as<std::string>(),
         .port = node["port"].as<std::string>(),
+        .maxLogLines = max_lines_,
     };
     return config;
   } catch (const YAML::BadFile& e) {

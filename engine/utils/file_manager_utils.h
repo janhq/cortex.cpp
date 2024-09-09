@@ -139,6 +139,7 @@ inline void CreateConfigFileIfNotExist() {
       .dataFolderPath = defaultDataFolderPath.string(),
       .host = config_yaml_utils::kDefaultHost,
       .port = config_yaml_utils::kDefaultPort,
+      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
   };
   DumpYamlConfig(config, config_path.string());
 }

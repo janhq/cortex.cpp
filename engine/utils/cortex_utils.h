@@ -36,8 +36,6 @@ inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
-inline size_t log_file_size_limit = 20000000;  // ~20 mb
-inline size_t log_file_max_lines = 100000;     // 100,000 lines
 
 inline std::string extractBase64(const std::string& input) {
   std::regex pattern("base64,(.*)");

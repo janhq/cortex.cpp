@@ -35,8 +35,7 @@ void RunServer() {
   trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(config.logFolderPath + "/" +
                               cortex_utils::logs_base_name);
-  asyncFileLogger.setMaxLines(
-      cortex_utils::log_file_max_lines);  // Keep last 100000 lines
+  asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
   asyncFileLogger.startLogging();
   trantor::Logger::setOutputFunction(
       [&](const char* msg, const uint64_t len) {
@@ -163,7 +162,7 @@ int main(int argc, char* argv[]) {
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                   cortex_utils::logs_cli_base_name);
       asyncFileLogger.setMaxLines(
-          cortex_utils::log_file_max_lines);  // Keep last 1 million lines
+          config.maxLogLines);  // Keep last 100000 lines
       asyncFileLogger.startLogging();
       trantor::Logger::setOutputFunction(
           [&](const char* msg, const uint64_t len) {
