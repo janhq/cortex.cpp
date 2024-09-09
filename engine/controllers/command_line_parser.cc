@@ -23,7 +23,7 @@ CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
-
+  auto config = file_manager_utils::GetCortexConfig();
   std::string model_id;
 
   // Models group commands
@@ -33,7 +33,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto start_cmd = models_cmd->add_subcommand("start", "Start a model by ID");
     start_cmd->add_option("model_id", model_id, "");
-    start_cmd->callback([&model_id]() {
+    start_cmd->callback([&model_id, &config]() {
       commands::CmdInfo ci(model_id);
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
@@ -41,7 +41,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       yaml_handler.ModelConfigFromFile(
           file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
-      commands::ModelStartCmd msc("127.0.0.1", 3928,
+      commands::ModelStartCmd msc(config.apiServerHost,
+                                  std::stoi(config.apiServerPort),
                                   yaml_handler.GetModelConfig());
       msc.Exec();
     });
@@ -49,7 +50,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto stop_model_cmd =
         models_cmd->add_subcommand("stop", "Stop a model by ID");
     stop_model_cmd->add_option("model_id", model_id, "");
-    stop_model_cmd->callback([&model_id]() {
+    stop_model_cmd->callback([&model_id, &config]() {
       commands::CmdInfo ci(model_id);
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
@@ -57,7 +58,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       yaml_handler.ModelConfigFromFile(
           file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
-      commands::ModelStopCmd smc("127.0.0.1", 3928,
+      commands::ModelStopCmd smc(config.apiServerHost,
+                                 std::stoi(config.apiServerPort),
                                  yaml_handler.GetModelConfig());
       smc.Exec();
     });
@@ -104,7 +106,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     chat_cmd->add_option("model_id", model_id, "");
     chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
 
-    chat_cmd->callback([&model_id, &msg] {
+    chat_cmd->callback([&model_id, &msg, &config] {
       commands::CmdInfo ci(model_id);
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
@@ -112,7 +114,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       yaml_handler.ModelConfigFromFile(
           file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
-      commands::ChatCmd cc("127.0.0.1", 3928, yaml_handler.GetModelConfig());
+      commands::ChatCmd cc(config.apiServerHost,
+                           std::stoi(config.apiServerPort),
+                           yaml_handler.GetModelConfig());
       cc.Exec(msg);
     });
   }
@@ -158,17 +162,18 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
         app_.add_subcommand("run", "Shortcut to start a model and chat");
     std::string model_id;
     run_cmd->add_option("model_id", model_id, "");
-    run_cmd->callback([&model_id] {
-      commands::RunCmd rc("127.0.0.1", 3928, model_id);
+    run_cmd->callback([&model_id, &config] {
+      commands::RunCmd rc(config.apiServerHost, std::stoi(config.apiServerPort),
+                          model_id);
       rc.Exec();
     });
   }
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
-  stop_cmd->callback([] {
-    // TODO get info from config file
-    commands::ServerStopCmd ssc("127.0.0.1", 3928);
+  stop_cmd->callback([&config] {
+    commands::ServerStopCmd ssc(config.apiServerHost,
+                                std::stoi(config.apiServerPort));
     ssc.Exec();
   });
 
