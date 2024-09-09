@@ -16,6 +16,7 @@ namespace commands {
 CortexUpdCmd::CortexUpdCmd() {}
 
 void CortexUpdCmd::Exec(std::string v) {
+  // TODO(sang) check if server is running - if yes, stop it
   // {
   //   commands::ServerStopCmd ssc("127.0.0.1", 3928);
   //   ssc.Exec();
