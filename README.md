@@ -15,7 +15,7 @@ CortexCPP is a Local AI engine that is used to run and customize LLMs. CortexCPP
 
 CortexCPP supports the following engines:
 - [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp)
-- [`cortex.onnx` Repository](https://github.com/janhq/cortex.onnx)
+- [`cortex.onnx`](https://github.com/janhq/cortex.onnx)
 - [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
