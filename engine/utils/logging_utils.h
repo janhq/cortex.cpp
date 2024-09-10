@@ -30,4 +30,3 @@ inline bool log_verbose = false;
   } else {                         \
     std::cout << msg << std::endl; \
   }
-

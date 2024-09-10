@@ -16,7 +16,6 @@
 #include "config/yaml_config.h"
 #include "httplib.h"
 #include "services/engine_service.h"
-#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
@@ -24,7 +23,7 @@ CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
-
+  auto config = file_manager_utils::GetCortexConfig();
   std::string model_id;
 
   // Models group commands
@@ -34,7 +33,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto start_cmd = models_cmd->add_subcommand("start", "Start a model by ID");
     start_cmd->add_option("model_id", model_id, "");
-    start_cmd->callback([&model_id]() {
+    start_cmd->callback([&model_id, &config]() {
       commands::CmdInfo ci(model_id);
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
@@ -42,7 +41,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       yaml_handler.ModelConfigFromFile(
           file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
-      commands::ModelStartCmd msc("127.0.0.1", 3928,
+      commands::ModelStartCmd msc(config.apiServerHost,
+                                  std::stoi(config.apiServerPort),
                                   yaml_handler.GetModelConfig());
       msc.Exec();
     });
@@ -50,7 +50,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     auto stop_model_cmd =
         models_cmd->add_subcommand("stop", "Stop a model by ID");
     stop_model_cmd->add_option("model_id", model_id, "");
-    stop_model_cmd->callback([&model_id]() {
+    stop_model_cmd->callback([&model_id, &config]() {
       commands::CmdInfo ci(model_id);
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
@@ -58,7 +58,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       yaml_handler.ModelConfigFromFile(
           file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
-      commands::ModelStopCmd smc("127.0.0.1", 3928,
+      commands::ModelStopCmd smc(config.apiServerHost,
+                                 std::stoi(config.apiServerPort),
                                  yaml_handler.GetModelConfig());
       smc.Exec();
     });
@@ -105,7 +106,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     chat_cmd->add_option("model_id", model_id, "");
     chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
 
-    chat_cmd->callback([&model_id, &msg] {
+    chat_cmd->callback([&model_id, &msg, &config] {
       commands::CmdInfo ci(model_id);
       std::string model_file =
           ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
@@ -113,7 +114,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       yaml_handler.ModelConfigFromFile(
           file_manager_utils::GetModelsContainerPath().string() + "/" +
           model_file + ".yaml");
-      commands::ChatCmd cc("127.0.0.1", 3928, yaml_handler.GetModelConfig());
+      commands::ChatCmd cc(config.apiServerHost,
+                           std::stoi(config.apiServerPort),
+                           yaml_handler.GetModelConfig());
       cc.Exec(msg);
     });
   }
@@ -135,9 +138,19 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
+    auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
+    install_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
     for (auto& engine : engine_service_.kSupportEngines) {
       std::string engine_name{engine};
-      EngineManagement(engines_cmd, engine_name, version);
+      EngineInstall(install_cmd, engine_name, version);
+    }
+
+    auto uninstall_cmd =
+        engines_cmd->add_subcommand("uninstall", "Uninstall engine");
+    uninstall_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
+    for (auto& engine : engine_service_.kSupportEngines) {
+      std::string engine_name{engine};
+      EngineUninstall(uninstall_cmd, engine_name);
     }
 
     EngineGet(engines_cmd);
@@ -149,17 +162,18 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
         app_.add_subcommand("run", "Shortcut to start a model and chat");
     std::string model_id;
     run_cmd->add_option("model_id", model_id, "");
-    run_cmd->callback([&model_id] {
-      commands::RunCmd rc("127.0.0.1", 3928, model_id);
+    run_cmd->callback([&model_id, &config] {
+      commands::RunCmd rc(config.apiServerHost, std::stoi(config.apiServerPort),
+                          model_id);
       rc.Exec();
     });
   }
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
-  stop_cmd->callback([] {
-    // TODO get info from config file
-    commands::ServerStopCmd ssc("127.0.0.1", 3928);
+  stop_cmd->callback([&config] {
+    commands::ServerStopCmd ssc(config.apiServerHost,
+                                std::stoi(config.apiServerPort));
     ssc.Exec();
   });
 
@@ -193,59 +207,29 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
   if (check_update) {
-    constexpr auto github_host = "https://api.github.com";
-    std::ostringstream release_path;
-    release_path << "/repos/janhq/cortex.cpp/releases/latest";
-    CTL_INF("Engine release path: " << github_host << release_path.str());
-
-    httplib::Client cli(github_host);
-    if (auto res = cli.Get(release_path.str())) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        try {
-          auto json_res = nlohmann::json::parse(res->body);
-          std::string latest_version = json_res["tag_name"].get<std::string>();
-          std::string current_version = CORTEX_CPP_VERSION;
-          if (current_version != latest_version) {
-            CLI_LOG("\nA new release of cortex is available: "
-                    << current_version << " -> " << latest_version);
-            CLI_LOG("To upgrade, run: cortex update");
-            CLI_LOG(json_res["html_url"].get<std::string>());
-          }
-        } catch (const nlohmann::json::parse_error& e) {
-          CTL_INF("JSON parse error: " << e.what());
-        }
-      } else {
-        CTL_INF("HTTP error: " << res->status);
-      }
-    } else {
-      auto err = res.error();
-      CTL_INF("HTTP error: " << httplib::to_string(err));
-    }
+    commands::CheckNewUpdate();
   }
 #endif
 
   return true;
 }
 
-void CommandLineParser::EngineManagement(CLI::App* parent,
-                                         const std::string& engine_name,
-                                         std::string& version) {
-  auto engine_cmd =
-      parent->add_subcommand(engine_name, "Manage " + engine_name + " engine");
+void CommandLineParser::EngineInstall(CLI::App* parent,
+                                      const std::string& engine_name,
+                                      std::string& version) {
+  auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  auto install_cmd = engine_cmd->add_subcommand(
-      "install", "Install " + engine_name + " engine");
-  install_cmd->add_option("-v, --version", version,
-                          "Engine version. Default will be latest");
-
-  install_cmd->callback([engine_name, &version] {
+  install_engine_cmd->callback([&] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });
+}
 
-  auto uninstall_desc{"Uninstall " + engine_name + " engine"};
-  auto uninstall_cmd = engine_cmd->add_subcommand("uninstall", uninstall_desc);
-  uninstall_cmd->callback([engine_name] {
+void CommandLineParser::EngineUninstall(CLI::App* parent,
+                                        const std::string& engine_name) {
+  auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
+
+  uninstall_engine_cmd->callback([&] {
     commands::EngineUninstallCmd cmd(engine_name);
     cmd.Exec();
   });

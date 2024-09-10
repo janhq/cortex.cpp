@@ -135,9 +135,11 @@ inline void CreateConfigFileIfNotExist() {
   CTL_INF("Default data folder path: " + defaultDataFolderPath.string());
 
   auto config = config_yaml_utils::CortexConfig{
+      .logFolderPath = defaultDataFolderPath.string(),
       .dataFolderPath = defaultDataFolderPath.string(),
-      .host = config_yaml_utils::kDefaultHost,
-      .port = config_yaml_utils::kDefaultPort,
+      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
+      .apiServerHost = config_yaml_utils::kDefaultHost,
+      .apiServerPort = config_yaml_utils::kDefaultPort,
   };
   DumpYamlConfig(config, config_path.string());
 }
@@ -167,6 +169,27 @@ inline std::filesystem::path GetCortexDataPath() {
     std::filesystem::create_directory(data_folder_path);
   }
   return data_folder_path;
+}
+
+inline std::filesystem::path GetCortexLogPath() {
+  // TODO: We will need to support user to move the data folder to other place.
+  // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
+  // currently we will store cortex data at ~/cortexcpp
+  auto config = GetCortexConfig();
+  std::filesystem::path log_folder_path;
+  if (!config.logFolderPath.empty()) {
+    log_folder_path = std::filesystem::path(config.logFolderPath);
+  } else {
+    auto home_path = GetHomeDirectoryPath();
+    log_folder_path = home_path / config_yaml_utils::kCortexFolderName;
+  }
+
+  if (!std::filesystem::exists(log_folder_path)) {
+    CTL_INF("Cortex log folder not found. Create one: " +
+            log_folder_path.string());
+    std::filesystem::create_directory(log_folder_path);
+  }
+  return log_folder_path;
 }
 
 inline std::filesystem::path GetModelsContainerPath() {

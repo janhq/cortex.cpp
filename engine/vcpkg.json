@@ -1,5 +1,6 @@
 {
     "dependencies": [
+      "gtest",
       "cli11",
       {
         "name": "cpp-httplib",
@@ -16,4 +17,4 @@
       "libarchive",
       "tabulate"
     ]
-  }
+}

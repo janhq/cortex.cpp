@@ -81,6 +81,7 @@ void DownloadService::StartDownloadItem(
         }
         if (current == total) {
           outputFile.flush();
+          outputFile.close();
           CLI_LOG("Done download: " << static_cast<double>(total) / 1024 / 1024
                                     << " MiB");
           if (callback.has_value()) {

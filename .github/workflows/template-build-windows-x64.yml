@@ -39,17 +39,23 @@ on:
         type: string
         default: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
         description: 'The ccache directory to use for this job'
-      package-name:
-        required: false
+      channel:
+        required: true
         type: string
-        default: 'cortexcpp-nightly'
-        description: 'The package name to use for this job'
+        default: 'nightly'
+        description: 'The channel to use for this job'
     secrets:
-      DELTA_AWS_S3_BUCKET_NAME:
+      MINIO_BUCKET_NAME:
         required: false
-      DELTA_AWS_ACCESS_KEY_ID:
+      MINIO_ENDPOINT:
         required: false
-      DELTA_AWS_SECRET_ACCESS_KEY:
+      MINIO_ACCESS_KEY_ID:
+        required: false
+      MINIO_SECRET_ACCESS_KEY:
+        required: false
+      MINIO_REGION:
+        required: false
+      DEVELOPER_ID:
         required: false
       AZURE_KEY_VAULT_URI:
         required: false
@@ -60,6 +66,14 @@ on:
       AZURE_CLIENT_SECRET:
         required: false
       AZURE_CERT_NAME:
+        required: false
+      DELTA_AWS_S3_BUCKET_NAME:
+        required: false
+      DELTA_AWS_ACCESS_KEY_ID:
+        required: false
+      DELTA_AWS_SECRET_ACCESS_KEY:
+        required: false
+      DELTA_AWS_REGION:
         required: false
 
 jobs:
@@ -77,6 +91,40 @@ jobs:
         if: runner.os == 'Windows'
         with:
           dotnet-version: "8.0.x"
+
+      - name: Set output params for each channel
+        id : set-output-params
+        shell: bash
+        run: |
+          # Set output for stable channel
+          if [ "${{ inputs.channel }}" == "stable" ]; then
+            echo "::set-output name=package_name::cortexcpp"
+            echo "::set-output name=destination_binary_name::cortex"
+            echo "::set-output name=data_folder_name::.cortex"
+            echo "::set-output name=configuration_file_name::.cortexrc"
+            echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
+            echo "::set-output name=iss_file_name::installer.iss"
+          fi
+
+          # Set output for beta channel
+          if [ "${{ inputs.channel }}" == "beta" ]; then
+            echo "::set-output name=package_name::cortexcpp-beta"
+            echo "::set-output name=destination_binary_name::cortex-beta"
+            echo "::set-output name=data_folder_name::.cortex-beta"
+            echo "::set-output name=configuration_file_name::.cortexrc-beta"
+            echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
+            echo "::set-output name=iss_file_name::installer-beta.iss"
+          fi
+
+          # Set output for nightly channel
+          if [ "${{ inputs.channel }}" == "nightly" ]; then
+            echo "::set-output name=package_name::cortexcpp-nightly"
+            echo "::set-output name=destination_binary_name::cortex-nightly"
+            echo "::set-output name=data_folder_name::.cortex-nightly"
+            echo "::set-output name=configuration_file_name::.cortexrc-nightly"
+            echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
+            echo "::set-output name=iss_file_name::installer-nightly.iss"
+          fi
 
       - name: Install jq
         uses: dcarbone/install-jq-action@v2.0.1
@@ -118,17 +166,25 @@ jobs:
           cd engine
           make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
 
+      - name: Update version in installer.iss using sed
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cd engine/templates/windows
+          sed -i "s/AppVersion=1.0/AppVersion=${{ inputs.new_version }}/g" ${{ steps.set-output-params.outputs.iss_file_name }}
+          cat ${{ steps.set-output-params.outputs.iss_file_name }}
+
       - name: Build Installers
         shell: bash
         run: |
           cd engine
-          make build-installer PACKAGE_NAME=${{ inputs.package-name }} VERSION=${{ inputs.new_version }} SOURCE_BINARY_PATH="../../cortex/cortex" DESTINATION_BINARY_NAME="cortex-nightly" DATA_FOLDER_NAME=".cortex-nightly" CONFIGURATION_FILE_NAME=".cortexrc-nightly" UNINSTALLER_FILE_NAME="cortex-nightly-uninstall.sh"
+          make build-installer PACKAGE_NAME=${{ steps.set-output-params.outputs.package_name }} VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
 
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         if: runner.os == 'Windows'
         with:
-          path: engine/templates/windows/installer-nightly.iss
+          path: engine/templates/windows/${{ steps.set-output-params.outputs.iss_file_name }}
           options: /O+
 
       - name: Codesign for windows installer
@@ -162,6 +218,20 @@ jobs:
           asset_path: ./engine/cortex.tar.gz
           asset_name: cortex-${{ inputs.new_version }}-windows-amd64.tar.gz
           asset_content_type: application/zip
+
+      - name: upload to aws s3 if public provider is aws
+        if: ${{ inputs.public_provider }} == 'aws-s3'
+        run: |
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
+          aws s3 cp ./engine/templates/windows/setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-windows-amd64-installer-${{ inputs.new_version }}.exe
+
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
+          aws s3 cp ./engine/templates/windows/setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-windows-amd64-installer-${{ inputs.new_version }}.exe
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.DELTA_AWS_REGION }}
+          AWS_EC2_METADATA_DISABLED: "true"
 
       - name: Upload release assert if public provider is github
         if: ${{ inputs.public_provider }} == 'github'

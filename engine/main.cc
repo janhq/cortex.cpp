@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
@@ -26,19 +27,21 @@
 
 void RunServer() {
   auto config = file_manager_utils::GetCortexConfig();
-  LOG_INFO << "Host: " << config.host << " Port: " << config.port << "\n";
+  LOG_INFO << "Host: " << config.apiServerHost << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
-  std::filesystem::create_directory(cortex_utils::logs_folder);
-  trantor::AsyncFileLogger asyncFileLogger;
-  asyncFileLogger.setFileName(cortex_utils::logs_base_name);
+  std::filesystem::create_directory(config.logFolderPath + "/" +
+                                    cortex_utils::logs_folder);
+  trantor::FileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(config.logFolderPath + "/" +
+                              cortex_utils::logs_base_name);
+  asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
   asyncFileLogger.startLogging();
   trantor::Logger::setOutputFunction(
       [&](const char* msg, const uint64_t len) {
-        asyncFileLogger.output(msg, len);
+        asyncFileLogger.output_(msg, len);
       },
       [&]() { asyncFileLogger.flush(); });
-  asyncFileLogger.setFileSizeLimit(cortex_utils::log_file_size_limit);
   // Number of cortex.cpp threads
   // if (argc > 1) {
   //   thread_num = std::atoi(argv[1]);
@@ -66,10 +69,10 @@ void RunServer() {
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-  LOG_INFO << "Server started, listening at: " << config.host << ":"
-           << config.port;
+  LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
+           << config.apiServerPort;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(config.host, std::stoi(config.port));
+  drogon::app().addListener(config.apiServerHost, std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
@@ -154,6 +157,18 @@ int main(int argc, char* argv[]) {
       RunServer();
       return 0;
     } else {
+      auto config = file_manager_utils::GetCortexConfig();
+      trantor::FileLogger asyncFileLogger;
+      asyncFileLogger.setFileName(config.logFolderPath + "/" +
+                                  cortex_utils::logs_cli_base_name);
+      asyncFileLogger.setMaxLines(
+          config.maxLogLines);  // Keep last 100000 lines
+      asyncFileLogger.startLogging();
+      trantor::Logger::setOutputFunction(
+          [&](const char* msg, const uint64_t len) {
+            asyncFileLogger.output_(msg, len);
+          },
+          [&]() { asyncFileLogger.flush(); });
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
       return 0;
