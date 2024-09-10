@@ -13,28 +13,28 @@
 ## About
 Cortex.cpp is a Local AI engine that is used to run and customize LLMs. Cortex can be deployed as a standalone server, or integrated into apps like [Jan.ai](https://jan.ai/).
 
-Cortex supports the following engines:
+Cortex.cpp supports the following engines:
 - [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp)
 - [`cortex.onnx`](https://github.com/janhq/cortex.onnx)
 - [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
-To install Cortex, download the installer for your operating system from the following options:
+To install Cortex.cpp, download the installer for your operating system from the following options:
 - **Stable Version**
-  - [Windows]()
-  - [Mac]()
-  - [Linux (Debian)]()
-  - [Linux (Fedora)]()
+  - [Windows](https://github.com/janhq/cortex.cpp/releases)
+  - [Mac](https://github.com/janhq/cortex.cpp/releases)
+  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
+  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
 - **Beta Version**
-  - [Windows]()
-  - [Mac]()
-  - [Linux (Debian)]()
-  - [Linux (Fedora)]()
+  - [Windows](https://github.com/janhq/cortex.cpp/releases)
+  - [Mac](https://github.com/janhq/cortex.cpp/releases)
+  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
+  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
 - **Nightly Version**
-  - [Windows]()
-  - [Mac]()
-  - [Linux (Debian)]()
-  - [Linux (Fedora)]()
+  - [Windows](https://github.com/janhq/cortex.cpp/releases)
+  - [Mac](https://github.com/janhq/cortex.cpp/releases)
+  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
+  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
 
 
 ### Libraries
@@ -43,7 +43,7 @@ To install Cortex, download the installer for your operating system from the fol
 
 ### Build from Source
 
-To install Cortex from the source, follow the steps below:
+To install Cortex.cpp from the source, follow the steps below:
 
 1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
 2. Navigate to the `engine > vcpkg` folder.
@@ -54,7 +54,7 @@ cd vcpkg
 ./bootstrap-vcpkg.bat
 vcpkg install
 ```
-4. Build the Cortex inside the `build` folder:
+4. Build the Cortex.cpp inside the `build` folder:
 
 ```bash
 mkdir build
@@ -62,11 +62,16 @@ cd build
 cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
 ```
 5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
+6. Verify that Cortex.cpp is installed correctly by getting help information.
 
+```sh
+# Get the help information
+cortex -h
+```
 ## Quickstart
-To run and chat with a model in Cortex:
+To run and chat with a model in Cortex.cpp:
 ```bash
-# Start the Cortex server
+# Start the Cortex.cpp server
 cortex
 
 # Start a model
@@ -122,7 +127,7 @@ Here are example of models that you can use based on each supported engine:
 
 | Command Description                | Command Example                                                     |
 |------------------------------------|---------------------------------------------------------------------|
-| **Start Cortex Server**            | `cortex`                                                            |
+| **Start Cortex.cpp Server**            | `cortex`                                                            |
 | **Chat with a Model**              | `cortex chat [options] [model_id] [message]`                        |
 | **Embeddings**                     | `cortex embeddings [options] [model_id] [message]`                  |
 | **Pull a Model**                   | `cortex pull <model_id>`                                            |
@@ -138,7 +143,7 @@ Here are example of models that you can use based on each supported engine:
 | **List Engines**                   | `cortex engines list [options]`                                     |
 | **Uninnstall an Engine**              | `cortex engines uninstall <engine_name> [options]`                 |
 | **Show Model Information**         | `cortex ps`                                                         |
-| **Update Cortex**         | `cortex update [options]`                                                         |
+| **Update Cortex.cpp**         | `cortex update [options]`                                                         |
 
 > **Note**:
 > For a more detailed CLI Reference documentation, please see [here](https://cortex.so/docs/cli).
