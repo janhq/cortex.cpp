@@ -2,9 +2,11 @@
 
 #include <trantor/utils/AsyncFileLogger.h>
 #include <trantor/utils/Utilities.h>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <mutex>
 
 #ifdef _WIN32
 #include <windows.h>
