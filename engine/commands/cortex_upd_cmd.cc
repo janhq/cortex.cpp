@@ -31,13 +31,13 @@ void CortexUpdCmd::Exec(std::string v) {
     if (!GetNightly(v))
       return;
   } else {
-    if (!GetProAndBeta(v))
+    if (!GetStableAndBeta(v))
       return;
   }
   CLI_LOG("Update cortex sucessfully");
 }
 
-bool CortexUpdCmd::GetProAndBeta(const std::string& v) {
+bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
   // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
@@ -136,9 +136,9 @@ bool CortexUpdCmd::GetProAndBeta(const std::string& v) {
     return false;
   }
 
-  // Replace binay file
+  // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = executable_path / "cortex" / "cortex-cpp" / GetCortexBinary();
+  auto src = executable_path / "cortex" / kCortexBinary / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }

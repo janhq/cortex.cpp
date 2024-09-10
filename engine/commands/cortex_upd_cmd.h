@@ -117,7 +117,7 @@ class CortexUpdCmd {
   void Exec(std::string version);
 
  private:
-  bool GetProAndBeta(const std::string& v);
+  bool GetStableAndBeta(const std::string& v);
   bool GetNightly(const std::string& v);
 };
 
