@@ -9,8 +9,8 @@
 namespace config_yaml_utils {
 struct CortexConfig {
   std::string dataFolderPath;
-  std::string host;
-  std::string port;
+  std::string apiServerHost;
+  std::string apiServerPort;
 };
 
 const std::string kCortexFolderName = "cortexcpp";
@@ -28,8 +28,8 @@ inline void DumpYamlConfig(const CortexConfig& config,
     }
     YAML::Node node;
     node["dataFolderPath"] = config.dataFolderPath;
-    node["host"] = config.host;
-    node["port"] = config.port;
+    node["apiServerHost"] = config.apiServerHost;
+    node["apiServerPort"] = config.apiServerPort;
 
     out_file << node;
     out_file.close();
@@ -50,8 +50,8 @@ inline CortexConfig FromYaml(const std::string& path,
     auto node = YAML::LoadFile(config_file_path.string());
     CortexConfig config = {
         .dataFolderPath = node["dataFolderPath"].as<std::string>(),
-        .host = node["host"].as<std::string>(),
-        .port = node["port"].as<std::string>(),
+        .apiServerHost = node["apiServerHost"].as<std::string>(),
+        .apiServerPort = node["apiServerPort"].as<std::string>(),
     };
     return config;
   } catch (const YAML::BadFile& e) {
@@ -59,6 +59,5 @@ inline CortexConfig FromYaml(const std::string& path,
     throw;
   }
 }
-
 
 }  // namespace config_yaml_utils

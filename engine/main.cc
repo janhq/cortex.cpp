@@ -26,7 +26,7 @@
 
 void RunServer() {
   auto config = file_manager_utils::GetCortexConfig();
-  LOG_INFO << "Host: " << config.host << " Port: " << config.port << "\n";
+  LOG_INFO << "Host: " << config.apiServerHost << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
   std::filesystem::create_directory(cortex_utils::logs_folder);
@@ -66,10 +66,10 @@ void RunServer() {
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-  LOG_INFO << "Server started, listening at: " << config.host << ":"
-           << config.port;
+  LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
+           << config.apiServerPort;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(config.host, std::stoi(config.port));
+  drogon::app().addListener(config.apiServerHost, std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
