@@ -137,9 +137,9 @@ inline void CreateConfigFileIfNotExist() {
   auto config = config_yaml_utils::CortexConfig{
       .logFolderPath = defaultDataFolderPath.string(),
       .dataFolderPath = defaultDataFolderPath.string(),
-      .host = config_yaml_utils::kDefaultHost,
-      .port = config_yaml_utils::kDefaultPort,
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
+      .apiServerHost = config_yaml_utils::kDefaultHost,
+      .apiServerPort = config_yaml_utils::kDefaultPort,
   };
   DumpYamlConfig(config, config_path.string());
 }

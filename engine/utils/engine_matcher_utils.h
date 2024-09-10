@@ -8,49 +8,10 @@
 #include "utils/logging_utils.h"
 
 namespace engine_matcher_utils {
-// for testing purpose
-const std::vector<std::string> cortex_llamacpp_variants{
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx2-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx2-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx2.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx512-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx512-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx512.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-noavx-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-noavx-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-noavx.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-vulkan.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-mac-amd64.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-mac-arm64.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx512-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx512-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx512.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-noavx-cuda-11-7.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-noavx-cuda-12-0.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-noavx.tar.gz",
-    "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-vulkan.tar.gz",
-};
-const std::vector<std::string> cortex_onnx_variants{
-    "cortex.onnx-0.1.7-windows-amd64.tar.gz"};
-
-const std::vector<std::string> cortex_tensorrt_variants{
-    "cortex.tensorrt-llm-0.0.9-linux-cuda-12-4.tar.gz",
-    "cortex.tensorrt-llm-0.0.9-windows-cuda-12-4.tar.gz"};
-
-inline std::string GetSuitableAvxVariant() {
-  cortex::cpuid::CpuInfo cpu_info;
-
+inline std::string GetSuitableAvxVariant(cortex::cpuid::CpuInfo& cpu_info) {
   CTL_INF("GetSuitableAvxVariant:" << "\n" << cpu_info.to_string());
 
+  // prioritize avx512 > avx2 > avx > noavx
   if (cpu_info.has_avx512_f())
     return "avx512";
   if (cpu_info.has_avx2())
@@ -151,10 +112,8 @@ inline std::string Validate(const std::vector<std::string>& variants,
                             const std::string& os, const std::string& cpu_arch,
                             const std::string& suitable_avx,
                             const std::string& cuda_version) {
-
-  // Early return if the OS is unsupported
+  // Early return if the OS is not supported
   if (os != "mac" && os != "windows" && os != "linux") {
-    // TODO: throw is better
     return "";
   }
 
