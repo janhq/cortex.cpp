@@ -136,8 +136,8 @@ inline void CreateConfigFileIfNotExist() {
 
   auto config = config_yaml_utils::CortexConfig{
       .dataFolderPath = defaultDataFolderPath.string(),
-      .host = config_yaml_utils::kDefaultHost,
-      .port = config_yaml_utils::kDefaultPort,
+      .apiServerHost = config_yaml_utils::kDefaultHost,
+      .apiServerPort = config_yaml_utils::kDefaultPort,
   };
   DumpYamlConfig(config, config_path.string());
 }
