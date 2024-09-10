@@ -7,8 +7,8 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
-#include "utils/logging_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -288,13 +288,47 @@ void server::LoadModel(const HttpRequestPtr& req,
       }
 
       std::string abs_path =
-          (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
-                                 : file_manager_utils::GetCortexDataPath().string()) +
+          (getenv("ENGINE_PATH")
+               ? getenv("ENGINE_PATH")
+               : file_manager_utils::GetCortexDataPath().string()) +
           get_engine_path(engine_type);
-#if defined(WIN32)
-      auto ws = std::wstring(abs_path.begin(), abs_path.end());
-      if (AddDllDirectory(ws.c_str()) == 0) {
-        CTL_WRN("Could not add dll directory: " << abs_path);
+#if defined(_WIN32)
+      // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
+      // We would like to support running multiple engines at the same time. Therefore,
+      // the adding/removing dll directory logic is quite complicated:
+      // 1. If llamacpp is loaded and new requested engine is tensorrt-llm:
+      // Unload the llamacpp dll directory then load the tensorrt-llm
+      // 2. If tensorrt-llm is loaded and new requested engine is llamacpp:
+      // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
+      // 3. Add dll directory if met other conditions
+      if (IsEngineLoaded(kLlamaEngine) && engine_type == kTensorrtLlmEngine) {
+        // Remove llamacpp dll directory
+        if (!RemoveDllDirectory(engines_[kLlamaEngine].cookie)) {
+          LOG_INFO << "Could not remove dll directory: " << kLlamaEngine;
+        } else {
+          LOG_INFO << "Removed dll directory: " << kLlamaEngine;
+        }
+
+        auto ws = std::wstring(abs_path.begin(), abs_path.end());
+        if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
+          LOG_INFO << "Added dll directory: " << abs_path;
+          engines_[engine_type].cookie = cookie;
+        } else {
+          LOG_INFO << "Could not add dll directory: " << abs_path;
+        }
+
+      } else if (IsEngineLoaded(kTensorrtLlmEngine) &&
+                 engine_type == kLlamaEngine) {
+        // Do nothing
+      } else {
+        auto ws = std::wstring(abs_path.begin(), abs_path.end());
+        if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
+          std::cout << "sangnv" << std::endl;
+          LOG_INFO << "Added dll directory: " << abs_path;
+          engines_[engine_type].cookie = cookie;
+        } else {
+          LOG_INFO << "Could not add dll directory: " << abs_path;
+        }
       }
 #endif
       engines_[engine_type].dl =
@@ -352,6 +386,9 @@ void server::UnloadEngine(
 
   EngineI* e = std::get<EngineI*>(engines_[engine_type].engine);
   delete e;
+#if defined(_WIN32)
+  RemoveDllDirectory(engines_[engine_type].cookie);
+#endif
   engines_.erase(engine_type);
   LOG_INFO << "Unloaded engine " + engine_type;
   Json::Value res;

@@ -10,6 +10,7 @@
 #include "utils/cuda_toolkit_utils.h"
 #include "utils/engine_matcher_utils.h"
 #if defined(_WIN32) || defined(__linux__)
+#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #endif
 
@@ -125,7 +126,7 @@ bool EngineInitCmd::Exec() const {
 
               archive_utils::ExtractArchive(downloadedEnginePath.string(),
                                             extract_path.string());
-#if defined(_WIN32) || defined(__linux__)
+#if defined(__linux__)
               // FIXME: hacky try to copy the file. Remove this when we are able to set the library path
               auto engine_path = extract_path / engineName_;
               LOG_INFO << "Source path: " << engine_path.string();
@@ -224,15 +225,30 @@ bool EngineInitCmd::Exec() const {
 
             download_service.AddDownloadTask(
                 downloadCudaToolkitTask,
-                [](const std::string& absolute_path, bool unused) {
+                [this](const std::string& absolute_path, bool unused) {
                   LOG_DEBUG << "Downloaded cuda path: " << absolute_path;
                   // try to unzip the downloaded file
                   std::filesystem::path downloaded_path{absolute_path};
-
+#if defined(__linux__)
                   archive_utils::ExtractArchive(
                       absolute_path,
                       downloaded_path.parent_path().parent_path().string());
-
+#else
+                  // TODO(any) This is a temporary fix. The issue will be fixed when we has CIs 
+                  // to pack CUDA dependecies into engine release
+                  auto get_engine_path = [](std::string_view e) {
+                    if (e == "cortex.llamacpp") {
+                      return cortex_utils::kLlamaLibPath;
+                    } else if (e == "cortex.tensorrt-llm") {
+                      return cortex_utils::kTensorrtLlmPath;
+                    }
+                    return cortex_utils::kLlamaLibPath;
+                  };
+                  std::string engine_path =
+                      file_manager_utils::GetCortexDataPath().string() +
+                      get_engine_path(engineName_);
+                  archive_utils::ExtractArchive(absolute_path, engine_path);
+#endif
                   try {
                     std::filesystem::remove(absolute_path);
                   } catch (std::exception& e) {
