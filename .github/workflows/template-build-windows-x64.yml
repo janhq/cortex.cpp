@@ -16,7 +16,7 @@ on:
         type: string
         default: ''
       upload_url:
-        required: true
+        required: false
         type: string
         default: ''
       runs-on:
@@ -86,9 +86,9 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{ inputs.ref }}
+          submodules: 'recursive'
 
       - uses: actions/setup-dotnet@v3
-        if: runner.os == 'Windows'
         with:
           dotnet-version: "8.0.x"
 
@@ -135,7 +135,6 @@ jobs:
           dotnet tool install --global AzureSignTool
 
       - name: Download ccache from s3
-        if: runner.os == 'Windows'
         continue-on-error: true
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
@@ -147,6 +146,7 @@ jobs:
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
       - name: Configure vcpkg
+        shell: cmd
         run: |
           cd engine
           make configure-vcpkg
@@ -164,34 +164,33 @@ jobs:
       - name: Code Signing binaries
         run: |
           cd engine
-          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+          make codesign-binary AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
 
       - name: Update version in installer.iss using sed
-        if: runner.os == 'Windows'
         shell: bash
         run: |
           cd engine/templates/windows
           sed -i "s/AppVersion=1.0/AppVersion=${{ inputs.new_version }}/g" ${{ steps.set-output-params.outputs.iss_file_name }}
           cat ${{ steps.set-output-params.outputs.iss_file_name }}
+          cp ${{ steps.set-output-params.outputs.iss_file_name }} ../../../
+          ls ../../../
 
       - name: Build Installers
         shell: bash
         run: |
           cd engine
           make build-installer PACKAGE_NAME=${{ steps.set-output-params.outputs.package_name }} VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
+          ls ../
 
       - name: Compile .ISS to .EXE Installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-        if: runner.os == 'Windows'
         with:
-          path: engine/templates/windows/${{ steps.set-output-params.outputs.iss_file_name }}
+          path: ${{ steps.set-output-params.outputs.iss_file_name }}
           options: /O+
 
       - name: Codesign for windows installer
-        if: runner.os == 'Windows'
         run: |
-          cd engine
-          %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\templates\windows\setup.exe";' 
+          %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\setup.exe";' 
 
       - name: Package
         run: |
@@ -199,34 +198,25 @@ jobs:
           make package
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: cortex-windows-amd64-${{ inputs.new_version }}
+          name: cortex-${{ inputs.new_version }}-windows-amd64
           path: ./engine/cortex
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: cortex-windows-amd64-installer-${{ inputs.new_version }}
-          path: ./engine/templates/windows/setup.exe
-      
-      - name: Upload release assert if public provider is github
-        if: ${{ inputs.public_provider }} == 'github'
-        uses: actions/upload-release-asset@v1.0.1
-        with:
-          upload_url: ${{ inputs.upload_url }}
-          asset_path: ./engine/cortex.tar.gz
-          asset_name: cortex-${{ inputs.new_version }}-windows-amd64.tar.gz
-          asset_content_type: application/zip
+          name: cortex-${{ inputs.new_version }}-windows-amd64-installer
+          path: ./setup.exe
 
       - name: upload to aws s3 if public provider is aws
-        if: ${{ inputs.public_provider }} == 'aws-s3'
+        if: inputs.public_provider == 'aws-s3'
         run: |
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./engine/templates/windows/setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-windows-amd64-installer-${{ inputs.new_version }}.exe
+          aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./engine/templates/windows/setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-windows-amd64-installer-${{ inputs.new_version }}.exe
+          aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
@@ -234,7 +224,7 @@ jobs:
           AWS_EC2_METADATA_DISABLED: "true"
 
       - name: Upload release assert if public provider is github
-        if: ${{ inputs.public_provider }} == 'github'
+        if: inputs.public_provider == 'github'
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ inputs.upload_url }}
@@ -243,10 +233,10 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload release assert if public provider is github
-        if: ${{ inputs.public_provider }} == 'github'
+        if: inputs.public_provider == 'github'
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ inputs.upload_url }}
-          asset_path: ./engine/templates/windows/setup.exe
-          asset_name: cortex-windows-amd64-installer-${{ inputs.new_version }}.exe
-          asset_content_type: application/zip
+          asset_path: ./setup.exe
+          asset_name: cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
+          asset_content_type: application/octet-stream

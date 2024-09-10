@@ -13,10 +13,6 @@ on:
           - aws-s3
         default: none
 
-env:
-  LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
-  EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
-
 jobs:
   set-public-provider:
     runs-on: ubuntu-latest
@@ -47,188 +43,69 @@ jobs:
   get-update-version:
     uses: ./.github/workflows/template-get-update-version.yml
 
-  build-and-test:
-    runs-on: ${{ matrix.runs-on }}
+  build-macos-x64:
+    uses: ./.github/workflows/template-build-macos.yml
     needs: [get-update-version, set-public-provider]
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: "linux"
-            name: "amd64"
-            runs-on: "ubuntu-20-04-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ''
-          - os: "mac"
-            name: "amd64"
-            runs-on: "macos-13"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ''
-          - os: "mac"
-            name: "arm64"
-            runs-on: "macos-latest"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
-            build-deps-cmake-flags: ""
-            ccache-dir: ''
-          - os: "windows"
-            name: "amd64"
-            runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'          
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+    secrets: inherit
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: macos-12
+      cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      arch: amd64
 
-      - name: Get Cer for code signing
-        if: runner.os == 'macOS'
-        run: base64 -d <<< "$NOTARIZE_P8_BASE64" > /tmp/notary-key.p8
-        shell: bash
-        env:
-          NOTARIZE_P8_BASE64: ${{ secrets.NOTARIZE_P8_BASE64 }}
+  build-macos-arm64:
+    uses: ./.github/workflows/template-build-macos.yml
+    needs: [get-update-version, set-public-provider]
+    secrets: inherit
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: macos-latest
+      cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      arch: arm64
 
-      - name: Install gettext-bast linux
-        if: runner.os == 'Linux'
-        run: sudo apt update && sudo apt install gettext-base -y
-
-      - uses: apple-actions/import-codesign-certs@v2
-        continue-on-error: true
-        if: runner.os == 'macOS'
-        with:
-          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
-
-      - uses: actions/setup-dotnet@v3
-        if: runner.os == 'Windows'
-        with:
-          dotnet-version: "8.0.x"
-
-      - name: Install choco on Windows
-        if: runner.os == 'Windows'
-        run: |
-          choco install make pkgconfiglite ccache awscli 7zip ninja -y
-          dotnet tool install --global AzureSignTool
-
-      - name: Download ccache from s3
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        run: |
-          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-          refreshenv
-          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
-          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
-
-      - name: Configure vcpkg
-        run: |
-          cd engine
-          make configure-vcpkg
-      
-      - name: Build
-        run: |
-          cd engine
-          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
- 
-      - name: Pre-package
-        run: |
-          cd engine
-          make pre-package
-      
-      - name: Code Signing binaries
-        run: |
-          cd engine
-          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
-
-      - name: Notary macOS Binary
-        if: runner.os == 'macOS'
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
-          cd engine/cortex
-          # Notarize the binary
-          quill notarize ./cortex
-        env:
-          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
-          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
-          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
-
-      - name: Build Installers
-        shell: bash
-        run: |
-          cd engine
-          make build-installer PACKAGE_NAME=cortexcpp-nightly VERSION=${{ needs.get-update-version.outputs.new_version }} SOURCE_BINARY_PATH="../../cortex/cortex" DESTINATION_BINARY_NAME="cortex-nightly" DATA_FOLDER_NAME=".cortex-nightly" CONFIGURATION_FILE_NAME=".cortexrc-nightly" UNINSTALLER_FILE_NAME="cortex-nightly-uninstall.sh"
-
-      - name: Codesign and notary for macos installer
-        if: runner.os == 'macOS'
-        run: |
-          cd engine
-          productsign --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}-signed.pkg
-          rm cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg
-          mv cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}-signed.pkg cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg
-          xcrun notarytool submit cortexcpp-nightly-${{ needs.get-update-version.outputs.new_version }}.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
-
-      - name: Compile .ISS to .EXE Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
-        if: runner.os == 'Windows'
-        with:
-          path: engine/templates/windows/installer-nightly.iss
-          options: /O+
-
-      - name: Codesign for windows installer
-        if: runner.os == 'Windows'
-        run: |
-          cd engine
+  build-windows-x64:
+    uses: ./.github/workflows/template-build-windows-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: windows-cuda-11-7
+      cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+      channel: nightly
           
-          set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-          azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\templates\windows\setup.exe";' 
-
-      - name: Package
+  build-linux-x64:
+    uses: ./.github/workflows/template-build-linux-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-20-04
+      cmake-flags: "-DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+  
+  update-latest-version:
+    runs-on: ubuntu-latest
+    needs: [get-update-version, set-public-provider, build-linux-x64, build-macos-x64, build-macos-arm64, build-windows-x64]
+    steps:
+      - name: Update latest version
+        id: update-latest-version
         run: |
-          cd engine
-          make package
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-${{ matrix.name }}
-          path: ./engine/cortex
-
-      - name: Upload windwos installer
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-installer-${{ matrix.name }}
-          path: ./engine/templates/windows/setup.exe
-      
-      - name: Upload macos installer
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-installer-${{ matrix.name }}
-          path: ./engine/cortexcpp-nightly.pkg
-
-      - name: Upload linux installer
-        if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-${{ matrix.os }}-installer-${{ matrix.name }}
-          path: ./engine/cortexcpp-nightly.deb
-
-      - name: Upload ccache to s3
-        continue-on-error: true
-        if: always() && runner.os == 'Windows'
-        run: |
-          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-          refreshenv
-          aws s3 cp ${{ matrix.ccache-dir }} s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-${{ matrix.os }}-${{ matrix.name }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+          echo "{\"tag_name\": \"v${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
+          aws s3 cp version.json s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/version.json
         env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
-          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+          AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.DELTA_AWS_REGION }}
+          AWS_EC2_METADATA_DISABLED: "true"

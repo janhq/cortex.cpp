@@ -29,8 +29,8 @@ all:
 
 configure-vcpkg:
 ifeq ($(OS),Windows_NT)
-	@cd vcpkg && bootstrap-vcpkg.bat;
-	@cd vcpkg && vcpkg install
+	@cd vcpkg && cmd /c bootstrap-vcpkg.bat;
+	@cd vcpkg && cmd /c vcpkg install
 else ifeq ($(shell uname -s),Linux) 
 	@cd vcpkg && ./bootstrap-vcpkg.sh;
 	@cd vcpkg && ./vcpkg install;
@@ -76,7 +76,7 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
-	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\cortex.exe";'
+	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\cortex.exe";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
@@ -95,20 +95,20 @@ endif
 
 build-installer:
 ifeq ($(OS),Windows_NT)
-	@echo "Building installer for linux"; \
-	cp cortex/* templates/windows/; \
-	mv templates/windows/cortex.exe templates/windows/$(DESTINATION_BINARY_NAME).exe;
+	@echo "Building installer for Windows"; \
+	cp cortex/* ../; \
+	mv ../cortex.exe ../$(DESTINATION_BINARY_NAME).exe;
 else ifeq ($(shell uname -s),Linux)
 	@echo "Building installer for linux"; \
 	cd templates/linux; \
 	chmod +x create_deb.sh; \
-	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME);
+	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME); \
 	cp $(PACKAGE_NAME).deb ../../
 else
-	@echo "Building installer for linux"; \
+	@echo "Building installer for Macos"; \
 	cd templates/macos; \
 	chmod +x create_pkg.sh; \
-	./create_pkg.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME) $(UNINSTALLER_FILE_NAME);
+	./create_pkg.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME) $(UNINSTALLER_FILE_NAME); \
 	cp $(PACKAGE_NAME).pkg ../../
 endif
 
