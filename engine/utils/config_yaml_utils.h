@@ -8,7 +8,9 @@
 
 namespace config_yaml_utils {
 struct CortexConfig {
+  std::string logFolderPath;
   std::string dataFolderPath;
+  int maxLogLines;
   std::string apiServerHost;
   std::string apiServerPort;
 };
@@ -16,6 +18,7 @@ struct CortexConfig {
 const std::string kCortexFolderName = "cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
 const std::string kDefaultPort{"3928"};
+const int kDefaultMaxLines{100000};
 
 inline void DumpYamlConfig(const CortexConfig& config,
                            const std::string& path) {
@@ -27,7 +30,9 @@ inline void DumpYamlConfig(const CortexConfig& config,
       throw std::runtime_error("Failed to open output file.");
     }
     YAML::Node node;
+    node["logFolderPath"] = config.logFolderPath;
     node["dataFolderPath"] = config.dataFolderPath;
+    node["maxLogLines"] = config.maxLogLines;
     node["apiServerHost"] = config.apiServerHost;
     node["apiServerPort"] = config.apiServerPort;
 
@@ -48,8 +53,16 @@ inline CortexConfig FromYaml(const std::string& path,
 
   try {
     auto node = YAML::LoadFile(config_file_path.string());
+    int max_lines;
+    if (!node["maxLogLines"]) {
+      max_lines = kDefaultMaxLines;
+    } else {
+      max_lines = node["maxLogLines"].as<int>();
+    }
     CortexConfig config = {
+        .logFolderPath = node["logFolderPath"].as<std::string>(),
         .dataFolderPath = node["dataFolderPath"].as<std::string>(),
+        .maxLogLines = max_lines,
         .apiServerHost = node["apiServerHost"].as<std::string>(),
         .apiServerPort = node["apiServerPort"].as<std::string>(),
     };
