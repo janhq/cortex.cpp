@@ -28,16 +28,19 @@ void FileLogger::output_(const char* msg, const uint64_t len) {
 FileLogger::CircularLogFile::CircularLogFile(const std::string& fileName,
                                              uint64_t maxLines)
     : max_lines_(maxLines), file_name_(fileName) {
+  std::lock_guard<std::mutex> lock(mutex_);
   OpenFile();
   LoadExistingLines();
   TruncateFileIfNeeded();
 }
 
 FileLogger::CircularLogFile::~CircularLogFile() {
+  std::lock_guard<std::mutex> lock(mutex_);
   CloseFile();
 }
 void FileLogger::CircularLogFile::writeLog(const char* logLine,
                                            const uint64_t len) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (!fp_)
     return;
 
@@ -60,6 +63,7 @@ void FileLogger::CircularLogFile::writeLog(const char* logLine,
   }
 }
 void FileLogger::CircularLogFile::flush() {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (fp_) {
     fflush(fp_);
   }
