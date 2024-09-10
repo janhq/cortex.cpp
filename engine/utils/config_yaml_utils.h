@@ -53,16 +53,16 @@ inline CortexConfig FromYaml(const std::string& path,
 
   try {
     auto node = YAML::LoadFile(config_file_path.string());
-    int max_lines_;
+    int max_lines;
     if (!node["maxLogLines"]) {
-      max_lines_ = kDefaultMaxLines;
+      max_lines = kDefaultMaxLines;
     } else {
-      max_lines_ = node["maxLogLines"].as<int>();
+      max_lines = node["maxLogLines"].as<int>();
     }
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"].as<std::string>(),
         .dataFolderPath = node["dataFolderPath"].as<std::string>(),
-        .maxLogLines = max_lines_,
+        .maxLogLines = max_lines,
         .apiServerHost = node["apiServerHost"].as<std::string>(),
         .apiServerPort = node["apiServerPort"].as<std::string>(),
     };

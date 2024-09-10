@@ -48,7 +48,7 @@ void FileLogger::CircularLogFile::writeLog(const char* logLine,
   std::istringstream iss(logString);
   std::string line;
   while (std::getline(iss, line)) {
-    if (totalLines_ >= max_lines_) {
+    if (totalLines_.load() >= max_lines_) {
       lineBuffer_.pop_front();
       --totalLines_;
     }
@@ -56,7 +56,7 @@ void FileLogger::CircularLogFile::writeLog(const char* logLine,
     ++totalLines_;
     AppendToFile(line + "\n");
     ++linesWrittenSinceLastTruncate_;
-    if (linesWrittenSinceLastTruncate_ >= TRUNCATE_CHECK_INTERVAL) {
+    if (linesWrittenSinceLastTruncate_.load() >= TRUNCATE_CHECK_INTERVAL) {
 
       TruncateFileIfNeeded();
     }
@@ -71,7 +71,7 @@ void FileLogger::CircularLogFile::flush() {
 
 void FileLogger::CircularLogFile::TruncateFileIfNeeded() {
   // std::cout<<"Truncating file "<< totalLines_ <<std::endl;
-  if (!fp_ || totalLines_ < max_lines_)
+  if (!fp_ || totalLines_.load() < max_lines_)
     return;
 
   // Close the current file
@@ -106,14 +106,14 @@ void FileLogger::CircularLogFile::TruncateFileIfNeeded() {
     std::remove(tempFileName.c_str());  // Clean up the temporary file
   } else {
     // std::cout<<"Truncating file" <<std::endl;
-    totalLines_ =
-        lineBuffer_.size() > max_lines_ ? max_lines_ : lineBuffer_.size();
+    totalLines_.store(lineBuffer_.size() > max_lines_ ? max_lines_
+                                                      : lineBuffer_.size());
   }
 
   // Reopen the file
   OpenFile();
   // LoadExistingLines();
-  linesWrittenSinceLastTruncate_ = 0;
+  linesWrittenSinceLastTruncate_.store(0);
 }
 
 void FileLogger::CircularLogFile::OpenFile() {
@@ -145,7 +145,7 @@ void FileLogger::CircularLogFile::LoadExistingLines() {
   fseek(fp_, 0, SEEK_SET);
 
   lineBuffer_.clear();
-  totalLines_ = 0;
+  totalLines_.store(0);
 
   std::string line;
   char buffer[4096];
@@ -154,7 +154,7 @@ void FileLogger::CircularLogFile::LoadExistingLines() {
     if (!line.empty() && line.back() == '\n') {
       line.pop_back();  // Remove trailing newline
     }
-    if (totalLines_ >= max_lines_) {
+    if (totalLines_.load() >= max_lines_) {
       lineBuffer_.pop_front();
     }
     lineBuffer_.push_back(line);

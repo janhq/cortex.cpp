@@ -2,6 +2,8 @@
 
 #include <trantor/utils/AsyncFileLogger.h>
 #include <trantor/utils/Utilities.h>
+#include <cstddef>
+#include <cstdint>
 #include <deque>
 
 #ifdef _WIN32
@@ -49,10 +51,10 @@ class TRANTOR_EXPORT FileLogger : public AsyncFileLogger {
    private:
     FILE* fp_{nullptr};
     uint64_t max_lines_;
-    std::atomic<uint64_t> totalLines_{0};
+    std::atomic<size_t> totalLines_{0};
     std::string file_name_;
     std::deque<std::string> lineBuffer_;
-    uint64_t linesWrittenSinceLastTruncate_{0};
+    std::atomic<size_t> linesWrittenSinceLastTruncate_{0};
     static const uint64_t TRUNCATE_CHECK_INTERVAL = 1000;
     mutable std::mutex mutex_;
 
