@@ -21,11 +21,9 @@ constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
 }  // namespace
 
 server::server() {
-
-  // Some default values for now below
-  // log_disable();  // Disable the log to file feature, reduce bloat for
-  // target
-  // system ()
+#if defined(WIN32)
+  SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+#endif
 };
 
 server::~server() {}
@@ -293,7 +291,12 @@ void server::LoadModel(const HttpRequestPtr& req,
           (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
                                  : file_manager_utils::GetCortexDataPath().string()) +
           get_engine_path(engine_type);
-      std::cout << abs_path << std::endl;
+#if defined(WIN32)
+      auto ws = std::wstring(abs_path.begin(), abs_path.end());
+      if (AddDllDirectory(ws.c_str()) == 0) {
+        CTL_WRN("Could not add dll directory: " << abs_path);
+      }
+#endif
       engines_[engine_type].dl =
           std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
 
