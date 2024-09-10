@@ -5,7 +5,9 @@ namespace {
 constexpr const auto kNewReleaseFolder = "./cortex-release";
 constexpr const auto kNewReleaseFile = "./cortex-release/cortexexe";
 constexpr const auto kCurReleaseFile = "./cortexexe";
-constexpr const auto kTemp = "./cortex_temp";
+std::filesystem::path GetCortexTemp() {
+    return std::filesystem::temp_directory_path() / "cortex_temp";
+}
 }  // namespace
 
 class CortexUpdCmdTest : public ::testing::Test {
@@ -29,8 +31,8 @@ class CortexUpdCmdTest : public ::testing::Test {
       std::filesystem::remove(kCurReleaseFile);
     }
 
-    if (std::filesystem::exists(kTemp)) {
-      std::filesystem::remove(kTemp);
+    if (std::filesystem::exists(GetCortexTemp())) {
+      std::filesystem::remove(GetCortexTemp());
     }
   }
 };
@@ -43,12 +45,12 @@ TEST_F(CortexUpdCmdTest, replace_binary_successfully) {
   std::filesystem::path new_binary(kNewReleaseFile);
   std::filesystem::path cur_binary(kCurReleaseFile);
   EXPECT_TRUE(commands::ReplaceBinaryInflight(new_binary, cur_binary));
-  EXPECT_TRUE(std::filesystem::exists(kTemp));
+  EXPECT_TRUE(std::filesystem::exists(GetCortexTemp()));
 }
 
 TEST_F(CortexUpdCmdTest, should_restore_old_binary_if_has_error) {
   std::filesystem::path new_binary("Non-exist");
   std::filesystem::path cur_binary(kCurReleaseFile);
   EXPECT_FALSE(commands::ReplaceBinaryInflight(new_binary, cur_binary));
-  EXPECT_FALSE(std::filesystem::exists(kTemp));
+  EXPECT_FALSE(std::filesystem::exists(GetCortexTemp()));
 }

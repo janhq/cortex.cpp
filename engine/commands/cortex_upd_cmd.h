@@ -83,8 +83,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     // Already has the newest
     return true;
   }
-  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
-  std::cout << temp.string() << std::endl;
+  std::filesystem::path temp = std::filesystem::temp_directory_path() / "cortex_temp";
 
   try {
     if (std::filesystem::exists(temp)) {
