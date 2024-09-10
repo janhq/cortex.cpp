@@ -1,0 +1,182 @@
+name: build-windows-x64
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+        default: 'refs/heads/main'
+      public_provider:
+        required: true
+        type: string
+        default: none
+        description: 'none: build only, github: build and publish to github, aws s3: build and publish to aws s3'
+      new_version:
+        required: true
+        type: string
+        default: ''
+      upload_url:
+        required: true
+        type: string
+        default: ''
+      runs-on:
+        required: false
+        type: string
+        default: 'windows-cuda-12-0'
+        description: 'The runner to use for this job'
+      cmake-flags:
+        required: false
+        type: string
+        default: ''
+        description: 'The cmake flags to use for this job'
+      build-deps-cmake-flags:
+        required: false
+        type: string
+        default: ''
+        description: 'The cmake flags to use for this job'
+      ccache-dir:
+        required: false
+        type: string
+        default: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+        description: 'The ccache directory to use for this job'
+      package-name:
+        required: false
+        type: string
+        default: 'cortexcpp-nightly'
+        description: 'The package name to use for this job'
+    secrets:
+      DELTA_AWS_S3_BUCKET_NAME:
+        required: false
+      DELTA_AWS_ACCESS_KEY_ID:
+        required: false
+      DELTA_AWS_SECRET_ACCESS_KEY:
+        required: false
+      AZURE_KEY_VAULT_URI:
+        required: false
+      AZURE_CLIENT_ID:
+        required: false
+      AZURE_TENANT_ID:
+        required: false
+      AZURE_CLIENT_SECRET:
+        required: false
+      AZURE_CERT_NAME:
+        required: false
+
+jobs:
+  build-windows-x64:
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: write
+    steps:
+      - name: Getting the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: actions/setup-dotnet@v3
+        if: runner.os == 'Windows'
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.0.1
+
+      - name: Install dependencies on Windows
+        run: |
+          choco install make pkgconfiglite ccache awscli 7zip ninja -y
+          dotnet tool install --global AzureSignTool
+
+      - name: Download ccache from s3
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
+          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-windows-amd64 ${{ inputs.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+
+      - name: Configure vcpkg
+        run: |
+          cd engine
+          make configure-vcpkg
+
+      - name: Build
+        run: |
+          cd engine
+          make build CMAKE_EXTRA_FLAGS="${{ inputs.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ inputs.build-deps-cmake-flags }}"
+
+      - name: Pre-package
+        run: |
+          cd engine
+          make pre-package
+
+      - name: Code Signing binaries
+        run: |
+          cd engine
+          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+
+      - name: Build Installers
+        shell: bash
+        run: |
+          cd engine
+          make build-installer PACKAGE_NAME=${{ inputs.package-name }} VERSION=${{ inputs.new_version }} SOURCE_BINARY_PATH="../../cortex/cortex" DESTINATION_BINARY_NAME="cortex-nightly" DATA_FOLDER_NAME=".cortex-nightly" CONFIGURATION_FILE_NAME=".cortexrc-nightly" UNINSTALLER_FILE_NAME="cortex-nightly-uninstall.sh"
+
+      - name: Compile .ISS to .EXE Installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        if: runner.os == 'Windows'
+        with:
+          path: engine/templates/windows/installer-nightly.iss
+          options: /O+
+
+      - name: Codesign for windows installer
+        if: runner.os == 'Windows'
+        run: |
+          cd engine
+          %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\templates\windows\setup.exe";' 
+
+      - name: Package
+        run: |
+          cd engine
+          make package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-windows-amd64-${{ inputs.new_version }}
+          path: ./engine/cortex
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: cortex-windows-amd64-installer-${{ inputs.new_version }}
+          path: ./engine/templates/windows/setup.exe
+      
+      - name: Upload release assert if public provider is github
+        if: ${{ inputs.public_provider }} == 'github'
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./engine/cortex.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-windows-amd64.tar.gz
+          asset_content_type: application/zip
+
+      - name: Upload release assert if public provider is github
+        if: ${{ inputs.public_provider }} == 'github'
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./engine/cortex.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-windows-amd64.tar.gz
+          asset_content_type: application/zip
+
+      - name: Upload release assert if public provider is github
+        if: ${{ inputs.public_provider }} == 'github'
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./engine/templates/windows/setup.exe
+          asset_name: cortex-windows-amd64-installer-${{ inputs.new_version }}.exe
+          asset_content_type: application/zip
