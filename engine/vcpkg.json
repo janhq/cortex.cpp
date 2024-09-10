@@ -1,19 +1,20 @@
 {
-  "dependencies": [
-    "gtest",
-    "cli11",
-    {
-      "name": "cpp-httplib",
-      "features": ["openssl"]
-    },
-    "drogon",
-    "jinja2cpp",
-    "jsoncpp",
-    "minizip",
-    "nlohmann-json",
-    "yaml-cpp",
-    "libarchive",
-    "tabulate"
-  ]
+    "dependencies": [
+      "gtest",
+      "cli11",
+      {
+        "name": "cpp-httplib",
+        "features": [
+          "openssl"
+        ]
+      },
+      "drogon",
+      "jinja2cpp",
+      "jsoncpp",
+      "minizip",
+      "nlohmann-json",
+      "yaml-cpp",
+      "libarchive",
+      "tabulate"
+    ]
 }
-
