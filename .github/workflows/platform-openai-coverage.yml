@@ -95,7 +95,7 @@ jobs:
           AWS_EC2_METADATA_DISABLED: "true"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report
           path: |
