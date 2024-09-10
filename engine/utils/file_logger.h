@@ -46,15 +46,14 @@ class TRANTOR_EXPORT FileLogger : public AsyncFileLogger {
 
     void writeLog(const char* logLine, const uint64_t len);
     void flush();
-    uint64_t getLength() const { return totalLines_.load(); }
+    uint64_t getLength() const { return lineBuffer_.size(); }
 
    private:
     FILE* fp_{nullptr};
     uint64_t max_lines_;
-    std::atomic<uint64_t> totalLines_{0};
     std::string file_name_;
     std::deque<std::string> lineBuffer_;
-    std::atomic<uint64_t> linesWrittenSinceLastTruncate_{0};
+    std::atomic<int> linesWrittenSinceLastTruncate_{0};
     static const uint64_t TRUNCATE_CHECK_INTERVAL = 1000;
     mutable std::mutex mutex_;
 
