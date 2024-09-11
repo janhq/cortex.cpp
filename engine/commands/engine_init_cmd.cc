@@ -7,12 +7,10 @@
 #include "utils/archive_utils.h"   
 #include "utils/system_info_utils.h"
 // clang-format on
+#include "utils/cortex_utils.h"
 #include "utils/cuda_toolkit_utils.h"
 #include "utils/engine_matcher_utils.h"
-#if defined(_WIN32) || defined(__linux__)
-#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
-#endif
 
 namespace commands {
 
