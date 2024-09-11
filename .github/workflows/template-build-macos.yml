@@ -1,0 +1,236 @@
+name: build-mac-x64
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+        default: 'refs/heads/main'
+      public_provider:
+        required: true
+        type: string
+        default: none
+        description: 'none: build only, github: build and publish to github, aws s3: build and publish to aws s3'
+      new_version:
+        required: true
+        type: string
+        default: ''
+      upload_url:
+        required: false
+        type: string
+        default: ''
+      runs-on:
+        required: false
+        type: string
+        default: 'macos-latest'
+        description: 'The runner to use for this job'
+      cmake-flags:
+        required: false
+        type: string
+        default: ''
+        description: 'The cmake flags to use for this job'
+      build-deps-cmake-flags:
+        required: false
+        type: string
+        default: ''
+        description: 'The cmake flags to use for this job'
+      ccache-dir:
+        required: false
+        type: string
+        default: ''
+        description: 'The ccache directory to use for this job'
+      channel:
+        required: true
+        type: string
+        default: 'nightly'
+        description: 'The channel to use for this job'
+      arch:
+        required: true
+        type: string
+        default: 'arm64'
+        description: 'The architecture to use for this job'
+    secrets:
+      DELTA_AWS_S3_BUCKET_NAME:
+        required: false
+      DELTA_AWS_ACCESS_KEY_ID:
+        required: false
+      DELTA_AWS_SECRET_ACCESS_KEY:
+        required: false
+      DELTA_AWS_REGION:
+        required: false
+      NOTARIZE_P8_BASE64:
+        required: false
+      CODE_SIGN_P12_BASE64:
+        required: false
+      CODE_SIGN_P12_PASSWORD:
+        required: false
+      DEVELOPER_ID:
+        required: false
+      NOTARY_KEY_ID:
+        required: false
+      NOTARY_ISSUER:
+        required: false
+      APPLE_ID:
+        required: false
+      APPLE_APP_SPECIFIC_PASSWORD:
+        required: false
+      APPLE_TEAM_ID:
+        required: false
+
+jobs:
+  build-mac-x64:
+    runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: write
+    steps:
+      - name: Getting the repo
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.ref }}
+          submodules: 'recursive'
+
+      - name: Set output params for each channel
+        id : set-output-params
+        shell: bash
+        run: |
+          # Set output for stable channel
+          if [ "${{ inputs.channel }}" == "stable" ]; then
+            echo "::set-output name=package_name::cortexcpp"
+            echo "::set-output name=destination_binary_name::cortex"
+            echo "::set-output name=data_folder_name::cortexcpp"
+            echo "::set-output name=configuration_file_name::.cortexrc"
+            echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
+            echo "::set-output name=iss_file_name::installer.iss"
+          fi
+
+          # Set output for beta channel
+          if [ "${{ inputs.channel }}" == "beta" ]; then
+            echo "::set-output name=package_name::cortexcpp-beta"
+            echo "::set-output name=destination_binary_name::cortex-beta"
+            echo "::set-output name=data_folder_name::cortexcpp-beta"
+            echo "::set-output name=configuration_file_name::.cortexrc-beta"
+            echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
+            echo "::set-output name=iss_file_name::installer-beta.iss"
+          fi
+
+          # Set output for nightly channel
+          if [ "${{ inputs.channel }}" == "nightly" ]; then
+            echo "::set-output name=package_name::cortexcpp-nightly"
+            echo "::set-output name=destination_binary_name::cortex-nightly"
+            echo "::set-output name=data_folder_name::cortexcpp-nightly"
+            echo "::set-output name=configuration_file_name::.cortexrc-nightly"
+            echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
+            echo "::set-output name=iss_file_name::installer-nightly.iss"
+          fi
+
+      - name: Install jq
+        uses: dcarbone/install-jq-action@v2.0.1
+
+      - name: Get Cer for code signing
+        run: base64 -d <<< "$NOTARIZE_P8_BASE64" > /tmp/notary-key.p8
+        shell: bash
+        env:
+          NOTARIZE_P8_BASE64: ${{ secrets.NOTARIZE_P8_BASE64 }}
+
+      - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
+      - name: Configure vcpkg
+        run: |
+          cd engine
+          make configure-vcpkg
+      
+      - name: Build
+        run: |
+          cd engine
+          make build CMAKE_EXTRA_FLAGS="${{ inputs.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ inputs.build-deps-cmake-flags }}"
+
+      - name: Pre-package
+        run: |
+          cd engine
+          make pre-package
+
+      - name: Code Signing binaries
+        run: |
+          cd engine
+          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
+
+      - name: Notary macOS Binary
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+          cd engine/cortex
+          # Notarize the binary
+          quill notarize ./cortex
+        env:
+          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
+
+      - name: Build Installers
+        shell: bash
+        run: |
+          cd engine
+          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}"
+
+      - name: Codesign and notary for macos installer
+        run: |
+          cd engine
+          productsign --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" ${{ steps.set-output-params.outputs.package_name }}.pkg ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg
+          rm ${{ steps.set-output-params.outputs.package_name }}.pkg
+          mv ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg ${{ steps.set-output-params.outputs.package_name }}.pkg
+          xcrun notarytool submit ${{ steps.set-output-params.outputs.package_name }}.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+
+      - name: Package
+        run: |
+          cd engine
+          make package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}
+          path: ./engine/cortex
+  
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-installer
+          path: ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg
+
+      - name: upload to aws s3 if public provider is aws
+        if: inputs.public_provider == 'aws-s3'
+        run: |
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-${{ inputs.arch}}/cortex-nightly.tar.gz
+
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-nightly-${{ inputs.new_version }}.tar.gz
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-mac-${{ inputs.arch}}-installer-${{ inputs.new_version }}.pkg
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.DELTA_AWS_REGION }}
+          AWS_EC2_METADATA_DISABLED: "true"
+
+      - name: Upload release assert if public provider is github
+        if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./engine/cortex.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}.tar.gz
+          asset_content_type: application/zip
+
+      - name: Upload release assert if public provider is github
+        if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg
+          asset_name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-installer.pkg
+          asset_content_type: application/octet-stream
