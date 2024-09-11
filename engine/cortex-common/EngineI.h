@@ -29,7 +29,8 @@ class EngineI {
 
   // For backward compatible checking
   virtual bool IsSupported(const std::string& f) = 0;
-
+  virtual bool SetFileLogger(int max_log_lines,
+                             const std::string& log_path) = 0;
   // Get list of running models
   virtual void GetModels(
       std::shared_ptr<Json::Value> jsonBody,

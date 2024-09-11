@@ -7,8 +7,8 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
-#include "utils/logging_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -290,8 +290,9 @@ void server::LoadModel(const HttpRequestPtr& req,
       }
 
       std::string abs_path =
-          (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
-                                 : file_manager_utils::GetCortexDataPath().string()) +
+          (getenv("ENGINE_PATH")
+               ? getenv("ENGINE_PATH")
+               : file_manager_utils::GetCortexDataPath().string()) +
           get_engine_path(engine_type);
       std::cout << abs_path << std::endl;
       engines_[engine_type].dl =
@@ -318,6 +319,11 @@ void server::LoadModel(const HttpRequestPtr& req,
 
   LOG_TRACE << "Load model";
   auto& en = std::get<EngineI*>(engines_[engine_type].engine);
+  if (engine_type == kLlamaEngine) {  //fix for llamacpp engine first
+    auto config = file_manager_utils::GetCortexConfig();
+    en->SetFileLogger(config.maxLogLines, config.logFolderPath + "/" +
+                                              cortex_utils::logs_base_name);
+  }
   en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
                                           Json::Value status, Json::Value res) {
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
