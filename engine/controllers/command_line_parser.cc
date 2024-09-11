@@ -14,7 +14,6 @@
 #include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
-#include "httplib.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -219,7 +218,7 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
                                       std::string& version) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  install_engine_cmd->callback([&] {
+  install_engine_cmd->callback([=] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });
@@ -229,7 +228,7 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
                                         const std::string& engine_name) {
   auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  uninstall_engine_cmd->callback([&] {
+  uninstall_engine_cmd->callback([=] {
     commands::EngineUninstallCmd cmd(engine_name);
     cmd.Exec();
   });
