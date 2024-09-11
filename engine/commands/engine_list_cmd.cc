@@ -9,28 +9,12 @@ bool EngineListCmd::Exec() {
   auto status_list = engine_service.GetEngineInfoList();
 
   tabulate::Table table;
-  table.format().font_color(tabulate::Color::green);
-  table.add_row(
-      {"(Index)", "name", "description", "version", "product name", "status"});
+  table.add_row({"#", "Name", "Supported Formats", "Version", "Status"});
   for (int i = 0; i < status_list.size(); i++) {
     auto status = status_list[i];
     std::string index = std::to_string(i + 1);
-    table.add_row({index, status.name, status.description, status.version,
-                   status.product_name, status.status});
-  }
-
-  for (int i = 0; i < 6; i++) {
-    table[0][i]
-        .format()
-        .font_color(tabulate::Color::white)  // Set font color
-        .font_style({tabulate::FontStyle::bold})
-        .font_align(tabulate::FontAlign::center);
-  }
-  for (int i = 1; i < 4; i++) {
-    table[i][0]
-        .format()
-        .font_color(tabulate::Color::white)  // Set font color
-        .font_align(tabulate::FontAlign::center);
+    table.add_row({index, status.product_name, status.format, status.version,
+                   status.status});
   }
 
   std::cout << table << std::endl;
