@@ -182,22 +182,26 @@ jobs:
           make build-installer PACKAGE_NAME=${{ steps.set-output-params.outputs.package_name }} VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
           ls ../
 
+      - name: Enable long paths
+        run: |
+          reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+
       - name: Compile .ISS to .EXE Installer
-        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        uses: nadeemjazmawe/inno-setup-action-cli@v6.0.5
         with:
-          path: ${{ steps.set-output-params.outputs.iss_file_name }}
-          options: /O+
+          filepath: ./${{ steps.set-output-params.outputs.iss_file_name }}
 
       - name: Codesign for windows installer
+        shell: pwsh
         run: |
-          %USERPROFILE%\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\setup.exe";' 
+          ~\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\setup.exe"
 
       - name: Package
         run: |
           cd engine
           make package
 
-      - name: Upload Artifact
+      - name: Upload Artifact 
         uses: actions/upload-artifact@v4
         with:
           name: cortex-${{ inputs.new_version }}-windows-amd64
@@ -212,10 +216,11 @@ jobs:
       - name: upload to aws s3 if public provider is aws
         if: inputs.public_provider == 'aws-s3'
         run: |
+          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+          refreshenv
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
 
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-nightly-${{ inputs.new_version }}.tar.gz
           aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
