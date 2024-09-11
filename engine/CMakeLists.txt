@@ -43,7 +43,7 @@ if(MSVC)
       $<$<CONFIG:Release>:/MT> #--|
   )
 endif()
- 
+
 if(LLAMA_CUDA)
   cmake_minimum_required(VERSION 3.17)
 
