@@ -126,32 +126,6 @@ bool EngineInitCmd::Exec() const {
 
               archive_utils::ExtractArchive(downloadedEnginePath.string(),
                                             extract_path.string());
-#if defined(__linux__)
-              // FIXME: hacky try to copy the file. Remove this when we are able to set the library path
-              auto engine_path = extract_path / engineName_;
-              LOG_INFO << "Source path: " << engine_path.string();
-              auto executable_path =
-                  file_manager_utils::GetExecutableFolderContainerPath();
-              for (const auto& entry :
-                   std::filesystem::recursive_directory_iterator(engine_path)) {
-                if (entry.is_regular_file() &&
-                    entry.path().extension() != ".gz") {
-                  std::filesystem::path relative_path =
-                      std::filesystem::relative(entry.path(), engine_path);
-                  std::filesystem::path destFile =
-                      executable_path / relative_path;
-
-                  std::filesystem::create_directories(destFile.parent_path());
-                  std::filesystem::copy_file(
-                      entry.path(), destFile,
-                      std::filesystem::copy_options::overwrite_existing);
-
-                  std::cout << "Copied: " << entry.path().filename().string()
-                            << " to " << destFile.string() << std::endl;
-                }
-              }
-              std::cout << "DLL copying completed successfully." << std::endl;
-#endif
 
               // remove the downloaded file
               // TODO(any) Could not delete file on Windows because it is currently hold by httplib(?)
@@ -229,12 +203,7 @@ bool EngineInitCmd::Exec() const {
                   LOG_DEBUG << "Downloaded cuda path: " << absolute_path;
                   // try to unzip the downloaded file
                   std::filesystem::path downloaded_path{absolute_path};
-#if defined(__linux__)
-                  archive_utils::ExtractArchive(
-                      absolute_path,
-                      downloaded_path.parent_path().parent_path().string());
-#else
-                  // TODO(any) This is a temporary fix. The issue will be fixed when we has CIs 
+                  // TODO(any) This is a temporary fix. The issue will be fixed when we has CIs
                   // to pack CUDA dependecies into engine release
                   auto get_engine_path = [](std::string_view e) {
                     if (e == "cortex.llamacpp") {
@@ -248,7 +217,6 @@ bool EngineInitCmd::Exec() const {
                       file_manager_utils::GetCortexDataPath().string() +
                       get_engine_path(engineName_);
                   archive_utils::ExtractArchive(absolute_path, engine_path);
-#endif
                   try {
                     std::filesystem::remove(absolute_path);
                   } catch (std::exception& e) {
