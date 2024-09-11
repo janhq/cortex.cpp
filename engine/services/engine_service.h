@@ -15,7 +15,7 @@ struct EngineInfo {
 
 class EngineService {
  public:
-  const std::vector<std::string_view> kSupportEngines = {
+  const std::vector<std::string> kSupportEngines = {
       "cortex.llamacpp", "cortex.onnx", "cortex.tensorrt-llm"};
 
   EngineInfo GetEngineInfo(const std::string& engine) const;
