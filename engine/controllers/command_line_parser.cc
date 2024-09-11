@@ -138,7 +138,6 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
 
     auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
-    install_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
     for (auto& engine : engine_service_.kSupportEngines) {
       std::string engine_name{engine};
       EngineInstall(install_cmd, engine_name, version);
@@ -146,7 +145,6 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto uninstall_cmd =
         engines_cmd->add_subcommand("uninstall", "Uninstall engine");
-    uninstall_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
     for (auto& engine : engine_service_.kSupportEngines) {
       std::string engine_name{engine};
       EngineUninstall(uninstall_cmd, engine_name);
