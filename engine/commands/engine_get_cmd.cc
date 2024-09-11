@@ -13,10 +13,9 @@ void EngineGetCmd::Exec() const {
   try {
     auto status = engine_service.GetEngineInfo(engine_);
     tabulate::Table table;
-    table.add_row({"name", "description", "version", "product name", "status"});
-    table.format().font_color(tabulate::Color::green);
-    table.add_row({status.name, status.description, status.version,
-                   status.product_name, status.status});
+    table.add_row({"Name", "Supported Formats", "Version", "Status"});
+    table.add_row(
+        {status.product_name, status.format, status.version, status.status});
     std::cout << table << std::endl;
   } catch (const std::runtime_error& e) {
     std::cerr << "Engine " << engine_ << " is not supported!" << "\n";
