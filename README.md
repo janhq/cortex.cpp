@@ -14,9 +14,9 @@
 Cortex.cpp is a Local AI engine that is used to run and customize LLMs. Cortex can be deployed as a standalone server, or integrated into apps like [Jan.ai](https://jan.ai/).
 
 Cortex.cpp supports the following engines:
-- [`cortex.llamacpp`](https://github.com/janhq/cortex.llamacpp)
-- [`cortex.onnx`](https://github.com/janhq/cortex.onnx)
-- [`cortex.tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
+- [`llamacpp`](https://github.com/janhq/cortex.llamacpp)
+- [`onnx`](https://github.com/janhq/cortex.onnx)
+- [`tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
 To install Cortex.cpp, download the installer for your operating system from the following options:
@@ -176,7 +176,7 @@ curl --request POST \
   "flash_attn": true,
   "cache_type": "f16",
   "use_mmap": true,
-  "engine": "cortex.llamacpp"
+  "engine": "llamacpp"
 }'
 ```
 
