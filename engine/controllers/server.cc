@@ -21,7 +21,7 @@ constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
 }  // namespace
 
 server::server() {
-#if defined(WIN32)
+#if defined(_WIN32)
   SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 #endif
 };
