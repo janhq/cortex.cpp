@@ -14,7 +14,7 @@ class TestCliEngineUninstall:
 
         # Teardown
         # Clean up, removing installed engine
-        run("Uninstall Engine", ["engines", "uninsatll", "cortex.llamacpp"])
+        run("Uninstall Engine", ["engines", "uninstall", "cortex.llamacpp"])
 
     def test_engines_uninstall_llamacpp_should_be_successfully(self):
         exit_code, output, error = run(
