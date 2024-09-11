@@ -301,34 +301,31 @@ void server::LoadModel(const HttpRequestPtr& req,
       // 2. If tensorrt-llm is loaded and new requested engine is llamacpp:
       // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
       // 3. Add dll directory if met other conditions
+
+      auto add_dll = [this](const std::string& e_type, const std::string& p) {
+        auto ws = std::wstring(p.begin(), p.end());
+        if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
+          LOG_INFO << "Added dll directory: " << p;
+          engines_[e_type].cookie = cookie;
+        } else {
+          LOG_WARN << "Could not add dll directory: " << p;
+        }
+      };
+
       if (IsEngineLoaded(kLlamaEngine) && engine_type == kTensorrtLlmEngine) {
         // Remove llamacpp dll directory
         if (!RemoveDllDirectory(engines_[kLlamaEngine].cookie)) {
           LOG_INFO << "Could not remove dll directory: " << kLlamaEngine;
         } else {
-          LOG_INFO << "Removed dll directory: " << kLlamaEngine;
+          LOG_WARN << "Removed dll directory: " << kLlamaEngine;
         }
 
-        auto ws = std::wstring(abs_path.begin(), abs_path.end());
-        if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
-          LOG_INFO << "Added dll directory: " << abs_path;
-          engines_[engine_type].cookie = cookie;
-        } else {
-          LOG_INFO << "Could not add dll directory: " << abs_path;
-        }
-
+        add_dll(engine_type, abs_path);
       } else if (IsEngineLoaded(kTensorrtLlmEngine) &&
                  engine_type == kLlamaEngine) {
         // Do nothing
       } else {
-        auto ws = std::wstring(abs_path.begin(), abs_path.end());
-        if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
-          std::cout << "sangnv" << std::endl;
-          LOG_INFO << "Added dll directory: " << abs_path;
-          engines_[engine_type].cookie = cookie;
-        } else {
-          LOG_INFO << "Could not add dll directory: " << abs_path;
-        }
+        add_dll(engine_type, abs_path);
       }
 #endif
       engines_[engine_type].dl =
@@ -387,7 +384,11 @@ void server::UnloadEngine(
   EngineI* e = std::get<EngineI*>(engines_[engine_type].engine);
   delete e;
 #if defined(_WIN32)
-  RemoveDllDirectory(engines_[engine_type].cookie);
+  if (!RemoveDllDirectory(engines_[engine_type].cookie)) {
+    LOG_WARN << "Could not remove dll directory: " << engine_type;
+  } else {
+    LOG_INFO << "Removed dll directory: " << engine_type;
+  }
 #endif
   engines_.erase(engine_type);
   LOG_INFO << "Unloaded engine " + engine_type;
