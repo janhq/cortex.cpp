@@ -74,7 +74,7 @@ Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\cortexcpp-nightly"
 [UninstallRun]
 Filename: "{app}\cortex-nightly.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp-nightly service..."; Flags: runhidden
 
-; Use Pascal scripting to ask user if they want to delete the .cortex-nightly folder and .cortexrc-nightly file
+; Use Pascal scripting to ask user if they want to delete the cortexcpp-nightly folder and .cortexrc-nightly file
 [Code]
 procedure DeleteCurrentUserCortexFolderAndConfig;
 var
@@ -82,12 +82,12 @@ var
   UserCortexConfig: String;
   ShouldDelete: Integer;
 begin
-  UserCortexFolder := ExpandConstant('{%USERPROFILE}\.cortex-nightly');
+  UserCortexFolder := ExpandConstant('{%USERPROFILE}\cortexcpp-nightly');
   UserCortexConfig := ExpandConstant('{%USERPROFILE}\.cortexrc-nightly');
   
   if DirExists(UserCortexFolder) or FileExists(UserCortexConfig) then
   begin
-    ShouldDelete := MsgBox('Do you want to delete the application data in .cortex-nightly and the .cortexrc-nightly config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
+    ShouldDelete := MsgBox('Do you want to delete the application data in cortexcpp-nightly and the .cortexrc-nightly config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
     
     if ShouldDelete = idYes then
     begin

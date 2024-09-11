@@ -97,7 +97,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "stable" ]; then
             echo "::set-output name=package_name::cortexcpp"
             echo "::set-output name=destination_binary_name::cortex"
-            echo "::set-output name=data_folder_name::.cortex"
+            echo "::set-output name=data_folder_name::cortexcpp"
             echo "::set-output name=configuration_file_name::.cortexrc"
             echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
             echo "::set-output name=iss_file_name::installer.iss"
@@ -107,7 +107,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "beta" ]; then
             echo "::set-output name=package_name::cortexcpp-beta"
             echo "::set-output name=destination_binary_name::cortex-beta"
-            echo "::set-output name=data_folder_name::.cortex-beta"
+            echo "::set-output name=data_folder_name::cortexcpp-beta"
             echo "::set-output name=configuration_file_name::.cortexrc-beta"
             echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
             echo "::set-output name=iss_file_name::installer-beta.iss"
@@ -117,7 +117,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "nightly" ]; then
             echo "::set-output name=package_name::cortexcpp-nightly"
             echo "::set-output name=destination_binary_name::cortex-nightly"
-            echo "::set-output name=data_folder_name::.cortex-nightly"
+            echo "::set-output name=data_folder_name::cortexcpp-nightly"
             echo "::set-output name=configuration_file_name::.cortexrc-nightly"
             echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
             echo "::set-output name=iss_file_name::installer-nightly.iss"
@@ -215,6 +215,8 @@ jobs:
 
       - name: Upload release assert if public provider is github
         if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ inputs.upload_url }}
@@ -224,6 +226,8 @@ jobs:
 
       - name: Upload release assert if public provider is github
         if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ inputs.upload_url }}

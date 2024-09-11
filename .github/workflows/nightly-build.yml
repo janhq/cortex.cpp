@@ -102,7 +102,7 @@ jobs:
       - name: Update latest version
         id: update-latest-version
         run: |
-          echo "{\"tag_name\": \"v${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
+          echo "{\"tag_name\": \"${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
           aws s3 cp version.json s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/version.json
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}

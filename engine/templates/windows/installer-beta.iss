@@ -74,7 +74,7 @@ Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\cortexcpp-beta"; F
 [UninstallRun]
 Filename: "{app}\cortex-beta.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp-beta service..."; Flags: runhidden
 
-; Use Pascal scripting to ask user if they want to delete the .cortex-beta folder and .cortexrc-beta file
+; Use Pascal scripting to ask user if they want to delete the cortexcpp-beta folder and .cortexrc-beta file
 [Code]
 procedure DeleteCurrentUserCortexFolderAndConfig;
 var
@@ -82,12 +82,12 @@ var
   UserCortexConfig: String;
   ShouldDelete: Integer;
 begin
-  UserCortexFolder := ExpandConstant('{%USERPROFILE}\.cortex-beta');
+  UserCortexFolder := ExpandConstant('{%USERPROFILE}\cortexcpp-beta');
   UserCortexConfig := ExpandConstant('{%USERPROFILE}\.cortexrc-beta');
   
   if DirExists(UserCortexFolder) or FileExists(UserCortexConfig) then
   begin
-    ShouldDelete := MsgBox('Do you want to delete the application data in .cortex-beta and the .cortexrc-beta config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
+    ShouldDelete := MsgBox('Do you want to delete the application data in cortexcpp-beta and the .cortexrc-beta config file (this will remove all user data)?', mbConfirmation, MB_YESNO);
     
     if ShouldDelete = idYes then
     begin
