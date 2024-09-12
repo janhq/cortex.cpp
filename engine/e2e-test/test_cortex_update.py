@@ -1,0 +1,14 @@
+import platform
+
+import pytest
+from test_runner import run
+
+
+class TestCortexUpdate:
+    # We don't have stable release yet, so mark this test as skip for now
+    # Only able to test with beta and nightly
+    @pytest.mark.skip(reason="Stable release is not available yet")
+    def test_cortex_update(self):
+        exit_code, output, error = run("Update cortex", ["update"])
+        assert exit_code == 0, f"Something wrong happened"
+        assert "Update cortex sucessfully" in output
