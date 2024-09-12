@@ -71,8 +71,6 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 }
 
 void EngineService::UninstallEngine(const std::string& engine) {
-  CTL_INF("Uninstall engine " + engine);
-
   // TODO: Unload the model which is currently running on engine_
 
   // TODO: Unload engine if is loaded
