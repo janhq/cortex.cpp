@@ -154,6 +154,9 @@ class server : public drogon::HttpController<server>,
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
+#if defined(_WIN32)
+    DLL_DIRECTORY_COOKIE cookie;
+#endif
   };
   std::unordered_map<std::string, EngineInfo> engines_;
   std::string cur_engine_type_;
