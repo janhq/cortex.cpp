@@ -27,7 +27,8 @@
 
 void RunServer() {
   auto config = file_manager_utils::GetCortexConfig();
-  LOG_INFO << "Host: " << config.apiServerHost << " Port: " << config.apiServerPort << "\n";
+  LOG_INFO << "Host: " << config.apiServerHost
+           << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
   std::filesystem::create_directory(config.logFolderPath + "/" +
@@ -72,7 +73,8 @@ void RunServer() {
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(config.apiServerHost, std::stoi(config.apiServerPort));
+  drogon::app().addListener(config.apiServerHost,
+                            std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
@@ -130,6 +132,13 @@ void ForkProcess() {
 
 int main(int argc, char* argv[]) {
   { file_manager_utils::CreateConfigFileIfNotExist(); }
+
+  // Delete temporary file if it exists
+  auto temp =
+      file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
+  if (std::filesystem::exists(temp)) {
+    std::filesystem::remove(temp);
+  }
 
   // Check if this process is for python execution
   if (argc > 1) {
