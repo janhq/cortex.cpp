@@ -90,9 +90,7 @@ inline void CheckNewUpdate() {
           CLI_LOG("\nA new release of cortex is available: "
                   << current_version << " -> " << latest_version);
           CLI_LOG("To upgrade, run: " << GetCortexBinary() << " update");
-          if (CORTEX_VARIANT != file_manager_utils::kNightlyVariant) {
-            CLI_LOG(json_res["html_url"].get<std::string>());
-          }
+          // CLI_LOG(json_res["html_url"].get<std::string>());
         }
       } catch (const nlohmann::json::parse_error& e) {
         CTL_INF("JSON parse error: " << e.what());
