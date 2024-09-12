@@ -31,8 +31,7 @@ void RunServer() {
            << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
-  std::filesystem::create_directory(config.logFolderPath);
-  std::filesystem::create_directory(std::filesystem::path(config.logFolderPath) /
+  std::filesystem::create_directories(std::filesystem::path(config.logFolderPath) /
                                     std::filesystem::path(cortex_utils::logs_folder));
   trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(config.logFolderPath + "/" +
@@ -161,8 +160,7 @@ int main(int argc, char* argv[]) {
       return 0;
     } else {
       auto config = file_manager_utils::GetCortexConfig();
-      std::filesystem::create_directory(config.logFolderPath);
-      std::filesystem::create_directory(std::filesystem::path(config.logFolderPath) /
+      std::filesystem::create_directories(std::filesystem::path(config.logFolderPath) /
                                     std::filesystem::path(cortex_utils::logs_folder));
       trantor::FileLogger asyncFileLogger;
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
