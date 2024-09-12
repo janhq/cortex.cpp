@@ -27,17 +27,20 @@ void CortexUpdCmd::Exec(std::string v) {
       ssc.Exec();
     }
   }
-  if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
-    if (!GetNightly(v))
+  if (CORTEX_VARIANT == file_manager_utils::kProdVariant) {
+    if (!GetStable(v))
+      return;
+  } else if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
+    if (!GetBeta(v))
       return;
   } else {
-    if (!GetStableAndBeta(v))
+    if (!GetNightly(v))
       return;
   }
   CLI_LOG("Update cortex sucessfully");
 }
 
-bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
+bool CortexUpdCmd::GetStable(const std::string& v) {
   // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info.arch == system_info_utils::kUnsupported ||
@@ -61,69 +64,18 @@ bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
   if (auto res = cli.Get(release_path.str())) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
-        auto jsonResponse = nlohmann::json::parse(res->body);
-        auto assets = jsonResponse["assets"];
-        auto os_arch{system_info.os + "-" + system_info.arch};
-
-        std::string matched_variant = "";
-        for (auto& asset : assets) {
-          auto asset_name = asset["name"].get<std::string>();
-          if (asset_name.find(kCortexBinary) != std::string::npos &&
-              asset_name.find(os_arch) != std::string::npos) {
-            matched_variant = asset_name;
-            break;
-          }
-          CTL_INF(asset_name);
-        }
-        if (matched_variant.empty()) {
-          CTL_ERR("No variant found for " << os_arch);
+        auto json_data = nlohmann::json::parse(res->body);
+        if (json_data.empty()) {
+          CLI_LOG("Version not found: " << v);
           return false;
         }
-        CTL_INF("Matched variant: " << matched_variant);
 
-        for (auto& asset : assets) {
-          auto asset_name = asset["name"].get<std::string>();
-          if (asset_name == matched_variant) {
-            std::string host{"https://github.com"};
-
-            auto full_url = asset["browser_download_url"].get<std::string>();
-            std::string path = full_url.substr(host.length());
-
-            auto fileName = asset["name"].get<std::string>();
-            CTL_INF("URL: " << full_url);
-
-            auto download_task = DownloadTask{.id = "cortex",
-                                              .type = DownloadType::Cortex,
-                                              .error = std::nullopt,
-                                              .items = {DownloadItem{
-                                                  .id = "cortex",
-                                                  .host = host,
-                                                  .fileName = fileName,
-                                                  .type = DownloadType::Cortex,
-                                                  .path = path,
-                                              }}};
-
-            DownloadService download_service;
-            download_service.AddDownloadTask(
-                download_task,
-                [this](const std::string& absolute_path, bool unused) {
-                  // try to unzip the downloaded file
-                  std::filesystem::path download_path{absolute_path};
-                  CTL_INF("Downloaded engine path: " << download_path.string());
-
-                  std::filesystem::path extract_path =
-                      download_path.parent_path().parent_path();
-
-                  archive_utils::ExtractArchive(download_path.string(),
-                                                extract_path.string());
-
-                  CTL_INF("Finished!");
-                });
-            break;
-          }
+        if (!HandleGithubRelease(json_data["assets"],
+                                 {system_info.os + "-" + system_info.arch})) {
+          return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        CTL_ERR("JSON parse error: " << e.what());
         return false;
       }
     } else {
@@ -141,6 +93,131 @@ bool CortexUpdCmd::GetStableAndBeta(const std::string& v) {
   auto src = executable_path / "cortex" / kCortexBinary / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
+}
+
+bool CortexUpdCmd::GetBeta(const std::string& v) {
+  // Check if the architecture and OS are supported
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (system_info.arch == system_info_utils::kUnsupported ||
+      system_info.os == system_info_utils::kUnsupported) {
+    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
+                                               << system_info.arch);
+    return false;
+  }
+  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+
+  // Download file
+  constexpr auto github_host = "https://api.github.com";
+  std::ostringstream release_path;
+  release_path << "/repos/janhq/cortex.cpp/releases";
+  CTL_INF("Engine release path: " << github_host << release_path.str());
+
+  httplib::Client cli(github_host);
+  if (auto res = cli.Get(release_path.str())) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      try {
+        auto json_res = nlohmann::json::parse(res->body);
+
+        nlohmann::json json_data;
+        for (auto& jr : json_res) {
+          // Get the latest beta or match version
+          if (auto tag = jr["tag_name"].get<std::string>();
+              (v.empty() && tag.find(kBetaComp) != std::string::npos) ||
+              (tag == v)) {
+            json_data = jr;
+            break;
+          }
+        }
+
+        if (json_data.empty()) {
+          CLI_LOG("Version not found: " << v);
+          return false;
+        }
+
+        if (!HandleGithubRelease(json_data["assets"],
+                                 {system_info.os + "-" + system_info.arch})) {
+          return false;
+        }
+      } catch (const nlohmann::json::parse_error& e) {
+        CTL_ERR("JSON parse error: " << e.what());
+        return false;
+      }
+    } else {
+      CTL_ERR("HTTP error: " << res->status);
+      return false;
+    }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    return false;
+  }
+
+  // Replace binary file
+  auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
+  auto src = executable_path / "cortex" / kCortexBinary / GetCortexBinary();
+  auto dst = executable_path / GetCortexBinary();
+  return ReplaceBinaryInflight(src, dst);
+}
+
+bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
+                                       const std::string& os_arch) {
+  std::string matched_variant = "";
+  for (auto& asset : assets) {
+    auto asset_name = asset["name"].get<std::string>();
+    if (asset_name.find(kCortexBinary) != std::string::npos &&
+        asset_name.find(os_arch) != std::string::npos) {
+      matched_variant = asset_name;
+      break;
+    }
+    CTL_INF(asset_name);
+  }
+  if (matched_variant.empty()) {
+    CTL_ERR("No variant found for " << os_arch);
+    return false;
+  }
+  CTL_INF("Matched variant: " << matched_variant);
+
+  for (auto& asset : assets) {
+    auto asset_name = asset["name"].get<std::string>();
+    if (asset_name == matched_variant) {
+      std::string host{"https://github.com"};
+
+      auto full_url = asset["browser_download_url"].get<std::string>();
+      std::string path = full_url.substr(host.length());
+
+      auto fileName = asset["name"].get<std::string>();
+      CTL_INF("URL: " << full_url);
+
+      auto download_task = DownloadTask{.id = "cortex",
+                                        .type = DownloadType::Cortex,
+                                        .error = std::nullopt,
+                                        .items = {DownloadItem{
+                                            .id = "cortex",
+                                            .host = host,
+                                            .fileName = fileName,
+                                            .type = DownloadType::Cortex,
+                                            .path = path,
+                                        }}};
+
+      DownloadService download_service;
+      download_service.AddDownloadTask(
+          download_task, [this](const std::string& absolute_path, bool unused) {
+            // try to unzip the downloaded file
+            std::filesystem::path download_path{absolute_path};
+            CTL_INF("Downloaded engine path: " << download_path.string());
+
+            std::filesystem::path extract_path =
+                download_path.parent_path().parent_path();
+
+            archive_utils::ExtractArchive(download_path.string(),
+                                          extract_path.string());
+
+            CTL_INF("Finished!");
+          });
+      break;
+    }
+  }
+  return true;
 }
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
