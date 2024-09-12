@@ -133,6 +133,17 @@ void ForkProcess() {
 int main(int argc, char* argv[]) {
   { file_manager_utils::CreateConfigFileIfNotExist(); }
 
+  // Delete temporary file if it exists
+  auto temp =
+      file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
+  if (std::filesystem::exists(temp)) {
+    try {
+      std::filesystem::remove(temp);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << '\n';
+    }
+  }
+
   // Check if this process is for python execution
   if (argc > 1) {
     if (strcmp(argv[1], "--run_python_file") == 0) {

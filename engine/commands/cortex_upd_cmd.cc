@@ -159,7 +159,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   std::ostringstream release_path;
   release_path << "cortex/" << version << "/" << system_info.os << "-"
                << system_info.arch << "/" << kNightlyFileName;
-  CTL_INF("Engine release path: " << kNightlyHost << release_path.str());
+  CTL_INF("Engine release path: " << kNightlyHost << "/" << release_path.str());
 
   auto download_task = DownloadTask{.id = "cortex",
                                     .type = DownloadType::Cortex,
@@ -190,7 +190,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   // Replace binay file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = executable_path / "cortex" / GetCortexBinary();
+  auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
+             GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }
