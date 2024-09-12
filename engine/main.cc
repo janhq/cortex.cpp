@@ -30,6 +30,7 @@ void RunServer() {
   LOG_INFO << "Host: " << config.apiServerHost << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
+  std::filesystem::create_directory(config.logFolderPath);
   std::filesystem::create_directory(config.logFolderPath + "/" +
                                     cortex_utils::logs_folder);
   trantor::FileLogger asyncFileLogger;
@@ -41,7 +42,7 @@ void RunServer() {
       [&](const char* msg, const uint64_t len) {
         asyncFileLogger.output_(msg, len);
       },
-      [&]() { asyncFileLogger.flush(); });
+      [&]() { asyncFileLogger.flush_(); });
   // Number of cortex.cpp threads
   // if (argc > 1) {
   //   thread_num = std::atoi(argv[1]);
@@ -158,6 +159,9 @@ int main(int argc, char* argv[]) {
       return 0;
     } else {
       auto config = file_manager_utils::GetCortexConfig();
+      std::filesystem::create_directory(config.logFolderPath);
+      std::filesystem::create_directory(config.logFolderPath + "/" +
+                                    cortex_utils::logs_folder);
       trantor::FileLogger asyncFileLogger;
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                   cortex_utils::logs_cli_base_name);
@@ -168,7 +172,7 @@ int main(int argc, char* argv[]) {
           [&](const char* msg, const uint64_t len) {
             asyncFileLogger.output_(msg, len);
           },
-          [&]() { asyncFileLogger.flush(); });
+          [&]() { asyncFileLogger.flush_(); });
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
       return 0;
