@@ -15,6 +15,7 @@ constexpr const auto kNightlyHost = "https://delta.jan.ai";
 constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
 constexpr const auto kBetaComp = "-rc";
+constexpr const auto kReleaseFormat = ".tar.gz";
 
 inline std::string GetCortexBinary() {
 #if defined(_WIN32)
@@ -63,7 +64,7 @@ inline void CheckNewUpdate() {
           if (data.empty()) {
             return "";
           }
-          
+
           if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
             for (auto& d : data) {
               if (auto tag = d["tag_name"].get<std::string>();
@@ -80,7 +81,7 @@ inline void CheckNewUpdate() {
 
         auto json_res = nlohmann::json::parse(res->body);
         std::string latest_version = get_latest(json_res);
-        if(latest_version.empty()) {
+        if (latest_version.empty()) {
           CTL_WRN("Release not found!");
           return;
         }
@@ -88,8 +89,10 @@ inline void CheckNewUpdate() {
         if (current_version != latest_version) {
           CLI_LOG("\nA new release of cortex is available: "
                   << current_version << " -> " << latest_version);
-          CLI_LOG("To upgrade, run: cortex update");
-          // CLI_LOG(json_res["html_url"].get<std::string>());
+          CLI_LOG("To upgrade, run: " << GetCortexBinary() << " update");
+          if (CORTEX_VARIANT != file_manager_utils::kNightlyVariant) {
+            CLI_LOG(json_res["html_url"].get<std::string>());
+          }
         }
       } catch (const nlohmann::json::parse_error& e) {
         CTL_INF("JSON parse error: " << e.what());
@@ -137,7 +140,6 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
 
   return true;
 }
-
 
 // This class manages the 'cortex update' command functionality
 // There are three release types available:

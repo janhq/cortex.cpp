@@ -165,7 +165,8 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
   for (auto& asset : assets) {
     auto asset_name = asset["name"].get<std::string>();
     if (asset_name.find(kCortexBinary) != std::string::npos &&
-        asset_name.find(os_arch) != std::string::npos) {
+        asset_name.find(os_arch) != std::string::npos &&
+        asset_name.find(kReleaseFormat) != std::string::npos) {
       matched_variant = asset_name;
       break;
     }

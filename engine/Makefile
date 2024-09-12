@@ -56,7 +56,7 @@ endif
 pre-package:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex;"
-	@powershell -Command "cp build\cortex.exe .\cortex\;"
+	@powershell -Command "cp build\*.exe .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
