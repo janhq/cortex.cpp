@@ -230,7 +230,7 @@ inline std::filesystem::path GetContainerFolderPath(
   } else if (type == "CudaToolkit") {
     container_folder_path = current_path;
   } else if (type == "Cortex") {
-    container_folder_path = current_path / "cortex";
+    container_folder_path = std::filesystem::temp_directory_path() / "cortex";
   } else {
     container_folder_path = current_path / "misc";
   }

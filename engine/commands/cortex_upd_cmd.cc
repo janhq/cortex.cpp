@@ -154,7 +154,8 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = executable_path / "cortex" / kCortexBinary / GetCortexBinary();
+  auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
+             GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }
@@ -268,7 +269,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   // Replace binay file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = executable_path / "cortex" / GetCortexBinary();
+  auto src =
+      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }

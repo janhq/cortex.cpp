@@ -113,7 +113,6 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     return true;
   }
   auto temp = std::filesystem::temp_directory_path() / "cortex_temp";
-  auto download_folder = src.parent_path();
   try {
     if (std::filesystem::exists(temp)) {
       std::filesystem::remove(temp);
@@ -126,15 +125,11 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
                                           std::filesystem::perms::group_all |
                                           std::filesystem::perms::others_read |
                                           std::filesystem::perms::others_exec);
-    std::filesystem::remove_all(download_folder);
   } catch (const std::exception& e) {
     CTL_ERR("Something wrong happened: " << e.what());
     if (std::filesystem::exists(temp)) {
       std::rename(temp.string().c_str(), dst.string().c_str());
       CLI_LOG("Restored binary file");
-    }
-    if (std::filesystem::exists(download_folder)) {
-      std::filesystem::remove_all(download_folder);
     }
     return false;
   }
