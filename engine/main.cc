@@ -42,7 +42,7 @@ void RunServer() {
       [&](const char* msg, const uint64_t len) {
         asyncFileLogger.output_(msg, len);
       },
-      [&]() { asyncFileLogger.flush_(); });
+      [&]() { asyncFileLogger.flush(); });
   // Number of cortex.cpp threads
   // if (argc > 1) {
   //   thread_num = std::atoi(argv[1]);
@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
           [&](const char* msg, const uint64_t len) {
             asyncFileLogger.output_(msg, len);
           },
-          [&]() { asyncFileLogger.flush_(); });
+          [&]() { asyncFileLogger.flush(); });
       CommandLineParser clp;
       clp.SetupCommand(argc, argv);
       return 0;
