@@ -1,0 +1,9 @@
+Package: $PACKAGE_NAME
+Version: $VERSION
+Section: base
+Priority: optional
+Architecture: amd64
+Depends: openmpi-bin,libopenmpi-dev
+Maintainer: Homebrew Computer Pte Ltd <service@homebrew.ltd>
+Description: Cortex
+  Cortex is a C++ AI engine that comes with a Docker-like command-line interface and client libraries. It supports running AI models using ONNX, TensorRT-LLM, and llama.cpp engines. Cortex can function as a standalone server or be integrated as a library.

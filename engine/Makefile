@@ -14,14 +14,23 @@ AZURE_CLIENT_SECRET ?= xxxx
 AZURE_CERT_NAME ?= xxxx
 DEVELOPER_ID ?= xxxx
 
+# Arguments for build installer
+PACKAGE_NAME ?= cortexcpp
+VERSION ?= 0.1.1
+SOURCE_BINARY_PATH ?= ../../cortex/cortex
+DESTINATION_BINARY_NAME ?= cortex
+DATA_FOLDER_NAME ?= .cortex
+CONFIGURATION_FILE_NAME ?= .cortexrc
+UNINSTALLER_FILE_NAME ?= cortex-uninstall.sh
+
 # Default target, does nothing
 all:
 	@echo "Specify a target to run"
 
 configure-vcpkg:
 ifeq ($(OS),Windows_NT)
-	@cd vcpkg && bootstrap-vcpkg.bat;
-	@cd vcpkg && vcpkg install
+	@cd vcpkg && cmd /c bootstrap-vcpkg.bat;
+	@cd vcpkg && cmd /c vcpkg install
 else ifeq ($(shell uname -s),Linux) 
 	@cd vcpkg && ./bootstrap-vcpkg.sh;
 	@cd vcpkg && ./vcpkg install;
@@ -46,20 +55,20 @@ endif
 
 pre-package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "mkdir -p cortex-cpp;"
-	@powershell -Command "cp build\cortex-cpp.exe .\cortex-cpp\;"
-	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex-cpp\;"
-	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex-cpp\;"
-	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex-cpp\;"
+	@powershell -Command "mkdir -p cortex;"
+	@powershell -Command "cp build\cortex.exe .\cortex\;"
+	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
+	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
 else ifeq ($(shell uname -s),Linux)
-	@mkdir -p cortex-cpp; \
-	cp build/cortex-cpp cortex-cpp/;
+	@mkdir -p cortex; \
+	cp build/cortex cortex/;
 else
-	@mkdir -p cortex-cpp; \
-	cp build/cortex-cpp cortex-cpp/;
+	@mkdir -p cortex; \
+	cp build/cortex cortex/;
 endif
 
-codesign:
+codesign-binary:
 ifeq ($(CODE_SIGN),false)
 	@echo "Skipping Code Sign"
 	@exit 0
@@ -67,29 +76,47 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
-	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex-cpp\cortex-cpp.exe";'
-	@powershell -Command 'azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex-cpp\engines\cortex.llamacpp\engine.dll";'
+	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\cortex.exe";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
 else
-	find "cortex-cpp" -type f -exec codesign --force -s "$(DEVELOPER_ID)" --options=runtime {} \;
+	codesign --force -s "$(DEVELOPER_ID)" --options=runtime --entitlements="./templates/macos/entitlements.plist" ./cortex/cortex;
 endif
 
 package:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "7z a -ttar temp.tar cortex-cpp\*; 7z a -tgzip cortex-cpp.tar.gz temp.tar;"
+	@powershell -Command "7z a -ttar temp.tar cortex\*; 7z a -tgzip cortex.tar.gz temp.tar;"
 else ifeq ($(shell uname -s),Linux)
-	tar -czvf cortex-cpp.tar.gz cortex-cpp;
+	tar -czvf cortex.tar.gz cortex;
 else
-	tar -czvf cortex-cpp.tar.gz cortex-cpp;
+	tar -czvf cortex.tar.gz cortex;
+endif
+
+build-installer:
+ifeq ($(OS),Windows_NT)
+	@echo "Building installer for Windows"; \
+	cp cortex/* ../; \
+	mv ../cortex.exe ../$(DESTINATION_BINARY_NAME).exe;
+else ifeq ($(shell uname -s),Linux)
+	@echo "Building installer for linux"; \
+	cd templates/linux; \
+	chmod +x create_deb.sh; \
+	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME); \
+	cp $(PACKAGE_NAME).deb ../../
+else
+	@echo "Building installer for Macos"; \
+	cd templates/macos; \
+	chmod +x create_pkg.sh; \
+	./create_pkg.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(DESTINATION_BINARY_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME) $(UNINSTALLER_FILE_NAME); \
+	cp $(PACKAGE_NAME).pkg ../../
 endif
 
 clean:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;"
+	@powershell -Command "rm -rf build; rm -rf build-deps; rm -rf cortex; rm -rf cortex.tar.gz;"
 else ifeq ($(shell uname -s),Linux)
-	@rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;
+	@rm -rf build; rm -rf build-deps; rm -rf cortex; rm -rf cortex.tar.gz;
 else
-	@rm -rf build; rm -rf build-deps; rm -rf cortex-cpp; rm -rf cortex-cpp.tar.gz;
+	@rm -rf build; rm -rf build-deps; rm -rf cortex; rm -rf cortex.tar.gz;
 endif
