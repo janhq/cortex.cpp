@@ -206,10 +206,9 @@ bool EngineInitCmd::Exec() const {
                   auto get_engine_path = [](std::string_view e) {
                     if (e == "cortex.llamacpp") {
                       return cortex_utils::kLlamaLibPath;
-                    } else if (e == "cortex.tensorrt-llm") {
+                    } else {
                       return cortex_utils::kTensorrtLlmPath;
                     }
-                    return cortex_utils::kLlamaLibPath;
                   };
                   std::string engine_path =
                       file_manager_utils::GetCortexDataPath().string() +
