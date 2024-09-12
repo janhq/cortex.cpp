@@ -4,6 +4,15 @@
 </p>
 
 <p align="center">
+  <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+  <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/m/janhq/cortex.cpp"/>
+  <img alt="Github Last Commit" src="https://img.shields.io/github/last-commit/janhq/cortex.cpp"/>
+  <img alt="Github Contributors" src="https://img.shields.io/github/contributors/janhq/cortex.cpp"/>
+  <img alt="GitHub closed issues" src="https://img.shields.io/github/issues-closed/janhq/cortex.cpp"/>
+  <img alt="Discord" src="https://img.shields.io/discord/1107178041848909847?label=discord"/>
+</p>
+
+<p align="center">
   <a href="https://cortex.so/docs/">Documentation</a> - <a href="https://cortex.so/api-reference">API Reference</a> 
   - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
@@ -13,61 +22,130 @@
 ## About
 Cortex.cpp is a Local AI engine that is used to run and customize LLMs. Cortex can be deployed as a standalone server, or integrated into apps like [Jan.ai](https://jan.ai/).
 
-Cortex.cpp supports the following engines:
+Cortex.cpp is a multi-engine that uses `llama.cpp` as the default engine but also supports the following:
 - [`llamacpp`](https://github.com/janhq/cortex.llamacpp)
 - [`onnx`](https://github.com/janhq/cortex.onnx)
 - [`tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
 To install Cortex.cpp, download the installer for your operating system from the following options:
-- **Stable Version**
-  - [Windows](https://github.com/janhq/cortex.cpp/releases)
-  - [Mac](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
-- **Beta Version**
-  - [Windows](https://github.com/janhq/cortex.cpp/releases)
-  - [Mac](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
-- **Nightly Version**
-  - [Windows](https://github.com/janhq/cortex.cpp/releases)
-  - [Mac](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
+
+<table>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Version Type</b></td>
+    <td style="text-align:center"><b>Windows</b></td>
+    <td colspan="2" style="text-align:center"><b>MacOS</b></td>
+    <td colspan="2" style="text-align:center"><b>Linux</b></td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Stable (Recommended)</b></td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>Intel</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>M1/M2/M3/M4</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.deb</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.AppImage</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Beta Build</b></td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>Intel</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>M1/M2/M3/M4</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.deb</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.AppImage</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Nightly Build</b></td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>Intel</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>M1/M2/M3/M4</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.deb</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp/releases'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortexcpp.AppImage</b>
+      </a>
+    </td>
+  </tr>
+</table>
+
+> **Note**:
+> You can also build Cortex.cpp from source by following the steps [here](#build-from-source).
 
 
 ### Libraries
 - [cortex.js](https://github.com/janhq/cortex.js)
 - [cortex.py](https://github.com/janhq/cortex-python)
 
-### Build from Source
-
-To install Cortex.cpp from the source, follow the steps below:
-
-1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
-2. Navigate to the `engine > vcpkg` folder.
-3. Configure the vpkg:
-
-```bash
-cd vcpkg
-./bootstrap-vcpkg.bat
-vcpkg install
-```
-4. Build the Cortex.cpp inside the `build` folder:
-
-```bash
-mkdir build
-cd build
-cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
-```
-5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
-6. Verify that Cortex.cpp is installed correctly by getting help information.
-
-```sh
-# Get the help information
-cortex -h
-```
 ## Quickstart
 To run and chat with a model in Cortex.cpp:
 ```bash
@@ -75,7 +153,7 @@ To run and chat with a model in Cortex.cpp:
 cortex
 
 # Start a model
-cortex run [model_id]
+cortex run <model_id>:[engine_name]
 ```
 ## Built-in Model Library
 Cortex.cpp supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
@@ -145,7 +223,7 @@ Here are example of models that you can use based on each supported engine:
 | **Show Model Information**         | `cortex ps`                                                         |
 | **Update Cortex.cpp**         | `cortex update [options]`                                                         |
 
-> **Note**:
+> **Note**
 > For a more detailed CLI Reference documentation, please see [here](https://cortex.so/docs/cli).
 
 ## REST API
@@ -211,8 +289,85 @@ curl --request POST \
   --url http://localhost:3928/v1/models/mistral/stop
 ```
 
+> **Note**
+> Check our [API documentation](https://cortex.so/api-reference) for a full list of available endpoints.
 
-> **Note**: Check our [API documentation](https://cortex.so/api-reference) for a full list of available endpoints.
+## Build from Source
+
+### Windows
+1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
+2. Navigate to the `engine > vcpkg` folder.
+3. Configure the vpkg:
+
+```bash
+cd vcpkg
+./bootstrap-vcpkg.bat
+vcpkg install
+```
+4. Build the Cortex.cpp inside the `build` folder:
+
+```bash
+mkdir build
+cd build
+cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
+```
+5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
+6. Verify that Cortex.cpp is installed correctly by getting help information.
+
+```sh
+# Get the help information
+cortex -h
+```
+### MacOS
+1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
+2. Navigate to the `engine > vcpkg` folder.
+3. Configure the vpkg:
+
+```bash
+cd vcpkg
+./bootstrap-vcpkg.sh
+vcpkg install
+```
+4. Build the Cortex.cpp inside the `build` folder:
+
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake
+make -j4
+```
+5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
+6. Verify that Cortex.cpp is installed correctly by getting help information.
+
+```sh
+# Get the help information
+cortex -h
+```
+### Linux
+1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
+2. Navigate to the `engine > vcpkg` folder.
+3. Configure the vpkg:
+
+```bash
+cd vcpkg
+./bootstrap-vcpkg.sh
+vcpkg install
+```
+4. Build the Cortex.cpp inside the `build` folder:
+
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake
+make -j4
+```
+5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
+6. Verify that Cortex.cpp is installed correctly by getting help information.
+
+```sh
+# Get the help information
+cortex -h
+```
 
 ## Contact Support
 - For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
