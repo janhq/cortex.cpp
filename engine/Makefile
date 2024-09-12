@@ -56,16 +56,16 @@ endif
 pre-package:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex;"
-	@powershell -Command "cp build\cortex.exe .\cortex\;"
+	@powershell -Command "cp build\cortex.exe .\cortex\$(DESTINATION_BINARY_NAME).exe;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
 else ifeq ($(shell uname -s),Linux)
 	@mkdir -p cortex; \
-	cp build/cortex cortex/;
+	cp build/cortex cortex/$(DESTINATION_BINARY_NAME);
 else
 	@mkdir -p cortex; \
-	cp build/cortex cortex/;
+	cp build/cortex cortex/$(DESTINATION_BINARY_NAME);
 endif
 
 codesign-binary:
@@ -76,12 +76,12 @@ endif
 
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
-	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\cortex.exe";'
+	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\$(DESTINATION_BINARY_NAME).exe";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
 else
-	codesign --force -s "$(DEVELOPER_ID)" --options=runtime --entitlements="./templates/macos/entitlements.plist" ./cortex/cortex;
+	codesign --force -s "$(DEVELOPER_ID)" --options=runtime --entitlements="./templates/macos/entitlements.plist" ./cortex/$(DESTINATION_BINARY_NAME);
 endif
 
 package:
@@ -96,8 +96,7 @@ endif
 build-installer:
 ifeq ($(OS),Windows_NT)
 	@echo "Building installer for Windows"; \
-	cp cortex/* ../; \
-	mv ../cortex.exe ../$(DESTINATION_BINARY_NAME).exe;
+	cp cortex/* ../;
 else ifeq ($(shell uname -s),Linux)
 	@echo "Building installer for linux"; \
 	cd templates/linux; \

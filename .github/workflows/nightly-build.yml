@@ -52,7 +52,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: macos-12
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
       arch: amd64
 
@@ -65,7 +65,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: macos-latest
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
       arch: arm64
 
@@ -78,7 +78,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: windows-cuda-11-7
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
       build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
       ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
       channel: nightly
@@ -92,7 +92,7 @@ jobs:
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: ubuntu-20-04
-      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION=${{ needs.get-update-version.outputs.new_version }} -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
   
   update-latest-version:
@@ -102,10 +102,28 @@ jobs:
       - name: Update latest version
         id: update-latest-version
         run: |
-          echo "{\"tag_name\": \"${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
+          echo "{\"tag_name\": \"v${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
           aws s3 cp version.json s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/version.json
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: ${{ secrets.DELTA_AWS_REGION }}
           AWS_EC2_METADATA_DISABLED: "true"
+
+  noti-discord-nightly-and-update-url-readme:
+    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider]
+    secrets: inherit
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/template-noti-discord.yaml
+    with:
+      build_reason: Nightly
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+
+  noti-discord-manual:
+    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider]
+    secrets: inherit
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.public_provider == 'aws-s3'
+    uses: ./.github/workflows/template-noti-discord.yaml
+    with:
+      build_reason: Manual
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
