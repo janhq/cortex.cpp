@@ -3,6 +3,7 @@
 #include <trantor/utils/AsyncFileLogger.h>
 #include <trantor/utils/Utilities.h>
 #include <atomic>
+#include <condition_variable>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
@@ -16,7 +17,7 @@
 
 namespace trantor {
 
-class TRANTOR_EXPORT FileLogger : public AsyncFileLogger {
+class TRANTOR_EXPORT FileLogger : NonCopyable {
  public:
   FileLogger();
   ~FileLogger();
@@ -39,26 +40,37 @@ class TRANTOR_EXPORT FileLogger : public AsyncFileLogger {
     fileExtName_ = "";
   }
   void output_(const char* msg, const uint64_t len);
+  std::string filePath_;
+  std::string fileBaseName_;
+  std::string fileExtName_;
+  void startLogging();
+  void flush_();
 
  protected:
+  mutable std::mutex mutex_;
+  std::condition_variable cond_;
+  std::unique_ptr<std::thread> thread_ptr_;
+  bool stop_flag_{false};
+  void LogThreadFunc();
+
   class CircularLogFile {
    public:
     CircularLogFile(const std::string& fileName, uint64_t maxLines);
     ~CircularLogFile();
 
-    void writeLog(const char* logLine, const uint64_t len);
+    void writeLog();
     void flush();
     uint64_t getLength() const { return lineBuffer_.size(); }
-
-   private:
+    void AddLineBuffer(const char* logLine, const uint64_t len);
+   protected:
     FILE* fp_{nullptr};
     uint64_t max_lines_;
     std::string file_name_;
-    std::deque<std::string> lineBuffer_;
+
     std::atomic<int> linesWrittenSinceLastTruncate_{0};
     static const uint64_t TRUNCATE_CHECK_INTERVAL = 1000;
-    mutable std::mutex mutex_;
-
+    std::deque<std::string> tmpBuffer_;
+    std::deque<std::string> lineBuffer_;
     void LoadExistingLines();
     void TruncateFileIfNeeded();
     void AppendToFile(const std::string& line);

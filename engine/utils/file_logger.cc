@@ -1,7 +1,10 @@
 #include "file_logger.h"
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <sstream>
+#include <string>
+#include <utility>
 
 #ifdef _WIN32
 #include <io.h>
@@ -13,34 +16,26 @@
 
 using namespace trantor;
 
-FileLogger::FileLogger() : AsyncFileLogger() {}
+FileLogger::FileLogger() {}
 
-FileLogger::~FileLogger() = default;
-
+FileLogger::~FileLogger() {
+  stop_flag_ = true;
+  if (thread_ptr_) {
+    thread_ptr_->join();
+  }
+  //write
+};
+void FileLogger::flush_(){}
 void FileLogger::output_(const char* msg, const uint64_t len) {
+  std::lock_guard<std::mutex> lock(mutex_);
   if (!circular_log_file_ptr_) {
     circular_log_file_ptr_ =
         std::make_unique<CircularLogFile>(fileBaseName_, max_lines_);
   }
-  circular_log_file_ptr_->writeLog(msg, len);
+  circular_log_file_ptr_->AddLineBuffer(msg, len);
 }
-
-FileLogger::CircularLogFile::CircularLogFile(const std::string& fileName,
-                                             uint64_t maxLines)
-    : max_lines_(maxLines), file_name_(fileName) {
-  std::lock_guard<std::mutex> lock(mutex_);
-  OpenFile();
-  LoadExistingLines();
-  TruncateFileIfNeeded();
-}
-
-FileLogger::CircularLogFile::~CircularLogFile() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  CloseFile();
-}
-void FileLogger::CircularLogFile::writeLog(const char* logLine,
-                                           const uint64_t len) {
-  std::lock_guard<std::mutex> lock(mutex_);
+void FileLogger::CircularLogFile::AddLineBuffer(const char* logLine,
+                                                const uint64_t len) {
   if (!fp_)
     return;
 
@@ -48,6 +43,51 @@ void FileLogger::CircularLogFile::writeLog(const char* logLine,
   std::istringstream iss(logString);
   std::string line;
   while (std::getline(iss, line)) {
+    tmpBuffer_.push_back(line);
+  }
+}
+
+FileLogger::CircularLogFile::CircularLogFile(const std::string& fileName,
+                                             uint64_t maxLines)
+    : max_lines_(maxLines), file_name_(fileName) {
+  // std::lock_guard<std::mutex> lock(mutex_);
+  OpenFile();
+  LoadExistingLines();
+  TruncateFileIfNeeded();
+}
+
+void FileLogger::startLogging() {
+  thread_ptr_ = std::unique_ptr<std::thread>(
+      new std::thread(std::bind(&FileLogger::LogThreadFunc, this)));
+}
+
+void FileLogger::LogThreadFunc() {
+#ifdef __linux__
+  prctl(PR_SET_NAME, "FileLogger")
+#endif
+      while (!stop_flag_) {
+
+      std::lock_guard<std::mutex> lock(mutex_);
+      circular_log_file_ptr_->writeLog();
+    
+  }
+
+}
+
+FileLogger::CircularLogFile::~CircularLogFile() {
+  // std::lock_guard<std::mutex> lock(mutex_);
+  CloseFile();
+}
+
+void FileLogger::CircularLogFile::writeLog() {
+  // std::lock_guard<std::mutex> lock(mutex_);
+  if (!fp_)
+    return;
+  if (!tmpBuffer_.empty()) {
+
+    std::string line = std::move(tmpBuffer_.front());
+    tmpBuffer_.pop_front();
+
     if (lineBuffer_.size() >= max_lines_) {
       lineBuffer_.pop_front();
     }
@@ -61,7 +101,7 @@ void FileLogger::CircularLogFile::writeLog(const char* logLine,
   }
 }
 void FileLogger::CircularLogFile::flush() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  // std::lock_guard<std::mutex> lock(mutex_);
   if (fp_) {
     fflush(fp_);
   }
