@@ -1,0 +1,36 @@
+name: noti-discord
+on:
+  workflow_call:
+    inputs:
+      build_reason:
+        required: true
+        type: string
+        default: 'Nightly'
+      new_version:
+        required: true
+        type: string
+        default: ''
+
+jobs:
+  noti-discord:
+    environment: production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Set version to environment variable
+        run: |
+          echo "VERSION=${{ inputs.new_version }}" >> $GITHUB_ENV
+
+      - name: Notify Discord
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            Cortex.cpp ${{ inputs.build_reason }} build artifact version {{ VERSION }}:
+            - Windows: https://delta.jan.ai/cortex/v{{ VERSION }}/windows-amd64/cortex-{{ VERSION }}-windows-amd64-installer.exe
+            - macOS Intel: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-amd64/cortex-{{ VERSION }}-mac-amd64-installer.pkg
+            - macOS Apple Silicon: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-amd64-installer.pkg
+            - Linux Deb: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-installer.deb
+            - Github action run: https://github.com/janhq/cortex.cpp/actions/runs/{{ GITHUB_RUN_ID }}
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
