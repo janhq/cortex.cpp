@@ -31,8 +31,8 @@ void RunServer() {
 
   // Create logs/ folder and setup log to file
   std::filesystem::create_directory(config.logFolderPath);
-  std::filesystem::create_directory(config.logFolderPath + "/" +
-                                    cortex_utils::logs_folder);
+  std::filesystem::create_directory(std::filesystem::path(config.logFolderPath) /
+                                    std::filesystem::path(cortex_utils::logs_folder));
   trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(config.logFolderPath + "/" +
                               cortex_utils::logs_base_name);
@@ -160,8 +160,8 @@ int main(int argc, char* argv[]) {
     } else {
       auto config = file_manager_utils::GetCortexConfig();
       std::filesystem::create_directory(config.logFolderPath);
-      std::filesystem::create_directory(config.logFolderPath + "/" +
-                                    cortex_utils::logs_folder);
+      std::filesystem::create_directory(std::filesystem::path(config.logFolderPath) /
+                                    std::filesystem::path(cortex_utils::logs_folder));
       trantor::FileLogger asyncFileLogger;
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                   cortex_utils::logs_cli_base_name);
