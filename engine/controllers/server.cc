@@ -7,8 +7,8 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
-#include "utils/logging_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
@@ -21,11 +21,9 @@ constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
 }  // namespace
 
 server::server() {
-
-  // Some default values for now below
-  // log_disable();  // Disable the log to file feature, reduce bloat for
-  // target
-  // system ()
+#if defined(_WIN32)
+  SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+#endif
 };
 
 server::~server() {}
@@ -290,10 +288,46 @@ void server::LoadModel(const HttpRequestPtr& req,
       }
 
       std::string abs_path =
-          (getenv("ENGINE_PATH") ? getenv("ENGINE_PATH")
-                                 : file_manager_utils::GetCortexDataPath().string()) +
+          (getenv("ENGINE_PATH")
+               ? getenv("ENGINE_PATH")
+               : file_manager_utils::GetCortexDataPath().string()) +
           get_engine_path(engine_type);
-      std::cout << abs_path << std::endl;
+#if defined(_WIN32)
+      // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
+      // We would like to support running multiple engines at the same time. Therefore,
+      // the adding/removing dll directory logic is quite complicated:
+      // 1. If llamacpp is loaded and new requested engine is tensorrt-llm:
+      // Unload the llamacpp dll directory then load the tensorrt-llm
+      // 2. If tensorrt-llm is loaded and new requested engine is llamacpp:
+      // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
+      // 3. Add dll directory if met other conditions
+
+      auto add_dll = [this](const std::string& e_type, const std::string& p) {
+        auto ws = std::wstring(p.begin(), p.end());
+        if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
+          LOG_INFO << "Added dll directory: " << p;
+          engines_[e_type].cookie = cookie;
+        } else {
+          LOG_WARN << "Could not add dll directory: " << p;
+        }
+      };
+
+      if (IsEngineLoaded(kLlamaEngine) && engine_type == kTensorrtLlmEngine) {
+        // Remove llamacpp dll directory
+        if (!RemoveDllDirectory(engines_[kLlamaEngine].cookie)) {
+          LOG_INFO << "Could not remove dll directory: " << kLlamaEngine;
+        } else {
+          LOG_WARN << "Removed dll directory: " << kLlamaEngine;
+        }
+
+        add_dll(engine_type, abs_path);
+      } else if (IsEngineLoaded(kTensorrtLlmEngine) &&
+                 engine_type == kLlamaEngine) {
+        // Do nothing
+      } else {
+        add_dll(engine_type, abs_path);
+      }
+#endif
       engines_[engine_type].dl =
           std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
 
@@ -349,6 +383,13 @@ void server::UnloadEngine(
 
   EngineI* e = std::get<EngineI*>(engines_[engine_type].engine);
   delete e;
+#if defined(_WIN32)
+  if (!RemoveDllDirectory(engines_[engine_type].cookie)) {
+    LOG_WARN << "Could not remove dll directory: " << engine_type;
+  } else {
+    LOG_INFO << "Removed dll directory: " << engine_type;
+  }
+#endif
   engines_.erase(engine_type);
   LOG_INFO << "Unloaded engine " + engine_type;
   Json::Value res;

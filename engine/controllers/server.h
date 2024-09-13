@@ -17,11 +17,11 @@
 #include <variant>
 
 #include "common/base.h"
+#include "config/gguf_parser.h"
+#include "config/yaml_config.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
 #include "trantor/utils/SerialTaskQueue.h"
-#include "config/yaml_config.h"
-#include "config/gguf_parser.h"
 #include "utils/dylib.h"
 #include "utils/json.hpp"
 #ifndef SERVER_VERBOSE
@@ -153,6 +153,9 @@ class server : public drogon::HttpController<server>,
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
+#if defined(_WIN32)
+    DLL_DIRECTORY_COOKIE cookie;
+#endif
   };
   std::unordered_map<std::string, EngineInfo> engines_;
   std::string cur_engine_type_;

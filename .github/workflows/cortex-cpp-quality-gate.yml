@@ -82,7 +82,7 @@ jobs:
       - name: Pre-package
         run: |
           cd engine
-          make pre-package
+          make pre-package DESTINATION_BINARY_NAME="cortex"
           
       - name: Package
         run: |

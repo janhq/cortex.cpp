@@ -9,6 +9,7 @@
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "commands/cortex_upd_cmd.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -31,8 +32,8 @@ void RunServer() {
            << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
-  std::filesystem::create_directory(config.logFolderPath + "/" +
-                                    cortex_utils::logs_folder);
+  std::filesystem::create_directories(std::filesystem::path(config.logFolderPath) /
+                                    std::filesystem::path(cortex_utils::logs_folder));
   trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(config.logFolderPath + "/" +
                               cortex_utils::logs_base_name);
@@ -91,8 +92,9 @@ void ForkProcess() {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
+  auto exe = commands::GetCortexBinary();
   std::string cmds =
-      cortex_utils::GetCurrentPath() + "/cortex-cpp.exe --start-server";
+      cortex_utils::GetCurrentPath() + "/" + exe + " --start-server";
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
@@ -137,7 +139,11 @@ int main(int argc, char* argv[]) {
   auto temp =
       file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
   if (std::filesystem::exists(temp)) {
-    std::filesystem::remove(temp);
+    try {
+      std::filesystem::remove(temp);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << '\n';
+    }
   }
 
   // Check if this process is for python execution
@@ -167,6 +173,8 @@ int main(int argc, char* argv[]) {
       return 0;
     } else {
       auto config = file_manager_utils::GetCortexConfig();
+      std::filesystem::create_directories(std::filesystem::path(config.logFolderPath) /
+                                    std::filesystem::path(cortex_utils::logs_folder));
       trantor::FileLogger asyncFileLogger;
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                   cortex_utils::logs_cli_base_name);

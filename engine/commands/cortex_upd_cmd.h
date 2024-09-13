@@ -112,8 +112,9 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     // Already has the newest
     return true;
   }
-  auto temp =
-      file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
+
+  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
+
   try {
     if (std::filesystem::exists(temp)) {
       std::filesystem::remove(temp);
