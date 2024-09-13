@@ -132,13 +132,13 @@ void ForkProcess() {
     if (auto g = getenv(name); g) {
       v += g;
     }
-    CTL_DEBUG("LD_LIBRARY_PATH: " << v);
+    CTL_INF("LD_LIBRARY_PATH: " << v);
     auto data_path = file_manager_utils::GetCortexDataPath();
     auto llamacpp_path = data_path / "engines" / "cortex.llamacpp/";
     auto trt_path = data_path / "engines" / "cortex.tensorrt-llm/";
     auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
     setenv(name, new_v.c_str(), true);
-    CTL_DEBUG("LD_LIBRARY_PATH: " << getenv(name));
+    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
 #endif
     auto exe = commands::GetCortexBinary();
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
