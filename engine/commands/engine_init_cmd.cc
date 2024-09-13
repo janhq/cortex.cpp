@@ -7,7 +7,6 @@
 #include "utils/archive_utils.h"   
 #include "utils/system_info_utils.h"
 // clang-format on
-#include "utils/cortex_utils.h"
 #include "utils/cuda_toolkit_utils.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -125,6 +124,11 @@ bool EngineInitCmd::Exec() const {
               return true;
             }
 
+            if (cuda_driver_version.empty()) {
+              CTL_WRN("No cuda driver, continue with CPU");
+              return true;
+            }
+
             // download cuda toolkit
             const std::string jan_host = "https://catalog.jan.ai";
             const std::string cuda_toolkit_file_name = "cuda.tar.gz";
@@ -164,35 +168,30 @@ bool EngineInitCmd::Exec() const {
                              << cuda_driver_version << "/" << system_info.os
                              << "/" << cuda_toolkit_file_name;
 
-            LOG_DEBUG << "Cuda toolkit download url: " << jan_host
+            LOG_DEBUG << "Cuda toolkit download url: "
                       << cuda_toolkit_url.str();
-            auto cuda_toollkit_local_path =
-                file_manager_utils::GetExecutableFolderContainerPath() /
+            auto cuda_toolkit_local_path =
+                file_manager_utils::GetContainerFolderPath(
+                    file_manager_utils::DownloadTypeToString(
+                        DownloadType::CudaToolkit)) /
                 cuda_toolkit_file_name;
+            LOG_DEBUG << "Download to: " << cuda_toolkit_local_path.string();
             auto downloadCudaToolkitTask{DownloadTask{
                 .id = download_id,
                 .type = DownloadType::CudaToolkit,
                 .items = {DownloadItem{.id = download_id,
                                        .downloadUrl = cuda_toolkit_url.str(),
-                                       .localPath = cuda_toollkit_local_path}},
+                                       .localPath = cuda_toolkit_local_path}},
             }};
 
             download_service.AddDownloadTask(
                 downloadCudaToolkitTask, [&](const DownloadTask& finishedTask) {
-                  // TODO(any) This is a temporary fix. The issue will be fixed when we has CIs
-                  // to pack CUDA dependecies into engine release
-                  auto get_engine_path = [](std::string_view e) {
-                    if (e == "cortex.llamacpp") {
-                      return cortex_utils::kLlamaLibPath;
-                    } else {
-                      return cortex_utils::kTensorrtLlmPath;
-                    }
-                  };
-                  std::string engine_path =
-                      file_manager_utils::GetCortexDataPath().string() +
-                      get_engine_path(engineName_);
+                  auto engine_path =
+                      file_manager_utils::GetEnginesContainerPath() /
+                      engineName_;
                   archive_utils::ExtractArchive(
-                      finishedTask.items[0].localPath.string(), engine_path);
+                      finishedTask.items[0].localPath.string(),
+                      engine_path.string());
 
                   try {
                     std::filesystem::remove(finishedTask.items[0].localPath);

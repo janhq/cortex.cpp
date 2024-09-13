@@ -229,24 +229,24 @@ inline std::filesystem::path GetEnginesContainerPath() {
 
 inline std::filesystem::path GetContainerFolderPath(
     const std::string_view type) {
-  const auto current_path{GetExecutableFolderContainerPath()};
-  auto container_folder_path = std::filesystem::path{};
+  std::filesystem::path container_folder_path;
 
   if (type == "Model") {
     container_folder_path = GetModelsContainerPath();
   } else if (type == "Engine") {
     container_folder_path = GetEnginesContainerPath();
   } else if (type == "CudaToolkit") {
-    container_folder_path = current_path;
+    container_folder_path =
+        std::filesystem::temp_directory_path() / "cuda-dependencies";
   } else if (type == "Cortex") {
     container_folder_path = std::filesystem::temp_directory_path() / "cortex";
   } else {
-    container_folder_path = current_path / "misc";
+    container_folder_path = std::filesystem::temp_directory_path() / "misc";
   }
 
   if (!std::filesystem::exists(container_folder_path)) {
     CTL_INF("Creating folder: " << container_folder_path.string() << "\n");
-    std::filesystem::create_directory(container_folder_path);
+    std::filesystem::create_directories(container_folder_path);
   }
 
   return container_folder_path;
