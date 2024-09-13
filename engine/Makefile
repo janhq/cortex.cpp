@@ -55,7 +55,7 @@ endif
 
 run-unit-tests:
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "cd build\test\components\Release\; .\test-components.exe;"
+	@powershell -Command "cd build\test\components\; .\test-components.exe;"
 else ifeq ($(shell uname -s),Linux)
 	@cd build/test/components/;\
 	./test-components
