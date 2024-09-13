@@ -124,7 +124,10 @@ void ForkProcess() {
     return;
   } else if (pid == 0) {
     // Child process
-    RunServer();
+    // RunServer();
+    std::string p = cortex_utils::GetCurrentPath() + "/cortex";
+    std::cout << p << std::endl;
+    auto res = execl(p.c_str(), "cortex", "--start-server", (char*)0);
   } else {
     // Parent process
     std::cout << "Server started" << std::endl;
