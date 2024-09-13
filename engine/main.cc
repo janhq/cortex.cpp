@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <climits>  // for PATH_MAX
+#include "commands/cortex_upd_cmd.h"
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/archive_utils.h"
@@ -9,7 +10,6 @@
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "commands/cortex_upd_cmd.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -32,8 +32,9 @@ void RunServer() {
            << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
-  std::filesystem::create_directories(std::filesystem::path(config.logFolderPath) /
-                                    std::filesystem::path(cortex_utils::logs_folder));
+  std::filesystem::create_directories(
+      std::filesystem::path(config.logFolderPath) /
+      std::filesystem::path(cortex_utils::logs_folder));
   trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(config.logFolderPath + "/" +
                               cortex_utils::logs_base_name);
@@ -123,8 +124,25 @@ void ForkProcess() {
     std::cerr << "Could not start server: " << std::endl;
     return;
   } else if (pid == 0) {
-    // Child process
-    RunServer();
+    // No need to configure LD_LIBRARY_PATH for macOS
+#if !defined(__APPLE__) || !defined(__MACH__)
+    const char* name = "LD_LIBRARY_PATH";
+    auto data = getenv(name);
+    std::string v;
+    if (auto g = getenv(name); g) {
+      v += g;
+    }
+    CTL_DEBUG("LD_LIBRARY_PATH: " << v);
+    auto data_path = file_manager_utils::GetCortexDataPath();
+    auto llamacpp_path = data_path / "engines" / "cortex.llamacpp/";
+    auto trt_path = data_path / "engines" / "cortex.tensorrt-llm/";
+    auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
+    setenv(name, new_v.c_str(), true);
+    CTL_DEBUG("LD_LIBRARY_PATH: " << getenv(name));
+#endif
+    auto exe = commands::GetCortexBinary();
+    std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
+    execl(p.c_str(), exe.c_str(), "--start-server", (char*)0);
   } else {
     // Parent process
     std::cout << "Server started" << std::endl;
@@ -173,8 +191,9 @@ int main(int argc, char* argv[]) {
       return 0;
     } else {
       auto config = file_manager_utils::GetCortexConfig();
-      std::filesystem::create_directories(std::filesystem::path(config.logFolderPath) /
-                                    std::filesystem::path(cortex_utils::logs_folder));
+      std::filesystem::create_directories(
+          std::filesystem::path(config.logFolderPath) /
+          std::filesystem::path(cortex_utils::logs_folder));
       trantor::FileLogger asyncFileLogger;
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                   cortex_utils::logs_cli_base_name);
