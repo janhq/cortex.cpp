@@ -1,7 +1,7 @@
 import platform
 import os
 from pathlib import Path
-import pytest, requests
+import pytest, requests, shutil
 from test_runner import run
 from test_runner import start_server, stop_server
 
@@ -10,6 +10,9 @@ class TestCreateLogFolder:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
+        root = Path.home()
+        if os.path.exists(root / "cortexcpp" / "logs"):
+            shutil.rmtree(root / "cortexcpp" / "logs")
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
