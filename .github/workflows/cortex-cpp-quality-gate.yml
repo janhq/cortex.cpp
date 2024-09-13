@@ -81,9 +81,9 @@ jobs:
 
       - name: Run unit tests
         run: |
+          cd engine
           make run-unit-tests
   
- 
       - name: Pre-package
         run: |
           cd engine
