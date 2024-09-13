@@ -191,8 +191,8 @@ bool EngineInitCmd::Exec() const {
                   std::string engine_path =
                       file_manager_utils::GetCortexDataPath().string() +
                       get_engine_path(engineName_);
-                  archive_utils::ExtractArchive(finishedTask.items[0].localPath,
-                                                engine_path);
+                  archive_utils::ExtractArchive(
+                      finishedTask.items[0].localPath.string(), engine_path);
 
                   try {
                     std::filesystem::remove(finishedTask.items[0].localPath);

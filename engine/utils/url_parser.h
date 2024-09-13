@@ -2,6 +2,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 #include "exceptions/malformed_url_exception.h"
 
@@ -26,6 +27,9 @@ inline void SplitPathParams(const std::string& input,
   std::string token;
   std::istringstream tokenStream(input);
   while (std::getline(tokenStream, token, '/')) {
+    if (token.empty()) {
+      continue;
+    }
     pathList.push_back(token);
   }
 }
