@@ -28,7 +28,7 @@ Name: "{group}\cortexcpp-nightly"; Filename: "{app}\cortex-nightly.exe"
 
 ; Define the run section to execute the application after installation
 [Run]
-Filename: "{app}\cortex-nightly.exe"; Parameters: "engines cortex.llamacpp install"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
+Filename: "{app}\cortex-nightly.exe"; Parameters: "engines install cortex.llamacpp"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
 [Code]
 procedure AddToUserPath;
 var
