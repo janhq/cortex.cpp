@@ -62,8 +62,10 @@ inline void CheckNewUpdate() {
         if (current_version != latest_version) {
           CLI_LOG("\nA new release of cortex is available: "
                   << current_version << " -> " << latest_version);
-          CLI_LOG("To upgrade, run: cortex update");
-          // CLI_LOG(json_res["html_url"].get<std::string>());
+          CLI_LOG("To upgrade, run: " << GetCortexBinary() << " update");
+          if (CORTEX_VARIANT == file_manager_utils::kProdVariant) {
+            CLI_LOG(json_res["html_url"].get<std::string>());
+          }
         }
       } catch (const nlohmann::json::parse_error& e) {
         CTL_INF("JSON parse error: " << e.what());
@@ -83,7 +85,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     // Already has the newest
     return true;
   }
-  std::filesystem::path temp = std::filesystem::temp_directory_path() / "cortex_temp";
+  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
 
   try {
     if (std::filesystem::exists(temp)) {
@@ -97,8 +99,6 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
                                           std::filesystem::perms::group_all |
                                           std::filesystem::perms::others_read |
                                           std::filesystem::perms::others_exec);
-    auto download_folder = src.parent_path();
-    std::filesystem::remove_all(download_folder);
   } catch (const std::exception& e) {
     CTL_ERR("Something wrong happened: " << e.what());
     if (std::filesystem::exists(temp)) {
