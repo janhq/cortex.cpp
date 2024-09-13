@@ -1,4 +1,4 @@
-name: build-mac-x64
+name: build-mac
 on:
   workflow_call:
     inputs:
@@ -174,13 +174,18 @@ jobs:
         run: |
           cd engine
           make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" VERSION=${{ inputs.new_version }} SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}"
+          cat templates/macos/Scripts/postinstall
 
       - name: Codesign and notary for macos installer
         run: |
           cd engine
           productsign --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" ${{ steps.set-output-params.outputs.package_name }}.pkg ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg
           rm ${{ steps.set-output-params.outputs.package_name }}.pkg
-          mv ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg ${{ steps.set-output-params.outputs.package_name }}.pkg
+          mv ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg Distribution.pkg
+          productbuild --synthesize --package Distribution.pkg Distribution.xml
+          sed -i '' 's/require-scripts="false"/require-scripts="true"/' Distribution.xml
+          cat Distribution.xml
+          productbuild --distribution Distribution.xml --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" --package-path . ${{ steps.set-output-params.outputs.package_name }}.pkg
           xcrun notarytool submit ${{ steps.set-output-params.outputs.package_name }}.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
 
       - name: Package
