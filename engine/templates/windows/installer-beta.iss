@@ -28,7 +28,7 @@ Name: "{group}\cortexcpp-beta"; Filename: "{app}\cortex-beta.exe"
 
 ; Define the run section to execute the application after installation
 [Run]
-Filename: "{app}\cortex-beta.exe"; Parameters: "engines cortex.llamacpp install"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
+Filename: "{app}\cortex-beta.exe"; Parameters: "engines install cortex.llamacpp"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
 [Code]
 procedure AddToUserPath;
 var
