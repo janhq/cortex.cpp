@@ -100,7 +100,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
                                           std::filesystem::perms::others_read |
                                           std::filesystem::perms::others_exec);
   } catch (const std::exception& e) {
-    CTL_ERR("Something wrong happened: " << e.what());
+    CTL_ERR("Something went wrong: " << e.what());
     if (std::filesystem::exists(temp)) {
       std::rename(temp.string().c_str(), dst.string().c_str());
       CLI_LOG("Restored binary file");
