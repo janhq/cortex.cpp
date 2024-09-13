@@ -133,6 +133,7 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
+  std::cout << "Test" << std::endl;
   { file_manager_utils::CreateConfigFileIfNotExist(); }
 
   // Delete temporary file if it exists
