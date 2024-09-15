@@ -3,7 +3,7 @@
 #include "commands/cmd_info.h"
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
-#include "commands/engine_init_cmd.h"
+#include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
 #include "commands/model_get_cmd.h"
@@ -79,18 +79,17 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
-    auto model_pull_cmd =
-        app_.add_subcommand("pull",
-                            "Download a model from a registry. Working with "
-                            "HuggingFace repositories. For available models, "
-                            "please visit https://huggingface.co/cortexso");
-    model_pull_cmd->add_option("model_id", model_id, "");
-
-    model_pull_cmd->callback([&model_id]() {
-      commands::CmdInfo ci(model_id);
-      commands::ModelPullCmd command(ci.model_name, ci.branch);
-      command.Exec();
-    });
+    {
+      auto model_pull_cmd =
+          app_.add_subcommand("pull",
+                              "Download a model from a registry. Working with "
+                              "HuggingFace repositories. For available models, "
+                              "please visit https://huggingface.co/cortexso");
+      std::string pull_input{""};
+      model_pull_cmd->add_option("model_id", pull_input, "");
+      model_pull_cmd->callback(
+          [&]() { commands::ModelPullCmd().Exec(pull_input); });
+    }
 
     auto model_del_cmd =
         models_cmd->add_subcommand("delete", "Delete a model by ID locally");
@@ -224,9 +223,12 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
                                       std::string& version) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  install_engine_cmd->callback([=] {
-    commands::EngineInitCmd eic(engine_name, version);
-    eic.Exec();
+  install_engine_cmd->callback([engine_name, version] {
+    try {
+      commands::EngineInstallCmd().Exec(engine_name, version);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
+    }
   });
 }
 
@@ -234,9 +236,12 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
                                         const std::string& engine_name) {
   auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  uninstall_engine_cmd->callback([=] {
-    commands::EngineUninstallCmd cmd(engine_name);
-    cmd.Exec();
+  uninstall_engine_cmd->callback([engine_name] {
+    try {
+      commands::EngineUninstallCmd().Exec(engine_name);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
+    }
   });
 }
 
@@ -248,9 +253,7 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     std::string desc = "Get " + engine_name + " status";
 
     auto engine_get_cmd = get_cmd->add_subcommand(engine_name, desc);
-    engine_get_cmd->callback([engine_name] {
-      commands::EngineGetCmd cmd(engine_name);
-      cmd.Exec();
-    });
+    engine_get_cmd->callback(
+        [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
 }
