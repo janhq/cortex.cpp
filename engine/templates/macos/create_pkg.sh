@@ -13,7 +13,7 @@ cp $SOURCE_BINARY_PATH installer/$DESTINATION_BINARY_NAME
 
 export DESTINATION_BINARY_NAME
 cp postinstall Scripts/postinstall
-sed -i '' "2s/.*/DESTINATION_BINARY_NAME=$DESTINATION_BINARY_NAME/" Scripts/postinstall
+sed -i '' "3s/.*/DESTINATION_BINARY_NAME=$DESTINATION_BINARY_NAME/" Scripts/postinstall
 
 export DATA_FOLDER_NAME CONFIGURATION_FILE_NAME UNINSTALLER_FILE_NAME
 cp cortex-uninstall.sh installer/$UNINSTALLER_FILE_NAME
