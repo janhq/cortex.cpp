@@ -45,7 +45,7 @@ begin
   Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Update status message for downloading llamacpp engine
-  WizardForm.StatusLabel.Caption := 'Downloading llamacpp engine and dependencies ...';
+  WizardForm.StatusLabel.Caption := 'Downloading llama.cpp engine and dependencies ...';
   WizardForm.StatusLabel.Update;
 
   // Download llamacpp engine by default
