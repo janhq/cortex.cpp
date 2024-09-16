@@ -1,4 +1,5 @@
 #include "models.h"
+#include "commands/cmd_info.h"
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
@@ -167,5 +168,69 @@ void Models::GetModel(
   ret["result"] = "OK";
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
+  callback(resp);
+}
+
+void Models::DeleteModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
+    return;
+  }
+  auto model_handle = (*(req->getJsonObject())).get("modelId", "").asString();
+  LOG_DEBUG << "DeleteModel, Model handle: " << model_handle;
+  commands::CmdInfo ci(model_handle);
+  std::string model_file =
+      ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
+  auto models_path = file_manager_utils::GetModelsContainerPath();
+  if (std::filesystem::exists(models_path) &&
+      std::filesystem::is_directory(models_path)) {
+    // Iterate through directory
+    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
+      if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
+        try {
+          config::YamlHandler handler;
+          handler.ModelConfigFromFile(entry.path().string());
+          auto cfg = handler.GetModelConfig();
+          if (entry.path().stem().string() == model_file) {
+            // Delete data
+            if (cfg.files.size() > 0) {
+              std::filesystem::path f(cfg.files[0]);
+              auto rel = std::filesystem::relative(f, models_path);
+              // Only delete model data if it is stored in our models folder
+              if (!rel.empty()) {
+                if (cfg.engine == "cortex.llamacpp") {
+                  std::filesystem::remove_all(f.parent_path());
+                } else {
+                  std::filesystem::remove_all(f);
+                }
+              }
+            }
+
+            // Delete yaml file
+            std::filesystem::remove(entry);
+            LOG_INFO << "The model " << model_handle << " was deleted";
+            Json::Value ret;
+            ret["result"] = "OK";
+            ret["modelHandle"] = model_handle;
+            auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+            resp->setStatusCode(k200OK);
+            callback(resp);
+            return;
+          }
+        } catch (const std::exception& e) {
+          LOG_WARN << "Error reading yaml file '" << entry.path().string()
+                   << "': " << e.what();
+        }
+      }
+    }
+  }
+
+  LOG_INFO << "Model does not exist: " << model_handle;
+  Json::Value ret;
+  ret["result"] = "Not Found";
+  ret["modelHandle"] = model_handle;
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  resp->setStatusCode(k404NotFound);
   callback(resp);
 }
