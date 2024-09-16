@@ -1,4 +1,5 @@
 #include "models.h"
+#include "commands/model_del_cmd.h"
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
@@ -168,4 +169,26 @@ void Models::GetModel(
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);
+}
+
+void Models::DeleteModel(const HttpRequestPtr& req,
+                         std::function<void(const HttpResponsePtr&)>&& callback,
+                         const std::string& model_id) const {
+  LOG_DEBUG << "DeleteModel, Model handle: " << model_id;
+  commands::ModelDelCmd mdc;
+  if (mdc.Exec(model_id)) {
+    Json::Value ret;
+    ret["result"] = "OK";
+    ret["modelHandle"] = model_id;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["result"] = "Not Found";
+    ret["modelHandle"] = model_id;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k404NotFound);
+    callback(resp);
+  }
 }
