@@ -10,6 +10,7 @@
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/system_info_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -151,6 +152,15 @@ void ForkProcess() {
 }
 
 int main(int argc, char* argv[]) {
+  // Stop the program if the system is not supported
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (system_info.arch == system_info_utils::kUnsupported ||
+      system_info.os == system_info_utils::kUnsupported) {
+    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
+                                               << system_info.arch);
+    return 1;
+  }
+
   { file_manager_utils::CreateConfigFileIfNotExist(); }
 
   // Delete temporary file if it exists

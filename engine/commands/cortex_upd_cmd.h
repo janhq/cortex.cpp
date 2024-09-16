@@ -1,5 +1,4 @@
 #pragma once
-#include <optional>
 #include <string>
 
 #include "httplib.h"
@@ -11,7 +10,7 @@ namespace commands {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT file_manager_utils::kProdVariant
 #endif
-constexpr const auto kNightlyHost = "https://delta.jan.ai";
+constexpr const auto kNightlyHost = "delta.jan.ai";
 constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
 constexpr const auto kBetaComp = "-rc";
@@ -146,7 +145,6 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
 // - Nightly: Enables retrieval of the latest nightly build and specific versions using the -v flag
 class CortexUpdCmd {
  public:
-  CortexUpdCmd();
   void Exec(std::string version);
 
  private:
@@ -156,5 +154,4 @@ class CortexUpdCmd {
                            const std::string& os_arch);
   bool GetNightly(const std::string& v);
 };
-
 }  // namespace commands

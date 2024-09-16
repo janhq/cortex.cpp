@@ -26,56 +26,37 @@ Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\cortexcpp-beta"; Filename: "{app}\cortex-beta.exe"
 
-; Define the run section to execute the application after installation
-[Run]
-Filename: "{app}\cortex-beta.exe"; Parameters: "engines install cortex.llamacpp"; WorkingDir: "{app}"; StatusMsg: "Initializing cortex configuration..."; Flags: nowait postinstall
-[Code]
-procedure AddToUserPath;
-var
-  ExpandedAppDir: String;
-  CmdLine: String;
-  ResultCode: Integer;
-begin
-  ExpandedAppDir := ExpandConstant('{app}');
-  
-  CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
-  
-  if Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode) then
-  begin
-    if ResultCode = 0 then
-      MsgBox('Successfully added to user PATH.', mbInformation, MB_OK)
-    else
-      MsgBox('Failed to update user PATH. Error code: ' + IntToStr(ResultCode), mbError, MB_OK);
-  end
-  else
-  begin
-    MsgBox('Failed to execute setx command.', mbError, MB_OK);
-  end;
-end;
-
-procedure CurStepChanged(CurStep: TSetupStep);
-begin
-  if CurStep = ssPostInstall then
-  begin
-    AddToUserPath;
-  end;
-end;
-
-[Tasks]
-Name: "desktopicon"; Description: "Create a &desktop icon"; GroupDescription: "Additional icons:"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "Create a &Quick Launch icon"; GroupDescription: "Additional icons:"; Flags: unchecked
-
-; Define icons for the additional tasks
-[Icons]
-Name: "{commondesktop}\cortexcpp-beta"; Filename: "{app}\cortex-beta.exe"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\cortexcpp-beta"; Filename: "{app}\cortex-beta.exe"; Tasks: quicklaunchicon
-
 ; Define the uninstall run section to execute commands before uninstallation
 [UninstallRun]
 Filename: "{app}\cortex-beta.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp-beta service..."; Flags: runhidden
 
-; Use Pascal scripting to ask user if they want to delete the cortexcpp-beta folder and .cortexrc-beta file
+; Combine all Pascal scripting code in one [Code] section
 [Code]
+procedure AddToUserPathAndInstallEngines;
+var
+  ExpandedAppDir: String;
+  CmdLine, CortexInstallCmd: String;
+  ResultCode: Integer;
+begin
+  ExpandedAppDir := ExpandConstant('{app}');
+  
+  // Add {app} to PATH
+  CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
+  Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // Update status message for downloading llamacpp engine
+  WizardForm.StatusLabel.Caption := 'Downloading llama.cpp engine and dependencies ...';
+  WizardForm.StatusLabel.Update;
+
+  // Download llamacpp engine by default
+  CortexInstallCmd := Format('"%s\cortex-beta.exe" engines install cortex.llamacpp', [ExpandedAppDir]);
+  Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // Clear the status message after completion
+  WizardForm.StatusLabel.Caption := '';
+  WizardForm.StatusLabel.Update;
+end;
+
 procedure DeleteCurrentUserCortexFolderAndConfig;
 var
   UserCortexFolder: String;
@@ -101,6 +82,14 @@ begin
         DeleteFile(UserCortexConfig);
       end;
     end;
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then
+  begin
+    AddToUserPathAndInstallEngines;
   end;
 end;
 

@@ -110,7 +110,7 @@ inline std::filesystem::path GetConfigurationPath() {
 }
 
 inline void CreateConfigFileIfNotExist() {
-  auto config_path = file_manager_utils::GetConfigurationPath();
+  auto config_path = GetConfigurationPath();
   if (std::filesystem::exists(config_path)) {
     // already exists
     return;
@@ -192,6 +192,15 @@ inline std::filesystem::path GetCortexLogPath() {
   return log_folder_path;
 }
 
+inline void CreateDirectoryRecursively(const std::string& path) {
+  // Create the directories if they don't exist
+  if (std::filesystem::create_directories(path)) {
+    CTL_INF(path + " successfully created!");
+  } else {
+    CTL_INF(path + " already exist!");
+  }
+}
+
 inline std::filesystem::path GetModelsContainerPath() {
   auto cortex_path = GetCortexDataPath();
   auto models_container_path = cortex_path / "models";
@@ -220,30 +229,30 @@ inline std::filesystem::path GetEnginesContainerPath() {
 
 inline std::filesystem::path GetContainerFolderPath(
     const std::string_view type) {
-  const auto current_path{GetExecutableFolderContainerPath()};
-  auto container_folder_path = std::filesystem::path{};
+  std::filesystem::path container_folder_path;
 
   if (type == "Model") {
     container_folder_path = GetModelsContainerPath();
   } else if (type == "Engine") {
     container_folder_path = GetEnginesContainerPath();
   } else if (type == "CudaToolkit") {
-    container_folder_path = current_path;
+    container_folder_path =
+        std::filesystem::temp_directory_path() / "cuda-dependencies";
   } else if (type == "Cortex") {
     container_folder_path = std::filesystem::temp_directory_path() / "cortex";
   } else {
-    container_folder_path = current_path / "misc";
+    container_folder_path = std::filesystem::temp_directory_path() / "misc";
   }
 
   if (!std::filesystem::exists(container_folder_path)) {
     CTL_INF("Creating folder: " << container_folder_path.string() << "\n");
-    std::filesystem::create_directory(container_folder_path);
+    std::filesystem::create_directories(container_folder_path);
   }
 
   return container_folder_path;
 }
 
-inline std::string downloadTypeToString(DownloadType type) {
+inline std::string DownloadTypeToString(DownloadType type) {
   switch (type) {
     case DownloadType::Model:
       return "Model";
