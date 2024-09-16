@@ -206,7 +206,7 @@ jobs:
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-${{ inputs.arch}}/cortex-nightly.tar.gz
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-mac-${{ inputs.arch}}-installer-${{ inputs.new_version }}.pkg
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-installer.pkg
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}

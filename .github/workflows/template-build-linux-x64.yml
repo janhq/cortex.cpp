@@ -157,7 +157,7 @@ jobs:
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-amd64/cortex-nightly.tar.gz
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-amd64/cortex-linux-amd64-installer-${{ inputs.new_version }}.deb
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-amd64/cortex-${{ inputs.new_version }}-linux-amd64-installer.deb
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}

@@ -16,10 +16,10 @@ cp post-installer.sh scripts/post-installer.sh
 sed -i '' '2s/.*/DESTINATION_BINARY_NAME=\$DESTINATION_BINARY_NAME/' $PACKAGE_NAME/DEBIAN/postinst
 
 export DATA_FOLDER_NAME CONFIGURATION_FILE_NAME UNINSTALLER_FILE_NAME
-cp cortex-uninstall.sh scripts/$UNINSTALLER_FILE_NAME
-sed -i '' '2s/.*/DESTINATION_BINARY_NAME=\$DESTINATION_BINARY_NAME/' scripts/$UNINSTALLER_FILE_NAME
-sed -i '' '3s/.*/DATA_FOLDER_NAME=\$DATA_FOLDER_NAME/' scripts/$UNINSTALLER_FILE_NAME
-sed -i '' '4s/.*/CONFIGURATION_FILE_NAME=\$CONFIGURATION_FILE_NAME/' scripts/$UNINSTALLER_FILE_NAME
-sed -i '' '5s/.*/UNINSTALLER_FILE_NAME=\$UNINSTALLER_FILE_NAME/' scripts/$UNINSTALLER_FILE_NAME
+cp cortex-uninstall.sh installer/$UNINSTALLER_FILE_NAME
+sed -i '' "2s/.*/DESTINATION_BINARY_NAME=$DESTINATION_BINARY_NAME/" installer/$UNINSTALLER_FILE_NAME
+sed -i '' "3s/.*/DATA_FOLDER_NAME=$DATA_FOLDER_NAME/" installer/$UNINSTALLER_FILE_NAME
+sed -i '' "4s/.*/CONFIGURATION_FILE_NAME=$CONFIGURATION_FILE_NAME/" installer/$UNINSTALLER_FILE_NAME
+sed -i '' "5s/.*/UNINSTALLER_FILE_NAME=$UNINSTALLER_FILE_NAME/" installer/$UNINSTALLER_FILE_NAME
 
 pkgbuild --identifier ai.cortexcpp.pkg --version $VERSION --scripts scripts --install-location /usr/local/bin --root ./installer ${PACKAGE_NAME}.pkg
