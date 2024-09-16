@@ -4,6 +4,7 @@
 #include <regex>
 #include <sstream>
 #include <vector>
+#include <optional>
 #include "utils/command_executor.h"
 #include "utils/logging_utils.h"
 #ifdef _WIN32

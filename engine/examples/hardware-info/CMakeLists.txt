@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(cortex C CXX)
+project(hardware-info C CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -30,44 +30,14 @@ if(MSVC)
   )
 endif()
 
-if(DEBUG)
-  message(STATUS "CORTEX-CPP DEBUG IS ON")
-  add_compile_definitions(ALLOW_ALL_CORS)
-endif()
-
-if(NOT DEFINED CORTEX_VARIANT)
-  set(CORTEX_VARIANT "prod")
-endif()
-
 set(TARGET_NAME ${PROJECT_NAME})
-if(RENAME_EXE)
-  if(CORTEX_VARIANT STREQUAL "beta")
-    set(TARGET_NAME "${PROJECT_NAME}-beta")
-  elseif(CORTEX_VARIANT STREQUAL "nightly")
-    set(TARGET_NAME "${PROJECT_NAME}-nightly")
-  else()
-    set(TARGET_NAME ${PROJECT_NAME})
-  endif()
-endif()
 
-if(NOT DEFINED CORTEX_CONFIG_FILE_PATH)
-  set(CORTEX_CONFIG_FILE_PATH "user_home")
-endif()
 
-if(NOT DEFINED CORTEX_CPP_VERSION)
-  set(CORTEX_CPP_VERSION "default_version")
+if(NOT DEFINED HARDWARE_INFO_VERSION)
+  set(HARDWARE_INFO_VERSION "default_version")
 endif()
  
-add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
-add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
-add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
-
-option(CMAKE_BUILD_TEST "Enable testing" OFF)
-if(CMAKE_BUILD_TEST)
-  add_subdirectory(test)
-endif()
-
-add_subdirectory(examples/hardware-info)
+add_compile_definitions(HARDWARE_INFO_VERSION="${HARDWARE_INFO_VERSION}")
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
@@ -81,10 +51,10 @@ find_package(LibArchive REQUIRED)
 find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 
-add_executable(${TARGET_NAME} main.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
-  )
+add_executable(
+  ${TARGET_NAME} hardware_info.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/cpuid/cpu_info.cc
+)
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE nlohmann_json::nlohmann_json)
@@ -118,6 +88,6 @@ aux_source_directory(cortex-common CORTEX_COMMON)
 aux_source_directory(config CONFIG_SRC)
 aux_source_directory(commands COMMANDS_SRC)
 
-target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC})
