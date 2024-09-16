@@ -19,7 +19,6 @@ endif()
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 if(MSVC)
@@ -39,32 +38,16 @@ endif()
  
 add_compile_definitions(HARDWARE_INFO_VERSION="${HARDWARE_INFO_VERSION}")
 
-find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
-find_package(yaml-cpp CONFIG REQUIRED)
-find_package(jinja2cpp CONFIG REQUIRED)
-find_package(httplib CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
-find_package(CLI11 CONFIG REQUIRED)
-find_package(unofficial-minizip CONFIG REQUIRED)
-find_package(LibArchive REQUIRED)
-find_package(tabulate CONFIG REQUIRED)
-find_package(CURL REQUIRED)
 
 add_executable(
   ${TARGET_NAME} hardware_info.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/cpuid/cpu_info.cc
 )
 
-target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE nlohmann_json::nlohmann_json)
-target_link_libraries(${TARGET_NAME} PRIVATE jinja2cpp)
-target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
-target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
-target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
-target_link_libraries(${TARGET_NAME} PRIVATE tabulate::tabulate)
-target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
+target_link_libraries(${TARGET_NAME} PRIVATE Drogon::Drogon
   ${CMAKE_THREAD_LIBS_INIT})
 
 # ##############################################################################
@@ -80,14 +63,4 @@ else()
   message(STATUS "use c++20")
 endif()
 
-aux_source_directory(controllers CTL_SRC)
-aux_source_directory(services SERVICES_SRC)
-aux_source_directory(common COMMON_SRC)
-aux_source_directory(models MODEL_SRC)
-aux_source_directory(cortex-common CORTEX_COMMON)
-aux_source_directory(config CONFIG_SRC)
-aux_source_directory(commands COMMANDS_SRC)
-
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../)
-
-target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC})
