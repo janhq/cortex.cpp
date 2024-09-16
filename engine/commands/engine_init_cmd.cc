@@ -7,7 +7,6 @@
 #include "utils/archive_utils.h"   
 #include "utils/system_info_utils.h"
 // clang-format on
-#include "utils/cortex_utils.h"
 #include "utils/cuda_toolkit_utils.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -18,28 +17,7 @@ EngineInitCmd::EngineInitCmd(std::string engineName, std::string version)
     : engineName_(std::move(engineName)), version_(std::move(version)) {}
 
 bool EngineInitCmd::Exec() const {
-  if (engineName_.empty()) {
-    CTL_ERR("Engine name is required");
-    return false;
-  }
-
-  // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-                                               << system_info.arch);
-    return false;
-  }
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
-
-  // check if engine is supported
-  if (std::find(supportedEngines_.begin(), supportedEngines_.end(),
-                engineName_) == supportedEngines_.end()) {
-    CTL_ERR("Engine not supported");
-    return false;
-  }
-
   constexpr auto gitHubHost = "https://api.github.com";
   std::string version = version_.empty() ? "latest" : version_;
   std::ostringstream engineReleasePath;
@@ -90,53 +68,64 @@ bool EngineInitCmd::Exec() const {
         for (auto& asset : assets) {
           auto assetName = asset["name"].get<std::string>();
           if (assetName == matched_variant) {
-            std::string host{"https://github.com"};
+            auto download_url =
+                asset["browser_download_url"].get<std::string>();
+            auto file_name = asset["name"].get<std::string>();
+            CTL_INF("Download url: " << download_url);
 
-            auto full_url = asset["browser_download_url"].get<std::string>();
-            std::string path = full_url.substr(host.length());
+            std::filesystem::path engine_folder_path =
+                file_manager_utils::GetContainerFolderPath(
+                    file_manager_utils::DownloadTypeToString(
+                        DownloadType::Engine)) /
+                engineName_;
 
-            auto fileName = asset["name"].get<std::string>();
-            CTL_INF("URL: " << full_url);
+            if (!std::filesystem::exists(engine_folder_path)) {
+              CTL_INF("Creating " << engine_folder_path.string());
+              std::filesystem::create_directories(engine_folder_path);
+            }
 
-            auto downloadTask = DownloadTask{.id = engineName_,
-                                             .type = DownloadType::Engine,
-                                             .error = std::nullopt,
-                                             .items = {DownloadItem{
-                                                 .id = engineName_,
-                                                 .host = host,
-                                                 .fileName = fileName,
-                                                 .type = DownloadType::Engine,
-                                                 .path = path,
-                                             }}};
+            CTL_INF("Engine folder path: " << engine_folder_path.string()
+                                           << "\n");
+            auto local_path = engine_folder_path / file_name;
+            auto downloadTask{DownloadTask{.id = engineName_,
+                                           .type = DownloadType::Engine,
+                                           .items = {DownloadItem{
+                                               .id = engineName_,
+                                               .downloadUrl = download_url,
+                                               .localPath = local_path,
+                                           }}}};
 
             DownloadService download_service;
-            download_service.AddDownloadTask(downloadTask, [this](
-                                                               const std::string&
-                                                                   absolute_path,
-                                                               bool unused) {
-              // try to unzip the downloaded file
-              std::filesystem::path downloadedEnginePath{absolute_path};
-              CTL_INF(
-                  "Downloaded engine path: " << downloadedEnginePath.string());
+            download_service.AddDownloadTask(
+                downloadTask, [](const DownloadTask& finishedTask) {
+                  // try to unzip the downloaded file
+                  CTL_INF("Engine zip path: "
+                          << finishedTask.items[0].localPath.string());
 
-              std::filesystem::path extract_path =
-                  downloadedEnginePath.parent_path().parent_path();
+                  std::filesystem::path extract_path =
+                      finishedTask.items[0]
+                          .localPath.parent_path()
+                          .parent_path();
 
-              archive_utils::ExtractArchive(downloadedEnginePath.string(),
-                                            extract_path.string());
+                  archive_utils::ExtractArchive(
+                      finishedTask.items[0].localPath.string(),
+                      extract_path.string());
 
-              // remove the downloaded file
-              // TODO(any) Could not delete file on Windows because it is currently hold by httplib(?)
-              // Not sure about other platforms
-              try {
-                std::filesystem::remove(absolute_path);
-              } catch (const std::exception& e) {
-                CTL_WRN("Could not delete file: " << e.what());
-              }
-              CTL_INF("Finished!");
-            });
+                  // remove the downloaded file
+                  try {
+                    std::filesystem::remove(finishedTask.items[0].localPath);
+                  } catch (const std::exception& e) {
+                    CTL_WRN("Could not delete file: " << e.what());
+                  }
+                  CTL_INF("Finished!");
+                });
             if (system_info.os == "mac" || engineName_ == "cortex.onnx") {
               // mac and onnx engine does not require cuda toolkit
+              return true;
+            }
+
+            if (cuda_driver_version.empty()) {
+              CTL_WRN("No cuda driver, continue with CPU");
               return true;
             }
 
@@ -146,7 +135,7 @@ bool EngineInitCmd::Exec() const {
             const std::string download_id = "cuda";
 
             // TODO: we don't have API to retrieve list of cuda toolkit dependencies atm because we hosting it at jan
-            // will have better logic after https://github.com/janhq/cortex/issues/1046 finished
+            //  will have better logic after https://github.com/janhq/cortex/issues/1046 finished
             // for now, assume that we have only 11.7 and 12.4
             auto suitable_toolkit_version = "";
             if (engineName_ == "cortex.tensorrt-llm") {
@@ -174,53 +163,42 @@ bool EngineInitCmd::Exec() const {
               return false;
             }
 
-            std::ostringstream cuda_toolkit_path;
-            cuda_toolkit_path << "dist/cuda-dependencies/"
-                              << cuda_driver_version << "/" << system_info.os
-                              << "/" << cuda_toolkit_file_name;
+            std::ostringstream cuda_toolkit_url;
+            cuda_toolkit_url << jan_host << "/" << "dist/cuda-dependencies/"
+                             << cuda_driver_version << "/" << system_info.os
+                             << "/" << cuda_toolkit_file_name;
 
-            LOG_DEBUG << "Cuda toolkit download url: " << jan_host
-                      << cuda_toolkit_path.str();
-
-            auto downloadCudaToolkitTask = DownloadTask{
+            LOG_DEBUG << "Cuda toolkit download url: "
+                      << cuda_toolkit_url.str();
+            auto cuda_toolkit_local_path =
+                file_manager_utils::GetContainerFolderPath(
+                    file_manager_utils::DownloadTypeToString(
+                        DownloadType::CudaToolkit)) /
+                cuda_toolkit_file_name;
+            LOG_DEBUG << "Download to: " << cuda_toolkit_local_path.string();
+            auto downloadCudaToolkitTask{DownloadTask{
                 .id = download_id,
                 .type = DownloadType::CudaToolkit,
-                .error = std::nullopt,
-                .items = {DownloadItem{
-                    .id = download_id,
-                    .host = jan_host,
-                    .fileName = cuda_toolkit_file_name,
-                    .type = DownloadType::CudaToolkit,
-                    .path = cuda_toolkit_path.str(),
-                }},
-            };
+                .items = {DownloadItem{.id = download_id,
+                                       .downloadUrl = cuda_toolkit_url.str(),
+                                       .localPath = cuda_toolkit_local_path}},
+            }};
 
             download_service.AddDownloadTask(
-                downloadCudaToolkitTask,
-                [this](const std::string& absolute_path, bool unused) {
-                  LOG_DEBUG << "Downloaded cuda path: " << absolute_path;
-                  // try to unzip the downloaded file
-                  std::filesystem::path downloaded_path{absolute_path};
-                  // TODO(any) This is a temporary fix. The issue will be fixed when we has CIs
-                  // to pack CUDA dependecies into engine release
-                  auto get_engine_path = [](std::string_view e) {
-                    if (e == "cortex.llamacpp") {
-                      return cortex_utils::kLlamaLibPath;
-                    } else {
-                      return cortex_utils::kTensorrtLlmPath;
-                    }
-                  };
-                  std::string engine_path =
-                      file_manager_utils::GetCortexDataPath().string() +
-                      get_engine_path(engineName_);
-                  archive_utils::ExtractArchive(absolute_path, engine_path);
+                downloadCudaToolkitTask, [&](const DownloadTask& finishedTask) {
+                  auto engine_path =
+                      file_manager_utils::GetEnginesContainerPath() /
+                      engineName_;
+                  archive_utils::ExtractArchive(
+                      finishedTask.items[0].localPath.string(),
+                      engine_path.string());
+
                   try {
-                    std::filesystem::remove(absolute_path);
+                    std::filesystem::remove(finishedTask.items[0].localPath);
                   } catch (std::exception& e) {
                     CTL_ERR("Error removing downloaded file: " << e.what());
                   }
                 });
-
             return true;
           }
         }
