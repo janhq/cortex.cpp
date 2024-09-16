@@ -24,7 +24,7 @@ class Models : public drogon::HttpController<Models> {
                  std::function<void(const HttpResponsePtr&)>&& callback) const;
   void GetModel(const HttpRequestPtr& req,
                 std::function<void(const HttpResponsePtr&)>&& callback) const;
-  void DeleteModel(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback, const std::string& model_id) const;
+  void DeleteModel(const HttpRequestPtr& req,
+                   std::function<void(const HttpResponsePtr&)>&& callback,
+                   const std::string& model_id) const;
 };

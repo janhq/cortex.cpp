@@ -6,9 +6,10 @@
 #include "utils/file_manager_utils.h"
 #include "utils/model_callback_utils.h"
 
-void Models::PullModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
+    void
+    Models::PullModel(
+        const HttpRequestPtr& req,
+        std::function<void(const HttpResponsePtr&)>&& callback) const {
   if (!http_util::HasFieldInReq(req, callback, "modelId")) {
     return;
   }
