@@ -13,6 +13,8 @@ namespace commands {
 constexpr const auto kNightlyHost = "delta.jan.ai";
 constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
+constexpr const auto kBetaComp = "-rc";
+constexpr const auto kReleaseFormat = ".tar.gz";
 
 inline std::string GetCortexBinary() {
 #if defined(_WIN32)
@@ -41,6 +43,8 @@ inline std::string GetHostName() {
 inline std::string GetReleasePath() {
   if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
     return "/cortex/latest/version.json";
+  } else if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
+    return "/repos/janhq/cortex.cpp/releases";
   } else {
     return "/repos/janhq/cortex.cpp/releases/latest";
   }
@@ -55,8 +59,31 @@ inline void CheckNewUpdate() {
   if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
+        auto get_latest = [](const nlohmann::json& data) -> std::string {
+          if (data.empty()) {
+            return "";
+          }
+
+          if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
+            for (auto& d : data) {
+              if (auto tag = d["tag_name"].get<std::string>();
+                  tag.find(kBetaComp) != std::string::npos) {
+                return tag;
+              }
+            }
+            return data[0]["tag_name"].get<std::string>();
+          } else {
+            return data["tag_name"].get<std::string>();
+          }
+          return "";
+        };
+
         auto json_res = nlohmann::json::parse(res->body);
-        std::string latest_version = json_res["tag_name"].get<std::string>();
+        std::string latest_version = get_latest(json_res);
+        if (latest_version.empty()) {
+          CTL_WRN("Release not found!");
+          return;
+        }
         std::string current_version = CORTEX_CPP_VERSION;
         if (current_version != latest_version) {
           CLI_LOG("\nA new release of cortex is available: "
@@ -84,6 +111,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     // Already has the newest
     return true;
   }
+
   std::filesystem::path temp = dst.parent_path() / "cortex_temp";
 
   try {
@@ -110,12 +138,20 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
   return true;
 }
 
+// This class manages the 'cortex update' command functionality
+// There are three release types available:
+// - Stable: Only retrieves the latest version
+// - Beta: Allows retrieval of the latest beta version and specific versions using the -v flag
+// - Nightly: Enables retrieval of the latest nightly build and specific versions using the -v flag
 class CortexUpdCmd {
  public:
   void Exec(std::string version);
 
  private:
-  bool GetStableAndBeta(const std::string& v);
+  bool GetStable(const std::string& v);
+  bool GetBeta(const std::string& v);
+  bool HandleGithubRelease(const nlohmann::json& assets,
+                           const std::string& os_arch);
   bool GetNightly(const std::string& v);
 };
 }  // namespace commands
