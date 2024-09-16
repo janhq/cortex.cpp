@@ -19,6 +19,13 @@ class ModelService {
   void DownloadModelFromCortexso(const std::string& name,
                                  const std::string& branch);
 
+  /**
+   * Handle downloading model which have following pattern: author/model_name
+   */
+  void DownloadHuggingFaceGgufModel(const std::string& author,
+                                    const std::string& modelName,
+                                    std::optional<std::string> fileName);
+
   DownloadService download_service_;
 
   constexpr auto static kHuggingFaceHost = "huggingface.co";

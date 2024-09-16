@@ -1,12 +1,41 @@
 #include "model_service.h"
 #include <filesystem>
 #include <iostream>
+#include <ostream>
 #include "commands/cmd_info.h"
 #include "utils/cortexso_parser.h"
 #include "utils/file_manager_utils.h"
+#include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/model_callback_utils.h"
-#include "utils/url_parser.h"
+
+void PrintMenu(const std::vector<std::string>& options) {
+  auto index{1};
+  for (const auto& option : options) {
+    std::cout << index << ". " << option << "\n";
+    index++;
+  }
+  std::endl(std::cout);
+}
+
+std::optional<std::string> PrintSelection(
+    const std::vector<std::string>& options) {
+  std::string selection{""};
+  PrintMenu(options);
+  std::cin >> selection;
+
+  if (selection.empty()) {
+    return std::nullopt;
+  }
+
+  // std::cout << "Selection: " << selection << "\n";
+  // std::cout << "Int representaion: " << std::stoi(selection) << "\n";
+  if (std::stoi(selection) > options.size() || std::stoi(selection) < 1) {
+    return std::nullopt;
+  }
+
+  return options[std::stoi(selection) - 1];
+}
 
 void ModelService::DownloadModel(const std::string& input) {
   if (input.empty()) {
@@ -14,19 +43,65 @@ void ModelService::DownloadModel(const std::string& input) {
         "Input must be Cortex Model Hub handle or HuggingFace url!");
   }
 
-  // case input is a direct url
-  auto url_obj = url_parser::FromUrlString(input);
-  // TODO: handle case user paste url from cortexso
-  if (url_obj.protocol == "https") {
-    if (url_obj.host != kHuggingFaceHost) {
-      CLI_LOG("Only huggingface.co is supported for now");
+  if (input.starts_with("https://")) {
+    return DownloadModelByDirectUrl(input);
+  }
+
+  // if input contains / then handle it differently
+  if (input.find("/") != std::string::npos) {
+    // TODO: what if we have more than one /?
+    // TODO: what if the left size of / is cortexso?
+
+    // split by /. TODO: Move this function to somewhere else
+    std::string model_input = input;
+    std::string delimiter{"/"};
+    std::string token{""};
+    std::vector<std::string> parsed{};
+    std::string author{""};
+    std::string model_name{""};
+    while (token != model_input) {
+      token = model_input.substr(0, model_input.find_first_of("/"));
+      model_input = model_input.substr(model_input.find_first_of("/") + 1);
+      std::string new_str{token};
+      parsed.push_back(new_str);
+    }
+
+    author = parsed[0];
+    model_name = parsed[1];
+    auto repo_info =
+        huggingface_utils::GetHuggingFaceModelRepoInfo(author, model_name);
+    if (!repo_info.has_value()) {
+      // throw is better?
+      CTL_ERR("Model not found");
       return;
     }
-    return DownloadModelByDirectUrl(input);
-  } else {
-    commands::CmdInfo ci(input);
-    return DownloadModelFromCortexso(ci.model_name, ci.branch);
+
+    if (!repo_info->gguf.has_value()) {
+      throw std::runtime_error(
+          "Not a GGUF model. Currently, only GGUF single file is supported.");
+    }
+
+    std::vector<std::string> options{};
+    for (const auto& sibling : repo_info->siblings) {
+      if (sibling.rfilename.ends_with(".gguf")) {
+        options.push_back(sibling.rfilename);
+      }
+    }
+    auto selection = PrintSelection(options);
+    std::cout << "Selected: " << selection.value() << std::endl;
+
+    auto download_url = huggingface_utils::GetDownloadableUrl(
+        author, model_name, selection.value());
+
+    std::cout << "Download url: " << download_url << std::endl;
+    // TODO: split to this function
+    // DownloadHuggingFaceGgufModel(author, model_name, nullptr);
+    return;
   }
+
+  // user just input a text, seems like a model name only, maybe comes with a branch, using : as delimeter
+  // handle cortexso here
+  // separate into another function and the above can route to it if we regconize a cortexso url
 }
 
 std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
@@ -113,4 +188,24 @@ void ModelService::DownloadModelFromCortexso(const std::string& name,
   } else {
     CTL_ERR("Model not found");
   }
+}
+
+void ModelService::DownloadHuggingFaceGgufModel(
+    const std::string& author, const std::string& modelName,
+    std::optional<std::string> fileName) {
+  std::cout << author << std::endl;
+  std::cout << modelName << std::endl;
+  // if we don't have file name, we must display a list for user to pick
+  // auto repo_info =
+  //     huggingface_utils::GetHuggingFaceModelRepoInfo(author, modelName);
+  //
+  // if (!repo_info.has_value()) {
+  //   // throw is better?
+  //   CTL_ERR("Model not found");
+  //   return;
+  // }
+  //
+  // for (const auto& sibling : repo_info->siblings) {
+  //   std::cout << sibling.rfilename << "\n";
+  // }
 }
