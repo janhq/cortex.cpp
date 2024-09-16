@@ -10,7 +10,7 @@ class TestCliEngineInstall:
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "cortex.llamacpp"]
         )
-        assert "Download" in output, "Should display downloading message"
+        assert "Start downloading" in output, "Should display downloading message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")

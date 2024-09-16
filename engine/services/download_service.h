@@ -1,66 +1,74 @@
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <optional>
+#include <sstream>
 #include <vector>
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
 
-enum class DownloadStatus {
-  Pending,
-  Downloading,
-  Error,
-  Downloaded,
-};
-
 struct DownloadItem {
   std::string id;
 
-  std::string host;
+  std::string downloadUrl;
 
-  std::string fileName;
-
-  DownloadType type;
-
-  std::string path;
+  /**
+   * An absolute path to where the file is located (locally).
+   */
+  std::filesystem::path localPath;
 
   std::optional<std::string> checksum;
+
+  std::string ToString() const {
+    std::ostringstream output;
+    output << "DownloadItem{id: " << id << ", downloadUrl: " << downloadUrl
+           << ", localContainerPath: " << localPath
+           << ", checksum: " << checksum.value_or("N/A") << "}";
+    return output.str();
+  }
 };
 
 struct DownloadTask {
   std::string id;
+
   DownloadType type;
-  std::optional<std::string> error;
+
   std::vector<DownloadItem> items;
+
+  std::string ToString() const {
+    std::ostringstream output;
+    output << "DownloadTask{id: " << id << ", type: " << static_cast<int>(type)
+           << ", items: [";
+    for (const auto& item : items) {
+      output << item.ToString() << ", ";
+    }
+    output << "]}";
+    return output.str();
+  }
 };
 
 class DownloadService {
  public:
-  /**
-  * @brief Synchronously download.
-  * 
-  * @param task 
-  */
-  using DownloadItemCb = std::function<void(const std::string&, bool)>;
-  void AddDownloadTask(const DownloadTask& task,
-                       std::optional<DownloadItemCb> callback = std::nullopt);
+  using OnDownloadTaskSuccessfully =
+      std::function<void(const DownloadTask& task)>;
+
+  void AddDownloadTask(
+      const DownloadTask& task,
+      std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
 
   void AddAsyncDownloadTask(
       const DownloadTask& task,
-      std::optional<DownloadItemCb> callback = std::nullopt);
+      std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
 
-  // TODO: [NamH] implement the following methods
-  //  void removeTask(const std::string &id);
-  //  void registerCallback
-  //  setup folder path at runtime
-  //  register action after downloaded
+  /**
+   * Getting file size for a provided url.
+   *
+   * @param url - url to get file size
+   */
+  uint64_t GetFileSize(const std::string& url) const;
 
  private:
-  void StartDownloadItem(const std::string& downloadId,
-                         const DownloadItem& item,
-                         std::optional<DownloadItemCb> callback = std::nullopt);
-
-  // store tasks so we can abort it later
-  std::vector<DownloadTask> tasks;
-  const int kUpdateProgressThreshold = 100000000;
+  void Download(const std::string& download_id,
+                const DownloadItem& download_item);
 };

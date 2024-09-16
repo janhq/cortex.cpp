@@ -192,7 +192,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     CLI_LOG("default");
 #endif
   };
-  app_.add_flag_function("-v", cb, "Cortex version");
+  app_.add_flag_function("-v,--version", cb, "Cortex version");
 
   std::string cortex_version;
   bool check_update = true;

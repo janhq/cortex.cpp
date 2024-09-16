@@ -1,53 +1,78 @@
 #pragma once
+
 #include <trantor/utils/Logger.h>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <thread>
 
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
-#include "utils/file_manager_utils.h"
+#include "services/download_service.h"
 #include "utils/logging_utils.h"
 
 namespace model_callback_utils {
-inline void DownloadModelCb(const std::string& path, bool need_parse_gguf) {
+inline void WriteYamlOutput(const DownloadItem& modelYmlDownloadItem) {
+  config::YamlHandler handler;
+  handler.ModelConfigFromFile(modelYmlDownloadItem.localPath.string());
+  config::ModelConfig model_config = handler.GetModelConfig();
+  model_config.id =
+      modelYmlDownloadItem.localPath.parent_path().filename().string();
 
-  std::filesystem::path path_obj(path);
-  std::string filename(path_obj.filename().string());
-  //TODO: handle many cases of downloaded items from other sources except cortexso.
-  if (filename.compare("model.yml") == 0) {
-    config::YamlHandler handler;
-    handler.ModelConfigFromFile(path);
-    config::ModelConfig model_config = handler.GetModelConfig();
-    model_config.id = path_obj.parent_path().filename().string();
+  CTL_INF("Updating model config in "
+          << modelYmlDownloadItem.localPath.string());
+  handler.UpdateModelConfig(model_config);
+  std::string yaml_filename{model_config.id + ".yaml"};
+  std::filesystem::path yaml_output =
+      modelYmlDownloadItem.localPath.parent_path().parent_path() /
+      yaml_filename;
+  handler.WriteYamlFile(yaml_output.string());
+}
 
-    CTL_INF("Updating model config in " << path);
-    handler.UpdateModelConfig(model_config);
-    handler.WriteYamlFile(path_obj.parent_path().parent_path().string() + "/" +
-                          model_config.id + ".yaml");
+inline void ParseGguf(const DownloadItem& ggufDownloadItem) {
+  config::GGUFHandler gguf_handler;
+  config::YamlHandler yaml_handler;
+  gguf_handler.Parse(ggufDownloadItem.localPath.string());
+  config::ModelConfig model_config = gguf_handler.GetModelConfig();
+  model_config.id =
+      ggufDownloadItem.localPath.parent_path().filename().string();
+  model_config.files = {ggufDownloadItem.localPath.string()};
+  yaml_handler.UpdateModelConfig(model_config);
+
+  std::string yaml_filename{model_config.id + ".yaml"};
+  std::filesystem::path yaml_output =
+      ggufDownloadItem.localPath.parent_path().parent_path() / yaml_filename;
+  std::filesystem::path yaml_path(ggufDownloadItem.localPath.parent_path() /
+                                  "model.yml");
+  if (!std::filesystem::exists(yaml_output)) {  // if model.yml doesn't exist
+    yaml_handler.WriteYamlFile(yaml_output.string());
   }
-  // currently, only handle downloaded model with only 1 .gguf file
-  // TODO: handle multipart gguf file or different model in 1 repo.
-  else if (path_obj.extension().string().compare(".gguf") == 0) {
-    if(!need_parse_gguf) return;    
-    config::GGUFHandler gguf_handler;
-    config::YamlHandler yaml_handler;
-    gguf_handler.Parse(path);
-    config::ModelConfig model_config = gguf_handler.GetModelConfig();
-    model_config.id = path_obj.parent_path().filename().string();
-    model_config.files = {path};
-    yaml_handler.UpdateModelConfig(model_config);
-    std::string yml_path(path_obj.parent_path().parent_path().string() + "/" +
-                         model_config.id + ".yaml");
-    std::string yaml_path(path_obj.parent_path().string() + "/model.yml");
-    if (!std::filesystem::exists(yml_path)) {  // if model.yml doesn't exist
-      yaml_handler.WriteYamlFile(yml_path);
+  if (!std::filesystem::exists(yaml_path)) {
+    yaml_handler.WriteYamlFile(yaml_path.string());
+  }
+}
+
+inline void DownloadModelCb(const DownloadTask& finishedTask) {
+  const DownloadItem* model_yml_di = nullptr;
+  const DownloadItem* gguf_di = nullptr;
+  auto need_parse_gguf = true;
+
+  for (const auto& item : finishedTask.items) {
+    if (item.localPath.filename().string() == "model.yml") {
+      model_yml_di = &item;
     }
-    if (!std::filesystem::exists(
-            yaml_path)) {  // if <model_id>.yaml doesn't exist
-      yaml_handler.WriteYamlFile(yaml_path);
+    if (item.localPath.extension().string() == ".gguf") {
+      gguf_di = &item;
     }
+    if (item.downloadUrl.find("cortexso") != std::string::npos) {
+      // if downloading from cortexso, we dont need to parse gguf
+      need_parse_gguf = false;
+    }
+  }
+
+  if (model_yml_di != nullptr) {
+    WriteYamlOutput(*model_yml_di);
+  }
+
+  if (need_parse_gguf && gguf_di != nullptr) {
+    ParseGguf(*gguf_di);
   }
 }
 }  // namespace model_callback_utils

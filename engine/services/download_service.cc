@@ -1,96 +1,121 @@
+#include <curl/curl.h>
 #include <httplib.h>
+#include <stdio.h>
 #include <trantor/utils/Logger.h>
 #include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <thread>
 
 #include "download_service.h"
-#include "utils/file_manager_utils.h"
+#include "exceptions/failed_curl_exception.h"
+#include "exceptions/failed_init_curl_exception.h"
+#include "exceptions/failed_open_file_exception.h"
 #include "utils/logging_utils.h"
 
-void DownloadService::AddDownloadTask(const DownloadTask& task,
-                                      std::optional<DownloadItemCb> callback) {
-  tasks.push_back(task);
+namespace {
+size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
+  size_t written = fwrite(ptr, size, nmemb, stream);
+  return written;
+}
+}  // namespace
 
+void DownloadService::AddDownloadTask(
+    const DownloadTask& task,
+    std::optional<OnDownloadTaskSuccessfully> callback) {
+  CLI_LOG("Validating download items, please wait..");
+  // preprocess to check if all the item are valid
+  auto total_download_size{0};
   for (const auto& item : task.items) {
-    StartDownloadItem(task.id, item, callback);
+    try {
+      total_download_size += GetFileSize(item.downloadUrl);
+    } catch (const FailedCurlException& e) {
+      CTL_ERR("Found invalid download item: " << item.downloadUrl << " - "
+                                              << e.what());
+      throw;
+    }
   }
+
+  // all items are valid, start downloading
+  for (const auto& item : task.items) {
+    CLI_LOG("Start downloading: " + item.localPath.filename().string());
+    Download(task.id, item);
+  }
+
+  if (callback.has_value()) {
+    callback.value()(task);
+  }
+}
+
+uint64_t DownloadService::GetFileSize(const std::string& url) const {
+  CURL* curl;
+  curl = curl_easy_init();
+
+  if (!curl) {
+    throw FailedInitCurlException();
+  }
+
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  CURLcode res = curl_easy_perform(curl);
+
+  if (res != CURLE_OK) {
+    // if we have a failed here. it meant the url is invalid
+    throw FailedCurlException("CURL failed: " +
+                              std::string(curl_easy_strerror(res)));
+  }
+
+  curl_off_t content_length = 0;
+  res = curl_easy_getinfo(curl, CURLINFO_CONTENT_LENGTH_DOWNLOAD_T,
+                          &content_length);
+  return content_length;
 }
 
 void DownloadService::AddAsyncDownloadTask(
-    const DownloadTask& task, std::optional<DownloadItemCb> callback) {
-  tasks.push_back(task);
+    const DownloadTask& task,
+    std::optional<OnDownloadTaskSuccessfully> callback) {
 
   for (const auto& item : task.items) {
-    // TODO: maybe apply std::async is better?
     std::thread([this, task, &callback, item]() {
-      this->StartDownloadItem(task.id, item, callback);
+      this->Download(task.id, item);
     }).detach();
   }
+
+  // TODO: how to call the callback when all the download has finished?
 }
 
-void DownloadService::StartDownloadItem(
-    const std::string& downloadId, const DownloadItem& item,
-    std::optional<DownloadItemCb> callback) {
-  CTL_INF("Downloading item: " << downloadId);
+void DownloadService::Download(const std::string& download_id,
+                               const DownloadItem& download_item) {
+  CTL_INF("Absolute file output: " << download_item.localPath.string());
 
-  auto containerFolderPath{file_manager_utils::GetContainerFolderPath(
-      file_manager_utils::downloadTypeToString(item.type))};
-  CTL_INF("Container folder path: " << containerFolderPath.string() << "\n");
+  CURL* curl;
+  FILE* file;
+  CURLcode res;
 
-  auto itemFolderPath{containerFolderPath / std::filesystem::path(downloadId)};
-  CTL_INF("itemFolderPath: " << itemFolderPath.string());
-  if (!std::filesystem::exists(itemFolderPath)) {
-    CTL_INF("Creating " << itemFolderPath.string());
-    std::filesystem::create_directory(itemFolderPath);
+  curl = curl_easy_init();
+  if (!curl) {
+    throw FailedInitCurlException();
   }
 
-  auto outputFilePath{itemFolderPath / std::filesystem::path(item.fileName)};
-  CTL_INF("Absolute file output: " << outputFilePath.string());
+  file = fopen(download_item.localPath.string().c_str(), "wb");
+  if (!file) {
+    auto err_msg{"Failed to open output file " +
+                 download_item.localPath.string()};
+    throw FailedOpenFileException(err_msg);
+  }
 
-  uint64_t last = 0;
-  uint64_t tot = 0;
-  std::ofstream outputFile(outputFilePath, std::ios::binary);
+  curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
+  curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
-  auto downloadUrl{item.host + "/" + item.path};
-  CLI_LOG("Downloading url: " << downloadUrl);
+  res = curl_easy_perform(curl);
 
-  httplib::Client client(item.host);
+  if (res != CURLE_OK) {
+    fprintf(stderr, "curl_easy_perform() failed: %s\n",
+            curl_easy_strerror(res));
+  }
 
-  client.set_follow_location(true);
-  client.Get(
-      downloadUrl,
-      [](const httplib::Response& res) {
-        if (res.status != httplib::StatusCode::OK_200) {
-          LOG_ERROR << "HTTP error: " << res.reason;
-          return false;
-        }
-        return true;
-      },
-      [&](const char* data, size_t data_length) {
-        tot += data_length;
-        outputFile.write(data, data_length);
-        return true;
-      },
-      [&item, &last, &outputFile, &callback, outputFilePath, this](
-          uint64_t current, uint64_t total) {
-        if (current - last > kUpdateProgressThreshold) {
-          last = current;
-          CLI_LOG("Downloading: " << current << " / " << total);
-        }
-        if (current == total) {
-          outputFile.flush();
-          outputFile.close();
-          CLI_LOG("Done download: " << static_cast<double>(total) / 1024 / 1024
-                                    << " MiB");
-          if (callback.has_value()) {
-            auto need_parse_gguf =
-                item.path.find("cortexso") == std::string::npos;
-            callback.value()(outputFilePath.string(), need_parse_gguf);
-          }
-          return false;
-        }
-        return true;
-      });
+  fclose(file);
+  curl_easy_cleanup(curl);
 }

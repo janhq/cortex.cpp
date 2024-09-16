@@ -12,9 +12,8 @@ ModelPullCmd::ModelPullCmd(std::string model_handle, std::string branch)
 bool ModelPullCmd::Exec() {
   auto downloadTask = cortexso_parser::getDownloadTask(model_handle_, branch_);
   if (downloadTask.has_value()) {
-    DownloadService downloadService;
-    downloadService.AddDownloadTask(downloadTask.value(),
-                                    model_callback_utils::DownloadModelCb);
+    DownloadService().AddDownloadTask(downloadTask.value(),
+                                      model_callback_utils::DownloadModelCb);
     CTL_INF("Download finished");
     return true;
   } else {
