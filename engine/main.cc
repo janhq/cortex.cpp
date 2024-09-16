@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <climits>  // for PATH_MAX
+#include "commands/cortex_upd_cmd.h"
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/archive_utils.h"
@@ -27,11 +28,13 @@
 
 void RunServer() {
   auto config = file_manager_utils::GetCortexConfig();
-  LOG_INFO << "Host: " << config.apiServerHost << " Port: " << config.apiServerPort << "\n";
+  LOG_INFO << "Host: " << config.apiServerHost
+           << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
-  std::filesystem::create_directory(config.logFolderPath + "/" +
-                                    cortex_utils::logs_folder);
+  std::filesystem::create_directories(
+      std::filesystem::path(config.logFolderPath) /
+      std::filesystem::path(cortex_utils::logs_folder));
   trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(config.logFolderPath + "/" +
                               cortex_utils::logs_base_name);
@@ -72,7 +75,8 @@ void RunServer() {
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
   LOG_INFO << "Please load your model";
-  drogon::app().addListener(config.apiServerHost, std::stoi(config.apiServerPort));
+  drogon::app().addListener(config.apiServerHost,
+                            std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
 
@@ -89,8 +93,9 @@ void ForkProcess() {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
+  auto exe = commands::GetCortexBinary();
   std::string cmds =
-      cortex_utils::GetCurrentPath() + "/cortex-cpp.exe --start-server";
+      cortex_utils::GetCurrentPath() + "/" + exe + " --start-server";
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
@@ -119,8 +124,25 @@ void ForkProcess() {
     std::cerr << "Could not start server: " << std::endl;
     return;
   } else if (pid == 0) {
-    // Child process
-    RunServer();
+    // No need to configure LD_LIBRARY_PATH for macOS
+#if !defined(__APPLE__) || !defined(__MACH__)
+    const char* name = "LD_LIBRARY_PATH";
+    auto data = getenv(name);
+    std::string v;
+    if (auto g = getenv(name); g) {
+      v += g;
+    }
+    CTL_INF("LD_LIBRARY_PATH: " << v);
+    auto data_path = file_manager_utils::GetCortexDataPath();
+    auto llamacpp_path = data_path / "engines" / "cortex.llamacpp/";
+    auto trt_path = data_path / "engines" / "cortex.tensorrt-llm/";
+    auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
+    setenv(name, new_v.c_str(), true);
+    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
+#endif
+    auto exe = commands::GetCortexBinary();
+    std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
+    execl(p.c_str(), exe.c_str(), "--start-server", (char*)0);
   } else {
     // Parent process
     std::cout << "Server started" << std::endl;
@@ -130,6 +152,17 @@ void ForkProcess() {
 
 int main(int argc, char* argv[]) {
   { file_manager_utils::CreateConfigFileIfNotExist(); }
+
+  // Delete temporary file if it exists
+  auto temp =
+      file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
+  if (std::filesystem::exists(temp)) {
+    try {
+      std::filesystem::remove(temp);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << '\n';
+    }
+  }
 
   // Check if this process is for python execution
   if (argc > 1) {
@@ -158,6 +191,9 @@ int main(int argc, char* argv[]) {
       return 0;
     } else {
       auto config = file_manager_utils::GetCortexConfig();
+      std::filesystem::create_directories(
+          std::filesystem::path(config.logFolderPath) /
+          std::filesystem::path(cortex_utils::logs_folder));
       trantor::FileLogger asyncFileLogger;
       asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                   cortex_utils::logs_cli_base_name);

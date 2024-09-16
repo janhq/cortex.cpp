@@ -1,9 +1,0 @@
-Package: cortexso
-Version:
-Section: base
-Priority: optional
-Architecture: amd64
-Depends: openmpi-bin,libopenmpi-dev
-Maintainer: Homebrew Pte Ltd <service@jan.ai>
-Description: Cortex
- Cortex is an OpenAI-compatible AI engine that developers can use to build LLM apps. It is packaged with a Docker-inspired command-line interface and client libraries. It can be used as a standalone server or imported as a library.

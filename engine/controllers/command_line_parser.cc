@@ -15,7 +15,6 @@
 #include "commands/server_stop_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "config/yaml_config.h"
-#include "httplib.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -147,7 +146,6 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
 
     auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
-    install_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
     for (auto& engine : engine_service_.kSupportEngines) {
       std::string engine_name{engine};
       EngineInstall(install_cmd, engine_name, version);
@@ -155,7 +153,6 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto uninstall_cmd =
         engines_cmd->add_subcommand("uninstall", "Uninstall engine");
-    uninstall_cmd->callback([] { CLI_LOG("Engine name can't be empty!"); });
     for (auto& engine : engine_service_.kSupportEngines) {
       std::string engine_name{engine};
       EngineUninstall(uninstall_cmd, engine_name);
@@ -227,7 +224,7 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
                                       std::string& version) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  install_engine_cmd->callback([&] {
+  install_engine_cmd->callback([=] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });
@@ -237,7 +234,7 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
                                         const std::string& engine_name) {
   auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  uninstall_engine_cmd->callback([&] {
+  uninstall_engine_cmd->callback([=] {
     commands::EngineUninstallCmd cmd(engine_name);
     cmd.Exec();
   });

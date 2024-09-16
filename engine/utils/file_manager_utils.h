@@ -27,10 +27,10 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
   uint32_t size = sizeof(buffer);
 
   if (_NSGetExecutablePath(buffer, &size) == 0) {
-    LOG_INFO << "Executable path: " << buffer;
+    CTL_INF("Executable path: " << buffer);
     return std::filesystem::path{buffer}.parent_path();
   } else {
-    LOG_ERROR << "Failed to get executable path";
+    CTL_ERR("Failed to get executable path");
     return std::filesystem::current_path();
   }
 #elif defined(__linux__)
@@ -38,10 +38,10 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
   ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
   if (len != -1) {
     buffer[len] = '\0';
-    LOG_INFO << "Executable path: " << buffer;
+    CTL_INF("Executable path: " << buffer);
     return std::filesystem::path{buffer}.parent_path();
   } else {
-    LOG_ERROR << "Failed to get executable path";
+    CTL_ERR("Failed to get executable path");
     return std::filesystem::current_path();
   }
 #elif defined(_WIN32)
@@ -230,7 +230,7 @@ inline std::filesystem::path GetContainerFolderPath(
   } else if (type == "CudaToolkit") {
     container_folder_path = current_path;
   } else if (type == "Cortex") {
-    container_folder_path = current_path / "cortex";
+    container_folder_path = std::filesystem::temp_directory_path() / "cortex";
   } else {
     container_folder_path = current_path / "misc";
   }

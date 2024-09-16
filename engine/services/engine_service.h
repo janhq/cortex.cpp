@@ -7,6 +7,7 @@
 struct EngineInfo {
   std::string name;
   std::string description;
+  std::string format;
   std::string version;
   std::string product_name;
   std::string status;

@@ -3,6 +3,12 @@
 #include "algorithm"
 #include "utils/file_manager_utils.h"
 
+namespace {
+constexpr static auto kIncompatible = "Incompatible";
+constexpr static auto kReady = "Ready";
+constexpr static auto kNotInstalled = "Not Installed";
+}  // namespace
+
 EngineInfo EngineService::GetEngineInfo(const std::string& engine) const {
   // if engine is not found in kSupportEngine, throw runtime error
   if (std::find(kSupportEngines.begin(), kSupportEngines.end(), engine) ==
@@ -21,42 +27,43 @@ EngineInfo EngineService::GetEngineInfo(const std::string& engine) const {
 std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
   auto ecp = file_manager_utils::GetEnginesContainerPath();
 
-  std::string onnx_status{"not_supported"};
-  std::string llamacpp_status = std::filesystem::exists(ecp / "cortex.llamacpp")
-                                    ? "ready"
-                                    : "not_initialized";
-  std::string tensorrt_status{"not_supported"};
+  std::string onnx_status{kIncompatible};
+  std::string llamacpp_status =
+      std::filesystem::exists(ecp / "cortex.llamacpp") ? kReady : kNotInstalled;
+  std::string tensorrt_status{kIncompatible};
 
 #ifdef _WIN32
-  onnx_status = std::filesystem::exists(ecp / "cortex.onnx")
-                    ? "ready"
-                    : "not_initialized";
+  onnx_status =
+      std::filesystem::exists(ecp / "cortex.onnx") ? kReady : kNotInstalled;
   tensorrt_status = std::filesystem::exists(ecp / "cortex.tensorrt-llm")
-                        ? "ready"
-                        : "not_initialized";
+                        ? kReady
+                        : kNotInstalled;
 #elif defined(__linux__)
   tensorrt_status = std::filesystem::exists(ecp / "cortex.tensorrt-llm")
-                        ? "ready"
-                        : "not_initialized";
+                        ? kReady
+                        : kNotInstalled;
 #endif
   std::vector<EngineInfo> engines = {
       {.name = "cortex.onnx",
        .description = "This extension enables chat completion API calls using "
                       "the Onnx engine",
+       .format = "ONNX",
        .version = "0.0.1",
-       .product_name = "Onnx Inference Engine",
+       .product_name = "ONNXRuntime",
        .status = onnx_status},
       {.name = "cortex.llamacpp",
        .description = "This extension enables chat completion API calls using "
                       "the LlamaCPP engine",
+       .format = "GGUF",
        .version = "0.0.1",
-       .product_name = "LlamaCPP Inference Engine",
+       .product_name = "llama.cpp",
        .status = llamacpp_status},
       {.name = "cortex.tensorrt-llm",
        .description = "This extension enables chat completion API calls using "
                       "the TensorrtLLM engine",
+       .format = "TensorRT Engines",
        .version = "0.0.1",
-       .product_name = "TensorrtLLM Inference Engine",
+       .product_name = "TensorRT-LLM",
        .status = tensorrt_status},
   };
 
@@ -64,8 +71,6 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 }
 
 void EngineService::UninstallEngine(const std::string& engine) {
-  CTL_INF("Uninstall engine " + engine);
-
   // TODO: Unload the model which is currently running on engine_
 
   // TODO: Unload engine if is loaded

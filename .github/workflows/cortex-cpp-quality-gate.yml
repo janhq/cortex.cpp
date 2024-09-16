@@ -24,26 +24,26 @@ jobs:
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ''
           - os: "mac"
             name: "amd64"
             runs-on: "macos-13"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ''
           - os: "mac"
             name: "arm64"
             runs-on: "macos-latest"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ''
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+            build-deps-cmake-flags: "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
             ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'          
     steps:
       - name: Clone
@@ -51,7 +51,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-
+      
       - name: Install choco on Windows
         if: runner.os == 'Windows'
         run: |
@@ -78,11 +78,16 @@ jobs:
         run: |
           cd engine
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
- 
+
+      - name: Run unit tests
+        run: |
+          cd engine
+          make run-unit-tests
+  
       - name: Pre-package
         run: |
           cd engine
-          make pre-package
+          make pre-package DESTINATION_BINARY_NAME="cortex"
           
       - name: Package
         run: |
@@ -90,10 +95,10 @@ jobs:
           make package
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
-          name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
-          path: ./engine/cortex-cpp
+          name: cortex-${{ matrix.os }}-${{ matrix.name }}
+          path: ./engine/cortex
 
       - name: Upload ccache to s3
         continue-on-error: true
@@ -101,7 +106,7 @@ jobs:
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          aws s3 cp ${{ matrix.ccache-dir }} s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+          aws s3 cp ${{ matrix.ccache-dir }} s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-${{ matrix.os }}-${{ matrix.name }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"

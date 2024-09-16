@@ -1,178 +1,130 @@
 name: CI Cortex CPP Nightly Build
 
 on:
-  push:
-    tags: ["v[0-9]+.[0-9]+.[0-9]+-[0-9]+.[0-9]+.[0-9]+"]
-    paths:
-      [
-        "cortex-cpp/**",
-      ]
+  schedule:
+      - cron: '0 20 * * *' # At 8 PM UTC everyday
   workflow_dispatch:
-
-env:
-  LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
-  EMBEDDING_MODEL_URL: https://catalog.jan.ai/dist/models/embeds/nomic-embed-text-v1.5.f16.gguf
+    inputs:
+      public_provider:
+        type: choice
+        description: 'Public Provider'
+        options:
+          - none
+          - aws-s3
+        default: none
 
 jobs:
-  create-draft-release:
+  set-public-provider:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-      version: ${{ steps.get_version.outputs.version }}
-    permissions:
-      contents: write
+      public_provider: ${{ steps.set-public-provider.outputs.public_provider }}
+      ref: ${{ steps.set-public-provider.outputs.ref }}
     steps:
-      - name: Extract tag name without v prefix
-        id: get_version
+      - name: Set public provider
+        id: set-public-provider
         run: |
-          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV && echo "::set-output name=version::${GITHUB_REF#refs/tags/v}"
-        env:
-          GITHUB_REF: ${{ github.ref }}
-      - name: Create Draft Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: "${{ env.VERSION }}"
-          draft: false
-          generate_release_notes: true
-          prerelease: true
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "::set-output name=public_provider::${{ github.event.inputs.public_provider }}"
+            echo "::set-output name=ref::${{ github.ref }}"
+          else
+            if [ "${{ github.event_name }}" == "schedule" ]; then
+              echo "::set-output name=public_provider::aws-s3"
+              echo "::set-output name=ref::refs/heads/dev"
+            elif [ "${{ github.event_name }}" == "push" ]; then
+              echo "::set-output name=public_provider::aws-s3"
+              echo "::set-output name=ref::${{ github.ref }}"
+            else
+              echo "::set-output name=public_provider::none"
+              echo "::set-output name=ref::${{ github.ref }}"
+            fi
+          fi
 
-  build-and-test:
-    runs-on: ${{ matrix.runs-on }}
-    needs: [create-draft-release]
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: "linux"
-            name: "amd64"
-            runs-on: "ubuntu-20-04"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}}"
-            build-deps-cmake-flags: ""
-            ccache-dir: ''
-          - os: "mac"
-            name: "amd64"
-            runs-on: "macos-13"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}}"
-            build-deps-cmake-flags: ""
-            ccache-dir: ''
-          - os: "mac"
-            name: "arm64"
-            runs-on: "mac-silicon"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}} -DMAC_ARM64=ON"
-            build-deps-cmake-flags: ""
-            ccache-dir: ''
-          - os: "windows"
-            name: "amd64"
-            runs-on: "windows-cuda-12-0"
-            cmake-flags: "-DCORTEX_CPP_VERSION=${{needs.create-draft-release.outputs.version}} -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
-            ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+  # Job create Update app version based on latest release tag with build number and save to output
+  get-update-version:
+    uses: ./.github/workflows/template-get-update-version.yml
 
-    steps:
-      - name: Clone
-        id: checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
+  build-macos-x64:
+    uses: ./.github/workflows/template-build-macos.yml
+    needs: [get-update-version, set-public-provider]
+    secrets: inherit
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: macos-12
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      arch: amd64
 
-      - uses: actions/setup-dotnet@v3
-        if: runner.os == 'Windows'
-        with:
-          dotnet-version: "8.0.x"
+  build-macos-arm64:
+    uses: ./.github/workflows/template-build-macos.yml
+    needs: [get-update-version, set-public-provider]
+    secrets: inherit
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: macos-latest
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      arch: arm64
 
-      - name: Install choco on Windows
-        if: runner.os == 'Windows'
-        run: |
-          choco install make pkgconfiglite ccache awscli 7zip ninja -y
-
-      - name: Download ccache from s3
-        if: runner.os == 'Windows'
-        continue-on-error: true
-        run: |
-          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-          refreshenv
-          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} ${{ matrix.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
-          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
-
-      - name: Get Cer for code signing
-        if: runner.os == 'macOS'
-        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
-        shell: bash
-        env:
-          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-  
-      - uses: apple-actions/import-codesign-certs@v2
-        if: runner.os == 'macOS'
-        with:
-          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
-
-      - name: Build
-        run: |
-          cd cortex-cpp
-          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
-
-      - name: Pre-package
-        run: |
-          cd cortex-cpp
-          make pre-package
+  build-windows-x64:
+    uses: ./.github/workflows/template-build-windows-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: windows-cuda-11-7
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+      channel: nightly
           
-      - name: Code Signing macOS
-        if: runner.os == 'macOS'
+  build-linux-x64:
+    uses: ./.github/workflows/template-build-linux-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-20-04
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+  
+  update-latest-version:
+    runs-on: ubuntu-latest
+    if: needs.set-public-provider.outputs.public_provider == 'aws-s3'
+    needs: [get-update-version, set-public-provider, build-linux-x64, build-macos-x64, build-macos-arm64, build-windows-x64]
+    steps:
+      - name: Update latest version
+        id: update-latest-version
         run: |
-          cd cortex-cpp
-          make codesign CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}"
-
-      - uses: nick-fields/retry@v3
-        with:
-          continue_on_error: true
-          retry_wait_seconds: 10
-          timeout_minutes: 10
-          max_attempts: 3
-          shell: cmd
-          command: |
-            cd cortex-cpp
-            set PATH=%PATH%;%USERPROFILE%\.dotnet\tools
-            make codesign CODE_SIGN=true AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
-        name: Code Signing Windows
-        if: runner.os == 'Windows'
-
-      - name: Package
-        run: |
-          cd cortex-cpp
-          make package      
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: cortex-cpp-${{ matrix.os }}-${{ matrix.name }}
-          path: ./cortex-cpp/cortex-cpp
-
-      - uses: actions/upload-release-asset@v1.0.1
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+          echo "{\"tag_name\": \"v${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
+          aws s3 cp version.json s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/version.json
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-          asset_path: ./cortex-cpp/cortex-cpp.tar.gz
-          asset_name: cortex-cpp-${{ needs.create-draft-release.outputs.version }}-${{ matrix.os }}-${{ matrix.name }}.tar.gz
-          asset_content_type: application/gzip
-      - name: Upload ccache to s3
-        continue-on-error: true
-        if: always() && runner.os == 'Windows'
-        run: |
-          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-          refreshenv
-          aws s3 cp ${{ matrix.ccache-dir }} s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-${{ matrix.os }}-${{ matrix.name }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
-        env:
-          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
-          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
-          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+          AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.DELTA_AWS_REGION }}
+          AWS_EC2_METADATA_DISABLED: "true"
+
+  noti-discord-nightly-and-update-url-readme:
+    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider]
+    secrets: inherit
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/template-noti-discord.yaml
+    with:
+      build_reason: Nightly
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+
+  noti-discord-manual:
+    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider]
+    secrets: inherit
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.public_provider == 'aws-s3'
+    uses: ./.github/workflows/template-noti-discord.yaml
+    with:
+      build_reason: Manual
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
