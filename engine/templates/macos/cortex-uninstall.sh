@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 DESTINATION_BINARY_NAME=cortex
 DATA_FOLDER_NAME=.cortex
 CONFIGURATION_FILE_NAME=.cortexrc
