@@ -37,7 +37,6 @@ void CortexUpdCmd::Exec(std::string v) {
 }
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
-  // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
@@ -83,14 +82,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
-  // Check if the architecture and OS are supported
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-                                               << system_info.arch);
-    return false;
-  }
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // Download file
@@ -140,8 +132,8 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
-             GetCortexBinary();
+  auto src =
+      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }
@@ -174,6 +166,14 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
 
       auto local_path =
           std::filesystem::temp_directory_path() / "cortex" / asset_name;
+      try {
+        if (!std::filesystem::exists(local_path.parent_path())) {
+          std::filesystem::create_directories(local_path.parent_path());
+        }
+      } catch (const std::filesystem::filesystem_error& e) {
+        CTL_ERR("Failed to create directories: " << e.what());
+        return false;
+      }
       auto download_task{DownloadTask{.id = "cortex",
                                       .type = DownloadType::Cortex,
                                       .items = {DownloadItem{
@@ -227,6 +227,14 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   std::filesystem::path localPath =
       std::filesystem::temp_directory_path() / "cortex" / path_list.back();
+  try {
+    if (!std::filesystem::exists(localPath.parent_path())) {
+      std::filesystem::create_directories(localPath.parent_path());
+    }
+  } catch (const std::filesystem::filesystem_error& e) {
+    CTL_ERR("Failed to create directories: " << e.what());
+    return false;
+  }
   auto download_task =
       DownloadTask{.id = "cortex",
                    .type = DownloadType::Cortex,
@@ -253,8 +261,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
-             GetCortexBinary();
+  auto src =
+      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   return ReplaceBinaryInflight(src, dst);
 }
