@@ -42,16 +42,12 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // Download file
-  constexpr auto github_host = "https://api.github.com";
-  //   std::string version = v.empty() ? "latest" : std::move(v);
-  // TODO(sang): support download with version
-  std::string version = "latest";
-  std::ostringstream release_path;
-  release_path << "/repos/janhq/cortex.cpp/releases/" << version;
-  CTL_INF("Engine release path: " << github_host << release_path.str());
+  auto github_host = GetHostName();
+  auto release_path = GetReleasePath();
+  CTL_INF("Engine release path: " << github_host << release_path);
 
   httplib::Client cli(github_host);
-  if (auto res = cli.Get(release_path.str())) {
+  if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
         auto json_data = nlohmann::json::parse(res->body);
@@ -98,13 +94,12 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
 
   // Download file
-  constexpr auto github_host = "https://api.github.com";
-  std::ostringstream release_path;
-  release_path << "/repos/janhq/cortex.cpp/releases";
-  CTL_INF("Engine release path: " << github_host << release_path.str());
+  auto github_host = GetHostName();
+  auto release_path = GetReleasePath();
+  CTL_INF("Engine release path: " << github_host << release_path);
 
   httplib::Client cli(github_host);
-  if (auto res = cli.Get(release_path.str())) {
+  if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
         auto json_res = nlohmann::json::parse(res->body);
@@ -177,8 +172,8 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
       auto file_name = asset["name"].get<std::string>();
       CTL_INF("Download url: " << download_url);
 
-      auto local_path = std::filesystem::temp_directory_path() /
-                        "cortex" / asset_name;
+      auto local_path =
+          std::filesystem::temp_directory_path() / "cortex" / asset_name;
       auto download_task{DownloadTask{.id = "cortex",
                                       .type = DownloadType::Cortex,
                                       .items = {DownloadItem{
@@ -231,8 +226,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   CTL_INF("Engine release path: " << url_parser::FromUrl(url_obj));
 
   std::filesystem::path localPath =
-      std::filesystem::temp_directory_path() / "cortex" /
-      path_list.back();
+      std::filesystem::temp_directory_path() / "cortex" / path_list.back();
   auto download_task =
       DownloadTask{.id = "cortex",
                    .type = DownloadType::Cortex,
