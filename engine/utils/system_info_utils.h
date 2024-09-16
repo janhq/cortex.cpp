@@ -218,7 +218,11 @@ inline std::vector<GpuInfo> GetGpuInfoListVulkan() {
 
 inline std::vector<GpuInfo> GetGpuInfoList() {
   std::vector<GpuInfo> gpuInfoList;
-
+  if (!IsNvidiaSmiAvailable()) {
+    CTL_INF("nvidia-smi is not available!");
+    return gpuInfoList;
+  };
+  
   try {
     // TODO: improve by parsing both in one command execution
     auto driver_version = GetDriverVersion();
