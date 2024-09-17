@@ -7,9 +7,29 @@
 #include "utils/logging_utils.h"
 
 namespace commands {
+
+namespace {
+bool TryConnectToServer(const std::string& host, int port) {
+  constexpr const auto kMaxRetry = 3u;
+  auto count = 0u;
+  // Check if server is started
+  while (true) {
+    if (IsServerAlive(host, port))
+      break;
+    // Wait for server up
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    if (count++ == kMaxRetry) {
+      std::cerr << "Could not start server" << std::endl;
+      return false;
+    }
+  }
+  return true;
+}
+}  // namespace
+
 ServerStartCmd::ServerStartCmd() {}
 
-void ServerStartCmd::Exec() {
+bool ServerStartCmd::Exec(const std::string& host, int port) {
 #if defined(_WIN32) || defined(_WIN64)
   // Windows-specific code to create a new process
   STARTUPINFO si;
@@ -36,7 +56,11 @@ void ServerStartCmd::Exec() {
           &pi))               // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
+    return false;
   } else {
+    if(!TryConnectToServer(host, port)) {
+        return false;
+    }
     std::cout << "Server started" << std::endl;
   }
 
@@ -47,7 +71,7 @@ void ServerStartCmd::Exec() {
   if (pid < 0) {
     // Fork failed
     std::cerr << "Could not start server: " << std::endl;
-    return;
+    return false;
   } else if (pid == 0) {
     // No need to configure LD_LIBRARY_PATH for macOS
 #if !defined(__APPLE__) || !defined(__MACH__)
@@ -70,9 +94,13 @@ void ServerStartCmd::Exec() {
     execl(p.c_str(), exe.c_str(), "--start-server", (char*)0);
   } else {
     // Parent process
+    if(!TryConnectToServer(host, port)) {
+        return false;
+    }
     std::cout << "Server started" << std::endl;
   }
 #endif
+  return true;
 }
 
 };  // namespace commands

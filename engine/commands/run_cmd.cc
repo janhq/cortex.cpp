@@ -43,12 +43,12 @@ void RunCmd::Exec() {
 
   // Start server if it is not running
   {
-    httplib::Client cli(host_ + ":" + std::to_string(port_));
-    auto res = cli.Get("/healthz");
-    if (!res || res->status != httplib::StatusCode::OK_200) {
+    if (!commands::IsServerAlive(host_, port_)) {
       CLI_LOG("Starting server ...");
       commands::ServerStartCmd ssc;
-      ssc.Exec();
+      if(!ssc.Exec(host_, port_)) {
+        return;
+      }
     }
   }
 

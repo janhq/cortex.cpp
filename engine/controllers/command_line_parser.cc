@@ -187,7 +187,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       config_yaml_utils::DumpYamlConfig(config, config_path.string());
     }
     commands::ServerStartCmd ssc;
-    ssc.Exec();
+    ssc.Exec(config.apiServerHost, std::stoi(config.apiServerPort));
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
