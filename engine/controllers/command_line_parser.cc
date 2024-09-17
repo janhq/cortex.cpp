@@ -13,6 +13,7 @@
 #include "commands/model_stop_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
+#include "commands/model_del_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
@@ -91,8 +92,15 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
-    auto remove_cmd =
-        models_cmd->add_subcommand("remove", "Remove a model by ID locally");
+    auto model_del_cmd =
+        models_cmd->add_subcommand("delete", "Delete a model by ID locally");
+    model_del_cmd->add_option("model_id", model_id, "");
+
+    model_del_cmd->callback([&model_id]() {
+      commands::ModelDelCmd mdc;
+      mdc.Exec(model_id);
+    });
+
     auto update_cmd =
         models_cmd->add_subcommand("update", "Update configuration of a model");
   }

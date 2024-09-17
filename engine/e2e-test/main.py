@@ -7,6 +7,7 @@ from test_cli_engine_uninstall import TestCliEngineUninstall
 from test_cortex_update import TestCortexUpdate
 from test_cli_server_start import TestCliServerStart
 from test_create_log_folder import TestCreateLogFolder
+from test_cli_model_delete import TestCliModelDelete
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
