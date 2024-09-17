@@ -5,11 +5,7 @@ namespace commands {
 
 class ServerStartCmd{
  public:
-  ServerStartCmd(std::string host, int port);
+  ServerStartCmd();
   void Exec();
-
- private:
-  std::string host_;
-  int port_;
 };
 }  // namespace commands

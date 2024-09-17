@@ -7,8 +7,7 @@
 #include "utils/logging_utils.h"
 
 namespace commands {
-ServerStartCmd::ServerStartCmd(std::string host, int port)
-    : host_(std::move(host)), port_(port) {}
+ServerStartCmd::ServerStartCmd() {}
 
 void ServerStartCmd::Exec() {
 #if defined(_WIN32) || defined(_WIN64)

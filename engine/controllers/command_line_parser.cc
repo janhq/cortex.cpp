@@ -186,7 +186,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       config.apiServerPort = std::to_string(port);
       config_yaml_utils::DumpYamlConfig(config, config_path.string());
     }
-    commands::ServerStartCmd ssc(config.apiServerHost, port);
+    commands::ServerStartCmd ssc;
     ssc.Exec();
   });
 
