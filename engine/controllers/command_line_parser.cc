@@ -14,6 +14,7 @@
 #include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "commands/model_del_cmd.h"
+#include "commands/server_start_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
@@ -174,6 +175,14 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
   }
 
+  auto start_cmd = app_.add_subcommand("start", "Start the API server");
+
+  start_cmd->callback([&config] {
+    commands::ServerStartCmd ssc(config.apiServerHost,
+                                std::stoi(config.apiServerPort));
+    ssc.Exec();
+  });
+
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
   stop_cmd->callback([&config] {
@@ -208,6 +217,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   }
 
   CLI11_PARSE(app_, argc, argv);
+  if(argc == 1) {
+    std::cout << app_.help() << std::endl;
+  }
 
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
