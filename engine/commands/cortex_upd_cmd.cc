@@ -15,7 +15,7 @@ void CortexUpdCmd::Exec(std::string v) {
   {
     auto config = file_manager_utils::GetCortexConfig();
     httplib::Client cli(config.apiServerHost + ":" + config.apiServerPort);
-    auto res = cli.Get("/health/healthz");
+    auto res = cli.Get("/healthz");
     if (res) {
       CLI_LOG("Server is running. Stopping server before updating!");
       commands::ServerStopCmd ssc(config.apiServerHost,

@@ -37,7 +37,7 @@ void ChatCmd::Exec(std::string msg) {
   // Check if server is started
   {
     httplib::Client cli(host_ + ":" + std::to_string(port_));
-    auto res = cli.Get("/health/healthz");
+    auto res = cli.Get("/healthz");
     if (!res || res->status != httplib::StatusCode::OK_200) {
       CLI_LOG("Server is not started yet, please run `"
               << commands::GetCortexBinary() << " start` to start server!");
