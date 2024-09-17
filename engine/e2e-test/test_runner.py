@@ -33,7 +33,7 @@ def run(test_name: str, arguments: List[str], timeout=timeout) -> (int, str, str
         [executable_path] + arguments,
         capture_output=True,
         text=True,
-        timeout=timeout_sec,
+        timeout=timeout,
     )
     return result.returncode, result.stdout, result.stderr
 

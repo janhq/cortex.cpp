@@ -6,6 +6,7 @@
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
+#include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
@@ -13,7 +14,6 @@
 #include "commands/model_stop_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
-#include "commands/model_del_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
@@ -66,10 +66,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto list_models_cmd =
         models_cmd->add_subcommand("list", "List all models locally");
-    list_models_cmd->callback([]() {
-      commands::ModelListCmd command;
-      command.Exec();
-    });
+    list_models_cmd->callback([]() { commands::ModelListCmd().Exec(); });
 
     auto get_models_cmd =
         models_cmd->add_subcommand("get", "Get info of {model_id} locally");
@@ -85,10 +82,14 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
                               "Download a model from a registry. Working with "
                               "HuggingFace repositories. For available models, "
                               "please visit https://huggingface.co/cortexso");
-      std::string pull_input{""};
-      model_pull_cmd->add_option("model_id", pull_input, "");
-      model_pull_cmd->callback(
-          [&]() { commands::ModelPullCmd().Exec(pull_input); });
+      model_pull_cmd->add_option("model_id", model_id, "");
+      model_pull_cmd->callback([&model_id]() {
+        try {
+          commands::ModelPullCmd().Exec(model_id);
+        } catch (const std::exception& e) {
+          CLI_LOG(e.what());
+        }
+      });
     }
 
     auto model_del_cmd =
