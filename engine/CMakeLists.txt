@@ -63,11 +63,14 @@ add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 option(CMAKE_BUILD_TEST "Enable testing" OFF)
+option(BUILD_HARDWARE_INFO "Enable build hardware info" ON)
 if(CMAKE_BUILD_TEST)
   add_subdirectory(test)
 endif()
 
-add_subdirectory(examples/hardware-info)
+if(BUILD_HARDWARE_INFO)
+  add_subdirectory(examples/hardware-info)
+endif()
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
