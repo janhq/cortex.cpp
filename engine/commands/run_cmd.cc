@@ -45,7 +45,7 @@ void RunCmd::Exec() {
   {
     httplib::Client cli(host_ + ":" + std::to_string(port_));
     auto res = cli.Get("/health/healthz");
-    if (!res || res->status == httplib::StatusCode::OK_200) {
+    if (!res || res->status != httplib::StatusCode::OK_200) {
       CLI_LOG("Starting server ...");
       commands::ServerStartCmd ssc;
       ssc.Exec();
