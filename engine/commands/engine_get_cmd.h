@@ -1,15 +1,15 @@
 #pragma once
 
-#include <string>
+#include "services/engine_service.h"
 
 namespace commands {
 class EngineGetCmd {
  public:
-  EngineGetCmd(const std::string& engine) : engine_{engine} {};
+  explicit EngineGetCmd() : engine_service_{EngineService()} {};
 
-  void Exec() const;
+  void Exec(const std::string& engineName) const;
 
  private:
-  std::string engine_;
+  EngineService engine_service_;
 };
 }  // namespace commands
