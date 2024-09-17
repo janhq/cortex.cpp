@@ -1,16 +1,15 @@
 #pragma once
 
-#include <string>
+#include "services/model_service.h"
 
 namespace commands {
 
 class ModelPullCmd {
  public:
-explicit  ModelPullCmd(std::string model_handle, std::string branch);
-  bool Exec();
+  explicit ModelPullCmd() : model_service_{ModelService()} {};
+  void Exec(const std::string& input);
 
  private:
-  std::string model_handle_;
-  std::string branch_;
+  ModelService model_service_;
 };
 }  // namespace commands

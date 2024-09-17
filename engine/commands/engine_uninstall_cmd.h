@@ -1,15 +1,16 @@
 #pragma once
 
 #include <string>
+#include "services/engine_service.h"
 
 namespace commands {
 class EngineUninstallCmd {
  public:
-  EngineUninstallCmd(std::string engine);
+  explicit EngineUninstallCmd() : engine_service_{EngineService()} {};
 
-  void Exec() const;
+  void Exec(const std::string& engine);
 
  private:
-  std::string engine_;
+  EngineService engine_service_;
 };
 }  // namespace commands

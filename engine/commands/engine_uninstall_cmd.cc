@@ -4,18 +4,8 @@
 
 namespace commands {
 
-EngineUninstallCmd::EngineUninstallCmd(std::string engine)
-    : engine_{std::move(engine)} {}
-
-void EngineUninstallCmd::Exec() const {
-  CTL_INF("Uninstall engine " + engine_);
-  auto engine_service = EngineService();
-
-  try {
-    engine_service.UninstallEngine(engine_);
-    CLI_LOG("Engine " << engine_ << " uninstalled successfully!")
-  } catch (const std::exception& e) {
-    CLI_LOG("Failed to uninstall engine " << engine_ << ": " << e.what());
-  }
+void EngineUninstallCmd::Exec(const std::string& engine) {
+  engine_service_.UninstallEngine(engine);
+  CLI_LOG("Engine " << engine << " uninstalled successfully!");
 }
 };  // namespace commands

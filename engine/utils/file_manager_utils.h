@@ -208,7 +208,7 @@ inline std::filesystem::path GetModelsContainerPath() {
   if (!std::filesystem::exists(models_container_path)) {
     CTL_INF("Model container folder not found. Create one: "
             << models_container_path.string());
-    std::filesystem::create_directory(models_container_path);
+    std::filesystem::create_directories(models_container_path);
   }
 
   return models_container_path;

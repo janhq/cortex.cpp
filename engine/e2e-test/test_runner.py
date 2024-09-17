@@ -7,7 +7,7 @@ import time
 from typing import List
 
 # You might want to change the path of the executable based on your build directory
-executable_windows_path = "build\\Release\\cortex-nightly.exe"
+executable_windows_path = "build\\Debug\\cortex.exe"
 executable_unix_path = "build/cortex"
 
 # Timeout
@@ -24,13 +24,16 @@ def getExecutablePath() -> str:
 
 
 # Execute a command
-def run(test_name: str, arguments: List[str], timeout_sec = 5):
+def run(test_name: str, arguments: List[str], timeout=timeout) -> (int, str, str):
     executable_path = getExecutablePath()
     print("Running:", test_name)
     print("Command:", [executable_path] + arguments)
 
     result = subprocess.run(
-        [executable_path] + arguments, capture_output=True, text=True, timeout=timeout_sec
+        [executable_path] + arguments,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
     )
     return result.returncode, result.stdout, result.stderr
 
