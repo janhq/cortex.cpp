@@ -1,4 +1,5 @@
 #include "model_start_cmd.h"
+#include "cortex_upd_cmd.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "trantor/utils/Logger.h"
@@ -11,15 +12,13 @@ ModelStartCmd::ModelStartCmd(std::string host, int port,
     : host_(std::move(host)), port_(port), mc_(mc) {}
 
 bool ModelStartCmd::Exec() {
-
   // Check if server is started
   {
     httplib::Client cli(host_ + ":" + std::to_string(port_));
     auto res = cli.Get("/health/healthz");
     if (!res || res->status == httplib::StatusCode::OK_200) {
-      CLI_LOG(
-          "Server is not started yet, please run `cortex start` to start "
-          "server!");
+      CLI_LOG("Server is not started yet, please run `"
+              << commands::GetCortexBinary() << " start` to start server!");
       return false;
     }
   }

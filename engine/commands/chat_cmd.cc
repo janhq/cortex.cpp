@@ -1,6 +1,7 @@
 #include "chat_cmd.h"
 #include "httplib.h"
 
+#include "cortex_upd_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
 
@@ -33,6 +34,17 @@ ChatCmd::ChatCmd(std::string host, int port, const config::ModelConfig& mc)
     : host_(std::move(host)), port_(port), mc_(mc) {}
 
 void ChatCmd::Exec(std::string msg) {
+  // Check if server is started
+  {
+    httplib::Client cli(host_ + ":" + std::to_string(port_));
+    auto res = cli.Get("/health/healthz");
+    if (!res || res->status == httplib::StatusCode::OK_200) {
+      CLI_LOG("Server is not started yet, please run `"
+              << commands::GetCortexBinary() << " start` to start server!");
+      return;
+    }
+  }
+
   auto address = host_ + ":" + std::to_string(port_);
   // Check if model is loaded
   // TODO(sang) only llamacpp support modelstatus for now
