@@ -3,8 +3,10 @@
 #include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "engine_init_cmd.h"
+#include "httplib.h"
 #include "model_pull_cmd.h"
 #include "model_start_cmd.h"
+#include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
@@ -38,6 +40,17 @@ void RunCmd::Exec() {
         LOG_INFO << "Failed to install engine";
         return;
       }
+    }
+  }
+
+  // Start server if it is not running
+  {
+    httplib::Client cli(host_ + ":" + std::to_string(port_));
+    auto res = cli.Get("/health/healthz");
+    if (!res || res->status == httplib::StatusCode::OK_200) {
+      CLI_LOG("Starting server ...");
+      commands::ServerStartCmd ssc(host_, port_);
+      ssc.Exec();
     }
   }
 

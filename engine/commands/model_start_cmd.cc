@@ -2,6 +2,7 @@
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "trantor/utils/Logger.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -10,7 +11,21 @@ ModelStartCmd::ModelStartCmd(std::string host, int port,
     : host_(std::move(host)), port_(port), mc_(mc) {}
 
 bool ModelStartCmd::Exec() {
+
+  // Check if server is started
+  {
+    httplib::Client cli(host_ + ":" + std::to_string(port_));
+    auto res = cli.Get("/health/healthz");
+    if (!res || res->status == httplib::StatusCode::OK_200) {
+      CLI_LOG(
+          "Server is not started yet, please run `cortex start` to start "
+          "server!");
+      return false;
+    }
+  }
+
   httplib::Client cli(host_ + ":" + std::to_string(port_));
+
   nlohmann::json json_data;
   if (mc_.files.size() > 0) {
     // TODO(sang) support multiple files
