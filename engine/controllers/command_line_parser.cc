@@ -218,7 +218,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   CLI11_PARSE(app_, argc, argv);
   if(argc == 1) {
-    std::cout << app_.help() << std::endl;
+    CLI_LOG(app_.help());
+    return true;
   }
 
   // Check new update, only check for stable release for now
