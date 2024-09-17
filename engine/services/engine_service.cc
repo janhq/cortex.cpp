@@ -109,7 +109,7 @@ void EngineService::InstallEngine(const std::string& engine,
       body = get_data(body);
     }
     if (body.empty()) {
-      throw std::runtime_error("No version found for " + version);      
+      throw std::runtime_error("No release found for " + version);      
     }
 
     auto assets = body["assets"];
