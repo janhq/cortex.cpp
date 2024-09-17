@@ -8,7 +8,7 @@ class TestCliEngineUninstall:
     def setup_and_teardown(self):
         # Setup
         # Preinstall llamacpp engine
-        run("Install Engine", ["engines", "install", "cortex.llamacpp"])
+        run("Install Engine", ["engines", "install", "cortex.llamacpp"], timeout=120)
 
         yield
 
