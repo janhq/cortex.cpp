@@ -7,7 +7,7 @@ import time
 from typing import List
 
 # You might want to change the path of the executable based on your build directory
-executable_windows_path = "build\\Debug\\cortex.exe"
+executable_windows_path = "build\\Release\\cortex-nightly.exe"
 executable_unix_path = "build/cortex"
 
 # Timeout
@@ -47,7 +47,10 @@ def start_server() -> bool:
 def start_server_nix() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        executable, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        [executable] + ['start', '-p', '3928'], 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE, 
+        text=True
     )
 
     start_time = time.time()
@@ -74,7 +77,7 @@ def start_server_nix() -> bool:
 def start_server_windows() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        executable,
+        [executable] + ['start', '-p', '3928'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
