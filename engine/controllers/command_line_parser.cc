@@ -85,10 +85,11 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
                               "Download a model from a registry. Working with "
                               "HuggingFace repositories. For available models, "
                               "please visit https://huggingface.co/cortexso");
-      std::string pull_input{""};
-      model_pull_cmd->add_option("model_id", pull_input, "");
-      model_pull_cmd->callback(
-          [&]() { commands::ModelPullCmd().Exec(pull_input); });
+      model_pull_cmd->add_option("model_id", model_id, "");
+      model_pull_cmd->callback([&model_id]() {
+        std::cout << "Pulling model: " << model_id << std::endl;
+        commands::ModelPullCmd().Exec(model_id);
+      });
     }
 
     auto model_del_cmd =
