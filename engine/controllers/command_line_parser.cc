@@ -6,6 +6,7 @@
 #include "commands/engine_init_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
+#include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
@@ -13,7 +14,6 @@
 #include "commands/model_stop_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_stop_cmd.h"
-#include "commands/model_del_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
@@ -224,7 +224,10 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
                                       std::string& version) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  install_engine_cmd->callback([=] {
+  install_engine_cmd->add_option("-v, --version", version,
+                                 "Engine version to download");
+
+  install_engine_cmd->callback([engine_name, &version] {
     commands::EngineInitCmd eic(engine_name, version);
     eic.Exec();
   });

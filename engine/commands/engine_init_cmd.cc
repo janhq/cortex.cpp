@@ -19,10 +19,12 @@ EngineInitCmd::EngineInitCmd(std::string engineName, std::string version)
 bool EngineInitCmd::Exec() const {
   auto system_info = system_info_utils::GetSystemInfo();
   constexpr auto gitHubHost = "https://api.github.com";
-  std::string version = version_.empty() ? "latest" : version_;
+  // std::string version = version_.empty() ? "latest" : version_;
   std::ostringstream engineReleasePath;
-  engineReleasePath << "/repos/janhq/" << engineName_ << "/releases/"
-                    << version;
+  engineReleasePath << "/repos/janhq/" << engineName_ << "/releases";
+  if (version_ == "latest") {
+    engineReleasePath << "/latest";
+  }
   CTL_INF("Engine release path: " << gitHubHost << engineReleasePath.str());
   using namespace nlohmann;
 
@@ -31,7 +33,26 @@ bool EngineInitCmd::Exec() const {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
         auto jsonResponse = json::parse(res->body);
-        auto assets = jsonResponse["assets"];
+
+        nlohmann::json json_data;
+        if (version_ == "latest") {
+          json_data = jsonResponse;
+        } else {
+          for (auto& jr : jsonResponse) {
+            // Get the latest or match version
+            if (auto tag = jr["tag_name"].get<std::string>(); tag == version_) {
+              json_data = jr;
+              break;
+            }
+          }
+        }
+
+        if (json_data.empty()) {
+          CLI_LOG("Version not found: " << version_);
+          return false;
+        }
+
+        auto assets = json_data["assets"];
         auto os_arch{system_info.os + "-" + system_info.arch};
 
         std::vector<std::string> variants;
