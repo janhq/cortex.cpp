@@ -202,6 +202,7 @@ inline void CreateDirectoryRecursively(const std::string& path) {
 }
 
 inline std::filesystem::path GetModelsContainerPath() {
+  CreateConfigFileIfNotExist();
   auto cortex_path = GetCortexDataPath();
   auto models_container_path = cortex_path / "models";
 
