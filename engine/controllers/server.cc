@@ -347,6 +347,15 @@ void server::LoadModel(const HttpRequestPtr& req,
 
   LOG_TRACE << "Load model";
   auto& en = std::get<EngineI*>(engines_[engine_type].engine);
+  if (engine_type == kLlamaEngine) {  //fix for llamacpp engine first
+    auto config = file_manager_utils::GetCortexConfig();
+    if (en->IsSupported("SetFileLogger")) {
+      en->SetFileLogger(config.maxLogLines, config.logFolderPath + "/" +
+                                                cortex_utils::logs_base_name);
+    } else {
+      LOG_WARN << "Method SetFileLogger is not supported yet";
+    }
+  }
   en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
                                           Json::Value status, Json::Value res) {
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
