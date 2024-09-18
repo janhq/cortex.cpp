@@ -1,4 +1,5 @@
 import pytest
+import sys
 from test_api_engine_list import TestApiEngineList
 from test_cli_engine_get import TestCliEngineGet
 from test_cli_engine_install import TestCliEngineInstall
@@ -11,4 +12,4 @@ from test_cortex_update import TestCortexUpdate
 from test_create_log_folder import TestCreateLogFolder
 
 if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+    sys.exit(pytest.main([__file__, "-v"]))
