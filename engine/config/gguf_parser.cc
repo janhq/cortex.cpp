@@ -321,7 +321,11 @@ void GGUFHandler::Parse(const std::string& file_path) {
     offset += value_byte_length;
     LOG_INFO << "-------------------------------------------- " << "\n";
   }
-  //   PrintMetadata();
+  try {
+    PrintMetadata();
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Error parsing metadata: " << e.what() << "\n";
+  }
   ModelConfigFromMetadata();
   CloseFile();
 }
