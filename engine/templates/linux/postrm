@@ -3,7 +3,7 @@ set +e
 DATA_FOLDER_NAME=.cortex
 CONFIGURATION_FILE_NAME=.cortexrc
 
-echo "Do you want to delete the '~/${DATA_FOLDER_NAME}' data folder and file '~/${CONFIGURATION_FILE_NAME}'? (yes/no)"
+echo "Do you want to delete the ~/$DATA_FOLDER_NAME data folder and file ~/$CONFIGURATION_FILE_NAME? (yes/no)"
 read -r answer
 
 USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
@@ -11,13 +11,13 @@ USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
 case "$answer" in
     [yY][eE][sS]|[yY])
         echo "Deleting cortex data folders..."
-        if [ -d "/home/${USER_TO_RUN_AS}/${DATA_FOLDER_NAME}" ]; then
-            echo "Removing /home/${USER_TO_RUN_AS}/${DATA_FOLDER_NAME}"
-            rm -rf "/home/${USER_TO_RUN_AS}/${DATA_FOLDER_NAME}" > /dev/null 2>&1
+        if [ -d "/home/$USER_TO_RUN_AS/$DATA_FOLDER_NAME" ]; then
+            echo "Removing /home/$USER_TO_RUN_AS/$DATA_FOLDER_NAME"
+            rm -rf "/home/$USER_TO_RUN_AS/$DATA_FOLDER_NAME" > /dev/null 2>&1
         fi
-        if [ -f "/home/${USER_TO_RUN_AS}/${CONFIGURATION_FILE_NAME}" ]; then
-            echo "Removing /home/${USER_TO_RUN_AS}/${CONFIGURATION_FILE_NAME}"
-            rm -f "/home/${USER_TO_RUN_AS}/${CONFIGURATION_FILE_NAME}" > /dev/null 2>&1
+        if [ -f "/home/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME" ]; then
+            echo "Removing /home/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME"
+            rm -f "/home/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME" > /dev/null 2>&1
         fi
         ;;
     [nN][oO]|[nN])

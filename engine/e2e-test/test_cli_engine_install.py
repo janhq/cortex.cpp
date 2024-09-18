@@ -8,9 +8,9 @@ class TestCliEngineInstall:
 
     def test_engines_install_llamacpp_should_be_successfully(self):
         exit_code, output, error = run(
-            "Install Engine", ["engines", "install", "cortex.llamacpp"]
+            "Install Engine", ["engines", "install", "cortex.llamacpp"], timeout=60
         )
-        assert "Download" in output, "Should display downloading message"
+        assert "Start downloading" in output, "Should display downloading message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
@@ -28,3 +28,11 @@ class TestCliEngineInstall:
         )
         assert "No variant found" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
+        
+    def test_engines_install_pre_release_llamacpp(self):
+        exit_code, output, error = run(
+            "Install Engine", ["engines", "install", "cortex.llamacpp", "-v", "v0.1.29"], timeout=60
+        )
+        assert "Start downloading" in output, "Should display downloading message"
+        assert exit_code == 0, f"Install engine failed with error: {error}"
+

@@ -1,13 +1,9 @@
-// clang-format off
-#include "utils/cortex_utils.h"
-// clang-format on
 #include "model_list_cmd.h"
 #include <filesystem>
 #include <iostream>
 #include <tabulate/table.hpp>
 #include <vector>
 #include "config/yaml_config.h"
-#include "trantor/utils/Logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 

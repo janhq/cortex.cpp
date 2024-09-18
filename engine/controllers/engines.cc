@@ -24,18 +24,6 @@ void Engines::InstallEngine(
   }
 
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    Json::Value res;
-    res["message"] = "Unsupported OS or architecture";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(k409Conflict);
-    callback(resp);
-    LOG_ERROR << "Unsupported OS or architecture: " << system_info.os << ", "
-              << system_info.arch;
-    return;
-  }
-
   auto version{"latest"};
   constexpr auto gitHubHost = "https://api.github.com";
 
@@ -54,41 +42,46 @@ void Engines::InstallEngine(
         for (auto& asset : assets) {
           auto assetName = asset["name"].get<std::string>();
           if (assetName.find(os_arch) != std::string::npos) {
-            std::string host{"https://github.com"};
+            auto download_url =
+                asset["browser_download_url"].get<std::string>();
+            auto name = asset["name"].get<std::string>();
+            LOG_INFO << "Download url: " << download_url;
 
-            auto full_url = asset["browser_download_url"].get<std::string>();
-            std::string path = full_url.substr(host.length());
+            std::filesystem::path engine_folder_path =
+                file_manager_utils::GetContainerFolderPath(
+                    file_manager_utils::DownloadTypeToString(
+                        DownloadType::Engine)) /
+                engine;
 
-            auto fileName = asset["name"].get<std::string>();
-            LOG_INFO << "URL: " << full_url;
-
-            auto downloadTask = DownloadTask{.id = engine,
-                                             .type = DownloadType::Engine,
-                                             .error = std::nullopt,
-                                             .items = {DownloadItem{
-                                                 .id = engine,
-                                                 .host = host,
-                                                 .fileName = fileName,
-                                                 .type = DownloadType::Engine,
-                                                 .path = path,
-                                             }}};
+            if (!std::filesystem::exists(engine_folder_path)) {
+              CTL_INF("Creating " << engine_folder_path.string());
+              std::filesystem::create_directories(engine_folder_path);
+            }
+            auto local_path = engine_folder_path / assetName;
+            auto downloadTask{DownloadTask{.id = engine,
+                                           .type = DownloadType::Engine,
+                                           .items = {DownloadItem{
+                                               .id = engine,
+                                               .downloadUrl = download_url,
+                                               .localPath = local_path,
+                                           }}}};
 
             DownloadService().AddAsyncDownloadTask(
-                downloadTask,
-                [](const std::string& absolute_path, bool unused) {
+                downloadTask, [](const DownloadTask& finishedTask) {
                   // try to unzip the downloaded file
-                  std::filesystem::path downloadedEnginePath{absolute_path};
-                  LOG_INFO << "Downloaded engine path: "
-                           << downloadedEnginePath.string();
-
                   archive_utils::ExtractArchive(
-                      downloadedEnginePath.string(),
-                      downloadedEnginePath.parent_path()
+                      finishedTask.items[0].localPath.string(),
+                      finishedTask.items[0]
+                          .localPath.parent_path()
                           .parent_path()
                           .string());
 
                   // remove the downloaded file
-                  std::filesystem::remove(absolute_path);
+                  try {
+                    std::filesystem::remove(finishedTask.items[0].localPath);
+                  } catch (const std::exception& e) {
+                    LOG_WARN << "Could not delete file: " << e.what();
+                  }
                   LOG_INFO << "Finished!";
                 });
 
@@ -151,11 +144,11 @@ void Engines::GetEngine(const HttpRequestPtr& req,
   try {
     auto status = engine_service.GetEngineInfo(engine);
     Json::Value ret;
-    ret["name"] = status.name;
-    ret["description"] = status.description;
-    ret["version"] = status.version;
-    ret["productName"] = status.product_name;
-    ret["status"] = status.status;
+    ret["name"] = status->name;
+    ret["description"] = status->description;
+    ret["version"] = status->version;
+    ret["productName"] = status->product_name;
+    ret["status"] = status->status;
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);

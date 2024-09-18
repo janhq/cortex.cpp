@@ -3,15 +3,17 @@
 #include "commands/cmd_info.h"
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
-#include "commands/engine_init_cmd.h"
+#include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
+#include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/run_cmd.h"
+#include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
@@ -65,10 +67,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     auto list_models_cmd =
         models_cmd->add_subcommand("list", "List all models locally");
-    list_models_cmd->callback([]() {
-      commands::ModelListCmd command;
-      command.Exec();
-    });
+    list_models_cmd->callback([]() { commands::ModelListCmd().Exec(); });
 
     auto get_models_cmd =
         models_cmd->add_subcommand("get", "Get info of {model_id} locally");
@@ -78,20 +77,30 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       command.Exec();
     });
 
-    auto model_pull_cmd =
+    {
+      auto model_pull_cmd =
         app_.add_subcommand("pull",
                             "Download a model by URL (or HuggingFace ID) "
                             "See built-in models: https://huggingface.co/cortexso");
     model_pull_cmd->add_option("model_id", model_id, "");
+      model_pull_cmd->callback([&model_id]() {
+        try {
+          commands::ModelPullCmd().Exec(model_id);
+        } catch (const std::exception& e) {
+          CLI_LOG(e.what());
+        }
+      });
+    }
 
-    model_pull_cmd->callback([&model_id]() {
-      commands::CmdInfo ci(model_id);
-      commands::ModelPullCmd command(ci.model_name, ci.branch);
-      command.Exec();
+    auto model_del_cmd =
+        models_cmd->add_subcommand("delete", "Delete a model by ID locally");
+    model_del_cmd->add_option("model_id", model_id, "");
+
+    model_del_cmd->callback([&model_id]() {
+      commands::ModelDelCmd mdc;
+      mdc.Exec(model_id);
     });
 
-    auto remove_cmd =
-        models_cmd->add_subcommand("remove", "Remove a model by ID locally");
     auto update_cmd =
         models_cmd->add_subcommand("update", "Update configuration of a model");
   }
@@ -165,6 +174,21 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
   }
 
+  auto start_cmd = app_.add_subcommand("start", "Start the API server");
+  int port = std::stoi(config.apiServerPort);
+  start_cmd->add_option("-p, --port", port, "Server port to listen");
+  start_cmd->callback([&config, &port] {
+    if (port != stoi(config.apiServerPort)) {
+      CTL_INF("apiServerPort changed from " << config.apiServerPort << " to "
+                                            << port);
+      auto config_path = file_manager_utils::GetConfigurationPath();
+      config.apiServerPort = std::to_string(port);
+      config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    }
+    commands::ServerStartCmd ssc;
+    ssc.Exec(config.apiServerHost, std::stoi(config.apiServerPort));
+  });
+
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
   stop_cmd->callback([&config] {
@@ -183,7 +207,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     CLI_LOG("default");
 #endif
   };
-  app_.add_flag_function("-v", cb, "Cortex version");
+  app_.add_flag_function("-v,--version", cb, "Cortex version");
 
   std::string cortex_version;
   bool check_update = true;
@@ -199,6 +223,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   }
 
   CLI11_PARSE(app_, argc, argv);
+  if (argc == 1) {
+    CLI_LOG(app_.help());
+    return true;
+  }
 
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
@@ -215,9 +243,15 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
                                       std::string& version) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  install_engine_cmd->callback([=] {
-    commands::EngineInitCmd eic(engine_name, version);
-    eic.Exec();
+  install_engine_cmd->add_option("-v, --version", version,
+                                 "Engine version to download");
+
+  install_engine_cmd->callback([engine_name, &version] {
+    try {
+      commands::EngineInstallCmd().Exec(engine_name, version);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
+    }
   });
 }
 
@@ -225,9 +259,12 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
                                         const std::string& engine_name) {
   auto uninstall_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  uninstall_engine_cmd->callback([=] {
-    commands::EngineUninstallCmd cmd(engine_name);
-    cmd.Exec();
+  uninstall_engine_cmd->callback([engine_name] {
+    try {
+      commands::EngineUninstallCmd().Exec(engine_name);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
+    }
   });
 }
 
@@ -239,9 +276,7 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     std::string desc = "Get " + engine_name + " status";
 
     auto engine_get_cmd = get_cmd->add_subcommand(engine_name, desc);
-    engine_get_cmd->callback([engine_name] {
-      commands::EngineGetCmd cmd(engine_name);
-      cmd.Exec();
-    });
+    engine_get_cmd->callback(
+        [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
 }

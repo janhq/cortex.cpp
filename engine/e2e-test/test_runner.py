@@ -24,13 +24,16 @@ def getExecutablePath() -> str:
 
 
 # Execute a command
-def run(test_name: str, arguments: List[str]):
+def run(test_name: str, arguments: List[str], timeout=timeout) -> (int, str, str):
     executable_path = getExecutablePath()
     print("Running:", test_name)
     print("Command:", [executable_path] + arguments)
 
     result = subprocess.run(
-        [executable_path] + arguments, capture_output=True, text=True, timeout=timeout
+        [executable_path] + arguments,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
     )
     return result.returncode, result.stdout, result.stderr
 
@@ -47,7 +50,10 @@ def start_server() -> bool:
 def start_server_nix() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        executable, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        [executable] + ['start', '-p', '3928'], 
+        stdout=subprocess.PIPE, 
+        stderr=subprocess.PIPE, 
+        text=True
     )
 
     start_time = time.time()
@@ -74,7 +80,7 @@ def start_server_nix() -> bool:
 def start_server_windows() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        executable,
+        [executable] + ['start', '-p', '3928'],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,

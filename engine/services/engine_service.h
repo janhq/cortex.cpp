@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -15,14 +16,19 @@ struct EngineInfo {
 
 class EngineService {
  public:
+  constexpr static auto kIncompatible = "Incompatible";
+  constexpr static auto kReady = "Ready";
+  constexpr static auto kNotInstalled = "Not Installed";
+
   const std::vector<std::string_view> kSupportEngines = {
       "cortex.llamacpp", "cortex.onnx", "cortex.tensorrt-llm"};
 
-  EngineInfo GetEngineInfo(const std::string& engine) const;
+  std::optional<EngineInfo> GetEngineInfo(const std::string& engine) const;
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
-  void InstallEngine(const std::string& engine);
+  void InstallEngine(const std::string& engine,
+                     const std::string& version = "latest");
 
   void UninstallEngine(const std::string& engine);
 };
