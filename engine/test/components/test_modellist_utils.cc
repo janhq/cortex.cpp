@@ -2,7 +2,7 @@
 #include <iostream>
 #include "gtest/gtest.h"
 #include "utils/modellist_utils.h"
-
+#include "utils/file_manager_utils.h"
 class ModelListUtilsTestSuite : public ::testing::Test {
  protected:
   modellist_utils::ModelListUtils model_list_;
@@ -12,7 +12,14 @@ class ModelListUtilsTestSuite : public ::testing::Test {
       "main",          "/path/to/model.yaml",
       "test_alias",    modellist_utils::ModelStatus::READY};
 };
+  void SetUp()  {
+    // Create a temporary directory for tests
+    file_manager_utils::CreateConfigFileIfNotExist();
+  }
 
+  void TearDown() {
+    // Clean up the temporary directory
+  }
 TEST_F(ModelListUtilsTestSuite, TestAddModelEntry) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
 
