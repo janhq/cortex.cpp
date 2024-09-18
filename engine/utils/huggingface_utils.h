@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Security/cssmconfig.h>
 #include <httplib.h>
 #include <optional>
 #include <stdexcept>
@@ -24,7 +23,7 @@ struct HuggingFaceFileSibling {
 };
 
 struct HuggingFaceGgufInfo {
-  uint64 total;
+  uint64_t total;
   std::string architecture;
 };
 
