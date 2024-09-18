@@ -576,9 +576,16 @@ void GGUFHandler::ModelConfigFromMetadata() {
     }
   }
 
-  eos_string = tokens[eos_token];
-  bos_string = tokens[bos_token];
-  stop.push_back(std::move(eos_string));
+  try {
+    if (tokens.size() > eos_token) {
+      eos_string = tokens[eos_token];
+      stop.push_back(std::move(eos_string));
+    } else {
+      LOG_ERROR << "Can't find stop token";
+    }
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Can't find stop token";
+  }
 
   model_config_.stop = std::move(stop);
   if (chat_template.empty())
