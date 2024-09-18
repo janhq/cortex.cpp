@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include "httplib.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 
 namespace cortexso_parser {
 constexpr static auto kHuggingFaceHost = "https://huggingface.co";
@@ -34,7 +35,7 @@ inline std::optional<DownloadTask> getDownloadTask(
         file_manager_utils::CreateDirectoryRecursively(
             model_container_path.string());
 
-        for (auto& [key, value] : jsonResponse.items()) {
+        for (const auto& [key, value] : jsonResponse.items()) {
           std::ostringstream downloadUrlOutput;
           auto path = value["path"].get<std::string>();
           if (path == ".gitattributes" || path == ".gitignore" ||
@@ -58,7 +59,7 @@ inline std::optional<DownloadTask> getDownloadTask(
 
         return downloadTask;
       } catch (const json::parse_error& e) {
-        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        CTL_ERR("JSON parse error: {}" << e.what());
       }
     }
   } else {

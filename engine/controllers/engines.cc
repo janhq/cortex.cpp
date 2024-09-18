@@ -144,11 +144,11 @@ void Engines::GetEngine(const HttpRequestPtr& req,
   try {
     auto status = engine_service.GetEngineInfo(engine);
     Json::Value ret;
-    ret["name"] = status.name;
-    ret["description"] = status.description;
-    ret["version"] = status.version;
-    ret["productName"] = status.product_name;
-    ret["status"] = status.status;
+    ret["name"] = status->name;
+    ret["description"] = status->description;
+    ret["version"] = status->version;
+    ret["productName"] = status->product_name;
+    ret["status"] = status->status;
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);

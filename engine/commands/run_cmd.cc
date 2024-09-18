@@ -2,17 +2,16 @@
 #include "chat_cmd.h"
 #include "cmd_info.h"
 #include "config/yaml_config.h"
-#include "engine_init_cmd.h"
+#include "engine_install_cmd.h"
+#include "httplib.h"
 #include "model_pull_cmd.h"
 #include "model_start_cmd.h"
+#include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 
 namespace commands {
-
-RunCmd::RunCmd(std::string host, int port, std::string model_id)
-    : host_(std::move(host)), port_(port), model_id_(std::move(model_id)) {}
 
 void RunCmd::Exec() {
   auto address = host_ + ":" + std::to_string(port_);
@@ -22,20 +21,32 @@ void RunCmd::Exec() {
   // TODO should we clean all resource if something fails?
   // Check if model existed. If not, download it
   {
-    if (!IsModelExisted(model_file)) {
-      ModelPullCmd model_pull_cmd(ci.model_name, ci.branch);
-      if (!model_pull_cmd.Exec()) {
-        return;
-      }
+    auto model_conf = model_service_.GetDownloadedModel(model_file + ".yaml");
+    if (!model_conf.has_value()) {
+      model_service_.DownloadModel(model_id_);
     }
   }
 
   // Check if engine existed. If not, download it
   {
-    if (!IsEngineExisted(ci.engine_name)) {
-      EngineInitCmd eic(ci.engine_name, "");
-      if (!eic.Exec()) {
-        LOG_INFO << "Failed to install engine";
+    auto required_engine = engine_service_.GetEngineInfo(ci.engine_name);
+    if (!required_engine.has_value()) {
+      throw std::runtime_error("Engine not found: " + ci.engine_name);
+    }
+    if (required_engine.value().status == EngineService::kIncompatible) {
+      throw std::runtime_error("Engine " + ci.engine_name + " is incompatible");
+    }
+    if (required_engine.value().status == EngineService::kNotInstalled) {
+      engine_service_.InstallEngine(ci.engine_name);
+    }
+  }
+
+  // Start server if it is not running
+  {
+    if (!commands::IsServerAlive(host_, port_)) {
+      CLI_LOG("Starting server ...");
+      commands::ServerStartCmd ssc;
+      if(!ssc.Exec(host_, port_)) {
         return;
       }
     }
@@ -59,37 +70,4 @@ void RunCmd::Exec() {
     cc.Exec("");
   }
 }
-
-bool RunCmd::IsModelExisted(const std::string& model_id) {
-  auto models_path = file_manager_utils::GetModelsContainerPath();
-  if (std::filesystem::exists(models_path) &&
-      std::filesystem::is_directory(models_path)) {
-    // Iterate through directory
-    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
-      if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
-        try {
-          config::YamlHandler handler;
-          handler.ModelConfigFromFile(entry.path().string());
-          if (entry.path().stem().string() == model_id) {
-            return true;
-          }
-        } catch (const std::exception& e) {
-          LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                    << "': " << e.what();
-        }
-      }
-    }
-  }
-  return false;
-}
-
-bool RunCmd::IsEngineExisted(const std::string& e) {
-  auto engines_path = file_manager_utils::GetEnginesContainerPath();
-  if (std::filesystem::exists(engines_path) &&
-      std::filesystem::exists(engines_path.string() + "/" + e)) {
-    return true;
-  }
-  return false;
-}
-
 };  // namespace commands
