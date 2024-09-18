@@ -2,7 +2,13 @@
 #include "chat_cmd.h"
 #include "cmd_info.h"
 #include "config/yaml_config.h"
+#include "engine_install_cmd.h"
+#include "httplib.h"
+#include "model_pull_cmd.h"
 #include "model_start_cmd.h"
+#include "server_start_cmd.h"
+#include "trantor/utils/Logger.h"
+#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 
 namespace commands {
@@ -15,7 +21,7 @@ void RunCmd::Exec() {
   // TODO should we clean all resource if something fails?
   // Check if model existed. If not, download it
   {
-    auto model_conf = model_service_.GetDownloadedModel(model_id_);
+    auto model_conf = model_service_.GetDownloadedModel(model_file + ".yaml");
     if (!model_conf.has_value()) {
       model_service_.DownloadModel(model_id_);
     }
@@ -32,6 +38,17 @@ void RunCmd::Exec() {
     }
     if (required_engine.value().status == EngineService::kNotInstalled) {
       engine_service_.InstallEngine(ci.engine_name);
+    }
+  }
+
+  // Start server if it is not running
+  {
+    if (!commands::IsServerAlive(host_, port_)) {
+      CLI_LOG("Starting server ...");
+      commands::ServerStartCmd ssc;
+      if(!ssc.Exec(host_, port_)) {
+        return;
+      }
     }
   }
 
