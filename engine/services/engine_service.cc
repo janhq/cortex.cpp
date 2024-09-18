@@ -1,20 +1,23 @@
 #include "engine_service.h"
+#include <httplib.h>
 #include <stdexcept>
 #include "algorithm"
+#include "utils/archive_utils.h"
+#include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/json.hpp"
+#include "utils/semantic_version_utils.h"
+#include "utils/system_info_utils.h"
+#include "utils/url_parser.h"
 
-namespace {
-constexpr static auto kIncompatible = "Incompatible";
-constexpr static auto kReady = "Ready";
-constexpr static auto kNotInstalled = "Not Installed";
-}  // namespace
+using json = nlohmann::json;
 
-EngineInfo EngineService::GetEngineInfo(const std::string& engine) const {
+std::optional<EngineInfo> EngineService::GetEngineInfo(
+    const std::string& engine) const {
   // if engine is not found in kSupportEngine, throw runtime error
   if (std::find(kSupportEngines.begin(), kSupportEngines.end(), engine) ==
       kSupportEngines.end()) {
-    // TODO: create a custom exception class
-    throw std::runtime_error("Engine " + engine + " is not supported!");
+    return std::nullopt;
   }
 
   auto engine_status_list = GetEngineInfoList();
@@ -68,6 +71,215 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
   };
 
   return engines;
+}
+
+void EngineService::InstallEngine(const std::string& engine,
+                                  const std::string& version) {
+  auto system_info = system_info_utils::GetSystemInfo();
+  auto get_params = [&engine, &version]() -> std::vector<std::string> {
+    if (version == "latest") {
+      return {"repos", "janhq", engine, "releases", version};
+    } else {
+      return {"repos", "janhq", engine, "releases"};
+    }
+  };
+
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = "api.github.com",
+      .pathParams = get_params(),
+  };
+
+  httplib::Client cli(url_obj.GetProtocolAndHost());
+  if (auto res = cli.Get(url_obj.GetPathAndQuery());
+      res->status == httplib::StatusCode::OK_200) {
+    auto body = json::parse(res->body);
+    auto get_data =
+        [&version](const nlohmann::json& json_data) -> nlohmann::json {
+      for (auto& jr : json_data) {
+        // Get the latest or match version
+        if (auto tag = jr["tag_name"].get<std::string>(); tag == version) {
+          return jr;
+        }
+      }
+      return nlohmann::json();
+    };
+
+    if (version != "latest") {
+      body = get_data(body);
+    }
+    if (body.empty()) {
+      throw std::runtime_error("No release found for " + version);      
+    }
+
+    auto assets = body["assets"];
+    auto os_arch{system_info.os + "-" + system_info.arch};
+
+    std::vector<std::string> variants;
+    for (auto& asset : assets) {
+      auto asset_name = asset["name"].get<std::string>();
+      variants.push_back(asset_name);
+    }
+
+    auto cuda_driver_version = system_info_utils::GetCudaVersion();
+    CTL_INF("engine: " << engine);
+    CTL_INF("CUDA version: " << cuda_driver_version);
+    std::string matched_variant = "";
+
+    if (engine == "cortex.tensorrt-llm") {
+      matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
+          variants, system_info.os, cuda_driver_version);
+    } else if (engine == "cortex.onnx") {
+      matched_variant = engine_matcher_utils::ValidateOnnx(
+          variants, system_info.os, system_info.arch);
+    } else if (engine == "cortex.llamacpp") {
+      cortex::cpuid::CpuInfo cpu_info;
+      auto suitable_avx = engine_matcher_utils::GetSuitableAvxVariant(cpu_info);
+      matched_variant = engine_matcher_utils::Validate(
+          variants, system_info.os, system_info.arch, suitable_avx,
+          cuda_driver_version);
+    }
+    CTL_INF("Matched variant: " << matched_variant);
+    if (matched_variant.empty()) {
+      CTL_ERR("No variant found for " << os_arch);
+      throw std::runtime_error("No variant found for " + os_arch);
+    }
+
+    for (auto& asset : assets) {
+      auto assetName = asset["name"].get<std::string>();
+      if (assetName == matched_variant) {
+        auto download_url = asset["browser_download_url"].get<std::string>();
+        auto file_name = asset["name"].get<std::string>();
+        CTL_INF("Download url: " << download_url);
+
+        std::filesystem::path engine_folder_path =
+            file_manager_utils::GetContainerFolderPath(
+                file_manager_utils::DownloadTypeToString(
+                    DownloadType::Engine)) /
+            engine;
+
+        if (!std::filesystem::exists(engine_folder_path)) {
+          CTL_INF("Creating " << engine_folder_path.string());
+          std::filesystem::create_directories(engine_folder_path);
+        }
+
+        CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
+        auto local_path = engine_folder_path / file_name;
+        auto downloadTask{DownloadTask{.id = engine,
+                                       .type = DownloadType::Engine,
+                                       .items = {DownloadItem{
+                                           .id = engine,
+                                           .downloadUrl = download_url,
+                                           .localPath = local_path,
+                                       }}}};
+
+        DownloadService download_service;
+        download_service.AddDownloadTask(
+            downloadTask, [](const DownloadTask& finishedTask) {
+              // try to unzip the downloaded file
+              CTL_INF("Engine zip path: "
+                      << finishedTask.items[0].localPath.string());
+
+              std::filesystem::path extract_path =
+                  finishedTask.items[0].localPath.parent_path().parent_path();
+
+              archive_utils::ExtractArchive(
+                  finishedTask.items[0].localPath.string(),
+                  extract_path.string());
+
+              // remove the downloaded file
+              try {
+                std::filesystem::remove(finishedTask.items[0].localPath);
+              } catch (const std::exception& e) {
+                CTL_WRN("Could not delete file: " << e.what());
+              }
+              CTL_INF("Finished!");
+            });
+        if (system_info.os == "mac" || engine == "cortex.onnx") {
+          // mac and onnx engine does not require cuda toolkit
+          return;
+        }
+
+        if (cuda_driver_version.empty()) {
+          CTL_WRN("No cuda driver, continue with CPU");
+          return;
+        }
+
+        // download cuda toolkit
+        const std::string jan_host = "https://catalog.jan.ai";
+        const std::string cuda_toolkit_file_name = "cuda.tar.gz";
+        const std::string download_id = "cuda";
+
+        // TODO: we don't have API to retrieve list of cuda toolkit dependencies atm because we hosting it at jan
+        //  will have better logic after https://github.com/janhq/cortex/issues/1046 finished
+        // for now, assume that we have only 11.7 and 12.4
+        auto suitable_toolkit_version = "";
+        if (engine == "cortex.tensorrt-llm") {
+          // for tensorrt-llm, we need to download cuda toolkit v12.4
+          suitable_toolkit_version = "12.4";
+        } else {
+          // llamacpp
+          auto cuda_driver_semver =
+              semantic_version_utils::SplitVersion(cuda_driver_version);
+          if (cuda_driver_semver.major == 11) {
+            suitable_toolkit_version = "11.7";
+          } else if (cuda_driver_semver.major == 12) {
+            suitable_toolkit_version = "12.4";
+          }
+        }
+
+        // compare cuda driver version with cuda toolkit version
+        // cuda driver version should be greater than toolkit version to ensure compatibility
+        if (semantic_version_utils::CompareSemanticVersion(
+                cuda_driver_version, suitable_toolkit_version) < 0) {
+          CTL_ERR("Your Cuda driver version "
+                  << cuda_driver_version
+                  << " is not compatible with cuda toolkit version "
+                  << suitable_toolkit_version);
+          throw std::runtime_error(
+              "Cuda driver is not compatible with cuda toolkit");
+        }
+
+        std::ostringstream cuda_toolkit_url;
+        cuda_toolkit_url << jan_host << "/" << "dist/cuda-dependencies/"
+                         << cuda_driver_version << "/" << system_info.os << "/"
+                         << cuda_toolkit_file_name;
+
+        LOG_DEBUG << "Cuda toolkit download url: " << cuda_toolkit_url.str();
+        auto cuda_toolkit_local_path =
+            file_manager_utils::GetContainerFolderPath(
+                file_manager_utils::DownloadTypeToString(
+                    DownloadType::CudaToolkit)) /
+            cuda_toolkit_file_name;
+        LOG_DEBUG << "Download to: " << cuda_toolkit_local_path.string();
+        auto downloadCudaToolkitTask{DownloadTask{
+            .id = download_id,
+            .type = DownloadType::CudaToolkit,
+            .items = {DownloadItem{.id = download_id,
+                                   .downloadUrl = cuda_toolkit_url.str(),
+                                   .localPath = cuda_toolkit_local_path}},
+        }};
+
+        download_service.AddDownloadTask(
+            downloadCudaToolkitTask, [&](const DownloadTask& finishedTask) {
+              auto engine_path =
+                  file_manager_utils::GetEnginesContainerPath() / engine;
+              archive_utils::ExtractArchive(
+                  finishedTask.items[0].localPath.string(),
+                  engine_path.string());
+
+              try {
+                std::filesystem::remove(finishedTask.items[0].localPath);
+              } catch (std::exception& e) {
+                CTL_ERR("Error removing downloaded file: " << e.what());
+              }
+            });
+        return;
+      }
+    }
+  } else {
+    throw std::runtime_error("Failed to fetch engine release: " + engine);
+  }
 }
 
 void EngineService::UninstallEngine(const std::string& engine) {

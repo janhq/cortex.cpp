@@ -62,7 +62,7 @@ class DownloadService {
       std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
 
   /**
-   * Getting file size for a provided url.
+   * Getting file size for a provided url. Can be used to validating the download url.
    *
    * @param url - url to get file size
    */

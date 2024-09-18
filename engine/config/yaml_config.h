@@ -1,13 +1,11 @@
 #pragma once
-#include <cmath>
+
 #include <ctime>
-#include <fstream>
-#include <iostream>
-#include <limits>
 #include <string>
 
-#include "yaml-cpp/yaml.h"
 #include "model_config.h"
+#include "yaml-cpp/yaml.h"
+
 namespace config {
 class YamlHandler {
  private:
@@ -29,4 +27,4 @@ class YamlHandler {
   // Method to write all attributes to a YAML file
   void WriteYamlFile(const std::string& file_path) const;
 };
-}
+}  // namespace config

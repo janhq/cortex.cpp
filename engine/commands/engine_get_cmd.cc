@@ -6,22 +6,17 @@
 
 namespace commands {
 
-void EngineGetCmd::Exec() const {
-  CTL_INF("[EngineGetCmd] engine: " << engine_);
-
-  auto engine_service = EngineService();
-  try {
-    auto status = engine_service.GetEngineInfo(engine_);
-    tabulate::Table table;
-    table.add_row({"Name", "Supported Formats", "Version", "Status"});
-    table.add_row(
-        {status.product_name, status.format, status.version, status.status});
-    std::cout << table << std::endl;
-  } catch (const std::runtime_error& e) {
-    std::cerr << "Engine " << engine_ << " is not supported!" << "\n";
-  } catch (const std::exception& e) {
-    std::cerr << "Failed to get engine info for " << engine_ << ": " << e.what()
-              << "\n";
+void EngineGetCmd::Exec(const std::string& engine_name) const {
+  auto engine = engine_service_.GetEngineInfo(engine_name);
+  if (engine == std::nullopt) {
+    CLI_LOG("Engine " + engine_name + " is not supported!");
+    return;
   }
+
+  tabulate::Table table;
+  table.add_row({"Name", "Supported Formats", "Version", "Status"});
+  table.add_row(
+      {engine->product_name, engine->format, engine->version, engine->status});
+  std::cout << table << std::endl;
 }
 };  // namespace commands
