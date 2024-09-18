@@ -24,9 +24,8 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       std::vector<std::string> v;
       if (yaml_node_["engine"] &&
           yaml_node_["engine"].as<std::string>() == "cortex.llamacpp") {
-            // TODO: change prefix to models:// with source from cortexso
-        v.emplace_back(s.substr(0, s.find_last_of('/')) +
-                       "/model.gguf");
+        // TODO: change prefix to models:// with source from cortexso
+        v.emplace_back(s.substr(0, s.find_last_of('/')) + "/model.gguf");
       } else {
         v.emplace_back(s.substr(0, s.find_last_of('/')));
       }
@@ -38,7 +37,6 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
     std::cerr << "Failed to read file: " << e.what() << std::endl;
     throw;
   }
-  ModelConfigFromYaml();
 }
 void YamlHandler::SplitPromptTemplate(ModelConfig& mc) {
   if (mc.prompt_template.size() > 0) {
@@ -287,6 +285,8 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
 
     // Write GENERAL GGUF METADATA
     outFile << "# BEGIN GENERAL GGUF METADATA\n";
+    writeKeyValue("id", yaml_node_["id"],
+                  "Model ID unique between models (author / quantization)");
     writeKeyValue("model", yaml_node_["model"],
                   "Model ID which is used for request construct - should be "
                   "unique between models (author / quantization)");
