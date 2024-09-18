@@ -83,26 +83,27 @@ To install Cortex.cpp, download the installer for your operating system from the
 ## Quickstart
 ### CLI
 ```bash
-# Start the Cortex.cpp server (The server is running at localhost:3928)
+# 1. Start the Cortex.cpp server (The server is running at localhost:3928)
 cortex
 
-# Start a model
+# 2. Start a model
 cortex run <model_id>:[engine_name]
 
-# Stop a model
+# 3. Stop a model
 cortex stop <model_id>:[engine_name]
 
-# Stop the Cortex.cpp server
+# 4. Stop the Cortex.cpp server
 cortex stop 
 ```
 ### API
-**Pull a Model**
+1.  Start the API server using `cortex` command.
+2. **Pull a Model**
 ```bash
 curl --request POST \
   --url http://localhost:3928/v1/models/{model_id}/pull
 ```
 
-**Start a Model**
+3. **Start a Model**
 ```bash
 curl --request POST \
   --url http://localhost:3928/v1/models/{model_id}/start \
@@ -125,7 +126,7 @@ curl --request POST \
 }'
 ```
 
-**Chat with a Model**
+4. **Chat with a Model**
 ```bash
 curl http://localhost:3928/v1/chat/completions \
 -H "Content-Type: application/json" \
@@ -150,16 +151,17 @@ curl http://localhost:3928/v1/chat/completions \
 }'
 ```
 
-**Stop a Model**
+5. **Stop a Model**
 ```bash
 curl --request POST \
   --url http://localhost:3928/v1/models/mistral/stop
 ```
+6. Stop the Cortex.cpp server using `cortex stop` command.
 > **Note**:
 > Our API server is fully compatible with the OpenAI API, making it easy to integrate with any systems or tools that support OpenAI-compatible APIs.
 
 ## Built-in Model Library
-Cortex.cpp supports a list of models available on [Cortex Hub](https://huggingface.co/cortexso).
+Cortex.cpp supports various models available on the [Cortex Hub](https://huggingface.co/cortexso). Once downloaded, all model source files will be stored at `C:\Users\<username>\AppData\Local\cortexcpp\models`.
 
 Here are example of models that you can use based on each supported engine:
 
@@ -182,7 +184,7 @@ Here are example of models that you can use based on each supported engine:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
 ## Cortex.cpp CLI Commands
-For comprehensive details on CLI commands, please refer to the [CLI Reference documentation](https://cortex.so/docs/cli).
+For complete details on CLI commands, please refer to our [CLI documentation](https://cortex.so/docs/cli).
 
 ## REST API
 Cortex.cpp includes a REST API accessible at `localhost:3928`. For a complete list of endpoints and their usage, visit our [API documentation](https://cortex.so/api-reference).
