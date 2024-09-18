@@ -6,8 +6,11 @@
 #include <regex>
 #include <sstream>
 #include <stdexcept>
+#include "file_manager_utils.h"
 namespace modellist_utils {
-const std::string ModelListUtils::kModelListPath = "model.list";
+const std::string ModelListUtils::kModelListPath =
+    file_manager_utils::GetModelsContainerPath() /
+    std::filesystem::path("model.list");
 
 std::vector<ModelEntry> ModelListUtils::LoadModelList() const {
   std::vector<ModelEntry> entries;
