@@ -13,6 +13,7 @@
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/run_cmd.h"
+#include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
@@ -174,6 +175,21 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
   }
 
+  auto start_cmd = app_.add_subcommand("start", "Start the API server");
+  int port = std::stoi(config.apiServerPort);
+  start_cmd->add_option("-p, --port", port, "Server port to listen");
+  start_cmd->callback([&config, &port] {
+    if (port != stoi(config.apiServerPort)) {
+      CTL_INF("apiServerPort changed from " << config.apiServerPort << " to "
+                                            << port);
+      auto config_path = file_manager_utils::GetConfigurationPath();
+      config.apiServerPort = std::to_string(port);
+      config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    }
+    commands::ServerStartCmd ssc;
+    ssc.Exec(config.apiServerHost, std::stoi(config.apiServerPort));
+  });
+
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
   stop_cmd->callback([&config] {
@@ -208,6 +224,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   }
 
   CLI11_PARSE(app_, argc, argv);
+  if (argc == 1) {
+    CLI_LOG(app_.help());
+    return true;
+  }
 
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
