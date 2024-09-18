@@ -9,8 +9,9 @@
 #include "file_manager_utils.h"
 namespace modellist_utils {
 const std::string ModelListUtils::kModelListPath =
-    file_manager_utils::GetModelsContainerPath() /
-    std::filesystem::path("model.list");
+    (file_manager_utils::GetModelsContainerPath() /
+     std::filesystem::path("model.list"))
+        .string();
 
 std::vector<ModelEntry> ModelListUtils::LoadModelList() const {
   std::vector<ModelEntry> entries;
