@@ -76,16 +76,42 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 void EngineService::InstallEngine(const std::string& engine,
                                   const std::string& version) {
   auto system_info = system_info_utils::GetSystemInfo();
+  auto get_params = [&engine, &version]() -> std::vector<std::string> {
+    if (version == "latest") {
+      return {"repos", "janhq", engine, "releases", version};
+    } else {
+      return {"repos", "janhq", engine, "releases"};
+    }
+  };
+
   auto url_obj = url_parser::Url{
       .protocol = "https",
       .host = "api.github.com",
-      .pathParams = {"repos", "janhq", engine, "releases", version},
+      .pathParams = get_params(),
   };
 
   httplib::Client cli(url_obj.GetProtocolAndHost());
   if (auto res = cli.Get(url_obj.GetPathAndQuery());
       res->status == httplib::StatusCode::OK_200) {
     auto body = json::parse(res->body);
+    auto get_data =
+        [&version](const nlohmann::json& json_data) -> nlohmann::json {
+      for (auto& jr : json_data) {
+        // Get the latest or match version
+        if (auto tag = jr["tag_name"].get<std::string>(); tag == version) {
+          return jr;
+        }
+      }
+      return nlohmann::json();
+    };
+
+    if (version != "latest") {
+      body = get_data(body);
+    }
+    if (body.empty()) {
+      throw std::runtime_error("No release found for " + version);      
+    }
+
     auto assets = body["assets"];
     auto os_arch{system_info.os + "-" + system_info.arch};
 
