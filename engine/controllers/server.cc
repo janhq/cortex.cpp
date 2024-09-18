@@ -1,14 +1,9 @@
 #include "server.h"
 
-#include <chrono>
-#include <fstream>
-#include <iostream>
-
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/file_manager_utils.h"
-#include "utils/logging_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
