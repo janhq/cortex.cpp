@@ -13,6 +13,7 @@
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/run_cmd.h"
+#include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
 #include "config/yaml_config.h"
 #include "services/engine_service.h"
@@ -78,11 +79,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     {
       auto model_pull_cmd =
-          app_.add_subcommand("pull",
-                              "Download a model from a registry. Working with "
-                              "HuggingFace repositories. For available models, "
-                              "please visit https://huggingface.co/cortexso");
-      model_pull_cmd->add_option("model_id", model_id, "");
+        app_.add_subcommand("pull",
+                            "Download a model by URL (or HuggingFace ID) "
+                            "See built-in models: https://huggingface.co/cortexso");
+    model_pull_cmd->add_option("model_id", model_id, "");
       model_pull_cmd->callback([&model_id]() {
         try {
           commands::ModelPullCmd().Exec(model_id);
@@ -108,7 +108,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   std::string msg;
   {
     auto chat_cmd =
-        app_.add_subcommand("chat", "Send a chat request to a model");
+        app_.add_subcommand("chat", "Send a chat completion request");
 
     chat_cmd->add_option("model_id", model_id, "");
     chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
@@ -174,6 +174,21 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
   }
 
+  auto start_cmd = app_.add_subcommand("start", "Start the API server");
+  int port = std::stoi(config.apiServerPort);
+  start_cmd->add_option("-p, --port", port, "Server port to listen");
+  start_cmd->callback([&config, &port] {
+    if (port != stoi(config.apiServerPort)) {
+      CTL_INF("apiServerPort changed from " << config.apiServerPort << " to "
+                                            << port);
+      auto config_path = file_manager_utils::GetConfigurationPath();
+      config.apiServerPort = std::to_string(port);
+      config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    }
+    commands::ServerStartCmd ssc;
+    ssc.Exec(config.apiServerHost, std::stoi(config.apiServerPort));
+  });
+
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
 
   stop_cmd->callback([&config] {
@@ -208,6 +223,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   }
 
   CLI11_PARSE(app_, argc, argv);
+  if (argc == 1) {
+    CLI_LOG(app_.help());
+    return true;
+  }
 
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
