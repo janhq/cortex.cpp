@@ -79,11 +79,10 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
     {
       auto model_pull_cmd =
-          app_.add_subcommand("pull",
-                              "Download a model from a registry. Working with "
-                              "HuggingFace repositories. For available models, "
-                              "please visit https://huggingface.co/cortexso");
-      model_pull_cmd->add_option("model_id", model_id, "");
+        app_.add_subcommand("pull",
+                            "Download a model by URL (or HuggingFace ID) "
+                            "See built-in models: https://huggingface.co/cortexso");
+    model_pull_cmd->add_option("model_id", model_id, "");
       model_pull_cmd->callback([&model_id]() {
         try {
           commands::ModelPullCmd().Exec(model_id);
@@ -109,7 +108,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   std::string msg;
   {
     auto chat_cmd =
-        app_.add_subcommand("chat", "Send a chat request to a model");
+        app_.add_subcommand("chat", "Send a chat completion request");
 
     chat_cmd->add_option("model_id", model_id, "");
     chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
