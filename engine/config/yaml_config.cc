@@ -24,7 +24,9 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       std::vector<std::string> v;
       if (yaml_node_["engine"] &&
           yaml_node_["engine"].as<std::string>() == "cortex.llamacpp") {
-        v.emplace_back(s.substr(0, s.find_last_of('/')) + "/model.gguf");
+            // TODO: change prefix to models:// with source from cortexso
+        v.emplace_back(s.substr(0, s.find_last_of('/')) +
+                       "/model.gguf");
       } else {
         v.emplace_back(s.substr(0, s.find_last_of('/')));
       }
@@ -119,6 +121,41 @@ void YamlHandler::ModelConfigFromYaml() {
       tmp.files = yaml_node_["files"].as<std::vector<std::string>>();
     if (yaml_node_["created"])
       tmp.created = yaml_node_["created"].as<std::size_t>();
+
+    if (yaml_node_["seed"])
+      tmp.seed = yaml_node_["seed"].as<int>();
+    if (yaml_node_["dynatemp_range"])
+      tmp.dynatemp_range = yaml_node_["dynatemp_range"].as<float>();
+    if (yaml_node_["dynatemp_exponent"])
+      tmp.dynatemp_exponent = yaml_node_["dynatemp_exponent"].as<float>();
+    if (yaml_node_["top_k"])
+      tmp.top_k = yaml_node_["top_k"].as<int>();
+    if (yaml_node_["min_p"])
+      tmp.min_p = yaml_node_["min_p"].as<float>();
+    if (yaml_node_["tfs_z"])
+      tmp.tfs_z = yaml_node_["tfs_z"].as<float>();
+    if (yaml_node_["typ_p"])
+      tmp.typ_p = yaml_node_["typ_p"].as<float>();
+    if (yaml_node_["repeat_last_n"])
+      tmp.repeat_last_n = yaml_node_["repeat_last_n"].as<int>();
+    if (yaml_node_["repeat_penalty"])
+      tmp.repeat_penalty = yaml_node_["repeat_penalty"].as<float>();
+    if (yaml_node_["mirostat"])
+      tmp.mirostat = yaml_node_["mirostat"].as<bool>();
+    if (yaml_node_["mirostat_tau"])
+      tmp.mirostat_tau = yaml_node_["mirostat_tau"].as<float>();
+    if (yaml_node_["mirostat_eta"])
+      tmp.mirostat_eta = yaml_node_["mirostat_eta"].as<float>();
+    if (yaml_node_["penalize_nl"])
+      tmp.penalize_nl = yaml_node_["penalize_nl"].as<bool>();
+    if (yaml_node_["ignore_eos"])
+      tmp.ignore_eos = yaml_node_["ignore_eos"].as<bool>();
+    if (yaml_node_["n_probs"])
+      tmp.n_probs = yaml_node_["n_probs"].as<int>();
+    if (yaml_node_["min_keep"])
+      tmp.min_keep = yaml_node_["min_keep"].as<int>();
+    if (yaml_node_["grammar"])
+      tmp.grammar = yaml_node_["grammar"].as<std::string>();
   } catch (const std::exception& e) {
     std::cerr << "Error when load model config : " << e.what() << std::endl;
     std::cerr << "Revert ..." << std::endl;
@@ -185,6 +222,42 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
       yaml_node_["stop"] = model_config_.stop;
     if (model_config_.files.size() > 0)
       yaml_node_["files"] = model_config_.files;
+
+    if (!std::isnan(static_cast<double>(model_config_.seed)))
+      yaml_node_["seed"] = model_config_.seed;
+    if (!std::isnan(model_config_.dynatemp_range))
+      yaml_node_["dynatemp_range"] = model_config_.dynatemp_range;
+    if (!std::isnan(model_config_.dynatemp_exponent))
+      yaml_node_["dynatemp_exponent"] = model_config_.dynatemp_exponent;
+    if (!std::isnan(static_cast<double>(model_config_.top_k)))
+      yaml_node_["top_k"] = model_config_.top_k;
+    if (!std::isnan(model_config_.min_p))
+      yaml_node_["min_p"] = model_config_.min_p;
+    if (!std::isnan(model_config_.tfs_z))
+      yaml_node_["tfs_z"] = model_config_.tfs_z;
+    if (!std::isnan(model_config_.typ_p))
+      yaml_node_["typ_p"] = model_config_.typ_p;
+    if (!std::isnan(static_cast<double>(model_config_.repeat_last_n)))
+      yaml_node_["repeat_last_n"] = model_config_.repeat_last_n;
+    if (!std::isnan(model_config_.repeat_penalty))
+      yaml_node_["repeat_penalty"] = model_config_.repeat_penalty;
+    if (!std::isnan(static_cast<double>(model_config_.mirostat)))
+      yaml_node_["mirostat"] = model_config_.mirostat;
+    if (!std::isnan(model_config_.mirostat_tau))
+      yaml_node_["mirostat_tau"] = model_config_.mirostat_tau;
+    if (!std::isnan(model_config_.mirostat_eta))
+      yaml_node_["mirostat_eta"] = model_config_.mirostat_eta;
+    if (!std::isnan(static_cast<double>(model_config_.penalize_nl)))
+      yaml_node_["penalize_nl"] = model_config_.penalize_nl;
+    if (!std::isnan(static_cast<double>(model_config_.ignore_eos)))
+      yaml_node_["ignore_eos"] = model_config_.ignore_eos;
+    if (!std::isnan(static_cast<double>(model_config_.n_probs)))
+      yaml_node_["n_probs"] = model_config_.n_probs;
+    if (!std::isnan(static_cast<double>(model_config_.min_keep)))
+      yaml_node_["min_keep"] = model_config_.min_keep;
+    if (!model_config_.grammar.empty())
+      yaml_node_["grammar"] = model_config_.grammar;
+
     yaml_node_["created"] = std::time(nullptr);
   } catch (const std::exception& e) {
     std::cerr << "Error when update model config : " << e.what() << std::endl;
@@ -200,7 +273,95 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     if (!outFile) {
       throw std::runtime_error("Failed to open output file.");
     }
-    outFile << yaml_node_;
+    // Helper function to write a key-value pair with an optional comment
+    auto writeKeyValue = [&](const std::string& key, const YAML::Node& value,
+                             const std::string& comment = "") {
+      if (!value)
+        return;
+      outFile << key << ": " << value;
+      if (!comment.empty()) {
+        outFile << " # " << comment;
+      }
+      outFile << "\n";
+    };
+
+    // Write GENERAL GGUF METADATA
+    outFile << "# BEGIN GENERAL GGUF METADATA\n";
+    writeKeyValue("model", yaml_node_["model"],
+                  "Model ID which is used for request construct - should be "
+                  "unique between models (author / quantization)");
+    writeKeyValue("name", yaml_node_["name"], "metadata.general.name");
+    writeKeyValue("version", yaml_node_["version"], "metadata.version");
+    if (yaml_node_["files"] && yaml_node_["files"].size()) {
+      outFile << "files:             # can be universal protocol (models://) "
+                 "OR absolute local file path (file://) OR https remote URL "
+                 "(https://)\n";
+      for (const auto& source : yaml_node_["files"]) {
+        outFile << "  - " << source << "\n";
+      }
+    }
+
+    outFile << "# END GENERAL GGUF METADATA\n";
+    outFile << "\n";
+    // Write INFERENCE PARAMETERS
+    outFile << "# BEGIN INFERENCE PARAMETERS\n";
+    outFile << "# BEGIN REQUIRED\n";
+    if (yaml_node_["stop"] && yaml_node_["stop"].size()) {
+      outFile << "stop:                # tokenizer.ggml.eos_token_id\n";
+      for (const auto& stop : yaml_node_["stop"]) {
+        outFile << "  - " << stop << "\n";
+      }
+    }
+
+    outFile << "# END REQUIRED\n";
+    outFile << "\n";
+    outFile << "# BEGIN OPTIONAL\n";
+    writeKeyValue("stream", yaml_node_["stream"], "Default true?");
+    writeKeyValue("top_p", yaml_node_["top_p"], "Ranges: 0 to 1");
+    writeKeyValue("temperature", yaml_node_["temperature"], "Ranges: 0 to 1");
+    writeKeyValue("frequency_penalty", yaml_node_["frequency_penalty"],
+                  "Ranges: 0 to 1");
+    writeKeyValue("presence_penalty", yaml_node_["presence_penalty"],
+                  "Ranges: 0 to 1");
+    writeKeyValue("max_tokens", yaml_node_["max_tokens"],
+                  "Should be default to context length");
+    writeKeyValue("seed", yaml_node_["seed"]);
+    writeKeyValue("dynatemp_range", yaml_node_["dynatemp_range"]);
+    writeKeyValue("dynatemp_exponent", yaml_node_["dynatemp_exponent"]);
+    writeKeyValue("top_k", yaml_node_["top_k"]);
+    writeKeyValue("min_p", yaml_node_["min_p"]);
+    writeKeyValue("tfs_z", yaml_node_["tfs_z"]);
+    writeKeyValue("typ_p", yaml_node_["typ_p"]);
+    writeKeyValue("repeat_last_n", yaml_node_["repeat_last_n"]);
+    writeKeyValue("repeat_penalty", yaml_node_["repeat_penalty"]);
+    writeKeyValue("mirostat", yaml_node_["mirostat"]);
+    writeKeyValue("mirostat_tau", yaml_node_["mirostat_tau"]);
+    writeKeyValue("mirostat_eta", yaml_node_["mirostat_eta"]);
+    writeKeyValue("penalize_nl", yaml_node_["penalize_nl"]);
+    writeKeyValue("ignore_eos", yaml_node_["ignore_eos"]);
+    writeKeyValue("n_probs", yaml_node_["n_probs"]);
+    writeKeyValue("min_keep", yaml_node_["min_keep"]);
+    writeKeyValue("grammar", yaml_node_["grammar"]);
+    outFile << "# END OPTIONAL\n";
+    outFile << "# END INFERENCE PARAMETERS\n";
+    outFile << "\n";
+    // Write MODEL LOAD PARAMETERS
+    outFile << "# BEGIN MODEL LOAD PARAMETERS\n";
+    outFile << "# BEGIN REQUIRED\n";
+    writeKeyValue("engine", yaml_node_["engine"], "engine to run model");
+    outFile << "prompt_template:";
+    outFile << " " << yaml_node_["prompt_template"] << "\n";
+    outFile << "# END REQUIRED\n";
+    outFile << "\n";
+    outFile << "# BEGIN OPTIONAL\n";
+    writeKeyValue("ctx_len", yaml_node_["ctx_len"],
+                  "llama.context_length | 0 or undefined = loaded from model");
+    writeKeyValue("ngl", yaml_node_["ngl"], "Undefined = loaded from model");
+    outFile << "# END OPTIONAL\n";
+    outFile << "# END MODEL LOAD PARAMETERS\n";
+
+    // Write new configuration parameters
+
     outFile.close();
   } catch (const std::exception& e) {
     std::cerr << "Error writing to file: " << e.what() << std::endl;

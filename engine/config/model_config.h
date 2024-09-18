@@ -36,5 +36,23 @@ struct ModelConfig {
   std::size_t created;
   std::string object;
   std::string owned_by = "";
+
+  int seed = std::numeric_limits<int>::quiet_NaN();
+  float dynatemp_range = std::numeric_limits<float>::quiet_NaN();
+  float dynatemp_exponent = std::numeric_limits<float>::quiet_NaN();
+  int top_k = std::numeric_limits<int>::quiet_NaN();
+  float min_p = std::numeric_limits<float>::quiet_NaN();
+  float tfs_z = std::numeric_limits<float>::quiet_NaN();
+  float typ_p = std::numeric_limits<float>::quiet_NaN();
+  int repeat_last_n = std::numeric_limits<int>::quiet_NaN();
+  float repeat_penalty = std::numeric_limits<float>::quiet_NaN();
+  bool mirostat = std::numeric_limits<bool>::quiet_NaN();
+  float mirostat_tau = std::numeric_limits<float>::quiet_NaN();
+  float mirostat_eta = std::numeric_limits<float>::quiet_NaN();
+  bool penalize_nl = std::numeric_limits<bool>::quiet_NaN();
+  bool ignore_eos = std::numeric_limits<bool>::quiet_NaN();
+  int n_probs = std::numeric_limits<int>::quiet_NaN();
+  int min_keep = std::numeric_limits<int>::quiet_NaN();
+  std::string grammar;
 };
 }  // namespace config

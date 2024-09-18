@@ -321,11 +321,7 @@ void GGUFHandler::Parse(const std::string& file_path) {
     offset += value_byte_length;
     LOG_INFO << "-------------------------------------------- " << "\n";
   }
-  try {
-    PrintMetadata();
-  } catch (const std::exception& e) {
-    LOG_ERROR << "Error parsing metadata: " << e.what() << "\n";
-  }
+  //   PrintMetadata();
   ModelConfigFromMetadata();
   CloseFile();
 }
@@ -409,7 +405,23 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.created = std::time(nullptr);
   model_config_.model = "model";
   model_config_.owned_by = "";
-  model_config_.version;
+  model_config_.seed = -1;
+  model_config_.dynatemp_range = 0.0f;
+  model_config_.dynatemp_exponent = 1.0f;
+  model_config_.top_k = 40;
+  model_config_.min_p = 0.05f;
+  model_config_.tfs_z = 1.0f;
+  model_config_.typ_p = 1.0f;
+  model_config_.repeat_last_n = 64;
+  model_config_.repeat_penalty = 1.0f;
+  model_config_.mirostat = false;
+  model_config_.mirostat_tau = 5.0f;
+  model_config_.mirostat_eta = 0.1f;
+  model_config_.penalize_nl = false;
+  model_config_.ignore_eos = false;
+  model_config_.n_probs = 0;
+  model_config_.min_keep = 0;
+  model_config_.grammar = "";
 
   // Get version, bos, eos id, contex_len, ngl from meta data
   for (const auto& [key, value] : metadata_uint8_) {
@@ -522,7 +534,7 @@ void GGUFHandler::ModelConfigFromMetadata() {
   for (const auto& [key, value] : metadata_string_) {
     if (key.compare("general.name") == 0) {
       name = std::regex_replace(value, std::regex(" "), "-");
-    } else if (key.compare("tokenizer.chat_template") == 0) {
+    } else if (key.find("chat_template") != std::string::npos) {
       if (value.compare(ZEPHYR_JINJA) == 0) {
         chat_template =
             "<|system|>\n{system_message}</s>\n<|user|>\n{prompt}</"
@@ -569,7 +581,9 @@ void GGUFHandler::ModelConfigFromMetadata() {
   stop.push_back(std::move(eos_string));
 
   model_config_.stop = std::move(stop);
-
+  if (chat_template.empty())
+    chat_template =
+        "[INST] <<SYS>>\n{system_message}\n<</SYS>>\n{prompt}[/INST]";
   model_config_.prompt_template = std::move(chat_template);
   model_config_.name = name;
   model_config_.model = name;
