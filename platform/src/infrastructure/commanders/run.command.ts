@@ -32,7 +32,7 @@ type RunOptions = {
     model_id:
       'Model to run. If the model is not available, it will attempt to pull.',
   },
-  description: 'Shortcut to start a model and chat',
+  description: 'Shortcut: start a model and interactive chat shell',
 })
 export class RunCommand extends BaseCommand {
   chatClient: ChatClient;
