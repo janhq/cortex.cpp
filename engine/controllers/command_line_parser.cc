@@ -31,6 +31,7 @@ CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
+  app_.usage(commands::GetCortexBinary() + " [OPTIONS] [SUBCOMMAND]");
   auto config = file_manager_utils::GetCortexConfig();
   std::string model_id;
   std::string msg;
@@ -237,7 +238,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   auto ps_cmd =
       app_.add_subcommand("ps", "Show running models and their status");
   ps_cmd->group(kSystemGroup);
-
+  
   CLI11_PARSE(app_, argc, argv);
   if (argc == 1) {
     CLI_LOG(app_.help());
