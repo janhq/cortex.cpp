@@ -191,42 +191,24 @@ Cortex.cpp includes a REST API accessible at `localhost:3928`. For a complete li
 
 ## Uninstallation
 ### Windows
-To uninstall Cortex.cpp:
 1. Navigate to Add or Remove program.
 2. Search for Cortex.cpp.
 3. Click Uninstall.
 4. Delete the Cortex.cpp data folder located in your home folder.
 ### MacOs
-1. Open the Finder menu.
-2. Click the Applications option from the sidebar.
-3. Find the Jan app or type in the search bar.
-4. Use any of these ways to move the Jan app to the Trash:
-    - Drag the app to the Trash.
-    - Select the app and choose the Move to Trash option.
-    - Select the app and press Command-Delete on your keyboard.
-5. Use the following command to delete Jan's user data and app cache:
+Run the uninstaller script:
 ```bash
-# Remove all user data
-rm -rf ~/.cortexcpp<env>
-
-# Delete the application data
-rm -rf ~/.cortexrc<env>
+sudo sh cortex-uninstall.sh
 ```
-6. Delete the Cortex.cpp data folder located in your home folder.
+> **Note**:
+> The script requires sudo permission.
+
+
 ### Linux
-1. Uninstall using the following command:
-```sh
-# Uninstall Jan
-sudo apt-get remove cortexcpp
-
-# Remove all user data
-rm -rf ~/.cortexcpp<env>
-
-# Delete the application data
-rm -rf ~/.cortexrc<env>
-
+Run the uninstaller script:
+```bash
+sudo apt remove cortexcpp
 ```
-2. Delete the Cortex.cpp data folder located in your home folder.
 
 ## Alternate Installation
 We also provide Beta and Nightly version.
