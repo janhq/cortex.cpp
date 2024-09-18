@@ -29,7 +29,7 @@ type ChatOptions = {
 
 @SubCommand({
   name: 'chat',
-  description: 'Send a chat request to a model',
+  description: 'Send a chat completion request',
   arguments: '[model_id] [message]',
   argsDescription: {
     model_id:
