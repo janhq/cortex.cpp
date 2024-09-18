@@ -244,7 +244,10 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
                                       std::string& version) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
-  install_engine_cmd->callback([engine_name, version] {
+  install_engine_cmd->add_option("-v, --version", version,
+                                 "Engine version to download");
+
+  install_engine_cmd->callback([engine_name, &version] {
     try {
       commands::EngineInstallCmd().Exec(engine_name, version);
     } catch (const std::exception& e) {

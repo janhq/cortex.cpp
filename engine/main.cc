@@ -140,12 +140,12 @@ int main(int argc, char* argv[]) {
       verbose = true;
     }
   }
+  trantor::FileLogger asyncFileLogger;
   if (!verbose) {
     auto config = file_manager_utils::GetCortexConfig();
     std::filesystem::create_directories(
         std::filesystem::path(config.logFolderPath) /
         std::filesystem::path(cortex_utils::logs_folder));
-    trantor::FileLogger asyncFileLogger;
     asyncFileLogger.setFileName(config.logFolderPath + "/" +
                                 cortex_utils::logs_cli_base_name);
     asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
