@@ -1,7 +1,10 @@
 #include "model_start_cmd.h"
+#include "cortex_upd_cmd.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
+#include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -10,7 +13,15 @@ ModelStartCmd::ModelStartCmd(std::string host, int port,
     : host_(std::move(host)), port_(port), mc_(mc) {}
 
 bool ModelStartCmd::Exec() {
+  // Check if server is started
+  if (!commands::IsServerAlive(host_, port_)) {
+    CLI_LOG("Server is not started yet, please run `"
+            << commands::GetCortexBinary() << " start` to start server!");
+    return false;
+  }
+
   httplib::Client cli(host_ + ":" + std::to_string(port_));
+
   nlohmann::json json_data;
   if (mc_.files.size() > 0) {
     // TODO(sang) support multiple files
