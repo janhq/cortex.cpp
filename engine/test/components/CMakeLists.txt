@@ -3,13 +3,14 @@ project(test-components)
 
 enable_testing()
 
-add_executable(${PROJECT_NAME} ${SRCS} ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/modellist_utils.cc)
+add_executable(${PROJECT_NAME} ${SRCS} ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/modellist_utils.cc ${CMAKE_CURRENT_SOURCE_DIR}/../../config/yaml_config.cc ${CMAKE_CURRENT_SOURCE_DIR}/../../config/gguf_parser.cc)
 
 find_package(Drogon CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
+find_package(jinja2cpp CONFIG REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gtest_main yaml-cpp::yaml-cpp
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gtest_main yaml-cpp::yaml-cpp jinja2cpp
                                               ${CMAKE_THREAD_LIBS_INIT})
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
