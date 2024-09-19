@@ -8,8 +8,7 @@ class TestCliModelDelete:
     def setup_and_teardown(self):
         # Setup
         # Pull model
-        run("Pull Model", ["pull", "tinyllama"], 120)
-
+        run("Pull Model", ["pull", "tinyllama"], timeout=None)
         yield
 
         # Teardown

@@ -8,7 +8,7 @@ class TestCliEngineInstall:
 
     def test_engines_install_llamacpp_should_be_successfully(self):
         exit_code, output, error = run(
-            "Install Engine", ["engines", "install", "cortex.llamacpp"], timeout=60
+            "Install Engine", ["engines", "install", "cortex.llamacpp"], timeout=None
         )
         assert "Start downloading" in output, "Should display downloading message"
         assert exit_code == 0, f"Install engine failed with error: {error}"

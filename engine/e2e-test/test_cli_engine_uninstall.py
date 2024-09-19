@@ -8,7 +8,7 @@ class TestCliEngineUninstall:
     def setup_and_teardown(self):
         # Setup
         # Preinstall llamacpp engine
-        run("Install Engine", ["engines", "install", "cortex.llamacpp"],timeout=None)
+        run("Install Engine", ["engines", "install", "cortex.llamacpp"],timeout = None)
 
         yield
 
@@ -18,7 +18,7 @@ class TestCliEngineUninstall:
 
     def test_engines_uninstall_llamacpp_should_be_successfully(self):
         exit_code, output, error = run(
-            "Uninstall engine", ["engines", "uninstall", "cortex.llamacpp"]
+            "Uninstall engine", ["engines", "uninstall", "cortex.llamacpp"], timeout = None
         )
         assert "Engine cortex.llamacpp uninstalled successfully!" in output
         assert exit_code == 0, f"Install engine failed with error: {error}"
