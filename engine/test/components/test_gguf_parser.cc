@@ -17,17 +17,15 @@
 class GGUFParserTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        gguf_handler = new config::GGUFHandler();
-        yaml_handler = new config::YamlHandler();
+        gguf_handler = std::make_unique<config::GGUFHandler>();
+        yaml_handler = std::make_unique< config::YamlHandler>();
     }
 
     void TearDown() override {
-        delete gguf_handler;
-        delete yaml_handler;
     }
 
-    config::GGUFHandler* gguf_handler;
-    config::YamlHandler* yaml_handler;
+    std::unique_ptr<config::GGUFHandler> gguf_handler;
+    std::unique_ptr<config::YamlHandler> yaml_handler;
 
     std::string getTempFilePath(const std::string& prefix, const std::string& extension) {
     #ifdef _WIN32
