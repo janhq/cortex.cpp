@@ -105,6 +105,11 @@ jobs:
         run: |
           echo "{\"tag_name\": \"v${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
           aws s3 cp version.json s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/version.json
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-amd64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-arm64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-arm64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-amd64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
+
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
