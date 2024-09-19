@@ -109,7 +109,7 @@ void EngineService::InstallEngine(const std::string& engine,
       body = get_data(body);
     }
     if (body.empty()) {
-      throw std::runtime_error("No release found for " + version);      
+      throw std::runtime_error("No release found for " + version);
     }
 
     auto assets = body["assets"];
@@ -280,6 +280,89 @@ void EngineService::InstallEngine(const std::string& engine,
   } else {
     throw std::runtime_error("Failed to fetch engine release: " + engine);
   }
+}
+
+void EngineService::InstallLocalEngine(const std::string& engine,
+                                       const std::string& path) {
+  auto system_info = system_info_utils::GetSystemInfo();
+  std::string cuda_variant = "";
+  // Get CPU, GPU info
+  auto cuda_driver_version = system_info_utils::GetCudaVersion();
+  CTL_INF("engine: " << engine);
+  CTL_INF("CUDA version: " << cuda_driver_version);
+  std::string matched_variant = "";
+  if (engine == "cortex.tensorrt-llm") {
+    matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
+        variants, system_info.os, cuda_driver_version);
+  } else if (engine == "cortex.onnx") {
+    matched_variant = engine_matcher_utils::ValidateOnnx(
+        variants, system_info.os, system_info.arch);
+  } else if (engine == "cortex.llamacpp") {
+    cortex::cpuid::CpuInfo cpu_info;
+    auto suitable_avx = engine_matcher_utils::GetSuitableAvxVariant(cpu_info);
+    matched_variant = engine_matcher_utils::Validate(
+        variants, system_info.os, system_info.arch, suitable_avx,
+        cuda_driver_version);
+  }
+  CTL_INF("Matched variant: " << matched_variant);
+  if (matched_variant.empty()) {
+    CTL_ERR("No variant found for " << os_arch);
+    throw std::runtime_error("No variant found for " + os_arch);
+  }
+
+  if (engine == "cortex.tensorrt-llm") {
+    // for tensorrt-llm, we need to download cuda toolkit v12.4
+    cuda_variant = "cuda-12.4.tar.gz";
+  } else {
+    // llamacpp
+    auto cuda_driver_semver =
+        semantic_version_utils::SplitVersion(cuda_driver_version);
+    cuda_variant = "cuda-" + std::to_string(cuda_driver_semver.major) + "." +
+                   std::to_string(cuda_driver_semver.minor) + "tar.gz";
+  }
+
+  CTL_INF("Matched cuda variant: " << cuda_variant);
+  if (cuda_variant.empty()) {
+    CTL_ERR("No cuda variant found for " << engine);
+    throw std::runtime_error("No cuda variant found for " + engine);
+  }
+
+  // Check if folder exists
+  bool found_engine = false;
+  bool found_cuda = false;
+  if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
+    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
+      if (entry.is_regular_file() && entry.path().extension() == ".tar.gz") {
+        // Check if match engine binary
+        if (std::string filename = entry.path().stem().string();
+            filename == matched_variant) {
+          found_engine = true;
+          // extract binary
+          auto engine_path =
+              file_manager_utils::GetEnginesContainerPath() / engine;
+          archive_utils::ExtractArchive(path + "/" + filename,
+                                        engine_path.string());
+
+        } else if (std::string cf = entry.path().stem().string();
+                   cf == cuda_variant) {
+          found_cuda = true;
+          // extract binary
+          auto engine_path =
+              file_manager_utils::GetEnginesContainerPath() / engine;
+          archive_utils::ExtractArchive(path + "/" + cf,
+                                        engine_path.string());
+        }
+      }
+    }
+  } else {
+    // Folder does not exist, throw exception
+  }
+
+  // Not match, download from remote
+  if (!found_engine) {}
+
+  // Not match any cuda binary, download from remote
+  if (!found_cuda) {}
 }
 
 void EngineService::UninstallEngine(const std::string& engine) {

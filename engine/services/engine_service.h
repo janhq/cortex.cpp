@@ -30,5 +30,7 @@ class EngineService {
   void InstallEngine(const std::string& engine,
                      const std::string& version = "latest");
 
+  void InstallLocalEngine(const std::string& engine, const std::string& path);
+
   void UninstallEngine(const std::string& engine);
 };

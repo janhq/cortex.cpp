@@ -245,6 +245,9 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
 
   install_engine_cmd->add_option("-v, --version", version,
                                  "Engine version to download");
+  std::string source;
+  install_engine_cmd->add_option("-s, --source", source,
+                                 "Download engine by local path or remote url");
 
   install_engine_cmd->callback([engine_name, &version] {
     try {
