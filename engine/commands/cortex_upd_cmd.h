@@ -164,7 +164,15 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
 
     // Set owner and group of the executable file
     if (chown(dst.string().c_str(), dst_file_owner, dst_file_group) != 0) {
-      CTL_ERR("Error setting owner and group of executable file: " << dst.string());
+      CTL_ERR(
+          "Error setting owner and group of executable file: " << dst.string());
+      restore_binary();
+      return false;
+    }
+    
+    // Remove cortex_temp
+    if (unlink(temp.string().c_str()) != 0) {
+      CTL_ERR("Error deleting self: " << strerror(errno));
       restore_binary();
       return false;
     }
