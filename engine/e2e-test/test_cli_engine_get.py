@@ -52,5 +52,6 @@ class TestCliEngineGet:
     @pytest.mark.skipif(platform.system() != "Linux", reason="Linux-specific test")
     def test_engines_get_onnx_should_be_incompatible_on_linux(self):
         exit_code, output, error = run("Get engine", ["engines", "get", "cortex.onnx"])
+        print(output)
         assert exit_code == 0, f"Get engine failed with error: {error}"
         assert "Incompatible" in output, "cortex.onnx should be Incompatible on Linux"

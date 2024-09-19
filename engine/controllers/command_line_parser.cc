@@ -20,161 +20,175 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
+namespace {
+constexpr const auto kCommonCommandsGroup = "Common Commands";
+constexpr const auto kInferenceGroup = "Inference";
+constexpr const auto kModelsGroup = "Models";
+constexpr const auto kEngineGroup = "Engines";
+constexpr const auto kSystemGroup = "System";
+}  // namespace
 CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
+  app_.usage(commands::GetCortexBinary() + " [OPTIONS] [SUBCOMMAND]");
   auto config = file_manager_utils::GetCortexConfig();
   std::string model_id;
-
-  // Models group commands
-  {
-    auto models_cmd =
-        app_.add_subcommand("models", "Subcommands for managing models");
-
-    auto start_cmd = models_cmd->add_subcommand("start", "Start a model by ID");
-    start_cmd->add_option("model_id", model_id, "");
-    start_cmd->callback([&model_id, &config]() {
-      commands::CmdInfo ci(model_id);
-      std::string model_file =
-          ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-      config::YamlHandler yaml_handler;
-      yaml_handler.ModelConfigFromFile(
-          file_manager_utils::GetModelsContainerPath().string() + "/" +
-          model_file + ".yaml");
-      commands::ModelStartCmd msc(config.apiServerHost,
-                                  std::stoi(config.apiServerPort),
-                                  yaml_handler.GetModelConfig());
-      msc.Exec();
-    });
-
-    auto stop_model_cmd =
-        models_cmd->add_subcommand("stop", "Stop a model by ID");
-    stop_model_cmd->add_option("model_id", model_id, "");
-    stop_model_cmd->callback([&model_id, &config]() {
-      commands::CmdInfo ci(model_id);
-      std::string model_file =
-          ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-      config::YamlHandler yaml_handler;
-      yaml_handler.ModelConfigFromFile(
-          file_manager_utils::GetModelsContainerPath().string() + "/" +
-          model_file + ".yaml");
-      commands::ModelStopCmd smc(config.apiServerHost,
-                                 std::stoi(config.apiServerPort),
-                                 yaml_handler.GetModelConfig());
-      smc.Exec();
-    });
-
-    auto list_models_cmd =
-        models_cmd->add_subcommand("list", "List all models locally");
-    list_models_cmd->callback([]() { commands::ModelListCmd().Exec(); });
-
-    auto get_models_cmd =
-        models_cmd->add_subcommand("get", "Get info of {model_id} locally");
-    get_models_cmd->add_option("model_id", model_id, "");
-    get_models_cmd->callback([&model_id]() {
-      commands::ModelGetCmd command(model_id);
-      command.Exec();
-    });
-
-    {
-      auto model_pull_cmd =
-        app_.add_subcommand("pull",
-                            "Download a model by URL (or HuggingFace ID) "
-                            "See built-in models: https://huggingface.co/cortexso");
-    model_pull_cmd->add_option("model_id", model_id, "");
-      model_pull_cmd->callback([&model_id]() {
-        try {
-          commands::ModelPullCmd().Exec(model_id);
-        } catch (const std::exception& e) {
-          CLI_LOG(e.what());
-        }
-      });
-    }
-
-    auto model_del_cmd =
-        models_cmd->add_subcommand("delete", "Delete a model by ID locally");
-    model_del_cmd->add_option("model_id", model_id, "");
-
-    model_del_cmd->callback([&model_id]() {
-      commands::ModelDelCmd mdc;
-      mdc.Exec(model_id);
-    });
-
-    auto update_cmd =
-        models_cmd->add_subcommand("update", "Update configuration of a model");
-  }
-
   std::string msg;
-  {
-    auto chat_cmd =
-        app_.add_subcommand("chat", "Send a chat completion request");
 
-    chat_cmd->add_option("model_id", model_id, "");
-    chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
+  auto model_pull_cmd = app_.add_subcommand(
+      "pull",
+      "Download a model by URL (or HuggingFace ID) "
+      "See built-in models: https://huggingface.co/cortexso");
+  model_pull_cmd->group(kCommonCommandsGroup);
+  model_pull_cmd->add_option("model_id", model_id, "");
+  model_pull_cmd->require_option();
+  model_pull_cmd->callback([&model_id]() {
+    try {
+      commands::ModelPullCmd().Exec(model_id);
+    } catch (const std::exception& e) {
+      CLI_LOG(e.what());
+    }
+  });
 
-    chat_cmd->callback([&model_id, &msg, &config] {
-      commands::CmdInfo ci(model_id);
-      std::string model_file =
-          ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-      config::YamlHandler yaml_handler;
-      yaml_handler.ModelConfigFromFile(
-          file_manager_utils::GetModelsContainerPath().string() + "/" +
-          model_file + ".yaml");
-      commands::ChatCmd cc(config.apiServerHost,
-                           std::stoi(config.apiServerPort),
-                           yaml_handler.GetModelConfig());
-      cc.Exec(msg);
-    });
-  }
+  auto run_cmd =
+      app_.add_subcommand("run", "Shortcut to start a model and chat");
+  run_cmd->group(kCommonCommandsGroup);
+  run_cmd->add_option("model_id", model_id, "");
+  run_cmd->require_option();
+  run_cmd->callback([&model_id, &config] {
+    commands::RunCmd rc(config.apiServerHost, std::stoi(config.apiServerPort),
+                        model_id);
+    rc.Exec();
+  });
 
-  auto ps_cmd =
-      app_.add_subcommand("ps", "Show running models and their status");
+  auto chat_cmd = app_.add_subcommand("chat", "Send a chat completion request");
+  chat_cmd->group(kCommonCommandsGroup);
+  chat_cmd->add_option("model_id", model_id, "");
+  chat_cmd->require_option();
+  chat_cmd->add_option("-m,--message", msg, "Message to chat with model");
+  chat_cmd->callback([&model_id, &msg, &config] {
+    if (model_id.empty()) {
+      CLI_LOG("Please input [model_id] in command!");
+      return;
+    }
+    commands::CmdInfo ci(model_id);
+    std::string model_file =
+        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
+    config::YamlHandler yaml_handler;
+    yaml_handler.ModelConfigFromFile(
+        file_manager_utils::GetModelsContainerPath().string() + "/" +
+        model_file + ".yaml");
+    commands::ChatCmd cc(config.apiServerHost, std::stoi(config.apiServerPort),
+                         yaml_handler.GetModelConfig());
+    cc.Exec(msg);
+  });
 
   auto embeddings_cmd = app_.add_subcommand(
       "embeddings", "Creates an embedding vector representing the input text");
+  embeddings_cmd->group(kInferenceGroup);
+
+  // Models group commands
+  auto models_cmd =
+      app_.add_subcommand("models", "Subcommands for managing models");
+  models_cmd->group(kModelsGroup);
+  models_cmd->require_subcommand();
+
+  auto model_start_cmd =
+      models_cmd->add_subcommand("start", "Start a model by ID");
+  model_start_cmd->add_option("model_id", model_id, "");
+  model_start_cmd->require_option();
+  model_start_cmd->callback([&model_id, &config]() {
+    commands::CmdInfo ci(model_id);
+    std::string model_file =
+        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
+    config::YamlHandler yaml_handler;
+    yaml_handler.ModelConfigFromFile(
+        file_manager_utils::GetModelsContainerPath().string() + "/" +
+        model_file + ".yaml");
+    commands::ModelStartCmd msc(config.apiServerHost,
+                                std::stoi(config.apiServerPort),
+                                yaml_handler.GetModelConfig());
+    msc.Exec();
+  });
+
+  auto stop_model_cmd =
+      models_cmd->add_subcommand("stop", "Stop a model by ID");
+  stop_model_cmd->add_option("model_id", model_id, "");
+  stop_model_cmd->require_option();
+  stop_model_cmd->callback([&model_id, &config]() {
+    commands::CmdInfo ci(model_id);
+    std::string model_file =
+        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
+    config::YamlHandler yaml_handler;
+    yaml_handler.ModelConfigFromFile(
+        file_manager_utils::GetModelsContainerPath().string() + "/" +
+        model_file + ".yaml");
+    commands::ModelStopCmd smc(config.apiServerHost,
+                               std::stoi(config.apiServerPort),
+                               yaml_handler.GetModelConfig());
+    smc.Exec();
+  });
+
+  auto list_models_cmd =
+      models_cmd->add_subcommand("list", "List all models locally");
+  list_models_cmd->callback([]() { commands::ModelListCmd().Exec(); });
+
+  auto get_models_cmd =
+      models_cmd->add_subcommand("get", "Get info of {model_id} locally");
+  get_models_cmd->add_option("model_id", model_id, "");
+  get_models_cmd->require_option();
+  get_models_cmd->callback([&model_id]() {
+    commands::ModelGetCmd command(model_id);
+    command.Exec();
+  });
+
+  auto model_del_cmd =
+      models_cmd->add_subcommand("delete", "Delete a model by ID locally");
+  model_del_cmd->add_option("model_id", model_id, "");
+  model_del_cmd->require_option();
+  model_del_cmd->callback([&model_id]() {
+    commands::ModelDelCmd mdc;
+    mdc.Exec(model_id);
+  });
+
+  auto model_update_cmd =
+      models_cmd->add_subcommand("update", "Update configuration of a model");
 
   // Default version is latest
   std::string version{"latest"};
-  {  // engines group commands
-    auto engines_cmd = app_.add_subcommand("engines", "Get cortex engines");
-    auto list_engines_cmd =
-        engines_cmd->add_subcommand("list", "List all cortex engines");
-    list_engines_cmd->callback([]() {
-      commands::EngineListCmd command;
-      command.Exec();
-    });
+  // engines group commands
+  auto engines_cmd =
+      app_.add_subcommand("engines", "Subcommands for managing engines");
+  engines_cmd->group(kEngineGroup);
+  engines_cmd->require_subcommand();
 
-    auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
-    for (auto& engine : engine_service_.kSupportEngines) {
-      std::string engine_name{engine};
-      EngineInstall(install_cmd, engine_name, version);
-    }
+  auto list_engines_cmd =
+      engines_cmd->add_subcommand("list", "List all cortex engines");
+  list_engines_cmd->callback([]() {
+    commands::EngineListCmd command;
+    command.Exec();
+  });
 
-    auto uninstall_cmd =
-        engines_cmd->add_subcommand("uninstall", "Uninstall engine");
-    for (auto& engine : engine_service_.kSupportEngines) {
-      std::string engine_name{engine};
-      EngineUninstall(uninstall_cmd, engine_name);
-    }
-
-    EngineGet(engines_cmd);
+  auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
+  install_cmd->require_subcommand();
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineInstall(install_cmd, engine_name, version);
   }
 
-  {
-    // cortex run tinyllama:gguf
-    auto run_cmd =
-        app_.add_subcommand("run", "Shortcut to start a model and chat");
-    std::string model_id;
-    run_cmd->add_option("model_id", model_id, "");
-    run_cmd->callback([&model_id, &config] {
-      commands::RunCmd rc(config.apiServerHost, std::stoi(config.apiServerPort),
-                          model_id);
-      rc.Exec();
-    });
+  auto uninstall_cmd =
+      engines_cmd->add_subcommand("uninstall", "Uninstall engine");
+  uninstall_cmd->require_subcommand();
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineUninstall(uninstall_cmd, engine_name);
   }
+
+  EngineGet(engines_cmd);
 
   auto start_cmd = app_.add_subcommand("start", "Start the API server");
+  start_cmd->group(kSystemGroup);
   int port = std::stoi(config.apiServerPort);
   start_cmd->add_option("-p, --port", port, "Server port to listen");
   start_cmd->callback([&config, &port] {
@@ -190,7 +204,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
-
+  stop_cmd->group(kSystemGroup);
   stop_cmd->callback([&config] {
     commands::ServerStopCmd ssc(config.apiServerHost,
                                 std::stoi(config.apiServerPort));
@@ -211,17 +225,20 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   std::string cortex_version;
   bool check_update = true;
-  {
-    auto update_cmd = app_.add_subcommand("update", "Update cortex version");
 
-    update_cmd->add_option("-v", cortex_version, "");
-    update_cmd->callback([&cortex_version, &check_update] {
-      commands::CortexUpdCmd cuc;
-      cuc.Exec(cortex_version);
-      check_update = false;
-    });
-  }
+  auto update_cmd = app_.add_subcommand("update", "Update cortex version");
+  update_cmd->group(kSystemGroup);
+  update_cmd->add_option("-v", cortex_version, "");
+  update_cmd->callback([&cortex_version, &check_update] {
+    commands::CortexUpdCmd cuc;
+    cuc.Exec(cortex_version);
+    check_update = false;
+  });
 
+  auto ps_cmd =
+      app_.add_subcommand("ps", "Show running models and their status");
+  ps_cmd->group(kSystemGroup);
+  
   CLI11_PARSE(app_, argc, argv);
   if (argc == 1) {
     CLI_LOG(app_.help());
@@ -270,6 +287,7 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
 
 void CommandLineParser::EngineGet(CLI::App* parent) {
   auto get_cmd = parent->add_subcommand("get", "Get an engine info");
+  get_cmd->require_subcommand();
 
   for (auto& engine : engine_service_.kSupportEngines) {
     std::string engine_name{engine};
