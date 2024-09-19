@@ -2,13 +2,8 @@
 #include "chat_cmd.h"
 #include "cmd_info.h"
 #include "config/yaml_config.h"
-#include "engine_install_cmd.h"
-#include "httplib.h"
-#include "model_pull_cmd.h"
 #include "model_start_cmd.h"
 #include "server_start_cmd.h"
-#include "trantor/utils/Logger.h"
-#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 
 namespace commands {
@@ -46,7 +41,7 @@ void RunCmd::Exec() {
     if (!commands::IsServerAlive(host_, port_)) {
       CLI_LOG("Starting server ...");
       commands::ServerStartCmd ssc;
-      if(!ssc.Exec(host_, port_)) {
+      if (!ssc.Exec(host_, port_)) {
         return;
       }
     }

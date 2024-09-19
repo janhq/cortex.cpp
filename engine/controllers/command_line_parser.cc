@@ -139,10 +139,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       models_cmd->add_subcommand("get", "Get info of {model_id} locally");
   get_models_cmd->add_option("model_id", model_id, "");
   get_models_cmd->require_option();
-  get_models_cmd->callback([&model_id]() {
-    commands::ModelGetCmd command(model_id);
-    command.Exec();
-  });
+  get_models_cmd->callback(
+      [&model_id]() { commands::ModelGetCmd().Exec(model_id); });
 
   auto model_del_cmd =
       models_cmd->add_subcommand("delete", "Delete a model by ID locally");
