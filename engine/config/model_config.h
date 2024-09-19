@@ -36,5 +36,23 @@ struct ModelConfig {
   std::size_t created;
   std::string object;
   std::string owned_by = "";
+
+  int seed = -1;
+  float dynatemp_range = 0.0f;
+  float dynatemp_exponent = 1.0f;
+  int top_k = 40;
+  float min_p = 0.05f;
+  float tfs_z = 1.0f;
+  float typ_p = 1.0f;
+  int repeat_last_n = 64;
+  float repeat_penalty = 1.0f;
+  bool mirostat = false;
+  float mirostat_tau = 5.0f;
+  float mirostat_eta = 0.1f;
+  bool penalize_nl = false;
+  bool ignore_eos = false;
+  int n_probs = 0;
+  int min_keep = 0;
+  std::string grammar;
 };
 }  // namespace config

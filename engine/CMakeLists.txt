@@ -82,6 +82,7 @@ find_package(CURL REQUIRED)
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/modellist_utils.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)

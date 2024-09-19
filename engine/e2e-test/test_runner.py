@@ -38,6 +38,26 @@ def run(test_name: str, arguments: List[str], timeout=timeout) -> (int, str, str
     return result.returncode, result.stdout, result.stderr
 
 
+def popen(arguments: List[str], user_input: str) -> (int, str, str):
+    # Start the process
+    executable_path = getExecutablePath()
+    process = subprocess.Popen(
+        [executable_path] + arguments,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,  # This ensures the input and output are treated as text
+    )
+
+    # Send input and get output
+    stdout, stderr = process.communicate(input=user_input)
+
+    # Get the return code
+    return_code = process.returncode
+
+    return stdout, stderr, return_code
+
+
 # Start the API server
 # Wait for `Server started` message or failed
 def start_server() -> bool:
@@ -50,10 +70,10 @@ def start_server() -> bool:
 def start_server_nix() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        [executable] + ['start', '-p', '3928'], 
-        stdout=subprocess.PIPE, 
-        stderr=subprocess.PIPE, 
-        text=True
+        [executable] + ["start", "-p", "3928"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
     )
 
     start_time = time.time()
@@ -80,7 +100,7 @@ def start_server_nix() -> bool:
 def start_server_windows() -> bool:
     executable = getExecutablePath()
     process = subprocess.Popen(
-        [executable] + ['start', '-p', '3928'],
+        [executable] + ["start", "-p", "3928"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
