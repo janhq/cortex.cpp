@@ -34,4 +34,7 @@ class EngineI {
   virtual void GetModels(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  virtual bool SetFileLogger(int max_log_lines,
+                             const std::string& log_path) = 0;
 };
