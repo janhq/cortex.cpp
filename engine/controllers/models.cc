@@ -250,7 +250,7 @@ void Models::ImportModel(
 
   } catch (const std::exception& e) {
     std::remove(model_yaml_path.c_str());
-    std::string error_message = "Error importing model '" + modelPath +
+    std::string error_message = "Error importing model path '" + modelPath +
                                 "' with model_id '" + modelHandle +
                                 "': " + e.what();
     LOG_ERROR << error_message;

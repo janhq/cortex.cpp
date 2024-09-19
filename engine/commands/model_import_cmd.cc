@@ -31,7 +31,7 @@ void ModelImportCmd::Exec() {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     gguf_handler.Parse(model_path_);
-    config::ModelConfig model_config = gguf_handler.GetModelConfig();
+    auto model_config = gguf_handler.GetModelConfig();
     model_config.files.push_back(model_path_);
     model_config.name = model_handle_;
     yaml_handler.UpdateModelConfig(model_config);
@@ -46,9 +46,8 @@ void ModelImportCmd::Exec() {
 
   } catch (const std::exception& e) {
     std::remove(model_yaml_path.c_str());
-    throw std::runtime_error("Error importing model '" + model_path_ +
-                             "' with model_id '" + model_handle_ +
-                             "': " + e.what());
+    CLI_LOG("Error importing model path '" + model_path_ + "' with model_id '" +
+            model_handle_ + "': " + e.what());
   }
 }
 }  // namespace commands
