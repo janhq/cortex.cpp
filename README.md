@@ -205,7 +205,6 @@ sudo sh cortex-uninstall.sh
 
 
 ### Linux
-Run the uninstaller script:
 ```bash
 sudo apt remove cortexcpp
 ```
