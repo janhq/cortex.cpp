@@ -1,4 +1,5 @@
 import platform
+import tempfile
 
 import pytest
 from test_runner import run
@@ -36,3 +37,16 @@ class TestCliEngineInstall:
         assert "Start downloading" in output, "Should display downloading message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
+    def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
+        exit_code, output, error = run(
+            "Install Engine", ["engines", "install", "cortex.llamacpp", "-s", tempfile.gettempdir()], timeout=None
+        )
+        assert "Start downloading" in output, "Should display downloading message"
+        assert exit_code == 0, f"Install engine failed with error: {error}"
+        
+    def test_engines_should_not_perform_with_dummy_path(self):
+        exit_code, output, error = run(
+            "Install Engine", ["engines", "install", "cortex.llamacpp", "-s", "abcpod"], timeout=None
+        )
+        assert "Folder does not exist" in output, "Should display error"
+        assert exit_code == 0, f"Install engine failed with error: {error}"
