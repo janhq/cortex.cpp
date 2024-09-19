@@ -43,7 +43,11 @@ TEST_F(CortexUpdCmdTest, replace_binary_successfully) {
   std::filesystem::path new_binary(kNewReleaseFile);
   std::filesystem::path cur_binary(kCurReleaseFile);
   EXPECT_TRUE(commands::ReplaceBinaryInflight(new_binary, cur_binary));
+#if defined(__linux__)
+  EXPECT_FALSE(std::filesystem::exists(kCortexTemp));
+#else
   EXPECT_TRUE(std::filesystem::exists(kCortexTemp));
+#endif
 }
 
 TEST_F(CortexUpdCmdTest, should_restore_old_binary_if_has_error) {
