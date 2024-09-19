@@ -109,12 +109,7 @@ inline std::filesystem::path GetConfigurationPath() {
   return configuration_path;
 }
 
-inline void CreateConfigFileIfNotExist() {
-  auto config_path = GetConfigurationPath();
-  if (std::filesystem::exists(config_path)) {
-    // already exists
-    return;
-  }
+inline std::string GetDefaultDataFolderName() {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT "prod"
 #endif
@@ -128,6 +123,17 @@ inline void CreateConfigFileIfNotExist() {
     env_postfix.append("-").append(kNightlyVariant);
   }
   default_data_folder_name.append(env_postfix);
+  return default_data_folder_name;
+}
+
+inline void CreateConfigFileIfNotExist() {
+  auto config_path = GetConfigurationPath();
+  if (std::filesystem::exists(config_path)) {
+    // already exists
+    return;
+  }
+
+  auto default_data_folder_name = GetDefaultDataFolderName();
 
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto defaultDataFolderPath =
@@ -146,8 +152,18 @@ inline void CreateConfigFileIfNotExist() {
 
 inline config_yaml_utils::CortexConfig GetCortexConfig() {
   auto config_path = GetConfigurationPath();
-  std::string variant = "";  // TODO: empty for now
-  return config_yaml_utils::FromYaml(config_path.string(), variant);
+  auto default_data_folder_name = GetDefaultDataFolderName();
+  auto default_data_folder_path =
+      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
+  auto default_cfg = config_yaml_utils::CortexConfig{
+      .logFolderPath = default_data_folder_path.string(),
+      .dataFolderPath = default_data_folder_path.string(),
+      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
+      .apiServerHost = config_yaml_utils::kDefaultHost,
+      .apiServerPort = config_yaml_utils::kDefaultPort,
+  };
+
+  return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
 }
 
 inline std::filesystem::path GetCortexDataPath() {

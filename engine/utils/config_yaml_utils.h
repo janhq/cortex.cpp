@@ -45,7 +45,7 @@ inline void DumpYamlConfig(const CortexConfig& config,
 }
 
 inline CortexConfig FromYaml(const std::string& path,
-                             const std::string& variant) {
+                             const CortexConfig& default_cfg) {
   std::filesystem::path config_file_path{path};
   if (!std::filesystem::exists(config_file_path)) {
     throw std::runtime_error("File not found: " + path);
@@ -60,11 +60,20 @@ inline CortexConfig FromYaml(const std::string& path,
       max_lines = node["maxLogLines"].as<int>();
     }
     CortexConfig config = {
-        .logFolderPath = node["logFolderPath"].as<std::string>(),
-        .dataFolderPath = node["dataFolderPath"].as<std::string>(),
-        .maxLogLines = max_lines,
-        .apiServerHost = node["apiServerHost"].as<std::string>(),
-        .apiServerPort = node["apiServerPort"].as<std::string>(),
+        .logFolderPath = node["logFolderPath"]
+                             ? node["logFolderPath"].as<std::string>()
+                             : default_cfg.logFolderPath,
+        .dataFolderPath = node["dataFolderPath"]
+                              ? node["dataFolderPath"].as<std::string>()
+                              : default_cfg.dataFolderPath,
+        .maxLogLines = node["maxLogLines"] ? node["maxLogLines"].as<int>()
+                                           : default_cfg.maxLogLines,
+        .apiServerHost = node["apiServerHost"]
+                             ? node["apiServerHost"].as<std::string>()
+                             : default_cfg.apiServerHost,
+        .apiServerPort = node["apiServerPort"]
+                             ? node["apiServerPort"].as<std::string>()
+                             : default_cfg.apiServerPort,
     };
     return config;
   } catch (const YAML::BadFile& e) {
