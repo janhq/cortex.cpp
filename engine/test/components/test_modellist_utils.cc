@@ -89,3 +89,35 @@ TEST_F(ModelListUtilsTestSuite, TestPersistence) {
   EXPECT_EQ(retrieved_model.author_repo_id, kTestModel.author_repo_id);
   model_list_.DeleteModelEntry("test_model_id");
 }
+
+TEST_F(ModelListUtilsTestSuite, TestUpdateModelAlias) {
+  // Add the test model
+  ASSERT_TRUE(model_list_.AddModelEntry(kTestModel));
+
+  // Test successful update
+  EXPECT_TRUE(model_list_.UpdateModelAlias("test_model_id", "new_test_alias"));
+  auto updated_model = model_list_.GetModelInfo("new_test_alias");
+  EXPECT_EQ(updated_model.model_alias, "new_test_alias");
+  EXPECT_EQ(updated_model.model_id, "test_model_id");
+
+  // Test update with non-existent model
+  EXPECT_FALSE(model_list_.UpdateModelAlias("non_existent_model", "another_alias"));
+
+  // Test update with non-unique alias
+  modellist_utils::ModelEntry another_model = kTestModel;
+  another_model.model_id = "another_model_id";
+  another_model.model_alias = "another_alias";
+  ASSERT_TRUE(model_list_.AddModelEntry(another_model));
+
+  EXPECT_FALSE(model_list_.UpdateModelAlias("test_model_id", "another_alias"));
+
+  // Test update using model alias instead of model ID
+  EXPECT_TRUE(model_list_.UpdateModelAlias("new_test_alias", "final_test_alias"));
+  updated_model = model_list_.GetModelInfo("final_test_alias");
+  EXPECT_EQ(updated_model.model_alias, "final_test_alias");
+  EXPECT_EQ(updated_model.model_id, "test_model_id");
+
+  // Clean up
+  model_list_.DeleteModelEntry("test_model_id");
+  model_list_.DeleteModelEntry("another_model_id");
+}

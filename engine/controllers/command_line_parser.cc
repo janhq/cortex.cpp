@@ -6,6 +6,7 @@
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
+#include "commands/model_alias_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_list_cmd.h"
@@ -152,6 +153,18 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     mdc.Exec(model_id);
   });
 
+  std::string model_alias;
+  auto model_alias_cmd =
+      models_cmd->add_subcommand("alias", "Add alias name for a modelID");
+  model_alias_cmd->add_option("--model_id", model_id, "");
+  model_alias_cmd->require_option();
+  model_alias_cmd->add_option("--model_alias", model_alias, "");
+  model_alias_cmd->require_option();
+  model_alias_cmd->callback([&model_id, &model_alias]() {
+    commands::ModelAliasCmd mdc;
+    mdc.Exec(model_id, model_alias);
+  });
+
   auto model_update_cmd =
       models_cmd->add_subcommand("update", "Update configuration of a model");
 
@@ -238,7 +251,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   auto ps_cmd =
       app_.add_subcommand("ps", "Show running models and their status");
   ps_cmd->group(kSystemGroup);
-  
+
   CLI11_PARSE(app_, argc, argv);
   if (argc == 1) {
     CLI_LOG(app_.help());

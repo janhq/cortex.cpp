@@ -198,6 +198,28 @@ bool ModelListUtils::UpdateModelEntry(const std::string& identifier,
   return false;  // Entry not found
 }
 
+bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
+                                      const std::string& new_model_alias) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto entries = LoadModelList();
+  auto it = std::find_if(
+      entries.begin(), entries.end(), [&model_id](const ModelEntry& entry) {
+        return entry.model_id == model_id || entry.model_alias == model_id;
+      });
+  bool check_alias_unique = std::none_of(
+      entries.begin(), entries.end(), [&](const ModelEntry& entry) {
+        return entry.model_id == new_model_alias ||
+               entry.model_alias == new_model_alias;
+      });
+  if (it != entries.end() && check_alias_unique) {
+
+    (*it).model_alias = new_model_alias;
+    SaveModelList(entries);
+    return true;
+  }
+  return false;  // Entry not found
+}
+
 bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
   std::lock_guard<std::mutex> lock(mutex_);
   auto entries = LoadModelList();
