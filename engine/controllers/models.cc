@@ -5,11 +5,11 @@
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/model_callback_utils.h"
+#include "utils/modellist_utils.h"
 
-    void
-    Models::PullModel(
-        const HttpRequestPtr& req,
-        std::function<void(const HttpResponsePtr&)>&& callback) const {
+void Models::PullModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
   if (!http_util::HasFieldInReq(req, callback, "modelId")) {
     return;
   }
@@ -190,6 +190,76 @@ void Models::DeleteModel(const HttpRequestPtr& req,
     ret["modelHandle"] = model_id;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k404NotFound);
+    callback(resp);
+  }
+}
+
+void Models::ImportModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  if (!http_util::HasFieldInReq(req, callback, "modelId") ||
+      !http_util::HasFieldInReq(req, callback, "modelPath")) {
+    return;
+  }
+  auto modelHandle = (*(req->getJsonObject())).get("modelId", "").asString();
+  auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
+  config::GGUFHandler gguf_handler;
+  config::YamlHandler yaml_handler;
+  modellist_utils::ModelListUtils modellist_utils_obj;
+
+  std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
+                                 std::filesystem::path("imported") /
+                                 std::filesystem::path(modelHandle + ".yml"))
+                                    .string();
+  modellist_utils::ModelEntry model_entry{
+      modelHandle,     "local",     "imported",
+      model_yaml_path, modelHandle, modellist_utils::ModelStatus::READY};
+  try {
+    std::filesystem::create_directories(
+        std::filesystem::path(model_yaml_path).parent_path());
+    gguf_handler.Parse(modelPath);
+    config::ModelConfig model_config = gguf_handler.GetModelConfig();
+    model_config.files.push_back(modelPath);
+    model_config.name = modelHandle;
+    yaml_handler.UpdateModelConfig(model_config);
+
+    if (modellist_utils_obj.AddModelEntry(model_entry)) {
+      yaml_handler.WriteYamlFile(model_yaml_path);
+      std::string success_message = "Model is imported successfully!";
+      LOG_INFO << success_message;
+      Json::Value ret;
+      ret["result"] = "OK";
+      ret["modelHandle"] = modelHandle;
+      ret["message"] = success_message;
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+
+    } else {
+      std::string error_message = "Fail to import model, model_id '" +
+                                  modelHandle + "' already exists!";
+      LOG_ERROR << error_message;
+      Json::Value ret;
+      ret["result"] = "Import failed!";
+      ret["modelHandle"] = modelHandle;
+      ret["message"] = error_message;
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+    }
+
+  } catch (const std::exception& e) {
+    std::remove(model_yaml_path.c_str());
+    std::string error_message = "Error importing model '" + modelPath +
+                                "' with model_id '" + modelHandle +
+                                "': " + e.what();
+    LOG_ERROR << error_message;
+    Json::Value ret;
+    ret["result"] = "Import failed!";
+    ret["modelHandle"] = modelHandle;
+    ret["message"] = error_message;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
     callback(resp);
   }
 }
