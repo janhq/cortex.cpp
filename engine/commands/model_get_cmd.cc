@@ -4,21 +4,16 @@
 #include <vector>
 #include "cmd_info.h"
 #include "config/yaml_config.h"
-#include "trantor/utils/Logger.h"
-#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
 
-ModelGetCmd::ModelGetCmd(std::string model_handle)
-    : model_handle_(std::move(model_handle)) {}
-
-void ModelGetCmd::Exec() {
+void ModelGetCmd::Exec(const std::string& model_handle) {
   auto models_path = file_manager_utils::GetModelsContainerPath();
   if (std::filesystem::exists(models_path) &&
       std::filesystem::is_directory(models_path)) {
-    CmdInfo ci(model_handle_);
+    CmdInfo ci(model_handle);
     std::string model_file =
         ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
     bool found_model = false;
