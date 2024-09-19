@@ -10,7 +10,7 @@ class CommandLineParser {
 
  private:
   void EngineInstall(CLI::App* parent, const std::string& engine_name,
-                     std::string& version);
+                     std::string& version, std::string& src);
 
   void EngineUninstall(CLI::App* parent, const std::string& engine_name);
 

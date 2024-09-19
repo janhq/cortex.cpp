@@ -157,6 +157,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   // Default version is latest
   std::string version{"latest"};
+  std::string src;
   // engines group commands
   auto engines_cmd =
       app_.add_subcommand("engines", "Subcommands for managing engines");
@@ -174,7 +175,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   install_cmd->require_subcommand();
   for (auto& engine : engine_service_.kSupportEngines) {
     std::string engine_name{engine};
-    EngineInstall(install_cmd, engine_name, version);
+    EngineInstall(install_cmd, engine_name, version, src);
   }
 
   auto uninstall_cmd =
@@ -257,18 +258,19 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
 void CommandLineParser::EngineInstall(CLI::App* parent,
                                       const std::string& engine_name,
-                                      std::string& version) {
+                                      std::string& version,
+                                      std::string& src) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
 
   install_engine_cmd->add_option("-v, --version", version,
                                  "Engine version to download");
-  std::string source;
-  install_engine_cmd->add_option("-s, --source", source,
+  
+  install_engine_cmd->add_option("-s, --source", src,
                                  "Download engine by local path or remote url");
 
-  install_engine_cmd->callback([engine_name, &version] {
+  install_engine_cmd->callback([engine_name, &version, &src] {
     try {
-      commands::EngineInstallCmd().Exec(engine_name, version);
+      commands::EngineInstallCmd().Exec(engine_name, version, src);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
     }

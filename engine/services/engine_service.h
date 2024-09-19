@@ -28,7 +28,8 @@ class EngineService {
   std::vector<EngineInfo> GetEngineInfoList() const;
 
   void InstallEngine(const std::string& engine,
-                     const std::string& version = "latest");
+                     const std::string& version = "latest",
+                     const std::string& src = "");
 
   void InstallLocalEngine(const std::string& engine, const std::string& path);
 
