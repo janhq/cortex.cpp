@@ -31,7 +31,14 @@ class EngineService {
                      const std::string& version = "latest",
                      const std::string& src = "");
 
-  void InstallLocalEngine(const std::string& engine, const std::string& path);
+  void UnzipEngine(const std::string& engine,
+                            const std::string& version,
+                            const std::string& path);
 
   void UninstallEngine(const std::string& engine);
+
+ private:
+  void DownloadEngine(const std::string& engine,
+                             const std::string& version = "latest");
+  void DownloadCuda(const std::string& engine);
 };
