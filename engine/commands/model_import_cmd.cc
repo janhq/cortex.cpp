@@ -36,18 +36,19 @@ void ModelImportCmd::Exec() {
     model_config.name = model_handle_;
     yaml_handler.UpdateModelConfig(model_config);
 
-    if(modellist_utils_obj.AddModelEntry(model_entry)){
-        yaml_handler.WriteYamlFile(model_yaml_path);
-        CLI_LOG("Model is imported successfully!");
+    if (modellist_utils_obj.AddModelEntry(model_entry)) {
+      yaml_handler.WriteYamlFile(model_yaml_path);
+      CLI_LOG("Model is imported successfully!");
+    } else {
+      CLI_LOG("Fail to import model, model_id '" + model_handle_ +
+              "' already exists!");
     }
-    else{
-        CLI_LOG("Fail to import model, model_id '"+model_handle_+"' already exists!" );
-    }
-    
+
   } catch (const std::exception& e) {
     std::remove(model_yaml_path.c_str());
-    CTL_ERR("Error importing model '" << model_path_ << "' with model_id '"
-                                      << model_handle_ << "': " << e.what());
+    throw std::runtime_error("Error importing model '" + model_path_ +
+                             "' with model_id '" + model_handle_ +
+                             "': " + e.what());
   }
 }
 }  // namespace commands
