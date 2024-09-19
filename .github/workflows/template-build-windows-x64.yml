@@ -218,7 +218,7 @@ jobs:
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
           aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
