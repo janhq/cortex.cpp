@@ -54,8 +54,6 @@ TEST_F(CortexUpdCmdTest, replace_binary_successfully) {
 
   struct stat new_file_stat;
   EXPECT_TRUE(stat(cur_binary.string().c_str(), &new_file_stat) == 0);
-  uid_t new_file_owner = new_file_stat.st_uid;
-  gid_t new_file_group = new_file_stat.st_gid;
   EXPECT_EQ(cur_file_stat.st_uid, new_file_stat.st_uid);
   EXPECT_EQ(cur_file_stat.st_gid, new_file_stat.st_gid);
   EXPECT_EQ(cur_file_stat.st_mode, new_file_stat.st_mode);
