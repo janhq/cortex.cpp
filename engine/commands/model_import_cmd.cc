@@ -33,7 +33,7 @@ void ModelImportCmd::Exec() {
     gguf_handler.Parse(model_path_);
     auto model_config = gguf_handler.GetModelConfig();
     model_config.files.push_back(model_path_);
-    model_config.name = model_handle_;
+    model_config.model = model_handle_;
     yaml_handler.UpdateModelConfig(model_config);
 
     if (modellist_utils_obj.AddModelEntry(model_entry)) {
