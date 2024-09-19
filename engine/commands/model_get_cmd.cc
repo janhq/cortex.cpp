@@ -1,147 +1,140 @@
 #include "model_get_cmd.h"
 #include <filesystem>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 #include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/modellist_utils.h"
 
 namespace commands {
 
 void ModelGetCmd::Exec(const std::string& model_handle) {
-  auto models_path = file_manager_utils::GetModelsContainerPath();
-  if (std::filesystem::exists(models_path) &&
-      std::filesystem::is_directory(models_path)) {
-    CmdInfo ci(model_handle);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    bool found_model = false;
-    // Iterate through directory
-    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
+  modellist_utils::ModelListUtils modellist_handler;
+  config::YamlHandler yaml_handler;
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    auto model_config = yaml_handler.GetModelConfig();
 
-      if (entry.is_regular_file() && entry.path().stem() == model_file &&
-          entry.path().extension() == ".yaml") {
-        try {
-          config::YamlHandler handler;
-          handler.ModelConfigFromFile(entry.path().string());
-          const auto& model_config = handler.GetModelConfig();
-          std::cout << "ModelConfig Details:\n";
-          std::cout << "-------------------\n";
+    // Helper function to print comments
+    auto print_comment = [](const std::string& comment) {
+      std::cout << "\033[1;90m# " << comment << "\033[0m\n";
+    };
 
-          // Print non-null strings
-          if (!model_config.id.empty())
-            std::cout << "id: " << model_config.id << "\n";
-          if (!model_config.name.empty())
-            std::cout << "name: " << model_config.name << "\n";
-          if (!model_config.model.empty())
-            std::cout << "model: " << model_config.model << "\n";
-          if (!model_config.version.empty())
-            std::cout << "version: " << model_config.version << "\n";
+    print_comment("BEGIN GENERAL GGUF METADATA");
 
-          // Print non-empty vectors
-          if (!model_config.stop.empty()) {
-            std::cout << "stop: [";
-            for (size_t i = 0; i < model_config.stop.size(); ++i) {
-              std::cout << model_config.stop[i];
-              if (i < model_config.stop.size() - 1)
-                std::cout << ", ";
-            }
-            std::cout << "]\n";
-          }
-          // Print valid numbers
-          if (!std::isnan(static_cast<double>(model_config.top_p)))
-            std::cout << "top_p: " << model_config.top_p << "\n";
-          if (!std::isnan(static_cast<double>(model_config.temperature)))
-            std::cout << "temperature: " << model_config.temperature << "\n";
-          if (!std::isnan(static_cast<double>(model_config.frequency_penalty)))
-            std::cout << "frequency_penalty: " << model_config.frequency_penalty
-                      << "\n";
-          if (!std::isnan(static_cast<double>(model_config.presence_penalty)))
-            std::cout << "presence_penalty: " << model_config.presence_penalty
-                      << "\n";
-          if (!std::isnan(static_cast<double>(model_config.max_tokens)))
-            std::cout << "max_tokens: " << model_config.max_tokens << "\n";
-          if (!std::isnan(static_cast<double>(model_config.stream)))
+    // Helper function to print key-value pairs with color
+    auto print_kv = [](const std::string& key, const auto& value,
+                       const std::string& color = "\033[0m") {
+      std::cout << "\033[1;32m" << key << ":\033[0m " << color << value
+                << "\033[0m\n";
+    };
 
-            std::cout << "stream: " << std::boolalpha << model_config.stream
-                      << "\n";
-          if (!std::isnan(static_cast<double>(model_config.ngl)))
-            std::cout << "ngl: " << model_config.ngl << "\n";
-          if (!std::isnan(static_cast<double>(model_config.ctx_len)))
-            std::cout << "ctx_len: " << model_config.ctx_len << "\n";
+    // Helper function to print boolean values
+    auto print_bool = [&print_kv](const std::string& key, bool value) {
+      print_kv(key, value ? "true" : "false", "\033[0;35m");
+    };
 
-          // Print non-null strings
-          if (!model_config.engine.empty())
-            std::cout << "engine: " << model_config.engine << "\n";
-          if (!model_config.prompt_template.empty())
+    // Print non-empty strings
+    if (!model_config.id.empty())
+      print_kv("id", model_config.id, "\033[0;33m");
+    if (!model_config.name.empty())
+      print_kv("name", model_config.name, "\033[0;33m");
+    if (!model_config.model.empty())
+      print_kv("model", model_config.model, "\033[0;33m");
+    if (!model_config.version.empty())
+      print_kv("version", model_config.version, "\033[0;33m");
 
-            std::cout << "prompt_template: " << model_config.prompt_template
-                      << "\n";
-          if (!model_config.system_template.empty())
-            std::cout << "system_template: " << model_config.system_template
-                      << "\n";
-          if (!model_config.user_template.empty())
-            std::cout << "user_template: " << model_config.user_template
-                      << "\n";
-          if (!model_config.ai_template.empty())
-            std::cout << "ai_template: " << model_config.ai_template << "\n";
-          if (!model_config.os.empty())
-            std::cout << "os: " << model_config.os << "\n";
-          if (!model_config.gpu_arch.empty())
-            std::cout << "gpu_arch: " << model_config.gpu_arch << "\n";
-          if (!model_config.quantization_method.empty())
-
-            std::cout << "quantization_method: "
-                      << model_config.quantization_method << "\n";
-          if (!model_config.precision.empty())
-            std::cout << "precision: " << model_config.precision << "\n";
-
-          if (!std::isnan(static_cast<double>(model_config.tp)))
-            std::cout << "tp: " << model_config.tp << "\n";
-
-          // Print non-null strings
-          if (!model_config.trtllm_version.empty())
-
-            std::cout << "trtllm_version: " << model_config.trtllm_version
-                      << "\n";
-          if (!std::isnan(static_cast<double>(model_config.text_model)))
-            std::cout << "text_model: " << std::boolalpha
-                      << model_config.text_model << "\n";
-
-          // Print non-empty vectors
-          if (!model_config.files.empty()) {
-            std::cout << "files: [";
-            for (size_t i = 0; i < model_config.files.size(); ++i) {
-              std::cout << model_config.files[i];
-              if (i < model_config.files.size() - 1)
-                std::cout << ", ";
-            }
-            std::cout << "]\n";
-          }
-
-          // Print valid size_t number
-          if (model_config.created != 0)
-            std::cout << "created: " << model_config.created << "\n";
-
-          if (!model_config.object.empty())
-            std::cout << "object: " << model_config.object << "\n";
-          if (!model_config.owned_by.empty())
-            std::cout << "owned_by: " << model_config.owned_by << "\n";
-
-          found_model = true;
-          break;
-        } catch (const std::exception& e) {
-          CTL_ERR("Error reading yaml file '" << entry.path().string()
-                                              << "': " << e.what());
-        }
+    // Print non-empty vectors
+    if (!model_config.files.empty()) {
+      std::cout << "\033[1;32mfiles:\033[0m\n";
+      for (const auto& file : model_config.files) {
+        std::cout << "  - \033[0;33m" << file << "\033[0m\n";
       }
     }
-    if (!found_model) {
-      CLI_LOG("Model not found!");
+
+    print_comment("END GENERAL GGUF METADATA");
+    print_comment("BEGIN INFERENCE PARAMETERS");
+    print_comment("BEGIN REQUIRED");
+
+    if (!model_config.stop.empty()) {
+      std::cout << "\033[1;32mstop:\033[0m\n";
+      for (const auto& stop : model_config.stop) {
+        std::cout << "  - \033[0;33m" << stop << "\033[0m\n";
+      }
     }
-  } else {
-    CLI_LOG("Model not found!");
+
+    print_comment("END REQUIRED");
+    print_comment("BEGIN OPTIONAL");
+
+    // Print boolean values
+    print_bool("stream", model_config.stream);
+
+    // Print float values with fixed precision
+    auto print_float = [&print_kv](const std::string& key, float value) {
+      if (!std::isnan(value)) {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(9) << value;
+        print_kv(key, oss.str(), "\033[0;34m");
+      }
+    };
+
+    print_float("top_p", model_config.top_p);
+    print_float("temperature", model_config.temperature);
+    print_float("frequency_penalty", model_config.frequency_penalty);
+    print_float("presence_penalty", model_config.presence_penalty);
+
+    // Print integer values
+    auto print_int = [&print_kv](const std::string& key, int value) {
+      if (value != 0) {  // Assuming 0 is the default/unset value
+        print_kv(key, value, "\033[0;35m");
+      }
+    };
+
+    print_int("max_tokens", static_cast<int>(model_config.max_tokens));
+    print_int("seed", model_config.seed);
+    print_float("dynatemp_range", model_config.dynatemp_range);
+    print_float("dynatemp_exponent", model_config.dynatemp_exponent);
+    print_int("top_k", model_config.top_k);
+    print_float("min_p", model_config.min_p);
+    print_int("tfs_z", model_config.tfs_z);
+    print_float("typ_p", model_config.typ_p);
+    print_int("repeat_last_n", model_config.repeat_last_n);
+    print_float("repeat_penalty", model_config.repeat_penalty);
+    print_bool("mirostat", model_config.mirostat);
+    print_float("mirostat_tau", model_config.mirostat_tau);
+    print_float("mirostat_eta", model_config.mirostat_eta);
+    print_bool("penalize_nl", model_config.penalize_nl);
+    print_bool("ignore_eos", model_config.ignore_eos);
+    print_int("n_probs", model_config.n_probs);
+    print_int("min_keep", model_config.min_keep);
+
+    print_comment("END OPTIONAL");
+    print_comment("END INFERENCE PARAMETERS");
+    print_comment("BEGIN MODEL LOAD PARAMETERS");
+    print_comment("BEGIN REQUIRED");
+
+    if (!model_config.engine.empty())
+      print_kv("engine", model_config.engine, "\033[0;33m");
+    if (!model_config.prompt_template.empty())
+      print_kv("prompt_template", model_config.prompt_template, "\033[0;33m");
+
+    print_comment("END REQUIRED");
+    print_comment("BEGIN OPTIONAL");
+
+    print_int("ctx_len", static_cast<int>(model_config.ctx_len));
+    print_int("ngl", static_cast<int>(model_config.ngl));
+
+    print_comment("END OPTIONAL");
+    print_comment("END MODEL LOAD PARAMETERS");
+
+  } catch (const std::exception& e) {
+    CLI_LOG("Fail to get model information with ID '" + model_handle +
+            "': " + e.what());
   }
 }
-};  // namespace commands
+
+}  // namespace commands

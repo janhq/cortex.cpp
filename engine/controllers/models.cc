@@ -52,58 +52,108 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-  auto models_path = file_manager_utils::GetModelsContainerPath();
-  if (std::filesystem::exists(models_path) &&
-      std::filesystem::is_directory(models_path)) {
-    // Iterate through directory
-    for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
-      if (entry.is_regular_file() && entry.path().extension() == ".yaml") {
-        try {
-          config::YamlHandler handler;
-          handler.ModelConfigFromFile(entry.path().string());
-          auto const& model_config = handler.GetModelConfig();
-          Json::Value obj;
-          obj["name"] = model_config.name;
-          obj["model"] = model_config.model;
-          obj["version"] = model_config.version;
-          Json::Value stop_array(Json::arrayValue);
-          for (const std::string& stop : model_config.stop)
-            stop_array.append(stop);
-          obj["stop"] = stop_array;
-          obj["top_p"] = model_config.top_p;
-          obj["temperature"] = model_config.temperature;
-          obj["presence_penalty"] = model_config.presence_penalty;
-          obj["max_tokens"] = model_config.max_tokens;
-          obj["stream"] = model_config.stream;
-          obj["ngl"] = model_config.ngl;
-          obj["ctx_len"] = model_config.ctx_len;
-          obj["engine"] = model_config.engine;
-          obj["prompt_template"] = model_config.prompt_template;
 
-          Json::Value files_array(Json::arrayValue);
-          for (const std::string& file : model_config.files)
-            files_array.append(file);
-          obj["files"] = files_array;
-          obj["id"] = model_config.id;
-          obj["created"] = static_cast<uint32_t>(model_config.created);
-          obj["object"] = model_config.object;
-          obj["owned_by"] = model_config.owned_by;
-          if (model_config.engine == "cortex.tensorrt-llm") {
-            obj["trtllm_version"] = model_config.trtllm_version;
-          }
-          data.append(std::move(obj));
-        } catch (const std::exception& e) {
-          LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                    << "': " << e.what();
+  // Iterate through directory
+
+  try {
+    modellist_utils::ModelListUtils modellist_handler;
+    config::YamlHandler yaml_handler;
+
+    auto list_entry = modellist_handler.LoadModelList();
+
+    for (const auto& model_entry : list_entry) {
+      // auto model_entry = modellist_handler.GetModelInfo(model_handle);
+      try {
+
+        yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+        auto model_config = yaml_handler.GetModelConfig();
+        Json::Value obj;
+        obj["id"] = model_config.id;
+        obj["name"] = model_config.name;
+        obj["model"] = model_config.model;
+        obj["version"] = model_config.version;
+
+        Json::Value stop_array(Json::arrayValue);
+        for (const std::string& stop : model_config.stop)
+          stop_array.append(stop);
+        obj["stop"] = stop_array;
+
+        obj["stream"] = model_config.stream;
+        obj["top_p"] = model_config.top_p;
+        obj["temperature"] = model_config.temperature;
+        obj["frequency_penalty"] = model_config.frequency_penalty;
+        obj["presence_penalty"] = model_config.presence_penalty;
+        obj["max_tokens"] = static_cast<int>(model_config.max_tokens);
+
+        // New fields
+        obj["seed"] = model_config.seed;
+        obj["dynatemp_range"] = model_config.dynatemp_range;
+        obj["dynatemp_exponent"] = model_config.dynatemp_exponent;
+        obj["top_k"] = model_config.top_k;
+        obj["min_p"] = model_config.min_p;
+        obj["tfs_z"] = model_config.tfs_z;
+        obj["typ_p"] = model_config.typ_p;
+        obj["repeat_last_n"] = model_config.repeat_last_n;
+        obj["repeat_penalty"] = model_config.repeat_penalty;
+        obj["mirostat"] = model_config.mirostat;
+        obj["mirostat_tau"] = model_config.mirostat_tau;
+        obj["mirostat_eta"] = model_config.mirostat_eta;
+        obj["penalize_nl"] = model_config.penalize_nl;
+        obj["ignore_eos"] = model_config.ignore_eos;
+        obj["n_probs"] = model_config.n_probs;
+        obj["min_keep"] = model_config.min_keep;
+
+        obj["ngl"] = model_config.ngl;
+        obj["ctx_len"] = static_cast<int>(model_config.ctx_len);
+        obj["engine"] = model_config.engine;
+        obj["prompt_template"] = model_config.prompt_template;
+        obj["system_template"] = model_config.system_template;
+        obj["user_template"] = model_config.user_template;
+        obj["ai_template"] = model_config.ai_template;
+
+        obj["os"] = model_config.os;
+        obj["gpu_arch"] = model_config.gpu_arch;
+        obj["quantization_method"] = model_config.quantization_method;
+        obj["precision"] = model_config.precision;
+
+        Json::Value files_array(Json::arrayValue);
+        for (const std::string& file : model_config.files)
+          files_array.append(file);
+        obj["files"] = files_array;
+
+        obj["created"] = static_cast<uint32_t>(model_config.created);
+        obj["object"] = model_config.object;
+        obj["owned_by"] = model_config.owned_by;
+        obj["text_model"] = model_config.text_model;
+
+        if (model_config.engine == "cortex.tensorrt-llm") {
+          obj["trtllm_version"] = model_config.trtllm_version;
+          obj["tp"] = model_config.tp;
         }
+
+        data.append(std::move(obj));
+        yaml_handler.Reset();
+      } catch (const std::exception& e) {
+        LOG_ERROR << "Failed to load yaml file for model: "
+                  << model_entry.path_to_model_yaml << ", error: " << e.what();
       }
     }
+    ret["data"] = data;
+    ret["result"] = "OK";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  } catch (const std::exception& e) {
+    std::string message =
+        "Fail to get list model information: " + std::string(e.what());
+    LOG_ERROR << message;
+    ret["data"] = data;
+    ret["result"] = "Fail to get list model information";
+    ret["message"] = message;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
   }
-  ret["data"] = data;
-  ret["result"] = "OK";
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-  resp->setStatusCode(k200OK);
-  callback(resp);
 }
 
 void Models::GetModel(
@@ -117,59 +167,95 @@ void Models::GetModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-  if (std::filesystem::exists(cortex_utils::models_folder) &&
-      std::filesystem::is_directory(cortex_utils::models_folder)) {
-    // Iterate through directory
-    for (const auto& entry :
-         std::filesystem::directory_iterator(cortex_utils::models_folder)) {
-      if (entry.is_regular_file() && entry.path().extension() == ".yaml" &&
-          entry.path().stem() == model_handle) {
-        try {
-          config::YamlHandler handler;
-          handler.ModelConfigFromFile(entry.path().string());
-          auto const& model_config = handler.GetModelConfig();
-          Json::Value obj;
-          obj["name"] = model_config.name;
-          obj["model"] = model_config.model;
-          obj["version"] = model_config.version;
-          Json::Value stop_array(Json::arrayValue);
-          for (const std::string& stop : model_config.stop)
-            stop_array.append(stop);
-          obj["stop"] = stop_array;
-          obj["top_p"] = model_config.top_p;
-          obj["temperature"] = model_config.temperature;
-          obj["presence_penalty"] = model_config.presence_penalty;
-          obj["max_tokens"] = model_config.max_tokens;
-          obj["stream"] = model_config.stream;
-          obj["ngl"] = model_config.ngl;
-          obj["ctx_len"] = model_config.ctx_len;
-          obj["engine"] = model_config.engine;
-          obj["prompt_template"] = model_config.prompt_template;
 
-          Json::Value files_array(Json::arrayValue);
-          for (const std::string& file : model_config.files)
-            files_array.append(file);
-          obj["files"] = files_array;
-          obj["id"] = model_config.id;
-          obj["created"] = static_cast<uint32_t>(model_config.created);
-          obj["object"] = model_config.object;
-          obj["owned_by"] = model_config.owned_by;
-          if (model_config.engine == "cortex.tensorrt-llm") {
-            obj["trtllm_version"] = model_config.trtllm_version;
-          }
-          data.append(std::move(obj));
-        } catch (const std::exception& e) {
-          LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                    << "': " << e.what();
-        }
-      }
+  try {
+    modellist_utils::ModelListUtils modellist_handler;
+    config::YamlHandler yaml_handler;
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    auto model_config = yaml_handler.GetModelConfig();
+
+    Json::Value obj;
+    obj["id"] = model_config.id;
+    obj["name"] = model_config.name;
+    obj["model"] = model_config.model;
+    obj["version"] = model_config.version;
+
+    Json::Value stop_array(Json::arrayValue);
+    for (const std::string& stop : model_config.stop)
+      stop_array.append(stop);
+    obj["stop"] = stop_array;
+
+    obj["stream"] = model_config.stream;
+    obj["top_p"] = model_config.top_p;
+    obj["temperature"] = model_config.temperature;
+    obj["frequency_penalty"] = model_config.frequency_penalty;
+    obj["presence_penalty"] = model_config.presence_penalty;
+    obj["max_tokens"] = static_cast<int>(model_config.max_tokens);
+
+    // New fields
+    obj["seed"] = model_config.seed;
+    obj["dynatemp_range"] = model_config.dynatemp_range;
+    obj["dynatemp_exponent"] = model_config.dynatemp_exponent;
+    obj["top_k"] = model_config.top_k;
+    obj["min_p"] = model_config.min_p;
+    obj["tfs_z"] = model_config.tfs_z;
+    obj["typ_p"] = model_config.typ_p;
+    obj["repeat_last_n"] = model_config.repeat_last_n;
+    obj["repeat_penalty"] = model_config.repeat_penalty;
+    obj["mirostat"] = model_config.mirostat;
+    obj["mirostat_tau"] = model_config.mirostat_tau;
+    obj["mirostat_eta"] = model_config.mirostat_eta;
+    obj["penalize_nl"] = model_config.penalize_nl;
+    obj["ignore_eos"] = model_config.ignore_eos;
+    obj["n_probs"] = model_config.n_probs;
+    obj["min_keep"] = model_config.min_keep;
+
+    obj["ngl"] = model_config.ngl;
+    obj["ctx_len"] = static_cast<int>(model_config.ctx_len);
+    obj["engine"] = model_config.engine;
+    obj["prompt_template"] = model_config.prompt_template;
+    obj["system_template"] = model_config.system_template;
+    obj["user_template"] = model_config.user_template;
+    obj["ai_template"] = model_config.ai_template;
+
+    obj["os"] = model_config.os;
+    obj["gpu_arch"] = model_config.gpu_arch;
+    obj["quantization_method"] = model_config.quantization_method;
+    obj["precision"] = model_config.precision;
+
+    Json::Value files_array(Json::arrayValue);
+    for (const std::string& file : model_config.files)
+      files_array.append(file);
+    obj["files"] = files_array;
+
+    obj["created"] = static_cast<uint32_t>(model_config.created);
+    obj["object"] = model_config.object;
+    obj["owned_by"] = model_config.owned_by;
+    obj["text_model"] = model_config.text_model;
+
+    if (model_config.engine == "cortex.tensorrt-llm") {
+      obj["trtllm_version"] = model_config.trtllm_version;
+      obj["tp"] = model_config.tp;
     }
+
+    data.append(std::move(obj));
+    ret["data"] = data;
+    ret["result"] = "OK";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  } catch (const std::exception& e) {
+    std::string message = "Fail to get model information with ID '" +
+                          model_handle + "': " + e.what();
+    LOG_ERROR << message;
+    ret["data"] = data;
+    ret["result"] = "Fail to get model information";
+    ret["message"] = message;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
   }
-  ret["data"] = data;
-  ret["result"] = "OK";
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-  resp->setStatusCode(k200OK);
-  callback(resp);
 }
 
 void Models::DeleteModel(const HttpRequestPtr& req,
