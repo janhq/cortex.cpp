@@ -309,7 +309,6 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     std::string desc = "Get " + engine_name + " status";
 
     auto engine_get_cmd = get_cmd->add_subcommand(engine_name, desc);
-    engine_get_cmd->require_option();
     engine_get_cmd->callback(
         [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
