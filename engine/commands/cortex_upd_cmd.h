@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#if defined(__linux__)
+#if !defined(_WIN32)
 #include <sys/stat.h>
 #include <unistd.h>
 #endif
@@ -137,7 +137,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     if (std::filesystem::exists(temp)) {
       std::filesystem::remove(temp);
     }
-#if defined(__linux__)
+#if !defined(_WIN32)
     // Get permissions of the executable file
     struct stat dst_file_stat;
     if (stat(dst.string().c_str(), &dst_file_stat) != 0) {
@@ -154,7 +154,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
     std::filesystem::copy_file(
         src, dst, std::filesystem::copy_options::overwrite_existing);
 
-#if defined(__linux__)
+#if !defined(_WIN32)
     // Set permissions of the executable file
     if (chmod(dst.string().c_str(), dst_file_stat.st_mode) != 0) {
       CTL_ERR("Error setting permissions of executable file: " << dst.string());
@@ -169,7 +169,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
       restore_binary();
       return false;
     }
-    
+
     // Remove cortex_temp
     if (unlink(temp.string().c_str()) != 0) {
       CTL_ERR("Error deleting self: " << strerror(errno));
