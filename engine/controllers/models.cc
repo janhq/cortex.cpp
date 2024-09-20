@@ -222,7 +222,7 @@ void Models::SetModelAlias(
     } else {
       std::string message = "Unable to set model alias for modelID '" +
                             model_handle + "': model alias '" + model_alias +
-                            "' or modelID is not unique!";
+                            "' is not unique!";
       LOG_ERROR << message;
       Json::Value ret;
       ret["result"] = "Set alias failed!";

@@ -156,7 +156,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
       models_cmd->add_subcommand("alias", "Add alias name for a modelID");
   model_alias_cmd->add_option("--model_id", model_id, "Can be modelID or model alias to identify model");
   model_alias_cmd->require_option();
-  model_alias_cmd->add_option("--new_model_alias", model_alias, "new alias to be set");
+  model_alias_cmd->add_option("--alias", model_alias, "new alias to be set");
   model_alias_cmd->require_option();
   model_alias_cmd->callback([&model_id, &model_alias]() {
     commands::ModelAliasCmd mdc;

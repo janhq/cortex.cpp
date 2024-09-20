@@ -208,7 +208,7 @@ bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
       });
   bool check_alias_unique = std::none_of(
       entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return entry.model_id == new_model_alias ||
+        return (entry.model_id == new_model_alias && entry.model_id != model_id) ||
                entry.model_alias == new_model_alias;
       });
   if (it != entries.end() && check_alias_unique) {

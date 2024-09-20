@@ -12,7 +12,7 @@ void ModelAliasCmd::Exec(const std::string& model_handle,
               "' for modeID '" + model_handle + "'.");
     } else {
       CLI_LOG("Unable to set model alias for modelID '" + model_handle +
-              "': model alias '" + model_alias + "' or modelID is not unique!");
+              "': model alias '" + model_alias + "' is not unique!");
     }
   } catch (const std::exception& e) {
     CLI_LOG("Error when setting model alias ('" + model_alias +
