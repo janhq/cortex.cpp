@@ -6,6 +6,7 @@
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
+#include "commands/model_alias_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_import_cmd.h"
@@ -149,6 +150,18 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   model_del_cmd->callback([&model_id]() {
     commands::ModelDelCmd mdc;
     mdc.Exec(model_id);
+  });
+
+  std::string model_alias;
+  auto model_alias_cmd =
+      models_cmd->add_subcommand("alias", "Add alias name for a modelID");
+  model_alias_cmd->add_option("--model_id", model_id, "Can be modelID or model alias to identify model");
+  model_alias_cmd->require_option();
+  model_alias_cmd->add_option("--alias", model_alias, "new alias to be set");
+  model_alias_cmd->require_option();
+  model_alias_cmd->callback([&model_id, &model_alias]() {
+    commands::ModelAliasCmd mdc;
+    mdc.Exec(model_id, model_alias);
   });
 
   auto model_update_cmd =
