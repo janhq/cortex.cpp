@@ -70,6 +70,7 @@ inline void CheckNewUpdate() {
 
   httplib::Client cli(host_name);
   cli.set_connection_timeout(kTimeoutCheckUpdate);
+  cli.set_read_timeout(kTimeoutCheckUpdate);
   if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
