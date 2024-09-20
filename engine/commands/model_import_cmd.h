@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>  // For std::isnan
 #include <string>
 namespace commands {
 
