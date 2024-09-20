@@ -115,7 +115,7 @@ void ChatCmd::Exec(std::string msg) {
             std::cout << std::endl;
             return false;
           }
-          std::cout << cp.content;
+          std::cout << cp.content << std::flush;
           ai_chat += cp.content;
           return true;
         };
