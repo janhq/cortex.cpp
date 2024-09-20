@@ -28,6 +28,7 @@ constexpr const auto kInferenceGroup = "Inference";
 constexpr const auto kModelsGroup = "Models";
 constexpr const auto kEngineGroup = "Engines";
 constexpr const auto kSystemGroup = "System";
+constexpr const auto kSubcommnds = "Subcommands";
 }  // namespace
 CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
@@ -93,14 +94,26 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Models group commands
   auto models_cmd =
       app_.add_subcommand("models", "Subcommands for managing models");
+  models_cmd->usage(commands::GetCortexBinary() + " models [OPTIONS] [SUBCOMMAND]");
   models_cmd->group(kModelsGroup);
-  models_cmd->require_subcommand();
+
+  // models_cmd->require_subcommand();
+  models_cmd->callback([&]{
+    if(models_cmd->get_subcommands().size() == 0) {
+      std::cout << models_cmd->help() << std::endl;
+    }
+  });
 
   auto model_start_cmd =
       models_cmd->add_subcommand("start", "Start a model by ID");
   model_start_cmd->add_option("model_id", model_id, "");
-  model_start_cmd->require_option();
-  model_start_cmd->callback([&model_id, &config]() {
+  model_start_cmd->group(kSubcommnds);
+  // model_start_cmd->require_option();
+  model_start_cmd->callback([&model_start_cmd, &model_id, &config]() {
+    if(model_id.empty()) {
+      std::cout << model_start_cmd->help() << std::endl;
+      return;
+    };
     commands::CmdInfo ci(model_id);
     std::string model_file =
         ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
