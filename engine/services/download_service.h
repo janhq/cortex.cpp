@@ -20,6 +20,8 @@ struct DownloadItem {
 
   std::optional<std::string> checksum;
 
+  std::optional<uint64_t> bytes;
+
   std::string ToString() const {
     std::ostringstream output;
     output << "DownloadItem{id: " << id << ", downloadUrl: " << downloadUrl
@@ -54,7 +56,7 @@ class DownloadService {
       std::function<void(const DownloadTask& task)>;
 
   void AddDownloadTask(
-      const DownloadTask& task,
+      DownloadTask& task,
       std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
 
   void AddAsyncDownloadTask(
@@ -70,5 +72,5 @@ class DownloadService {
 
  private:
   void Download(const std::string& download_id,
-                const DownloadItem& download_item);
+                const DownloadItem& download_item, bool allow_resume);
 };
