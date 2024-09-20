@@ -15,6 +15,7 @@ constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
 constexpr const auto kBetaComp = "-rc";
 constexpr const auto kReleaseFormat = ".tar.gz";
+constexpr const auto kTimeoutCheckUpdate = std::chrono::milliseconds(1000);
 
 inline std::string GetCortexBinary() {
 #if defined(_WIN32)
@@ -56,6 +57,7 @@ inline void CheckNewUpdate() {
   CTL_INF("Engine release path: " << host_name << release_path);
 
   httplib::Client cli(host_name);
+  cli.set_connection_timeout(kTimeoutCheckUpdate);
   if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
