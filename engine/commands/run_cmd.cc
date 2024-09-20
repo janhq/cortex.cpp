@@ -3,6 +3,7 @@
 #include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "model_start_cmd.h"
+#include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/file_manager_utils.h"
 
@@ -47,21 +48,27 @@ void RunCmd::Exec() {
     }
   }
 
-  // Start model
   config::YamlHandler yaml_handler;
   yaml_handler.ModelConfigFromFile(
       file_manager_utils::GetModelsContainerPath().string() + "/" + model_file +
       ".yaml");
+  auto mc = yaml_handler.GetModelConfig();
+
+  // Always start model if not llamacpp
+  // If it is llamacpp, then check model status first
   {
-    ModelStartCmd msc(host_, port_, yaml_handler.GetModelConfig());
-    if (!msc.Exec()) {
-      return;
+    if ((mc.engine.find("llamacpp") == std::string::npos) ||
+        !commands::ModelStatusCmd().IsLoaded(host_, port_, mc)) {
+      ModelStartCmd msc(host_, port_, mc);
+      if (!msc.Exec()) {
+        return;
+      }
     }
   }
 
   // Chat
   {
-    ChatCmd cc(host_, port_, yaml_handler.GetModelConfig());
+    ChatCmd cc(host_, port_, mc);
     cc.Exec("");
   }
 }

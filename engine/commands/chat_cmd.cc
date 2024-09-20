@@ -2,9 +2,10 @@
 #include "httplib.h"
 
 #include "cortex_upd_cmd.h"
+#include "model_status_cmd.h"
+#include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
-#include "server_start_cmd.h"
 
 namespace commands {
 namespace {
@@ -45,29 +46,11 @@ void ChatCmd::Exec(std::string msg) {
   }
 
   auto address = host_ + ":" + std::to_string(port_);
-  // Check if model is loaded
-  // TODO(sang) only llamacpp support modelstatus for now
-  if (mc_.engine.find("llamacpp") != std::string::npos) {
-    httplib::Client cli(address);
-    nlohmann::json json_data;
-    json_data["model"] = mc_.name;
-    json_data["engine"] = mc_.engine;
-
-    auto data_str = json_data.dump();
-
-    // TODO: move this to another message?
-    auto res = cli.Post("/inferences/server/modelstatus", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status != httplib::StatusCode::OK_200) {
-        CTL_ERR(res->body);
-        return;
-      }
-    } else {
-      auto err = res.error();
-      CTL_ERR("HTTP error: " << httplib::to_string(err));
-      return;
-    }
+  // Only check if llamacpp engine
+  if ((mc_.engine.find("llamacpp") != std::string::npos) &&
+      !commands::ModelStatusCmd().IsLoaded(host_, port_, mc_)) {
+    CLI_LOG("Model is not loaded yet!");
+    return;
   }
 
   // Some instruction for user here
