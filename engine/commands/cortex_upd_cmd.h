@@ -1,5 +1,9 @@
 #pragma once
 #include <string>
+#if !defined(_WIN32)
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 #include "httplib.h"
 #include "nlohmann/json.hpp"
@@ -16,6 +20,14 @@ const std::string kCortexBinary = "cortex";
 constexpr const auto kBetaComp = "-rc";
 constexpr const auto kReleaseFormat = ".tar.gz";
 constexpr const auto kTimeoutCheckUpdate = std::chrono::milliseconds(1000);
+
+inline std::string GetRole() {
+#if defined(_WIN32)
+  return "";
+#else
+  return "sudo ";
+#endif
+}
 
 inline std::string GetCortexBinary() {
 #if defined(_WIN32)
@@ -90,7 +102,8 @@ inline void CheckNewUpdate() {
         if (current_version != latest_version) {
           CLI_LOG("\nA new release of cortex is available: "
                   << current_version << " -> " << latest_version);
-          CLI_LOG("To upgrade, run: " << GetCortexBinary() << " update");
+          CLI_LOG("To upgrade, run: " << GetRole() << GetCortexBinary()
+                                      << " update");
           if (CORTEX_VARIANT == file_manager_utils::kProdVariant) {
             CLI_LOG(json_res["html_url"].get<std::string>());
           }
@@ -115,25 +128,60 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
   }
 
   std::filesystem::path temp = dst.parent_path() / "cortex_temp";
+  auto restore_binary = [&temp, &dst]() {
+    if (std::filesystem::exists(temp)) {
+      std::rename(temp.string().c_str(), dst.string().c_str());
+      CLI_LOG("Restored binary file");
+    }
+  };
 
   try {
     if (std::filesystem::exists(temp)) {
       std::filesystem::remove(temp);
     }
+#if !defined(_WIN32)
+    // Get permissions of the executable file
+    struct stat dst_file_stat;
+    if (stat(dst.string().c_str(), &dst_file_stat) != 0) {
+      CTL_ERR("Error getting permissions of executable file: " << dst.string());
+      return false;
+    }
+
+    // Get owner and group of the executable file
+    uid_t dst_file_owner = dst_file_stat.st_uid;
+    gid_t dst_file_group = dst_file_stat.st_gid;
+#endif
 
     std::rename(dst.string().c_str(), temp.string().c_str());
     std::filesystem::copy_file(
         src, dst, std::filesystem::copy_options::overwrite_existing);
-    std::filesystem::permissions(dst, std::filesystem::perms::owner_all |
-                                          std::filesystem::perms::group_all |
-                                          std::filesystem::perms::others_read |
-                                          std::filesystem::perms::others_exec);
+
+#if !defined(_WIN32)
+    // Set permissions of the executable file
+    if (chmod(dst.string().c_str(), dst_file_stat.st_mode) != 0) {
+      CTL_ERR("Error setting permissions of executable file: " << dst.string());
+      restore_binary();
+      return false;
+    }
+
+    // Set owner and group of the executable file
+    if (chown(dst.string().c_str(), dst_file_owner, dst_file_group) != 0) {
+      CTL_ERR(
+          "Error setting owner and group of executable file: " << dst.string());
+      restore_binary();
+      return false;
+    }
+
+    // Remove cortex_temp
+    if (unlink(temp.string().c_str()) != 0) {
+      CTL_ERR("Error deleting self: " << strerror(errno));
+      restore_binary();
+      return false;
+    }
+#endif
   } catch (const std::exception& e) {
     CTL_ERR("Something went wrong: " << e.what());
-    if (std::filesystem::exists(temp)) {
-      std::rename(temp.string().c_str(), dst.string().c_str());
-      CLI_LOG("Restored binary file");
-    }
+    restore_binary();
     return false;
   }
 
