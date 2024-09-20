@@ -8,6 +8,7 @@ class TestCliModelDelete:
     def setup_and_teardown(self):
         # Setup
         # Pull model
+
         stdout, stderr, return_code = popen(["pull", "tinyllama"], "1\n")
 
         yield
