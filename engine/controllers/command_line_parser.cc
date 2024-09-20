@@ -9,6 +9,7 @@
 #include "commands/model_alias_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
+#include "commands/model_import_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
@@ -165,6 +166,19 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   auto model_update_cmd =
       models_cmd->add_subcommand("update", "Update configuration of a model");
+
+  std::string model_path;
+  auto model_import_cmd = models_cmd->add_subcommand(
+      "import", "Import a gguf model from local file");
+  model_import_cmd->add_option("--model_id", model_id, "");
+  model_import_cmd->add_option("--model_path", model_path,
+                               "Absolute path to .gguf model, the path should "
+                               "include the gguf file name");
+  model_import_cmd->require_option(2);
+  model_import_cmd->callback([&model_id,&model_path]() {
+    commands::ModelImportCmd command(model_id, model_path);
+    command.Exec();
+  });
 
   // Default version is latest
   std::string version{"latest"};
