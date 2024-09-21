@@ -38,7 +38,7 @@ void CortexUpdCmd::Exec(std::string v) {
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
   auto system_info = system_info_utils::GetSystemInfo();
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
   auto github_host = GetHostName();
@@ -56,7 +56,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
         }
 
         if (!HandleGithubRelease(json_data["assets"],
-                                 {system_info.os + "-" + system_info.arch})) {
+                                 {system_info->os + "-" + system_info->arch})) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
@@ -83,7 +83,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
   auto system_info = system_info_utils::GetSystemInfo();
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
   auto github_host = GetHostName();
@@ -113,7 +113,7 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
         }
 
         if (!HandleGithubRelease(json_data["assets"],
-                                 {system_info.os + "-" + system_info.arch})) {
+                                 {system_info->os + "-" + system_info->arch})) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
@@ -205,11 +205,11 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto system_info = system_info_utils::GetSystemInfo();
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
   std::string version = v.empty() ? "latest" : std::move(v);
-  std::string os_arch{system_info.os + "-" + system_info.arch};
+  std::string os_arch{system_info->os + "-" + system_info->arch};
   const char* paths[] = {
       "cortex",
       version.c_str(),

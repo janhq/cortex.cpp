@@ -1,6 +1,7 @@
 #pragma once
 
 #include <trantor/utils/Logger.h>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <vector>
@@ -51,7 +52,7 @@ inline std::string GetGpuArch(const std::string& gpuName) {
   }
 }
 
-inline SystemInfo GetSystemInfo() {
+inline std::unique_ptr<SystemInfo> GetSystemInfo() {
   std::ostringstream arch;
   std::ostringstream os;
 
@@ -76,7 +77,7 @@ inline SystemInfo GetSystemInfo() {
 #else
   os << kUnsupported;
 #endif
-  return SystemInfo{os.str(), arch.str()};
+  return std::make_unique<SystemInfo>(os.str(), arch.str());
 }
 
 inline bool IsNvidiaSmiAvailable() {

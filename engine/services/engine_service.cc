@@ -12,6 +12,11 @@
 
 using json = nlohmann::json;
 
+EngineService::EngineService()
+    : hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
+              .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
+EngineService::~EngineService() {}
+
 std::optional<EngineInfo> EngineService::GetEngineInfo(
     const std::string& engine) const {
   // if engine is not found in kSupportEngine, throw runtime error
@@ -86,20 +91,20 @@ void EngineService::InstallEngine(const std::string& engine,
 }
 
 void EngineService::UnzipEngine(const std::string& engine,
-                                         const std::string& version,
-                                         const std::string& path) {
+                                const std::string& version,
+                                const std::string& path) {
   bool found_cuda = false;
-  auto system_info = system_info_utils::GetSystemInfo();
 
-  // Get CPU, GPU info
-  auto cuda_driver_version = system_info_utils::GetCudaVersion();
   CTL_INF("engine: " << engine);
-  CTL_INF("CUDA version: " << cuda_driver_version);
-  std::string matched_variant = "";
+  CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
   std::string cuda_variant = "cuda-";
-  cuda_variant += cuda_driver_version;
+  cuda_variant += hw_inf_.cuda_driver_version;
   cuda_variant += ".tar.gz";
+  
   std::vector<std::string> variants;
+  // Loop through all files in the directory
+  // 1. Push all engine variants to a list
+  // 2. If cuda version is matched, extract it
   if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
     for (const auto& entry : std::filesystem::directory_iterator(path)) {
       CTL_INF("file path: " << entry.path().string());
@@ -124,23 +129,11 @@ void EngineService::UnzipEngine(const std::string& engine,
     return;
   }
 
-  if (engine == "cortex.tensorrt-llm") {
-    matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
-        variants, system_info.os, cuda_driver_version);
-  } else if (engine == "cortex.onnx") {
-    matched_variant = engine_matcher_utils::ValidateOnnx(
-        variants, system_info.os, system_info.arch);
-  } else if (engine == "cortex.llamacpp") {
-    cortex::cpuid::CpuInfo cpu_info;
-    auto suitable_avx = engine_matcher_utils::GetSuitableAvxVariant(cpu_info);
-    matched_variant = engine_matcher_utils::Validate(
-        variants, system_info.os, system_info.arch, suitable_avx,
-        cuda_driver_version);
-  }
-
+  auto matched_variant = GetMatchedVariant(engine, variants);
   CTL_INF("Matched variant: " << matched_variant);
   if (matched_variant.empty()) {
-    CTL_INF("No variant found for " << system_info.os << "-" << system_info.arch
+    CTL_INF("No variant found for " << hw_inf_.sys_inf->os << "-"
+                                    << hw_inf_.sys_inf->arch
                                     << ", will get engine from remote");
     // Go with the remote flow
     DownloadEngine(engine, version);
@@ -178,8 +171,7 @@ void EngineService::UninstallEngine(const std::string& engine) {
 }
 
 void EngineService::DownloadEngine(const std::string& engine,
-                                          const std::string& version) {
-  auto system_info = system_info_utils::GetSystemInfo();
+                                   const std::string& version) {
   auto get_params = [&engine, &version]() -> std::vector<std::string> {
     if (version == "latest") {
       return {"repos", "janhq", engine, "releases", version};
@@ -217,7 +209,7 @@ void EngineService::DownloadEngine(const std::string& engine,
     }
 
     auto assets = body["assets"];
-    auto os_arch{system_info.os + "-" + system_info.arch};
+    auto os_arch{hw_inf_.sys_inf->os + "-" + hw_inf_.sys_inf->arch};
 
     std::vector<std::string> variants;
     for (auto& asset : assets) {
@@ -225,24 +217,9 @@ void EngineService::DownloadEngine(const std::string& engine,
       variants.push_back(asset_name);
     }
 
-    auto cuda_driver_version = system_info_utils::GetCudaVersion();
     CTL_INF("engine: " << engine);
-    CTL_INF("CUDA version: " << cuda_driver_version);
-    std::string matched_variant = "";
-
-    if (engine == "cortex.tensorrt-llm") {
-      matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
-          variants, system_info.os, cuda_driver_version);
-    } else if (engine == "cortex.onnx") {
-      matched_variant = engine_matcher_utils::ValidateOnnx(
-          variants, system_info.os, system_info.arch);
-    } else if (engine == "cortex.llamacpp") {
-      cortex::cpuid::CpuInfo cpu_info;
-      auto suitable_avx = engine_matcher_utils::GetSuitableAvxVariant(cpu_info);
-      matched_variant = engine_matcher_utils::Validate(
-          variants, system_info.os, system_info.arch, suitable_avx,
-          cuda_driver_version);
-    }
+    CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
+    auto matched_variant = GetMatchedVariant(engine, variants);
     CTL_INF("Matched variant: " << matched_variant);
     if (matched_variant.empty()) {
       CTL_ERR("No variant found for " << os_arch);
@@ -309,14 +286,12 @@ void EngineService::DownloadEngine(const std::string& engine,
 }
 
 void EngineService::DownloadCuda(const std::string& engine) {
-  auto system_info = system_info_utils::GetSystemInfo();
-  auto cuda_driver_version = system_info_utils::GetCudaVersion();
-  if (system_info.os == "mac" || engine == "cortex.onnx") {
+  if (hw_inf_.sys_inf->os == "mac" || engine == "cortex.onnx") {
     // mac and onnx engine does not require cuda toolkit
     return;
   }
 
-  if (cuda_driver_version.empty()) {
+  if (hw_inf_.cuda_driver_version.empty()) {
     CTL_WRN("No cuda driver, continue with CPU");
     return;
   }
@@ -335,7 +310,7 @@ void EngineService::DownloadCuda(const std::string& engine) {
   } else {
     // llamacpp
     auto cuda_driver_semver =
-        semantic_version_utils::SplitVersion(cuda_driver_version);
+        semantic_version_utils::SplitVersion(hw_inf_.cuda_driver_version);
     if (cuda_driver_semver.major == 11) {
       suitable_toolkit_version = "11.7";
     } else if (cuda_driver_semver.major == 12) {
@@ -346,9 +321,9 @@ void EngineService::DownloadCuda(const std::string& engine) {
   // compare cuda driver version with cuda toolkit version
   // cuda driver version should be greater than toolkit version to ensure compatibility
   if (semantic_version_utils::CompareSemanticVersion(
-          cuda_driver_version, suitable_toolkit_version) < 0) {
+          hw_inf_.cuda_driver_version, suitable_toolkit_version) < 0) {
     CTL_ERR("Your Cuda driver version "
-            << cuda_driver_version
+            << hw_inf_.cuda_driver_version
             << " is not compatible with cuda toolkit version "
             << suitable_toolkit_version);
     throw std::runtime_error("Cuda driver is not compatible with cuda toolkit");
@@ -356,8 +331,8 @@ void EngineService::DownloadCuda(const std::string& engine) {
 
   std::ostringstream cuda_toolkit_url;
   cuda_toolkit_url << jan_host << "/" << "dist/cuda-dependencies/"
-                   << cuda_driver_version << "/" << system_info.os << "/"
-                   << cuda_toolkit_file_name;
+                   << hw_inf_.cuda_driver_version << "/" << hw_inf_.sys_inf->os
+                   << "/" << cuda_toolkit_file_name;
 
   LOG_DEBUG << "Cuda toolkit download url: " << cuda_toolkit_url.str();
   auto cuda_toolkit_local_path =
@@ -387,4 +362,23 @@ void EngineService::DownloadCuda(const std::string& engine) {
           CTL_ERR("Error removing downloaded file: " << e.what());
         }
       });
+}
+
+std::string EngineService::GetMatchedVariant(
+    const std::string& engine, const std::vector<std::string>& variants) {
+  std::string matched_variant;
+  if (engine == "cortex.tensorrt-llm") {
+    matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
+        variants, hw_inf_.sys_inf->os, hw_inf_.cuda_driver_version);
+  } else if (engine == "cortex.onnx") {
+    matched_variant = engine_matcher_utils::ValidateOnnx(
+        variants, hw_inf_.sys_inf->os, hw_inf_.sys_inf->arch);
+  } else if (engine == "cortex.llamacpp") {
+    auto suitable_avx =
+        engine_matcher_utils::GetSuitableAvxVariant(hw_inf_.cpu_inf);
+    matched_variant = engine_matcher_utils::Validate(
+        variants, hw_inf_.sys_inf->os, hw_inf_.sys_inf->arch, suitable_avx,
+        hw_inf_.cuda_driver_version);
+  }
+  return matched_variant;
 }
