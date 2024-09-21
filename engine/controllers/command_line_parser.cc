@@ -159,7 +159,7 @@ void CommandLineParser::SetupModelCommands() {
                     " models [options] [subcommand]");
   models_cmd->group(kModelsGroup);
 
-  models_cmd->callback([&] {
+  models_cmd->callback([models_cmd] {
     if (models_cmd->get_subcommands().empty()) {
       CLI_LOG(models_cmd->help());
     }
