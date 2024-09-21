@@ -23,6 +23,8 @@ constexpr static auto kGpuInfoRegex{
     R"((\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+))"};
 
 struct SystemInfo {
+  SystemInfo(std::string os, std::string arch)
+      : os(std::move(os)), arch(std::move(arch)) {}
   std::string os;
   std::string arch;
 };
