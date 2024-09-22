@@ -47,10 +47,10 @@
 #include <string>
 #include <vector>
 namespace config {
-#if __cplusplus >= 202000L
-#define LU8(x) (const char*)(u8##x)
+#if __cplusplus >= 202002L
+    #define LU8(x) reinterpret_cast<const char*>(u8##x)
 #else
-#define LU8(x) u8##x
+    #define LU8(x) u8##x
 #endif
 
 typedef struct llama_chat_message {
