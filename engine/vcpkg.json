@@ -10,7 +10,6 @@
         ]
       },
       "drogon",
-      "jinja2cpp",
       "jsoncpp",
       "minizip",
       "nlohmann-json",
