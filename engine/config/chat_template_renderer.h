@@ -47,7 +47,8 @@
 #include <string>
 #include <vector>
 namespace config {
-#if __cplusplus >= 202002L
+
+#if (defined(_MSC_VER) && _MSC_VER >= 1900 && defined(__cpp_char8_t)) || __cplusplus >= 202002L
     #define LU8(x) reinterpret_cast<const char*>(u8##x)
 #else
     #define LU8(x) u8##x
