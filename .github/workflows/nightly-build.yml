@@ -43,9 +43,12 @@ jobs:
   get-update-version:
     uses: ./.github/workflows/template-get-update-version.yml
 
+  get-cortex-llamacpp-latest-version:
+    uses: ./.github/workflows/template-cortex-llamacpp-latest-version.yml
+
   build-macos-x64:
     uses: ./.github/workflows/template-build-macos.yml
-    needs: [get-update-version, set-public-provider]
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     secrets: inherit
     with:
       ref: ${{ needs.set-public-provider.outputs.ref }}
@@ -58,7 +61,7 @@ jobs:
 
   build-macos-arm64:
     uses: ./.github/workflows/template-build-macos.yml
-    needs: [get-update-version, set-public-provider]
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     secrets: inherit
     with:
       ref: ${{ needs.set-public-provider.outputs.ref }}
@@ -72,7 +75,7 @@ jobs:
   build-windows-x64:
     uses: ./.github/workflows/template-build-windows-x64.yml
     secrets: inherit
-    needs: [get-update-version, set-public-provider]
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     with:
       ref: ${{ needs.set-public-provider.outputs.ref }}
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
@@ -82,11 +85,12 @@ jobs:
       build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
       ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
       channel: nightly
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
           
   build-linux-x64:
     uses: ./.github/workflows/template-build-linux-x64.yml
     secrets: inherit
-    needs: [get-update-version, set-public-provider]
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     with:
       ref: ${{ needs.set-public-provider.outputs.ref }}
       public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
@@ -98,7 +102,7 @@ jobs:
   update-latest-version:
     runs-on: ubuntu-latest
     if: needs.set-public-provider.outputs.public_provider == 'aws-s3'
-    needs: [get-update-version, set-public-provider, build-linux-x64, build-macos-x64, build-macos-arm64, build-windows-x64]
+    needs: [get-update-version, set-public-provider, build-linux-x64, build-macos-x64, build-macos-arm64, build-windows-x64, get-cortex-llamacpp-latest-version]
     steps:
       - name: Update latest version
         id: update-latest-version
@@ -117,7 +121,7 @@ jobs:
           AWS_EC2_METADATA_DISABLED: "true"
 
   noti-discord-nightly-and-update-url-readme:
-    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider]
+    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     secrets: inherit
     if: github.event_name == 'schedule'
     uses: ./.github/workflows/template-noti-discord.yaml
@@ -126,7 +130,7 @@ jobs:
       new_version: ${{ needs.get-update-version.outputs.new_version }}
 
   noti-discord-manual:
-    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider]
+    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     secrets: inherit
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.public_provider == 'aws-s3'
     uses: ./.github/workflows/template-noti-discord.yaml

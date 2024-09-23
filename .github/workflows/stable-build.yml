@@ -9,6 +9,9 @@ jobs:
   get-update-version:
     uses: ./.github/workflows/template-get-update-version.yml
 
+  get-cortex-llamacpp-latest-version:
+    uses: ./.github/workflows/template-cortex-llamacpp-latest-version.yml
+
   create-draft-release:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -35,7 +38,7 @@ jobs:
 
   build-macos-x64:
     uses: ./.github/workflows/template-build-macos.yml
-    needs: [get-update-version, create-draft-release]
+    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
     secrets: inherit
     with:
       ref: ${{ github.ref }}
@@ -49,7 +52,7 @@ jobs:
 
   build-macos-arm64:
     uses: ./.github/workflows/template-build-macos.yml
-    needs: [get-update-version, create-draft-release]
+    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
     secrets: inherit
     with:
       ref: ${{ github.ref }}
@@ -64,7 +67,7 @@ jobs:
   build-windows-x64:
     uses: ./.github/workflows/template-build-windows-x64.yml
     secrets: inherit
-    needs: [get-update-version, create-draft-release]
+    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
     with:
       ref: ${{ github.ref }}
       public_provider: github
@@ -75,11 +78,12 @@ jobs:
       ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
       channel: stable
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
           
   build-linux-x64:
     uses: ./.github/workflows/template-build-linux-x64.yml
     secrets: inherit
-    needs: [get-update-version, create-draft-release]
+    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
     with:
       ref: ${{ github.ref }}
       public_provider: github
