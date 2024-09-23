@@ -14,6 +14,7 @@
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
+#include "commands/model_upd_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
@@ -271,10 +272,8 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelAliasCmd mdc;
     mdc.Exec(cml_data_.model_id, cml_data_.model_alias);
   });
-
-  auto model_update_cmd =
-      models_cmd->add_subcommand("update", "Update configuration of a model");
-  model_update_cmd->group(kSubcommands);
+  // Model update parameters comment
+  ModelUpdate(models_cmd);
 
   std::string model_path;
   auto model_import_cmd = models_cmd->add_subcommand(
@@ -452,4 +451,105 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback(
         [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
+}
+
+void CommandLineParser::ModelUpdate(CLI::App* parent) {
+  auto model_update_cmd =
+      parent->add_subcommand("update", "Update configuration of a model");
+  model_update_cmd->group(kSubcommands);
+  model_update_cmd->add_option("--model_id", cml_data_.model_id, "Model ID")
+      ->required();
+
+  // Add options dynamically
+  model_update_cmd->add_option("--name", model_update_options_.name, "Name");
+  model_update_cmd->add_option("--model", model_update_options_.model, "Model");
+  model_update_cmd->add_option("--version", model_update_options_.version,
+                               "Version");
+  model_update_cmd->add_option("--stop", model_update_options_.stop, "Stop");
+  model_update_cmd->add_option("--top_p", model_update_options_.top_p, "Top P");
+  model_update_cmd->add_option(
+      "--temperature", model_update_options_.temperature, "Temperature");
+  model_update_cmd->add_option("--frequency_penalty",
+                               model_update_options_.frequency_penalty,
+                               "Frequency Penalty");
+  model_update_cmd->add_option("--presence_penalty",
+                               model_update_options_.presence_penalty,
+                               "Presence Penalty");
+  model_update_cmd->add_option("--max_tokens", model_update_options_.max_tokens,
+                               "Max Tokens");
+  model_update_cmd->add_option("--stream", model_update_options_.stream,
+                               "Stream");
+  model_update_cmd->add_option("--ngl", model_update_options_.ngl, "NGL");
+  model_update_cmd->add_option("--ctx_len", model_update_options_.ctx_len,
+                               "Context Length");
+  model_update_cmd->add_option("--engine", model_update_options_.engine,
+                               "Engine");
+  model_update_cmd->add_option("--prompt_template",
+                               model_update_options_.prompt_template,
+                               "Prompt Template");
+  model_update_cmd->add_option("--system_template",
+                               model_update_options_.system_template,
+                               "System Template");
+  model_update_cmd->add_option(
+      "--user_template", model_update_options_.user_template, "User Template");
+  model_update_cmd->add_option(
+      "--ai_template", model_update_options_.ai_template, "AI Template");
+  model_update_cmd->add_option("--os", model_update_options_.os, "OS");
+  model_update_cmd->add_option("--gpu_arch", model_update_options_.gpu_arch,
+                               "GPU Architecture");
+  model_update_cmd->add_option("--quantization_method",
+                               model_update_options_.quantization_method,
+                               "Quantization Method");
+  model_update_cmd->add_option("--precision", model_update_options_.precision,
+                               "Precision");
+  model_update_cmd->add_option("--tp", model_update_options_.tp, "TP");
+  model_update_cmd->add_option("--trtllm_version",
+                               model_update_options_.trtllm_version,
+                               "TRTLLM Version");
+  model_update_cmd->add_option("--text_model", model_update_options_.text_model,
+                               "Text Model");
+  model_update_cmd->add_option("--files", model_update_options_.files, "Files");
+  model_update_cmd->add_option("--created", model_update_options_.created,
+                               "Created");
+  model_update_cmd->add_option("--object", model_update_options_.object,
+                               "Object");
+  model_update_cmd->add_option("--owned_by", model_update_options_.owned_by,
+                               "Owned By");
+  model_update_cmd->add_option("--seed", model_update_options_.seed, "Seed");
+  model_update_cmd->add_option("--dynatemp_range",
+                               model_update_options_.dynatemp_range,
+                               "Dynatemp Range");
+  model_update_cmd->add_option("--dynatemp_exponent",
+                               model_update_options_.dynatemp_exponent,
+                               "Dynatemp Exponent");
+  model_update_cmd->add_option("--top_k", model_update_options_.top_k, "Top K");
+  model_update_cmd->add_option("--min_p", model_update_options_.min_p, "Min P");
+  model_update_cmd->add_option("--tfs_z", model_update_options_.tfs_z, "TFS Z");
+  model_update_cmd->add_option("--typ_p", model_update_options_.typ_p, "Typ P");
+  model_update_cmd->add_option(
+      "--repeat_last_n", model_update_options_.repeat_last_n, "Repeat Last N");
+  model_update_cmd->add_option("--repeat_penalty",
+                               model_update_options_.repeat_penalty,
+                               "Repeat Penalty");
+  model_update_cmd->add_option("--mirostat", model_update_options_.mirostat,
+                               "Mirostat");
+  model_update_cmd->add_option(
+      "--mirostat_tau", model_update_options_.mirostat_tau, "Mirostat Tau");
+  model_update_cmd->add_option(
+      "--mirostat_eta", model_update_options_.mirostat_eta, "Mirostat Eta");
+  model_update_cmd->add_option(
+      "--penalize_nl", model_update_options_.penalize_nl, "Penalize NL");
+  model_update_cmd->add_option("--ignore_eos", model_update_options_.ignore_eos,
+                               "Ignore EOS");
+  model_update_cmd->add_option("--n_probs", model_update_options_.n_probs,
+                               "N Probs");
+  model_update_cmd->add_option("--min_keep", model_update_options_.min_keep,
+                               "Min Keep");
+  model_update_cmd->add_option("--grammar", model_update_options_.grammar,
+                               "Grammar");
+
+  model_update_cmd->callback([this]() {
+    commands::ModelUpdCmd command(cml_data_.model_id);
+    command.Exec(model_update_options_);
+  });
 }

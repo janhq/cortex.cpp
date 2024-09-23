@@ -1,9 +1,9 @@
 #pragma once
 
 #include "CLI/CLI.hpp"
+#include "commands/model_upd_cmd.h"
 #include "services/engine_service.h"
 #include "utils/config_yaml_utils.h"
-
 class CommandLineParser {
  public:
   CommandLineParser();
@@ -11,13 +11,13 @@ class CommandLineParser {
 
  private:
   void SetupCommonCommands();
-  
+
   void SetupInferenceCommands();
-  
+
   void SetupModelCommands();
-  
+
   void SetupEngineCommands();
-  
+
   void SetupSystemCommands();
 
   void EngineInstall(CLI::App* parent, const std::string& engine_name,
@@ -26,10 +26,11 @@ class CommandLineParser {
   void EngineUninstall(CLI::App* parent, const std::string& engine_name);
 
   void EngineGet(CLI::App* parent);
+  void ModelUpdate(CLI::App* parent);
 
   CLI::App app_;
   EngineService engine_service_;
-  struct CmlData{
+  struct CmlData {
     std::string model_id;
     std::string msg;
     std::string model_alias;
@@ -41,4 +42,5 @@ class CommandLineParser {
     config_yaml_utils::CortexConfig config;
   };
   CmlData cml_data_;
+  commands::ModelUpdateOptions model_update_options_;
 };

@@ -114,7 +114,7 @@ void Models::GetModel(
     auto model_config = yaml_handler.GetModelConfig();
 
     Json::Value obj = model_config.ToJson();
-    
+
     data.append(std::move(obj));
     ret["data"] = data;
     ret["result"] = "OK";
@@ -155,7 +155,49 @@ void Models::DeleteModel(const HttpRequestPtr& req,
     callback(resp);
   }
 }
+void Models::UpdateModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
+    return;
+  }
+  auto model_id = (*(req->getJsonObject())).get("modelId", "").asString();
+  auto json_body = *(req->getJsonObject());
+  try {
+    modellist_utils::ModelListUtils model_list_utils;
+    auto model_entry = model_list_utils.GetModelInfo(model_id);
+    config::YamlHandler yaml_handler;
+    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    config::ModelConfig model_config = yaml_handler.GetModelConfig();
+    model_config.FromJson(json_body);
+    yaml_handler.UpdateModelConfig(model_config);
+    yaml_handler.WriteYamlFile(model_entry.path_to_model_yaml);
+    std::string message = "Successfully update model ID '" + model_id +
+                          "': " + json_body.toStyledString();
+    LOG_INFO << message;
+    Json::Value ret;
+    ret["result"] = "Updated successfully!";
+    ret["modelHandle"] = model_id;
+    ret["message"] = message;
 
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+
+  } catch (const std::exception& e) {
+    std::string error_message =
+        "Error updating with model_id '" + model_id + "': " + e.what();
+    LOG_ERROR << error_message;
+    Json::Value ret;
+    ret["result"] = "Updated failed!";
+    ret["modelHandle"] = model_id;
+    ret["message"] = error_message;
+
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  }
+}
 void Models::ImportModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
