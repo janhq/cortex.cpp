@@ -75,10 +75,19 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
-             GetCortexBinary();
+  auto src =
+      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
-  return ReplaceBinaryInflight(src, dst);
+  auto res = ReplaceBinaryInflight(src, dst);
+  // Remove cortex tmp folder
+  if (std::filesystem::exists(src.parent_path())) {
+    try {
+      std::filesystem::remove_all(src.parent_path());
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  }
+  return res;
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
@@ -135,7 +144,16 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
-  return ReplaceBinaryInflight(src, dst);
+  auto res = ReplaceBinaryInflight(src, dst);
+  // Remove cortex tmp folder
+  if (std::filesystem::exists(src.parent_path())) {
+    try {
+      std::filesystem::remove_all(src.parent_path());
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  }
+  return res;
 }
 
 bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
@@ -264,6 +282,15 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
-  return ReplaceBinaryInflight(src, dst);
+  auto res = ReplaceBinaryInflight(src, dst);
+  // Remove cortex tmp folder
+  if (std::filesystem::exists(src.parent_path())) {
+    try {
+      std::filesystem::remove_all(src.parent_path());
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  }
+  return res;
 }
 }  // namespace commands
