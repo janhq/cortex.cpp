@@ -14,6 +14,8 @@ cp $SOURCE_BINARY_PATH installer/$DESTINATION_BINARY_NAME
 export DESTINATION_BINARY_NAME
 cp postinstall Scripts/postinstall
 sed -i '' "3s/.*/DESTINATION_BINARY_NAME=$DESTINATION_BINARY_NAME/" Scripts/postinstall
+sed -i '' "4s/.*/DATA_FOLDER_NAME=$DATA_FOLDER_NAME/" Scripts/postinstall
+sed -i '' "5s/.*/CONFIGURATION_FILE_NAME=$CONFIGURATION_FILE_NAME/" Scripts/postinstall
 chmod +x Scripts/postinstall
 
 export DATA_FOLDER_NAME CONFIGURATION_FILE_NAME UNINSTALLER_FILE_NAME
