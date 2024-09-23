@@ -1,6 +1,7 @@
 #include "model_start_cmd.h"
 #include "cortex_upd_cmd.h"
 #include "httplib.h"
+#include "model_status_cmd.h"
 #include "nlohmann/json.hpp"
 #include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
@@ -18,6 +19,12 @@ bool ModelStartCmd::Exec() {
     CLI_LOG("Server is not started yet, please run `"
             << commands::GetCortexBinary() << " start` to start server!");
     return false;
+  }
+  // Only check for llamacpp for now
+  if ((mc_.engine.find("llamacpp") != std::string::npos) &&
+      commands::ModelStatusCmd().IsLoaded(host_, port_, mc_)) {
+    CLI_LOG("Model has already been started!");
+    return true;
   }
 
   httplib::Client cli(host_ + ":" + std::to_string(port_));

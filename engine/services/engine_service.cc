@@ -100,7 +100,7 @@ void EngineService::UnzipEngine(const std::string& engine,
   std::string cuda_variant = "cuda-";
   cuda_variant += hw_inf_.cuda_driver_version;
   cuda_variant += ".tar.gz";
-  
+
   std::vector<std::string> variants;
   // Loop through all files in the directory
   // 1. Push all engine variants to a list
@@ -276,7 +276,6 @@ void EngineService::DownloadEngine(const std::string& engine,
               }
               CTL_INF("Finished!");
             });
-
         return;
       }
     }
