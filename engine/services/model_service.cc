@@ -95,12 +95,16 @@ void ModelService::DownloadModelByDirectUrl(const std::string& url) {
       url_obj.pathParams[2] = "resolve";
     }
   }
-
+  auto author{url_obj.pathParams[0]};
   auto model_id{url_obj.pathParams[1]};
   auto file_name{url_obj.pathParams.back()};
 
-  auto local_path =
-      file_manager_utils::GetModelsContainerPath() / model_id / model_id;
+  if (author == "cortexso") {
+    return DownloadModelFromCortexso(model_id);
+  }
+
+  auto local_path{file_manager_utils::GetModelsContainerPath() /
+                  "huggingface.co" / author / model_id / file_name};
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
@@ -120,10 +124,10 @@ void ModelService::DownloadModelByDirectUrl(const std::string& url) {
                                      .localPath = local_path,
                                  }}}};
 
-  auto on_finished = [](const DownloadTask& finishedTask) {
+  auto on_finished = [&author](const DownloadTask& finishedTask) {
     CLI_LOG("Model " << finishedTask.id << " downloaded successfully!")
     auto gguf_download_item = finishedTask.items[0];
-    model_callback_utils::ParseGguf(gguf_download_item);
+    model_callback_utils::ParseGguf(gguf_download_item, author);
   };
 
   download_service_.AddDownloadTask(downloadTask, on_finished);
