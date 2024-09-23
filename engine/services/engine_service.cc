@@ -12,6 +12,27 @@
 
 using json = nlohmann::json;
 
+namespace {
+std::string GetSuitableCudaVersion(const std::string& engine,
+                                   const std::string& cuda_driver_version) {
+  auto suitable_toolkit_version = "";
+  if (engine == "cortex.tensorrt-llm") {
+    // for tensorrt-llm, we need to download cuda toolkit v12.4
+    suitable_toolkit_version = "12.4";
+  } else {
+    // llamacpp
+    auto cuda_driver_semver =
+        semantic_version_utils::SplitVersion(cuda_driver_version);
+    if (cuda_driver_semver.major == 11) {
+      suitable_toolkit_version = "11.7";
+    } else if (cuda_driver_semver.major == 12) {
+      suitable_toolkit_version = "12.0";
+    }
+  }
+  return suitable_toolkit_version;
+}
+}  // namespace
+
 EngineService::EngineService()
     : hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
               .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
@@ -98,8 +119,10 @@ void EngineService::UnzipEngine(const std::string& engine,
   CTL_INF("engine: " << engine);
   CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
   std::string cuda_variant = "cuda-";
-  cuda_variant += hw_inf_.cuda_driver_version;
-  cuda_variant += ".tar.gz";
+  cuda_variant += GetSuitableCudaVersion(engine, hw_inf_.cuda_driver_version) +
+                  "-" + hw_inf_.sys_inf->os + "-" + hw_inf_.sys_inf->arch +
+                  ".tar.gz";
+  CTL_INF("cuda_variant: " << cuda_variant);
 
   std::vector<std::string> variants;
   // Loop through all files in the directory
@@ -299,23 +322,8 @@ void EngineService::DownloadCuda(const std::string& engine) {
   const std::string cuda_toolkit_file_name = "cuda.tar.gz";
   const std::string download_id = "cuda";
 
-  // TODO: we don't have API to retrieve list of cuda toolkit dependencies atm because we hosting it at jan
-  //  will have better logic after https://github.com/janhq/cortex/issues/1046 finished
-  // for now, assume that we have only 11.7 and 12.4
-  auto suitable_toolkit_version = "";
-  if (engine == "cortex.tensorrt-llm") {
-    // for tensorrt-llm, we need to download cuda toolkit v12.4
-    suitable_toolkit_version = "12.4";
-  } else {
-    // llamacpp
-    auto cuda_driver_semver =
-        semantic_version_utils::SplitVersion(hw_inf_.cuda_driver_version);
-    if (cuda_driver_semver.major == 11) {
-      suitable_toolkit_version = "11.7";
-    } else if (cuda_driver_semver.major == 12) {
-      suitable_toolkit_version = "12.0";
-    }
-  }
+  auto suitable_toolkit_version =
+      GetSuitableCudaVersion(engine, hw_inf_.cuda_driver_version);
 
   // compare cuda driver version with cuda toolkit version
   // cuda driver version should be greater than toolkit version to ensure compatibility
@@ -331,7 +339,7 @@ void EngineService::DownloadCuda(const std::string& engine) {
   auto url_obj = url_parser::Url{
       .protocol = "https",
       .host = jan_host,
-      .pathParams = {"dist", "cuda-dependencies", hw_inf_.cuda_driver_version,
+      .pathParams = {"dist", "cuda-dependencies", suitable_toolkit_version,
                      hw_inf_.sys_inf->os, cuda_toolkit_file_name},
   };
 
