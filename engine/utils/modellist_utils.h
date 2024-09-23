@@ -1,9 +1,10 @@
 #pragma once
+
 #include <trantor/utils/Logger.h>
 #include <mutex>
 #include <string>
 #include <vector>
-#include "logging_utils.h"
+
 namespace modellist_utils {
 
 enum class ModelStatus { READY, RUNNING };
@@ -22,7 +23,7 @@ class ModelListUtils {
  private:
   mutable std::mutex mutex_;  // For thread safety
 
-    bool IsUnique(const std::vector<ModelEntry>& entries,
+  bool IsUnique(const std::vector<ModelEntry>& entries,
                 const std::string& model_id,
                 const std::string& model_alias) const;
   void SaveModelList(const std::vector<ModelEntry>& entries) const;
@@ -40,6 +41,7 @@ class ModelListUtils {
   bool UpdateModelEntry(const std::string& identifier,
                         const ModelEntry& updated_entry);
   bool DeleteModelEntry(const std::string& identifier);
-  bool UpdateModelAlias(const std::string& model_id, const std::string& model_alias);
+  bool UpdateModelAlias(const std::string& model_id,
+                        const std::string& model_alias);
 };
 }  // namespace modellist_utils
