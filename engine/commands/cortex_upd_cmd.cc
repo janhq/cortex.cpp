@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/scope_exit.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
 
@@ -78,16 +79,16 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
-  auto res = ReplaceBinaryInflight(src, dst);
-  // Remove cortex tmp folder
-  if (std::filesystem::exists(src.parent_path())) {
+  utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
     try {
-      std::filesystem::remove_all(src.parent_path());
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
     } catch (const std::exception& e) {
       CTL_WRN(e.what());
     }
-  }
-  return res;
+  });
+  return ReplaceBinaryInflight(src, dst);
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
@@ -144,16 +145,16 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
-  auto res = ReplaceBinaryInflight(src, dst);
-  // Remove cortex tmp folder
-  if (std::filesystem::exists(src.parent_path())) {
+  utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
     try {
-      std::filesystem::remove_all(src.parent_path());
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
     } catch (const std::exception& e) {
       CTL_WRN(e.what());
     }
-  }
-  return res;
+  });
+  return ReplaceBinaryInflight(src, dst);
 }
 
 bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
@@ -282,15 +283,15 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
-  auto res = ReplaceBinaryInflight(src, dst);
-  // Remove cortex tmp folder
-  if (std::filesystem::exists(src.parent_path())) {
+  utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
     try {
-      std::filesystem::remove_all(src.parent_path());
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
     } catch (const std::exception& e) {
       CTL_WRN(e.what());
     }
-  }
-  return res;
+  });
+  return ReplaceBinaryInflight(src, dst);
 }
 }  // namespace commands
