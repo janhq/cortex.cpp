@@ -1,5 +1,7 @@
 import pytest
 from test_runner import run
+import tempfile
+import os
 
 
 class TestCortexUpdate:
@@ -10,3 +12,4 @@ class TestCortexUpdate:
         exit_code, output, error = run("Update cortex", ["update"])
         assert exit_code == 0, "Something went wrong"
         assert "Updated cortex sucessfully" in output
+        assert os.path.exists(os.path.join(tempfile.gettempdir()), 'cortex') == False
