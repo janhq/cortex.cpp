@@ -6,6 +6,7 @@
 #include "utils/archive_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/scope_exit.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
 
@@ -23,6 +24,16 @@ void CortexUpdCmd::Exec(std::string v) {
       ssc.Exec();
     }
   }
+
+  // Try to remove cortex temp folder if it exists first
+  try {
+    auto n = std::filesystem::remove_all(
+        std::filesystem::temp_directory_path() / "cortex");
+    CTL_INF("Deleted " << n << " files or directories");
+  } catch (const std::exception& e) {
+    CTL_WRN(e.what());
+  }
+
   if (CORTEX_VARIANT == file_manager_utils::kProdVariant) {
     if (!GetStable(v))
       return;
@@ -38,7 +49,7 @@ void CortexUpdCmd::Exec(std::string v) {
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
   auto system_info = system_info_utils::GetSystemInfo();
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
   auto github_host = GetHostName();
@@ -56,7 +67,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
         }
 
         if (!HandleGithubRelease(json_data["assets"],
-                                 {system_info.os + "-" + system_info.arch})) {
+                                 {system_info->os + "-" + system_info->arch})) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
@@ -75,15 +86,24 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src = std::filesystem::temp_directory_path() / "cortex" / kCortexBinary /
-             GetCortexBinary();
+  auto src =
+      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
+  utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
+    try {
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  });
   return ReplaceBinaryInflight(src, dst);
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
   auto system_info = system_info_utils::GetSystemInfo();
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
   auto github_host = GetHostName();
@@ -113,7 +133,7 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
         }
 
         if (!HandleGithubRelease(json_data["assets"],
-                                 {system_info.os + "-" + system_info.arch})) {
+                                 {system_info->os + "-" + system_info->arch})) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
@@ -135,6 +155,15 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
+  utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
+    try {
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  });
   return ReplaceBinaryInflight(src, dst);
 }
 
@@ -205,11 +234,11 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto system_info = system_info_utils::GetSystemInfo();
-  CTL_INF("OS: " << system_info.os << ", Arch: " << system_info.arch);
+  CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
   std::string version = v.empty() ? "latest" : std::move(v);
-  std::string os_arch{system_info.os + "-" + system_info.arch};
+  std::string os_arch{system_info->os + "-" + system_info->arch};
   const char* paths[] = {
       "cortex",
       version.c_str(),
@@ -264,6 +293,15 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto src =
       std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
+  utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
+    try {
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  });
   return ReplaceBinaryInflight(src, dst);
 }
 }  // namespace commands

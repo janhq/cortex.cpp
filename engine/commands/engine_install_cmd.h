@@ -9,7 +9,8 @@ class EngineInstallCmd {
  public:
   explicit EngineInstallCmd() : engine_service_{EngineService()} {};
 
-  void Exec(const std::string& engine, const std::string& version = "latest");
+  void Exec(const std::string& engine, const std::string& version = "latest",
+            const std::string& src = "");
 
  private:
   EngineService engine_service_;
