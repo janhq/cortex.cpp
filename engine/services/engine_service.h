@@ -6,7 +6,6 @@
 #include <string_view>
 #include <vector>
 #include "utils/cpuid/cpu_info.h"
-// #include "utils/system_info_utils.h"
 
 struct EngineInfo {
   std::string name;

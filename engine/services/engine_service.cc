@@ -328,12 +328,16 @@ void EngineService::DownloadCuda(const std::string& engine) {
     throw std::runtime_error("Cuda driver is not compatible with cuda toolkit");
   }
 
-  std::ostringstream cuda_toolkit_url;
-  cuda_toolkit_url << jan_host << "/" << "dist/cuda-dependencies/"
-                   << hw_inf_.cuda_driver_version << "/" << hw_inf_.sys_inf->os
-                   << "/" << cuda_toolkit_file_name;
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = jan_host,
+      .pathParams = {"dist", "cuda-dependencies", hw_inf_.cuda_driver_version,
+                     hw_inf_.sys_inf->os, cuda_toolkit_file_name},
+  };
 
-  LOG_DEBUG << "Cuda toolkit download url: " << cuda_toolkit_url.str();
+  auto cuda_toolkit_url = url_parser::FromUrl(url_obj);
+
+  LOG_DEBUG << "Cuda toolkit download url: " << cuda_toolkit_url;
   auto cuda_toolkit_local_path =
       file_manager_utils::GetContainerFolderPath(
           file_manager_utils::DownloadTypeToString(DownloadType::CudaToolkit)) /
@@ -343,7 +347,7 @@ void EngineService::DownloadCuda(const std::string& engine) {
       .id = download_id,
       .type = DownloadType::CudaToolkit,
       .items = {DownloadItem{.id = download_id,
-                             .downloadUrl = cuda_toolkit_url.str(),
+                             .downloadUrl = cuda_toolkit_url,
                              .localPath = cuda_toolkit_local_path}},
   }};
 
