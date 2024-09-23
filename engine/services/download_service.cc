@@ -12,6 +12,14 @@
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 
+#ifdef _WIN32
+#define ftell64(f) _ftelli64(f)
+#define fseek64(f, o, w) _fseeki64(f, o, w)
+#else
+#define ftell64(f) ftello(f)
+#define fseek64(f, o, w) fseeko(f, o, w)
+#endif
+
 namespace {
 size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
   size_t written = fwrite(ptr, size, nmemb, stream);
@@ -37,12 +45,19 @@ void DownloadService::AddDownloadTask(
   }
 
   // all items are valid, start downloading
+  bool download_successfully = true;
   for (const auto& item : task.items) {
     CLI_LOG("Start downloading: " + item.localPath.filename().string());
-    Download(task.id, item, true);
+    try {
+      Download(task.id, item, true);
+    } catch (const std::runtime_error& e) {
+      CTL_ERR("Failed to download: " << item.downloadUrl << " - " << e.what());
+      download_successfully = false;
+      break;
+    }
   }
 
-  if (callback.has_value()) {
+  if (download_successfully && callback.has_value()) {
     callback.value()(task);
   }
 }
@@ -102,10 +117,15 @@ void DownloadService::Download(const std::string& download_id,
   std::string mode = "wb";
   if (allow_resume && std::filesystem::exists(download_item.localPath) &&
       download_item.bytes.has_value()) {
-    FILE* existing_file = fopen(download_item.localPath.string().c_str(), "r");
-    fseek(existing_file, 0, SEEK_END);
-    curl_off_t existing_file_size = ftell(existing_file);
-    fclose(existing_file);
+    curl_off_t existing_file_size = GetLocalFileSize(download_item.localPath);
+    if (existing_file_size == -1) {
+      CLI_LOG("Cannot get file size: " << download_item.localPath.string()
+                                       << " . Start download over!");
+      return;
+    }
+    CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
+                                   << download_item.localPath.string() << " - "
+                                   << existing_file_size);
     auto missing_bytes = download_item.bytes.value() - existing_file_size;
     if (missing_bytes > 0) {
       CLI_LOG("Found unfinished download! Additional "
@@ -149,9 +169,13 @@ void DownloadService::Download(const std::string& download_id,
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   if (mode == "ab") {
-    fseek(file, 0, SEEK_END);
-    curl_off_t local_file_size = ftell(file);
-    curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE, local_file_size);
+    auto local_file_size = GetLocalFileSize(download_item.localPath);
+    if (local_file_size != -1) {
+      curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE,
+                       GetLocalFileSize(download_item.localPath));
+    } else {
+      CTL_ERR("Cannot get file size: " << download_item.localPath.string());
+    }
   }
 
   res = curl_easy_perform(curl);
@@ -159,8 +183,26 @@ void DownloadService::Download(const std::string& download_id,
   if (res != CURLE_OK) {
     fprintf(stderr, "curl_easy_perform() failed: %s\n",
             curl_easy_strerror(res));
+    throw std::runtime_error("Failed to download file " +
+                             download_item.localPath.filename().string());
   }
 
   fclose(file);
   curl_easy_cleanup(curl);
+}
+
+curl_off_t DownloadService::GetLocalFileSize(
+    const std::filesystem::path& path) const {
+  FILE* file = fopen(path.string().c_str(), "r");
+  if (!file) {
+    return -1;
+  }
+
+  if (fseek64(file, 0, SEEK_END) != 0) {
+    return -1;
+  }
+
+  curl_off_t file_size = ftell64(file);
+  fclose(file);
+  return file_size;
 }
