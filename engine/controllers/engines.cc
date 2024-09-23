@@ -38,7 +38,7 @@ void Engines::InstallEngine(
         auto jsonResponse = json::parse(res->body);
         auto assets = jsonResponse["assets"];
 
-        auto os_arch{system_info.os + "-" + system_info.arch};
+        auto os_arch{system_info->os + "-" + system_info->arch};
         for (auto& asset : assets) {
           auto assetName = asset["name"].get<std::string>();
           if (assetName.find(os_arch) != std::string::npos) {

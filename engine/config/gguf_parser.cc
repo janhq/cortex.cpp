@@ -19,7 +19,7 @@
 
 #include <fcntl.h>  // For file descriptors
 
-#include <jinja2cpp/template.h>
+#include "chat_template_renderer.h"
 
 #include "gguf_parser.h"
 #include "trantor/utils/Logger.h"
@@ -361,19 +361,10 @@ void GGUFHandler::PrintMetadata() {
     if (key.compare("tokenizer.chat_template") == 0) {
       LOG_INFO << key << ": " << "\n" << value << "\n";
 
-      jinja2::Template chat_template;
-      chat_template.Load(value);
-      jinja2::ValuesMap params{
-          {"add_generation_prompt", true},
-          {"bos_token", "<|begin_of_text|>"},
-          {"eos_token", "<|eot_id|>"},
-          {"messages",
-           jinja2::ValuesList{
-               jinja2::ValuesMap{{"role", "system"},
-                                 {"content", "{system_message}"}},
-               jinja2::ValuesMap{{"role", "user"}, {"content", "{prompt}"}}}}};
-      std::string result = chat_template.RenderAsString(params).value();
-
+      std::vector<llama_chat_msg> messages{
+          llama_chat_msg{"system", "{system_message}"},
+          llama_chat_msg{"user", "{prompt}"}};
+      std::string result = llama_chat_apply_template(value, messages, true);
       LOG_INFO << "result jinja render: " << result << "\n";
     } else {
       LOG_INFO << key << ": " << value << "\n";
@@ -555,19 +546,10 @@ void GGUFHandler::ModelConfigFromMetadata() {
             ">\n\n";
       } else {
         try {
-          jinja2::Template jinja2_chat_template;
-          jinja2_chat_template.Load(value);
-          jinja2::ValuesMap params{
-              {"add_generation_prompt", true},
-              {"bos_token", tokens[bos_token]},
-              {"eos_token", tokens[eos_token]},
-              {"messages",
-               jinja2::ValuesList{
-                   jinja2::ValuesMap{{"role", "system"},
-                                     {"content", "{system_message}"}},
-                   jinja2::ValuesMap{{"role", "user"},
-                                     {"content", "{prompt}"}}}}};
-          chat_template = jinja2_chat_template.RenderAsString(params).value();
+          std::vector<llama_chat_msg> messages{
+              llama_chat_msg{"system", "{system_message}"},
+              llama_chat_msg{"user", "{prompt}"}};
+          chat_template = llama_chat_apply_template(value, messages, true);
         } catch (const std::exception& e) {
           std::cerr << "Error render chat template: " << e.what()
                     << ". Using default template: \n[INST] "
