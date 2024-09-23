@@ -295,7 +295,7 @@ void EngineService::DownloadCuda(const std::string& engine) {
     return;
   }
   // download cuda toolkit
-  const std::string jan_host = "https://catalog.jan.ai";
+  const std::string jan_host = "catalog.jan.ai";
   const std::string cuda_toolkit_file_name = "cuda.tar.gz";
   const std::string download_id = "cuda";
 
