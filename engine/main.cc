@@ -88,10 +88,10 @@ void RunServer() {
 int main(int argc, char* argv[]) {
   // Stop the program if the system is not supported
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-                                               << system_info.arch);
+  if (system_info->arch == system_info_utils::kUnsupported ||
+      system_info->os == system_info_utils::kUnsupported) {
+    CTL_ERR("Unsupported OS or architecture: " << system_info->os << ", "
+                                               << system_info->arch);
     return 1;
   }
 

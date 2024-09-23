@@ -7,11 +7,35 @@
 #include "exceptions/malformed_url_exception.h"
 
 namespace url_parser {
+
+struct explicit_bool {
+  bool b = false;
+  template <class T, std::enable_if_t<std::is_same_v<T, bool>, bool> = true>
+  explicit_bool(T v) : b(v) {}
+  explicit_bool(explicit_bool const&) noexcept = default;
+  explicit_bool& operator=(explicit_bool const&) & noexcept = default;
+  explicit_bool() noexcept = default;
+  ~explicit_bool() noexcept = default;
+  bool operator!() const { return !b; }
+  explicit operator bool() const { return b; }
+};
+
+struct explicit_int {
+  int i = 0;
+  template <class T, std::enable_if_t<std::is_same_v<T, int>, int> = true>
+  explicit_int(T v) : i(v) {}
+  explicit_int(explicit_int const&) noexcept = default;
+  explicit_int& operator=(explicit_int const&) & noexcept = default;
+  explicit_int() noexcept = default;
+  ~explicit_int() noexcept = default;
+
+  explicit operator int() const { return i; }
+};
 struct Url {
   std::string protocol;
   std::string host;
   std::vector<std::string> pathParams;
-  std::unordered_map<std::string, std::variant<std::string, int, bool>> queries;
+  std::unordered_map<std::string, std::variant<std::string, explicit_int, explicit_bool>> queries;
 
   std::string GetProtocolAndHost() const { return protocol + "://" + host; }
 
@@ -106,10 +130,10 @@ inline std::string FromUrl(const Url& url) {
       std::string value_str;
       if (std::holds_alternative<std::string>(value)) {
         value_str = std::get<std::string>(value);
-      } else if (std::holds_alternative<int>(value)) {
-        value_str = std::to_string(std::get<int>(value));
-      } else if (std::holds_alternative<bool>(value)) {
-        value_str = std::get<bool>(value) ? "true" : "false";
+      } else if (std::holds_alternative<explicit_int>(value)) {
+        value_str = std::to_string(int(std::get<explicit_int>(value)));
+      } else if (std::holds_alternative<explicit_bool>(value)) {
+        value_str = std::get<explicit_bool>(value) ? "true" : "false";
       }
       if (!query_string.empty()) {
         query_string += "&";
