@@ -224,7 +224,7 @@ void EngineService::InstallEngine(const std::string& engine,
           if (cuda_driver_semver.major == 11) {
             suitable_toolkit_version = "11.7";
           } else if (cuda_driver_semver.major == 12) {
-            suitable_toolkit_version = "12.4";
+            suitable_toolkit_version = "12.0";
           }
         }
 
