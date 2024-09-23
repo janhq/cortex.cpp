@@ -45,7 +45,8 @@ void ModelImportCmd::Exec() {
     }
 
   } catch (const std::exception& e) {
-    std::remove(model_yaml_path.c_str());
+    // don't need to remove yml file here, because it's written only if model entry is successfully added, 
+    // remove file here can make it fail with edge case when user try to import new model with existed model_id
     CLI_LOG("Error importing model path '" + model_path_ + "' with model_id '" +
             model_handle_ + "': " + e.what());
   }

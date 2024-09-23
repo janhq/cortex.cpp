@@ -191,18 +191,14 @@ Cortex.cpp includes a REST API accessible at `localhost:3928`. For a complete li
 
 ## Uninstallation
 ### Windows
-1. Navigate to Add or Remove program.
-2. Search for Cortex.cpp.
-3. Click Uninstall.
-4. Delete the Cortex.cpp data folder located in your home folder.
+1. Navigate to `Add or Remove Programs`.
+2. Search for Cortex.cpp and click `Uninstall`.
+
 ### MacOs
 Run the uninstaller script:
 ```bash
 sudo sh cortex-uninstall.sh
 ```
-> **Note**:
-> The script requires sudo permission.
-
 
 ### Linux
 ```bash

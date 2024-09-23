@@ -22,14 +22,14 @@ class ModelListUtils {
  private:
   mutable std::mutex mutex_;  // For thread safety
 
-  std::vector<ModelEntry> LoadModelList() const;
-  bool IsUnique(const std::vector<ModelEntry>& entries,
+    bool IsUnique(const std::vector<ModelEntry>& entries,
                 const std::string& model_id,
                 const std::string& model_alias) const;
   void SaveModelList(const std::vector<ModelEntry>& entries) const;
 
  public:
   static const std::string kModelListPath;
+  std::vector<ModelEntry> LoadModelList() const;
   ModelListUtils() = default;
   std::string GenerateShortenedAlias(
       const std::string& model_id,
