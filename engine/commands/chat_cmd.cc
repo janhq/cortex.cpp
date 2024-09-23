@@ -6,6 +6,7 @@
 #include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
+#include "utils/modellist_utils.h"
 
 namespace commands {
 namespace {
@@ -36,23 +37,36 @@ struct ChunkParser {
   }
 };
 
-ChatCmd::ChatCmd(std::string host, int port, const config::ModelConfig& mc)
-    : host_(std::move(host)), port_(port), mc_(mc) {}
+void ChatCmd::Exec(const std::string& host, int port,
+                   const std::string& model_handle, std::string msg) {
+  modellist_utils::ModelListUtils modellist_handler;
+  config::YamlHandler yaml_handler;
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    auto mc = yaml_handler.GetModelConfig();
+    Exec(host, port, mc, std::move(msg));
+  } catch (const std::exception& e) {
+    CLI_LOG("Fail to start model information with ID '" + model_handle +
+            "': " + e.what());
+  }
+}
 
-void ChatCmd::Exec(std::string msg) {
+void ChatCmd::Exec(const std::string& host, int port,
+                   const config::ModelConfig& mc, std::string msg) {
+  auto address = host + ":" + std::to_string(port);
   // Check if server is started
   {
-    if (!commands::IsServerAlive(host_, port_)) {
+    if (!commands::IsServerAlive(host, port)) {
       CLI_LOG("Server is not started yet, please run `"
               << commands::GetCortexBinary() << " start` to start server!");
       return;
     }
   }
 
-  auto address = host_ + ":" + std::to_string(port_);
   // Only check if llamacpp engine
-  if ((mc_.engine.find("llamacpp") != std::string::npos) &&
-      !commands::ModelStatusCmd().IsLoaded(host_, port_, mc_)) {
+  if ((mc.engine.find("llamacpp") != std::string::npos) &&
+      !commands::ModelStatusCmd().IsLoaded(host, port, mc)) {
     CLI_LOG("Model is not loaded yet!");
     return;
   }
@@ -78,12 +92,12 @@ void ChatCmd::Exec(std::string msg) {
         new_data["role"] = kUser;
         new_data["content"] = user_input;
         histories_.push_back(std::move(new_data));
-        json_data["engine"] = mc_.engine;
+        json_data["engine"] = mc.engine;
         json_data["messages"] = histories_;
-        json_data["model"] = mc_.name;
+        json_data["model"] = mc.name;
         //TODO: support non-stream
         json_data["stream"] = true;
-        json_data["stop"] = mc_.stop;
+        json_data["stop"] = mc.stop;
         auto data_str = json_data.dump();
         // std::cout << data_str << std::endl;
         cli.set_read_timeout(std::chrono::seconds(60));

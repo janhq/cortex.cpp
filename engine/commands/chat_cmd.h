@@ -7,13 +7,12 @@
 namespace commands {
 class ChatCmd {
  public:
-  ChatCmd(std::string host, int port, const config::ModelConfig& mc);
-  void Exec(std::string msg);
+  void Exec(const std::string& host, int port, const std::string& model_handle,
+            std::string msg);
+  void Exec(const std::string& host, int port, const config::ModelConfig& mc,
+            std::string msg);
 
  private:
-  std::string host_;
-  int port_;
-  const config::ModelConfig& mc_;
   std::vector<nlohmann::json> histories_;
 };
 }  // namespace commands

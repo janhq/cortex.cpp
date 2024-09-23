@@ -6,6 +6,7 @@
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/file_manager_utils.h"
+#include "utils/modellist_utils.h"
 
 namespace commands {
 
@@ -48,28 +49,29 @@ void RunCmd::Exec() {
     }
   }
 
-  config::YamlHandler yaml_handler;
-  yaml_handler.ModelConfigFromFile(
-      file_manager_utils::GetModelsContainerPath().string() + "/" + model_file +
-      ".yaml");
-  auto mc = yaml_handler.GetModelConfig();
+  // TODO(sang) refactor after `cortex pull` done with new data structure
+  try {
+    modellist_utils::ModelListUtils modellist_handler;
+    config::YamlHandler yaml_handler;
+    auto model_entry = modellist_handler.GetModelInfo(model_id_);
+    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    auto mc = yaml_handler.GetModelConfig();
 
-  // Always start model if not llamacpp
-  // If it is llamacpp, then check model status first
-  {
-    if ((mc.engine.find("llamacpp") == std::string::npos) ||
-        !commands::ModelStatusCmd().IsLoaded(host_, port_, mc)) {
-      ModelStartCmd msc(host_, port_, mc);
-      if (!msc.Exec()) {
-        return;
+    // Always start model if not llamacpp
+    // If it is llamacpp, then check model status first
+    {
+      if ((mc.engine.find("llamacpp") == std::string::npos) ||
+          !commands::ModelStatusCmd().IsLoaded(host_, port_, mc)) {
+        if (!ModelStartCmd().Exec(host_, port_, mc)) {
+          return;
+        }
       }
     }
-  }
 
-  // Chat
-  {
-    ChatCmd cc(host_, port_, mc);
-    cc.Exec("");
+    // Chat
+    ChatCmd().Exec(host_, port_, mc, "");
+  } catch (const std::exception& e) {
+    CLI_LOG("Fail to run model with ID '" + model_id_ + "': " + e.what());
   }
 }
 };  // namespace commands
