@@ -42,8 +42,24 @@ TEST_F(CortexUpdCmdTest, return_true_if_self_replace) {
 TEST_F(CortexUpdCmdTest, replace_binary_successfully) {
   std::filesystem::path new_binary(kNewReleaseFile);
   std::filesystem::path cur_binary(kCurReleaseFile);
+#if !defined(_WIN32)
+  struct stat cur_file_stat;
+  EXPECT_TRUE(stat(cur_binary.string().c_str(), &cur_file_stat) == 0);
+#endif
+
   EXPECT_TRUE(commands::ReplaceBinaryInflight(new_binary, cur_binary));
+
+#if !defined(_WIN32)
+  EXPECT_FALSE(std::filesystem::exists(kCortexTemp));
+
+  struct stat new_file_stat;
+  EXPECT_TRUE(stat(cur_binary.string().c_str(), &new_file_stat) == 0);
+  EXPECT_EQ(cur_file_stat.st_uid, new_file_stat.st_uid);
+  EXPECT_EQ(cur_file_stat.st_gid, new_file_stat.st_gid);
+  EXPECT_EQ(cur_file_stat.st_mode, new_file_stat.st_mode);
+#else
   EXPECT_TRUE(std::filesystem::exists(kCortexTemp));
+#endif
 }
 
 TEST_F(CortexUpdCmdTest, should_restore_old_binary_if_has_error) {

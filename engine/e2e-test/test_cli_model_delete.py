@@ -1,5 +1,5 @@
 import pytest
-from test_runner import run
+from test_runner import popen, run
 
 
 class TestCliModelDelete:
@@ -8,7 +8,8 @@ class TestCliModelDelete:
     def setup_and_teardown(self):
         # Setup
         # Pull model
-        run("Pull Model", ["pull", "tinyllama"], 120)
+
+        stdout, stderr, return_code = popen(["pull", "tinyllama"], "1\n")
 
         yield
 
