@@ -24,6 +24,16 @@ void CortexUpdCmd::Exec(std::string v) {
       ssc.Exec();
     }
   }
+
+  // Try to remove cortex temp folder if it exists first
+  try {
+    auto n = std::filesystem::remove_all(
+        std::filesystem::temp_directory_path() / "cortex");
+    CTL_INF("Deleted " << n << " files or directories");
+  } catch (const std::exception& e) {
+    CTL_WRN(e.what());
+  }
+
   if (CORTEX_VARIANT == file_manager_utils::kProdVariant) {
     if (!GetStable(v))
       return;
