@@ -139,7 +139,7 @@ jobs:
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-windows-amd64 ${{ inputs.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-windows-amd64 ${{ inputs.ccache-dir }}  --endpoint ${{ secrets.MINIO_ENDPOINT }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
@@ -218,10 +218,10 @@ jobs:
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz
+          aws s3 sync ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz
 
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
+          aws s3 sync ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
+          aws s3 sync ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}

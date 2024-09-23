@@ -26,7 +26,11 @@ struct ChunkParser {
       if (s.find("[DONE]") != std::string::npos) {
         is_done = true;
       } else {
-        content = nlohmann::json::parse(s)["choices"][0]["delta"]["content"];
+        try {
+          content = nlohmann::json::parse(s)["choices"][0]["delta"]["content"];
+        } catch (const nlohmann::json::parse_error& e) {
+          CTL_WRN("JSON parse error: " << e.what());
+        }
       }
     }
   }
