@@ -1,5 +1,4 @@
 #include <trantor/utils/Logger.h>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -7,57 +6,57 @@
 #include <nlohmann/json.hpp>
 #include "httplib.h"
 #include "utils/file_manager_utils.h"
+#include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 
 namespace cortexso_parser {
-constexpr static auto kHuggingFaceHost = "https://huggingface.co";
+constexpr static auto kHuggingFaceHost = "huggingface.co";
 
 inline std::optional<DownloadTask> getDownloadTask(
     const std::string& modelId, const std::string& branch = "main") {
   using namespace nlohmann;
-  std::ostringstream oss;
-  oss << "/api/models/cortexso/" << modelId << "/tree/" << branch;
-  const std::string url = oss.str();
+  url_parser::Url url = {
+      .protocol = "https",
+      .host = kHuggingFaceHost,
+      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
 
-  std::ostringstream repoAndModelId;
-  repoAndModelId << "cortexso/" << modelId;
-  const std::string repoAndModelIdStr = repoAndModelId.str();
-
-  httplib::Client cli(kHuggingFaceHost);
-  if (auto res = cli.Get(url)) {
+  httplib::Client cli(url.GetProtocolAndHost());
+  if (auto res = cli.Get(url.GetPathAndQuery())) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
         auto jsonResponse = json::parse(res->body);
 
-        std::vector<DownloadItem> downloadItems{};
-        std::filesystem::path model_container_path =
-            file_manager_utils::GetModelsContainerPath() / modelId;
+        std::vector<DownloadItem> download_items{};
+        auto model_container_path =
+            file_manager_utils::GetModelsContainerPath() / "cortex.so" /
+            modelId / branch;
         file_manager_utils::CreateDirectoryRecursively(
             model_container_path.string());
 
         for (const auto& [key, value] : jsonResponse.items()) {
-          std::ostringstream downloadUrlOutput;
           auto path = value["path"].get<std::string>();
           if (path == ".gitattributes" || path == ".gitignore" ||
               path == "README.md") {
             continue;
           }
-          downloadUrlOutput << kHuggingFaceHost << "/" << repoAndModelIdStr
-                            << "/resolve/" << branch << "/" << path;
-          const std::string download_url = downloadUrlOutput.str();
-          auto local_path = model_container_path / path;
+          url_parser::Url download_url = {
+              .protocol = "https",
+              .host = kHuggingFaceHost,
+              .pathParams = {"cortexso", modelId, "resolve", branch, path}};
 
-          downloadItems.push_back(DownloadItem{.id = path,
-                                               .downloadUrl = download_url,
-                                               .localPath = local_path});
+          auto local_path = model_container_path / path;
+          download_items.push_back(
+              DownloadItem{.id = path,
+                           .downloadUrl = download_url.ToFullPath(),
+                           .localPath = local_path});
         }
 
-        DownloadTask downloadTask{
+        DownloadTask download_tasks{
             .id = branch == "main" ? modelId : modelId + "-" + branch,
             .type = DownloadType::Model,
-            .items = downloadItems};
+            .items = download_items};
 
-        return downloadTask;
+        return download_tasks;
       } catch (const json::parse_error& e) {
         CTL_ERR("JSON parse error: {}" << e.what());
       }

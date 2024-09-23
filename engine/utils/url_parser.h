@@ -30,6 +30,10 @@ struct Url {
     }
     return path;
   };
+
+  std::string ToFullPath() const {
+    return GetProtocolAndHost() + GetPathAndQuery();
+  }
 };
 
 const std::regex url_regex(
