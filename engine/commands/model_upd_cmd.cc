@@ -47,7 +47,60 @@ void ModelUpdCmd::UpdateConfig(const std::string& key,
            [](ModelUpdCmd* self, const std::string&, const std::string& v) {
              self->model_config_.version = v;
            }},
+          {"engine",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.engine = v;
+           }},
+          {"prompt_template",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.prompt_template = v;
+           }},
+          {"system_template",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.system_template = v;
+           }},
+          {"user_template",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.user_template = v;
+           }},
+          {"ai_template",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.ai_template = v;
+           }},
+          {"os",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.os = v;
+           }},
+          {"gpu_arch",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.gpu_arch = v;
+           }},
+          {"quantization_method",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.quantization_method = v;
+           }},
+          {"precision",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.precision = v;
+           }},
+          {"trtllm_version",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.trtllm_version = v;
+           }},
+          {"object",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.object = v;
+           }},
+          {"owned_by",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.owned_by = v;
+           }},
+          {"grammar",
+           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
+             self->model_config_.grammar = v;
+           }},
           {"stop", &ModelUpdCmd::UpdateVectorField},
+          {"files", &ModelUpdCmd::UpdateVectorField},
           {"top_p",
            [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
              self->UpdateNumericField(
@@ -71,10 +124,103 @@ void ModelUpdCmd::UpdateConfig(const std::string& key,
                self->model_config_.presence_penalty = f;
              });
            }},
+          {"dynatemp_range",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.dynatemp_range = f;
+             });
+           }},
+          {"dynatemp_exponent",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.dynatemp_exponent = f;
+             });
+           }},
+          {"min_p",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(
+                 k, v, [self](float f) { self->model_config_.min_p = f; });
+           }},
+          {"tfs_z",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(
+                 k, v, [self](float f) { self->model_config_.tfs_z = f; });
+           }},
+          {"typ_p",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(
+                 k, v, [self](float f) { self->model_config_.typ_p = f; });
+           }},
+          {"repeat_penalty",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.repeat_penalty = f;
+             });
+           }},
+          {"mirostat_tau",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.mirostat_tau = f;
+             });
+           }},
+          {"mirostat_eta",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.mirostat_eta = f;
+             });
+           }},
           {"max_tokens",
            [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
              self->UpdateNumericField(k, v, [self](float f) {
                self->model_config_.max_tokens = static_cast<int>(f);
+             });
+           }},
+          {"ngl",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.ngl = static_cast<int>(f);
+             });
+           }},
+          {"ctx_len",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.ctx_len = static_cast<int>(f);
+             });
+           }},
+          {"tp",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.tp = static_cast<int>(f);
+             });
+           }},
+          {"seed",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.seed = static_cast<int>(f);
+             });
+           }},
+          {"top_k",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.top_k = static_cast<int>(f);
+             });
+           }},
+          {"repeat_last_n",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.repeat_last_n = static_cast<int>(f);
+             });
+           }},
+          {"n_probs",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.n_probs = static_cast<int>(f);
+             });
+           }},
+          {"min_keep",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.min_keep = static_cast<int>(f);
              });
            }},
           {"stream",
@@ -82,12 +228,39 @@ void ModelUpdCmd::UpdateConfig(const std::string& key,
              self->UpdateBooleanField(
                  k, v, [self](bool b) { self->model_config_.stream = b; });
            }},
-          // Add more fields here...
+          {"text_model",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateBooleanField(
+                 k, v, [self](bool b) { self->model_config_.text_model = b; });
+           }},
+          {"mirostat",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateBooleanField(
+                 k, v, [self](bool b) { self->model_config_.mirostat = b; });
+           }},
+          {"penalize_nl",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateBooleanField(
+                 k, v, [self](bool b) { self->model_config_.penalize_nl = b; });
+           }},
+          {"ignore_eos",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateBooleanField(
+                 k, v, [self](bool b) { self->model_config_.ignore_eos = b; });
+           }},
+          {"created",
+           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
+             self->UpdateNumericField(k, v, [self](float f) {
+               self->model_config_.created = static_cast<std::size_t>(f);
+             });
+           }},
       };
 
   if (auto it = updaters.find(key); it != updaters.end()) {
     it->second(this, key, value);
     LogUpdate(key, value);
+  } else {
+    CLI_LOG("Warning: Unknown configuration key '" << key << "' ignored.");
   }
 }
 
