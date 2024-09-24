@@ -28,7 +28,7 @@ Cortex.cpp is a multi-engine that uses `llama.cpp` as the default engine but als
 - [`onnx`](https://github.com/janhq/cortex.onnx)
 - [`tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
-## Uninstallation
+## Installation
 
 You can install a nightly (unstable) version of Cortex from Discord here: https://discord.gg/nGp6PMrUqS
 
