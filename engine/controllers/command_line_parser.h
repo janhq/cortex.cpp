@@ -41,7 +41,7 @@ class CommandLineParser {
     bool check_upd = true;
     int port;
     config_yaml_utils::CortexConfig config;
+    std::unordered_map<std::string, std::string> model_update_options;
   };
   CmlData cml_data_;
-  commands::ModelUpdateOptions model_update_options_;
 };
