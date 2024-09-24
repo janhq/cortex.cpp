@@ -390,7 +390,7 @@ void CommandLineParser::SetupSystemCommands() {
   update_cmd->callback([this] {
 #if !defined(_WIN32)
     if (getuid()) {
-      CLI_LOG("You are not root, please run the command with `sudo`");
+      CLI_LOG("Error: Not root user. Please run with sudo.");
       return;
     }
 #endif
