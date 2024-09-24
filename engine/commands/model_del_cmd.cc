@@ -13,13 +13,18 @@ bool ModelDelCmd::Exec(const std::string& model_handle) {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
     yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
-    // Remove model file if it is not imported locally
+    // Remove yaml file
+    std::filesystem::remove(model_entry.path_to_model_yaml);
+    // Remove model files if they are not imported locally
     if (model_entry.branch_name != "imported") {
       if (mc.files.size() > 0) {
-        std::filesystem::path f(mc.files[0]);
         if (mc.engine == "cortex.llamacpp") {
-          std::filesystem::remove_all(f.parent_path());
+          for (auto& file : mc.files) {
+            std::filesystem::path gguf_p(file);
+            std::filesystem::remove(gguf_p);
+          }
         } else {
+          std::filesystem::path f(mc.files[0]);
           std::filesystem::remove_all(f);
         }
       } else {
