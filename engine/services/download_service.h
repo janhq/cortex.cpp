@@ -1,5 +1,6 @@
 #pragma once
 
+#include <curl/curl.h>
 #include <filesystem>
 #include <functional>
 #include <optional>
@@ -73,4 +74,6 @@ class DownloadService {
  private:
   void Download(const std::string& download_id,
                 const DownloadItem& download_item, bool allow_resume);
+
+  curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
 };
