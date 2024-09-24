@@ -471,27 +471,60 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
       ->required();
 
   // Add options dynamically
+  std::vector<std::string> option_names = {"name",
+                                           "model",
+                                           "version",
+                                           "stop",
+                                           "top_p",
+                                           "temperature",
+                                           "frequency_penalty",
+                                           "presence_penalty",
+                                           "max_tokens",
+                                           "stream",
+                                           "ngl",
+                                           "ctx_len",
+                                           "engine",
+                                           "prompt_template",
+                                           "system_template",
+                                           "user_template",
+                                           "ai_template",
+                                           "os",
+                                           "gpu_arch",
+                                           "quantization_method",
+                                           "precision",
+                                           "tp",
+                                           "trtllm_version",
+                                           "text_model",
+                                           "files",
+                                           "created",
+                                           "object",
+                                           "owned_by",
+                                           "seed",
+                                           "dynatemp_range",
+                                           "dynatemp_exponent",
+                                           "top_k",
+                                           "min_p",
+                                           "tfs_z",
+                                           "typ_p",
+                                           "repeat_last_n",
+                                           "repeat_penalty",
+                                           "mirostat",
+                                           "mirostat_tau",
+                                           "mirostat_eta",
+                                           "penalize_nl",
+                                           "ignore_eos",
+                                           "n_probs",
+                                           "min_keep",
+                                           "grammar"};
 
+  for (const auto& option_name : option_names) {
+    model_update_cmd->add_option("--" + option_name,
+                                 cml_data_.model_update_options[option_name],
+                                 option_name);
+  }
 
-// Add options dynamically
-std::vector<std::string> option_names = {
-    "name", "model", "version", "stop", "top_p", "temperature",
-    "frequency_penalty", "presence_penalty", "max_tokens", "stream",
-    "ngl", "ctx_len", "engine", "prompt_template", "system_template",
-    "user_template", "ai_template", "os", "gpu_arch", "quantization_method",
-    "precision", "tp", "trtllm_version", "text_model", "files", "created",
-    "object", "owned_by", "seed", "dynatemp_range", "dynatemp_exponent",
-    "top_k", "min_p", "tfs_z", "typ_p", "repeat_last_n", "repeat_penalty",
-    "mirostat", "mirostat_tau", "mirostat_eta", "penalize_nl", "ignore_eos",
-    "n_probs", "min_keep", "grammar"
-};
-
-for (const auto& option_name : option_names) {
-    model_update_cmd->add_option("--" + option_name, cml_data_.model_update_options[option_name], option_name);
-}
-
-model_update_cmd->callback([this]() {
+  model_update_cmd->callback([this]() {
     commands::ModelUpdCmd command(cml_data_.model_id);
     command.Exec(cml_data_.model_update_options);
-});
+  });
 }
