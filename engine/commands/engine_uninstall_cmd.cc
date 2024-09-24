@@ -5,7 +5,12 @@
 namespace commands {
 
 void EngineUninstallCmd::Exec(const std::string& engine) {
-  engine_service_.UninstallEngine(engine);
-  CLI_LOG("Engine " << engine << " uninstalled successfully!");
+  auto result = engine_service_.UninstallEngine(engine);
+
+  if (result.has_error()) {
+    CLI_LOG(result.error());
+  } else {
+    CLI_LOG("Engine uninstalled successfully");
+  }
 }
 };  // namespace commands

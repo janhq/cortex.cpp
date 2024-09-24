@@ -138,7 +138,11 @@ std::optional<std::string> ModelService::DownloadModelByDirectUrl(
     ParseGguf(gguf_download_item, author);
   };
 
-  download_service_.AddDownloadTask(downloadTask, on_finished);
+  auto result = download_service_.AddDownloadTask(downloadTask, on_finished);
+  if (result.has_error()) {
+    CTL_ERR(result.error());
+    return std::nullopt;
+  }
   return unique_model_id;
 }
 
@@ -148,7 +152,7 @@ std::optional<std::string> ModelService::DownloadModelFromCortexso(
   auto downloadTask = cortexso_parser::getDownloadTask(name, branch);
   if (downloadTask.has_value()) {
     std::string model_id{name + ":" + branch};
-    DownloadService().AddDownloadTask(
+    auto result = DownloadService().AddDownloadTask(
         downloadTask.value(), [&](const DownloadTask& finishedTask) {
           const DownloadItem* model_yml_item = nullptr;
           auto need_parse_gguf = true;
@@ -179,6 +183,10 @@ std::optional<std::string> ModelService::DownloadModelFromCortexso(
             modellist_utils_obj.AddModelEntry(model_entry);
           }
         });
+    if (result.has_error()) {
+      CTL_ERR(result.error());
+      return std::nullopt;
+    }
 
     CLI_LOG("Model " << model_id << " downloaded successfully!")
     return model_id;

@@ -57,7 +57,7 @@ class DownloadService {
   using OnDownloadTaskSuccessfully =
       std::function<void(const DownloadTask& task)>;
 
-  void AddDownloadTask(
+  cpp::result<void, std::string> AddDownloadTask(
       DownloadTask& task,
       std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
 

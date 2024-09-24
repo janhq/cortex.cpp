@@ -10,6 +10,7 @@
 #include "download_service.h"
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/result.hpp"
 
 #ifdef _WIN32
 #define ftell64(f) _ftelli64(f)
@@ -26,7 +27,7 @@ size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
 }
 }  // namespace
 
-void DownloadService::AddDownloadTask(
+cpp::result<void, std::string> DownloadService::AddDownloadTask(
     DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback) {
   CLI_LOG("Validating download items, please wait..");
   // preprocess to check if all the item are valid
@@ -45,7 +46,7 @@ void DownloadService::AddDownloadTask(
 
   if (err_msg.has_value()) {
     CTL_ERR(err_msg.value());
-    return;
+    return cpp::fail(err_msg.value());
   }
 
   // all items are valid, start downloading
@@ -62,12 +63,13 @@ void DownloadService::AddDownloadTask(
   }
   if (dl_err_msg.has_value()) {
     CTL_ERR(dl_err_msg.value());
-    return;
+    return cpp::fail(dl_err_msg.value());
   }
 
   if (callback.has_value()) {
     callback.value()(task);
   }
+  return {};
 }
 
 cpp::result<uint64_t, std::string> DownloadService::GetFileSize(

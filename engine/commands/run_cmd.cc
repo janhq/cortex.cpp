@@ -1,13 +1,12 @@
 #include "run_cmd.h"
 #include "chat_cmd.h"
-#include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
-#include "utils/cortex_utils.h"
-#include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/modellist_utils.h"
+
 namespace commands {
 
 void RunCmd::Exec() {
@@ -45,7 +44,10 @@ void RunCmd::Exec() {
         throw std::runtime_error("Engine " + mc.engine + " is incompatible");
       }
       if (required_engine.value().status == EngineService::kNotInstalled) {
-        engine_service_.InstallEngine(mc.engine);
+        auto install_engine_result = engine_service_.InstallEngine(mc.engine);
+        if (install_engine_result.has_error()) {
+          throw std::runtime_error(install_engine_result.error());
+        }
       }
     }
 
