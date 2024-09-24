@@ -132,17 +132,10 @@ void CommandLineParser::SetupCommonCommands() {
       CLI_LOG(chat_cmd->help());
       return;
     }
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ChatCmd cc(cml_data_.config.apiServerHost,
-                         std::stoi(cml_data_.config.apiServerPort),
-                         yaml_handler.GetModelConfig());
-    cc.Exec(cml_data_.msg);
+
+    commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
+            std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+            cml_data_.msg);
   });
 }
 
@@ -178,17 +171,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_start_cmd->help());
       return;
     };
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ModelStartCmd msc(cml_data_.config.apiServerHost,
-                                std::stoi(cml_data_.config.apiServerPort),
-                                yaml_handler.GetModelConfig());
-    msc.Exec();
+    commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
+                                   std::stoi(cml_data_.config.apiServerPort),
+                                   cml_data_.model_id);
   });
 
   auto stop_model_cmd =
