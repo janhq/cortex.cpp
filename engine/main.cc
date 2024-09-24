@@ -29,8 +29,8 @@
 
 void RunServer() {
   auto config = file_manager_utils::GetCortexConfig();
-  LOG_INFO << "Host: " << config.apiServerHost
-           << " Port: " << config.apiServerPort << "\n";
+  std::cout << "Host: " << config.apiServerHost
+            << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
@@ -46,6 +46,8 @@ void RunServer() {
         asyncFileLogger.output_(msg, len);
       },
       [&]() { asyncFileLogger.flush(); });
+  LOG_INFO << "Host: " << config.apiServerHost
+           << " Port: " << config.apiServerPort << "\n";
   // Number of cortex.cpp threads
   // if (argc > 1) {
   //   thread_num = std::atoi(argv[1]);

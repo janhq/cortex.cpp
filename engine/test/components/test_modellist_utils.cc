@@ -121,3 +121,11 @@ TEST_F(ModelListUtilsTestSuite, TestUpdateModelAlias) {
   model_list_.DeleteModelEntry("test_model_id");
   model_list_.DeleteModelEntry("another_model_id");
 }
+
+TEST_F(ModelListUtilsTestSuite, TestHasModel) {
+  model_list_.AddModelEntry(kTestModel);
+
+  EXPECT_TRUE(model_list_.HasModel("test_model_id"));
+  EXPECT_TRUE(model_list_.HasModel("test_alias"));
+  EXPECT_FALSE(model_list_.HasModel("non_existent_model"));
+}

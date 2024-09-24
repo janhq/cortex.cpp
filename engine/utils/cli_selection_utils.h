@@ -20,7 +20,7 @@ inline std::optional<std::string> PrintSelection(
   std::string selection{""};
   PrintMenu(options);
   std::cout << "Select an option (" << 1 << "-" << options.size() << "): ";
-  std::cin >> selection;
+  std::getline(std::cin, selection);
 
   if (selection.empty()) {
     return std::nullopt;

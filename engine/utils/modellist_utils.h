@@ -43,5 +43,6 @@ class ModelListUtils {
   bool DeleteModelEntry(const std::string& identifier);
   bool UpdateModelAlias(const std::string& model_id,
                         const std::string& model_alias);
+  bool HasModel(const std::string& identifier) const;
 };
 }  // namespace modellist_utils

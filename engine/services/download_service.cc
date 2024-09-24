@@ -113,7 +113,7 @@ void DownloadService::Download(const std::string& download_id,
               << " need to be downloaded.");
       std::cout << "Continue download [Y/n]: " << std::flush;
       std::string answer{""};
-      std::cin >> answer;
+      std::getline(std::cin, answer);
       if (answer == "Y" || answer == "y" || answer.empty()) {
         mode = "ab";
         CLI_LOG("Resuming download..");
@@ -126,7 +126,7 @@ void DownloadService::Download(const std::string& download_id,
       std::cout << "Re-download? [Y/n]: " << std::flush;
 
       std::string answer = "";
-      std::cin >> answer;
+      std::getline(std::cin, answer);
       if (answer == "Y" || answer == "y" || answer.empty()) {
         CLI_LOG("Re-downloading..");
       } else {

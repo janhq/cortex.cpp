@@ -6,13 +6,8 @@ namespace commands {
 
 class ModelStartCmd {
  public:
-  explicit ModelStartCmd(std::string host, int port,
-                         const config::ModelConfig& mc);
-  bool Exec();
+  bool Exec(const std::string& host, int port, const std::string& model_handle);
 
- private:
-  std::string host_;
-  int port_;
-  const config::ModelConfig& mc_;
+  bool Exec(const std::string& host, int port, const config::ModelConfig& mc);
 };
 }  // namespace commands

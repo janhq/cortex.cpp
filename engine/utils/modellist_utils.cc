@@ -238,4 +238,19 @@ bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
   }
   return false;  // Entry not found or not in READY state
 }
+
+bool ModelListUtils::HasModel(const std::string& identifier) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto entries = LoadModelList();
+  auto it = std::find_if(
+      entries.begin(), entries.end(), [&identifier](const ModelEntry& entry) {
+        return entry.model_id == identifier || entry.model_alias == identifier;
+      });
+
+  if (it != entries.end()) {
+    return true;
+  } else {
+    return false;
+  }
+}
 }  // namespace modellist_utils
