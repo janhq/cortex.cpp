@@ -19,7 +19,7 @@ class ModelListUtilsTestSuite : public ::testing::Test {
 
   void TearDown() {
     // Clean up the temporary directory
-    std::remove((file_manager_utils::GetModelsContainerPath() / "model.list").c_str());
+    std::remove((file_manager_utils::GetModelsContainerPath() / "model.list").string().c_str());
   }
 TEST_F(ModelListUtilsTestSuite, TestAddModelEntry) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
