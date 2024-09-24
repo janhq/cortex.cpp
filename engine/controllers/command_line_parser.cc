@@ -14,6 +14,7 @@
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
+#include "commands/model_upd_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
@@ -131,17 +132,10 @@ void CommandLineParser::SetupCommonCommands() {
       CLI_LOG(chat_cmd->help());
       return;
     }
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ChatCmd cc(cml_data_.config.apiServerHost,
-                         std::stoi(cml_data_.config.apiServerPort),
-                         yaml_handler.GetModelConfig());
-    cc.Exec(cml_data_.msg);
+
+    commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
+            std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+            cml_data_.msg);
   });
 }
 
@@ -177,17 +171,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_start_cmd->help());
       return;
     };
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ModelStartCmd msc(cml_data_.config.apiServerHost,
-                                std::stoi(cml_data_.config.apiServerPort),
-                                yaml_handler.GetModelConfig());
-    msc.Exec();
+    commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
+                                   std::stoi(cml_data_.config.apiServerPort),
+                                   cml_data_.model_id);
   });
 
   auto stop_model_cmd =
@@ -271,10 +257,8 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelAliasCmd mdc;
     mdc.Exec(cml_data_.model_id, cml_data_.model_alias);
   });
-
-  auto model_update_cmd =
-      models_cmd->add_subcommand("update", "Update configuration of a model");
-  model_update_cmd->group(kSubcommands);
+  // Model update parameters comment
+  ModelUpdate(models_cmd);
 
   std::string model_path;
   auto model_import_cmd = models_cmd->add_subcommand(
@@ -462,4 +446,70 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback(
         [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
+}
+
+void CommandLineParser::ModelUpdate(CLI::App* parent) {
+  auto model_update_cmd =
+      parent->add_subcommand("update", "Update configuration of a model");
+  model_update_cmd->group(kSubcommands);
+  model_update_cmd->add_option("--model_id", cml_data_.model_id, "Model ID")
+      ->required();
+
+  // Add options dynamically
+  std::vector<std::string> option_names = {"name",
+                                           "model",
+                                           "version",
+                                           "stop",
+                                           "top_p",
+                                           "temperature",
+                                           "frequency_penalty",
+                                           "presence_penalty",
+                                           "max_tokens",
+                                           "stream",
+                                           "ngl",
+                                           "ctx_len",
+                                           "engine",
+                                           "prompt_template",
+                                           "system_template",
+                                           "user_template",
+                                           "ai_template",
+                                           "os",
+                                           "gpu_arch",
+                                           "quantization_method",
+                                           "precision",
+                                           "tp",
+                                           "trtllm_version",
+                                           "text_model",
+                                           "files",
+                                           "created",
+                                           "object",
+                                           "owned_by",
+                                           "seed",
+                                           "dynatemp_range",
+                                           "dynatemp_exponent",
+                                           "top_k",
+                                           "min_p",
+                                           "tfs_z",
+                                           "typ_p",
+                                           "repeat_last_n",
+                                           "repeat_penalty",
+                                           "mirostat",
+                                           "mirostat_tau",
+                                           "mirostat_eta",
+                                           "penalize_nl",
+                                           "ignore_eos",
+                                           "n_probs",
+                                           "min_keep",
+                                           "grammar"};
+
+  for (const auto& option_name : option_names) {
+    model_update_cmd->add_option("--" + option_name,
+                                 cml_data_.model_update_options[option_name],
+                                 option_name);
+  }
+
+  model_update_cmd->callback([this]() {
+    commands::ModelUpdCmd command(cml_data_.model_id);
+    command.Exec(cml_data_.model_update_options);
+  });
 }
