@@ -388,6 +388,12 @@ void CommandLineParser::SetupSystemCommands() {
   update_cmd->group(kSystemGroup);
   update_cmd->add_option("-v", cml_data_.cortex_version, "");
   update_cmd->callback([this] {
+#if !defined(_WIN32)
+    if (getuid()) {
+      CLI_LOG("You are not root, please run the command with `sudo`");
+      return;
+    }
+#endif
     commands::CortexUpdCmd cuc;
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
