@@ -1,10 +1,8 @@
 #include "model_import_cmd.h"
 #include <filesystem>
-#include <iostream>
 #include <vector>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
-#include "trantor/utils/Logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/modellist_utils.h"
@@ -45,7 +43,7 @@ void ModelImportCmd::Exec() {
     }
 
   } catch (const std::exception& e) {
-    // don't need to remove yml file here, because it's written only if model entry is successfully added, 
+    // don't need to remove yml file here, because it's written only if model entry is successfully added,
     // remove file here can make it fail with edge case when user try to import new model with existed model_id
     CLI_LOG("Error importing model path '" + model_path_ + "' with model_id '" +
             model_handle_ + "': " + e.what());

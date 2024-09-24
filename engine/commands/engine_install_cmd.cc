@@ -10,8 +10,9 @@
 namespace commands {
 
 void EngineInstallCmd::Exec(const std::string& engine,
-                            const std::string& version) {
-  engine_service_.InstallEngine(engine, version);
+                            const std::string& version,
+                            const std::string& src) {
+  engine_service_.InstallEngine(engine, version, src);
   CLI_LOG("Engine " << engine << " installed successfully!");
 }
 };  // namespace commands
