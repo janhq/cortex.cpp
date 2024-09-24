@@ -128,4 +128,6 @@ TEST_F(ModelListUtilsTestSuite, TestHasModel) {
   EXPECT_TRUE(model_list_.HasModel("test_model_id"));
   EXPECT_TRUE(model_list_.HasModel("test_alias"));
   EXPECT_FALSE(model_list_.HasModel("non_existent_model"));
+  // Clean up
+  model_list_.DeleteModelEntry("test_model_id");
 }
