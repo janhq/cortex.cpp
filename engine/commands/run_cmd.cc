@@ -5,26 +5,28 @@
 #include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
+#include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/modellist_utils.h"
-#include "utils/cortex_utils.h"
 namespace commands {
 
 void RunCmd::Exec() {
-  auto model_id = cortex_utils::GetModelIdFromHandle(model_handle_);
+  std::optional<std::string> model_id = model_handle_;
 
-  if (!model_id.has_value()) {
-    CTL_ERR("Could not get model_id from handle: " << model_handle_);
-    return;
-  }
   modellist_utils::ModelListUtils modellist_handler;
   config::YamlHandler yaml_handler;
   auto address = host_ + ":" + std::to_string(port_);
 
-// Download model if it does not exist
+  // Download model if it does not exist
   {
-    if (!modellist_handler.HasModel(*model_id)) {
-      model_service_.DownloadModel(model_handle_);
+    if (!modellist_handler.HasModel(model_handle_)) {
+      model_id = model_service_.DownloadModel(model_handle_);
+      if (!model_id.has_value()) {
+        CTL_ERR("Error: Could not get model_id from handle: " << model_handle_);
+        return;
+      } else {
+        CTL_INF("model_id: " << model_id.value());
+      }
     }
   }
 
@@ -40,8 +42,7 @@ void RunCmd::Exec() {
         throw std::runtime_error("Engine not found: " + mc.engine);
       }
       if (required_engine.value().status == EngineService::kIncompatible) {
-        throw std::runtime_error("Engine " + mc.engine +
-                                 " is incompatible");
+        throw std::runtime_error("Engine " + mc.engine + " is incompatible");
       }
       if (required_engine.value().status == EngineService::kNotInstalled) {
         engine_service_.InstallEngine(mc.engine);

@@ -5,15 +5,11 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <optional>
 #include <ostream>
 #include <random>
 #include <regex>
 #include <string>
 #include <vector>
-
-#include "utils/string_utils.h"
-#include "utils/url_parser.h"
 
 // Include platform-specific headers
 #ifdef _WIN32
@@ -345,25 +341,5 @@ inline std::string GetCurrentPath() {
 #endif
 }
 #endif
-
-inline std::optional<std::string> GetModelIdFromHandle(
-    const std::string& model_handle) {
-  if (string_utils::StartsWith(model_handle, "https://")) {
-    auto url_obj = url_parser::FromUrlString(model_handle);
-    return url_obj.pathParams[1];
-  }
-
-  if (model_handle.find("/") != std::string::npos) {
-    auto parsed = string_utils::SplitBy(model_handle, "/");
-    if (parsed.size() != 2) {
-      return std::nullopt;
-    }
-
-    auto model_name = parsed[1];
-    return model_name;
-  }
-
-  return model_handle;
-}
 
 }  // namespace cortex_utils
