@@ -119,9 +119,12 @@ void EngineService::UnzipEngine(const std::string& engine,
   CTL_INF("engine: " << engine);
   CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
   std::string cuda_variant = "cuda-";
-  cuda_variant += GetSuitableCudaVersion(engine, hw_inf_.cuda_driver_version) +
-                  "-" + hw_inf_.sys_inf->os + "-" + hw_inf_.sys_inf->arch +
-                  ".tar.gz";
+  auto cuda_github =
+      GetSuitableCudaVersion(engine, hw_inf_.cuda_driver_version);
+  // Github release cuda example: cuda-12-0-windows-amd64.tar.gz
+  std::replace(cuda_github.begin(), cuda_github.end(), '.', '-');
+  cuda_variant += cuda_github + "-" + hw_inf_.sys_inf->os + "-" +
+                  hw_inf_.sys_inf->arch + ".tar.gz";
   CTL_INF("cuda_variant: " << cuda_variant);
 
   std::vector<std::string> variants;

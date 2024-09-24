@@ -14,6 +14,7 @@
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
+#include "commands/model_upd_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
@@ -256,10 +257,8 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelAliasCmd mdc;
     mdc.Exec(cml_data_.model_id, cml_data_.model_alias);
   });
-
-  auto model_update_cmd =
-      models_cmd->add_subcommand("update", "Update configuration of a model");
-  model_update_cmd->group(kSubcommands);
+  // Model update parameters comment
+  ModelUpdate(models_cmd);
 
   std::string model_path;
   auto model_import_cmd = models_cmd->add_subcommand(
@@ -373,6 +372,12 @@ void CommandLineParser::SetupSystemCommands() {
   update_cmd->group(kSystemGroup);
   update_cmd->add_option("-v", cml_data_.cortex_version, "");
   update_cmd->callback([this] {
+#if !defined(_WIN32)
+    if (getuid()) {
+      CLI_LOG("Error: Not root user. Please run with sudo.");
+      return;
+    }
+#endif
     commands::CortexUpdCmd cuc;
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
@@ -441,4 +446,70 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback(
         [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
+}
+
+void CommandLineParser::ModelUpdate(CLI::App* parent) {
+  auto model_update_cmd =
+      parent->add_subcommand("update", "Update configuration of a model");
+  model_update_cmd->group(kSubcommands);
+  model_update_cmd->add_option("--model_id", cml_data_.model_id, "Model ID")
+      ->required();
+
+  // Add options dynamically
+  std::vector<std::string> option_names = {"name",
+                                           "model",
+                                           "version",
+                                           "stop",
+                                           "top_p",
+                                           "temperature",
+                                           "frequency_penalty",
+                                           "presence_penalty",
+                                           "max_tokens",
+                                           "stream",
+                                           "ngl",
+                                           "ctx_len",
+                                           "engine",
+                                           "prompt_template",
+                                           "system_template",
+                                           "user_template",
+                                           "ai_template",
+                                           "os",
+                                           "gpu_arch",
+                                           "quantization_method",
+                                           "precision",
+                                           "tp",
+                                           "trtllm_version",
+                                           "text_model",
+                                           "files",
+                                           "created",
+                                           "object",
+                                           "owned_by",
+                                           "seed",
+                                           "dynatemp_range",
+                                           "dynatemp_exponent",
+                                           "top_k",
+                                           "min_p",
+                                           "tfs_z",
+                                           "typ_p",
+                                           "repeat_last_n",
+                                           "repeat_penalty",
+                                           "mirostat",
+                                           "mirostat_tau",
+                                           "mirostat_eta",
+                                           "penalize_nl",
+                                           "ignore_eos",
+                                           "n_probs",
+                                           "min_keep",
+                                           "grammar"};
+
+  for (const auto& option_name : option_names) {
+    model_update_cmd->add_option("--" + option_name,
+                                 cml_data_.model_update_options[option_name],
+                                 option_name);
+  }
+
+  model_update_cmd->callback([this]() {
+    commands::ModelUpdCmd command(cml_data_.model_id);
+    command.Exec(cml_data_.model_update_options);
+  });
 }

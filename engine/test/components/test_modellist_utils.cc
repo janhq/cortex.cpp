@@ -19,6 +19,7 @@ class ModelListUtilsTestSuite : public ::testing::Test {
 
   void TearDown() {
     // Clean up the temporary directory
+    std::remove((file_manager_utils::GetModelsContainerPath() / "model.list").string().c_str());
   }
 TEST_F(ModelListUtilsTestSuite, TestAddModelEntry) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
@@ -128,4 +129,6 @@ TEST_F(ModelListUtilsTestSuite, TestHasModel) {
   EXPECT_TRUE(model_list_.HasModel("test_model_id"));
   EXPECT_TRUE(model_list_.HasModel("test_alias"));
   EXPECT_FALSE(model_list_.HasModel("non_existent_model"));
+  // Clean up
+  model_list_.DeleteModelEntry("test_model_id");
 }
