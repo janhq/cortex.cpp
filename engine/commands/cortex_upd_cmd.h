@@ -76,7 +76,7 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
 // - Nightly: Enables retrieval of the latest nightly build and specific versions using the -v flag
 class CortexUpdCmd {
  public:
-  void Exec(std::string version);
+  void Exec(const std::string& v);
 
  private:
   bool GetStable(const std::string& v);
