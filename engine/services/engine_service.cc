@@ -101,6 +101,7 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 cpp::result<void, std::string> EngineService::InstallEngine(
     const std::string& engine, const std::string& version,
     const std::string& src) {
+  hw_inf_.cuda_driver_version = system_info_utils::GetCudaVersion();
 
   if (!src.empty()) {
     return UnzipEngine(engine, version, src);
