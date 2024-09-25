@@ -77,6 +77,7 @@ find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(SQLiteCpp REQUIRED)
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
@@ -93,6 +94,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE tabulate::tabulate)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 
 # ##############################################################################
 

@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+#include "sqlitecpp/SQLiteCpp.h"
+
 namespace modellist_utils {
 
 enum class ModelStatus { READY, RUNNING };
@@ -21,20 +23,20 @@ struct ModelEntry {
 class ModelListUtils {
 
  private:
+  mutable SQLite::Database db_;
   mutable std::mutex mutex_;  // For thread safety
 
-  bool IsUnique(const std::vector<ModelEntry>& entries,
-                const std::string& model_id,
+  bool IsUnique(const std::string& model_id,
                 const std::string& model_alias) const;
   void SaveModelList(const std::vector<ModelEntry>& entries) const;
 
  public:
   static const std::string kModelListPath;
   std::vector<ModelEntry> LoadModelList() const;
-  ModelListUtils() = default;
+  ModelListUtils();
+  ~ModelListUtils();
   std::string GenerateShortenedAlias(
-      const std::string& model_id,
-      const std::vector<ModelEntry>& entries) const;
+      const std::string& model_id) const;
   ModelEntry GetModelInfo(const std::string& identifier) const;
   void PrintModelInfo(const ModelEntry& entry) const;
   bool AddModelEntry(ModelEntry new_entry, bool use_short_alias = false);

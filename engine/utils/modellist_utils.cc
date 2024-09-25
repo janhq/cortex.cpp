@@ -12,75 +12,84 @@ const std::string ModelListUtils::kModelListPath =
     (file_manager_utils::GetModelsContainerPath() /
      std::filesystem::path("model.list"))
         .string();
+namespace {
+const std::string kDefaultDbPath =
+    file_manager_utils::GetCortexDataPath().string() + "/cortex.db";
+}
+ModelListUtils::ModelListUtils()
+    : db_(kDefaultDbPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
+  db_.exec(
+      "CREATE TABLE IF NOT EXISTS models ("
+      "model_id TEXT PRIMARY KEY,"
+      "author_repo_id TEXT,"
+      "branch_name TEXT,"
+      "path_to_model_yaml TEXT,"
+      "model_alias TEXT,"
+      "status TEXT);");
+}
+ModelListUtils::~ModelListUtils() {}
 
 std::vector<ModelEntry> ModelListUtils::LoadModelList() const {
   std::vector<ModelEntry> entries;
-  std::filesystem::path file_path(kModelListPath);
+  SQLite::Statement query(
+      db_,
+      "SELECT model_id, author_repo_id, branch_name, "
+      "path_to_model_yaml, model_alias, status FROM models");
 
-  // Check if the file exists, if not, create it
-  if (!std::filesystem::exists(file_path)) {
-    std::ofstream create_file(kModelListPath);
-    if (!create_file) {
-      throw std::runtime_error("Unable to create model.list file: " +
-                               kModelListPath);
-    }
-    create_file.close();
-    return entries;  // Return empty vector for newly created file
-  }
-
-  std::ifstream file(kModelListPath);
-  if (!file.is_open()) {
-    throw std::runtime_error("Unable to open model.list file: " +
-                             kModelListPath);
-  }
-
-  std::string line;
-  while (std::getline(file, line)) {
-    std::istringstream iss(line);
+  while (query.executeStep()) {
     ModelEntry entry;
-    std::string status_str;
-    if (!(iss >> entry.model_id >> entry.author_repo_id >> entry.branch_name >>
-          entry.path_to_model_yaml >> entry.model_alias >> status_str)) {
-      LOG_WARN << "Invalid entry in model.list: " << line;
-    } else {
-      entry.status =
-          (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
-      entries.push_back(entry);
-    }
+    entry.model_id = query.getColumn(0).getString();
+    entry.author_repo_id = query.getColumn(1).getString();
+    entry.branch_name = query.getColumn(2).getString();
+    entry.path_to_model_yaml = query.getColumn(3).getString();
+    entry.model_alias = query.getColumn(4).getString();
+    std::string status_str = query.getColumn(5).getString();
+    entry.status =
+        (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
+    entries.push_back(entry);
   }
   return entries;
 }
 
-bool ModelListUtils::IsUnique(const std::vector<ModelEntry>& entries,
-                              const std::string& model_id,
+bool ModelListUtils::IsUnique(const std::string& model_id,
                               const std::string& model_alias) const {
-  return std::none_of(
-      entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return entry.model_id == model_id || entry.model_alias == model_id ||
-               entry.model_id == model_alias ||
-               entry.model_alias == model_alias;
-      });
+  SQLite::Statement query(db_,
+                          "SELECT COUNT(*) FROM models WHERE model_id = ? OR "
+                          "model_id = ? OR model_alias = ? OR model_alias = ?");
+  query.bind(1, model_id);
+  query.bind(2, model_alias);
+  query.bind(3, model_id);
+  query.bind(4, model_alias);
+  if (query.executeStep()) {
+    return query.getColumn(0).getInt() == 0;
+  }
+  return false;
 }
 
 void ModelListUtils::SaveModelList(
     const std::vector<ModelEntry>& entries) const {
   std::ofstream file(kModelListPath);
-  if (!file.is_open()) {
-    throw std::runtime_error("Unable to open model.list file for writing: " +
-                             kModelListPath);
-  }
-
+  db_.exec("BEGIN TRANSACTION;");
   for (const auto& entry : entries) {
-    file << entry.model_id << " " << entry.author_repo_id << " "
-         << entry.branch_name << " " << entry.path_to_model_yaml << " "
-         << entry.model_alias << " "
-         << (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY")
-         << std::endl;
+    SQLite::Statement insert(
+        db_,
+        "INSERT OR REPLACE INTO models (model_id, author_repo_id, "
+        "branch_name, path_to_model_yaml, model_alias, status) VALUES (?, ?, "
+        "?, ?, ?, ?)");
+    insert.bind(1, entry.model_id);
+    insert.bind(2, entry.author_repo_id);
+    insert.bind(3, entry.branch_name);
+    insert.bind(4, entry.path_to_model_yaml);
+    insert.bind(5, entry.model_alias);
+    insert.bind(6,
+                (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
+    insert.exec();
   }
+  db_.exec("COMMIT;");
 }
 
 std::string ModelListUtils::GenerateShortenedAlias(
-    const std::string& model_id, const std::vector<ModelEntry>& entries) const {
+    const std::string& model_id) const {
   std::vector<std::string> parts;
   std::istringstream iss(model_id);
   std::string part;
@@ -123,7 +132,7 @@ std::string ModelListUtils::GenerateShortenedAlias(
 
   // Find the first unique candidate
   for (const auto& candidate : candidates) {
-    if (IsUnique(entries, model_id, candidate)) {
+    if (IsUnique(model_id, candidate)) {
       return candidate;
     }
   }
@@ -132,7 +141,7 @@ std::string ModelListUtils::GenerateShortenedAlias(
   std::string base_candidate = candidates.back();
   int suffix = 1;
   std::string unique_candidate = base_candidate;
-  while (!IsUnique(entries, model_id, unique_candidate)) {
+  while (!IsUnique(model_id, unique_candidate)) {
     unique_candidate = base_candidate + "-" + std::to_string(suffix++);
   }
 
@@ -141,14 +150,24 @@ std::string ModelListUtils::GenerateShortenedAlias(
 
 ModelEntry ModelListUtils::GetModelInfo(const std::string& identifier) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto entries = LoadModelList();
-  auto it = std::find_if(
-      entries.begin(), entries.end(), [&identifier](const ModelEntry& entry) {
-        return entry.model_id == identifier || entry.model_alias == identifier;
-      });
+  SQLite::Statement query(db_,
+                          "SELECT model_id, author_repo_id, branch_name, "
+                          "path_to_model_yaml, model_alias, status FROM models "
+                          "WHERE model_id = ? OR model_alias = ?");
 
-  if (it != entries.end()) {
-    return *it;
+  query.bind(1, identifier);
+  query.bind(2, identifier);
+  if (query.executeStep()) {
+    ModelEntry entry;
+    entry.model_id = query.getColumn(0).getString();
+    entry.author_repo_id = query.getColumn(1).getString();
+    entry.branch_name = query.getColumn(2).getString();
+    entry.path_to_model_yaml = query.getColumn(3).getString();
+    entry.model_alias = query.getColumn(4).getString();
+    std::string status_str = query.getColumn(5).getString();
+    entry.status =
+        (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
+    return entry;
   } else {
     throw std::runtime_error("Model not found: " + identifier);
   }
@@ -166,16 +185,27 @@ void ModelListUtils::PrintModelInfo(const ModelEntry& entry) const {
 
 bool ModelListUtils::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto entries = LoadModelList();
 
-  if (IsUnique(entries, new_entry.model_id, new_entry.model_alias)) {
+  if (IsUnique(new_entry.model_id, new_entry.model_alias)) {
     if (use_short_alias) {
-      new_entry.model_alias =
-          GenerateShortenedAlias(new_entry.model_id, entries);
+      new_entry.model_alias = GenerateShortenedAlias(new_entry.model_id);
     }
     new_entry.status = ModelStatus::READY;  // Set default status to READY
-    entries.push_back(std::move(new_entry));
-    SaveModelList(entries);
+
+    SQLite::Statement insert(
+        db_,
+        "INSERT INTO models (model_id, author_repo_id, "
+        "branch_name, path_to_model_yaml, model_alias, status) VALUES (?, ?, "
+        "?, ?, ?, ?)");
+    insert.bind(1, new_entry.model_id);
+    insert.bind(2, new_entry.author_repo_id);
+    insert.bind(3, new_entry.branch_name);
+    insert.bind(4, new_entry.path_to_model_yaml);
+    insert.bind(5, new_entry.model_alias);
+    insert.bind(
+        6, (new_entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
+    insert.exec();
+
     return true;
   }
   return false;  // Entry not added due to non-uniqueness
@@ -184,73 +214,52 @@ bool ModelListUtils::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
 bool ModelListUtils::UpdateModelEntry(const std::string& identifier,
                                       const ModelEntry& updated_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto entries = LoadModelList();
-  auto it = std::find_if(
-      entries.begin(), entries.end(), [&identifier](const ModelEntry& entry) {
-        return entry.model_id == identifier || entry.model_alias == identifier;
-      });
-
-  if (it != entries.end()) {
-    *it = updated_entry;
-    SaveModelList(entries);
-    return true;
-  }
-  return false;  // Entry not found
+  SQLite::Statement upd(db_,
+                        "UPDATE models "
+                        "SET author_repo_id = ?, branch_name = ?, "
+                        "path_to_model_yaml = ?, status = ? "
+                        "WHERE model_id = ? OR model_alias = ?");
+  upd.bind(1, updated_entry.author_repo_id);
+  upd.bind(2, updated_entry.branch_name);
+  upd.bind(3, updated_entry.path_to_model_yaml);
+  upd.bind(
+      4, (updated_entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
+  upd.bind(5, identifier);
+  upd.bind(6, identifier);
+  return upd.exec() == 1;
 }
 
 bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
                                       const std::string& new_model_alias) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto entries = LoadModelList();
-  auto it = std::find_if(
-      entries.begin(), entries.end(), [&model_id](const ModelEntry& entry) {
-        return entry.model_id == model_id || entry.model_alias == model_id;
-      });
-  bool check_alias_unique = std::none_of(
-      entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return (entry.model_id == new_model_alias &&
-                entry.model_id != model_id) ||
-               entry.model_alias == new_model_alias;
-      });
-  if (it != entries.end() && check_alias_unique) {
-
-    (*it).model_alias = new_model_alias;
-    SaveModelList(entries);
-    return true;
-  }
-  return false;  // Entry not found
+  SQLite::Statement upd(db_,
+                        "UPDATE models "
+                        "SET model_alias = ? "
+                        "WHERE model_id = ? OR model_alias = ?");
+  upd.bind(1, new_model_alias);
+  upd.bind(2, model_id);
+  upd.bind(3, model_id);
+  return upd.exec() == 1;
 }
 
 bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto entries = LoadModelList();
-  auto it = std::find_if(entries.begin(), entries.end(),
-                         [&identifier](const ModelEntry& entry) {
-                           return (entry.model_id == identifier ||
-                                   entry.model_alias == identifier) &&
-                                  entry.status == ModelStatus::READY;
-                         });
-
-  if (it != entries.end()) {
-    entries.erase(it);
-    SaveModelList(entries);
-    return true;
-  }
-  return false;  // Entry not found or not in READY state
+  SQLite::Statement del(
+      db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
+  del.bind(1, identifier);
+  del.bind(2, identifier);
+  return del.exec() == 1;
 }
 
 bool ModelListUtils::HasModel(const std::string& identifier) const {
   std::lock_guard<std::mutex> lock(mutex_);
-  auto entries = LoadModelList();
-  auto it = std::find_if(
-      entries.begin(), entries.end(), [&identifier](const ModelEntry& entry) {
-        return entry.model_id == identifier || entry.model_alias == identifier;
-      });
-
-  if (it != entries.end()) {
-    return true;
-  } else {
-    return false;
+  SQLite::Statement query(
+      db_, "SELECT COUNT(*) FROM models WHERE model_id = ? OR model_alias = ?");
+  query.bind(1, identifier);
+  query.bind(2, identifier);
+  if (query.executeStep()) {
+    return query.getColumn(0).getInt() > 0;
   }
+  return false;
 }
 }  // namespace modellist_utils
