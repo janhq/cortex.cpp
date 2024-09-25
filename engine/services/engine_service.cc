@@ -1,5 +1,6 @@
 #include "engine_service.h"
 #include <httplib.h>
+#include <optional>
 #include "algorithm"
 #include "utils/archive_utils.h"
 #include "utils/engine_matcher_utils.h"
@@ -38,11 +39,12 @@ EngineService::EngineService()
               .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
 EngineService::~EngineService() {}
 
-std::optional<EngineInfo> EngineService::GetEngineInfo(
+cpp::result<EngineInfo, std::string> EngineService::GetEngineInfo(
     const std::string& engine) const {
+
   if (std::find(kSupportEngines.begin(), kSupportEngines.end(), engine) ==
       kSupportEngines.end()) {
-    return std::nullopt;
+    return cpp::fail("Engine " + engine + " is not supported!");
   }
 
   auto engine_status_list = GetEngineInfoList();
@@ -76,24 +78,40 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
        .description = "This extension enables chat completion API calls using "
                       "the Onnx engine",
        .format = "ONNX",
-       .version = "0.0.1",
        .product_name = "ONNXRuntime",
        .status = onnx_status},
       {.name = "cortex.llamacpp",
        .description = "This extension enables chat completion API calls using "
                       "the LlamaCPP engine",
        .format = "GGUF",
-       .version = "0.0.1",
        .product_name = "llama.cpp",
        .status = llamacpp_status},
       {.name = "cortex.tensorrt-llm",
        .description = "This extension enables chat completion API calls using "
                       "the TensorrtLLM engine",
        .format = "TensorRT Engines",
-       .version = "0.0.1",
        .product_name = "TensorRT-LLM",
        .status = tensorrt_status},
   };
+
+  for (auto& engine : engines) {
+    if (engine.status == kReady) {
+      // try to read the version.txt
+      auto engine_info_path = file_manager_utils::GetEnginesContainerPath() /
+                              engine.name / "version.txt";
+      if (!std::filesystem::exists(engine_info_path)) {
+        continue;
+      }
+      try {
+        auto node = YAML::LoadFile(engine_info_path.string());
+        engine.version = node["version"].as<std::string>();
+        engine.variant = node["name"].as<std::string>();
+      } catch (const YAML::Exception& e) {
+        CTL_ERR("Error reading version.txt: " << e.what());
+        continue;
+      }
+    }
+  }
 
   return engines;
 }

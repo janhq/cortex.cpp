@@ -16,14 +16,18 @@ class ModelService {
   cpp::result<std::string, std::string> DownloadModel(const std::string& input,
                                                       bool async = false);
 
-  std::optional<config::ModelConfig> GetDownloadedModel(
-      const std::string& modelId) const;
-
-  cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
-
   cpp::result<std::string, std::string> DownloadModelFromCortexso(
       const std::string& name, const std::string& branch = "main",
       bool async = false);
+
+  std::optional<config::ModelConfig> GetDownloadedModel(
+      const std::string& modelId) const;
+
+  /**
+   * Delete a model from local. If a model is an import model, we only delete
+   * in our database/model.list.
+   */
+  cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
  private:
   cpp::result<std::string, std::string> HandleUrl(const std::string& url,
@@ -44,7 +48,4 @@ class ModelService {
       const std::string& modelName);
 
   DownloadService download_service_;
-
-  void ParseGguf(const DownloadItem& ggufDownloadItem,
-                 std::optional<std::string> author = nullptr) const;
 };

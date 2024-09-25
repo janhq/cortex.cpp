@@ -108,6 +108,14 @@ cpp::result<std::string, std::string> ModelService::DownloadModel(
     return HandleUrl(input, async);
   }
 
+  if (input.find(":") != std::string::npos) {
+    auto parsed = string_utils::SplitBy(input, ":");
+    if (parsed.size() != 2) {
+      return cpp::fail("Invalid model handle: " + input);
+    }
+    return DownloadModelFromCortexso(parsed[0], parsed[1], false);
+  }
+
   if (input.find("/") != std::string::npos) {
     auto parsed = string_utils::SplitBy(input, "/");
     if (parsed.size() != 2) {

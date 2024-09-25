@@ -117,11 +117,11 @@ cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
     return cpp::fail(verifying_result.error());
   }
 
-  auto execute_download_async = [&]() {
+  auto execute_download_async = [&, task, callback]() {
     std::optional<std::string> dl_err_msg = std::nullopt;
     for (const auto& item : task.items) {
       CTL_INF("Start downloading: " + item.localPath.filename().string());
-      auto result = Download(task.id, item, true);
+      auto result = Download(task.id, item, false);
       if (result.has_error()) {
         dl_err_msg = result.error();
         break;

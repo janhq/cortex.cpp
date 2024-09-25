@@ -1,22 +1,22 @@
 #include "models.h"
 #include <drogon/HttpTypes.h>
+#include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/http_util.h"
-#include "utils/model_callback_utils.h"
 #include "utils/modellist_utils.h"
+#include "utils/string_utils.h"
 
-void Models::PullModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
+void Models::PullModel(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!http_util::HasFieldInReq(req, callback, "modelId")) {
     return;
   }
-  auto modelHandle = (*(req->getJsonObject())).get("modelId", "").asString();
-  LOG_DEBUG << "PullModel, Model handle: " << modelHandle;
-  if (modelHandle.empty()) {
+
+  auto model_handle = (*(req->getJsonObject())).get("modelId", "").asString();
+  if (model_handle.empty()) {
     Json::Value ret;
     ret["result"] = "Bad Request";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -25,26 +25,24 @@ void Models::PullModel(
     return;
   }
 
-  // auto downloadTask = cortexso_parser::getDownloadTask(modelHandle);
-  // if (downloadTask.has_value()) {
-  //   DownloadService downloadService;
-  //   downloadService.AddAsyncDownloadTask(downloadTask.value(),
-  //                                        model_callback_utils::DownloadModelCb);
-  //
-  //   Json::Value ret;
-  //   ret["result"] = "OK";
-  //   ret["modelHandle"] = modelHandle;
-  //   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-  //   resp->setStatusCode(k200OK);
-  //   callback(resp);
-  // } else {
-  //   Json::Value ret;
-  //   ret["result"] = "Not Found";
-  //   ret["modelHandle"] = modelHandle;
-  //   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-  //   resp->setStatusCode(k404NotFound);
-  //   callback(resp);
-  // }
+  // TODO: remove the test
+  auto test = string_utils::SplitBy(model_handle, ":");
+
+  auto result =
+      model_service_.DownloadModelFromCortexso(test[0], test[1], true);
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["message"] = "Model start downloading!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
 }
 
 void Models::ListModel(

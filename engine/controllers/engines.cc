@@ -49,7 +49,8 @@ void Engines::ListEngine(
     Json::Value ret;
     ret["name"] = status.name;
     ret["description"] = status.description;
-    ret["version"] = status.version;
+    ret["version"] = status.version.value_or("");
+    ret["variant"] = status.variant.value_or("");
     ret["productName"] = status.product_name;
     ret["status"] = status.status;
 
@@ -71,7 +72,8 @@ void Engines::GetEngine(const HttpRequestPtr& req,
   if (status.has_value()) {
     ret["name"] = status->name;
     ret["description"] = status->description;
-    ret["version"] = status->version;
+    ret["version"] = status->version.value_or("");
+    ret["variant"] = status->variant.value_or("");
     ret["productName"] = status->product_name;
     ret["status"] = status->status;
 
