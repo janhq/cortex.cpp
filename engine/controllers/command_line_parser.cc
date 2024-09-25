@@ -122,20 +122,20 @@ void CommandLineParser::SetupCommonCommands() {
   auto chat_cmd = app_.add_subcommand("chat", "Send a chat completion request");
   chat_cmd->group(kCommonCommandsGroup);
   chat_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                  " chat [model_id] [options]");
+                  " chat [model_id] -m [msg]");
   chat_cmd->add_option("model_id", cml_data_.model_id, "");
   chat_cmd->add_option("-m,--message", cml_data_.msg,
                        "Message to chat with model");
   chat_cmd->callback([this, chat_cmd] {
-    if (cml_data_.model_id.empty()) {
-      CLI_LOG("[model_id] is required\n");
+    if (cml_data_.model_id.empty() || cml_data_.msg.empty()) {
+      CLI_LOG("[model_id] and [msg] are required\n");
       CLI_LOG(chat_cmd->help());
       return;
     }
 
     commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
-            std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-            cml_data_.msg);
+                             std::stoi(cml_data_.config.apiServerPort),
+                             cml_data_.model_id, cml_data_.msg);
   });
 }
 

@@ -71,14 +71,19 @@ void ChatCmd::Exec(const std::string& host, int port,
     return;
   }
 
+  // Interactive mode or not
+  bool interactive = msg.empty();
+
   // Some instruction for user here
-  std::cout << "Inorder to exit, type `exit()`" << std::endl;
+  if (interactive) {
+    std::cout << "Inorder to exit, type `exit()`" << std::endl;
+  }
   // Model is loaded, start to chat
   {
-    while (true) {
+    do {
       std::string user_input = std::move(msg);
-      std::cout << "> ";
       if (user_input.empty()) {
+        std::cout << "> ";
         std::getline(std::cin, user_input);
       }
       if (user_input == kExitChat) {
@@ -128,7 +133,7 @@ void ChatCmd::Exec(const std::string& host, int port,
         histories_.push_back(std::move(ai_res));
       }
       // std::cout << "ok Done" << std::endl;
-    }
+    } while (interactive);
   }
 }
 
