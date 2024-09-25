@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "sqlitecpp/SQLiteCpp.h"
+#include "SQLiteCpp/SQLiteCpp.h"
 
 namespace modellist_utils {
 
@@ -34,6 +34,7 @@ class ModelListUtils {
   static const std::string kModelListPath;
   std::vector<ModelEntry> LoadModelList() const;
   ModelListUtils();
+  ModelListUtils(const std::string& db_path);
   ~ModelListUtils();
   std::string GenerateShortenedAlias(
       const std::string& model_id) const;

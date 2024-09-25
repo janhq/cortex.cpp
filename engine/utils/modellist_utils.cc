@@ -27,6 +27,19 @@ ModelListUtils::ModelListUtils()
       "model_alias TEXT,"
       "status TEXT);");
 }
+
+ModelListUtils::ModelListUtils(const std::string& db_path)
+    : db_(db_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
+  db_.exec(
+      "CREATE TABLE IF NOT EXISTS models ("
+      "model_id TEXT PRIMARY KEY,"
+      "author_repo_id TEXT,"
+      "branch_name TEXT,"
+      "path_to_model_yaml TEXT,"
+      "model_alias TEXT,"
+      "status TEXT);");
+}
+
 ModelListUtils::~ModelListUtils() {}
 
 std::vector<ModelEntry> ModelListUtils::LoadModelList() const {
@@ -232,14 +245,18 @@ bool ModelListUtils::UpdateModelEntry(const std::string& identifier,
 bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
                                       const std::string& new_model_alias) {
   std::lock_guard<std::mutex> lock(mutex_);
-  SQLite::Statement upd(db_,
-                        "UPDATE models "
-                        "SET model_alias = ? "
-                        "WHERE model_id = ? OR model_alias = ?");
-  upd.bind(1, new_model_alias);
-  upd.bind(2, model_id);
-  upd.bind(3, model_id);
-  return upd.exec() == 1;
+  // Check new_model_alias is unique
+  if (IsUnique(new_model_alias, new_model_alias)) {
+    SQLite::Statement upd(db_,
+                          "UPDATE models "
+                          "SET model_alias = ? "
+                          "WHERE model_id = ? OR model_alias = ?");
+    upd.bind(1, new_model_alias);
+    upd.bind(2, model_id);
+    upd.bind(3, model_id);
+    return upd.exec() == 1;
+  }
+  return false;
 }
 
 bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
