@@ -180,7 +180,7 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
 }
 
 void CortexUpdCmd::Exec(std::string v) {
-  // Check for update, if current version is the lastest, notify to user
+  // Check for update, if current version is the latest, notify to user
   if (auto latest_version =
           commands::CheckNewUpdate(std::nullopt);
       latest_version.has_value() && *latest_version == CORTEX_CPP_VERSION) {
