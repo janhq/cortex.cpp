@@ -72,7 +72,13 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
-    commands::CheckNewUpdate();
+    if (auto latest_version = commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
+        latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
+      CLI_LOG("\nA new release of cortex is available: "
+              << CORTEX_CPP_VERSION << " -> " << *latest_version);
+      CLI_LOG("To upgrade, run: " << commands::GetRole()
+                                  << commands::GetCortexBinary() << " update");
+    }
   }
 #endif
 
@@ -134,8 +140,8 @@ void CommandLineParser::SetupCommonCommands() {
     }
 
     commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
-            std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-            cml_data_.msg);
+                             std::stoi(cml_data_.config.apiServerPort),
+                             cml_data_.model_id, cml_data_.msg);
   });
 }
 
