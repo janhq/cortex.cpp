@@ -1,9 +1,10 @@
 #include "models.h"
-#include "commands/model_del_cmd.h"
+#include <drogon/HttpTypes.h>
 #include "config/yaml_config.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/http_util.h"
 #include "utils/model_callback_utils.h"
 #include "utils/modellist_utils.h"
 
@@ -24,26 +25,26 @@ void Models::PullModel(
     return;
   }
 
-  auto downloadTask = cortexso_parser::getDownloadTask(modelHandle);
-  if (downloadTask.has_value()) {
-    DownloadService downloadService;
-    downloadService.AddAsyncDownloadTask(downloadTask.value(),
-                                         model_callback_utils::DownloadModelCb);
-
-    Json::Value ret;
-    ret["result"] = "OK";
-    ret["modelHandle"] = modelHandle;
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k200OK);
-    callback(resp);
-  } else {
-    Json::Value ret;
-    ret["result"] = "Not Found";
-    ret["modelHandle"] = modelHandle;
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k404NotFound);
-    callback(resp);
-  }
+  // auto downloadTask = cortexso_parser::getDownloadTask(modelHandle);
+  // if (downloadTask.has_value()) {
+  //   DownloadService downloadService;
+  //   downloadService.AddAsyncDownloadTask(downloadTask.value(),
+  //                                        model_callback_utils::DownloadModelCb);
+  //
+  //   Json::Value ret;
+  //   ret["result"] = "OK";
+  //   ret["modelHandle"] = modelHandle;
+  //   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  //   resp->setStatusCode(k200OK);
+  //   callback(resp);
+  // } else {
+  //   Json::Value ret;
+  //   ret["result"] = "Not Found";
+  //   ret["modelHandle"] = modelHandle;
+  //   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  //   resp->setStatusCode(k404NotFound);
+  //   callback(resp);
+  // }
 }
 
 void Models::ListModel(
@@ -136,25 +137,23 @@ void Models::GetModel(
 
 void Models::DeleteModel(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
-                         const std::string& model_id) const {
-  LOG_DEBUG << "DeleteModel, Model handle: " << model_id;
-  commands::ModelDelCmd mdc;
-  if (mdc.Exec(model_id)) {
+                         const std::string& model_id) {
+  auto result = model_service_.DeleteModel(model_id);
+  if (result.has_error()) {
     Json::Value ret;
-    ret["result"] = "OK";
-    ret["modelHandle"] = model_id;
+    ret["message"] = result.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k200OK);
+    resp->setStatusCode(drogon::k400BadRequest);
     callback(resp);
   } else {
     Json::Value ret;
-    ret["result"] = "Not Found";
-    ret["modelHandle"] = model_id;
+    ret["message"] = "Deleted successfully!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k404NotFound);
+    resp->setStatusCode(k200OK);
     callback(resp);
   }
 }
+
 void Models::UpdateModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {

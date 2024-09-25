@@ -2,10 +2,10 @@
 
 #include <httplib.h>
 #include <optional>
-#include <stdexcept>
 #include <string>
 #include <vector>
 #include "utils/json.hpp"
+#include "utils/result.hpp"
 #include "utils/url_parser.h"
 
 namespace huggingface_utils {
@@ -47,10 +47,11 @@ struct HuggingFaceModelRepoInfo {
   std::string createdAt;
 };
 
-inline std::vector<HuggingFaceBranch> GetModelRepositoryBranches(
-    const std::string& author, const std::string& modelName) {
+inline cpp::result<std::vector<HuggingFaceBranch>, std::string>
+GetModelRepositoryBranches(const std::string& author,
+                           const std::string& modelName) {
   if (author.empty() || modelName.empty()) {
-    throw std::runtime_error("Author and model name cannot be empty");
+    return cpp::fail("Author and model name cannot be empty");
   }
   auto url_obj = url_parser::Url{
       .protocol = "https",
@@ -60,8 +61,8 @@ inline std::vector<HuggingFaceBranch> GetModelRepositoryBranches(
   httplib::Client cli(url_obj.GetProtocolAndHost());
   auto res = cli.Get(url_obj.GetPathAndQuery());
   if (res->status != httplib::StatusCode::OK_200) {
-    throw std::runtime_error(
-        "Failed to get model repository branches: " + author + "/" + modelName);
+    return cpp::fail("Failed to get model repository branches: " + author +
+                     "/" + modelName);
   }
 
   using json = nlohmann::json;
@@ -82,10 +83,11 @@ inline std::vector<HuggingFaceBranch> GetModelRepositoryBranches(
 }
 
 // only support gguf for now
-inline std::optional<HuggingFaceModelRepoInfo> GetHuggingFaceModelRepoInfo(
-    const std::string& author, const std::string& modelName) {
+inline cpp::result<HuggingFaceModelRepoInfo, std::string>
+GetHuggingFaceModelRepoInfo(const std::string& author,
+                            const std::string& modelName) {
   if (author.empty() || modelName.empty()) {
-    throw std::runtime_error("Author and model name cannot be empty");
+    return cpp::fail("Author and model name cannot be empty");
   }
   auto url_obj =
       url_parser::Url{.protocol = "https",
@@ -95,8 +97,8 @@ inline std::optional<HuggingFaceModelRepoInfo> GetHuggingFaceModelRepoInfo(
   httplib::Client cli(url_obj.GetProtocolAndHost());
   auto res = cli.Get(url_obj.GetPathAndQuery());
   if (res->status != httplib::StatusCode::OK_200) {
-    throw std::runtime_error("Failed to get model repository info: " + author +
-                             "/" + modelName);
+    return cpp::fail("Failed to get model repository info: " + author + "/" +
+                     modelName);
   }
 
   using json = nlohmann::json;

@@ -27,12 +27,13 @@ size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
 }
 }  // namespace
 
-cpp::result<void, std::string> DownloadService::AddDownloadTask(
-    DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback) {
+cpp::result<void, std::string> DownloadService::VerifyDownloadTask(
+    DownloadTask& task) const noexcept {
   CLI_LOG("Validating download items, please wait..");
-  // preprocess to check if all the item are valid
+
   auto total_download_size{0};
   std::optional<std::string> err_msg = std::nullopt;
+
   for (auto& item : task.items) {
     auto file_size = GetFileSize(item.downloadUrl);
     if (file_size.has_error()) {
@@ -47,6 +48,17 @@ cpp::result<void, std::string> DownloadService::AddDownloadTask(
   if (err_msg.has_value()) {
     CTL_ERR(err_msg.value());
     return cpp::fail(err_msg.value());
+  }
+
+  return {};
+}
+
+cpp::result<void, std::string> DownloadService::AddDownloadTask(
+    DownloadTask& task,
+    std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
+  auto validating_result = VerifyDownloadTask(task);
+  if (validating_result.has_error()) {
+    return cpp::fail(validating_result.error());
   }
 
   // all items are valid, start downloading
@@ -97,15 +109,40 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
   return content_length;
 }
 
-void DownloadService::AddAsyncDownloadTask(
-    const DownloadTask& task,
-    std::optional<OnDownloadTaskSuccessfully> callback) {
-  // just start one thread and handle all the download items
-  for (const auto& item : task.items) {
-    std::thread([this, task, &callback, item]() {
-      this->Download(task.id, item, false);
-    }).detach();
+cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
+    DownloadTask& task,
+    std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
+  auto verifying_result = VerifyDownloadTask(task);
+  if (verifying_result.has_error()) {
+    return cpp::fail(verifying_result.error());
   }
+
+  auto execute_download_async = [&]() {
+    std::optional<std::string> dl_err_msg = std::nullopt;
+    for (const auto& item : task.items) {
+      CTL_INF("Start downloading: " + item.localPath.filename().string());
+      auto result = Download(task.id, item, true);
+      if (result.has_error()) {
+        dl_err_msg = result.error();
+        break;
+      }
+    }
+
+    if (dl_err_msg.has_value()) {
+      CTL_ERR(dl_err_msg.value());
+      return;
+    }
+
+    if (callback.has_value()) {
+      CTL_INF("Download success, executing post download lambda!");
+      callback.value()(task);
+    }
+  };
+
+  std::thread t(execute_download_async);
+  t.detach();
+
+  return {};
 }
 
 cpp::result<void, std::string> DownloadService::Download(

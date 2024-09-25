@@ -6,36 +6,45 @@
 
 class ModelService {
  public:
+  constexpr auto static kHuggingFaceHost = "huggingface.co";
+
   ModelService() : download_service_{DownloadService()} {};
 
   /**
    * Return model id if download successfully
    */
-  std::optional<std::string> DownloadModel(const std::string& input);
+  cpp::result<std::string, std::string> DownloadModel(const std::string& input,
+                                                      bool async = false);
 
   std::optional<config::ModelConfig> GetDownloadedModel(
       const std::string& modelId) const;
 
- private:
-  std::optional<std::string> DownloadModelByDirectUrl(const std::string& url);
+  cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
-  std::optional<std::string> DownloadModelFromCortexso(
-      const std::string& name, const std::string& branch = "main");
+  cpp::result<std::string, std::string> DownloadModelFromCortexso(
+      const std::string& name, const std::string& branch = "main",
+      bool async = false);
+
+ private:
+  cpp::result<std::string, std::string> HandleUrl(const std::string& url,
+                                                  bool async = false);
 
   /**
    * Handle downloading model which have following pattern: author/model_name
    */
-  std::optional<std::string> DownloadHuggingFaceGgufModel(
+  cpp::result<std::string, std::string> DownloadHuggingFaceGgufModel(
       const std::string& author, const std::string& modelName,
-      std::optional<std::string> fileName);
+      std::optional<std::string> fileName, bool async = false);
 
-  std::optional<std::string> DownloadModelByModelName(
+  /**
+   * Handling cortexso models. Will look through cortexso's HF repository and
+   * listing all the branches, except main. Then print out the selection for user.
+   */
+  cpp::result<std::string, std::string> HandleCortexsoModel(
       const std::string& modelName);
 
   DownloadService download_service_;
 
   void ParseGguf(const DownloadItem& ggufDownloadItem,
                  std::optional<std::string> author = nullptr) const;
-
-  constexpr auto static kHuggingFaceHost = "huggingface.co";
 };

@@ -2,15 +2,14 @@
 
 #include <drogon/HttpController.h>
 #include <trantor/utils/Logger.h>
-#include "services/download_service.h"
-#include "utils/cortex_utils.h"
-#include "utils/cortexso_parser.h"
-#include "utils/http_util.h"
+#include "services/model_service.h"
 
 using namespace drogon;
 
 class Models : public drogon::HttpController<Models> {
  public:
+  explicit Models() : model_service_{ModelService()} {};
+
   METHOD_LIST_BEGIN
   METHOD_ADD(Models::PullModel, "/pull", Post);
   METHOD_ADD(Models::ListModel, "/list", Get);
@@ -27,15 +26,19 @@ class Models : public drogon::HttpController<Models> {
                  std::function<void(const HttpResponsePtr&)>&& callback) const;
   void GetModel(const HttpRequestPtr& req,
                 std::function<void(const HttpResponsePtr&)>&& callback) const;
-  void UpdateModel(const HttpRequestPtr& req,
-                   std::function<void(const HttpResponsePtr&)>&& callback) const;
+  void UpdateModel(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) const;
   void ImportModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) const;
   void DeleteModel(const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback,
-                   const std::string& model_id) const;
+                   const std::string& model_id);
   void SetModelAlias(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) const;
+
+ private:
+  ModelService model_service_;
 };
