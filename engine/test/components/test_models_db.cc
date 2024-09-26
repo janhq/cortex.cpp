@@ -1,8 +1,8 @@
 #include <filesystem>
 #include <iostream>
+#include "database/models.h"
 #include "gtest/gtest.h"
 #include "utils/file_manager_utils.h"
-#include "database/models.h"
 
 namespace cortex::db {
 namespace {
@@ -13,18 +13,21 @@ class ModelsTestSuite : public ::testing::Test {
   ModelsTestSuite()
       : db_(kTestDb, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE),
         model_list_(db_) {}
+  ~ModelsTestSuite() {
+    try {
+      std::filesystem::remove(kTestDb);
+    } catch (const std::exception& e) {
+      
+    }
+  }
 
  protected:
   SQLite::Database db_;
   cortex::db::Models model_list_;
 
   const cortex::db::ModelEntry kTestModel{
-      kTestModel.model_id,
-      "test_author",
-      "main",
-      "/path/to/model.yaml",
-      "test_alias",
-      cortex::db::ModelStatus::READY};
+      kTestModel.model_id,   "test_author", "main",
+      "/path/to/model.yaml", "test_alias",  cortex::db::ModelStatus::READY};
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {
@@ -154,4 +157,4 @@ TEST_F(ModelsTestSuite, TestHasModel) {
   // Clean up
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
 }
-}
+}  // namespace cortex::db
