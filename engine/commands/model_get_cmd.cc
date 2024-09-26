@@ -16,7 +16,11 @@ void ModelGetCmd::Exec(const std::string& model_handle) {
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if(model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto model_config = yaml_handler.GetModelConfig();
 
     std::cout << model_config.ToString() << std::endl;

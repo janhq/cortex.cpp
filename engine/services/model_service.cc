@@ -342,12 +342,16 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if(model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
     // Remove yaml file
-    std::filesystem::remove(model_entry.path_to_model_yaml);
+    std::filesystem::remove(model_entry.value().path_to_model_yaml);
     // Remove model files if they are not imported locally
-    if (model_entry.branch_name != "imported") {
+    if (model_entry.value().branch_name != "imported") {
       if (mc.files.size() > 0) {
         if (mc.engine == "cortex.llamacpp") {
           for (auto& file : mc.files) {

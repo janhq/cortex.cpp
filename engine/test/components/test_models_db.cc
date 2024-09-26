@@ -29,83 +29,91 @@ class ModelsTestSuite : public ::testing::Test {
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model_id);
-  EXPECT_EQ(retrieved_model.model_id, kTestModel.model_id);
-  EXPECT_EQ(retrieved_model.author_repo_id, kTestModel.author_repo_id);
+  EXPECT_TRUE(retrieved_model);
+  EXPECT_EQ(retrieved_model.value().model_id, kTestModel.model_id);
+  EXPECT_EQ(retrieved_model.value().author_repo_id, kTestModel.author_repo_id);
 
-  // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
+  // // Clean up
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
 }
 
 TEST_F(ModelsTestSuite, TestGetModelInfo) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   auto model_by_id = model_list_.GetModelInfo(kTestModel.model_id);
-  EXPECT_EQ(model_by_id.model_id, kTestModel.model_id);
+  EXPECT_TRUE(model_by_id);
+  EXPECT_EQ(model_by_id.value().model_id, kTestModel.model_id);
 
   auto model_by_alias = model_list_.GetModelInfo("test_alias");
-  EXPECT_EQ(model_by_alias.model_id, kTestModel.model_id);
+  EXPECT_TRUE(model_by_alias);
+  EXPECT_EQ(model_by_alias.value().model_id, kTestModel.model_id);
 
-  EXPECT_THROW(model_list_.GetModelInfo("non_existent_model"),
-               std::runtime_error);
+  EXPECT_TRUE(model_list_.GetModelInfo("non_existent_model").has_error());
 
   // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
 }
 
 TEST_F(ModelsTestSuite, TestUpdateModelEntry) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   cortex::db::ModelEntry updated_model = kTestModel;
   updated_model.status = cortex::db::ModelStatus::RUNNING;
 
-  EXPECT_TRUE(model_list_.UpdateModelEntry(kTestModel.model_id, updated_model));
+  EXPECT_TRUE(
+      model_list_.UpdateModelEntry(kTestModel.model_id, updated_model).value());
 
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model_id);
-  EXPECT_EQ(retrieved_model.status, cortex::db::ModelStatus::RUNNING);
+  EXPECT_TRUE(retrieved_model);
+  EXPECT_EQ(retrieved_model.value().status, cortex::db::ModelStatus::RUNNING);
   updated_model.status = cortex::db::ModelStatus::READY;
-  EXPECT_TRUE(model_list_.UpdateModelEntry(kTestModel.model_id, updated_model));
+  EXPECT_TRUE(
+      model_list_.UpdateModelEntry(kTestModel.model_id, updated_model).value());
 
   // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
 }
 
 TEST_F(ModelsTestSuite, TestDeleteModelEntry) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
-  EXPECT_THROW(model_list_.GetModelInfo(kTestModel.model_id),
-               std::runtime_error);
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
+  EXPECT_TRUE(model_list_.GetModelInfo(kTestModel.model_id).has_error());
 }
 
 TEST_F(ModelsTestSuite, TestGenerateShortenedAlias) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
+  auto models1 = model_list_.LoadModelList();
   auto alias = model_list_.GenerateShortenedAlias(
-      "huggingface.co/bartowski/llama3.1-7b-gguf/Model_ID_Xxx.gguf");
+      "huggingface.co/bartowski/llama3.1-7b-gguf/Model_ID_Xxx.gguf",
+      models1.value());
   EXPECT_EQ(alias, "model_id_xxx");
-  EXPECT_TRUE(model_list_.UpdateModelAlias(kTestModel.model_id, alias));
+  EXPECT_TRUE(model_list_.UpdateModelAlias(kTestModel.model_id, alias).value());
 
   // Test with existing entries to force longer alias
+  auto models2 = model_list_.LoadModelList();
   alias = model_list_.GenerateShortenedAlias(
-      "huggingface.co/bartowski/llama3.1-7b-gguf/Model_ID_Xxx.gguf");
+      "huggingface.co/bartowski/llama3.1-7b-gguf/Model_ID_Xxx.gguf",
+      models2.value());
   EXPECT_EQ(alias, "llama3.1-7b-gguf:model_id_xxx");
 
   // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
 }
 
 TEST_F(ModelsTestSuite, TestPersistence) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   // Create a new ModelListUtils instance to test if it loads from file
   cortex::db::Models new_model_list(db_);
   auto retrieved_model = new_model_list.GetModelInfo(kTestModel.model_id);
-
-  EXPECT_EQ(retrieved_model.model_id, kTestModel.model_id);
-  EXPECT_EQ(retrieved_model.author_repo_id, kTestModel.author_repo_id);
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
+  EXPECT_TRUE(retrieved_model);
+  EXPECT_EQ(retrieved_model.value().model_id, kTestModel.model_id);
+  EXPECT_EQ(retrieved_model.value().author_repo_id, kTestModel.author_repo_id);
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
 }
 
 TEST_F(ModelsTestSuite, TestUpdateModelAlias) {
@@ -115,44 +123,48 @@ TEST_F(ModelsTestSuite, TestUpdateModelAlias) {
   constexpr const auto kFinalTestAlias = "final_test_alias";
   constexpr const auto kAnotherModelId = "another_model_id";
   // Add the test model
-  ASSERT_TRUE(model_list_.AddModelEntry(kTestModel));
+  ASSERT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   // Test successful update
-  EXPECT_TRUE(model_list_.UpdateModelAlias(kTestModel.model_id, kNewTestAlias));
+  EXPECT_TRUE(
+      model_list_.UpdateModelAlias(kTestModel.model_id, kNewTestAlias).value());
   auto updated_model = model_list_.GetModelInfo(kNewTestAlias);
-  EXPECT_EQ(updated_model.model_alias, kNewTestAlias);
-  EXPECT_EQ(updated_model.model_id, kTestModel.model_id);
+  EXPECT_TRUE(updated_model);
+  EXPECT_EQ(updated_model.value().model_alias, kNewTestAlias);
+  EXPECT_EQ(updated_model.value().model_id, kTestModel.model_id);
 
   // Test update with non-existent model
-  EXPECT_FALSE(model_list_.UpdateModelAlias(kNonExistentModel, kAnotherAlias));
+  EXPECT_FALSE(
+      model_list_.UpdateModelAlias(kNonExistentModel, kAnotherAlias).value());
 
   // Test update with non-unique alias
   cortex::db::ModelEntry another_model = kTestModel;
   another_model.model_id = kAnotherModelId;
   another_model.model_alias = kAnotherAlias;
-  ASSERT_TRUE(model_list_.AddModelEntry(another_model));
+  ASSERT_TRUE(model_list_.AddModelEntry(another_model).value());
 
   EXPECT_FALSE(
-      model_list_.UpdateModelAlias(kTestModel.model_id, kAnotherAlias));
+      model_list_.UpdateModelAlias(kTestModel.model_id, kAnotherAlias).value());
 
   // Test update using model alias instead of model ID
   EXPECT_TRUE(model_list_.UpdateModelAlias(kNewTestAlias, kFinalTestAlias));
   updated_model = model_list_.GetModelInfo(kFinalTestAlias);
-  EXPECT_EQ(updated_model.model_alias, kFinalTestAlias);
-  EXPECT_EQ(updated_model.model_id, kTestModel.model_id);
+  EXPECT_TRUE(updated_model);
+  EXPECT_EQ(updated_model.value().model_alias, kFinalTestAlias);
+  EXPECT_EQ(updated_model.value().model_id, kTestModel.model_id);
 
   // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kAnotherModelId));
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kAnotherModelId).value());
 }
 
 TEST_F(ModelsTestSuite, TestHasModel) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel));
+  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   EXPECT_TRUE(model_list_.HasModel(kTestModel.model_id));
   EXPECT_TRUE(model_list_.HasModel("test_alias"));
   EXPECT_FALSE(model_list_.HasModel("non_existent_model"));
   // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id).value());
 }
 }  // namespace cortex::db

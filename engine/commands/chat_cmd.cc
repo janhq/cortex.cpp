@@ -43,7 +43,11 @@ void ChatCmd::Exec(const std::string& host, int port,
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if(model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
     Exec(host, port, mc, std::move(msg));
   } catch (const std::exception& e) {

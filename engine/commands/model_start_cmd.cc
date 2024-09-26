@@ -1,5 +1,6 @@
 #include "model_start_cmd.h"
 #include "cortex_upd_cmd.h"
+#include "database/models.h"
 #include "httplib.h"
 #include "model_status_cmd.h"
 #include "nlohmann/json.hpp"
@@ -7,7 +8,6 @@
 #include "trantor/utils/Logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "database/models.h"
 
 namespace commands {
 bool ModelStartCmd::Exec(const std::string& host, int port,
@@ -17,7 +17,11 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return false;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
     return Exec(host, port, mc);
   } catch (const std::exception& e) {

@@ -24,7 +24,8 @@ class Models {
  private:
   SQLite::Database& db_;
 
-  bool IsUnique(const std::string& model_id,
+  bool IsUnique(const std::vector<ModelEntry>& entries,
+                const std::string& model_id,
                 const std::string& model_alias) const;
 
  public:
@@ -33,14 +34,17 @@ class Models {
   Models();
   Models(SQLite::Database& db);
   ~Models();
-  std::string GenerateShortenedAlias(const std::string& model_id) const;
-  ModelEntry GetModelInfo(const std::string& identifier) const;
+  std::string GenerateShortenedAlias(
+      const std::string& model_id,
+      const std::vector<ModelEntry>& entries) const;
+  cpp::result<ModelEntry, std::string> GetModelInfo(const std::string& identifier) const;
   void PrintModelInfo(const ModelEntry& entry) const;
-  bool AddModelEntry(ModelEntry new_entry, bool use_short_alias = false);
-  bool UpdateModelEntry(const std::string& identifier,
+  cpp::result<bool, std::string> AddModelEntry(ModelEntry new_entry,
+                                               bool use_short_alias = false);
+  cpp::result<bool, std::string> UpdateModelEntry(const std::string& identifier,
                         const ModelEntry& updated_entry);
-  bool DeleteModelEntry(const std::string& identifier);
-  bool UpdateModelAlias(const std::string& model_id,
+  cpp::result<bool, std::string> DeleteModelEntry(const std::string& identifier);
+  cpp::result<bool, std::string> UpdateModelAlias(const std::string& model_id,
                         const std::string& model_alias);
   bool HasModel(const std::string& identifier) const;
 };

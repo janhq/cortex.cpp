@@ -119,7 +119,11 @@ void Models::GetModel(
     cortex::db::Models modellist_handler;
     config::YamlHandler yaml_handler;
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto model_config = yaml_handler.GetModelConfig();
 
     Json::Value obj = model_config.ToJson();
@@ -174,11 +178,11 @@ void Models::UpdateModel(
     cortex::db::Models model_list_utils;
     auto model_entry = model_list_utils.GetModelInfo(model_id);
     config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
     model_config.FromJson(json_body);
     yaml_handler.UpdateModelConfig(model_config);
-    yaml_handler.WriteYamlFile(model_entry.path_to_model_yaml);
+    yaml_handler.WriteYamlFile(model_entry.value().path_to_model_yaml);
     std::string message = "Successfully update model ID '" + model_id +
                           "': " + json_body.toStyledString();
     LOG_INFO << message;
@@ -234,7 +238,7 @@ void Models::ImportModel(
     model_config.name = modelHandle;
     yaml_handler.UpdateModelConfig(model_config);
 
-    if (modellist_utils_obj.AddModelEntry(model_entry)) {
+    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
       yaml_handler.WriteYamlFile(model_yaml_path);
       std::string success_message = "Model is imported successfully!";
       LOG_INFO << success_message;

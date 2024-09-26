@@ -3,9 +3,9 @@
 #include <vector>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "database/models.h"
 
 namespace commands {
 
@@ -34,7 +34,7 @@ void ModelImportCmd::Exec() {
     model_config.model = model_handle_;
     yaml_handler.UpdateModelConfig(model_config);
 
-    if (modellist_utils_obj.AddModelEntry(model_entry)) {
+    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
       yaml_handler.WriteYamlFile(model_yaml_path);
       CLI_LOG("Model is imported successfully!");
     } else {
