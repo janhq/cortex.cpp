@@ -30,7 +30,7 @@ Models::Models(SQLite::Database& db) : db_(db) {
       "author_repo_id TEXT,"
       "branch_name TEXT,"
       "path_to_model_yaml TEXT,"
-      "model_alias TEXT,"
+      "model_alias TEXT UNIQUE,"
       "status TEXT);");
 }
 
