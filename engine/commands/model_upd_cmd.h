@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 #include "config/model_config.h"
-#include "database/models.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 namespace commands {
 class ModelUpdCmd {
  public:

@@ -2,11 +2,11 @@
 #include "httplib.h"
 
 #include "cortex_upd_cmd.h"
+#include "database/models.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
-#include "database/models.h"
 
 namespace commands {
 namespace {
@@ -43,7 +43,7 @@ void ChatCmd::Exec(const std::string& host, int port,
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    if(model_entry.has_error()) {
+    if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
     }

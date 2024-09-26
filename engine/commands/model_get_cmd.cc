@@ -5,9 +5,9 @@
 #include <vector>
 #include "cmd_info.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "database/models.h"
 
 namespace commands {
 
@@ -16,7 +16,7 @@ void ModelGetCmd::Exec(const std::string& model_handle) {
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    if(model_entry.has_error()) {
+    if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
     }

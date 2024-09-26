@@ -4,11 +4,11 @@
 #include <ostream>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
-#include "database/models.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
 
@@ -38,13 +38,12 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
-  cortex::db::ModelEntry model_entry{
-      .model_id = ggufDownloadItem.id,
-      .author_repo_id = author_id,
-      .branch_name = branch,
-      .path_to_model_yaml = yaml_name.string(),
-      .model_alias = ggufDownloadItem.id,
-      .status = cortex::db::ModelStatus::READY};
+  cortex::db::ModelEntry model_entry{.model_id = ggufDownloadItem.id,
+                                     .author_repo_id = author_id,
+                                     .branch_name = branch,
+                                     .path_to_model_yaml = yaml_name.string(),
+                                     .model_alias = ggufDownloadItem.id,
+                                     .status = cortex::db::ModelStatus::READY};
   modellist_utils_obj.AddModelEntry(model_entry, true);
 }
 
@@ -342,7 +341,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    if(model_entry.has_error()) {
+    if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }

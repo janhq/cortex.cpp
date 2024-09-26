@@ -11,7 +11,7 @@ void ModelUpdCmd::Exec(
     const std::unordered_map<std::string, std::string>& options) {
   try {
     auto model_entry = model_list_utils_.GetModelInfo(model_handle_);
-    if(model_entry.has_error()) {
+    if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
     }

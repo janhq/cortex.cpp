@@ -1,9 +1,9 @@
 #include "model_status_cmd.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "utils/logging_utils.h"
-#include "database/models.h"
 
 namespace commands {
 bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
@@ -12,7 +12,7 @@ bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    if(model_entry.has_error()) {
+    if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return false;
     }
