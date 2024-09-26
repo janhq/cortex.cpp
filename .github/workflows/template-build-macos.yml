@@ -49,6 +49,11 @@ on:
         type: string
         default: 'arm64'
         description: 'The architecture to use for this job'
+      cortex-llamacpp-version:
+        required: true
+        type: string
+        default: '0.0.0'
+        description: 'The version of cortex-llamacpp to use for this job'
     secrets:
       DELTA_AWS_S3_BUCKET_NAME:
         required: false
@@ -78,7 +83,7 @@ on:
         required: false
 
 jobs:
-  build-mac-x64:
+  build-mac:
     runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: write
@@ -169,7 +174,7 @@ jobs:
           QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
           QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
 
-      - name: Build Installers
+      - name: Build network Installers
         shell: bash
         run: |
           cd engine
@@ -185,8 +190,33 @@ jobs:
           productbuild --synthesize --package Distribution.pkg Distribution.xml
           sed -i '' 's/require-scripts="false"/require-scripts="true"/' Distribution.xml
           cat Distribution.xml
-          productbuild --distribution Distribution.xml --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" --package-path . ${{ steps.set-output-params.outputs.package_name }}.pkg
-          xcrun notarytool submit ${{ steps.set-output-params.outputs.package_name }}.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+          productbuild --distribution Distribution.xml --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" --package-path . ${{ steps.set-output-params.outputs.package_name }}-network.pkg
+          xcrun notarytool submit ${{ steps.set-output-params.outputs.package_name }}-network.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+
+      - name: Build local Installers
+        shell: bash
+        run: |
+          mkdir -p engine/templates/macos/Scripts/dependencies
+          cd engine/templates/macos/Scripts/dependencies
+          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-mac-${{ inputs.arch }}.tar.gz
+
+          cd ../../
+          chmod +x create_pkg_local.sh
+          ./create_pkg_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }} ${{ steps.set-output-params.outputs.uninstaller_file_name }}
+          cp ${{ steps.set-output-params.outputs.package_name }}.pkg ../../
+
+      - name: Codesign and notary for macos installer
+        run: |
+          cd engine
+          productsign --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" ${{ steps.set-output-params.outputs.package_name }}.pkg ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg
+          rm ${{ steps.set-output-params.outputs.package_name }}.pkg
+          mv ${{ steps.set-output-params.outputs.package_name }}$-signed.pkg Distribution.pkg
+          productbuild --synthesize --package Distribution.pkg Distribution.xml
+          sed -i '' 's/require-scripts="false"/require-scripts="true"/' Distribution.xml
+          cat Distribution.xml
+          productbuild --distribution Distribution.xml --sign "Developer ID Installer: ${{ secrets.DEVELOPER_ID }}" --package-path . ${{ steps.set-output-params.outputs.package_name }}-local.pkg
+          xcrun notarytool submit ${{ steps.set-output-params.outputs.package_name }}-local.pkg --apple-id ${{ secrets.APPLE_ID }} --password ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }} --team-id ${{ secrets.APPLE_TEAM_ID }} --wait
+  
 
       - name: Package
         run: |
@@ -202,8 +232,14 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-installer
-          path: ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg
+          name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-network-installer
+          path: ./engine/${{ steps.set-output-params.outputs.package_name }}-network.pkg
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-local-installer
+          path: ./engine/${{ steps.set-output-params.outputs.package_name }}-local.pkg
 
       - name: upload to aws s3 if public provider is aws
         if: inputs.public_provider == 'aws-s3'
@@ -211,7 +247,8 @@ jobs:
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-${{ inputs.arch}}-cortex-nightly.tar.gz
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-installer.pkg
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-network-installer.pkg
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-local.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/mac-${{ inputs.arch}}/cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-local-installer.pkg
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
@@ -236,6 +273,17 @@ jobs:
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ inputs.upload_url }}
-          asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}.pkg
-          asset_name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-installer.pkg
+          asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}-network.pkg
+          asset_name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-network-installer.pkg
+          asset_content_type: application/octet-stream
+
+      - name: Upload release assert if public provider is github
+        if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}-local.pkg
+          asset_name: cortex-${{ inputs.new_version }}-mac-${{ inputs.arch}}-local-installer.pkg
           asset_content_type: application/octet-stream

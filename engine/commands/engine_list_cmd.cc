@@ -9,12 +9,15 @@ bool EngineListCmd::Exec() {
   auto status_list = engine_service.GetEngineInfoList();
 
   tabulate::Table table;
-  table.add_row({"#", "Name", "Supported Formats", "Version", "Status"});
+  table.add_row(
+      {"#", "Name", "Supported Formats", "Version", "Variant", "Status"});
   for (int i = 0; i < status_list.size(); i++) {
-    auto status = status_list[i];
+    auto engine_status = status_list[i];
     std::string index = std::to_string(i + 1);
-    table.add_row({index, status.product_name, status.format, status.version,
-                   status.status});
+    auto variant = engine_status.variant.value_or("");
+    auto version = engine_status.version.value_or("");
+    table.add_row({index, engine_status.product_name, engine_status.format,
+                   version, variant, engine_status.status});
   }
 
   std::cout << table << std::endl;

@@ -233,14 +233,13 @@ void CommandLineParser::SetupModelCommands() {
                        " models delete [model_id]");
   model_del_cmd->group(kSubcommands);
   model_del_cmd->add_option("model_id", cml_data_.model_id, "");
-  model_del_cmd->callback([this, model_del_cmd]() {
+  model_del_cmd->callback([&]() {
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(model_del_cmd->help());
       return;
     };
-    commands::ModelDelCmd mdc;
-    mdc.Exec(cml_data_.model_id);
+    commands::ModelDelCmd().Exec(cml_data_.model_id);
   });
 
   std::string model_alias;

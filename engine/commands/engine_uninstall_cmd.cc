@@ -10,7 +10,7 @@ void EngineUninstallCmd::Exec(const std::string& engine) {
   if (result.has_error()) {
     CLI_LOG(result.error());
   } else {
-    CLI_LOG("Engine uninstalled successfully");
+    CLI_LOG("Engine " + engine + " uninstalled successfully!");
   }
 }
 };  // namespace commands
