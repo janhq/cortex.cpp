@@ -21,14 +21,6 @@ class ModelListUtilsTestSuite : public ::testing::Test {
       "/path/to/model.yaml",
       "test_alias",
       modellist_utils::ModelStatus::READY};
-
-  void SetUp() {
-  }
-
-  void TearDown() {
-    // Clean up the temporary directory
-    std::remove(kTestDb);
-  }
 };
 
 TEST_F(ModelListUtilsTestSuite, TestAddModelEntry) {
@@ -37,6 +29,9 @@ TEST_F(ModelListUtilsTestSuite, TestAddModelEntry) {
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model_id);
   EXPECT_EQ(retrieved_model.model_id, kTestModel.model_id);
   EXPECT_EQ(retrieved_model.author_repo_id, kTestModel.author_repo_id);
+
+  // Clean up
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
 }
 
 TEST_F(ModelListUtilsTestSuite, TestGetModelInfo) {
@@ -50,6 +45,9 @@ TEST_F(ModelListUtilsTestSuite, TestGetModelInfo) {
 
   EXPECT_THROW(model_list_.GetModelInfo("non_existent_model"),
                std::runtime_error);
+
+  // Clean up
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
 }
 
 TEST_F(ModelListUtilsTestSuite, TestUpdateModelEntry) {
@@ -64,6 +62,9 @@ TEST_F(ModelListUtilsTestSuite, TestUpdateModelEntry) {
   EXPECT_EQ(retrieved_model.status, modellist_utils::ModelStatus::RUNNING);
   updated_model.status = modellist_utils::ModelStatus::READY;
   EXPECT_TRUE(model_list_.UpdateModelEntry(kTestModel.model_id, updated_model));
+
+  // Clean up
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
 }
 
 TEST_F(ModelListUtilsTestSuite, TestDeleteModelEntry) {
@@ -85,6 +86,9 @@ TEST_F(ModelListUtilsTestSuite, TestGenerateShortenedAlias) {
   alias = model_list_.GenerateShortenedAlias(
       "huggingface.co/bartowski/llama3.1-7b-gguf/Model_ID_Xxx.gguf");
   EXPECT_EQ(alias, "llama3.1-7b-gguf:model_id_xxx");
+
+  // Clean up
+  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model_id));
 }
 
 TEST_F(ModelListUtilsTestSuite, TestPersistence) {
