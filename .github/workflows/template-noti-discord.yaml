@@ -35,7 +35,9 @@ jobs:
             - macOS Apple Silicon:
               - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-network-installer.pkg
               - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-local-installer.pkg
-            - Linux Deb: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-installer.deb
+            - Linux Deb:
+              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-network-installer.deb
+              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-local-installer.deb
             - Github action run: https://github.com/janhq/cortex.cpp/actions/runs/{{ GITHUB_RUN_ID }}
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
