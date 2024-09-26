@@ -42,8 +42,7 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
                                      .author_repo_id = author_id,
                                      .branch_name = branch,
                                      .path_to_model_yaml = yaml_name.string(),
-                                     .model_alias = ggufDownloadItem.id,
-                                     .status = cortex::db::ModelStatus::READY};
+                                     .model_alias = ggufDownloadItem.id};
   modellist_utils_obj.AddModelEntry(model_entry, true);
 }
 
@@ -283,8 +282,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
         .author_repo_id = "cortexso",
         .branch_name = branch,
         .path_to_model_yaml = model_yml_item->localPath.string(),
-        .model_alias = model_id,
-        .status = cortex::db::ModelStatus::READY};
+        .model_alias = model_id};
     modellist_utils_obj.AddModelEntry(model_entry);
   };
 

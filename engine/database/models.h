@@ -7,16 +7,12 @@
 #include "utils/result.hpp"
 
 namespace cortex::db {
-
-enum class ModelStatus { READY, RUNNING };
-
 struct ModelEntry {
   std::string model_id;
   std::string author_repo_id;
   std::string branch_name;
   std::string path_to_model_yaml;
   std::string model_alias;
-  ModelStatus status;
 };
 
 class Models {

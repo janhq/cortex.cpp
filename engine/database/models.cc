@@ -19,8 +19,7 @@ Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
       "author_repo_id TEXT,"
       "branch_name TEXT,"
       "path_to_model_yaml TEXT,"
-      "model_alias TEXT,"
-      "status TEXT);");
+      "model_alias TEXT);");
 }
 
 Models::Models(SQLite::Database& db) : db_(db) {
@@ -30,8 +29,7 @@ Models::Models(SQLite::Database& db) : db_(db) {
       "author_repo_id TEXT,"
       "branch_name TEXT,"
       "path_to_model_yaml TEXT,"
-      "model_alias TEXT UNIQUE,"
-      "status TEXT);");
+      "model_alias TEXT UNIQUE);");
 }
 
 Models::~Models() {}
@@ -76,8 +74,6 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
       entry.path_to_model_yaml = query.getColumn(3).getString();
       entry.model_alias = query.getColumn(4).getString();
       std::string status_str = query.getColumn(5).getString();
-      entry.status =
-          (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
       entries.push_back(entry);
     }
     return entries;
@@ -166,8 +162,6 @@ cpp::result<ModelEntry, std::string> Models::GetModelInfo(
       entry.path_to_model_yaml = query.getColumn(3).getString();
       entry.model_alias = query.getColumn(4).getString();
       std::string status_str = query.getColumn(5).getString();
-      entry.status =
-          (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
       return entry;
     } else {
       return cpp::fail("Model not found: " + identifier);
@@ -183,8 +177,6 @@ void Models::PrintModelInfo(const ModelEntry& entry) const {
   LOG_INFO << "Branch Name: " << entry.branch_name;
   LOG_INFO << "Path to model.yaml: " << entry.path_to_model_yaml;
   LOG_INFO << "Model Alias: " << entry.model_alias;
-  LOG_INFO << "Status: "
-           << (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY");
 }
 
 cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
@@ -203,8 +195,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
       if (use_short_alias) {
         new_entry.model_alias =
             GenerateShortenedAlias(new_entry.model_id, model_list.value());
-      }
-      new_entry.status = ModelStatus::READY;  // Set default status to READY
+      }      
 
       SQLite::Statement insert(
           db_,
@@ -216,8 +207,6 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
       insert.bind(3, new_entry.branch_name);
       insert.bind(4, new_entry.path_to_model_yaml);
       insert.bind(5, new_entry.model_alias);
-      insert.bind(
-          6, (new_entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
       insert.exec();
 
       return true;
@@ -240,10 +229,8 @@ cpp::result<bool, std::string> Models::UpdateModelEntry(
     upd.bind(1, updated_entry.author_repo_id);
     upd.bind(2, updated_entry.branch_name);
     upd.bind(3, updated_entry.path_to_model_yaml);
-    upd.bind(4, (updated_entry.status == ModelStatus::RUNNING ? "RUNNING"
-                                                              : "READY"));
+    upd.bind(4, identifier);
     upd.bind(5, identifier);
-    upd.bind(6, identifier);
     return upd.exec() == 1;
   } catch (const std::exception& e) {
     return cpp::fail(e.what());

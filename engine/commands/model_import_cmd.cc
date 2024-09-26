@@ -24,7 +24,7 @@ void ModelImportCmd::Exec() {
                                     .string();
   cortex::db::ModelEntry model_entry{
       model_handle_,   "local",       "imported",
-      model_yaml_path, model_handle_, cortex::db::ModelStatus::READY};
+      model_yaml_path, model_handle_};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());

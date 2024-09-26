@@ -228,7 +228,7 @@ void Models::ImportModel(
                                     .string();
   cortex::db::ModelEntry model_entry{
       modelHandle,     "local",     "imported",
-      model_yaml_path, modelHandle, cortex::db::ModelStatus::READY};
+      model_yaml_path, modelHandle};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());

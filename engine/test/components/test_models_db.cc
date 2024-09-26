@@ -25,7 +25,7 @@ class ModelsTestSuite : public ::testing::Test {
 
   const cortex::db::ModelEntry kTestModel{
       "test_model_id",       "test_author", "main",
-      "/path/to/model.yaml", "test_alias",  cortex::db::ModelStatus::READY};
+      "/path/to/model.yaml", "test_alias"};
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {
@@ -61,15 +61,12 @@ TEST_F(ModelsTestSuite, TestUpdateModelEntry) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   cortex::db::ModelEntry updated_model = kTestModel;
-  updated_model.status = cortex::db::ModelStatus::RUNNING;
 
   EXPECT_TRUE(
       model_list_.UpdateModelEntry(kTestModel.model_id, updated_model).value());
 
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model_id);
   EXPECT_TRUE(retrieved_model);
-  EXPECT_EQ(retrieved_model.value().status, cortex::db::ModelStatus::RUNNING);
-  updated_model.status = cortex::db::ModelStatus::READY;
   EXPECT_TRUE(
       model_list_.UpdateModelEntry(kTestModel.model_id, updated_model).value());
 
