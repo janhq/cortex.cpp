@@ -5,7 +5,7 @@
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/model_callback_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 void Models::PullModel(
     const HttpRequestPtr& req,
@@ -56,7 +56,7 @@ void Models::ListModel(
   // Iterate through directory
 
   try {
-    modellist_utils::ModelListUtils modellist_handler;
+    cortex::db::Models modellist_handler;
     config::YamlHandler yaml_handler;
 
     auto list_entry = modellist_handler.LoadModelList();
@@ -107,7 +107,7 @@ void Models::GetModel(
   Json::Value data(Json::arrayValue);
 
   try {
-    modellist_utils::ModelListUtils modellist_handler;
+    cortex::db::Models modellist_handler;
     config::YamlHandler yaml_handler;
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
     yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
@@ -164,7 +164,7 @@ void Models::UpdateModel(
   auto model_id = (*(req->getJsonObject())).get("modelId", "").asString();
   auto json_body = *(req->getJsonObject());
   try {
-    modellist_utils::ModelListUtils model_list_utils;
+    cortex::db::Models model_list_utils;
     auto model_entry = model_list_utils.GetModelInfo(model_id);
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
@@ -209,15 +209,15 @@ void Models::ImportModel(
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
-  modellist_utils::ModelListUtils modellist_utils_obj;
+  cortex::db::Models modellist_utils_obj;
 
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(modelHandle + ".yml"))
                                     .string();
-  modellist_utils::ModelEntry model_entry{
+  cortex::db::ModelEntry model_entry{
       modelHandle,     "local",     "imported",
-      model_yaml_path, modelHandle, modellist_utils::ModelStatus::READY};
+      model_yaml_path, modelHandle, cortex::db::ModelStatus::READY};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -281,7 +281,7 @@ void Models::SetModelAlias(
   LOG_DEBUG << "GetModel, Model handle: " << model_handle
             << ", Model alias: " << model_alias;
 
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   try {
     if (modellist_handler.UpdateModelAlias(model_handle, model_alias)) {
       std::string message = "Successfully set model alias '" + model_alias +

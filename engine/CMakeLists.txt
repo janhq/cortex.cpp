@@ -82,7 +82,6 @@ find_package(SQLiteCpp REQUIRED)
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/modellist_utils.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
@@ -116,7 +115,8 @@ aux_source_directory(models MODEL_SRC)
 aux_source_directory(cortex-common CORTEX_COMMON)
 aux_source_directory(config CONFIG_SRC)
 aux_source_directory(commands COMMANDS_SRC)
-
+aux_source_directory(database DB_SRC)
+ 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC})

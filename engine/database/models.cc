@@ -1,23 +1,16 @@
-#include "modellist_utils.h"
+#include "models.h"
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
-#include "file_manager_utils.h"
+#include "database.h"
+#include "utils/file_manager_utils.h"
 
-namespace modellist_utils {
-const std::string ModelListUtils::kModelListPath =
-    (file_manager_utils::GetModelsContainerPath() /
-     std::filesystem::path("model.list"))
-        .string();
-namespace {
-const std::string kDefaultDbPath =
-    file_manager_utils::GetCortexDataPath().string() + "/cortex.db";
-}
-ModelListUtils::ModelListUtils()
-    : db_(kDefaultDbPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
+namespace cortex::db {
+
+Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
   db_.exec(
       "CREATE TABLE IF NOT EXISTS models ("
       "model_id TEXT PRIMARY KEY,"
@@ -28,8 +21,7 @@ ModelListUtils::ModelListUtils()
       "status TEXT);");
 }
 
-ModelListUtils::ModelListUtils(const std::string& db_path)
-    : db_(db_path, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {
+Models::Models(SQLite::Database& db) : db_(db) {
   db_.exec(
       "CREATE TABLE IF NOT EXISTS models ("
       "model_id TEXT PRIMARY KEY,"
@@ -40,9 +32,9 @@ ModelListUtils::ModelListUtils(const std::string& db_path)
       "status TEXT);");
 }
 
-ModelListUtils::~ModelListUtils() {}
+Models::~Models() {}
 
-std::vector<ModelEntry> ModelListUtils::LoadModelList() const {
+std::vector<ModelEntry> Models::LoadModelList() const {
   std::vector<ModelEntry> entries;
   SQLite::Statement query(
       db_,
@@ -64,8 +56,8 @@ std::vector<ModelEntry> ModelListUtils::LoadModelList() const {
   return entries;
 }
 
-bool ModelListUtils::IsUnique(const std::string& model_id,
-                              const std::string& model_alias) const {
+bool Models::IsUnique(const std::string& model_id,
+                      const std::string& model_alias) const {
   SQLite::Statement query(db_,
                           "SELECT COUNT(*) FROM models WHERE model_id = ? OR "
                           "model_id = ? OR model_alias = ? OR model_alias = ?");
@@ -79,30 +71,28 @@ bool ModelListUtils::IsUnique(const std::string& model_id,
   return false;
 }
 
-void ModelListUtils::SaveModelList(
-    const std::vector<ModelEntry>& entries) const {
-  std::ofstream file(kModelListPath);
-  db_.exec("BEGIN TRANSACTION;");
-  for (const auto& entry : entries) {
-    SQLite::Statement insert(
-        db_,
-        "INSERT OR REPLACE INTO models (model_id, author_repo_id, "
-        "branch_name, path_to_model_yaml, model_alias, status) VALUES (?, ?, "
-        "?, ?, ?, ?)");
-    insert.bind(1, entry.model_id);
-    insert.bind(2, entry.author_repo_id);
-    insert.bind(3, entry.branch_name);
-    insert.bind(4, entry.path_to_model_yaml);
-    insert.bind(5, entry.model_alias);
-    insert.bind(6,
-                (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
-    insert.exec();
-  }
-  db_.exec("COMMIT;");
-}
+// void Models::SaveModelList(const std::vector<ModelEntry>& entries) const {
+//   std::ofstream file(kModelListPath);
+//   db_.exec("BEGIN TRANSACTION;");
+//   for (const auto& entry : entries) {
+//     SQLite::Statement insert(
+//         db_,
+//         "INSERT OR REPLACE INTO models (model_id, author_repo_id, "
+//         "branch_name, path_to_model_yaml, model_alias, status) VALUES (?, ?, "
+//         "?, ?, ?, ?)");
+//     insert.bind(1, entry.model_id);
+//     insert.bind(2, entry.author_repo_id);
+//     insert.bind(3, entry.branch_name);
+//     insert.bind(4, entry.path_to_model_yaml);
+//     insert.bind(5, entry.model_alias);
+//     insert.bind(6,
+//                 (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
+//     insert.exec();
+//   }
+//   db_.exec("COMMIT;");
+// }
 
-std::string ModelListUtils::GenerateShortenedAlias(
-    const std::string& model_id) const {
+std::string Models::GenerateShortenedAlias(const std::string& model_id) const {
   std::vector<std::string> parts;
   std::istringstream iss(model_id);
   std::string part;
@@ -161,7 +151,7 @@ std::string ModelListUtils::GenerateShortenedAlias(
   return unique_candidate;
 }
 
-ModelEntry ModelListUtils::GetModelInfo(const std::string& identifier) const {
+ModelEntry Models::GetModelInfo(const std::string& identifier) const {
   std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement query(db_,
                           "SELECT model_id, author_repo_id, branch_name, "
@@ -186,7 +176,7 @@ ModelEntry ModelListUtils::GetModelInfo(const std::string& identifier) const {
   }
 }
 
-void ModelListUtils::PrintModelInfo(const ModelEntry& entry) const {
+void Models::PrintModelInfo(const ModelEntry& entry) const {
   LOG_INFO << "Model ID: " << entry.model_id;
   LOG_INFO << "Author/Repo ID: " << entry.author_repo_id;
   LOG_INFO << "Branch Name: " << entry.branch_name;
@@ -196,7 +186,7 @@ void ModelListUtils::PrintModelInfo(const ModelEntry& entry) const {
            << (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY");
 }
 
-bool ModelListUtils::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
+bool Models::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   if (IsUnique(new_entry.model_id, new_entry.model_alias)) {
@@ -224,8 +214,8 @@ bool ModelListUtils::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
   return false;  // Entry not added due to non-uniqueness
 }
 
-bool ModelListUtils::UpdateModelEntry(const std::string& identifier,
-                                      const ModelEntry& updated_entry) {
+bool Models::UpdateModelEntry(const std::string& identifier,
+                              const ModelEntry& updated_entry) {
   std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement upd(db_,
                         "UPDATE models "
@@ -242,8 +232,8 @@ bool ModelListUtils::UpdateModelEntry(const std::string& identifier,
   return upd.exec() == 1;
 }
 
-bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
-                                      const std::string& new_model_alias) {
+bool Models::UpdateModelAlias(const std::string& model_id,
+                              const std::string& new_model_alias) {
   std::lock_guard<std::mutex> lock(mutex_);
   // Check new_model_alias is unique
   if (IsUnique(new_model_alias, new_model_alias)) {
@@ -259,7 +249,7 @@ bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
   return false;
 }
 
-bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
+bool Models::DeleteModelEntry(const std::string& identifier) {
   std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement del(
       db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
@@ -268,7 +258,7 @@ bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
   return del.exec() == 1;
 }
 
-bool ModelListUtils::HasModel(const std::string& identifier) const {
+bool Models::HasModel(const std::string& identifier) const {
   std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement query(
       db_, "SELECT COUNT(*) FROM models WHERE model_id = ? OR model_alias = ?");
@@ -279,4 +269,4 @@ bool ModelListUtils::HasModel(const std::string& identifier) const {
   }
   return false;
 }
-}  // namespace modellist_utils
+}  // namespace cortex::db

@@ -6,13 +6,13 @@
 #include "config/yaml_config.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 namespace commands {
 
 void ModelListCmd::Exec() {
   auto models_path = file_manager_utils::GetModelsContainerPath();
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   tabulate::Table table;
 

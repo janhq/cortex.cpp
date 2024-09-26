@@ -8,7 +8,7 @@
 #include "services/download_service.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 namespace model_callback_utils {
 
@@ -35,14 +35,14 @@ inline void ParseGguf(const DownloadItem& ggufDownloadItem,
   CTL_INF("Adding model to modellist with branch: " << branch);
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
-  modellist_utils::ModelListUtils modellist_utils_obj;
-  modellist_utils::ModelEntry model_entry{
+  cortex::db::Models modellist_utils_obj;
+  cortex::db::ModelEntry model_entry{
       .model_id = model_config.id,
       .author_repo_id = author_id,
       .branch_name = branch,
       .path_to_model_yaml = yaml_name.string(),
       .model_alias = model_config.id,
-      .status = modellist_utils::ModelStatus::READY};
+      .status = cortex::db::ModelStatus::READY};
   modellist_utils_obj.AddModelEntry(model_entry);
 }
 
@@ -76,14 +76,14 @@ inline void DownloadModelCb(const DownloadTask& finishedTask) {
     yaml_handler.ModelConfigFromFile(model_yml_di->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
 
-    modellist_utils::ModelListUtils modellist_utils_obj;
-    modellist_utils::ModelEntry model_entry{
+    cortex::db::Models modellist_utils_obj;
+    cortex::db::ModelEntry model_entry{
         .model_id = mc.name,
         .author_repo_id = "cortexso",
         .branch_name = branch,
         .path_to_model_yaml = model_yml_di->localPath.string(),
         .model_alias = mc.name,
-        .status = modellist_utils::ModelStatus::READY};
+        .status = cortex::db::ModelStatus::READY};
     modellist_utils_obj.AddModelEntry(model_entry);
   }
 }

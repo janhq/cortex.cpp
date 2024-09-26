@@ -3,12 +3,12 @@
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 namespace commands {
 bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
                               const std::string& model_handle) {
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);

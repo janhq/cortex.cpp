@@ -5,12 +5,12 @@ enable_testing()
 
 add_executable(${PROJECT_NAME} 
   ${SRCS} 
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/modellist_utils.cc 
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/yaml_config.cc 
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/gguf_parser.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../commands/cortex_upd_cmd.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../commands/server_stop_cmd.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../services/download_service.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../database/models.cc
 )
 
 find_package(Drogon CONFIG REQUIRED)

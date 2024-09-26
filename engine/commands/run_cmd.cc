@@ -5,14 +5,14 @@
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 namespace commands {
 
 void RunCmd::Exec() {
   std::optional<std::string> model_id = model_handle_;
 
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   auto address = host_ + ":" + std::to_string(port_);
 

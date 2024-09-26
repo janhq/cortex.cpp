@@ -2,11 +2,11 @@
 #include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "utils/file_manager_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 namespace commands {
 bool ModelDelCmd::Exec(const std::string& model_handle) {
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
   try {

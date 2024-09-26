@@ -7,12 +7,12 @@
 #include "config/yaml_config.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
+#include "database/models.h"
 
 namespace commands {
 
 void ModelGetCmd::Exec(const std::string& model_handle) {
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
