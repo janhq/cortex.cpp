@@ -61,10 +61,9 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
     const {
   try {
     std::vector<ModelEntry> entries;
-    SQLite::Statement query(
-        db_,
-        "SELECT model_id, author_repo_id, branch_name, "
-        "path_to_model_yaml, model_alias, status FROM models");
+    SQLite::Statement query(db_,
+                            "SELECT model_id, author_repo_id, branch_name, "
+                            "path_to_model_yaml, model_alias FROM models");
 
     while (query.executeStep()) {
       ModelEntry entry;
@@ -73,7 +72,6 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
       entry.branch_name = query.getColumn(2).getString();
       entry.path_to_model_yaml = query.getColumn(3).getString();
       entry.model_alias = query.getColumn(4).getString();
-      std::string status_str = query.getColumn(5).getString();
       entries.push_back(entry);
     }
     return entries;
@@ -146,11 +144,10 @@ std::string Models::GenerateShortenedAlias(
 cpp::result<ModelEntry, std::string> Models::GetModelInfo(
     const std::string& identifier) const {
   try {
-    SQLite::Statement query(
-        db_,
-        "SELECT model_id, author_repo_id, branch_name, "
-        "path_to_model_yaml, model_alias, status FROM models "
-        "WHERE model_id = ? OR model_alias = ?");
+    SQLite::Statement query(db_,
+                            "SELECT model_id, author_repo_id, branch_name, "
+                            "path_to_model_yaml, model_alias FROM models "
+                            "WHERE model_id = ? OR model_alias = ?");
 
     query.bind(1, identifier);
     query.bind(2, identifier);
@@ -161,7 +158,6 @@ cpp::result<ModelEntry, std::string> Models::GetModelInfo(
       entry.branch_name = query.getColumn(2).getString();
       entry.path_to_model_yaml = query.getColumn(3).getString();
       entry.model_alias = query.getColumn(4).getString();
-      std::string status_str = query.getColumn(5).getString();
       return entry;
     } else {
       return cpp::fail("Model not found: " + identifier);
@@ -195,13 +191,13 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
       if (use_short_alias) {
         new_entry.model_alias =
             GenerateShortenedAlias(new_entry.model_id, model_list.value());
-      }      
+      }
 
       SQLite::Statement insert(
           db_,
           "INSERT INTO models (model_id, author_repo_id, "
-          "branch_name, path_to_model_yaml, model_alias, status) VALUES (?, ?, "
-          "?, ?, ?, ?)");
+          "branch_name, path_to_model_yaml, model_alias) VALUES (?, ?, "
+          "?, ?, ?)");
       insert.bind(1, new_entry.model_id);
       insert.bind(2, new_entry.author_repo_id);
       insert.bind(3, new_entry.branch_name);
@@ -224,7 +220,7 @@ cpp::result<bool, std::string> Models::UpdateModelEntry(
     SQLite::Statement upd(db_,
                           "UPDATE models "
                           "SET author_repo_id = ?, branch_name = ?, "
-                          "path_to_model_yaml = ?, status = ? "
+                          "path_to_model_yaml = ? "
                           "WHERE model_id = ? OR model_alias = ?");
     upd.bind(1, updated_entry.author_repo_id);
     upd.bind(2, updated_entry.branch_name);
