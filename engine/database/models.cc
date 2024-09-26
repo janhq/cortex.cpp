@@ -39,6 +39,29 @@ Models::~Models() {}
 cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
     const {
   try {
+    db_.exec("BEGIN TRANSACTION;");
+    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    return LoadModelListNoLock();
+  } catch (const std::exception& e) {
+    CTL_WRN(e.what());
+    return cpp::fail(e.what());
+  }
+}
+
+bool Models::IsUnique(const std::vector<ModelEntry>& entries,
+                      const std::string& model_id,
+                      const std::string& model_alias) const {
+  return std::none_of(
+      entries.begin(), entries.end(), [&](const ModelEntry& entry) {
+        return entry.model_id == model_id || entry.model_alias == model_id ||
+               entry.model_id == model_alias ||
+               entry.model_alias == model_alias;
+      });
+}
+
+cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
+    const {
+  try {
     std::vector<ModelEntry> entries;
     SQLite::Statement query(
         db_,
@@ -62,17 +85,6 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
     CTL_WRN(e.what());
     return cpp::fail(e.what());
   }
-}
-
-bool Models::IsUnique(const std::vector<ModelEntry>& entries,
-                      const std::string& model_id,
-                      const std::string& model_alias) const {
-  return std::none_of(
-      entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return entry.model_id == model_id || entry.model_alias == model_id ||
-               entry.model_id == model_alias ||
-               entry.model_alias == model_alias;
-      });
 }
 
 std::string Models::GenerateShortenedAlias(
@@ -180,7 +192,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
   try {
     db_.exec("BEGIN TRANSACTION;");
     utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
-    auto model_list = LoadModelList();
+    auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());
       std::cout << "Test: " << model_list.error();
@@ -243,7 +255,7 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
   try {
     db_.exec("BEGIN TRANSACTION;");
     utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
-    auto model_list = LoadModelList();
+    auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());
       return cpp::fail(model_list.error());
