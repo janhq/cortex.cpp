@@ -29,8 +29,12 @@ jobs:
             - Windows:
               - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/windows-amd64/cortex-{{ VERSION }}-windows-amd64-network-installer.exe
               - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/windows-amd64/cortex-{{ VERSION }}-windows-amd64-local-installer.exe
-            - macOS Intel: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-amd64/cortex-{{ VERSION }}-mac-amd64-installer.pkg
-            - macOS Apple Silicon: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-installer.pkg
+            - macOS Intel:
+              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-amd64/cortex-{{ VERSION }}-mac-amd64-network-installer.pkg
+              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-amd64/cortex-{{ VERSION }}-mac-amd64-local-installer.pkg
+            - macOS Apple Silicon:
+              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-network-installer.pkg
+              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-local-installer.pkg
             - Linux Deb:
               - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-network-installer.deb
               - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-local-installer.deb

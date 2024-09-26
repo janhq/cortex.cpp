@@ -49,6 +49,7 @@ jobs:
       channel: beta
       arch: amd64
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
   build-macos-arm64:
     uses: ./.github/workflows/template-build-macos.yml
@@ -63,6 +64,7 @@ jobs:
       channel: beta
       arch: arm64
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
   build-windows-x64:
     uses: ./.github/workflows/template-build-windows-x64.yml
