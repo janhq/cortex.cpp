@@ -3,8 +3,8 @@
 #include <trantor/utils/Logger.h>
 #include <string>
 #include <vector>
-
 #include "SQLiteCpp/SQLiteCpp.h"
+#include "utils/result.hpp"
 
 namespace cortex::db {
 
@@ -29,7 +29,7 @@ class Models {
 
  public:
   static const std::string kModelListPath;
-  std::vector<ModelEntry> LoadModelList() const;
+  cpp::result<std::vector<ModelEntry>, std::string> LoadModelList() const;
   Models();
   Models(SQLite::Database& db);
   ~Models();

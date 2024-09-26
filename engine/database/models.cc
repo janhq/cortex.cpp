@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "database.h"
 #include "utils/file_manager_utils.h"
+#include "utils/result.hpp"
 #include "utils/scope_exit.h"
 
 namespace cortex::db {
@@ -35,26 +36,33 @@ Models::Models(SQLite::Database& db) : db_(db) {
 
 Models::~Models() {}
 
-std::vector<ModelEntry> Models::LoadModelList() const {
-  std::vector<ModelEntry> entries;
-  SQLite::Statement query(
-      db_,
-      "SELECT model_id, author_repo_id, branch_name, "
-      "path_to_model_yaml, model_alias, status FROM models");
+cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
+    const {
+  try {
+    std::vector<ModelEntry> entries;
+    db_.exec("BEGIN TRANSACTION;");
+    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    SQLite::Statement query(
+        db_,
+        "SELECT model_id, author_repo_id, branch_name, "
+        "path_to_model_yaml, model_alias, status FROM models");
 
-  while (query.executeStep()) {
-    ModelEntry entry;
-    entry.model_id = query.getColumn(0).getString();
-    entry.author_repo_id = query.getColumn(1).getString();
-    entry.branch_name = query.getColumn(2).getString();
-    entry.path_to_model_yaml = query.getColumn(3).getString();
-    entry.model_alias = query.getColumn(4).getString();
-    std::string status_str = query.getColumn(5).getString();
-    entry.status =
-        (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
-    entries.push_back(entry);
+    while (query.executeStep()) {
+      ModelEntry entry;
+      entry.model_id = query.getColumn(0).getString();
+      entry.author_repo_id = query.getColumn(1).getString();
+      entry.branch_name = query.getColumn(2).getString();
+      entry.path_to_model_yaml = query.getColumn(3).getString();
+      entry.model_alias = query.getColumn(4).getString();
+      std::string status_str = query.getColumn(5).getString();
+      entry.status =
+          (status_str == "RUNNING") ? ModelStatus::RUNNING : ModelStatus::READY;
+      entries.push_back(entry);
+    }
+    return entries;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
   }
-  return entries;
 }
 
 bool Models::IsUnique(const std::string& model_id,

@@ -65,13 +65,12 @@ void Models::ListModel(
 
   // Iterate through directory
 
-  try {
-    cortex::db::Models modellist_handler;
-    config::YamlHandler yaml_handler;
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
 
-    auto list_entry = modellist_handler.LoadModelList();
-
-    for (const auto& model_entry : list_entry) {
+  auto list_entry = modellist_handler.LoadModelList();
+  if (list_entry) {
+    for (const auto& model_entry : list_entry.value()) {
       // auto model_entry = modellist_handler.GetModelInfo(model_handle);
       try {
 
@@ -91,9 +90,9 @@ void Models::ListModel(
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
-  } catch (const std::exception& e) {
-    std::string message =
-        "Fail to get list model information: " + std::string(e.what());
+  } else {
+    std::string message = "Fail to get list model information: " +
+                          std::string(list_entry.error());
     LOG_ERROR << message;
     ret["data"] = data;
     ret["result"] = "Fail to get list model information";
