@@ -86,7 +86,7 @@ To install Cortex.cpp, download the installer for your operating system from the
 # 1. Start the Cortex.cpp server (The server is running at localhost:3928)
 cortex start
 
-# 2. Start a model
+# 2. Start and chat with the model
 cortex run <model_id>:[engine_name]
 
 # 3. Stop a model
