@@ -1,8 +1,13 @@
 #include "model_pull_cmd.h"
-#include "utils/cortexso_parser.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 void ModelPullCmd::Exec(const std::string& input) {
-  model_service_.DownloadModel(input);
+  auto result = model_service_.DownloadModel(input);
+  if (result.has_error()) {
+    CLI_LOG(result.error());
+  } else {
+    CLI_LOG("Model downloaded successfully!");
+  }
 }
 };  // namespace commands

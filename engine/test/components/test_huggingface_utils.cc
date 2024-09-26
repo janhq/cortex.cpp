@@ -7,13 +7,13 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
   auto branches =
       huggingface_utils::GetModelRepositoryBranches("cortexso", "tinyllama");
 
-  EXPECT_EQ(branches.size(), 3);
-  EXPECT_EQ(branches[0].name, "gguf");
-  EXPECT_EQ(branches[0].ref, "refs/heads/gguf");
-  EXPECT_EQ(branches[1].name, "1b-gguf");
-  EXPECT_EQ(branches[1].ref, "refs/heads/1b-gguf");
-  EXPECT_EQ(branches[2].name, "main");
-  EXPECT_EQ(branches[2].ref, "refs/heads/main");
+  EXPECT_EQ(branches.value().size(), 3);
+  EXPECT_EQ(branches.value()[0].name, "gguf");
+  EXPECT_EQ(branches.value()[0].ref, "refs/heads/gguf");
+  EXPECT_EQ(branches.value()[1].name, "1b-gguf");
+  EXPECT_EQ(branches.value()[1].ref, "refs/heads/1b-gguf");
+  EXPECT_EQ(branches.value()[2].name, "main");
+  EXPECT_EQ(branches.value()[2].ref, "refs/heads/main");
 }
 
 TEST_F(HuggingFaceUtilTestSuite, TestGetHuggingFaceModelRepoInfoSuccessfully) {

@@ -1,5 +1,4 @@
 #include "model_list_cmd.h"
-#include <filesystem>
 #include <iostream>
 #include <tabulate/table.hpp>
 #include <vector>

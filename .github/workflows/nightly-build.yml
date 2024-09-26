@@ -58,6 +58,7 @@ jobs:
       cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
       arch: amd64
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
   build-macos-arm64:
     uses: ./.github/workflows/template-build-macos.yml
@@ -71,6 +72,7 @@ jobs:
       cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
       arch: arm64
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
   build-windows-x64:
     uses: ./.github/workflows/template-build-windows-x64.yml
@@ -98,6 +100,7 @@ jobs:
       runs-on: ubuntu-20-04
       cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
   
   update-latest-version:
     runs-on: ubuntu-latest
