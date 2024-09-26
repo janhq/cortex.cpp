@@ -32,9 +32,9 @@ void Models::PullModel(const HttpRequestPtr& req,
     if (string_utils::StartsWith(model_handle, "https")) {
       return model_service_.HandleUrl(model_handle, true);
     } else if (model_handle.find(":") == std::string::npos) {
-      auto author_and_model = string_utils::SplitBy(model_handle, ":");
+      auto model_and_branch = string_utils::SplitBy(model_handle, ":");
       return model_service_.DownloadModelFromCortexso(
-          author_and_model[0], author_and_model[1], true);
+          model_and_branch[0], model_and_branch[1], true);
     }
 
     return cpp::fail("Invalid model handle or not supported!");
