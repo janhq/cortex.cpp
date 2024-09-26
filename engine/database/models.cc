@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include "database.h"
 #include "utils/file_manager_utils.h"
+#include "utils/scope_exit.h"
 
 namespace cortex::db {
 
@@ -71,27 +72,6 @@ bool Models::IsUnique(const std::string& model_id,
   return false;
 }
 
-// void Models::SaveModelList(const std::vector<ModelEntry>& entries) const {
-//   std::ofstream file(kModelListPath);
-//   db_.exec("BEGIN TRANSACTION;");
-//   for (const auto& entry : entries) {
-//     SQLite::Statement insert(
-//         db_,
-//         "INSERT OR REPLACE INTO models (model_id, author_repo_id, "
-//         "branch_name, path_to_model_yaml, model_alias, status) VALUES (?, ?, "
-//         "?, ?, ?, ?)");
-//     insert.bind(1, entry.model_id);
-//     insert.bind(2, entry.author_repo_id);
-//     insert.bind(3, entry.branch_name);
-//     insert.bind(4, entry.path_to_model_yaml);
-//     insert.bind(5, entry.model_alias);
-//     insert.bind(6,
-//                 (entry.status == ModelStatus::RUNNING ? "RUNNING" : "READY"));
-//     insert.exec();
-//   }
-//   db_.exec("COMMIT;");
-// }
-
 std::string Models::GenerateShortenedAlias(const std::string& model_id) const {
   std::vector<std::string> parts;
   std::istringstream iss(model_id);
@@ -152,7 +132,6 @@ std::string Models::GenerateShortenedAlias(const std::string& model_id) const {
 }
 
 ModelEntry Models::GetModelInfo(const std::string& identifier) const {
-  std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement query(db_,
                           "SELECT model_id, author_repo_id, branch_name, "
                           "path_to_model_yaml, model_alias, status FROM models "
@@ -187,8 +166,8 @@ void Models::PrintModelInfo(const ModelEntry& entry) const {
 }
 
 bool Models::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
-  std::lock_guard<std::mutex> lock(mutex_);
-
+  db_.exec("BEGIN TRANSACTION;");
+  utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
   if (IsUnique(new_entry.model_id, new_entry.model_alias)) {
     if (use_short_alias) {
       new_entry.model_alias = GenerateShortenedAlias(new_entry.model_id);
@@ -216,7 +195,6 @@ bool Models::AddModelEntry(ModelEntry new_entry, bool use_short_alias) {
 
 bool Models::UpdateModelEntry(const std::string& identifier,
                               const ModelEntry& updated_entry) {
-  std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement upd(db_,
                         "UPDATE models "
                         "SET author_repo_id = ?, branch_name = ?, "
@@ -234,7 +212,8 @@ bool Models::UpdateModelEntry(const std::string& identifier,
 
 bool Models::UpdateModelAlias(const std::string& model_id,
                               const std::string& new_model_alias) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  db_.exec("BEGIN TRANSACTION;");
+  utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
   // Check new_model_alias is unique
   if (IsUnique(new_model_alias, new_model_alias)) {
     SQLite::Statement upd(db_,
@@ -250,7 +229,6 @@ bool Models::UpdateModelAlias(const std::string& model_id,
 }
 
 bool Models::DeleteModelEntry(const std::string& identifier) {
-  std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement del(
       db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
   del.bind(1, identifier);
@@ -259,7 +237,6 @@ bool Models::DeleteModelEntry(const std::string& identifier) {
 }
 
 bool Models::HasModel(const std::string& identifier) const {
-  std::lock_guard<std::mutex> lock(mutex_);
   SQLite::Statement query(
       db_, "SELECT COUNT(*) FROM models WHERE model_id = ? OR model_alias = ?");
   query.bind(1, identifier);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <trantor/utils/Logger.h>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -24,7 +23,6 @@ class Models {
 
  private:
   SQLite::Database& db_;
-  mutable std::mutex mutex_;  // For thread safety
 
   bool IsUnique(const std::string& model_id,
                 const std::string& model_alias) const;
