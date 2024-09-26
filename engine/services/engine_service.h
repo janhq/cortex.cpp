@@ -12,9 +12,10 @@ struct EngineInfo {
   std::string name;
   std::string description;
   std::string format;
-  std::string version;
+  std::optional<std::string> version;
   std::string product_name;
   std::string status;
+  std::optional<std::string> variant;
 };
 
 namespace system_info_utils {
@@ -32,7 +33,8 @@ class EngineService {
   EngineService();
   ~EngineService();
 
-  std::optional<EngineInfo> GetEngineInfo(const std::string& engine) const;
+  cpp::result<EngineInfo, std::string> GetEngineInfo(
+      const std::string& engine) const;
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 

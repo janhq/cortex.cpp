@@ -19,13 +19,12 @@ void RunCmd::Exec() {
   // Download model if it does not exist
   {
     if (!modellist_handler.HasModel(model_handle_)) {
-      model_id = model_service_.DownloadModel(model_handle_);
-      if (!model_id.has_value()) {
-        CTL_ERR("Error: Could not get model_id from handle: " << model_handle_);
+      auto result = model_service_.DownloadModel(model_handle_);
+      if (result.has_error()) {
+        CTL_ERR("Error: " << result.error());
         return;
-      } else {
-        CTL_INF("model_id: " << model_id.value());
       }
+      CTL_INF("model_id: " << model_id.value());
     }
   }
 
