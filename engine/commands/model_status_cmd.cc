@@ -3,8 +3,25 @@
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "utils/logging_utils.h"
+#include "utils/modellist_utils.h"
 
 namespace commands {
+bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
+                              const std::string& model_handle) {
+  modellist_utils::ModelListUtils modellist_handler;
+  config::YamlHandler yaml_handler;
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    auto mc = yaml_handler.GetModelConfig();
+    return IsLoaded(host, port, mc);
+  } catch (const std::exception& e) {
+    CLI_LOG("Fail to get model status with ID '" + model_handle +
+            "': " + e.what());
+    return false;
+  }
+}
+
 bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
                               const config::ModelConfig& mc) {
   httplib::Client cli(host + ":" + std::to_string(port));

@@ -6,14 +6,16 @@
 #include <string_view>
 #include <vector>
 #include "utils/cpuid/cpu_info.h"
+#include "utils/result.hpp"
 
 struct EngineInfo {
   std::string name;
   std::string description;
   std::string format;
-  std::string version;
+  std::optional<std::string> version;
   std::string product_name;
   std::string status;
+  std::optional<std::string> variant;
 };
 
 namespace system_info_utils {
@@ -31,23 +33,26 @@ class EngineService {
   EngineService();
   ~EngineService();
 
-  std::optional<EngineInfo> GetEngineInfo(const std::string& engine) const;
+  cpp::result<EngineInfo, std::string> GetEngineInfo(
+      const std::string& engine) const;
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
-  void InstallEngine(const std::string& engine,
-                     const std::string& version = "latest",
-                     const std::string& src = "");
+  cpp::result<void, std::string> InstallEngine(
+      const std::string& engine, const std::string& version = "latest",
+      const std::string& src = "");
 
-  void UnzipEngine(const std::string& engine, const std::string& version,
-                   const std::string& path);
-
-  void UninstallEngine(const std::string& engine);
+  cpp::result<void, std::string> UninstallEngine(const std::string& engine);
 
  private:
-  void DownloadEngine(const std::string& engine,
-                      const std::string& version = "latest");
-  void DownloadCuda(const std::string& engine);
+  cpp::result<void, std::string> UnzipEngine(const std::string& engine,
+                                             const std::string& version,
+                                             const std::string& path);
+
+  cpp::result<void, std::string> DownloadEngine(
+      const std::string& engine, const std::string& version = "latest");
+
+  cpp::result<void, std::string> DownloadCuda(const std::string& engine);
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);

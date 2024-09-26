@@ -1,11 +1,12 @@
 #include "engine_service.h"
 #include <httplib.h>
-#include <stdexcept>
+#include <optional>
 #include "algorithm"
 #include "utils/archive_utils.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/json.hpp"
+#include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
@@ -38,12 +39,12 @@ EngineService::EngineService()
               .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
 EngineService::~EngineService() {}
 
-std::optional<EngineInfo> EngineService::GetEngineInfo(
+cpp::result<EngineInfo, std::string> EngineService::GetEngineInfo(
     const std::string& engine) const {
-  // if engine is not found in kSupportEngine, throw runtime error
+
   if (std::find(kSupportEngines.begin(), kSupportEngines.end(), engine) ==
       kSupportEngines.end()) {
-    return std::nullopt;
+    return cpp::fail("Engine " + engine + " is not supported!");
   }
 
   auto engine_status_list = GetEngineInfoList();
@@ -77,43 +78,62 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
        .description = "This extension enables chat completion API calls using "
                       "the Onnx engine",
        .format = "ONNX",
-       .version = "0.0.1",
        .product_name = "ONNXRuntime",
        .status = onnx_status},
       {.name = "cortex.llamacpp",
        .description = "This extension enables chat completion API calls using "
                       "the LlamaCPP engine",
        .format = "GGUF",
-       .version = "0.0.1",
        .product_name = "llama.cpp",
        .status = llamacpp_status},
       {.name = "cortex.tensorrt-llm",
        .description = "This extension enables chat completion API calls using "
                       "the TensorrtLLM engine",
        .format = "TensorRT Engines",
-       .version = "0.0.1",
        .product_name = "TensorRT-LLM",
        .status = tensorrt_status},
   };
 
+  for (auto& engine : engines) {
+    if (engine.status == kReady) {
+      // try to read the version.txt
+      auto engine_info_path = file_manager_utils::GetEnginesContainerPath() /
+                              engine.name / "version.txt";
+      if (!std::filesystem::exists(engine_info_path)) {
+        continue;
+      }
+      try {
+        auto node = YAML::LoadFile(engine_info_path.string());
+        engine.version = node["version"].as<std::string>();
+        engine.variant = node["name"].as<std::string>();
+      } catch (const YAML::Exception& e) {
+        CTL_ERR("Error reading version.txt: " << e.what());
+        continue;
+      }
+    }
+  }
+
   return engines;
 }
 
-void EngineService::InstallEngine(const std::string& engine,
-                                  const std::string& version,
-                                  const std::string& src) {
+cpp::result<void, std::string> EngineService::InstallEngine(
+    const std::string& engine, const std::string& version,
+    const std::string& src) {
 
   if (!src.empty()) {
-    UnzipEngine(engine, version, src);
+    return UnzipEngine(engine, version, src);
   } else {
-    DownloadEngine(engine, version);
-    DownloadCuda(engine);
+    auto result = DownloadEngine(engine, version);
+    if (result.has_error()) {
+      return result;
+    }
+    return DownloadCuda(engine);
   }
 }
 
-void EngineService::UnzipEngine(const std::string& engine,
-                                const std::string& version,
-                                const std::string& path) {
+cpp::result<void, std::string> EngineService::UnzipEngine(
+    const std::string& engine, const std::string& version,
+    const std::string& path) {
   bool found_cuda = false;
 
   CTL_INF("engine: " << engine);
@@ -150,9 +170,8 @@ void EngineService::UnzipEngine(const std::string& engine,
       }
     }
   } else {
-    // Folder does not exist, throw exception
-    CTL_ERR("Folder does not exist: " << path);
-    return;
+    // Folder does not exist
+    return cpp::fail("Folder does not exist: " + path);
   }
 
   auto matched_variant = GetMatchedVariant(engine, variants);
@@ -162,7 +181,7 @@ void EngineService::UnzipEngine(const std::string& engine,
                                     << hw_inf_.sys_inf->arch
                                     << ", will get engine from remote");
     // Go with the remote flow
-    DownloadEngine(engine, version);
+    return DownloadEngine(engine, version);
   } else {
     auto engine_path = file_manager_utils::GetEnginesContainerPath();
     archive_utils::ExtractArchive(path + "/" + matched_variant,
@@ -171,33 +190,33 @@ void EngineService::UnzipEngine(const std::string& engine,
 
   // Not match any cuda binary, download from remote
   if (!found_cuda) {
-    DownloadCuda(engine);
+    return DownloadCuda(engine);
   }
+
+  return {};
 }
 
-void EngineService::UninstallEngine(const std::string& engine) {
-  // TODO: Unload the model which is currently running on engine_
-
-  // TODO: Unload engine if is loaded
-
+cpp::result<void, std::string> EngineService::UninstallEngine(
+    const std::string& engine) {
   auto ecp = file_manager_utils::GetEnginesContainerPath();
   auto engine_path = ecp / engine;
 
   if (!std::filesystem::exists(engine_path)) {
-    throw std::runtime_error("Engine " + engine + " is not installed!");
+    return cpp::fail("Engine " + engine + " is not installed!");
   }
 
   try {
     std::filesystem::remove_all(engine_path);
     CTL_INF("Engine " << engine << " uninstalled successfully!");
+    return {};
   } catch (const std::exception& e) {
     CTL_ERR("Failed to uninstall engine " << engine << ": " << e.what());
-    throw;
+    return cpp::fail("Failed to uninstall engine " + engine + ": " + e.what());
   }
 }
 
-void EngineService::DownloadEngine(const std::string& engine,
-                                   const std::string& version) {
+cpp::result<void, std::string> EngineService::DownloadEngine(
+    const std::string& engine, const std::string& version) {
   auto get_params = [&engine, &version]() -> std::vector<std::string> {
     if (version == "latest") {
       return {"repos", "janhq", engine, "releases", version};
@@ -231,7 +250,7 @@ void EngineService::DownloadEngine(const std::string& engine,
       body = get_data(body);
     }
     if (body.empty()) {
-      throw std::runtime_error("No release found for " + version);
+      return cpp::fail("No release found for " + version);
     }
 
     auto assets = body["assets"];
@@ -249,7 +268,7 @@ void EngineService::DownloadEngine(const std::string& engine,
     CTL_INF("Matched variant: " << matched_variant);
     if (matched_variant.empty()) {
       CTL_ERR("No variant found for " << os_arch);
-      throw std::runtime_error("No variant found for " + os_arch);
+      return cpp::fail("No variant found for " + os_arch);
     }
 
     for (auto& asset : assets) {
@@ -280,8 +299,7 @@ void EngineService::DownloadEngine(const std::string& engine,
                                            .localPath = local_path,
                                        }}}};
 
-        DownloadService download_service;
-        download_service.AddDownloadTask(
+        return DownloadService().AddDownloadTask(
             downloadTask, [](const DownloadTask& finishedTask) {
               // try to unzip the downloaded file
               CTL_INF("Engine zip path: "
@@ -302,23 +320,24 @@ void EngineService::DownloadEngine(const std::string& engine,
               }
               CTL_INF("Finished!");
             });
-        return;
       }
     }
+    return {};
   } else {
-    throw std::runtime_error("Failed to fetch engine release: " + engine);
+    return cpp::fail("Failed to fetch engine release: " + engine);
   }
 }
 
-void EngineService::DownloadCuda(const std::string& engine) {
+cpp::result<void, std::string> EngineService::DownloadCuda(
+    const std::string& engine) {
   if (hw_inf_.sys_inf->os == "mac" || engine == "cortex.onnx") {
     // mac and onnx engine does not require cuda toolkit
-    return;
+    return {};
   }
 
   if (hw_inf_.cuda_driver_version.empty()) {
     CTL_WRN("No cuda driver, continue with CPU");
-    return;
+    return {};
   }
   // download cuda toolkit
   const std::string jan_host = "catalog.jan.ai";
@@ -336,7 +355,7 @@ void EngineService::DownloadCuda(const std::string& engine) {
             << hw_inf_.cuda_driver_version
             << " is not compatible with cuda toolkit version "
             << suitable_toolkit_version);
-    throw std::runtime_error("Cuda driver is not compatible with cuda toolkit");
+    return cpp::fail("Cuda driver is not compatible with cuda toolkit");
   }
 
   auto url_obj = url_parser::Url{
@@ -362,8 +381,7 @@ void EngineService::DownloadCuda(const std::string& engine) {
                              .localPath = cuda_toolkit_local_path}},
   }};
 
-  DownloadService download_service;
-  download_service.AddDownloadTask(
+  return DownloadService().AddDownloadTask(
       downloadCudaToolkitTask, [&](const DownloadTask& finishedTask) {
         auto engine_path =
             file_manager_utils::GetEnginesContainerPath() / engine;

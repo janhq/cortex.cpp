@@ -14,6 +14,7 @@
 #include "commands/model_pull_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
+#include "commands/model_upd_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
@@ -71,7 +72,13 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
-    commands::CheckNewUpdate();
+    if (auto latest_version = commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
+        latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
+      CLI_LOG("\nA new release of cortex is available: "
+              << CORTEX_CPP_VERSION << " -> " << *latest_version);
+      CLI_LOG("To upgrade, run: " << commands::GetRole()
+                                  << commands::GetCortexBinary() << " update");
+    }
   }
 #endif
 
@@ -121,27 +128,20 @@ void CommandLineParser::SetupCommonCommands() {
   auto chat_cmd = app_.add_subcommand("chat", "Send a chat completion request");
   chat_cmd->group(kCommonCommandsGroup);
   chat_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                  " chat [model_id] [options]");
+                  " chat [model_id] -m [msg]");
   chat_cmd->add_option("model_id", cml_data_.model_id, "");
   chat_cmd->add_option("-m,--message", cml_data_.msg,
                        "Message to chat with model");
   chat_cmd->callback([this, chat_cmd] {
-    if (cml_data_.model_id.empty()) {
-      CLI_LOG("[model_id] is required\n");
+    if (cml_data_.model_id.empty() || cml_data_.msg.empty()) {
+      CLI_LOG("[model_id] and [msg] are required\n");
       CLI_LOG(chat_cmd->help());
       return;
     }
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ChatCmd cc(cml_data_.config.apiServerHost,
-                         std::stoi(cml_data_.config.apiServerPort),
-                         yaml_handler.GetModelConfig());
-    cc.Exec(cml_data_.msg);
+
+    commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
+                             std::stoi(cml_data_.config.apiServerPort),
+                             cml_data_.model_id, cml_data_.msg);
   });
 }
 
@@ -177,17 +177,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_start_cmd->help());
       return;
     };
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ModelStartCmd msc(cml_data_.config.apiServerHost,
-                                std::stoi(cml_data_.config.apiServerPort),
-                                yaml_handler.GetModelConfig());
-    msc.Exec();
+    commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
+                                   std::stoi(cml_data_.config.apiServerPort),
+                                   cml_data_.model_id);
   });
 
   auto stop_model_cmd =
@@ -241,14 +233,13 @@ void CommandLineParser::SetupModelCommands() {
                        " models delete [model_id]");
   model_del_cmd->group(kSubcommands);
   model_del_cmd->add_option("model_id", cml_data_.model_id, "");
-  model_del_cmd->callback([this, model_del_cmd]() {
+  model_del_cmd->callback([&]() {
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(model_del_cmd->help());
       return;
     };
-    commands::ModelDelCmd mdc;
-    mdc.Exec(cml_data_.model_id);
+    commands::ModelDelCmd().Exec(cml_data_.model_id);
   });
 
   std::string model_alias;
@@ -271,10 +262,8 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelAliasCmd mdc;
     mdc.Exec(cml_data_.model_id, cml_data_.model_alias);
   });
-
-  auto model_update_cmd =
-      models_cmd->add_subcommand("update", "Update configuration of a model");
-  model_update_cmd->group(kSubcommands);
+  // Model update parameters comment
+  ModelUpdate(models_cmd);
 
   std::string model_path;
   auto model_import_cmd = models_cmd->add_subcommand(
@@ -388,6 +377,12 @@ void CommandLineParser::SetupSystemCommands() {
   update_cmd->group(kSystemGroup);
   update_cmd->add_option("-v", cml_data_.cortex_version, "");
   update_cmd->callback([this] {
+#if !defined(_WIN32)
+    if (getuid()) {
+      CLI_LOG("Error: Not root user. Please run with sudo.");
+      return;
+    }
+#endif
     commands::CortexUpdCmd cuc;
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
@@ -456,4 +451,70 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback(
         [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
   }
+}
+
+void CommandLineParser::ModelUpdate(CLI::App* parent) {
+  auto model_update_cmd =
+      parent->add_subcommand("update", "Update configuration of a model");
+  model_update_cmd->group(kSubcommands);
+  model_update_cmd->add_option("--model_id", cml_data_.model_id, "Model ID")
+      ->required();
+
+  // Add options dynamically
+  std::vector<std::string> option_names = {"name",
+                                           "model",
+                                           "version",
+                                           "stop",
+                                           "top_p",
+                                           "temperature",
+                                           "frequency_penalty",
+                                           "presence_penalty",
+                                           "max_tokens",
+                                           "stream",
+                                           "ngl",
+                                           "ctx_len",
+                                           "engine",
+                                           "prompt_template",
+                                           "system_template",
+                                           "user_template",
+                                           "ai_template",
+                                           "os",
+                                           "gpu_arch",
+                                           "quantization_method",
+                                           "precision",
+                                           "tp",
+                                           "trtllm_version",
+                                           "text_model",
+                                           "files",
+                                           "created",
+                                           "object",
+                                           "owned_by",
+                                           "seed",
+                                           "dynatemp_range",
+                                           "dynatemp_exponent",
+                                           "top_k",
+                                           "min_p",
+                                           "tfs_z",
+                                           "typ_p",
+                                           "repeat_last_n",
+                                           "repeat_penalty",
+                                           "mirostat",
+                                           "mirostat_tau",
+                                           "mirostat_eta",
+                                           "penalize_nl",
+                                           "ignore_eos",
+                                           "n_probs",
+                                           "min_keep",
+                                           "grammar"};
+
+  for (const auto& option_name : option_names) {
+    model_update_cmd->add_option("--" + option_name,
+                                 cml_data_.model_update_options[option_name],
+                                 option_name);
+  }
+
+  model_update_cmd->callback([this]() {
+    commands::ModelUpdCmd command(cml_data_.model_id);
+    command.Exec(cml_data_.model_update_options);
+  });
 }

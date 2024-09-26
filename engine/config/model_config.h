@@ -58,7 +58,115 @@ struct ModelConfig {
   int n_probs = 0;
   int min_keep = 0;
   std::string grammar;
+  
+  void FromJson(const Json::Value& json) {
+    // do now allow to update ID and model field because it is unique identifier
+    // if (json.isMember("id"))
+    //   id = json["id"].asString();
+    if (json.isMember("name"))
+      name = json["name"].asString();
+    // if (json.isMember("model"))
+    //   model = json["model"].asString();
+    if (json.isMember("version"))
+      version = json["version"].asString();
 
+    if (json.isMember("stop") && json["stop"].isArray()) {
+      stop.clear();
+      for (const auto& s : json["stop"]) {
+        stop.push_back(s.asString());
+      }
+    }
+
+    if (json.isMember("stream"))
+      stream = json["stream"].asBool();
+    if (json.isMember("top_p"))
+      top_p = json["top_p"].asFloat();
+    if (json.isMember("temperature"))
+      temperature = json["temperature"].asFloat();
+    if (json.isMember("frequency_penalty"))
+      frequency_penalty = json["frequency_penalty"].asFloat();
+    if (json.isMember("presence_penalty"))
+      presence_penalty = json["presence_penalty"].asFloat();
+    if (json.isMember("max_tokens"))
+      max_tokens = json["max_tokens"].asInt();
+    if (json.isMember("seed"))
+      seed = json["seed"].asInt();
+    if (json.isMember("dynatemp_range"))
+      dynatemp_range = json["dynatemp_range"].asFloat();
+    if (json.isMember("dynatemp_exponent"))
+      dynatemp_exponent = json["dynatemp_exponent"].asFloat();
+    if (json.isMember("top_k"))
+      top_k = json["top_k"].asInt();
+    if (json.isMember("min_p"))
+      min_p = json["min_p"].asFloat();
+    if (json.isMember("tfs_z"))
+      tfs_z = json["tfs_z"].asFloat();
+    if (json.isMember("typ_p"))
+      typ_p = json["typ_p"].asFloat();
+    if (json.isMember("repeat_last_n"))
+      repeat_last_n = json["repeat_last_n"].asInt();
+    if (json.isMember("repeat_penalty"))
+      repeat_penalty = json["repeat_penalty"].asFloat();
+    if (json.isMember("mirostat"))
+      mirostat = json["mirostat"].asBool();
+    if (json.isMember("mirostat_tau"))
+      mirostat_tau = json["mirostat_tau"].asFloat();
+    if (json.isMember("mirostat_eta"))
+      mirostat_eta = json["mirostat_eta"].asFloat();
+    if (json.isMember("penalize_nl"))
+      penalize_nl = json["penalize_nl"].asBool();
+    if (json.isMember("ignore_eos"))
+      ignore_eos = json["ignore_eos"].asBool();
+    if (json.isMember("n_probs"))
+      n_probs = json["n_probs"].asInt();
+    if (json.isMember("min_keep"))
+      min_keep = json["min_keep"].asInt();
+    if (json.isMember("ngl"))
+      ngl = json["ngl"].asInt();
+    if (json.isMember("ctx_len"))
+      ctx_len = json["ctx_len"].asInt();
+    if (json.isMember("engine"))
+      engine = json["engine"].asString();
+    if (json.isMember("prompt_template"))
+      prompt_template = json["prompt_template"].asString();
+    if (json.isMember("system_template"))
+      system_template = json["system_template"].asString();
+    if (json.isMember("user_template"))
+      user_template = json["user_template"].asString();
+    if (json.isMember("ai_template"))
+      ai_template = json["ai_template"].asString();
+    if (json.isMember("os"))
+      os = json["os"].asString();
+    if (json.isMember("gpu_arch"))
+      gpu_arch = json["gpu_arch"].asString();
+    if (json.isMember("quantization_method"))
+      quantization_method = json["quantization_method"].asString();
+    if (json.isMember("precision"))
+      precision = json["precision"].asString();
+
+    if (json.isMember("files") && json["files"].isArray()) {
+      files.clear();
+      for (const auto& file : json["files"]) {
+        files.push_back(file.asString());
+      }
+    }
+
+    if (json.isMember("created"))
+      created = json["created"].asUInt64();
+    if (json.isMember("object"))
+      object = json["object"].asString();
+    if (json.isMember("owned_by"))
+      owned_by = json["owned_by"].asString();
+    if (json.isMember("text_model"))
+      text_model = json["text_model"].asBool();
+
+    if (engine == "cortex.tensorrt-llm") {
+      if (json.isMember("trtllm_version"))
+        trtllm_version = json["trtllm_version"].asString();
+      if (json.isMember("tp"))
+        tp = json["tp"].asInt();
+    }
+  }
   Json::Value ToJson() const {
     Json::Value obj;
 

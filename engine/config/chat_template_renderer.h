@@ -123,7 +123,7 @@ static int32_t llama_chat_apply_template_internal(
           ss << content << "\n";
         }
       } else if (role == "user") {
-        ss << content << " [/INST]";
+        ss << "[INST] " << content << " [/INST]";
       } else {
         ss << (space_around_response ? " " : "") << content
            << (space_around_response ? " " : "") << "</s>";

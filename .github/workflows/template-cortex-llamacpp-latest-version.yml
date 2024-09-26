@@ -1,0 +1,47 @@
+name: get-cortex-llamacpp-latest-version
+on:
+  workflow_call:
+    outputs:
+      cortex_llamacpp_latest_version:
+        description: 'The latest version of cortex.llamacpp engines'
+        value: ${{ jobs.get-cortex-llamacpp-latest-version.outputs.new_version }}
+
+jobs:
+  get-cortex-llamacpp-latest-version:
+    runs-on: ubuntu-latest
+    outputs:
+      new_version: ${{ steps.version_update.outputs.new_version }}
+    steps:
+    - name: Install jq
+      uses: dcarbone/install-jq-action@v2.0.1
+
+    - name: Update app version based on latest release tag with build number
+      id: version_update
+      run: |
+        # Function to get the latest release tag
+        get_latest_tag() {
+          local retries=0
+          local max_retries=3
+          local tag
+          while [ $retries -lt $max_retries ]; do
+            tag=$(curl -s https://api.github.com/repos/janhq/cortex.llamacpp/releases/latest | jq -r .tag_name)
+            if [ -n "$tag" ] && [ "$tag" != "null" ]; then
+              echo $tag
+              return
+            else
+              let retries++
+              echo "Retrying... ($retries/$max_retries)"
+              sleep 2
+            fi
+          done
+          echo "Failed to fetch latest tag after $max_retries attempts."
+          exit 1
+        }
+
+        # Get the latest release tag from GitHub API
+        LATEST_TAG=$(get_latest_tag)
+        
+        # Remove the 'v' and append the build number to the version
+        new_version="${LATEST_TAG#v}"
+        echo "New version: $new_version"
+        echo "::set-output name=new_version::$new_version"

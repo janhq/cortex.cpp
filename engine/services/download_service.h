@@ -6,6 +6,7 @@
 #include <optional>
 #include <sstream>
 #include <vector>
+#include "utils/result.hpp"
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
 
@@ -56,24 +57,29 @@ class DownloadService {
   using OnDownloadTaskSuccessfully =
       std::function<void(const DownloadTask& task)>;
 
-  void AddDownloadTask(
-      DownloadTask& task,
-      std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
+  cpp::result<void, std::string> AddDownloadTask(
+      DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
+                              std::nullopt) noexcept;
 
-  void AddAsyncDownloadTask(
-      const DownloadTask& task,
-      std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt);
+  cpp::result<void, std::string> AddAsyncDownloadTask(
+      DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
+                              std::nullopt) noexcept;
 
   /**
    * Getting file size for a provided url. Can be used to validating the download url.
    *
    * @param url - url to get file size
    */
-  uint64_t GetFileSize(const std::string& url) const;
+  cpp::result<uint64_t, std::string> GetFileSize(
+      const std::string& url) const noexcept;
 
  private:
-  void Download(const std::string& download_id,
-                const DownloadItem& download_item, bool allow_resume);
+  cpp::result<void, std::string> VerifyDownloadTask(
+      DownloadTask& task) const noexcept;
+
+  cpp::result<void, std::string> Download(const std::string& download_id,
+                                          const DownloadItem& download_item,
+                                          bool allow_resume) noexcept;
 
   curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
 };

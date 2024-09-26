@@ -3,10 +3,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <regex>
 #include <sstream>
 #include <stdexcept>
 #include "file_manager_utils.h"
+
 namespace modellist_utils {
 const std::string ModelListUtils::kModelListPath =
     (file_manager_utils::GetModelsContainerPath() /
@@ -208,7 +208,8 @@ bool ModelListUtils::UpdateModelAlias(const std::string& model_id,
       });
   bool check_alias_unique = std::none_of(
       entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return (entry.model_id == new_model_alias && entry.model_id != model_id) ||
+        return (entry.model_id == new_model_alias &&
+                entry.model_id != model_id) ||
                entry.model_alias == new_model_alias;
       });
   if (it != entries.end() && check_alias_unique) {
@@ -236,5 +237,20 @@ bool ModelListUtils::DeleteModelEntry(const std::string& identifier) {
     return true;
   }
   return false;  // Entry not found or not in READY state
+}
+
+bool ModelListUtils::HasModel(const std::string& identifier) const {
+  std::lock_guard<std::mutex> lock(mutex_);
+  auto entries = LoadModelList();
+  auto it = std::find_if(
+      entries.begin(), entries.end(), [&identifier](const ModelEntry& entry) {
+        return entry.model_id == identifier || entry.model_alias == identifier;
+      });
+
+  if (it != entries.end()) {
+    return true;
+  } else {
+    return false;
+  }
 }
 }  // namespace modellist_utils
