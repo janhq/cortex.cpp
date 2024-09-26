@@ -24,6 +24,7 @@ void RunCmd::Exec() {
         CTL_ERR("Error: " << result.error());
         return;
       }
+      model_id = result.value();
       CTL_INF("model_id: " << model_id.value());
     }
   }
