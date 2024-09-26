@@ -14,7 +14,9 @@ class ModelsTestSuite : public ::testing::Test {
       : db_(kTestDb, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE),
         model_list_(db_) {}
   void SetUp() {
-    db_.exec("DELETE FROM models");
+    try {
+      db_.exec("DELETE FROM models");
+    } catch (const std::exception& e) {}
   }
 
  protected:
@@ -22,7 +24,7 @@ class ModelsTestSuite : public ::testing::Test {
   cortex::db::Models model_list_;
 
   const cortex::db::ModelEntry kTestModel{
-      kTestModel.model_id,   "test_author", "main",
+      "test_model_id",       "test_author", "main",
       "/path/to/model.yaml", "test_alias",  cortex::db::ModelStatus::READY};
 };
 
