@@ -29,10 +29,10 @@ class ModelService {
    */
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
- private:
   cpp::result<std::string, std::string> HandleUrl(const std::string& url,
                                                   bool async = false);
 
+ private:
   /**
    * Handle downloading model which have following pattern: author/model_name
    */

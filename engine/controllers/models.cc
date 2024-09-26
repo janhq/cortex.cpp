@@ -6,6 +6,7 @@
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/http_util.h"
+#include "utils/logging_utils.h"
 #include "utils/modellist_utils.h"
 #include "utils/string_utils.h"
 
@@ -25,11 +26,21 @@ void Models::PullModel(const HttpRequestPtr& req,
     return;
   }
 
-  // TODO: remove the test
-  auto test = string_utils::SplitBy(model_handle, ":");
+  auto handle_model_input =
+      [&, model_handle]() -> cpp::result<std::string, std::string> {
+    CTL_INF("Handle model input, model handle: " + model_handle);
+    if (string_utils::StartsWith(model_handle, "https")) {
+      return model_service_.HandleUrl(model_handle, true);
+    } else if (model_handle.find(":") == std::string::npos) {
+      auto author_and_model = string_utils::SplitBy(model_handle, ":");
+      return model_service_.DownloadModelFromCortexso(
+          author_and_model[0], author_and_model[1], true);
+    }
 
-  auto result =
-      model_service_.DownloadModelFromCortexso(test[0], test[1], true);
+    return cpp::fail("Invalid model handle or not supported!");
+  };
+
+  auto result = handle_model_input();
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
