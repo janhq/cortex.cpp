@@ -13,12 +13,8 @@ class ModelsTestSuite : public ::testing::Test {
   ModelsTestSuite()
       : db_(kTestDb, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE),
         model_list_(db_) {}
-  ~ModelsTestSuite() {
-    try {
-      std::filesystem::remove(kTestDb);
-    } catch (const std::exception& e) {
-      
-    }
+  void SetUp() {
+    db_.exec("DELETE FROM models");
   }
 
  protected:
