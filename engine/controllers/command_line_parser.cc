@@ -72,12 +72,27 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Check new update, only check for stable release for now
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
-    if (auto latest_version = commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
-        latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
-      CLI_LOG("\nA new release of cortex is available: "
-              << CORTEX_CPP_VERSION << " -> " << *latest_version);
-      CLI_LOG("To upgrade, run: " << commands::GetRole()
-                                  << commands::GetCortexBinary() << " update");
+    // TODO(sang) find a better way to handle
+    // This is a extremely ungly way to deal with connection 
+    // hang when network down
+    std::atomic<bool> done = false;
+    std::thread t([&]() {
+      if (auto latest_version =
+              commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
+          latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
+        CLI_LOG("\nA new release of cortex is available: "
+                << CORTEX_CPP_VERSION << " -> " << *latest_version);
+        CLI_LOG("To upgrade, run: " << commands::GetRole()
+                                    << commands::GetCortexBinary()
+                                    << " update");
+      }
+      done = true;
+    });
+    // Do not wait for http connection timeout
+    t.detach();
+    int retry = 5;
+    while (!done && retry--) {
+      std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 5);
     }
   }
 #endif
