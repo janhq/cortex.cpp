@@ -69,7 +69,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     return true;
   }
 
-  // Check new update, only check for stable release for now
+  // Check new update
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
     // TODO(sang) find a better way to handle
