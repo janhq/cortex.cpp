@@ -109,8 +109,7 @@ void CommandLineParser::SetupCommonCommands() {
     }
   });
 
-  auto run_cmd =
-      app_.add_subcommand("run", "Shortcut to start a model");
+  auto run_cmd = app_.add_subcommand("run", "Shortcut to start a model");
   run_cmd->group(kCommonCommandsGroup);
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
@@ -128,44 +127,32 @@ void CommandLineParser::SetupCommonCommands() {
     rc.Exec(cml_data_.chat_flag);
   });
 
-  auto chat_cmd =
-      app_.add_subcommand("chat", "Shortcut for `cortex run --chat`");
+  auto chat_cmd = app_.add_subcommand(
+      "chat",
+      "Shortcut for `cortex run --chat` or send a chat completion request");
   chat_cmd->group(kCommonCommandsGroup);
   chat_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                  " chat [model_id]");
+                  " chat [model_id] -m [msg]");
   chat_cmd->add_option("model_id", cml_data_.model_id, "");
+  chat_cmd->add_option("-m,--message", cml_data_.msg,
+                       "Message to chat with model");
   chat_cmd->callback([this, chat_cmd] {
     if (cml_data_.model_id.empty()) {
-      CLI_LOG("[model_id] are required\n");
+      CLI_LOG("[model_id] is required\n");
       CLI_LOG(chat_cmd->help());
       return;
     }
 
-    commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
-                             std::stoi(cml_data_.config.apiServerPort),
-                             cml_data_.model_id);
-  });
-
-  auto chat_completion_cmd =
-      app_.add_subcommand("chat-completion", "Send a chat completion request");
-  chat_completion_cmd->group(kCommonCommandsGroup);
-  chat_completion_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                             " chat-complition [model_id] -m [msg]");
-  chat_completion_cmd->add_option("model_id", cml_data_.model_id, "");
-  chat_completion_cmd->add_option("-m,--message", cml_data_.msg,
-                                  "Message to chat with model");
-
-  chat_completion_cmd->callback([this, chat_completion_cmd] {
-    if (cml_data_.model_id.empty() || cml_data_.msg.empty()) {
-      CLI_LOG("[model_id] and [msg] are required\n");
-      CLI_LOG(chat_completion_cmd->help());
-      return;
+    if (cml_data_.msg.empty()) {
+      commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
+                               std::stoi(cml_data_.config.apiServerPort),
+                               cml_data_.model_id);
+    } else {
+      commands::ChatCompletionCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+          cml_data_.msg);
     }
-
-    commands::ChatCompletionCmd().Exec(
-        cml_data_.config.apiServerHost,
-        std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-        cml_data_.msg);
   });
 }
 
