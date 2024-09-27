@@ -168,9 +168,7 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
 }
 
 inline std::filesystem::path GetCortexDataPath() {
-  // TODO: We will need to support user to move the data folder to other place.
-  // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
-  // currently we will store cortex data at ~/cortexcpp
+  CreateConfigFileIfNotExist();
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {
