@@ -1,18 +1,22 @@
 #include "model_status_cmd.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 
 namespace commands {
 bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
                               const std::string& model_handle) {
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return false;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
     return IsLoaded(host, port, mc);
   } catch (const std::exception& e) {

@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 #include "config/model_config.h"
-#include "utils/modellist_utils.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 namespace commands {
 class ModelUpdCmd {
  public:
@@ -17,7 +17,7 @@ class ModelUpdCmd {
   std::string model_handle_;
   config::ModelConfig model_config_;
   config::YamlHandler yaml_handler_;
-  modellist_utils::ModelListUtils model_list_utils_;
+  cortex::db::Models model_list_utils_;
 
   void UpdateConfig(const std::string& key, const std::string& value);
   void UpdateVectorField(const std::string& key, const std::string& value);

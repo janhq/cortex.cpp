@@ -3,9 +3,9 @@
 #include <vector>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 
 namespace commands {
 
@@ -16,15 +16,15 @@ ModelImportCmd::ModelImportCmd(std::string model_handle, std::string model_path)
 void ModelImportCmd::Exec() {
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
-  modellist_utils::ModelListUtils modellist_utils_obj;
+  cortex::db::Models modellist_utils_obj;
 
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(model_handle_ + ".yml"))
                                     .string();
-  modellist_utils::ModelEntry model_entry{
+  cortex::db::ModelEntry model_entry{
       model_handle_,   "local",       "imported",
-      model_yaml_path, model_handle_, modellist_utils::ModelStatus::READY};
+      model_yaml_path, model_handle_};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -34,7 +34,7 @@ void ModelImportCmd::Exec() {
     model_config.model = model_handle_;
     yaml_handler.UpdateModelConfig(model_config);
 
-    if (modellist_utils_obj.AddModelEntry(model_entry)) {
+    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
       yaml_handler.WriteYamlFile(model_yaml_path);
       CLI_LOG("Model is imported successfully!");
     } else {
