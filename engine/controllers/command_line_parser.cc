@@ -73,7 +73,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
     // TODO(sang) find a better way to handle
-    // This is a extremely ungly way to deal with connection 
+    // This is an extremely ungly way to deal with connection 
     // hang when network down
     std::atomic<bool> done = false;
     std::thread t([&]() {
@@ -90,9 +90,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     });
     // Do not wait for http connection timeout
     t.detach();
-    int retry = 5;
+    int retry = 10;
     while (!done && retry--) {
-      std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 5);
+      std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 10);
     }
   }
 #endif
