@@ -4,6 +4,7 @@
 #include <string>
 #include <tabulate/table.hpp>
 #include "nlohmann/json.hpp"
+#include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 
@@ -52,8 +53,8 @@ void PsCmd::PrintModelStatusList(
     table.add_row({
         model_status.model,
         model_status.engine,
-        model_status.ram,
-        model_status.vram,
+        format_utils::BytesToHumanReadable(model_status.ram),
+        format_utils::BytesToHumanReadable(model_status.vram),
         string_utils::FormatTimeElapsed(model_status.start_time),
     });
   }
