@@ -347,8 +347,8 @@ void server::LoadModel(const HttpRequestPtr& req,
     if (engine_type == kLlamaEngine) {  //fix for llamacpp engine first
       auto config = file_manager_utils::GetCortexConfig();
       if (en->IsSupported("SetFileLogger")) {
-        en->SetFileLogger(config.maxLogLines, config.logFolderPath + "/" +
-                                                  config.logLlamaCppPath);
+        en->SetFileLogger(config.maxLogLines, (std::filesystem::path(config.logFolderPath) /
+                                                  std::filesystem::path(config.logLlamaCppPath)).string());
       } else {
         LOG_WARN << "Method SetFileLogger is not supported yet";
       }
