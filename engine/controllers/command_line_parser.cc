@@ -16,6 +16,7 @@
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/model_upd_cmd.h"
+#include "commands/ps_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
@@ -74,7 +75,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
     // TODO(sang) find a better way to handle
-    // This is an extremely ungly way to deal with connection 
+    // This is an extremely ungly way to deal with connection
     // hang when network down
     std::atomic<bool> done = false;
     std::thread t([&]() {
@@ -397,6 +398,11 @@ void CommandLineParser::SetupSystemCommands() {
   auto ps_cmd =
       app_.add_subcommand("ps", "Show running models and their status");
   ps_cmd->group(kSystemGroup);
+  ps_cmd->usage("Usage:\n" + commands::GetCortexBinary() + "ps");
+  ps_cmd->callback([&]() {
+    commands::PsCmd().Exec(cml_data_.config.apiServerHost,
+                           std::stoi(cml_data_.config.apiServerPort));
+  });
 
   auto update_cmd = app_.add_subcommand("update", "Update cortex version");
   update_cmd->group(kSystemGroup);
