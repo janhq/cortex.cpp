@@ -35,9 +35,6 @@ constexpr static auto kTensorrtLlmPath = "/engines/cortex.tensorrt-llm";
 inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
-inline std::string logs_llamacpp_base_name = "./logs/cortex.log";
-inline std::string logs_tensorrtllm_base_name = "./logs/cortex.log";
-inline std::string logs_onnx_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
 
 inline std::string extractBase64(const std::string& input) {
