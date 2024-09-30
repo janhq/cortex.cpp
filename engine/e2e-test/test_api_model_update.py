@@ -4,7 +4,7 @@ from test_runner import popen, run
 from test_runner import start_server, stop_server
 
 
-class TestApiModelGet:
+class TestApiModelUpdate:
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
@@ -23,6 +23,7 @@ class TestApiModelGet:
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
         stop_server()
 
-    def test_models_get_should_be_successful(self):
-        response = requests.get("http://localhost:3928/models/tinyllama:gguf")
+    def test_models_update_should_be_successful(self):
+        body_json = {'modelId': 'tinyllama:gguf'}
+        response = requests.post("http://localhost:3928/models/tinyllama:gguf", json = body_json)        
         assert response.status_code == 200

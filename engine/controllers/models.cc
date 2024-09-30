@@ -162,13 +162,9 @@ void Models::DeleteModel(const HttpRequestPtr& req,
   }
 }
 
-void Models::UpdateModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
-    return;
-  }
-  auto model_id = (*(req->getJsonObject())).get("modelId", "").asString();
+void Models::UpdateModel(const HttpRequestPtr& req,
+                         std::function<void(const HttpResponsePtr&)>&& callback,
+                         const std::string& model_id) const {
   auto json_body = *(req->getJsonObject());
   try {
     cortex::db::Models model_list_utils;
@@ -188,7 +184,7 @@ void Models::UpdateModel(
     ret["message"] = message;
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k400BadRequest);
+    resp->setStatusCode(k200OK);
     callback(resp);
 
   } catch (const std::exception& e) {
