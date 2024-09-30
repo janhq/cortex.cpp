@@ -7,12 +7,6 @@ namespace commands {
 
 class ModelStopCmd {
  public:
-  ModelStopCmd(std::string host, int port, const config::ModelConfig& mc);
-  void Exec();
-
- private:
-  std::string host_;
-  int port_;
-  const config::ModelConfig& mc_;
+  void Exec(const std::string& host, int port, const std::string& model_handle);
 };
 }  // namespace commands
