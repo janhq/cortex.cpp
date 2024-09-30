@@ -7,7 +7,7 @@ import time
 from typing import List
 
 # You might want to change the path of the executable based on your build directory
-executable_windows_path = "build\\Debug\\cortex.exe"
+executable_windows_path = "build\\Debug\\cortex-nightly.exe"
 executable_unix_path = "build/cortex"
 
 # Timeout

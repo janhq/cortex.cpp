@@ -12,7 +12,7 @@ class Engines : public drogon::HttpController<Engines> {
   Engines() : engine_service_{EngineService()} {};
 
   METHOD_LIST_BEGIN
-  METHOD_ADD(Engines::InstallEngine, "/{1}/install", Post);
+  METHOD_ADD(Engines::InstallEngine, "/install/{1}", Post);
   METHOD_ADD(Engines::UninstallEngine, "/{1}", Delete);
   METHOD_ADD(Engines::ListEngine, "", Get);
   METHOD_ADD(Engines::GetEngine, "/{1}", Get);
