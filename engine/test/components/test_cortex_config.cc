@@ -9,10 +9,16 @@ class CortexConfigTest : public ::testing::Test {
 
   void SetUp() override {
     // Set up default configuration
-    default_config = {
-        "default_log_path",   "default_data_path", 1000,
-        kDefaultHost,         kDefaultPort,        kDefaultCheckedForUpdateAt,
-        kDefaultLatestRelease};
+    default_config = {"default_log_path",
+                      "default_llamacpp_log_path",
+                      "default_tensorrtllm_log_path",
+                      "default_onnx_log_path",
+                      "default_data_path",
+                      1000,
+                      kDefaultHost,
+                      kDefaultPort,
+                      kDefaultCheckedForUpdateAt,
+                      kDefaultLatestRelease};
   }
 
   void TearDown() override {
@@ -24,8 +30,16 @@ class CortexConfigTest : public ::testing::Test {
 };
 
 TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
-  CortexConfig config = {"log_path", "data_path", 5000,    "localhost",
-                         "8080",     123456789,   "v1.0.0"};
+  CortexConfig config = {"log_path",
+                         "default_llamacpp_log_path",
+                         "default_tensorrtllm_log_path",
+                         "default_onnx_log_path",
+                         "data_path",
+                         5000,
+                         "localhost",
+                         "8080",
+                         123456789,
+                         "v1.0.0"};
 
   DumpYamlConfig(config, test_file_path);
 
@@ -43,8 +57,16 @@ TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
 
 TEST_F(CortexConfigTest, FromYaml_ReadsCorrectly) {
   // First, create a valid YAML configuration file
-  CortexConfig config = {"log_path", "data_path", 5000,    "localhost",
-                         "8080",     123456789,   "v1.0.0"};
+  CortexConfig config = {"log_path",
+                         "default_llamacpp_log_path",
+                         "default_tensorrtllm_log_path",
+                         "default_onnx_log_path",
+                         "data_path",
+                         5000,
+                         "localhost",
+                         "8080",
+                         123456789,
+                         "v1.0.0"};
 
   DumpYamlConfig(config, test_file_path);
 

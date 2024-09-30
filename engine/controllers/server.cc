@@ -348,7 +348,7 @@ void server::LoadModel(const HttpRequestPtr& req,
       auto config = file_manager_utils::GetCortexConfig();
       if (en->IsSupported("SetFileLogger")) {
         en->SetFileLogger(config.maxLogLines, config.logFolderPath + "/" +
-                                                  cortex_utils::logs_base_name);
+                                                  config.logLlamaCppPath);
       } else {
         LOG_WARN << "Method SetFileLogger is not supported yet";
       }

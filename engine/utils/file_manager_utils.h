@@ -5,6 +5,7 @@
 #include "logging_utils.h"
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
+#include "utils/cortex_utils.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -156,6 +157,9 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
   auto default_cfg = config_yaml_utils::CortexConfig{
       .logFolderPath = default_data_folder_path.string(),
+      .logLlamaCppPath = cortex_utils::logs_llamacpp_base_name,
+      .logTensorrtLLMPath = cortex_utils::logs_tensorrtllm_base_name,
+      .logOnnxPath = cortex_utils::logs_onnx_base_name,
       .dataFolderPath = default_data_folder_path.string(),
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
