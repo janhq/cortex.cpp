@@ -1,14 +1,13 @@
 #pragma once
-// clang-format off
-#include "utils/cortex_utils.h"
-// clang-format on
 #include <filesystem>
 #include <string>
 #include <string_view>
 #include "logging_utils.h"
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
-
+// clang-format off
+#include "utils/cortex_utils.h"
+// clang-format on
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
