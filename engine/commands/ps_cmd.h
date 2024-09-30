@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -8,9 +9,9 @@ namespace commands {
 struct ModelLoadedStatus {
   std::string engine;
   std::string model;
-  std::string ram;
+  uint64_t ram;
   uint64_t start_time;
-  std::string vram;
+  uint64_t vram;
 };
 
 class PsCmd {
