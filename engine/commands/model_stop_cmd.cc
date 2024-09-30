@@ -1,7 +1,6 @@
 #include "model_stop_cmd.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
-#include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
