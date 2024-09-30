@@ -1,5 +1,5 @@
 #pragma once
-#include <optional>
+
 #include <string>
 #include "SQLiteCpp/SQLiteCpp.h"
 #include "utils/file_manager_utils.h"

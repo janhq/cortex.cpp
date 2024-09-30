@@ -6,7 +6,6 @@
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
-#include "utils/json.hpp"
 #include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
@@ -46,11 +45,6 @@ std::string NormalizeEngine(const std::string& engine) {
   return engine;
 };
 }  // namespace
-
-EngineService::EngineService()
-    : hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
-              .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
-EngineService::~EngineService() {}
 
 cpp::result<EngineInfo, std::string> EngineService::GetEngineInfo(
     const std::string& engine) const {
@@ -326,7 +320,7 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
                                            .localPath = local_path,
                                        }}}};
 
-        return DownloadService().AddDownloadTask(
+        return download_service_->AddDownloadTask(
             downloadTask, [](const DownloadTask& finishedTask) {
               // try to unzip the downloaded file
               CTL_INF("Engine zip path: "
@@ -409,7 +403,7 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
                              .localPath = cuda_toolkit_local_path}},
   }};
 
-  return DownloadService().AddDownloadTask(
+  return download_service_->AddDownloadTask(
       downloadCudaToolkitTask, [&](const DownloadTask& finishedTask) {
         auto engine_path =
             file_manager_utils::GetEnginesContainerPath() / engine;

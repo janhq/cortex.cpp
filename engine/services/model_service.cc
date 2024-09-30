@@ -55,7 +55,10 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
                                      .branch_name = branch,
                                      .path_to_model_yaml = rel.string(),
                                      .model_alias = ggufDownloadItem.id};
-  modellist_utils_obj.AddModelEntry(model_entry, true);
+  auto result = modellist_utils_obj.AddModelEntry(model_entry, true);
+  if (result.has_error()) {
+    CTL_WRN("Error adding model to modellist: " + result.error());
+  }
 }
 
 cpp::result<DownloadTask, std::string> GetDownloadTask(
@@ -282,7 +285,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
 
   if (async) {
     auto result =
-        download_service_.AddAsyncDownloadTask(downloadTask, on_finished);
+        download_service_->AddAsyncDownloadTask(downloadTask, on_finished);
 
     if (result.has_error()) {
       CTL_ERR(result.error());
@@ -290,7 +293,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
     }
     return unique_model_id;
   } else {
-    auto result = download_service_.AddDownloadTask(downloadTask, on_finished);
+    auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
     if (result.has_error()) {
       CTL_ERR(result.error());
       return cpp::fail(result.error());
@@ -346,10 +349,10 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     modellist_utils_obj.AddModelEntry(model_entry);
   };
 
-  auto result = async ? DownloadService().AddAsyncDownloadTask(
+  auto result = async ? download_service_->AddAsyncDownloadTask(
                             download_task.value(), on_finished)
-                      : DownloadService().AddDownloadTask(download_task.value(),
-                                                          on_finished);
+                      : download_service_->AddDownloadTask(
+                            download_task.value(), on_finished);
 
   if (result.has_error()) {
     return cpp::fail(result.error());

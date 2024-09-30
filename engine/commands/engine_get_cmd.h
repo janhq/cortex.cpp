@@ -5,7 +5,8 @@
 namespace commands {
 class EngineGetCmd {
  public:
-  explicit EngineGetCmd() : engine_service_{EngineService()} {};
+  explicit EngineGetCmd()
+      : engine_service_{EngineService(std::make_shared<DownloadService>())} {};
 
   void Exec(const std::string& engineName) const;
 
