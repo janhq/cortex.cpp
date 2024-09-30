@@ -1,5 +1,5 @@
 #include "run_cmd.h"
-#include "chat_cmd.h"
+#include "chat_completion_cmd.h"
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "model_start_cmd.h"
@@ -7,9 +7,11 @@
 #include "server_start_cmd.h"
 #include "utils/logging_utils.h"
 
+#include "cortex_upd_cmd.h"
+
 namespace commands {
 
-void RunCmd::Exec() {
+void RunCmd::Exec(bool chat_flag) {
   std::optional<std::string> model_id = model_handle_;
 
   cortex::db::Models modellist_handler;
@@ -78,7 +80,13 @@ void RunCmd::Exec() {
     }
 
     // Chat
-    ChatCmd().Exec(host_, port_, mc, "");
+    if (chat_flag) {
+      ChatCompletionCmd().Exec(host_, port_, mc, "");
+    } else {
+      CLI_LOG(*model_id << " model started successfully. Use `"
+                        << commands::GetCortexBinary() << " chat " << *model_id
+                        << "` for interactive chat shell");
+    }
   } catch (const std::exception& e) {
     CLI_LOG("Fail to run model with ID '" + model_handle_ + "': " + e.what());
   }

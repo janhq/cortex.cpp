@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "nlohmann/json.hpp"
 #include "services/engine_service.h"
 #include "services/model_service.h"
 
@@ -12,7 +13,7 @@ class RunCmd {
         model_handle_{std::move(model_handle)},
         model_service_{ModelService()} {};
 
-  void Exec();
+  void Exec(bool chat_flag);
 
  private:
   std::string host_;

@@ -6,6 +6,7 @@
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
 
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
@@ -20,6 +21,9 @@ constexpr std::string_view kDefaultConfigurationPath = "user_home";
 constexpr std::string_view kProdVariant = "prod";
 constexpr std::string_view kBetaVariant = "beta";
 constexpr std::string_view kNightlyVariant = "nightly";
+constexpr char kLogsLlamacppBaseName[] = "./logs/cortex.log";
+constexpr char kLogsTensorrtllmBaseName[] = "./logs/cortex.log";
+constexpr char kLogsOnnxBaseName[] = "./logs/cortex.log";
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
 #if defined(__APPLE__) && defined(__MACH__)
@@ -156,6 +160,9 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
   auto default_cfg = config_yaml_utils::CortexConfig{
       .logFolderPath = default_data_folder_path.string(),
+      .logLlamaCppPath = kLogsLlamacppBaseName,
+      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
+      .logOnnxPath = kLogsOnnxBaseName,
       .dataFolderPath = default_data_folder_path.string(),
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,

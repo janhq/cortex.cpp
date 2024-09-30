@@ -9,6 +9,9 @@
 namespace config_yaml_utils {
 struct CortexConfig {
   std::string logFolderPath;
+  std::string logLlamaCppPath;
+  std::string logTensorrtLLMPath;
+  std::string logOnnxPath;
   std::string dataFolderPath;
   int maxLogLines;
   std::string apiServerHost;
@@ -35,6 +38,9 @@ inline void DumpYamlConfig(const CortexConfig& config,
     }
     YAML::Node node;
     node["logFolderPath"] = config.logFolderPath;
+    node["logLlamaCppPath"] = config.logLlamaCppPath;
+    node["logTensorrtLLMPath"] = config.logTensorrtLLMPath;
+    node["logOnnxPath"] = config.logOnnxPath;
     node["dataFolderPath"] = config.dataFolderPath;
     node["maxLogLines"] = config.maxLogLines;
     node["apiServerHost"] = config.apiServerHost;
@@ -63,12 +69,22 @@ inline CortexConfig FromYaml(const std::string& path,
         (!node["logFolderPath"] || !node["dataFolderPath"] ||
          !node["maxLogLines"] || !node["apiServerHost"] ||
          !node["apiServerPort"] || !node["checkedForUpdateAt"] ||
-         !node["latestRelease"]);
+         !node["latestRelease"] || !node["logLlamaCppPath"] ||
+         !node["logOnnxPath"] || !node["logTensorrtLLMPath"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
                              ? node["logFolderPath"].as<std::string>()
                              : default_cfg.logFolderPath,
+        .logLlamaCppPath = node["logLlamaCppPath"]
+                               ? node["logLlamaCppPath"].as<std::string>()
+                               : default_cfg.logLlamaCppPath,
+        .logTensorrtLLMPath = node["logTensorrtLLMPath"]
+                                  ? node["logTensorrtLLMPath"].as<std::string>()
+                                  : default_cfg.logTensorrtLLMPath,
+        .logOnnxPath = node["logOnnxPath"]
+                           ? node["logOnnxPath"].as<std::string>()
+                           : default_cfg.logOnnxPath,
         .dataFolderPath = node["dataFolderPath"]
                               ? node["dataFolderPath"].as<std::string>()
                               : default_cfg.dataFolderPath,

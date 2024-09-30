@@ -1,3 +1,5 @@
+#include <chrono>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -28,5 +30,49 @@ inline std::vector<std::string> SplitBy(const std::string& str,
     prev = pos + delimiter.length();
   } while (pos < str.length() && prev < str.length());
   return tokens;
+}
+
+inline uint64_t getCurrentTimeInMilliseconds() {
+  using namespace std::chrono;
+  return duration_cast<milliseconds>(system_clock::now().time_since_epoch())
+      .count();
+}
+
+inline std::string FormatTimeElapsed(uint64_t pastTimestamp) {
+  uint64_t currentTimestamp = getCurrentTimeInMilliseconds();
+  uint64_t milliseconds = currentTimestamp - pastTimestamp;
+
+  // Constants for time units
+  const uint64_t millisInSecond = 1000;
+  const uint64_t millisInMinute = millisInSecond * 60;
+  const uint64_t millisInHour = millisInMinute * 60;
+  const uint64_t millisInDay = millisInHour * 24;
+
+  uint64_t days = milliseconds / millisInDay;
+  milliseconds %= millisInDay;
+
+  uint64_t hours = milliseconds / millisInHour;
+  milliseconds %= millisInHour;
+
+  uint64_t minutes = milliseconds / millisInMinute;
+  milliseconds %= millisInMinute;
+
+  uint64_t seconds = milliseconds / millisInSecond;
+
+  std::ostringstream oss;
+
+  if (days > 0) {
+    oss << days << " day" << (days > 1 ? "s" : "") << ", ";
+  }
+  if (hours > 0 || days > 0) {
+    oss << hours << " hour" << (hours > 1 ? "s" : "") << ", ";
+  }
+  if (minutes > 0 || hours > 0 || days > 0) {
+    oss << minutes << " minute" << (minutes > 1 ? "s" : "") << ", ";
+  }
+
+  oss << seconds << " second" << (seconds > 1 ? "s" : "");
+
+  return oss.str();
 }
 }  // namespace string_utils
