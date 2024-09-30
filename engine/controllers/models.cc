@@ -2,12 +2,12 @@
 #include <drogon/HttpTypes.h>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/http_util.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 #include "utils/string_utils.h"
 
 void Models::PullModel(const HttpRequestPtr& req,
@@ -65,13 +65,12 @@ void Models::ListModel(
 
   // Iterate through directory
 
-  try {
-    modellist_utils::ModelListUtils modellist_handler;
-    config::YamlHandler yaml_handler;
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
 
-    auto list_entry = modellist_handler.LoadModelList();
-
-    for (const auto& model_entry : list_entry) {
+  auto list_entry = modellist_handler.LoadModelList();
+  if (list_entry) {
+    for (const auto& model_entry : list_entry.value()) {
       // auto model_entry = modellist_handler.GetModelInfo(model_handle);
       try {
 
@@ -91,9 +90,9 @@ void Models::ListModel(
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
-  } catch (const std::exception& e) {
-    std::string message =
-        "Fail to get list model information: " + std::string(e.what());
+  } else {
+    std::string message = "Fail to get list model information: " +
+                          std::string(list_entry.error());
     LOG_ERROR << message;
     ret["data"] = data;
     ret["result"] = "Fail to get list model information";
@@ -117,10 +116,14 @@ void Models::GetModel(
   Json::Value data(Json::arrayValue);
 
   try {
-    modellist_utils::ModelListUtils modellist_handler;
+    cortex::db::Models modellist_handler;
     config::YamlHandler yaml_handler;
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto model_config = yaml_handler.GetModelConfig();
 
     Json::Value obj = model_config.ToJson();
@@ -172,14 +175,14 @@ void Models::UpdateModel(
   auto model_id = (*(req->getJsonObject())).get("modelId", "").asString();
   auto json_body = *(req->getJsonObject());
   try {
-    modellist_utils::ModelListUtils model_list_utils;
+    cortex::db::Models model_list_utils;
     auto model_entry = model_list_utils.GetModelInfo(model_id);
     config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
     model_config.FromJson(json_body);
     yaml_handler.UpdateModelConfig(model_config);
-    yaml_handler.WriteYamlFile(model_entry.path_to_model_yaml);
+    yaml_handler.WriteYamlFile(model_entry.value().path_to_model_yaml);
     std::string message = "Successfully update model ID '" + model_id +
                           "': " + json_body.toStyledString();
     LOG_INFO << message;
@@ -217,15 +220,15 @@ void Models::ImportModel(
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
-  modellist_utils::ModelListUtils modellist_utils_obj;
+  cortex::db::Models modellist_utils_obj;
 
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(modelHandle + ".yml"))
                                     .string();
-  modellist_utils::ModelEntry model_entry{
+  cortex::db::ModelEntry model_entry{
       modelHandle,     "local",     "imported",
-      model_yaml_path, modelHandle, modellist_utils::ModelStatus::READY};
+      model_yaml_path, modelHandle};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -235,7 +238,7 @@ void Models::ImportModel(
     model_config.name = modelHandle;
     yaml_handler.UpdateModelConfig(model_config);
 
-    if (modellist_utils_obj.AddModelEntry(model_entry)) {
+    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
       yaml_handler.WriteYamlFile(model_yaml_path);
       std::string success_message = "Model is imported successfully!";
       LOG_INFO << success_message;
@@ -289,7 +292,7 @@ void Models::SetModelAlias(
   LOG_DEBUG << "GetModel, Model handle: " << model_handle
             << ", Model alias: " << model_alias;
 
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   try {
     if (modellist_handler.UpdateModelAlias(model_handle, model_alias)) {
       std::string message = "Successfully set model alias '" + model_alias +

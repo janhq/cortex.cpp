@@ -77,11 +77,11 @@ find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(SQLiteCpp REQUIRED)
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/modellist_utils.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
@@ -93,6 +93,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE tabulate::tabulate)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 
 # ##############################################################################
 
@@ -114,7 +115,8 @@ aux_source_directory(models MODEL_SRC)
 aux_source_directory(cortex-common CORTEX_COMMON)
 aux_source_directory(config CONFIG_SRC)
 aux_source_directory(commands COMMANDS_SRC)
-
+aux_source_directory(database DB_SRC)
+ 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC})

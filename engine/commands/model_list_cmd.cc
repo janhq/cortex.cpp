@@ -3,15 +3,15 @@
 #include <tabulate/table.hpp>
 #include <vector>
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 
 namespace commands {
 
 void ModelListCmd::Exec() {
   auto models_path = file_manager_utils::GetModelsContainerPath();
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   tabulate::Table table;
 
@@ -20,24 +20,24 @@ void ModelListCmd::Exec() {
   int count = 0;
   // Iterate through directory
 
-  try {
-    auto list_entry = modellist_handler.LoadModelList();
-    for (const auto& model_entry : list_entry) {
-      // auto model_entry = modellist_handler.GetModelInfo(model_handle);
-      try {
-        count += 1;
-        yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
-        auto model_config = yaml_handler.GetModelConfig();
-        table.add_row({std::to_string(count), model_entry.model_id,
-                       model_entry.model_alias, model_config.engine,
-                       model_config.version});
-        yaml_handler.Reset();
-      } catch (const std::exception& e) {
-        CTL_ERR("Fail to get list model information: " + std::string(e.what()));
-      }
+  auto list_entry = modellist_handler.LoadModelList();
+  if (list_entry.has_error()) {
+    CTL_ERR("Fail to get list model information: " << list_entry.error());
+    return;
+  }
+  for (const auto& model_entry : list_entry.value()) {
+    // auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    try {
+      count += 1;
+      yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+      auto model_config = yaml_handler.GetModelConfig();
+      table.add_row({std::to_string(count), model_entry.model_id,
+                     model_entry.model_alias, model_config.engine,
+                     model_config.version});
+      yaml_handler.Reset();
+    } catch (const std::exception& e) {
+      CTL_ERR("Fail to get list model information: " + std::string(e.what()));
     }
-  } catch (const std::exception& e) {
-    CTL_ERR("Fail to get list model information: " + std::string(e.what()));
   }
 
   for (int i = 0; i < 5; i++) {

@@ -2,11 +2,11 @@
 #include "httplib.h"
 
 #include "cortex_upd_cmd.h"
+#include "database/models.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 
 namespace commands {
 namespace {
@@ -39,11 +39,15 @@ struct ChunkParser {
 
 void ChatCmd::Exec(const std::string& host, int port,
                    const std::string& model_handle, std::string msg) {
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
     Exec(host, port, mc, std::move(msg));
   } catch (const std::exception& e) {

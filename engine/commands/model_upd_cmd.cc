@@ -11,7 +11,11 @@ void ModelUpdCmd::Exec(
     const std::unordered_map<std::string, std::string>& options) {
   try {
     auto model_entry = model_list_utils_.GetModelInfo(model_handle_);
-    yaml_handler_.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler_.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     model_config_ = yaml_handler_.GetModelConfig();
 
     for (const auto& [key, value] : options) {
@@ -21,7 +25,7 @@ void ModelUpdCmd::Exec(
     }
 
     yaml_handler_.UpdateModelConfig(model_config_);
-    yaml_handler_.WriteYamlFile(model_entry.path_to_model_yaml);
+    yaml_handler_.WriteYamlFile(model_entry.value().path_to_model_yaml);
     CLI_LOG("Successfully updated model ID '" + model_handle_ + "'!");
   } catch (const std::exception& e) {
     CLI_LOG("Failed to update model with model ID '" + model_handle_ +

@@ -1,18 +1,18 @@
 #include "run_cmd.h"
 #include "chat_cmd.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 
 namespace commands {
 
 void RunCmd::Exec() {
   std::optional<std::string> model_id = model_handle_;
 
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   auto address = host_ + ":" + std::to_string(port_);
 
@@ -31,7 +31,11 @@ void RunCmd::Exec() {
 
   try {
     auto model_entry = modellist_handler.GetModelInfo(*model_id);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return;
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
 
     // Check if engine existed. If not, download it

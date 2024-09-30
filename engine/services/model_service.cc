@@ -4,11 +4,11 @@
 #include <ostream>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
+#include "database/models.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
-#include "utils/modellist_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
 
@@ -37,14 +37,12 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   CTL_INF("Adding model to modellist with branch: " << branch);
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
-  modellist_utils::ModelListUtils modellist_utils_obj;
-  modellist_utils::ModelEntry model_entry{
-      .model_id = ggufDownloadItem.id,
-      .author_repo_id = author_id,
-      .branch_name = branch,
-      .path_to_model_yaml = yaml_name.string(),
-      .model_alias = ggufDownloadItem.id,
-      .status = modellist_utils::ModelStatus::READY};
+  cortex::db::Models modellist_utils_obj;
+  cortex::db::ModelEntry model_entry{.model_id = ggufDownloadItem.id,
+                                     .author_repo_id = author_id,
+                                     .branch_name = branch,
+                                     .path_to_model_yaml = yaml_name.string(),
+                                     .model_alias = ggufDownloadItem.id};
   modellist_utils_obj.AddModelEntry(model_entry, true);
 }
 
@@ -233,6 +231,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   if (async) {
     auto result =
         download_service_.AddAsyncDownloadTask(downloadTask, on_finished);
+
     if (result.has_error()) {
       CTL_ERR(result.error());
       return cpp::fail(result.error());
@@ -277,14 +276,13 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
 
-    modellist_utils::ModelListUtils modellist_utils_obj;
-    modellist_utils::ModelEntry model_entry{
+    cortex::db::Models modellist_utils_obj;
+    cortex::db::ModelEntry model_entry{
         .model_id = model_id,
         .author_repo_id = "cortexso",
         .branch_name = branch,
         .path_to_model_yaml = model_yml_item->localPath.string(),
-        .model_alias = model_id,
-        .status = modellist_utils::ModelStatus::READY};
+        .model_alias = model_id};
     modellist_utils_obj.AddModelEntry(model_entry);
   };
 
@@ -336,17 +334,21 @@ ModelService::DownloadHuggingFaceGgufModel(const std::string& author,
 cpp::result<void, std::string> ModelService::DeleteModel(
     const std::string& model_handle) {
 
-  modellist_utils::ModelListUtils modellist_handler;
+  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+    if (model_entry.has_error()) {
+      CLI_LOG("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
     // Remove yaml file
-    std::filesystem::remove(model_entry.path_to_model_yaml);
+    std::filesystem::remove(model_entry.value().path_to_model_yaml);
     // Remove model files if they are not imported locally
-    if (model_entry.branch_name != "imported") {
+    if (model_entry.value().branch_name != "imported") {
       if (mc.files.size() > 0) {
         if (mc.engine == "cortex.llamacpp") {
           for (auto& file : mc.files) {
