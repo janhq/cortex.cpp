@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CLI/CLI.hpp"
-#include "commands/model_upd_cmd.h"
 #include "services/engine_service.h"
 #include "utils/config_yaml_utils.h"
 class CommandLineParser {
@@ -39,6 +38,7 @@ class CommandLineParser {
     std::string engine_src;
     std::string cortex_version;
     bool check_upd = true;
+    bool chat_flag = false;
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;

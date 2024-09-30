@@ -1,5 +1,6 @@
 #include "command_line_parser.h"
 #include "commands/chat_cmd.h"
+#include "commands/chat_completion_cmd.h"
 #include "commands/cmd_info.h"
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
@@ -15,6 +16,7 @@
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/model_upd_cmd.h"
+#include "commands/ps_cmd.h"
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
@@ -69,15 +71,30 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     return true;
   }
 
-  // Check new update, only check for stable release for now
+  // Check new update
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
-    if (auto latest_version = commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
-        latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
-      CLI_LOG("\nA new release of cortex is available: "
-              << CORTEX_CPP_VERSION << " -> " << *latest_version);
-      CLI_LOG("To upgrade, run: " << commands::GetRole()
-                                  << commands::GetCortexBinary() << " update");
+    // TODO(sang) find a better way to handle
+    // This is an extremely ungly way to deal with connection
+    // hang when network down
+    std::atomic<bool> done = false;
+    std::thread t([&]() {
+      if (auto latest_version =
+              commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
+          latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
+        CLI_LOG("\nA new release of cortex is available: "
+                << CORTEX_CPP_VERSION << " -> " << *latest_version);
+        CLI_LOG("To upgrade, run: " << commands::GetRole()
+                                    << commands::GetCortexBinary()
+                                    << " update");
+      }
+      done = true;
+    });
+    // Do not wait for http connection timeout
+    t.detach();
+    int retry = 10;
+    while (!done && retry--) {
+      std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 10);
     }
   }
 #endif
@@ -107,12 +124,12 @@ void CommandLineParser::SetupCommonCommands() {
     }
   });
 
-  auto run_cmd =
-      app_.add_subcommand("run", "Shortcut to start a model and chat");
+  auto run_cmd = app_.add_subcommand("run", "Shortcut to start a model");
   run_cmd->group(kCommonCommandsGroup);
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
   run_cmd->add_option("model_id", cml_data_.model_id, "");
+  run_cmd->add_flag("--chat", cml_data_.chat_flag, "Flag for interactive mode");
   run_cmd->callback([this, run_cmd] {
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
@@ -122,10 +139,12 @@ void CommandLineParser::SetupCommonCommands() {
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
                         cml_data_.model_id);
-    rc.Exec();
+    rc.Exec(cml_data_.chat_flag);
   });
 
-  auto chat_cmd = app_.add_subcommand("chat", "Send a chat completion request");
+  auto chat_cmd = app_.add_subcommand(
+      "chat",
+      "Shortcut for `cortex run --chat` or send a chat completion request");
   chat_cmd->group(kCommonCommandsGroup);
   chat_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                   " chat [model_id] -m [msg]");
@@ -133,15 +152,22 @@ void CommandLineParser::SetupCommonCommands() {
   chat_cmd->add_option("-m,--message", cml_data_.msg,
                        "Message to chat with model");
   chat_cmd->callback([this, chat_cmd] {
-    if (cml_data_.model_id.empty() || cml_data_.msg.empty()) {
-      CLI_LOG("[model_id] and [msg] are required\n");
+    if (cml_data_.model_id.empty()) {
+      CLI_LOG("[model_id] is required\n");
       CLI_LOG(chat_cmd->help());
       return;
     }
 
-    commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
-                             std::stoi(cml_data_.config.apiServerPort),
-                             cml_data_.model_id, cml_data_.msg);
+    if (cml_data_.msg.empty()) {
+      commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
+                               std::stoi(cml_data_.config.apiServerPort),
+                               cml_data_.model_id);
+    } else {
+      commands::ChatCompletionCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+          cml_data_.msg);
+    }
   });
 }
 
@@ -372,6 +398,11 @@ void CommandLineParser::SetupSystemCommands() {
   auto ps_cmd =
       app_.add_subcommand("ps", "Show running models and their status");
   ps_cmd->group(kSystemGroup);
+  ps_cmd->usage("Usage:\n" + commands::GetCortexBinary() + "ps");
+  ps_cmd->callback([&]() {
+    commands::PsCmd().Exec(cml_data_.config.apiServerHost,
+                           std::stoi(cml_data_.config.apiServerPort));
+  });
 
   auto update_cmd = app_.add_subcommand("update", "Update cortex version");
   update_cmd->group(kSystemGroup);
