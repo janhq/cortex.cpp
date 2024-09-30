@@ -11,7 +11,8 @@ import sys
 # from test_api_model_delete import TestApiModelDelete
 # from test_api_model_list import TestApiModelList
 # from test_api_model_get import TestApiModelGet
-from test_api_model_update import TestApiModelUpdate
+# from test_api_model_update import TestApiModelUpdate
+from test_api_model_alias import TestApiModelAlias
 ###
 # from test_cli_engine_get import TestCliEngineGet
 # from test_cli_engine_install import TestCliEngineInstall
