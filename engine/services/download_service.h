@@ -1,59 +1,25 @@
 #pragma once
 
 #include <curl/curl.h>
+#include <eventpp/eventqueue.h>
 #include <filesystem>
 #include <functional>
 #include <optional>
-#include <sstream>
 #include <vector>
+#include "common/download_event.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
-
-enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
-
-struct DownloadItem {
-  std::string id;
-
-  std::string downloadUrl;
-
-  /**
-   * An absolute path to where the file is located (locally).
-   */
-  std::filesystem::path localPath;
-
-  std::optional<std::string> checksum;
-
-  std::optional<uint64_t> bytes;
-
-  std::string ToString() const {
-    std::ostringstream output;
-    output << "DownloadItem{id: " << id << ", downloadUrl: " << downloadUrl
-           << ", localContainerPath: " << localPath
-           << ", checksum: " << checksum.value_or("N/A") << "}";
-    return output.str();
-  }
-};
-
-struct DownloadTask {
-  std::string id;
-
-  DownloadType type;
-
-  std::vector<DownloadItem> items;
-
-  std::string ToString() const {
-    std::ostringstream output;
-    output << "DownloadTask{id: " << id << ", type: " << static_cast<int>(type)
-           << ", items: [";
-    for (const auto& item : items) {
-      output << item.ToString() << ", ";
-    }
-    output << "]}";
-    return output.str();
-  }
-};
 
 class DownloadService {
  public:
+  using DownloadEvent = cortex::event::DownloadEvent;
+  using EventQueue = eventpp::EventQueue<std::string, void(DownloadEvent)>;
+
+  explicit DownloadService() = default;
+
+  explicit DownloadService(std::shared_ptr<EventQueue> event_queue)
+      : event_queue_{event_queue} {};
+
   using OnDownloadTaskSuccessfully =
       std::function<void(const DownloadTask& task)>;
 
@@ -77,9 +43,55 @@ class DownloadService {
   cpp::result<void, std::string> VerifyDownloadTask(
       DownloadTask& task) const noexcept;
 
-  cpp::result<bool, std::string> Download(
-      const std::string& download_id, const DownloadItem& download_item,
-      bool allow_resume) noexcept;
+  cpp::result<bool, std::string> Download(const std::string& download_id,
+                                          const DownloadItem& download_item,
+                                          bool allow_resume) noexcept;
 
   curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
+
+  std::optional<std::shared_ptr<EventQueue>> event_queue_;
+
+  std::vector<std::string> download_task_list_;
+  std::unordered_map<std::string, DownloadTask> download_task_map_;
+
+  std::optional<std::string> active_download_task_id_;
+  std::optional<std::string> active_download_item_id_;
+
+  /**
+   * Invoked when download is completed (both failed or success)
+   */
+  void CleanUp(const std::string& task_id);
+
+  static int ProgressCallback(void* ptr, double dltotal, double dlnow,
+                              double ultotal, double ulnow) {
+    DownloadService* service = static_cast<DownloadService*>(ptr);
+    auto event_queue = service->event_queue_.value();
+    if (event_queue == nullptr) {
+      return 0;
+    }
+
+    auto active_task_id = service->active_download_task_id_;
+    auto active_item_id = service->active_download_item_id_;
+    if (!active_task_id.has_value() || !active_item_id.has_value()) {
+      return 0;
+    }
+
+    auto task = service->download_task_map_[active_task_id.value()];
+
+    // loop through download items, find the active one and update it
+    for (auto& item : task.items) {
+      if (item.id == active_item_id.value()) {
+        item.downloadedBytes = dlnow;
+        item.bytes = dltotal;
+        break;
+      }
+    }
+
+    event_queue->enqueue(
+        "download-update",
+        DownloadEvent{
+            .type_ = cortex::event::DownloadEventType::DownloadUpdated,
+            .download_task_ = task});
+    return 0;
+  }
 };

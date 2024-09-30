@@ -5,9 +5,12 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/result.hpp"
+#include "utils/system_info_utils.h"
+
 struct EngineInfo {
   std::string name;
   std::string description;
@@ -30,8 +33,10 @@ class EngineService {
   const std::vector<std::string_view> kSupportEngines = {
       kLlamaEngine, kOnnxEngine, kTrtLlmEngine};
 
-  EngineService();
-  ~EngineService();
+  explicit EngineService(std::shared_ptr<DownloadService> download_service)
+      : download_service_{download_service},
+        hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
+                .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
 
   cpp::result<EngineInfo, std::string> GetEngineInfo(
       const std::string& engine) const;
@@ -58,6 +63,8 @@ class EngineService {
                                 const std::vector<std::string>& variants);
 
  private:
+  std::shared_ptr<DownloadService> download_service_;
+
   struct HardwareInfo {
     std::unique_ptr<system_info_utils::SystemInfo> sys_inf;
     cortex::cpuid::CpuInfo cpu_inf;
