@@ -103,13 +103,9 @@ void Models::ListModel(
   }
 }
 
-void Models::GetModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
-    return;
-  }
-  auto model_handle = (*(req->getJsonObject())).get("modelId", "").asString();
+void Models::GetModel(const HttpRequestPtr& req,
+                      std::function<void(const HttpResponsePtr&)>&& callback,
+                      const std::string& model_handle) const {
   LOG_DEBUG << "GetModel, Model handle: " << model_handle;
   Json::Value ret;
   ret["object"] = "list";
@@ -226,9 +222,8 @@ void Models::ImportModel(
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(modelHandle + ".yml"))
                                     .string();
-  cortex::db::ModelEntry model_entry{
-      modelHandle,     "local",     "imported",
-      model_yaml_path, modelHandle};
+  cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
+                                     model_yaml_path, modelHandle};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
