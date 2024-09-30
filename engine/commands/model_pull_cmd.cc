@@ -7,7 +7,7 @@ void ModelPullCmd::Exec(const std::string& input) {
   if (result.has_error()) {
     CLI_LOG(result.error());
   } else {
-    CLI_LOG("Model downloaded successfully!");
+    CLI_LOG("Model download process completed successfully!");
   }
 }
 };  // namespace commands

@@ -183,6 +183,7 @@ cpp::result<void, std::string> DownloadService::Download(
           CLI_LOG("Resuming download..");
         } else {
           CLI_LOG("Start over..");
+          return {};
         }
       } else {
         CLI_LOG(download_item.localPath.filename().string()
@@ -231,6 +232,7 @@ cpp::result<void, std::string> DownloadService::Download(
 
   fclose(file);
   curl_easy_cleanup(curl);
+  CLI_LOG("Model " << download_id << " downloaded successfully!")
   return {};
 }
 
