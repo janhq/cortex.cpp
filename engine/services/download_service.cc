@@ -67,14 +67,14 @@ cpp::result<void, std::string> DownloadService::AddDownloadTask(
   std::optional<std::string> dl_err_msg = std::nullopt;
   for (const auto& item : task.items) {
     CLI_LOG("Start downloading: " + item.localPath.filename().string());
-    auto result = Download(task.id, item, true, task.type);
+    auto result = Download(task.id, item, true);
     if (result.has_error()) {
       dl_err_msg = result.error();
       break;
     }
   }
   if (dl_err_msg.has_value()) {
-    CTL_ERR(dl_err_msg.value());
+    // CTL_ERR(dl_err_msg.value());
     return cpp::fail(dl_err_msg.value());
   }
 
@@ -121,7 +121,7 @@ cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
     std::optional<std::string> dl_err_msg = std::nullopt;
     for (const auto& item : task.items) {
       CTL_INF("Start downloading: " + item.localPath.filename().string());
-      auto result = Download(task.id, item, false, task.type);
+      auto result = Download(task.id, item, false);
       if (result.has_error()) {
         dl_err_msg = result.error();
         break;
@@ -147,7 +147,7 @@ cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
 
 cpp::result<void, std::string> DownloadService::Download(
     const std::string& download_id, const DownloadItem& download_item,
-    bool allow_resume, std::optional<DownloadType> download_type) noexcept {
+    bool allow_resume) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
 
   CURL* curl;
@@ -183,7 +183,7 @@ cpp::result<void, std::string> DownloadService::Download(
           CLI_LOG("Resuming download..");
         } else {
           CLI_LOG("Start over..");
-          return {};
+          return cpp::fail("Cancelled Resume download!");
         }
       } else {
         CLI_LOG(download_item.localPath.filename().string()
@@ -195,7 +195,7 @@ cpp::result<void, std::string> DownloadService::Download(
         if (answer == "Y" || answer == "y" || answer.empty()) {
           CLI_LOG("Re-downloading..");
         } else {
-          return {};
+          return cpp::fail("Cancelled Re-download!");
         }
       }
     }
@@ -232,9 +232,6 @@ cpp::result<void, std::string> DownloadService::Download(
 
   fclose(file);
   curl_easy_cleanup(curl);
-  if (download_type.has_value() && download_type == DownloadType::Model) {
-    CLI_LOG("Model " << download_id << " downloaded successfully!")
-  }
   return {};
 }
 
