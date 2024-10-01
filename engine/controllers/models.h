@@ -14,7 +14,7 @@ class Models : public drogon::HttpController<Models> {
   METHOD_ADD(Models::PullModel, "/pull", Post);
   METHOD_ADD(Models::ListModel, "", Get);
   METHOD_ADD(Models::GetModel, "/get", Post);
-  METHOD_ADD(Models::UpdateModel, "/update/", Post);
+  METHOD_ADD(Models::UpdateModel, "/update", Post);
   METHOD_ADD(Models::ImportModel, "/import", Post);
   METHOD_ADD(Models::DeleteModel, "/{1}", Delete);
   METHOD_ADD(Models::SetModelAlias, "/alias", Post);

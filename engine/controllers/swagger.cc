@@ -657,14 +657,57 @@ Json::Value SwaggerController::generateOpenAPISpec() {
 
   schemas["LoadModelRequest"]["type"] = "object";
   schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["model_path"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["model"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["stop"]["type"] = "array";
+  schemas["LoadModelRequest"]["properties"]["stop"]["items"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["stop"]["description"] =
+      "List of stop sequences";
+
+  schemas["LoadModelRequest"]["properties"]["stream"]["type"] = "boolean";
+  schemas["LoadModelRequest"]["properties"]["stream"]["description"] =
+      "Whether to stream the output";
+
+  schemas["LoadModelRequest"]["properties"]["ngl"]["type"] = "integer";
+  schemas["LoadModelRequest"]["properties"]["ngl"]["description"] =
+      "Number of GPU layers";
+
+  schemas["LoadModelRequest"]["properties"]["ctx_len"]["type"] = "integer";
+  schemas["LoadModelRequest"]["properties"]["ctx_len"]["description"] =
+      "Context length";
+
+  schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["engine"]["description"] =
+      "Engine used for the model";
+
+  schemas["LoadModelRequest"]["properties"]["system_template"]["type"] =
+      "string";
+  schemas["LoadModelRequest"]["properties"]["system_template"]["description"] =
+      "Template for system messages";
+
+  schemas["LoadModelRequest"]["properties"]["user_template"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["user_template"]["description"] =
+      "Template for user messages";
+
+  schemas["LoadModelRequest"]["properties"]["ai_template"]["type"] = "string";
+  schemas["LoadModelRequest"]["properties"]["ai_template"]["description"] =
+      "Template for AI responses";
+
+  schemas["LoadModelRequest"]["properties"]["n_probs"]["type"] = "integer";
+  schemas["LoadModelRequest"]["properties"]["n_probs"]["description"] =
+      "Number of probabilities to return";
+
   // Add other properties based on your implementation
 
   schemas["UnloadModelRequest"]["type"] = "object";
   schemas["UnloadModelRequest"]["properties"]["engine"]["type"] = "string";
+  schemas["UnloadModelRequest"]["properties"]["model"]["type"] = "string";
   // Add other properties based on your implementation
 
   schemas["ModelStatusRequest"]["type"] = "object";
   schemas["ModelStatusRequest"]["properties"]["engine"]["type"] = "string";
+  schemas["ModelStatusRequest"]["properties"]["model"]["type"] = "string";
   // Add other properties based on your implementation
 
   schemas["ModelStatusResponse"]["type"] = "object";
