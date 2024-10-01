@@ -223,7 +223,6 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
                                  }}}};
 
   auto on_finished = [&](const DownloadTask& finishedTask) {
-    CLI_LOG("Model " << finishedTask.id << " downloaded successfully!")
     auto gguf_download_item = finishedTask.items[0];
     ParseGguf(gguf_download_item, author);
   };
@@ -295,7 +294,6 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     return cpp::fail(result.error());
   }
 
-  CLI_LOG("Model " << model_id << " downloaded successfully!")
   return model_id;
 }
 
