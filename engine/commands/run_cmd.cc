@@ -72,8 +72,8 @@ void RunCmd::Exec(bool chat_flag) {
     // If it is llamacpp, then check model status first
     {
       if ((mc.engine.find("llamacpp") == std::string::npos) ||
-          !commands::ModelStatusCmd().IsLoaded(host_, port_, model_handle_)) {
-        if (!ModelStartCmd().Exec(host_, port_, model_handle_)) {
+          !commands::ModelStatusCmd().IsLoaded(host_, port_, *model_id)) {
+        if (!ModelStartCmd().Exec(host_, port_, *model_id)) {
           return;
         }
       }
@@ -81,7 +81,7 @@ void RunCmd::Exec(bool chat_flag) {
 
     // Chat
     if (chat_flag) {
-      ChatCompletionCmd().Exec(host_, port_, model_handle_, mc, "");
+      ChatCompletionCmd().Exec(host_, port_, *model_id, mc, "");
     } else {
       CLI_LOG(*model_id << " model started successfully. Use `"
                         << commands::GetCortexBinary() << " chat " << *model_id
