@@ -1,5 +1,9 @@
 #pragma once
 #include <string>
+#if !defined(_WIN32)
+#include <sys/stat.h>
+#include <unistd.h>
+#endif
 
 #include "httplib.h"
 #include "nlohmann/json.hpp"
@@ -15,6 +19,15 @@ constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
 constexpr const auto kBetaComp = "-rc";
 constexpr const auto kReleaseFormat = ".tar.gz";
+constexpr const auto kTimeoutCheckUpdate = std::chrono::milliseconds(1000);
+
+inline std::string GetRole() {
+#if defined(_WIN32)
+  return "";
+#else
+  return "sudo ";
+#endif
+}
 
 inline std::string GetCortexBinary() {
 #if defined(_WIN32)
@@ -50,93 +63,11 @@ inline std::string GetReleasePath() {
   }
 }
 
-inline void CheckNewUpdate() {
-  auto host_name = GetHostName();
-  auto release_path = GetReleasePath();
-  CTL_INF("Engine release path: " << host_name << release_path);
+std::optional<std::string> CheckNewUpdate(
+    std::optional<std::chrono::milliseconds> timeout);
 
-  httplib::Client cli(host_name);
-  if (auto res = cli.Get(release_path)) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      try {
-        auto get_latest = [](const nlohmann::json& data) -> std::string {
-          if (data.empty()) {
-            return "";
-          }
-
-          if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
-            for (auto& d : data) {
-              if (auto tag = d["tag_name"].get<std::string>();
-                  tag.find(kBetaComp) != std::string::npos) {
-                return tag;
-              }
-            }
-            return data[0]["tag_name"].get<std::string>();
-          } else {
-            return data["tag_name"].get<std::string>();
-          }
-          return "";
-        };
-
-        auto json_res = nlohmann::json::parse(res->body);
-        std::string latest_version = get_latest(json_res);
-        if (latest_version.empty()) {
-          CTL_WRN("Release not found!");
-          return;
-        }
-        std::string current_version = CORTEX_CPP_VERSION;
-        if (current_version != latest_version) {
-          CLI_LOG("\nA new release of cortex is available: "
-                  << current_version << " -> " << latest_version);
-          CLI_LOG("To upgrade, run: " << GetCortexBinary() << " update");
-          if (CORTEX_VARIANT == file_manager_utils::kProdVariant) {
-            CLI_LOG(json_res["html_url"].get<std::string>());
-          }
-        }
-      } catch (const nlohmann::json::parse_error& e) {
-        CTL_INF("JSON parse error: " << e.what());
-      }
-    } else {
-      CTL_INF("HTTP error: " << res->status);
-    }
-  } else {
-    auto err = res.error();
-    CTL_INF("HTTP error: " << httplib::to_string(err));
-  }
-}
-
-inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
-                                  const std::filesystem::path& dst) {
-  if (src == dst) {
-    // Already has the newest
-    return true;
-  }
-
-  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
-
-  try {
-    if (std::filesystem::exists(temp)) {
-      std::filesystem::remove(temp);
-    }
-
-    std::rename(dst.string().c_str(), temp.string().c_str());
-    std::filesystem::copy_file(
-        src, dst, std::filesystem::copy_options::overwrite_existing);
-    std::filesystem::permissions(dst, std::filesystem::perms::owner_all |
-                                          std::filesystem::perms::group_all |
-                                          std::filesystem::perms::others_read |
-                                          std::filesystem::perms::others_exec);
-  } catch (const std::exception& e) {
-    CTL_ERR("Something went wrong: " << e.what());
-    if (std::filesystem::exists(temp)) {
-      std::rename(temp.string().c_str(), dst.string().c_str());
-      CLI_LOG("Restored binary file");
-    }
-    return false;
-  }
-
-  return true;
-}
+bool ReplaceBinaryInflight(const std::filesystem::path& src,
+                           const std::filesystem::path& dst);
 
 // This class manages the 'cortex update' command functionality
 // There are three release types available:
@@ -145,7 +76,7 @@ inline bool ReplaceBinaryInflight(const std::filesystem::path& src,
 // - Nightly: Enables retrieval of the latest nightly build and specific versions using the -v flag
 class CortexUpdCmd {
  public:
-  void Exec(std::string version);
+  void Exec(const std::string& v);
 
  private:
   bool GetStable(const std::string& v);

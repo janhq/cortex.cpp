@@ -17,11 +17,8 @@
 #include <variant>
 
 #include "common/base.h"
-#include "config/gguf_parser.h"
-#include "config/yaml_config.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
-#include "trantor/utils/SerialTaskQueue.h"
 #include "utils/dylib.h"
 #include "utils/json.hpp"
 
@@ -109,6 +106,8 @@ class server : public drogon::HttpController<server>,
   bool HasFieldInReq(const HttpRequestPtr& req,
                      std::function<void(const HttpResponsePtr&)>& callback,
                      const std::string& field);
+
+  bool HasFieldInReq(const HttpRequestPtr& req, const std::string& field);
 
  private:
   struct SyncQueue {

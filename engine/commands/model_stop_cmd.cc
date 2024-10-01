@@ -1,33 +1,24 @@
 #include "model_stop_cmd.h"
+#include "config/yaml_config.h"
+#include "database/models.h"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
-#include "trantor/utils/Logger.h"
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
+#include "services/model_service.h"
 
 namespace commands {
-ModelStopCmd::ModelStopCmd(std::string host, int port,
-                           const config::ModelConfig& mc)
-    : host_(std::move(host)), port_(port), mc_(mc) {}
 
-void ModelStopCmd::Exec() {
-  httplib::Client cli(host_ + ":" + std::to_string(port_));
-  nlohmann::json json_data;
-  json_data["model"] = mc_.name;
-  json_data["engine"] = mc_.engine;
+void ModelStopCmd::Exec(const std::string& host, int port,
+                        const std::string& model_handle) {
+  ModelService ms;
+  auto res = ms.StopModel(host, port, model_handle);
 
-  auto data_str = json_data.dump();
-
-  auto res = cli.Post("/inferences/server/unloadmodel", httplib::Headers(),
-                      data_str.data(), data_str.size(), "application/json");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      // LOG_INFO << res->body;
-      CLI_LOG("Model unloaded!");
-    }
-  } else {
-    auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+  if (res.has_error()) {
+    CLI_LOG("Error: " + res.error());
+    return;
   }
+  CLI_LOG("Model unloaded!");
 }
 
 };  // namespace commands

@@ -1,5 +1,5 @@
 import pytest
-from test_runner import run
+from test_runner import popen, run
 
 
 class TestCliModelDelete:
@@ -8,7 +8,9 @@ class TestCliModelDelete:
     def setup_and_teardown(self):
         # Setup
         # Pull model
-        run("Pull Model", ["pull", "tinyllama"], 120)
+
+        # TODO: using pull with branch for easy testing tinyllama:gguf for example
+        popen(["pull", "tinyllama"], "1\n")
 
         yield
 
@@ -18,7 +20,7 @@ class TestCliModelDelete:
 
     def test_models_delete_should_be_successful(self):
         exit_code, output, error = run(
-            "Delete model", ["models", "delete", "tinyllama"]
+            "Delete model", ["models", "delete", "tinyllama:gguf"]
         )
-        assert "The model tinyllama was deleted" in output
+        assert "Model tinyllama:gguf deleted successfully" in output
         assert exit_code == 0, f"Model does not exist: {error}"

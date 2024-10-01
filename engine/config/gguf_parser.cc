@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -12,6 +13,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
+#include <limits>
 #else
 #include <sys/mman.h>  // For memory-mapped file
 #include <unistd.h>    // For file descriptors
@@ -19,12 +21,15 @@
 
 #include <fcntl.h>  // For file descriptors
 
-#include <jinja2cpp/template.h>
+#include "chat_template_renderer.h"
 
 #include "gguf_parser.h"
 #include "trantor/utils/Logger.h"
 
 namespace config {
+#define NOMINMAX
+constexpr int kDefaultMaxContextLength = 8192;
+
 void GGUFHandler::OpenFile(const std::string& file_path) {
 #ifdef _WIN32
   HANDLE file_handle_ = INVALID_HANDLE_VALUE;
@@ -361,19 +366,10 @@ void GGUFHandler::PrintMetadata() {
     if (key.compare("tokenizer.chat_template") == 0) {
       LOG_INFO << key << ": " << "\n" << value << "\n";
 
-      jinja2::Template chat_template;
-      chat_template.Load(value);
-      jinja2::ValuesMap params{
-          {"add_generation_prompt", true},
-          {"bos_token", "<|begin_of_text|>"},
-          {"eos_token", "<|eot_id|>"},
-          {"messages",
-           jinja2::ValuesList{
-               jinja2::ValuesMap{{"role", "system"},
-                                 {"content", "{system_message}"}},
-               jinja2::ValuesMap{{"role", "user"}, {"content", "{prompt}"}}}}};
-      std::string result = chat_template.RenderAsString(params).value();
-
+      std::vector<llama_chat_msg> messages{
+          llama_chat_msg{"system", "{system_message}"},
+          llama_chat_msg{"user", "{prompt}"}};
+      std::string result = llama_chat_apply_template(value, messages, true);
       LOG_INFO << "result jinja render: " << result << "\n";
     } else {
       LOG_INFO << key << ": " << value << "\n";
@@ -555,19 +551,10 @@ void GGUFHandler::ModelConfigFromMetadata() {
             ">\n\n";
       } else {
         try {
-          jinja2::Template jinja2_chat_template;
-          jinja2_chat_template.Load(value);
-          jinja2::ValuesMap params{
-              {"add_generation_prompt", true},
-              {"bos_token", tokens[bos_token]},
-              {"eos_token", tokens[eos_token]},
-              {"messages",
-               jinja2::ValuesList{
-                   jinja2::ValuesMap{{"role", "system"},
-                                     {"content", "{system_message}"}},
-                   jinja2::ValuesMap{{"role", "user"},
-                                     {"content", "{prompt}"}}}}};
-          chat_template = jinja2_chat_template.RenderAsString(params).value();
+          std::vector<llama_chat_msg> messages{
+              llama_chat_msg{"system", "{system_message}"},
+              llama_chat_msg{"user", "{prompt}"}};
+          chat_template = llama_chat_apply_template(value, messages, true);
         } catch (const std::exception& e) {
           std::cerr << "Error render chat template: " << e.what()
                     << ". Using default template: \n[INST] "
@@ -600,8 +587,8 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.model = name;
   model_config_.id = name;
   model_config_.version = std::to_string(version);
-  model_config_.max_tokens = max_tokens;
-  model_config_.ctx_len = max_tokens;
+  model_config_.max_tokens = std::min<int>(kDefaultMaxContextLength, max_tokens);
+  model_config_.ctx_len = std::min<int>(kDefaultMaxContextLength, max_tokens);
   model_config_.ngl = ngl;
 }
 

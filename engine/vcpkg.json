@@ -10,12 +10,12 @@
         ]
       },
       "drogon",
-      "jinja2cpp",
       "jsoncpp",
       "minizip",
       "nlohmann-json",
       "yaml-cpp",
       "libarchive",
-      "tabulate"
+      "tabulate",
+      "sqlitecpp"
     ]
 }

@@ -28,9 +28,18 @@
 #endif
 
 void RunServer() {
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+  signal(SIGINT, SIG_IGN);
+#elif defined(_WIN32)
+  auto console_ctrl_handler = +[](DWORD ctrl_type) -> BOOL {
+    return (ctrl_type == CTRL_C_EVENT) ? true : false;
+  };
+  SetConsoleCtrlHandler(
+      reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
+#endif
   auto config = file_manager_utils::GetCortexConfig();
-  LOG_INFO << "Host: " << config.apiServerHost
-           << " Port: " << config.apiServerPort << "\n";
+  std::cout << "Host: " << config.apiServerHost
+            << " Port: " << config.apiServerPort << "\n";
 
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
@@ -46,23 +55,10 @@ void RunServer() {
         asyncFileLogger.output_(msg, len);
       },
       [&]() { asyncFileLogger.flush(); });
-  // Number of cortex.cpp threads
-  // if (argc > 1) {
-  //   thread_num = std::atoi(argv[1]);
-  // }
+  LOG_INFO << "Host: " << config.apiServerHost
+           << " Port: " << config.apiServerPort << "\n";
 
-  // // Check for host argument
-  // if (argc > 2) {
-  //   host = argv[2];
-  // }
-
-  // // Check for port argument
-  // if (argc > 3) {
-  //   port = std::atoi(argv[3]);  // Convert string argument to int
-  // }
   int thread_num = 1;
-  // std::string host = "127.0.0.1";
-  // int port = 3928;
 
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
@@ -80,6 +76,7 @@ void RunServer() {
                             std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
+  drogon::app().disableSigtermHandling();
 
   drogon::app().run();
   // return 0;
@@ -88,10 +85,10 @@ void RunServer() {
 int main(int argc, char* argv[]) {
   // Stop the program if the system is not supported
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info.arch == system_info_utils::kUnsupported ||
-      system_info.os == system_info_utils::kUnsupported) {
-    CTL_ERR("Unsupported OS or architecture: " << system_info.os << ", "
-                                               << system_info.arch);
+  if (system_info->arch == system_info_utils::kUnsupported ||
+      system_info->os == system_info_utils::kUnsupported) {
+    CTL_ERR("Unsupported OS or architecture: " << system_info->os << ", "
+                                               << system_info->arch);
     return 1;
   }
 

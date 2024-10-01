@@ -1,0 +1,6 @@
+#!/bin/sh
+DESTINATION_BINARY_NAME=cortex
+USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
+echo "Download cortex.llamacpp engines by default for user $USER_TO_RUN_AS"
+sudo -u $USER_TO_RUN_AS env PATH=$PATH:/usr/lib/wsl/lib /usr/bin/$DESTINATION_BINARY_NAME engines install cortex.llamacpp -s /tmp/$DESTINATION_BINARY_NAME-dependencies
+rm -rf /tmp/$DESTINATION_BINARY_NAME-dependencies

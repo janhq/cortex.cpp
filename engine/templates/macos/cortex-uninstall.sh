@@ -12,6 +12,7 @@ fi
 
 USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
 
+sudo -u $USER_TO_RUN_AS /usr/local/bin/$DESTINATION_BINARY_NAME stop > /dev/null 2>&1
 rm /usr/local/bin/$DESTINATION_BINARY_NAME
 
 echo "Do you want to delete the '~/$DATA_FOLDER_NAME' data folder and file '~/$CONFIGURATION_FILE_NAME'? (yes/no)"

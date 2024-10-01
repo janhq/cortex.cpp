@@ -6,6 +6,7 @@
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
 
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
@@ -20,6 +21,9 @@ constexpr std::string_view kDefaultConfigurationPath = "user_home";
 constexpr std::string_view kProdVariant = "prod";
 constexpr std::string_view kBetaVariant = "beta";
 constexpr std::string_view kNightlyVariant = "nightly";
+constexpr char kLogsLlamacppBaseName[] = "./logs/cortex.log";
+constexpr char kLogsTensorrtllmBaseName[] = "./logs/cortex.log";
+constexpr char kLogsOnnxBaseName[] = "./logs/cortex.log";
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
 #if defined(__APPLE__) && defined(__MACH__)
@@ -109,17 +113,11 @@ inline std::filesystem::path GetConfigurationPath() {
   return configuration_path;
 }
 
-inline void CreateConfigFileIfNotExist() {
-  auto config_path = GetConfigurationPath();
-  if (std::filesystem::exists(config_path)) {
-    // already exists
-    return;
-  }
+inline std::string GetDefaultDataFolderName() {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT "prod"
 #endif
   std::string default_data_folder_name{config_yaml_utils::kCortexFolderName};
-
   std::string variant{CORTEX_VARIANT};
   std::string env_postfix{""};
   if (variant == kBetaVariant) {
@@ -128,6 +126,17 @@ inline void CreateConfigFileIfNotExist() {
     env_postfix.append("-").append(kNightlyVariant);
   }
   default_data_folder_name.append(env_postfix);
+  return default_data_folder_name;
+}
+
+inline void CreateConfigFileIfNotExist() {
+  auto config_path = GetConfigurationPath();
+  if (std::filesystem::exists(config_path)) {
+    // already exists
+    return;
+  }
+
+  auto default_data_folder_name = GetDefaultDataFolderName();
 
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto defaultDataFolderPath =
@@ -146,14 +155,27 @@ inline void CreateConfigFileIfNotExist() {
 
 inline config_yaml_utils::CortexConfig GetCortexConfig() {
   auto config_path = GetConfigurationPath();
-  std::string variant = "";  // TODO: empty for now
-  return config_yaml_utils::FromYaml(config_path.string(), variant);
+  auto default_data_folder_name = GetDefaultDataFolderName();
+  auto default_data_folder_path =
+      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
+  auto default_cfg = config_yaml_utils::CortexConfig{
+      .logFolderPath = default_data_folder_path.string(),
+      .logLlamaCppPath = kLogsLlamacppBaseName,
+      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
+      .logOnnxPath = kLogsOnnxBaseName,
+      .dataFolderPath = default_data_folder_path.string(),
+      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
+      .apiServerHost = config_yaml_utils::kDefaultHost,
+      .apiServerPort = config_yaml_utils::kDefaultPort,
+      .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
+      .latestRelease = config_yaml_utils::kDefaultLatestRelease,
+  };
+
+  return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
 }
 
 inline std::filesystem::path GetCortexDataPath() {
-  // TODO: We will need to support user to move the data folder to other place.
-  // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
-  // currently we will store cortex data at ~/cortexcpp
+  CreateConfigFileIfNotExist();
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {

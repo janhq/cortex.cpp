@@ -1,19 +1,26 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
+#include "utils/cpuid/cpu_info.h"
+#include "utils/result.hpp"
 
 struct EngineInfo {
   std::string name;
   std::string description;
   std::string format;
-  std::string version;
+  std::optional<std::string> version;
   std::string product_name;
   std::string status;
+  std::optional<std::string> variant;
 };
 
+namespace system_info_utils {
+struct SystemInfo;
+}
 class EngineService {
  public:
   constexpr static auto kIncompatible = "Incompatible";
@@ -23,12 +30,38 @@ class EngineService {
   const std::vector<std::string_view> kSupportEngines = {
       "cortex.llamacpp", "cortex.onnx", "cortex.tensorrt-llm"};
 
-  std::optional<EngineInfo> GetEngineInfo(const std::string& engine) const;
+  EngineService();
+  ~EngineService();
+
+  cpp::result<EngineInfo, std::string> GetEngineInfo(
+      const std::string& engine) const;
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
-  void InstallEngine(const std::string& engine,
-                     const std::string& version = "latest");
+  cpp::result<void, std::string> InstallEngine(
+      const std::string& engine, const std::string& version = "latest",
+      const std::string& src = "");
 
-  void UninstallEngine(const std::string& engine);
+  cpp::result<void, std::string> UninstallEngine(const std::string& engine);
+
+ private:
+  cpp::result<void, std::string> UnzipEngine(const std::string& engine,
+                                             const std::string& version,
+                                             const std::string& path);
+
+  cpp::result<void, std::string> DownloadEngine(
+      const std::string& engine, const std::string& version = "latest");
+
+  cpp::result<void, std::string> DownloadCuda(const std::string& engine);
+
+  std::string GetMatchedVariant(const std::string& engine,
+                                const std::vector<std::string>& variants);
+
+ private:
+  struct HardwareInfo {
+    std::unique_ptr<system_info_utils::SystemInfo> sys_inf;
+    cortex::cpuid::CpuInfo cpu_inf;
+    std::string cuda_driver_version;
+  };
+  HardwareInfo hw_inf_;
 };

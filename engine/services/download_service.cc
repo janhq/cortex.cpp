@@ -1,15 +1,24 @@
+#include "download_service.h"
 #include <curl/curl.h>
 #include <httplib.h>
 #include <stdio.h>
 #include <trantor/utils/Logger.h>
 #include <filesystem>
+#include <optional>
+#include <ostream>
 #include <thread>
-
 #include "download_service.h"
-#include "exceptions/failed_curl_exception.h"
-#include "exceptions/failed_init_curl_exception.h"
-#include "exceptions/failed_open_file_exception.h"
+#include "utils/format_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/result.hpp"
+
+#ifdef _WIN32
+#define ftell64(f) _ftelli64(f)
+#define fseek64(f, o, w) _fseeki64(f, o, w)
+#else
+#define ftell64(f) ftello(f)
+#define fseek64(f, o, w) fseeko(f, o, w)
+#endif
 
 namespace {
 size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
@@ -18,39 +27,70 @@ size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
 }
 }  // namespace
 
-void DownloadService::AddDownloadTask(
-    const DownloadTask& task,
-    std::optional<OnDownloadTaskSuccessfully> callback) {
+cpp::result<void, std::string> DownloadService::VerifyDownloadTask(
+    DownloadTask& task) const noexcept {
   CLI_LOG("Validating download items, please wait..");
-  // preprocess to check if all the item are valid
+
   auto total_download_size{0};
-  for (const auto& item : task.items) {
-    try {
-      total_download_size += GetFileSize(item.downloadUrl);
-    } catch (const FailedCurlException& e) {
-      CTL_ERR("Found invalid download item: " << item.downloadUrl << " - "
-                                              << e.what());
-      throw;
+  std::optional<std::string> err_msg = std::nullopt;
+
+  for (auto& item : task.items) {
+    auto file_size = GetFileSize(item.downloadUrl);
+    if (file_size.has_error()) {
+      err_msg = file_size.error();
+      break;
     }
+
+    item.bytes = file_size.value();
+    total_download_size += file_size.value();
+  }
+
+  if (err_msg.has_value()) {
+    CTL_ERR(err_msg.value());
+    return cpp::fail(err_msg.value());
+  }
+
+  return {};
+}
+
+cpp::result<void, std::string> DownloadService::AddDownloadTask(
+    DownloadTask& task,
+    std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
+  auto validating_result = VerifyDownloadTask(task);
+  if (validating_result.has_error()) {
+    return cpp::fail(validating_result.error());
   }
 
   // all items are valid, start downloading
+  // if any item from the task failed to download, the whole task will be
+  // considered failed
+  std::optional<std::string> dl_err_msg = std::nullopt;
   for (const auto& item : task.items) {
     CLI_LOG("Start downloading: " + item.localPath.filename().string());
-    Download(task.id, item);
+    auto result = Download(task.id, item, true);
+    if (result.has_error()) {
+      dl_err_msg = result.error();
+      break;
+    }
+  }
+  if (dl_err_msg.has_value()) {
+    // CTL_ERR(dl_err_msg.value());
+    return cpp::fail(dl_err_msg.value());
   }
 
   if (callback.has_value()) {
     callback.value()(task);
   }
+  return {};
 }
 
-uint64_t DownloadService::GetFileSize(const std::string& url) const {
+cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
+    const std::string& url) const noexcept {
   CURL* curl;
   curl = curl_easy_init();
 
   if (!curl) {
-    throw FailedInitCurlException();
+    return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
 
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
@@ -59,9 +99,8 @@ uint64_t DownloadService::GetFileSize(const std::string& url) const {
   CURLcode res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
-    // if we have a failed here. it meant the url is invalid
-    throw FailedCurlException("CURL failed: " +
-                              std::string(curl_easy_strerror(res)));
+    return cpp::fail(static_cast<std::string>(
+        "CURL failed: " + std::string(curl_easy_strerror(res))));
   }
 
   curl_off_t content_length = 0;
@@ -70,21 +109,45 @@ uint64_t DownloadService::GetFileSize(const std::string& url) const {
   return content_length;
 }
 
-void DownloadService::AddAsyncDownloadTask(
-    const DownloadTask& task,
-    std::optional<OnDownloadTaskSuccessfully> callback) {
-
-  for (const auto& item : task.items) {
-    std::thread([this, task, &callback, item]() {
-      this->Download(task.id, item);
-    }).detach();
+cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
+    DownloadTask& task,
+    std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
+  auto verifying_result = VerifyDownloadTask(task);
+  if (verifying_result.has_error()) {
+    return cpp::fail(verifying_result.error());
   }
 
-  // TODO: how to call the callback when all the download has finished?
+  auto execute_download_async = [&, task, callback]() {
+    std::optional<std::string> dl_err_msg = std::nullopt;
+    for (const auto& item : task.items) {
+      CTL_INF("Start downloading: " + item.localPath.filename().string());
+      auto result = Download(task.id, item, false);
+      if (result.has_error()) {
+        dl_err_msg = result.error();
+        break;
+      }
+    }
+
+    if (dl_err_msg.has_value()) {
+      CTL_ERR(dl_err_msg.value());
+      return;
+    }
+
+    if (callback.has_value()) {
+      CTL_INF("Download success, executing post download lambda!");
+      callback.value()(task);
+    }
+  };
+
+  std::thread t(execute_download_async);
+  t.detach();
+
+  return {};
 }
 
-void DownloadService::Download(const std::string& download_id,
-                               const DownloadItem& download_item) {
+cpp::result<void, std::string> DownloadService::Download(
+    const std::string& download_id, const DownloadItem& download_item,
+    bool allow_resume) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
 
   CURL* curl;
@@ -93,14 +156,55 @@ void DownloadService::Download(const std::string& download_id,
 
   curl = curl_easy_init();
   if (!curl) {
-    throw FailedInitCurlException();
+    return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
 
-  file = fopen(download_item.localPath.string().c_str(), "wb");
+  std::string mode = "wb";
+  if (allow_resume && std::filesystem::exists(download_item.localPath) &&
+      download_item.bytes.has_value()) {
+    curl_off_t existing_file_size = GetLocalFileSize(download_item.localPath);
+    if (existing_file_size == -1) {
+      CLI_LOG("Cannot get file size: " << download_item.localPath.string()
+                                       << " . Start download over!");
+    } else {
+      CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
+                                     << download_item.localPath.string()
+                                     << " - " << existing_file_size);
+      auto missing_bytes = download_item.bytes.value() - existing_file_size;
+      if (missing_bytes > 0) {
+        CLI_LOG("Found unfinished download! Additional "
+                << format_utils::BytesToHumanReadable(missing_bytes)
+                << " need to be downloaded.");
+        std::cout << "Continue download [Y/n]: " << std::flush;
+        std::string answer{""};
+        std::getline(std::cin, answer);
+        if (answer == "Y" || answer == "y" || answer.empty()) {
+          mode = "ab";
+          CLI_LOG("Resuming download..");
+        } else {
+          CLI_LOG("Start over..");
+          return cpp::fail("Cancelled Resume download!");
+        }
+      } else {
+        CLI_LOG(download_item.localPath.filename().string()
+                << " is already downloaded!");
+        std::cout << "Re-download? [Y/n]: " << std::flush;
+
+        std::string answer = "";
+        std::getline(std::cin, answer);
+        if (answer == "Y" || answer == "y" || answer.empty()) {
+          CLI_LOG("Re-downloading..");
+        } else {
+          return cpp::fail("Cancelled Re-download!");
+        }
+      }
+    }
+  }
+
+  file = fopen(download_item.localPath.string().c_str(), mode.c_str());
   if (!file) {
-    auto err_msg{"Failed to open output file " +
-                 download_item.localPath.string()};
-    throw FailedOpenFileException(err_msg);
+    return cpp::fail("Failed to open output file " +
+                     download_item.localPath.string());
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
@@ -109,13 +213,40 @@ void DownloadService::Download(const std::string& download_id,
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+  if (mode == "ab") {
+    auto local_file_size = GetLocalFileSize(download_item.localPath);
+    if (local_file_size != -1) {
+      curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE,
+                       GetLocalFileSize(download_item.localPath));
+    } else {
+      CTL_ERR("Cannot get file size: " << download_item.localPath.string());
+    }
+  }
+
   res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
-    fprintf(stderr, "curl_easy_perform() failed: %s\n",
-            curl_easy_strerror(res));
+    return cpp::fail("Download failed! Error: " +
+                     static_cast<std::string>(curl_easy_strerror(res)));
   }
 
   fclose(file);
   curl_easy_cleanup(curl);
+  return {};
+}
+
+curl_off_t DownloadService::GetLocalFileSize(
+    const std::filesystem::path& path) const {
+  FILE* file = fopen(path.string().c_str(), "r");
+  if (!file) {
+    return -1;
+  }
+
+  if (fseek64(file, 0, SEEK_END) != 0) {
+    return -1;
+  }
+
+  curl_off_t file_size = ftell64(file);
+  fclose(file);
+  return file_size;
 }

@@ -44,6 +44,11 @@ on:
         type: string
         default: 'nightly'
         description: 'The channel to use for this job'
+      cortex-llamacpp-version:
+        required: true
+        type: string
+        default: '0.0.0'
+        description: 'The version of cortex-llamacpp to use for this job'
     secrets:
       MINIO_BUCKET_NAME:
         required: false
@@ -104,6 +109,7 @@ jobs:
             echo "::set-output name=configuration_file_name::.cortexrc"
             echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
             echo "::set-output name=iss_file_name::installer.iss"
+            echo "::set-output name=local_iss_file_name::local-installer.iss"
           fi
 
           # Set output for beta channel
@@ -114,6 +120,7 @@ jobs:
             echo "::set-output name=configuration_file_name::.cortexrc-beta"
             echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
             echo "::set-output name=iss_file_name::installer-beta.iss"
+            echo "::set-output name=local_iss_file_name::local-installer-beta.iss"
           fi
 
           # Set output for nightly channel
@@ -124,6 +131,7 @@ jobs:
             echo "::set-output name=configuration_file_name::.cortexrc-nightly"
             echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
             echo "::set-output name=iss_file_name::installer-nightly.iss"
+            echo "::set-output name=local_iss_file_name::local-installer-nightly.iss"
           fi
 
       - name: Install jq
@@ -131,7 +139,7 @@ jobs:
 
       - name: Install dependencies on Windows
         run: |
-          choco install make pkgconfiglite ccache awscli 7zip ninja -y
+          choco install make pkgconfiglite ccache awscli 7zip ninja wget -y
           dotnet tool install --global AzureSignTool
 
       - name: Download ccache from s3
@@ -139,7 +147,7 @@ jobs:
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          aws s3 cp s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-windows-amd64 ${{ inputs.ccache-dir }} --recursive --endpoint ${{ secrets.MINIO_ENDPOINT }}
+          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-windows-amd64 ${{ inputs.ccache-dir }}  --endpoint ${{ secrets.MINIO_ENDPOINT }}
         env:
           AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
@@ -171,30 +179,65 @@ jobs:
         run: |
           cd engine/templates/windows
           sed -i "s/AppVersion=1.0/AppVersion=${{ inputs.new_version }}/g" ${{ steps.set-output-params.outputs.iss_file_name }}
+          sed -i "s/AppVersion=1.0/AppVersion=${{ inputs.new_version }}/g" ${{ steps.set-output-params.outputs.local_iss_file_name }}
           cat ${{ steps.set-output-params.outputs.iss_file_name }}
           cp ${{ steps.set-output-params.outputs.iss_file_name }} ../../../
+          cp ${{ steps.set-output-params.outputs.local_iss_file_name }} ../../../
           ls ../../../
 
-      - name: Build Installers
+      - name: Build network Installers
         shell: bash
         run: |
           cd engine
           make build-installer PACKAGE_NAME=${{ steps.set-output-params.outputs.package_name }} VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
           ls ../
 
+      - name: Build local Installers
+        shell: powershell
+        run: |
+          mkdir dependencies
+          cd dependencies
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx-cuda-11-7.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx-cuda-12-0.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2-cuda-11-7.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2-cuda-12-0.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx2.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512-cuda-11-7.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512-cuda-12-0.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-avx512.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx-cuda-11-7.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx-cuda-12-0.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-noavx.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-windows-amd64-vulkan.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-11-7-windows-amd64.tar.gz
+          wget.exe https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-12-0-windows-amd64.tar.gz
+
       - name: Enable long paths
         run: |
           reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
 
-      - name: Compile .ISS to .EXE Installer
+      - name: Compile .ISS to .EXE network Installer
         uses: nadeemjazmawe/inno-setup-action-cli@v6.0.5
         with:
           filepath: ./${{ steps.set-output-params.outputs.iss_file_name }}
 
-      - name: Codesign for windows installer
+      - name: Codesign for windows network installer
         shell: pwsh
         run: |
           ~\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\setup.exe"
+          mv .\setup.exe .\network-setup.exe
+
+      - name: Compile .ISS to .EXE local Installer
+        uses: nadeemjazmawe/inno-setup-action-cli@v6.0.5
+        with:
+          filepath: ./${{ steps.set-output-params.outputs.local_iss_file_name }}
+
+      - name: Codesign for windows network installer
+        shell: pwsh
+        run: |
+          ~\.dotnet\tools\azuresigntool.exe sign -kvu ${{ secrets.AZURE_KEY_VAULT_URI }} -kvi ${{ secrets.AZURE_CLIENT_ID }} -kvt ${{ secrets.AZURE_TENANT_ID }} -kvs ${{ secrets.AZURE_CLIENT_SECRET }} -kvc ${{ secrets.AZURE_CERT_NAME }} -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\setup.exe"
+          mv .\setup.exe .\local-setup.exe
 
       - name: Package
         run: |
@@ -207,21 +250,28 @@ jobs:
           name: cortex-${{ inputs.new_version }}-windows-amd64
           path: ./engine/cortex
 
-      - name: Upload Artifact
+      - name: Upload Artifact network installer
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-windows-amd64-installer
-          path: ./setup.exe
+          name: cortex-${{ inputs.new_version }}-windows-amd64-network-installer
+          path: ./network-setup.exe
+      
+      - name: Upload Artifact local installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ inputs.new_version }}-windows-amd64-local-installer
+          path: ./local-setup.exe
 
       - name: upload to aws s3 if public provider is aws
         if: inputs.public_provider == 'aws-s3'
         run: |
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
+          aws s3 cp ./network-setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-network-installer.exe
+          aws s3 cp ./local-setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-local-installer.exe
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
@@ -246,6 +296,17 @@ jobs:
         uses: actions/upload-release-asset@v1.0.1
         with:
           upload_url: ${{ inputs.upload_url }}
-          asset_path: ./setup.exe
-          asset_name: cortex-${{ inputs.new_version }}-windows-amd64-installer.exe
+          asset_path: ./network-setup.exe
+          asset_name: cortex-${{ inputs.new_version }}-windows-amd64-network-installer.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload release assert if public provider is github
+        if: inputs.public_provider == 'github'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/upload-release-asset@v1.0.1
+        with:
+          upload_url: ${{ inputs.upload_url }}
+          asset_path: ./local-setup.exe
+          asset_name: cortex-${{ inputs.new_version }}-windows-amd64-local-installer.exe
           asset_content_type: application/octet-stream
