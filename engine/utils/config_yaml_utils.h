@@ -22,7 +22,7 @@ struct CortexConfig {
 
 const std::string kCortexFolderName = "cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
-const std::string kDefaultPort{"3928"};
+const std::string kDefaultPort{"39281"};
 const int kDefaultMaxLines{100000};
 constexpr const uint64_t kDefaultCheckedForUpdateAt = 0u;
 constexpr const auto kDefaultLatestRelease = "default_version";
