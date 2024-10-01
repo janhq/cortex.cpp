@@ -27,7 +27,9 @@
 #include "trantor/utils/Logger.h"
 
 namespace config {
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define NOMINMAX
+constexpr int kDefaultMaxContextLength = 8192;
+
 void GGUFHandler::OpenFile(const std::string& file_path) {
 #ifdef _WIN32
   HANDLE file_handle_ = INVALID_HANDLE_VALUE;
@@ -585,8 +587,8 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.model = name;
   model_config_.id = name;
   model_config_.version = std::to_string(version);
-  model_config_.max_tokens = MIN(8192, max_tokens);
-  model_config_.ctx_len = MIN(8192, max_tokens);
+  model_config_.max_tokens = std::min(kDefaultMaxContextLength, max_tokens);
+  model_config_.ctx_len = std::min(kDefaultMaxContextLength, max_tokens);
   model_config_.ngl = ngl;
 }
 
