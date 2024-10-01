@@ -5,6 +5,7 @@
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "database/models.h"
+#include "httplib.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
@@ -338,7 +339,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
     if (model_entry.has_error()) {
-      CLI_LOG("Error: " + model_entry.error());
+      CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
     yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
@@ -370,6 +371,148 @@ cpp::result<void, std::string> ModelService::DeleteModel(
     }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to delete model with ID '" + model_handle +
+                     "': " + e.what());
+  }
+}
+
+cpp::result<bool, std::string> ModelService::StartModel(
+    const std::string& host, int port, const std::string& model_handle) {
+
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    auto mc = yaml_handler.GetModelConfig();
+
+    httplib::Client cli(host + ":" + std::to_string(port));
+
+    Json::Value json_data = mc.ToJson();
+    if (mc.files.size() > 0) {
+      // TODO(sang) support multiple files
+      json_data["model_path"] = mc.files[0];
+    } else {
+      LOG_WARN << "model_path is empty";
+      return false;
+    }
+    json_data["model"] = model_handle;
+    json_data["system_prompt"] = mc.system_template;
+    json_data["user_prompt"] = mc.user_template;
+    json_data["ai_prompt"] = mc.ai_template;
+
+    auto data_str = json_data.toStyledString();
+    CTL_INF(data_str);
+    cli.set_read_timeout(std::chrono::seconds(60));
+    auto res = cli.Post("/inferences/server/loadmodel", httplib::Headers(),
+                        data_str.data(), data_str.size(), "application/json");
+    if (res) {
+      if (res->status == httplib::StatusCode::OK_200) {       
+        return true;
+      } else {
+        CTL_ERR("Model failed to load with status code: " << res->status);
+        return cpp::fail("Model failed to load with status code: " +
+                         res->status);
+      }
+    } else {
+      auto err = res.error();
+      CTL_ERR("HTTP error: " << httplib::to_string(err));
+      return cpp::fail("HTTP error: " + httplib::to_string(err));
+    }
+
+  } catch (const std::exception& e) {
+    return cpp::fail("Fail to load model with ID '" + model_handle +
+                     "': " + e.what());
+  }
+}
+
+cpp::result<bool, std::string> ModelService::StopModel(
+    const std::string& host, int port, const std::string& model_handle) {
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    auto mc = yaml_handler.GetModelConfig();
+
+    httplib::Client cli(host + ":" + std::to_string(port));
+
+    Json::Value json_data;
+    json_data["model"] = model_handle;
+    json_data["engine"] = mc.engine;
+    auto data_str = json_data.toStyledString();
+    CTL_INF(data_str);
+    cli.set_read_timeout(std::chrono::seconds(60));
+    auto res = cli.Post("/inferences/server/unloadmodel", httplib::Headers(),
+                        data_str.data(), data_str.size(), "application/json");
+    if (res) {
+      if (res->status == httplib::StatusCode::OK_200) {        
+        return true;
+      } else {
+        CTL_ERR("Model failed to unload with status code: " << res->status);
+        return cpp::fail("Model failed to unload with status code: " +
+                         res->status);
+      }
+    } else {
+      auto err = res.error();
+      CTL_ERR("HTTP error: " << httplib::to_string(err));
+      return cpp::fail("HTTP error: " + httplib::to_string(err));
+    }
+
+  } catch (const std::exception& e) {
+    return cpp::fail("Fail to unload model with ID '" + model_handle +
+                     "': " + e.what());
+  }
+}
+
+cpp::result<bool, std::string> ModelService::GetModelStatus(
+    const std::string& host, int port, const std::string& model_handle) {
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    auto mc = yaml_handler.GetModelConfig();
+
+    httplib::Client cli(host + ":" + std::to_string(port));
+    nlohmann::json json_data;
+    json_data["model"] = model_handle;
+    json_data["engine"] = mc.engine;
+
+    auto data_str = json_data.dump();
+
+    auto res = cli.Post("/inferences/server/modelstatus", httplib::Headers(),
+                        data_str.data(), data_str.size(), "application/json");
+    if (res) {
+      if (res->status == httplib::StatusCode::OK_200) {
+        return true;
+      } else {
+        CTL_INF("Model failed to get model status with status code: "
+                << res->status);
+        return cpp::fail("Model failed to get model status with status code: " +
+                         res->status);
+      }
+    } else {
+      auto err = res.error();
+      CTL_WRN("HTTP error: " << httplib::to_string(err));
+      return cpp::fail("HTTP error: " + httplib::to_string(err));
+    }
+  } catch (const std::exception& e) {
+    return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
   }
 }
