@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
 #include <ctime>
@@ -12,6 +13,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
+#include <limits>
 #else
 #include <sys/mman.h>  // For memory-mapped file
 #include <unistd.h>    // For file descriptors
@@ -25,6 +27,9 @@
 #include "trantor/utils/Logger.h"
 
 namespace config {
+#define NOMINMAX
+constexpr int kDefaultMaxContextLength = 8192;
+
 void GGUFHandler::OpenFile(const std::string& file_path) {
 #ifdef _WIN32
   HANDLE file_handle_ = INVALID_HANDLE_VALUE;
@@ -582,8 +587,8 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.model = name;
   model_config_.id = name;
   model_config_.version = std::to_string(version);
-  model_config_.max_tokens = max_tokens;
-  model_config_.ctx_len = max_tokens;
+  model_config_.max_tokens = std::min<int>(kDefaultMaxContextLength, max_tokens);
+  model_config_.ctx_len = std::min<int>(kDefaultMaxContextLength, max_tokens);
   model_config_.ngl = ngl;
 }
 
