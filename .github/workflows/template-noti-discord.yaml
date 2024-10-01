@@ -20,24 +20,26 @@ jobs:
       - name: Set version to environment variable
         run: |
           echo "VERSION=${{ inputs.new_version }}" >> $GITHUB_ENV
+          echo "RUNNER_ID=$GITHUB_RUN_ID" >> $GITHUB_ENV
+          echo "BUILD_REASON=${{ inputs.build_reason }}" >> $GITHUB_ENV
 
       - name: Notify Discord
-        uses: Ilshidur/action-discord@master
+        uses: appleboy/discord-action@v1.0.0
         with:
-          args: |
-            Cortex.cpp ${{ inputs.build_reason }} build artifact version {{ VERSION }}:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          message: |
+            Cortex.cpp ${{ env.BUILD_REASON }} build artifact version ${{ env.VERSION }}:
             - Windows:
-              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/windows-amd64/cortex-{{ VERSION }}-windows-amd64-network-installer.exe
-              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/windows-amd64/cortex-{{ VERSION }}-windows-amd64-local-installer.exe
+              - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/windows-amd64/cortex-${{ env.VERSION }}-windows-amd64-network-installer.exe
+              - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/windows-amd64/cortex-${{ env.VERSION }}-windows-amd64-local-installer.exe
             - macOS Intel:
-              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-amd64/cortex-{{ VERSION }}-mac-amd64-network-installer.pkg
-              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-amd64/cortex-{{ VERSION }}-mac-amd64-local-installer.pkg
+              - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-amd64/cortex-${{ env.VERSION }}-mac-amd64-network-installer.pkg
+              - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-amd64/cortex-${{ env.VERSION }}-mac-amd64-local-installer.pkg
             - macOS Apple Silicon:
-              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-network-installer.pkg
-              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/mac-arm64/cortex-{{ VERSION }}-mac-arm64-local-installer.pkg
+              - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-arm64/cortex-${{ env.VERSION }}-mac-arm64-network-installer.pkg
+              - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-arm64/cortex-${{ env.VERSION }}-mac-arm64-local-installer.pkg
             - Linux Deb:
-              - Network Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-network-installer.deb
-              - Local Installer: https://delta.jan.ai/cortex/v{{ VERSION }}/linux-amd64/cortex-{{ VERSION }}-linux-amd64-local-installer.deb
-            - Github action run: https://github.com/janhq/cortex.cpp/actions/runs/{{ GITHUB_RUN_ID }}
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+              - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
+              - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
+            - Github action run: https://github.com/janhq/cortex.cpp/actions/runs/${{ env.RUNNER_ID }}
