@@ -220,17 +220,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(stop_model_cmd->help());
       return;
     };
-    commands::CmdInfo ci(cml_data_.model_id);
-    std::string model_file =
-        ci.branch == "main" ? ci.model_name : ci.model_name + "-" + ci.branch;
-    config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(
-        file_manager_utils::GetModelsContainerPath().string() + "/" +
-        model_file + ".yaml");
-    commands::ModelStopCmd smc(cml_data_.config.apiServerHost,
-                               std::stoi(cml_data_.config.apiServerPort),
-                               yaml_handler.GetModelConfig());
-    smc.Exec();
+    commands::ModelStopCmd().Exec(cml_data_.config.apiServerHost,
+                                  std::stoi(cml_data_.config.apiServerPort),
+                                  cml_data_.model_id);
   });
 
   auto list_models_cmd =

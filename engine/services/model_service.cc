@@ -223,7 +223,6 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
                                  }}}};
 
   auto on_finished = [&](const DownloadTask& finishedTask) {
-    CLI_LOG("Model " << finishedTask.id << " downloaded successfully!")
     auto gguf_download_item = finishedTask.items[0];
     ParseGguf(gguf_download_item, author);
   };
@@ -240,8 +239,10 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   } else {
     auto result = download_service_.AddDownloadTask(downloadTask, on_finished);
     if (result.has_error()) {
-      CTL_ERR(result.error());
+      // CTL_ERR(result.error());
       return cpp::fail(result.error());
+    } else {
+      CLI_LOG("Model " << model_id << " downloaded successfully!")
     }
     return unique_model_id;
   }
@@ -293,9 +294,10 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
 
   if (result.has_error()) {
     return cpp::fail(result.error());
+  } else {
+    CLI_LOG("Model " << model_id << " downloaded successfully!")
   }
 
-  CLI_LOG("Model " << model_id << " downloaded successfully!")
   return model_id;
 }
 

@@ -74,7 +74,7 @@ cpp::result<void, std::string> DownloadService::AddDownloadTask(
     }
   }
   if (dl_err_msg.has_value()) {
-    CTL_ERR(dl_err_msg.value());
+    // CTL_ERR(dl_err_msg.value());
     return cpp::fail(dl_err_msg.value());
   }
 
@@ -183,6 +183,7 @@ cpp::result<void, std::string> DownloadService::Download(
           CLI_LOG("Resuming download..");
         } else {
           CLI_LOG("Start over..");
+          return cpp::fail("Cancelled Resume download!");
         }
       } else {
         CLI_LOG(download_item.localPath.filename().string()
@@ -194,7 +195,7 @@ cpp::result<void, std::string> DownloadService::Download(
         if (answer == "Y" || answer == "y" || answer.empty()) {
           CLI_LOG("Re-downloading..");
         } else {
-          return {};
+          return cpp::fail("Cancelled Re-download!");
         }
       }
     }
