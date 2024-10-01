@@ -67,7 +67,7 @@ cpp::result<void, std::string> DownloadService::AddDownloadTask(
   std::optional<std::string> dl_err_msg = std::nullopt;
   for (const auto& item : task.items) {
     CLI_LOG("Start downloading: " + item.localPath.filename().string());
-    auto result = Download(task.id, item, true);
+    auto result = Download(task.id, item, true, task.type);
     if (result.has_error()) {
       dl_err_msg = result.error();
       break;
@@ -121,7 +121,7 @@ cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
     std::optional<std::string> dl_err_msg = std::nullopt;
     for (const auto& item : task.items) {
       CTL_INF("Start downloading: " + item.localPath.filename().string());
-      auto result = Download(task.id, item, false);
+      auto result = Download(task.id, item, false, task.type);
       if (result.has_error()) {
         dl_err_msg = result.error();
         break;
@@ -147,7 +147,7 @@ cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
 
 cpp::result<void, std::string> DownloadService::Download(
     const std::string& download_id, const DownloadItem& download_item,
-    bool allow_resume) noexcept {
+    bool allow_resume, std::optional<DownloadType> download_type) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
 
   CURL* curl;
@@ -232,7 +232,9 @@ cpp::result<void, std::string> DownloadService::Download(
 
   fclose(file);
   curl_easy_cleanup(curl);
-  CLI_LOG("Model " << download_id << " downloaded successfully!")
+  if (download_type.has_value() && download_type == DownloadType::Model) {
+    CLI_LOG("Model " << download_id << " downloaded successfully!")
+  }
   return {};
 }
 
