@@ -239,8 +239,10 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   } else {
     auto result = download_service_.AddDownloadTask(downloadTask, on_finished);
     if (result.has_error()) {
-      CTL_ERR(result.error());
+      // CTL_ERR(result.error());
       return cpp::fail(result.error());
+    } else {
+      CLI_LOG("Model " << model_id << " downloaded successfully!")
     }
     return unique_model_id;
   }
@@ -292,6 +294,8 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
 
   if (result.has_error()) {
     return cpp::fail(result.error());
+  } else {
+    CLI_LOG("Model " << model_id << " downloaded successfully!")
   }
 
   return model_id;

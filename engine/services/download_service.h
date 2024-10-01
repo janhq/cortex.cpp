@@ -77,9 +77,9 @@ class DownloadService {
   cpp::result<void, std::string> VerifyDownloadTask(
       DownloadTask& task) const noexcept;
 
-  cpp::result<void, std::string> Download(const std::string& download_id,
-                                          const DownloadItem& download_item,
-                                          bool allow_resume) noexcept;
+  cpp::result<void, std::string> Download(
+      const std::string& download_id, const DownloadItem& download_item,
+      bool allow_resume) noexcept;
 
   curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
 };
