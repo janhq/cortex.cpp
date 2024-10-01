@@ -39,6 +39,13 @@ var
   ResultCode: Integer;
 begin
   ExpandedAppDir := ExpandConstant('{app}');
+
+  // Set the maximum value for the progress bar to 100 (representing 100%)
+  WizardForm.ProgressGauge.Max := 100;
+
+  // Set the progress bar to 80%
+  WizardForm.ProgressGauge.Position := 80;
+  WizardForm.ProgressGauge.Update;
   
   // Add {app} to PATH
   CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
@@ -48,14 +55,27 @@ begin
   WizardForm.StatusLabel.Caption := 'Downloading llama.cpp engine and dependencies ...';
   WizardForm.StatusLabel.Update;
 
+  // Set the progress bar to 85% after adding to PATH
+  WizardForm.ProgressGauge.Position := 85;
+  WizardForm.ProgressGauge.Update;
+
   // Download llamacpp engine by default
   CortexInstallCmd := Format('"%s\cortex.exe" engines install cortex.llamacpp', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Clear the status message after completion
+  // Set the progress bar to 90% after downloading the engine
+  WizardForm.ProgressGauge.Position := 90;
+  WizardForm.ProgressGauge.Update;
+
+  // Clear status message after completion
   WizardForm.StatusLabel.Caption := '';
   WizardForm.StatusLabel.Update;
+
+  // Set the progress bar to 100% after completion
+  WizardForm.ProgressGauge.Position := 100;
+  WizardForm.ProgressGauge.Update;
 end;
+
 
 procedure DeleteCurrentUserCortexFolderAndConfig;
 var
