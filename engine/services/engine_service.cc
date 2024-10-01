@@ -116,7 +116,7 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
   return engines;
 }
 
-cpp::result<void, std::string> EngineService::InstallEngine(
+cpp::result<bool, std::string> EngineService::InstallEngine(
     const std::string& engine, const std::string& version,
     const std::string& src) {
 
@@ -131,7 +131,7 @@ cpp::result<void, std::string> EngineService::InstallEngine(
   }
 }
 
-cpp::result<void, std::string> EngineService::UnzipEngine(
+cpp::result<bool, std::string> EngineService::UnzipEngine(
     const std::string& engine, const std::string& version,
     const std::string& path) {
   bool found_cuda = false;
@@ -193,10 +193,10 @@ cpp::result<void, std::string> EngineService::UnzipEngine(
     return DownloadCuda(engine);
   }
 
-  return {};
+  return true;
 }
 
-cpp::result<void, std::string> EngineService::UninstallEngine(
+cpp::result<bool, std::string> EngineService::UninstallEngine(
     const std::string& engine) {
   auto ecp = file_manager_utils::GetEnginesContainerPath();
   auto engine_path = ecp / engine;
@@ -208,14 +208,14 @@ cpp::result<void, std::string> EngineService::UninstallEngine(
   try {
     std::filesystem::remove_all(engine_path);
     CTL_INF("Engine " << engine << " uninstalled successfully!");
-    return {};
+    return true;
   } catch (const std::exception& e) {
     CTL_ERR("Failed to uninstall engine " << engine << ": " << e.what());
     return cpp::fail("Failed to uninstall engine " + engine + ": " + e.what());
   }
 }
 
-cpp::result<void, std::string> EngineService::DownloadEngine(
+cpp::result<bool, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version) {
   auto get_params = [&engine, &version]() -> std::vector<std::string> {
     if (version == "latest") {
@@ -322,22 +322,22 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
             });
       }
     }
-    return {};
+    return true;
   } else {
     return cpp::fail("Failed to fetch engine release: " + engine);
   }
 }
 
-cpp::result<void, std::string> EngineService::DownloadCuda(
+cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine) {
   if (hw_inf_.sys_inf->os == "mac" || engine == "cortex.onnx") {
     // mac and onnx engine does not require cuda toolkit
-    return {};
+    return true;
   }
 
   if (hw_inf_.cuda_driver_version.empty()) {
     CTL_WRN("No cuda driver, continue with CPU");
-    return {};
+    return true;
   }
   // download cuda toolkit
   const std::string jan_host = "catalog.jan.ai";

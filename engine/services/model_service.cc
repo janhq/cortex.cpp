@@ -242,7 +242,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
     if (result.has_error()) {
       // CTL_ERR(result.error());
       return cpp::fail(result.error());
-    } else {
+    } else if (result && result.value()) {
       CLI_LOG("Model " << model_id << " downloaded successfully!")
     }
     return unique_model_id;
@@ -295,7 +295,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
 
   if (result.has_error()) {
     return cpp::fail(result.error());
-  } else {
+  } else if (result && result.value()) {
     CLI_LOG("Model " << model_id << " downloaded successfully!")
   }
 
@@ -415,7 +415,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
     auto res = cli.Post("/inferences/server/loadmodel", httplib::Headers(),
                         data_str.data(), data_str.size(), "application/json");
     if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {       
+      if (res->status == httplib::StatusCode::OK_200) {
         return true;
       } else {
         CTL_ERR("Model failed to load with status code: " << res->status);
@@ -459,7 +459,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
     auto res = cli.Post("/inferences/server/unloadmodel", httplib::Headers(),
                         data_str.data(), data_str.size(), "application/json");
     if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {        
+      if (res->status == httplib::StatusCode::OK_200) {
         return true;
       } else {
         CTL_ERR("Model failed to unload with status code: " << res->status);

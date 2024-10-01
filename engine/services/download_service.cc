@@ -53,7 +53,7 @@ cpp::result<void, std::string> DownloadService::VerifyDownloadTask(
   return {};
 }
 
-cpp::result<void, std::string> DownloadService::AddDownloadTask(
+cpp::result<bool, std::string> DownloadService::AddDownloadTask(
     DownloadTask& task,
     std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
   auto validating_result = VerifyDownloadTask(task);
@@ -65,12 +65,15 @@ cpp::result<void, std::string> DownloadService::AddDownloadTask(
   // if any item from the task failed to download, the whole task will be
   // considered failed
   std::optional<std::string> dl_err_msg = std::nullopt;
+  bool has_task_done = false;
   for (const auto& item : task.items) {
     CLI_LOG("Start downloading: " + item.localPath.filename().string());
     auto result = Download(task.id, item, true);
     if (result.has_error()) {
       dl_err_msg = result.error();
       break;
+    } else if(result) {
+      has_task_done |= result.value();
     }
   }
   if (dl_err_msg.has_value()) {
@@ -81,7 +84,7 @@ cpp::result<void, std::string> DownloadService::AddDownloadTask(
   if (callback.has_value()) {
     callback.value()(task);
   }
-  return {};
+  return has_task_done;
 }
 
 cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
@@ -109,7 +112,7 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
   return content_length;
 }
 
-cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
+cpp::result<bool, std::string> DownloadService::AddAsyncDownloadTask(
     DownloadTask& task,
     std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
   auto verifying_result = VerifyDownloadTask(task);
@@ -142,10 +145,10 @@ cpp::result<void, std::string> DownloadService::AddAsyncDownloadTask(
   std::thread t(execute_download_async);
   t.detach();
 
-  return {};
+  return true;
 }
 
-cpp::result<void, std::string> DownloadService::Download(
+cpp::result<bool, std::string> DownloadService::Download(
     const std::string& download_id, const DownloadItem& download_item,
     bool allow_resume) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
@@ -182,8 +185,7 @@ cpp::result<void, std::string> DownloadService::Download(
           mode = "ab";
           CLI_LOG("Resuming download..");
         } else {
-          CLI_LOG("Start over..");
-          return cpp::fail("Cancelled Resume download!");
+          CLI_LOG("Start over..");          
         }
       } else {
         CLI_LOG(download_item.localPath.filename().string()
@@ -195,7 +197,7 @@ cpp::result<void, std::string> DownloadService::Download(
         if (answer == "Y" || answer == "y" || answer.empty()) {
           CLI_LOG("Re-downloading..");
         } else {
-          return cpp::fail("Cancelled Re-download!");
+          return false;
         }
       }
     }
@@ -232,7 +234,7 @@ cpp::result<void, std::string> DownloadService::Download(
 
   fclose(file);
   curl_easy_cleanup(curl);
-  return {};
+  return true;
 }
 
 curl_off_t DownloadService::GetLocalFileSize(
