@@ -587,8 +587,8 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.model = name;
   model_config_.id = name;
   model_config_.version = std::to_string(version);
-  model_config_.max_tokens = std::min(kDefaultMaxContextLength, max_tokens);
-  model_config_.ctx_len = std::min(kDefaultMaxContextLength, max_tokens);
+  model_config_.max_tokens = std::min<int>(kDefaultMaxContextLength, max_tokens);
+  model_config_.ctx_len = std::min<int>(kDefaultMaxContextLength, max_tokens);
   model_config_.ngl = ngl;
 }
 
