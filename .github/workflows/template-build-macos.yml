@@ -152,10 +152,11 @@ jobs:
         run: |
           cd engine
           make build CMAKE_EXTRA_FLAGS="${{ inputs.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ inputs.build-deps-cmake-flags }}"
-          - name: Install Python
-          uses: actions/setup-python@v4
-          with:
-            python-version: '3.10' 
+      
+      - name: Install Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10' 
         
       - name: Run e2e tests
         run: |
