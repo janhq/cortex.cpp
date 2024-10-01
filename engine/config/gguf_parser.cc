@@ -12,6 +12,7 @@
 #ifdef _WIN32
 #include <io.h>
 #include <windows.h>
+#include <limits>
 #else
 #include <sys/mman.h>  // For memory-mapped file
 #include <unistd.h>    // For file descriptors
