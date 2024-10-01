@@ -28,6 +28,7 @@
 #endif
 
 void RunServer() {
+  signal(SIGINT, SIG_IGN);
   auto config = file_manager_utils::GetCortexConfig();
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
@@ -82,6 +83,7 @@ void RunServer() {
                             std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
+  drogon::app().disableSigtermHandling();
 
   drogon::app().run();
   // return 0;
