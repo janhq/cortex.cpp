@@ -26,12 +26,14 @@ server::~server() {}
 void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!HasFieldInReq(req, callback, "engine")) {
-    return;
+  std::string engine_type;
+  if (!HasFieldInReq(req, "engine")) {
+    engine_type = kLlamaEngine;
+  } else {
+    engine_type =
+        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
   }
 
-  auto engine_type =
-      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -89,12 +91,14 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!HasFieldInReq(req, callback, "engine")) {
-    return;
+  std::string engine_type;
+  if (!HasFieldInReq(req, "engine")) {
+    engine_type = kLlamaEngine;
+  } else {
+    engine_type =
+        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
   }
 
-  auto engine_type =
-      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -120,12 +124,14 @@ void server::UnloadModel(
 void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!HasFieldInReq(req, callback, "engine")) {
-    return;
+  std::string engine_type;
+  if (!HasFieldInReq(req, "engine")) {
+    engine_type = kLlamaEngine;
+  } else {
+    engine_type =
+        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
   }
 
-  auto engine_type =
-      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -347,8 +353,10 @@ void server::LoadModel(const HttpRequestPtr& req,
     if (engine_type == kLlamaEngine) {  //fix for llamacpp engine first
       auto config = file_manager_utils::GetCortexConfig();
       if (en->IsSupported("SetFileLogger")) {
-        en->SetFileLogger(config.maxLogLines, (std::filesystem::path(config.logFolderPath) /
-                                                  std::filesystem::path(config.logLlamaCppPath)).string());
+        en->SetFileLogger(config.maxLogLines,
+                          (std::filesystem::path(config.logFolderPath) /
+                           std::filesystem::path(config.logLlamaCppPath))
+                              .string());
       } else {
         LOG_WARN << "Method SetFileLogger is not supported yet";
       }
@@ -371,12 +379,14 @@ void server::LoadModel(const HttpRequestPtr& req,
 void server::UnloadEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!HasFieldInReq(req, callback, "engine")) {
-    return;
+  std::string engine_type;
+  if (!HasFieldInReq(req, "engine")) {
+    engine_type = kLlamaEngine;
+  } else {
+    engine_type =
+        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
   }
 
-  auto engine_type =
-      (*(req->getJsonObject())).get("engine", cur_engine_type_).asString();
   if (!IsEngineLoaded(engine_type)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -463,6 +473,14 @@ bool server::HasFieldInReq(
     resp->setStatusCode(k409Conflict);
     callback(resp);
     LOG_WARN << "No " << field << " field in request body";
+    return false;
+  }
+  return true;
+}
+
+bool server::HasFieldInReq(const HttpRequestPtr& req,
+                           const std::string& field) {
+  if (auto o = req->getJsonObject(); !o || (*o)[field].isNull()) {
     return false;
   }
   return true;
