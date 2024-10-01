@@ -226,9 +226,8 @@ void Models::ImportModel(
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(modelHandle + ".yml"))
                                     .string();
-  cortex::db::ModelEntry model_entry{
-      modelHandle,     "local",     "imported",
-      model_yaml_path, modelHandle};
+  cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
+                                     model_yaml_path, modelHandle};
   try {
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -328,6 +327,53 @@ void Models::SetModelAlias(
     ret["message"] = message;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  }
+}
+
+void Models::StartModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!http_util::HasFieldInReq(req, callback, "model"))
+    return;
+  auto config = file_manager_utils::GetCortexConfig();
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto result = model_service_.StartModel(
+      config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["message"] = "Started successfully!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::StopModel(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!http_util::HasFieldInReq(req, callback, "model"))
+    return;
+  auto config = file_manager_utils::GetCortexConfig();
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto result = model_service_.StopModel(
+      config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["message"] = "Started successfully!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
     callback(resp);
   }
 }
