@@ -107,6 +107,8 @@ class server : public drogon::HttpController<server>,
                      std::function<void(const HttpResponsePtr&)>& callback,
                      const std::string& field);
 
+  bool HasFieldInReq(const HttpRequestPtr& req, const std::string& field);
+
  private:
   struct SyncQueue {
     void push(std::pair<Json::Value, Json::Value>&& p) {

@@ -4,10 +4,11 @@
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
 #include "model_status_cmd.h"
+#include "run_cmd.h"
 #include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
-#include "run_cmd.h"
+#include "config/yaml_config.h"
 
 namespace commands {
 namespace {
@@ -39,7 +40,7 @@ struct ChunkParser {
 };
 
 void ChatCompletionCmd::Exec(const std::string& host, int port,
-                   const std::string& model_handle, std::string msg) {
+                             const std::string& model_handle, std::string msg) {
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
@@ -50,7 +51,7 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
     }
     yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
     auto mc = yaml_handler.GetModelConfig();
-    Exec(host, port, mc, std::move(msg));
+    Exec(host, port, model_handle, mc, std::move(msg));
   } catch (const std::exception& e) {
     CLI_LOG("Fail to start model information with ID '" + model_handle +
             "': " + e.what());
@@ -58,7 +59,8 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
 }
 
 void ChatCompletionCmd::Exec(const std::string& host, int port,
-                   const config::ModelConfig& mc, std::string msg) {
+                             const std::string& model_handle,
+                             const config::ModelConfig& mc, std::string msg) {
   auto address = host + ":" + std::to_string(port);
   // Check if server is started
   {
@@ -71,7 +73,7 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
 
   // Only check if llamacpp engine
   if ((mc.engine.find("llamacpp") != std::string::npos) &&
-      !commands::ModelStatusCmd().IsLoaded(host, port, mc)) {
+      !commands::ModelStatusCmd().IsLoaded(host, port, model_handle)) {
     CLI_LOG("Model is not loaded yet!");
     return;
   }
@@ -104,7 +106,7 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
         histories_.push_back(std::move(new_data));
         json_data["engine"] = mc.engine;
         json_data["messages"] = histories_;
-        json_data["model"] = mc.name;
+        json_data["model"] = model_handle;
         //TODO: support non-stream
         json_data["stream"] = true;
         json_data["stop"] = mc.stop;
