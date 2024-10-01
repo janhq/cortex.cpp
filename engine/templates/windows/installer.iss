@@ -50,7 +50,7 @@ begin
 
   // Download llamacpp engine by default
   CortexInstallCmd := Format('"%s\cortex.exe" engines install cortex.llamacpp', [ExpandedAppDir]);
-  Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_SHOW, ewWaitUntilTerminated, ResultCode);
+  Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Clear the status message after completion
   WizardForm.StatusLabel.Caption := '';
