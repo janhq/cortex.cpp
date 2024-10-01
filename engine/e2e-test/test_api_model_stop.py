@@ -1,10 +1,9 @@
 import pytest
 import requests
-from test_runner import popen, run
 from test_runner import start_server, stop_server
 
 
-class TestApiModelDelete:
+class TestApiModelStop:
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
@@ -18,6 +17,9 @@ class TestApiModelDelete:
         # Teardown
         stop_server()
 
-    def test_models_delete_should_be_successful(self):
-        response = requests.delete("http://localhost:3928/models/tinyllama:gguf")
+    def test_models_stop_should_be_successful(self):
+        json_body = {"model": "tinyllama:gguf"}
+        response = requests.post("http://localhost:3928/models/start", json = json_body)
+        assert response.status_code == 200
+        response = requests.post("http://localhost:3928/models/stop", json = json_body)
         assert response.status_code == 200

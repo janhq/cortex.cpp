@@ -1,10 +1,10 @@
 import pytest
 import requests
-from test_runner import popen, run
+from test_runner import popen
 from test_runner import start_server, stop_server
 
 
-class TestApiModelDelete:
+class TestApiModelStart:
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
@@ -13,11 +13,15 @@ class TestApiModelDelete:
         if not success:
             raise Exception("Failed to start server")
 
+        # TODO: using pull with branch for easy testing tinyllama:gguf for example
+        popen(["pull", "tinyllama"], "1\n")
+
         yield
 
         # Teardown
         stop_server()
 
-    def test_models_delete_should_be_successful(self):
-        response = requests.delete("http://localhost:3928/models/tinyllama:gguf")
+    def test_models_start_should_be_successful(self):
+        json_body = {"model": "tinyllama:gguf"}
+        response = requests.post("http://localhost:3928/models/start", json = json_body)
         assert response.status_code == 200
