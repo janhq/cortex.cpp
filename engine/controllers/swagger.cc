@@ -61,7 +61,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
   // Engines endpoints
   // Install Engine
   {
-    Json::Value& path = spec["paths"]["/engines/{engine}/install"]["post"];
+    Json::Value& path = spec["paths"]["/engines/install/{engine}"]["post"];
     path["summary"] = "Install an engine";
     path["parameters"][0]["name"] = "engine";
     path["parameters"][0]["in"] = "path";
@@ -191,32 +191,39 @@ Json::Value SwaggerController::generateOpenAPISpec() {
         "Failed to get list model information";
 
     // GetModel
-    Json::Value& get = spec["paths"]["/models/get"]["post"];
+    Json::Value& get = spec["paths"]["/models/{model}"]["get"];
     get["summary"] = "Get model details";
-    get["requestBody"]["content"]["application/json"]["schema"]["type"] =
+    get["parameters"][0]["name"] = "model";
+    get["parameters"][0]["in"] = "path";
+    get["parameters"][0]["required"] = true;
+    get["parameters"][0]["schema"]["type"] = "string";
+
+    Json::Value& responses = get["responses"];
+    responses["200"]["description"] = "Model details retrieved successfully";
+    Json::Value& schema =
+        responses["200"]["content"]["application/json"]["schema"];
+    responses["responses"]["400"]["description"] = "Failed to get model information";
+
+    responses["400"]["description"] = "Failed to get model information";
+    responses["400"]["content"]["application/json"]["schema"]["type"] =
         "object";
-    get["requestBody"]["content"]["application/json"]["schema"]["properties"]
-       ["model"]["type"] = "string";
-    get["requestBody"]["content"]["application/json"]["schema"]["required"] =
-        Json::Value(Json::arrayValue);
-    get["requestBody"]["content"]["application/json"]["schema"]["required"]
-        .append("model");
-    get["responses"]["200"]["description"] =
-        "Model details retrieved successfully";
-    get["responses"]["400"]["description"] = "Failed to get model information";
+    responses["400"]["content"]["application/json"]["schema"]["properties"]
+             ["message"]["type"] = "string";
 
     // UpdateModel Endpoint
-    Json::Value& update = spec["paths"]["/models/update"]["post"];
+    Json::Value& update = spec["paths"]["/models/{model}"]["post"];
     update["summary"] = "Update model details";
     update["description"] =
         "Update various attributes of a model based on the ModelConfig "
         "structure";
+    update["parameters"][0]["name"] = "model";
+    update["parameters"][0]["in"] = "path";
+    update["parameters"][0]["required"] = true;
+    update["parameters"][0]["schema"]["type"] = "string";
 
     Json::Value& updateSchema =
         update["requestBody"]["content"]["application/json"]["schema"];
     updateSchema["type"] = "object";
-    updateSchema["required"] = Json::Value(Json::arrayValue);
-    updateSchema["required"].append("model");
 
     Json::Value& properties = updateSchema["properties"];
     properties["model"]["type"] = "string";
@@ -409,9 +416,9 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     import["responses"]["400"]["description"] = "Failed to import model";
 
     // DeleteModel
-    Json::Value& del = spec["paths"]["/models/{model_id}"]["delete"];
+    Json::Value& del = spec["paths"]["/models/{model}"]["delete"];
     del["summary"] = "Delete a model";
-    del["parameters"][0]["name"] = "model_id";
+    del["parameters"][0]["name"] = "model";
     del["parameters"][0]["in"] = "path";
     del["parameters"][0]["required"] = true;
     del["parameters"][0]["schema"]["type"] = "string";
@@ -435,6 +442,34 @@ Json::Value SwaggerController::generateOpenAPISpec() {
         .append("modelAlias");
     alias["responses"]["200"]["description"] = "Model alias set successfully";
     alias["responses"]["400"]["description"] = "Failed to set model alias";
+
+    // Start Model
+    Json::Value& start = spec["paths"]["/models/start"]["post"];
+    start["summary"] = "Start model";
+    start["requestBody"]["content"]["application/json"]["schema"]["type"] =
+        "object";
+    start["requestBody"]["content"]["application/json"]["schema"]["properties"]
+         ["model"]["type"] = "string";
+    start["requestBody"]["content"]["application/json"]["schema"]["required"] =
+        Json::Value(Json::arrayValue);
+    start["requestBody"]["content"]["application/json"]["schema"]["required"]
+        .append("model");
+    start["responses"]["200"]["description"] = "Start model successfully";
+    start["responses"]["400"]["description"] = "Failed to start model";
+
+    // Stop Model
+   Json::Value& stop = spec["paths"]["/models/stop"]["post"];
+    stop["summary"] = "Stop model";
+    stop["requestBody"]["content"]["application/json"]["schema"]["type"] =
+        "object";
+    stop["requestBody"]["content"]["application/json"]["schema"]["properties"]
+         ["model"]["type"] = "string";
+    stop["requestBody"]["content"]["application/json"]["schema"]["required"] =
+        Json::Value(Json::arrayValue);
+    stop["requestBody"]["content"]["application/json"]["schema"]["required"]
+        .append("model");
+    stop["responses"]["200"]["description"] = "Stop model successfully";
+    stop["responses"]["400"]["description"] = "Failed to stop model";
   }
 
   // OpenAI Compatible Endpoints

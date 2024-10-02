@@ -382,7 +382,7 @@ void Models::StopModel(const HttpRequestPtr& req,
     callback(resp);
   } else {
     Json::Value ret;
-    ret["message"] = "Started successfully!";
+    ret["message"] = "Stopped successfully!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
