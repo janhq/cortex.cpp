@@ -276,7 +276,28 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
                              const std::string& comment = "") {
       if (!value)
         return;
-      outFile << key << ": " << value;
+      outFile << key << ": ";
+      
+      // Check if the value is a float and round it to 6 decimal places
+      if (value.IsScalar()) {
+        try {
+          double doubleValue = value.as<double>();
+          std::ostringstream oss;
+          oss << std::fixed << std::setprecision(6) << doubleValue;
+          std::string strValue = oss.str();
+          // Remove trailing zeros after the decimal point
+          strValue.erase(strValue.find_last_not_of('0') + 1, std::string::npos);
+          if (strValue.back() == '.') {
+            strValue.pop_back();
+          }
+          outFile << strValue;
+        } catch (...) {
+          outFile << value;  // If not a float, write as is
+        }
+      } else {
+        outFile << value;
+      }
+      
       if (!comment.empty()) {
         outFile << " # " << comment;
       }
@@ -358,9 +379,7 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
                   "llama.context_length | 0 or undefined = loaded from model");
     writeKeyValue("ngl", yaml_node_["ngl"], "Undefined = loaded from model");
     outFile << "# END OPTIONAL\n";
-    outFile << "# END MODEL LOAD PARAMETERS\n";
-
-    // Write new configuration parameters
+    outFile << "# END MODEL LOAD PARAMETERS\n";    
 
     outFile.close();
   } catch (const std::exception& e) {
