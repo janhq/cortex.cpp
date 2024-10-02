@@ -447,7 +447,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
                        .localPath = localPath,
                    }}};
 
-  DownloadService().AddDownloadTask(
+  auto res = DownloadService().AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
         CTL_INF("Downloaded engine path: "
@@ -461,6 +461,11 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
         CTL_INF("Finished!");
       });
+
+  if (res.has_error()) {
+    CLI_LOG("Download failed: " << res.error());
+    return false;
+  }
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
