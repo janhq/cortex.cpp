@@ -216,6 +216,9 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
 
 cpp::result<bool, std::string> Models::UpdateModelEntry(
     const std::string& identifier, const ModelEntry& updated_entry) {
+  if (!HasModel(identifier)) {
+    return cpp::fail("Model not found: " + identifier);
+  }
   try {
     SQLite::Statement upd(db_,
                           "UPDATE models "
@@ -235,6 +238,9 @@ cpp::result<bool, std::string> Models::UpdateModelEntry(
 
 cpp::result<bool, std::string> Models::UpdateModelAlias(
     const std::string& model_id, const std::string& new_model_alias) {
+  if (!HasModel(model_id)) {
+    return cpp::fail("Model not found: " + model_id);
+  }
   try {
     db_.exec("BEGIN TRANSACTION;");
     utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
