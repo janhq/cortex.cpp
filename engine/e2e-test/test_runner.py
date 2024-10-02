@@ -79,7 +79,7 @@ def start_server_nix() -> bool:
     start_time = time.time()
     while time.time() - start_time < timeout:
         # Use select to check if there's data to read from stdout or stderr
-        readable, _, _ = select.select([process.stdout, process.stderr], [], [], 3.0)
+        readable, _, _ = select.select([process.stdout, process.stderr], [], [], 0.1)
 
         for stream in readable:
             line = stream.readline()
