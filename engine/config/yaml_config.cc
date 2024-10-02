@@ -5,8 +5,8 @@
 #include <string>
 using namespace std;
 
+#include "utils/format_utils.h"
 #include "yaml_config.h"
-
 namespace config {
 // Method to read YAML file
 void YamlHandler::Reset() {
@@ -271,27 +271,20 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     if (!outFile) {
       throw std::runtime_error("Failed to open output file.");
     }
-    // Helper function to write a key-value pair with an optional comment
-    auto writeKeyValue = [&](const std::string& key, const YAML::Node& value,
-                             const std::string& comment = "") {
-      if (!value)
-        return;
-      outFile << key << ": " << value;
-      if (!comment.empty()) {
-        outFile << " # " << comment;
-      }
-      outFile << "\n";
-    };
-
     // Write GENERAL GGUF METADATA
     outFile << "# BEGIN GENERAL GGUF METADATA\n";
-    writeKeyValue("id", yaml_node_["id"],
-                  "Model ID unique between models (author / quantization)");
-    writeKeyValue("model", yaml_node_["model"],
-                  "Model ID which is used for request construct - should be "
-                  "unique between models (author / quantization)");
-    writeKeyValue("name", yaml_node_["name"], "metadata.general.name");
-    writeKeyValue("version", yaml_node_["version"], "metadata.version");
+    outFile << format_utils::writeKeyValue(
+        "id", yaml_node_["id"],
+        "Model ID unique between models (author / quantization)");
+    outFile << format_utils::writeKeyValue(
+        "model", yaml_node_["model"],
+        "Model ID which is used for request construct - should be "
+        "unique between models (author / quantization)");
+    outFile << format_utils::writeKeyValue("name", yaml_node_["name"],
+                                           "metadata.general.name");
+    if (yaml_node_["version"]) {
+      outFile << "version: " << yaml_node_["version"].as<std::string>() << "\n";
+    }
     if (yaml_node_["files"] && yaml_node_["files"].size()) {
       outFile << "files:             # can be universal protocol (models://) "
                  "OR absolute local file path (file://) OR https remote URL "
@@ -316,51 +309,64 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     outFile << "# END REQUIRED\n";
     outFile << "\n";
     outFile << "# BEGIN OPTIONAL\n";
-    writeKeyValue("stream", yaml_node_["stream"], "Default true?");
-    writeKeyValue("top_p", yaml_node_["top_p"], "Ranges: 0 to 1");
-    writeKeyValue("temperature", yaml_node_["temperature"], "Ranges: 0 to 1");
-    writeKeyValue("frequency_penalty", yaml_node_["frequency_penalty"],
-                  "Ranges: 0 to 1");
-    writeKeyValue("presence_penalty", yaml_node_["presence_penalty"],
-                  "Ranges: 0 to 1");
-    writeKeyValue("max_tokens", yaml_node_["max_tokens"],
-                  "Should be default to context length");
-    writeKeyValue("seed", yaml_node_["seed"]);
-    writeKeyValue("dynatemp_range", yaml_node_["dynatemp_range"]);
-    writeKeyValue("dynatemp_exponent", yaml_node_["dynatemp_exponent"]);
-    writeKeyValue("top_k", yaml_node_["top_k"]);
-    writeKeyValue("min_p", yaml_node_["min_p"]);
-    writeKeyValue("tfs_z", yaml_node_["tfs_z"]);
-    writeKeyValue("typ_p", yaml_node_["typ_p"]);
-    writeKeyValue("repeat_last_n", yaml_node_["repeat_last_n"]);
-    writeKeyValue("repeat_penalty", yaml_node_["repeat_penalty"]);
-    writeKeyValue("mirostat", yaml_node_["mirostat"]);
-    writeKeyValue("mirostat_tau", yaml_node_["mirostat_tau"]);
-    writeKeyValue("mirostat_eta", yaml_node_["mirostat_eta"]);
-    writeKeyValue("penalize_nl", yaml_node_["penalize_nl"]);
-    writeKeyValue("ignore_eos", yaml_node_["ignore_eos"]);
-    writeKeyValue("n_probs", yaml_node_["n_probs"]);
-    writeKeyValue("min_keep", yaml_node_["min_keep"]);
-    writeKeyValue("grammar", yaml_node_["grammar"]);
+    outFile << format_utils::writeKeyValue("stream", yaml_node_["stream"],
+                                           "Default true?");
+    outFile << format_utils::writeKeyValue("top_p", yaml_node_["top_p"],
+                                           "Ranges: 0 to 1");
+    outFile << format_utils::writeKeyValue(
+        "temperature", yaml_node_["temperature"], "Ranges: 0 to 1");
+    outFile << format_utils::writeKeyValue(
+        "frequency_penalty", yaml_node_["frequency_penalty"], "Ranges: 0 to 1");
+    outFile << format_utils::writeKeyValue(
+        "presence_penalty", yaml_node_["presence_penalty"], "Ranges: 0 to 1");
+    outFile << format_utils::writeKeyValue(
+        "max_tokens", yaml_node_["max_tokens"],
+        "Should be default to context length");
+    outFile << format_utils::writeKeyValue("seed", yaml_node_["seed"]);
+    outFile << format_utils::writeKeyValue("dynatemp_range",
+                                           yaml_node_["dynatemp_range"]);
+    outFile << format_utils::writeKeyValue("dynatemp_exponent",
+                                           yaml_node_["dynatemp_exponent"]);
+    outFile << format_utils::writeKeyValue("top_k", yaml_node_["top_k"]);
+    outFile << format_utils::writeKeyValue("min_p", yaml_node_["min_p"]);
+    outFile << format_utils::writeKeyValue("tfs_z", yaml_node_["tfs_z"]);
+    outFile << format_utils::writeKeyValue("typ_p", yaml_node_["typ_p"]);
+    outFile << format_utils::writeKeyValue("repeat_last_n",
+                                           yaml_node_["repeat_last_n"]);
+    outFile << format_utils::writeKeyValue("repeat_penalty",
+                                           yaml_node_["repeat_penalty"]);
+    outFile << format_utils::writeKeyValue("mirostat", yaml_node_["mirostat"]);
+    outFile << format_utils::writeKeyValue("mirostat_tau",
+                                           yaml_node_["mirostat_tau"]);
+    outFile << format_utils::writeKeyValue("mirostat_eta",
+                                           yaml_node_["mirostat_eta"]);
+    outFile << format_utils::writeKeyValue("penalize_nl",
+                                           yaml_node_["penalize_nl"]);
+    outFile << format_utils::writeKeyValue("ignore_eos",
+                                           yaml_node_["ignore_eos"]);
+    outFile << format_utils::writeKeyValue("n_probs", yaml_node_["n_probs"]);
+    outFile << format_utils::writeKeyValue("min_keep", yaml_node_["min_keep"]);
+    outFile << format_utils::writeKeyValue("grammar", yaml_node_["grammar"]);
     outFile << "# END OPTIONAL\n";
     outFile << "# END INFERENCE PARAMETERS\n";
     outFile << "\n";
     // Write MODEL LOAD PARAMETERS
     outFile << "# BEGIN MODEL LOAD PARAMETERS\n";
     outFile << "# BEGIN REQUIRED\n";
-    writeKeyValue("engine", yaml_node_["engine"], "engine to run model");
+    outFile << format_utils::writeKeyValue("engine", yaml_node_["engine"],
+                                           "engine to run model");
     outFile << "prompt_template:";
     outFile << " " << yaml_node_["prompt_template"] << "\n";
     outFile << "# END REQUIRED\n";
     outFile << "\n";
     outFile << "# BEGIN OPTIONAL\n";
-    writeKeyValue("ctx_len", yaml_node_["ctx_len"],
-                  "llama.context_length | 0 or undefined = loaded from model");
-    writeKeyValue("ngl", yaml_node_["ngl"], "Undefined = loaded from model");
+    outFile << format_utils::writeKeyValue(
+        "ctx_len", yaml_node_["ctx_len"],
+        "llama.context_length | 0 or undefined = loaded from model");
+    outFile << format_utils::writeKeyValue("ngl", yaml_node_["ngl"],
+                                           "Undefined = loaded from model");
     outFile << "# END OPTIONAL\n";
     outFile << "# END MODEL LOAD PARAMETERS\n";
-
-    // Write new configuration parameters
 
     outFile.close();
   } catch (const std::exception& e) {
