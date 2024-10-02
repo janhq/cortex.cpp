@@ -1,6 +1,7 @@
 #include "model_service.h"
 #include <filesystem>
 #include <iostream>
+#include <optional>
 #include <ostream>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
@@ -58,8 +59,7 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   httplib::Client cli(url.GetProtocolAndHost());
   auto res = cli.Get(url.GetPathAndQuery());
   if (res->status != httplib::StatusCode::OK_200) {
-    auto err = res.error();
-    return cpp::fail("HTTP error: " + httplib::to_string(err));
+    return cpp::fail("Model " + modelId + " not found");
   }
   auto jsonResponse = json::parse(res->body);
 
@@ -103,7 +103,6 @@ cpp::result<std::string, std::string> ModelService::DownloadModel(
   }
 
   if (string_utils::StartsWith(input, "https://")) {
-    // TODO: better name, for example handle url
     return HandleUrl(input, async);
   }
 
@@ -195,13 +194,27 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   auto file_name{url_obj.pathParams.back()};
 
   if (author == "cortexso") {
-    // TODO: try to get the branch
     return DownloadModelFromCortexso(model_id);
   }
 
+  if (url_obj.pathParams.size() < 5) {
+    if (url_obj.pathParams.size() < 2) {
+      return cpp::fail("Invalid url: " + url);
+    }
+    return DownloadHuggingFaceGgufModel(author, model_id, std::nullopt, async);
+  }
+
   std::string huggingFaceHost{kHuggingFaceHost};
-  std::string unique_model_id{huggingFaceHost + "/" + author + "/" + model_id +
-                              "/" + file_name};
+  std::string unique_model_id{author + ":" + model_id + ":" + file_name};
+
+  cortex::db::Models modellist_handler;
+  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
+
+  if (model_entry.has_value()) {
+    CLI_LOG("Model already downloaded: " << unique_model_id);
+    return cpp::fail("Please delete the model before downloading again");
+  }
+
   auto local_path{file_manager_utils::GetModelsContainerPath() /
                   "huggingface.co" / author / model_id / file_name};
 
@@ -240,7 +253,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   } else {
     auto result = download_service_.AddDownloadTask(downloadTask, on_finished);
     if (result.has_error()) {
-      // CTL_ERR(result.error());
+      CTL_ERR(result.error());
       return cpp::fail(result.error());
     } else if (result && result.value()) {
       CLI_LOG("Model " << model_id << " downloaded successfully!")
