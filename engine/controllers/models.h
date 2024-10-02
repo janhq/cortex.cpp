@@ -31,13 +31,13 @@ class Models : public drogon::HttpController<Models> {
                 const std::string& model_handle) const;
   void UpdateModel(const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback,
-                   const std::string& model_id) const;
+                   const std::string& model_handle) const;
   void ImportModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) const;
   void DeleteModel(const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback,
-                   const std::string& model_id);
+                   const std::string& model_handle);
   void SetModelAlias(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) const;

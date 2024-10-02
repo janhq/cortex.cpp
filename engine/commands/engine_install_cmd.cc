@@ -9,7 +9,7 @@ void EngineInstallCmd::Exec(const std::string& engine,
   auto result = engine_service_.InstallEngine(engine, version, src);
   if (result.has_error()) {
     CLI_LOG(result.error());
-  } else {
+  } else if(result && result.value()){
     CLI_LOG("Engine " << engine << " installed successfully!");
   }
 }
