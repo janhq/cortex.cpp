@@ -174,11 +174,11 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     pull["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
     pull["requestBody"]["content"]["application/json"]["schema"]["properties"]
-        ["modelId"]["type"] = "string";
+        ["model"]["type"] = "string";
     pull["requestBody"]["content"]["application/json"]["schema"]["required"] =
         Json::Value(Json::arrayValue);
     pull["requestBody"]["content"]["application/json"]["schema"]["required"]
-        .append("modelId");
+        .append("model");
     pull["responses"]["200"]["description"] = "Model start downloading";
     pull["responses"]["400"]["description"] = "Bad request";
 
@@ -196,11 +196,11 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     get["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
     get["requestBody"]["content"]["application/json"]["schema"]["properties"]
-       ["modelId"]["type"] = "string";
+       ["model"]["type"] = "string";
     get["requestBody"]["content"]["application/json"]["schema"]["required"] =
         Json::Value(Json::arrayValue);
     get["requestBody"]["content"]["application/json"]["schema"]["required"]
-        .append("modelId");
+        .append("model");
     get["responses"]["200"]["description"] =
         "Model details retrieved successfully";
     get["responses"]["400"]["description"] = "Failed to get model information";
@@ -216,11 +216,11 @@ Json::Value SwaggerController::generateOpenAPISpec() {
         update["requestBody"]["content"]["application/json"]["schema"];
     updateSchema["type"] = "object";
     updateSchema["required"] = Json::Value(Json::arrayValue);
-    updateSchema["required"].append("modelId");
+    updateSchema["required"].append("model");
 
     Json::Value& properties = updateSchema["properties"];
-    properties["modelId"]["type"] = "string";
-    properties["modelId"]["description"] =
+    properties["model"]["type"] = "string";
+    properties["model"]["description"] =
         "Unique identifier for the model (cannot be updated)";
 
     properties["name"]["type"] = "string";
@@ -396,13 +396,13 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     import["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
     import["requestBody"]["content"]["application/json"]["schema"]["properties"]
-          ["modelId"]["type"] = "string";
+          ["model"]["type"] = "string";
     import["requestBody"]["content"]["application/json"]["schema"]["properties"]
           ["modelPath"]["type"] = "string";
     import["requestBody"]["content"]["application/json"]["schema"]["required"] =
         Json::Value(Json::arrayValue);
     import["requestBody"]["content"]["application/json"]["schema"]["required"]
-        .append("modelId");
+        .append("model");
     import["requestBody"]["content"]["application/json"]["schema"]["required"]
         .append("modelPath");
     import["responses"]["200"]["description"] = "Model imported successfully";
@@ -424,13 +424,13 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     alias["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
     alias["requestBody"]["content"]["application/json"]["schema"]["properties"]
-         ["modelId"]["type"] = "string";
+         ["model"]["type"] = "string";
     alias["requestBody"]["content"]["application/json"]["schema"]["properties"]
          ["modelAlias"]["type"] = "string";
     alias["requestBody"]["content"]["application/json"]["schema"]["required"] =
         Json::Value(Json::arrayValue);
     alias["requestBody"]["content"]["application/json"]["schema"]["required"]
-        .append("modelId");
+        .append("model");
     alias["requestBody"]["content"]["application/json"]["schema"]["required"]
         .append("modelAlias");
     alias["responses"]["200"]["description"] = "Model alias set successfully";

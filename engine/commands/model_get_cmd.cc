@@ -3,7 +3,6 @@
 #include <iomanip>
 #include <iostream>
 #include <vector>
-#include "cmd_info.h"
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "utils/file_manager_utils.h"

@@ -18,7 +18,7 @@ class TestApiModelAlias:
         stop_server()
 
     def test_models_set_alias_should_be_successful(self):
-        body_json = {'modelId': 'tinyllama:gguf',
+        body_json = {'model': 'tinyllama:gguf',
                      'modelAlias': 'tg'}
         response = requests.post("http://localhost:3928/models/alias", json = body_json)        
         assert response.status_code == 200

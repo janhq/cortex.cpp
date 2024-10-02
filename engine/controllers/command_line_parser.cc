@@ -1,7 +1,6 @@
 #include "command_line_parser.h"
 #include "commands/chat_cmd.h"
 #include "commands/chat_completion_cmd.h"
-#include "commands/cmd_info.h"
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
 #include "commands/engine_install_cmd.h"

@@ -18,6 +18,6 @@ class TestApiModelUpdate:
         stop_server()
 
     def test_models_update_should_be_successful(self):
-        body_json = {'modelId': 'tinyllama:gguf'}
+        body_json = {'model': 'tinyllama:gguf'}
         response = requests.post("http://localhost:3928/models/tinyllama:gguf", json = body_json)        
         assert response.status_code == 200

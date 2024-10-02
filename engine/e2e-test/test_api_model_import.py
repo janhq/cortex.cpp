@@ -16,7 +16,7 @@ class TestApiModelImport:
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
     def test_model_import_should_be_success(self):
-        body_json = {'modelId': 'tinyllama:gguf',
+        body_json = {'model': 'tinyllama:gguf',
                      'modelPath': '/path/to/local/gguf'}
         response = requests.post("http://localhost:3928/models/import", json = body_json)              
         assert response.status_code == 200      
