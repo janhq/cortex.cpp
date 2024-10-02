@@ -23,9 +23,9 @@ class ModelsTestSuite : public ::testing::Test {
   SQLite::Database db_;
   cortex::db::Models model_list_;
 
-  const cortex::db::ModelEntry kTestModel{
-      "test_model_id",       "test_author", "main",
-      "/path/to/model.yaml", "test_alias"};
+  const cortex::db::ModelEntry kTestModel{"test_model_id", "test_author",
+                                          "main", "/path/to/model.yaml",
+                                          "test_alias"};
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {
@@ -131,8 +131,8 @@ TEST_F(ModelsTestSuite, TestUpdateModelAlias) {
   EXPECT_EQ(updated_model.value().model_id, kTestModel.model_id);
 
   // Test update with non-existent model
-  EXPECT_FALSE(
-      model_list_.UpdateModelAlias(kNonExistentModel, kAnotherAlias).value());
+  EXPECT_TRUE(model_list_.UpdateModelAlias(kNonExistentModel, kAnotherAlias)
+                  .has_error());
 
   // Test update with non-unique alias
   cortex::db::ModelEntry another_model = kTestModel;
