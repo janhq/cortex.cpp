@@ -24,4 +24,8 @@ class TestCreateLogFolder:
 
     def test_create_log_folder_run_successfully(self):
         root = Path.home()
-        assert os.path.exists(root / "cortexcpp" / "logs")
+        assert (
+            os.path.exists(root / "cortexcpp" / "logs")
+            or os.path.exists(root / "cortexcpp-beta" / "logs")
+            or os.path.exists(root / "cortexcpp-nightly" / "logs")
+        )
