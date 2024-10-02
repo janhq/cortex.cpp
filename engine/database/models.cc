@@ -51,8 +51,8 @@ bool Models::IsUnique(const std::vector<ModelEntry>& entries,
                       const std::string& model_alias) const {
   return std::none_of(
       entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return entry.model_id == model_id || entry.model_alias == model_id ||
-               entry.model_id == model_alias ||
+        return entry.model == model_id || entry.model_alias == model_id ||
+               entry.model == model_alias ||
                entry.model_alias == model_alias;
       });
 }
@@ -67,7 +67,7 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
 
     while (query.executeStep()) {
       ModelEntry entry;
-      entry.model_id = query.getColumn(0).getString();
+      entry.model = query.getColumn(0).getString();
       entry.author_repo_id = query.getColumn(1).getString();
       entry.branch_name = query.getColumn(2).getString();
       entry.path_to_model_yaml = query.getColumn(3).getString();
@@ -153,7 +153,7 @@ cpp::result<ModelEntry, std::string> Models::GetModelInfo(
     query.bind(2, identifier);
     if (query.executeStep()) {
       ModelEntry entry;
-      entry.model_id = query.getColumn(0).getString();
+      entry.model = query.getColumn(0).getString();
       entry.author_repo_id = query.getColumn(1).getString();
       entry.branch_name = query.getColumn(2).getString();
       entry.path_to_model_yaml = query.getColumn(3).getString();
@@ -168,7 +168,7 @@ cpp::result<ModelEntry, std::string> Models::GetModelInfo(
 }
 
 void Models::PrintModelInfo(const ModelEntry& entry) const {
-  LOG_INFO << "Model ID: " << entry.model_id;
+  LOG_INFO << "Model ID: " << entry.model;
   LOG_INFO << "Author/Repo ID: " << entry.author_repo_id;
   LOG_INFO << "Branch Name: " << entry.branch_name;
   LOG_INFO << "Path to model.yaml: " << entry.path_to_model_yaml;
@@ -186,11 +186,11 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
       std::cout << "Test: " << model_list.error();
       return cpp::fail(model_list.error());
     }
-    if (IsUnique(model_list.value(), new_entry.model_id,
+    if (IsUnique(model_list.value(), new_entry.model,
                  new_entry.model_alias)) {
       if (use_short_alias) {
         new_entry.model_alias =
-            GenerateShortenedAlias(new_entry.model_id, model_list.value());
+            GenerateShortenedAlias(new_entry.model, model_list.value());
       }
 
       SQLite::Statement insert(
@@ -198,7 +198,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
           "INSERT INTO models (model_id, author_repo_id, "
           "branch_name, path_to_model_yaml, model_alias) VALUES (?, ?, "
           "?, ?, ?)");
-      insert.bind(1, new_entry.model_id);
+      insert.bind(1, new_entry.model);
       insert.bind(2, new_entry.author_repo_id);
       insert.bind(3, new_entry.branch_name);
       insert.bind(4, new_entry.path_to_model_yaml);

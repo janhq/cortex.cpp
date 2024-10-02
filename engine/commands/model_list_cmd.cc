@@ -31,7 +31,7 @@ void ModelListCmd::Exec() {
       count += 1;
       yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
       auto model_config = yaml_handler.GetModelConfig();
-      table.add_row({std::to_string(count), model_entry.model_id,
+      table.add_row({std::to_string(count), model_entry.model,
                      model_entry.model_alias, model_config.engine,
                      model_config.version});
       yaml_handler.Reset();

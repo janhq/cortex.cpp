@@ -8,7 +8,7 @@
 
 namespace cortex::db {
 struct ModelEntry {
-  std::string model_id;
+  std::string model;
   std::string author_repo_id;
   std::string branch_name;
   std::string path_to_model_yaml;
