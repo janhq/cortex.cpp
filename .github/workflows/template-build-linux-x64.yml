@@ -135,12 +135,12 @@ jobs:
           
       - name: Run e2e tests
         run: |
+          cd engine
           cp build/cortex build/cortex-nightly
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install pytest
-          python -m pip install requests
-          cd engine
+          python -m pip install requests          
           python e2e-test/main.py
           rm build/cortex-nightly
           rm build/cortex-beta
