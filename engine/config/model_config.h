@@ -264,12 +264,19 @@ struct ModelConfig {
       print_kv(key, value ? "true" : "false", MAGENTA);
     };
 
-    // Helper function to print float values with fixed precision
+    // Updated helper function to print float values with fixed precision
     auto print_float = [&print_kv, &BLUE](const std::string& key, float value) {
       if (!std::isnan(value)) {
         std::ostringstream float_oss;
-        float_oss << std::fixed << std::setprecision(9) << value;
-        print_kv(key, float_oss.str(), BLUE);
+        float_oss << std::fixed << std::setprecision(6) << value;
+        std::string str_value = float_oss.str();
+        // Remove trailing zeros
+        str_value.erase(str_value.find_last_not_of('0') + 1, std::string::npos);
+        // Remove trailing dot if present
+        if (str_value.back() == '.') {
+          str_value.pop_back();
+        }
+        print_kv(key, str_value, BLUE);
       }
     };
 

@@ -312,7 +312,9 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
                   "Model ID which is used for request construct - should be "
                   "unique between models (author / quantization)");
     writeKeyValue("name", yaml_node_["name"], "metadata.general.name");
-    writeKeyValue("version", yaml_node_["version"], "metadata.version");
+    if(yaml_node_["version"]){
+      outFile<<"version: "<<yaml_node_["version"].as<std::string>()<<"\n";
+    }
     if (yaml_node_["files"] && yaml_node_["files"].size()) {
       outFile << "files:             # can be universal protocol (models://) "
                  "OR absolute local file path (file://) OR https remote URL "
