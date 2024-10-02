@@ -217,6 +217,10 @@ cpp::result<bool, std::string> EngineService::UninstallEngine(
 
 cpp::result<bool, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version) {
+
+  // Check if GITHUB_TOKEN env exist
+  const char* github_token = std::getenv("GITHUB_TOKEN");
+
   auto get_params = [&engine, &version]() -> std::vector<std::string> {
     if (version == "latest") {
       return {"repos", "janhq", engine, "releases", version};
@@ -232,7 +236,18 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
   };
 
   httplib::Client cli(url_obj.GetProtocolAndHost());
-  if (auto res = cli.Get(url_obj.GetPathAndQuery());
+
+  httplib::Headers headers;
+
+  if (github_token) {
+    std::string auth_header = "token " + std::string(github_token);
+    headers.insert({"Authorization", auth_header});
+    CTL_INF("Using authentication with GitHub token.");
+  } else {
+    CTL_INF("No GitHub token found. Sending request without authentication.");
+  }
+
+  if (auto res = cli.Get(url_obj.GetPathAndQuery(), headers);
       res->status == httplib::StatusCode::OK_200) {
     auto body = json::parse(res->body);
     auto get_data =

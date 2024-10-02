@@ -1,6 +1,7 @@
+#include <cmath>
+#include <sstream>
 #include "gtest/gtest.h"
 #include "utils/string_utils.h"
-
 class StringUtilsTestSuite : public ::testing::Test {};
 
 TEST_F(StringUtilsTestSuite, TestSplitBy) {

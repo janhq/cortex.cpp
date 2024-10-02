@@ -25,6 +25,7 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   model_config.id =
       ggufDownloadItem.localPath.parent_path().filename().string();
   model_config.files = {ggufDownloadItem.localPath.string()};
+  model_config.model = ggufDownloadItem.id;
   yaml_handler.UpdateModelConfig(model_config);
 
   auto yaml_path{ggufDownloadItem.localPath};
@@ -40,7 +41,7 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
-  cortex::db::ModelEntry model_entry{.model_id = ggufDownloadItem.id,
+  cortex::db::ModelEntry model_entry{.model = ggufDownloadItem.id,
                                      .author_repo_id = author_id,
                                      .branch_name = branch,
                                      .path_to_model_yaml = yaml_name.string(),
@@ -290,10 +291,13 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
+    mc.model = model_id;
+    yaml_handler.UpdateModelConfig(mc);
+    yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
     cortex::db::Models modellist_utils_obj;
     cortex::db::ModelEntry model_entry{
-        .model_id = model_id,
+        .model = model_id,
         .author_repo_id = "cortexso",
         .branch_name = branch,
         .path_to_model_yaml = model_yml_item->localPath.string(),

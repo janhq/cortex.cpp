@@ -12,11 +12,11 @@
 
 void Models::PullModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
+  if (!http_util::HasFieldInReq(req, callback, "model")) {
     return;
   }
 
-  auto model_handle = (*(req->getJsonObject())).get("modelId", "").asString();
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   if (model_handle.empty()) {
     Json::Value ret;
     ret["result"] = "Bad Request";
@@ -103,14 +103,10 @@ void Models::ListModel(
   }
 }
 
-void Models::GetModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
-    return;
-  }
-  auto model_handle = (*(req->getJsonObject())).get("modelId", "").asString();
-  LOG_DEBUG << "GetModel, Model handle: " << model_handle;
+void Models::GetModel(const HttpRequestPtr& req,
+                      std::function<void(const HttpResponsePtr&)>&& callback,
+                      const std::string& model_id) const {
+  LOG_DEBUG << "GetModel, Model handle: " << model_id;
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
@@ -118,7 +114,7 @@ void Models::GetModel(
   try {
     cortex::db::Models modellist_handler;
     config::YamlHandler yaml_handler;
-    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    auto model_entry = modellist_handler.GetModelInfo(model_id);
     if (model_entry.has_error()) {
       // CLI_LOG("Error: " + model_entry.error());
       ret["data"] = data;
@@ -142,7 +138,7 @@ void Models::GetModel(
     callback(resp);
   } catch (const std::exception& e) {
     std::string message = "Fail to get model information with ID '" +
-                          model_handle + "': " + e.what();
+                          model_id + "': " + e.what();
     LOG_ERROR << message;
     ret["data"] = data;
     ret["result"] = "Fail to get model information";
@@ -172,13 +168,9 @@ void Models::DeleteModel(const HttpRequestPtr& req,
   }
 }
 
-void Models::UpdateModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "modelId")) {
-    return;
-  }
-  auto model_id = (*(req->getJsonObject())).get("modelId", "").asString();
+void Models::UpdateModel(const HttpRequestPtr& req,
+                         std::function<void(const HttpResponsePtr&)>&& callback,
+                         const std::string& model_id) const {
   auto json_body = *(req->getJsonObject());
   try {
     cortex::db::Models model_list_utils;
@@ -198,7 +190,7 @@ void Models::UpdateModel(
     ret["message"] = message;
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k400BadRequest);
+    resp->setStatusCode(k200OK);
     callback(resp);
 
   } catch (const std::exception& e) {
@@ -218,11 +210,11 @@ void Models::UpdateModel(
 void Models::ImportModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "modelId") ||
+  if (!http_util::HasFieldInReq(req, callback, "model") ||
       !http_util::HasFieldInReq(req, callback, "modelPath")) {
     return;
   }
-  auto modelHandle = (*(req->getJsonObject())).get("modelId", "").asString();
+  auto modelHandle = (*(req->getJsonObject())).get("model", "").asString();
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
@@ -288,11 +280,11 @@ void Models::ImportModel(
 void Models::SetModelAlias(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "modelId") ||
+  if (!http_util::HasFieldInReq(req, callback, "model") ||
       !http_util::HasFieldInReq(req, callback, "modelAlias")) {
     return;
   }
-  auto model_handle = (*(req->getJsonObject())).get("modelId", "").asString();
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   auto model_alias = (*(req->getJsonObject())).get("modelAlias", "").asString();
   LOG_DEBUG << "GetModel, Model handle: " << model_handle
             << ", Model alias: " << model_alias;
@@ -390,7 +382,7 @@ void Models::StopModel(const HttpRequestPtr& req,
     callback(resp);
   } else {
     Json::Value ret;
-    ret["message"] = "Started successfully!";
+    ret["message"] = "Stopped successfully!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
