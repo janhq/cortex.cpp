@@ -1,11 +1,12 @@
 import pytest
 import sys
+
 ### e2e tests are expensive, have to keep engines tests in order
 from test_api_engine_list import TestApiEngineList
 from test_api_engine_install import TestApiEngineInstall
 from test_api_engine_get import TestApiEngineGet
-from test_api_engine_uninstall import TestApiEngineUninstall
-### models, keeps in order
+
+### models, keeps in order, note that we only uninstall engine after finishing all models test
 from test_api_model_pull_direct_url import TestApiModelPullDirectUrl
 from test_api_model_start import TestApiModelStart
 from test_api_model_stop import TestApiModelStop
@@ -15,6 +16,8 @@ from test_api_model_list import TestApiModelList
 from test_api_model_update import TestApiModelUpdate
 from test_api_model_delete import TestApiModelDelete
 from test_api_model_import import TestApiModelImport
+from test_api_engine_uninstall import TestApiEngineUninstall
+
 ###
 from test_cli_engine_get import TestCliEngineGet
 from test_cli_engine_install import TestCliEngineInstall
