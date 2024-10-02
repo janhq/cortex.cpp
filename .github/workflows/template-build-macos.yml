@@ -169,6 +169,8 @@ jobs:
           python e2e-test/main.py
           rm build/cortex-nightly
           rm build/cortex-beta
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Pre-package
         run: |
