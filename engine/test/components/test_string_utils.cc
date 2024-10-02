@@ -1,6 +1,8 @@
+#include <cmath>
+#include <sstream>
 #include "gtest/gtest.h"
 #include "utils/string_utils.h"
-
+#include "utils/string_utils.h"  // Assuming the original code is in this header file
 class StringUtilsTestSuite : public ::testing::Test {};
 
 TEST_F(StringUtilsTestSuite, TestSplitBy) {
@@ -76,4 +78,39 @@ TEST_F(StringUtilsTestSuite, TestEndsWithWithEmptySuffix) {
   auto input = "this is a test";
   auto suffix = "";
   EXPECT_TRUE(string_utils::EndsWith(input, suffix));
+}
+
+TEST_F(StringUtilsTestSuite, PrintComment) {
+  std::string result = string_utils::print_comment("Test comment");
+  EXPECT_EQ(result, "\033[1;90m# Test comment\033[0m\n");
+}
+
+TEST_F(StringUtilsTestSuite, PrintKV) {
+  std::string result = string_utils::print_kv("key", "value");
+  EXPECT_EQ(result, "\033[1;32mkey:\033[0m \033[0mvalue\033[0m\n");
+
+  std::string result2 = string_utils::print_kv("key", "value", "\033[0;34m");
+  EXPECT_EQ(result2, "\033[1;32mkey:\033[0m \033[0;34mvalue\033[0m\n");
+}
+
+TEST_F(StringUtilsTestSuite, PrintBool) {
+  std::string result = string_utils::print_bool("key", true);
+  EXPECT_EQ(result, "\033[1;32mkey:\033[0m \033[0;35mtrue\033[0m\n");
+
+  result = string_utils::print_bool("key", false);
+  EXPECT_EQ(result, "\033[1;32mkey:\033[0m \033[0;35mfalse\033[0m\n");
+}
+
+TEST_F(StringUtilsTestSuite, PrintFloat) {
+  std::string result = string_utils::print_float("key", 3.14159f);
+  EXPECT_EQ(result, "\033[1;32mkey:\033[0m \033[0;34m3.14159\033[0m\n");
+
+  result = string_utils::print_float("key", 3.000f);
+  EXPECT_EQ(result, "\033[1;32mkey:\033[0m \033[0;34m3\033[0m\n");
+
+  result = string_utils::print_float("key", 3.14000f);
+  EXPECT_EQ(result, "\033[1;32mkey:\033[0m \033[0;34m3.14\033[0m\n");
+
+  result = string_utils::print_float("key", std::numeric_limits<float>::quiet_NaN());
+  EXPECT_EQ(result, "");
 }

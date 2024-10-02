@@ -7,7 +7,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
-
+#include "utils/string_utils.h"
 namespace config {
 struct ModelConfig {
   std::string name;
@@ -58,7 +58,7 @@ struct ModelConfig {
   int n_probs = 0;
   int min_keep = 0;
   std::string grammar;
-  
+
   void FromJson(const Json::Value& json) {
     // do now allow to update ID and model field because it is unique identifier
     // if (json.isMember("id"))
@@ -236,123 +236,90 @@ struct ModelConfig {
   std::string ToString() const {
     std::ostringstream oss;
 
-    // Color codes
-    const std::string RESET = "\033[0m";
-    const std::string BOLD = "\033[1m";
-    const std::string GREEN = "\033[1;32m";
-    const std::string YELLOW = "\033[0;33m";
-    const std::string BLUE = "\033[0;34m";
-    const std::string MAGENTA = "\033[0;35m";
-    const std::string GRAY = "\033[1;90m";
-
-    // Helper function to print comments
-    auto print_comment = [&oss, &GRAY, &RESET](const std::string& comment) {
-      oss << GRAY << "# " << comment << RESET << "\n";
-    };
-
-    // Helper function to print key-value pairs
-    auto print_kv = [&oss, &GREEN, &RESET](
-                        const std::string& key, const auto& value,
-                        const std::string& color = "\033[0m") {
-      oss << GREEN << key << ":" << RESET << " " << color << value << RESET
-          << "\n";
-    };
-
-    // Helper function to print boolean values
-    auto print_bool = [&print_kv, &MAGENTA](const std::string& key,
-                                            bool value) {
-      print_kv(key, value ? "true" : "false", MAGENTA);
-    };
-
-    // Updated helper function to print float values with fixed precision
-    auto print_float = [&print_kv, &BLUE](const std::string& key, float value) {
-      if (!std::isnan(value)) {
-        std::ostringstream float_oss;
-        float_oss << std::fixed << std::setprecision(6) << value;
-        std::string str_value = float_oss.str();
-        // Remove trailing zeros
-        str_value.erase(str_value.find_last_not_of('0') + 1, std::string::npos);
-        // Remove trailing dot if present
-        if (str_value.back() == '.') {
-          str_value.pop_back();
-        }
-        print_kv(key, str_value, BLUE);
-      }
-    };
-
-    print_comment("BEGIN GENERAL GGUF METADATA");
+    oss << string_utils::print_comment("BEGIN GENERAL GGUF METADATA");
     if (!id.empty())
-      print_kv("id", id, YELLOW);
+      oss << string_utils::print_kv("id", id, string_utils::YELLOW);
     if (!name.empty())
-      print_kv("name", name, YELLOW);
+      oss << string_utils::print_kv("name", name, string_utils::YELLOW);
     if (!model.empty())
-      print_kv("model", model, YELLOW);
+      oss << string_utils::print_kv("model", model, string_utils::YELLOW);
     if (!version.empty())
-      print_kv("version", version, YELLOW);
+      oss << string_utils::print_kv("version", version, string_utils::YELLOW);
     if (!files.empty()) {
-      oss << GREEN << "files:" << RESET << "\n";
+      oss << string_utils::GREEN << "files:" << string_utils::RESET << "\n";
       for (const auto& file : files) {
-        oss << "  - " << YELLOW << file << RESET << "\n";
+        oss << "  - " << string_utils::YELLOW << file << string_utils::RESET
+            << "\n";
       }
     }
-    print_comment("END GENERAL GGUF METADATA");
+    oss << string_utils::print_comment("END GENERAL GGUF METADATA");
 
-    print_comment("BEGIN INFERENCE PARAMETERS");
-    print_comment("BEGIN REQUIRED");
+    oss << string_utils::print_comment("BEGIN INFERENCE PARAMETERS");
+    oss << string_utils::print_comment("BEGIN REQUIRED");
     if (!stop.empty()) {
-      oss << GREEN << "stop:" << RESET << "\n";
+      oss << string_utils::GREEN << "stop:" << string_utils::RESET << "\n";
       for (const auto& s : stop) {
-        oss << "  - " << YELLOW << s << RESET << "\n";
+        oss << "  - " << string_utils::YELLOW << s << string_utils::RESET
+            << "\n";
       }
     }
-    print_comment("END REQUIRED");
-    print_comment("BEGIN OPTIONAL");
+    oss << string_utils::print_comment("END REQUIRED");
+    oss << string_utils::print_comment("BEGIN OPTIONAL");
 
-    print_bool("stream", stream);
-    print_float("top_p", top_p);
-    print_float("temperature", temperature);
-    print_float("frequency_penalty", frequency_penalty);
-    print_float("presence_penalty", presence_penalty);
+    oss << string_utils::print_bool("stream", stream);
+    oss << string_utils::print_float("top_p", top_p);
+    oss << string_utils::print_float("temperature", temperature);
+    oss << string_utils::print_float("frequency_penalty", frequency_penalty);
+    oss << string_utils::print_float("presence_penalty", presence_penalty);
     if (max_tokens != std::numeric_limits<int>::quiet_NaN())
-      print_kv("max_tokens", max_tokens, MAGENTA);
+      oss << string_utils::print_kv("max_tokens", std::to_string(max_tokens),
+                                    string_utils::MAGENTA);
     if (seed != -1)
-      print_kv("seed", seed, MAGENTA);
-    print_float("dynatemp_range", dynatemp_range);
-    print_float("dynatemp_exponent", dynatemp_exponent);
-    print_kv("top_k", top_k, MAGENTA);
-    print_float("min_p", min_p);
-    print_kv("tfs_z", tfs_z, MAGENTA);
-    print_float("typ_p", typ_p);
-    print_kv("repeat_last_n", repeat_last_n, MAGENTA);
-    print_float("repeat_penalty", repeat_penalty);
-    print_bool("mirostat", mirostat);
-    print_float("mirostat_tau", mirostat_tau);
-    print_float("mirostat_eta", mirostat_eta);
-    print_bool("penalize_nl", penalize_nl);
-    print_bool("ignore_eos", ignore_eos);
-    print_kv("n_probs", n_probs, MAGENTA);
-    print_kv("min_keep", min_keep, MAGENTA);
+      oss << string_utils::print_kv("seed", std::to_string(seed),
+                                    string_utils::MAGENTA);
+    oss << string_utils::print_float("dynatemp_range", dynatemp_range);
+    oss << string_utils::print_float("dynatemp_exponent", dynatemp_exponent);
+    oss << string_utils::print_kv("top_k", std::to_string(top_k),
+                                  string_utils::MAGENTA);
+    oss << string_utils::print_float("min_p", min_p);
+    oss << string_utils::print_float("tfs_z", tfs_z);
+    oss << string_utils::print_float("typ_p", typ_p);
+    oss << string_utils::print_kv(
+        "repeat_last_n", std::to_string(repeat_last_n), string_utils::MAGENTA);
+    oss << string_utils::print_float("repeat_penalty", repeat_penalty);
+    oss << string_utils::print_bool("mirostat", mirostat);
+    oss << string_utils::print_float("mirostat_tau", mirostat_tau);
+    oss << string_utils::print_float("mirostat_eta", mirostat_eta);
+    oss << string_utils::print_bool("penalize_nl", penalize_nl);
+    oss << string_utils::print_bool("ignore_eos", ignore_eos);
+    oss << string_utils::print_kv("n_probs", std::to_string(n_probs),
+                                  string_utils::MAGENTA);
+    oss << string_utils::print_kv("min_keep", std::to_string(min_keep),
+                                  string_utils::MAGENTA);
 
-    print_comment("END OPTIONAL");
-    print_comment("END INFERENCE PARAMETERS");
-    print_comment("BEGIN MODEL LOAD PARAMETERS");
-    print_comment("BEGIN REQUIRED");
+    oss << string_utils::print_comment("END OPTIONAL");
+    oss << string_utils::print_comment("END INFERENCE PARAMETERS");
+    oss << string_utils::print_comment("BEGIN MODEL LOAD PARAMETERS");
+    oss << string_utils::print_comment("BEGIN REQUIRED");
 
     if (!engine.empty())
-      print_kv("engine", engine, YELLOW);
+      oss << string_utils::print_kv("engine", engine, string_utils::YELLOW);
     if (!prompt_template.empty())
-      print_kv("prompt_template", prompt_template, YELLOW);
+      oss << string_utils::print_kv("prompt_template", prompt_template,
+                                    string_utils::YELLOW);
 
-    print_comment("END REQUIRED");
-    print_comment("BEGIN OPTIONAL");
+    oss << string_utils::print_comment("END REQUIRED");
+    oss << string_utils::print_comment("BEGIN OPTIONAL");
 
     if (ctx_len != std::numeric_limits<int>::quiet_NaN())
-      print_kv("ctx_len", ctx_len, MAGENTA);
+      oss << string_utils::print_kv("ctx_len", std::to_string(ctx_len),
+                                    string_utils::MAGENTA);
     if (ngl != std::numeric_limits<int>::quiet_NaN())
-      print_kv("ngl", ngl, MAGENTA);
+      oss << string_utils::print_kv("ngl", std::to_string(ngl),
+                                    string_utils::MAGENTA);
 
-    print_comment("END OPTIONAL");
-    print_comment("END MODEL LOAD PARAMETERS");
+    oss << string_utils::print_comment("END OPTIONAL");
+    oss << string_utils::print_comment("END MODEL LOAD PARAMETERS");
 
     return oss.str();
   }
