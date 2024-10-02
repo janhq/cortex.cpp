@@ -98,6 +98,7 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
         return false;
     }
     std::cout << "Server started" << std::endl;
+    std::cout << "API Documentation available at: http://" << host << ":" << port << std::endl;
   }
 #endif
   return true;
