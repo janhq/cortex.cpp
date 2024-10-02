@@ -1,7 +1,7 @@
 import pytest
 import requests
 from test_runner import popen
-from test_runner import start_server, stop_server
+from test_runner import start_server, stop_server, run
 
 
 class TestApiModelStart:
@@ -14,6 +14,7 @@ class TestApiModelStart:
             raise Exception("Failed to start server")
 
         # TODO: using pull with branch for easy testing tinyllama:gguf for example
+        run("Delete model", ["models", "delete", "tinyllama:gguf"])
         popen(["pull", "tinyllama"], "1\n")
 
         yield

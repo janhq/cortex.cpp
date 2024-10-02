@@ -16,7 +16,7 @@ class TestCliModelDelete:
 
         # Teardown
         # Clean up
-        run("Delete model", ["models", "delete", "tinyllama"])
+        run("Delete model", ["models", "delete", "tinyllama:gguf"])
 
     def test_models_delete_should_be_successful(self):
         exit_code, output, error = run(
