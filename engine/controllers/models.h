@@ -14,10 +14,12 @@ class Models : public drogon::HttpController<Models> {
   METHOD_ADD(Models::PullModel, "/pull", Post);
   METHOD_ADD(Models::ListModel, "", Get);
   METHOD_ADD(Models::GetModel, "/get", Post);
-  METHOD_ADD(Models::UpdateModel, "/update/", Post);
+  METHOD_ADD(Models::UpdateModel, "/update", Post);
   METHOD_ADD(Models::ImportModel, "/import", Post);
   METHOD_ADD(Models::DeleteModel, "/{1}", Delete);
   METHOD_ADD(Models::SetModelAlias, "/alias", Post);
+  METHOD_ADD(Models::StartModel, "/start", Post);
+  METHOD_ADD(Models::StopModel, "/stop", Post);
   METHOD_LIST_END
 
   void PullModel(const HttpRequestPtr& req,
@@ -38,6 +40,12 @@ class Models : public drogon::HttpController<Models> {
   void SetModelAlias(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) const;
+
+  void StartModel(const HttpRequestPtr& req,
+                  std::function<void(const HttpResponsePtr&)>&& callback);
+
+  void StopModel(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
   ModelService model_service_;

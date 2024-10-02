@@ -57,11 +57,11 @@ class DownloadService {
   using OnDownloadTaskSuccessfully =
       std::function<void(const DownloadTask& task)>;
 
-  cpp::result<void, std::string> AddDownloadTask(
+  cpp::result<bool, std::string> AddDownloadTask(
       DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
                               std::nullopt) noexcept;
 
-  cpp::result<void, std::string> AddAsyncDownloadTask(
+  cpp::result<bool, std::string> AddAsyncDownloadTask(
       DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
                               std::nullopt) noexcept;
 
@@ -77,9 +77,9 @@ class DownloadService {
   cpp::result<void, std::string> VerifyDownloadTask(
       DownloadTask& task) const noexcept;
 
-  cpp::result<void, std::string> Download(const std::string& download_id,
-                                          const DownloadItem& download_item,
-                                          bool allow_resume) noexcept;
+  cpp::result<bool, std::string> Download(
+      const std::string& download_id, const DownloadItem& download_item,
+      bool allow_resume) noexcept;
 
   curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
 };

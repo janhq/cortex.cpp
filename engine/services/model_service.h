@@ -29,6 +29,15 @@ class ModelService {
    */
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
+  cpp::result<bool, std::string> StartModel(const std::string& host, int port,
+                                            const std::string& model_handle);
+
+  cpp::result<bool, std::string> StopModel(const std::string& host, int port,
+                                           const std::string& model_handle);
+
+  cpp::result<bool, std::string> GetModelStatus(
+      const std::string& host, int port, const std::string& model_handle);
+
   cpp::result<std::string, std::string> HandleUrl(const std::string& url,
                                                   bool async = false);
 
