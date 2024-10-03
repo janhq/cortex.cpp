@@ -3,6 +3,7 @@
 #include <optional>
 #include "algorithm"
 #include "utils/archive_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/json.hpp"
@@ -17,7 +18,7 @@ namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
                                    const std::string& cuda_driver_version) {
   auto suitable_toolkit_version = "";
-  if (engine == "cortex.tensorrt-llm") {
+  if (engine == kTrtLlmRepo || engine == kTrtLlmEngine) {
     // for tensorrt-llm, we need to download cuda toolkit v12.4
     suitable_toolkit_version = "12.4";
   } else {
@@ -32,6 +33,18 @@ std::string GetSuitableCudaVersion(const std::string& engine,
   }
   return suitable_toolkit_version;
 }
+
+// Need to change this after we rename repositories
+std::string NormalizeEngine(const std::string& engine) {
+  if (engine == kLlamaEngine) {
+    return kLlamaRepo;
+  } else if (engine == kOnnxEngine) {
+    return kOnnxRepo;
+  } else if (engine == kTrtLlmEngine) {
+    return kTrtLlmRepo;
+  }
+  return engine;
+};
 }  // namespace
 
 EngineService::EngineService()
@@ -59,38 +72,36 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 
   std::string onnx_status{kIncompatible};
   std::string llamacpp_status =
-      std::filesystem::exists(ecp / "cortex.llamacpp") ? kReady : kNotInstalled;
+      std::filesystem::exists(ecp / kLlamaRepo) ? kReady : kNotInstalled;
   std::string tensorrt_status{kIncompatible};
 
 #ifdef _WIN32
   onnx_status =
-      std::filesystem::exists(ecp / "cortex.onnx") ? kReady : kNotInstalled;
-  tensorrt_status = std::filesystem::exists(ecp / "cortex.tensorrt-llm")
-                        ? kReady
-                        : kNotInstalled;
+      std::filesystem::exists(ecp / kOnnxRepo) ? kReady : kNotInstalled;
+  tensorrt_status =
+      std::filesystem::exists(ecp / kTrtLlmRepo) ? kReady : kNotInstalled;
 #elif defined(__linux__)
-  tensorrt_status = std::filesystem::exists(ecp / "cortex.tensorrt-llm")
-                        ? kReady
-                        : kNotInstalled;
+  tensorrt_status =
+      std::filesystem::exists(ecp / kTrtLlmRepo) ? kReady : kNotInstalled;
 #endif
   std::vector<EngineInfo> engines = {
-      {.name = "cortex.onnx",
+      {.name = kOnnxEngine,
        .description = "This extension enables chat completion API calls using "
                       "the Onnx engine",
        .format = "ONNX",
-       .product_name = "ONNXRuntime",
+       .product_name = kOnnxEngine,
        .status = onnx_status},
-      {.name = "cortex.llamacpp",
+      {.name = kLlamaEngine,
        .description = "This extension enables chat completion API calls using "
                       "the LlamaCPP engine",
        .format = "GGUF",
-       .product_name = "llama.cpp",
+       .product_name = kLlamaEngine,
        .status = llamacpp_status},
-      {.name = "cortex.tensorrt-llm",
+      {.name = kTrtLlmEngine,
        .description = "This extension enables chat completion API calls using "
                       "the TensorrtLLM engine",
        .format = "TensorRT Engines",
-       .product_name = "TensorRT-LLM",
+       .product_name = kTrtLlmEngine,
        .status = tensorrt_status},
   };
 
@@ -119,15 +130,15 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 cpp::result<bool, std::string> EngineService::InstallEngine(
     const std::string& engine, const std::string& version,
     const std::string& src) {
-
+  auto ne = NormalizeEngine(engine);
   if (!src.empty()) {
-    return UnzipEngine(engine, version, src);
+    return UnzipEngine(ne, version, src);
   } else {
-    auto result = DownloadEngine(engine, version);
+    auto result = DownloadEngine(ne, version);
     if (result.has_error()) {
       return result;
     }
-    return DownloadCuda(engine);
+    return DownloadCuda(ne);
   }
 }
 
@@ -198,20 +209,21 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
 
 cpp::result<bool, std::string> EngineService::UninstallEngine(
     const std::string& engine) {
+  auto ne = NormalizeEngine(engine);
   auto ecp = file_manager_utils::GetEnginesContainerPath();
-  auto engine_path = ecp / engine;
+  auto engine_path = ecp / ne;
 
   if (!std::filesystem::exists(engine_path)) {
-    return cpp::fail("Engine " + engine + " is not installed!");
+    return cpp::fail("Engine " + ne + " is not installed!");
   }
 
   try {
     std::filesystem::remove_all(engine_path);
-    CTL_INF("Engine " << engine << " uninstalled successfully!");
+    CTL_INF("Engine " << ne << " uninstalled successfully!");
     return true;
   } catch (const std::exception& e) {
-    CTL_ERR("Failed to uninstall engine " << engine << ": " << e.what());
-    return cpp::fail("Failed to uninstall engine " + engine + ": " + e.what());
+    CTL_ERR("Failed to uninstall engine " << ne << ": " << e.what());
+    return cpp::fail("Failed to uninstall engine " + ne + ": " + e.what());
   }
 }
 
@@ -345,7 +357,8 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine) {
-  if (hw_inf_.sys_inf->os == "mac" || engine == "cortex.onnx") {
+  if (hw_inf_.sys_inf->os == "mac" || engine == kOnnxRepo ||
+      engine == kOnnxEngine) {
     // mac and onnx engine does not require cuda toolkit
     return true;
   }
@@ -414,13 +427,13 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
 std::string EngineService::GetMatchedVariant(
     const std::string& engine, const std::vector<std::string>& variants) {
   std::string matched_variant;
-  if (engine == "cortex.tensorrt-llm") {
+  if (engine == kTrtLlmRepo || engine == kTrtLlmEngine) {
     matched_variant = engine_matcher_utils::ValidateTensorrtLlm(
         variants, hw_inf_.sys_inf->os, hw_inf_.cuda_driver_version);
-  } else if (engine == "cortex.onnx") {
+  } else if (engine == kOnnxRepo || engine == kOnnxEngine) {
     matched_variant = engine_matcher_utils::ValidateOnnx(
         variants, hw_inf_.sys_inf->os, hw_inf_.sys_inf->arch);
-  } else if (engine == "cortex.llamacpp") {
+  } else if (engine == kLlamaRepo || engine == kLlamaEngine) {
     auto suitable_avx =
         engine_matcher_utils::GetSuitableAvxVariant(hw_inf_.cpu_inf);
     matched_variant = engine_matcher_utils::Validate(

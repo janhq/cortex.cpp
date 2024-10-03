@@ -18,5 +18,5 @@ class TestApiEngineInstall:
         stop_server()
 
     def test_engines_install_llamacpp_should_be_successful(self):
-        response = requests.post("http://localhost:3928/engines/install/cortex.llamacpp")
+        response = requests.post("http://localhost:3928/engines/install/llama-cpp")
         assert response.status_code == 200

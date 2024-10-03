@@ -5,6 +5,7 @@
 #include <string>
 using namespace std;
 
+#include "utils/engine_constants.h"
 #include "utils/format_utils.h"
 #include "yaml_config.h"
 namespace config {
@@ -23,7 +24,8 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       std::replace(s.begin(), s.end(), '\\', '/');
       std::vector<std::string> v;
       if (yaml_node_["engine"] &&
-          yaml_node_["engine"].as<std::string>() == "cortex.llamacpp") {
+          (yaml_node_["engine"].as<std::string>() == kLlamaRepo ||
+           (yaml_node_["engine"].as<std::string>() == kLlamaEngine))) {
         // TODO: change prefix to models:// with source from cortexso
         v.emplace_back(s.substr(0, s.find_last_of('/')) + "/model.gguf");
       } else {

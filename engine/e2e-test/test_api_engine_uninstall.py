@@ -18,5 +18,5 @@ class TestApiEngineUninstall:
         stop_server()
 
     def test_engines_uninstall_llamacpp_should_be_successful(self):
-        response = requests.delete("http://localhost:3928/engines/cortex.llamacpp")
+        response = requests.delete("http://localhost:3928/engines/llama-cpp")
         assert response.status_code == 200

@@ -4,6 +4,7 @@
 #include <string>
 #include <tabulate/table.hpp>
 #include "nlohmann/json.hpp"
+#include "utils/engine_constants.h"
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
@@ -26,7 +27,8 @@ void PsCmd::Exec(const std::string& host, int port) {
   try {
     for (const auto& item : data) {
       ModelLoadedStatus model_status;
-      model_status.engine = item["engine"];
+      // TODO(sang) hardcode for now
+      model_status.engine = kLlamaEngine;
       model_status.model = item["id"];
       model_status.ram = item["ram"];
       model_status.start_time = item["start_time"];

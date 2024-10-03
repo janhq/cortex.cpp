@@ -3,18 +3,25 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/cpuid/cpu_info.h"
+#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 
 using namespace inferences;
 using json = nlohmann::json;
 namespace inferences {
 namespace {
-constexpr static auto kLlamaEngine = "cortex.llamacpp";
-constexpr static auto kPythonRuntimeEngine = "cortex.python";
-constexpr static auto kOnnxEngine = "cortex.onnx";
-constexpr static auto kTensorrtLlmEngine = "cortex.tensorrt-llm";
+// Need to change this after we rename repositories
+std::string NormalizeEngine(const std::string& engine) {
+  if (engine == kLlamaEngine) {
+    return kLlamaRepo;
+  } else if (engine == kOnnxEngine) {
+    return kOnnxRepo;
+  } else if (engine == kTrtLlmEngine) {
+    return kTrtLlmRepo;
+  }
+  return engine;
+};
 }  // namespace
-
 server::server() {
 #if defined(_WIN32)
   SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
@@ -28,13 +35,15 @@ void server::ChatCompletion(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   std::string engine_type;
   if (!HasFieldInReq(req, "engine")) {
-    engine_type = kLlamaEngine;
+    engine_type = kLlamaRepo;
   } else {
     engine_type =
-        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+        (*(req->getJsonObject())).get("engine", kLlamaRepo).asString();
   }
 
-  if (!IsEngineLoaded(engine_type)) {
+  auto ne = NormalizeEngine(engine_type);
+
+  if (!IsEngineLoaded(ne)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -48,7 +57,7 @@ void server::ChatCompletion(
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
   auto q = std::make_shared<SyncQueue>();
-  std::get<EngineI*>(engines_[engine_type].engine)
+  std::get<EngineI*>(engines_[ne].engine)
       ->HandleChatCompletion(json_body,
                              [q](Json::Value status, Json::Value res) {
                                q->push(std::make_pair(status, res));
@@ -65,8 +74,9 @@ void server::ChatCompletion(
 void server::Embedding(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
-  if (!IsEngineLoaded(engine_type)) {
+      (*(req->getJsonObject())).get("engine", kLlamaRepo).asString();
+  auto ne = NormalizeEngine(engine_type);
+  if (!IsEngineLoaded(ne)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -78,7 +88,7 @@ void server::Embedding(const HttpRequestPtr& req,
 
   LOG_TRACE << "Start embedding";
   SyncQueue q;
-  std::get<EngineI*>(engines_[engine_type].engine)
+  std::get<EngineI*>(engines_[ne].engine)
       ->HandleEmbedding(req->getJsonObject(),
                         [&q](Json::Value status, Json::Value res) {
                           q.push(std::make_pair(status, res));
@@ -93,13 +103,14 @@ void server::UnloadModel(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   std::string engine_type;
   if (!HasFieldInReq(req, "engine")) {
-    engine_type = kLlamaEngine;
+    engine_type = kLlamaRepo;
   } else {
     engine_type =
-        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+        (*(req->getJsonObject())).get("engine", kLlamaRepo).asString();
   }
+  auto ne = NormalizeEngine(engine_type);
 
-  if (!IsEngineLoaded(engine_type)) {
+  if (!IsEngineLoaded(ne)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -109,7 +120,7 @@ void server::UnloadModel(
     return;
   }
   LOG_TRACE << "Start unload model";
-  std::get<EngineI*>(engines_[engine_type].engine)
+  std::get<EngineI*>(engines_[ne].engine)
       ->UnloadModel(
           req->getJsonObject(),
           [cb = std::move(callback)](Json::Value status, Json::Value res) {
@@ -126,13 +137,15 @@ void server::ModelStatus(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   std::string engine_type;
   if (!HasFieldInReq(req, "engine")) {
-    engine_type = kLlamaEngine;
+    engine_type = kLlamaRepo;
   } else {
     engine_type =
-        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+        (*(req->getJsonObject())).get("engine", kLlamaRepo).asString();
   }
 
-  if (!IsEngineLoaded(engine_type)) {
+  auto ne = NormalizeEngine(engine_type);
+
+  if (!IsEngineLoaded(ne)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -143,7 +156,7 @@ void server::ModelStatus(
   }
 
   LOG_TRACE << "Start to get model status";
-  std::get<EngineI*>(engines_[engine_type].engine)
+  std::get<EngineI*>(engines_[ne].engine)
       ->GetModelStatus(
           req->getJsonObject(),
           [cb = std::move(callback)](Json::Value status, Json::Value res) {
@@ -213,7 +226,7 @@ void server::FineTuning(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
-      (*(req->getJsonObject())).get("engine", kPythonRuntimeEngine).asString();
+      (*(req->getJsonObject())).get("engine", kPythonRuntimeRepo).asString();
 
   if (engines_.find(engine_type) == engines_.end()) {
     try {
@@ -267,23 +280,25 @@ void server::FineTuning(
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto engine_type =
-      (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+      (*(req->getJsonObject())).get("engine", kLlamaRepo).asString();
+
+  auto ne = NormalizeEngine(engine_type);
 
   // We have not loaded engine yet, should load it before using it
-  if (engines_.find(engine_type) == engines_.end()) {
+  if (engines_.find(ne) == engines_.end()) {
     auto get_engine_path = [](std::string_view e) {
-      if (e == kLlamaEngine) {
+      if (e == kLlamaRepo) {
         return cortex_utils::kLlamaLibPath;
-      } else if (e == kOnnxEngine) {
+      } else if (e == kOnnxRepo) {
         return cortex_utils::kOnnxLibPath;
-      } else if (e == kTensorrtLlmEngine) {
+      } else if (e == kTrtLlmRepo) {
         return cortex_utils::kTensorrtLlmPath;
       }
       return cortex_utils::kLlamaLibPath;
     };
 
     try {
-      if (engine_type == kLlamaEngine) {
+      if (ne == kLlamaRepo) {
         cortex::cpuid::CpuInfo cpu_info;
         LOG_INFO << "CPU instruction set: " << cpu_info.to_string();
       }
@@ -292,7 +307,7 @@ void server::LoadModel(const HttpRequestPtr& req,
           (getenv("ENGINE_PATH")
                ? getenv("ENGINE_PATH")
                : file_manager_utils::GetCortexDataPath().string()) +
-          get_engine_path(engine_type);
+          get_engine_path(ne);
 #if defined(_WIN32)
       // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
       // We would like to support running multiple engines at the same time. Therefore,
@@ -313,28 +328,26 @@ void server::LoadModel(const HttpRequestPtr& req,
         }
       };
 
-      if (IsEngineLoaded(kLlamaEngine) && engine_type == kTensorrtLlmEngine) {
+      if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo) {
         // Remove llamacpp dll directory
-        if (!RemoveDllDirectory(engines_[kLlamaEngine].cookie)) {
-          LOG_INFO << "Could not remove dll directory: " << kLlamaEngine;
+        if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
+          LOG_INFO << "Could not remove dll directory: " << kLlamaRepo;
         } else {
-          LOG_WARN << "Removed dll directory: " << kLlamaEngine;
+          LOG_WARN << "Removed dll directory: " << kLlamaRepo;
         }
 
-        add_dll(engine_type, abs_path);
-      } else if (IsEngineLoaded(kTensorrtLlmEngine) &&
-                 engine_type == kLlamaEngine) {
+        add_dll(ne, abs_path);
+      } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
         // Do nothing
       } else {
-        add_dll(engine_type, abs_path);
+        add_dll(ne, abs_path);
       }
 #endif
-      engines_[engine_type].dl =
-          std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+      engines_[ne].dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
 
     } catch (const cortex_cpp::dylib::load_error& e) {
       LOG_ERROR << "Could not load engine: " << e.what();
-      engines_.erase(engine_type);
+      engines_.erase(ne);
 
       Json::Value res;
       res["message"] = "Could not load engine " + engine_type;
@@ -343,14 +356,13 @@ void server::LoadModel(const HttpRequestPtr& req,
       callback(resp);
       return;
     }
-    cur_engine_type_ = engine_type;
+    cur_engine_type_ = ne;
 
-    auto func =
-        engines_[engine_type].dl->get_function<EngineI*()>("get_engine");
-    engines_[engine_type].engine = func();
+    auto func = engines_[ne].dl->get_function<EngineI*()>("get_engine");
+    engines_[ne].engine = func();
 
-    auto& en = std::get<EngineI*>(engines_[engine_type].engine);
-    if (engine_type == kLlamaEngine) {  //fix for llamacpp engine first
+    auto& en = std::get<EngineI*>(engines_[ne].engine);
+    if (ne == kLlamaRepo) {  //fix for llamacpp engine first
       auto config = file_manager_utils::GetCortexConfig();
       if (en->IsSupported("SetFileLogger")) {
         en->SetFileLogger(config.maxLogLines,
@@ -365,7 +377,7 @@ void server::LoadModel(const HttpRequestPtr& req,
   }
 
   LOG_TRACE << "Load model";
-  auto& en = std::get<EngineI*>(engines_[engine_type].engine);
+  auto& en = std::get<EngineI*>(engines_[ne].engine);
   en->LoadModel(req->getJsonObject(), [cb = std::move(callback)](
                                           Json::Value status, Json::Value res) {
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -381,13 +393,15 @@ void server::UnloadEngine(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   std::string engine_type;
   if (!HasFieldInReq(req, "engine")) {
-    engine_type = kLlamaEngine;
+    engine_type = kLlamaRepo;
   } else {
     engine_type =
-        (*(req->getJsonObject())).get("engine", kLlamaEngine).asString();
+        (*(req->getJsonObject())).get("engine", kLlamaRepo).asString();
   }
 
-  if (!IsEngineLoaded(engine_type)) {
+  auto ne = NormalizeEngine(engine_type);
+
+  if (!IsEngineLoaded(ne)) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -397,16 +411,16 @@ void server::UnloadEngine(
     return;
   }
 
-  EngineI* e = std::get<EngineI*>(engines_[engine_type].engine);
+  EngineI* e = std::get<EngineI*>(engines_[ne].engine);
   delete e;
 #if defined(_WIN32)
-  if (!RemoveDllDirectory(engines_[engine_type].cookie)) {
+  if (!RemoveDllDirectory(engines_[ne].cookie)) {
     LOG_WARN << "Could not remove dll directory: " << engine_type;
   } else {
     LOG_INFO << "Removed dll directory: " << engine_type;
   }
 #endif
-  engines_.erase(engine_type);
+  engines_.erase(ne);
   LOG_INFO << "Unloaded engine " + engine_type;
   Json::Value res;
   res["message"] = "Unloaded engine " + engine_type;
