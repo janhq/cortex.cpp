@@ -22,8 +22,8 @@ void ModelGetCmd::Exec(const std::string& model_handle) {
       return;
     }
     yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto model_config = yaml_handler.GetModelConfig();
 

@@ -52,8 +52,8 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       return;
     }
     yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto mc = yaml_handler.GetModelConfig();
     Exec(host, port, model_handle, mc, std::move(msg));

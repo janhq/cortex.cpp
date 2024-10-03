@@ -76,8 +76,8 @@ void Models::ListModel(
       // auto model_entry = modellist_handler.GetModelInfo(model_handle);
       try {
         yaml_handler.ModelConfigFromFile(
-            fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                                 fs::path(model_entry.path_to_model_yaml))
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.path_to_model_yaml))
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
@@ -132,8 +132,8 @@ void Models::GetModel(const HttpRequestPtr& req,
       return;
     }
     yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto model_config = yaml_handler.GetModelConfig();
 
@@ -187,9 +187,8 @@ void Models::UpdateModel(const HttpRequestPtr& req,
     cortex::db::Models model_list_utils;
     auto model_entry = model_list_utils.GetModelInfo(model_id);
     config::YamlHandler yaml_handler;
-    auto yaml_fp =
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml));
+    auto yaml_fp = fmu::ToAbsoluteCortexDataPath(
+        fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
     model_config.FromJson(json_body);
@@ -243,7 +242,7 @@ void Models::ImportModel(
   try {
     // Use relative path for model_yaml_path. In case of import, we use absolute path for model
     auto yaml_rel_path =
-        fmu::Subtract(fs::path(model_yaml_path), fmu::GetCortexDataPath());
+        fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
     cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
                                        yaml_rel_path.string(), modelHandle};
 

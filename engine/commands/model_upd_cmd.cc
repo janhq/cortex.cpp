@@ -17,9 +17,8 @@ void ModelUpdCmd::Exec(
       CLI_LOG("Error: " + model_entry.error());
       return;
     }
-    auto yaml_fp =
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml));
+    auto yaml_fp = fmu::ToAbsoluteCortexDataPath(
+        fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler_.ModelConfigFromFile(yaml_fp.string());
     model_config_ = yaml_handler_.GetModelConfig();
 
