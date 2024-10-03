@@ -46,8 +46,8 @@ void RunServer() {
       std::filesystem::path(config.logFolderPath) /
       std::filesystem::path(cortex_utils::logs_folder));
   trantor::FileLogger asyncFileLogger;
-  asyncFileLogger.setFileName(config.logFolderPath + "/" +
-                              cortex_utils::logs_base_name);
+  asyncFileLogger.setFileName((std::filesystem::path(config.logFolderPath) /
+      std::filesystem::path(cortex_utils::logs_base_name)).string());
   asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
   asyncFileLogger.startLogging();
   trantor::Logger::setOutputFunction(

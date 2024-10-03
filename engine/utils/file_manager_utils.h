@@ -294,4 +294,40 @@ inline std::string DownloadTypeToString(DownloadType type) {
   }
 }
 
+inline std::filesystem::path GetAbsolutePath(const std::filesystem::path& base,
+                                             const std::filesystem::path& r) {
+  if (r.is_absolute()) {
+    return r;
+  } else {
+    return base / r;
+  }
+}
+
+inline bool IsSubpath(const std::filesystem::path& base,
+                      const std::filesystem::path& path) {
+  if (base == path)
+    return true;
+  auto rel = std::filesystem::relative(path, base);
+  return !rel.empty() && rel.native()[0] != '.';
+}
+
+inline std::filesystem::path Subtract(const std::filesystem::path& path,
+                                      const std::filesystem::path& base) {
+  if (IsSubpath(base, path)) {
+    return path.lexically_relative(base);
+  } else {
+    return path;
+  }
+}
+
+inline std::filesystem::path ToRelativeCortexDataPath(
+    const std::filesystem::path& path) {
+  return Subtract(path, GetCortexDataPath());
+}
+
+inline std::filesystem::path ToAbsoluteCortexDataPath(
+    const std::filesystem::path& path) {
+  return GetAbsolutePath(GetCortexDataPath(), path);
+}
+
 }  // namespace file_manager_utils
