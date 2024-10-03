@@ -20,3 +20,4 @@ platform/package-lock.json
 platform/command
 platform/src/infrastructure/commanders/test/test_data
 **/vcpkg_installed
+engine/test.db

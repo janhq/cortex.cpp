@@ -1,9 +1,9 @@
 #pragma once
 
-#include <httplib.h>
 #include <optional>
 #include <string>
 #include <vector>
+#include "utils/curl_utils.h"
 #include "utils/json.hpp"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
@@ -58,17 +58,13 @@ GetModelRepositoryBranches(const std::string& author,
       .host = kHuggingfaceHost,
       .pathParams = {"api", "models", author, modelName, "refs"}};
 
-  httplib::Client cli(url_obj.GetProtocolAndHost());
-  auto res = cli.Get(url_obj.GetPathAndQuery());
-  if (res->status != httplib::StatusCode::OK_200) {
+  auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+  if (result.has_error()) {
     return cpp::fail("Failed to get model repository branches: " + author +
                      "/" + modelName);
   }
 
-  using json = nlohmann::json;
-  auto body = json::parse(res->body);
-  auto branches_json = body["branches"];
-
+  auto branches_json = result.value()["branches"];
   std::vector<HuggingFaceBranch> branches{};
 
   for (const auto& branch : branches_json) {
@@ -94,15 +90,13 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
                       .host = kHuggingfaceHost,
                       .pathParams = {"api", "models", author, modelName}};
 
-  httplib::Client cli(url_obj.GetProtocolAndHost());
-  auto res = cli.Get(url_obj.GetPathAndQuery());
-  if (res->status != httplib::StatusCode::OK_200) {
+  auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+  if (result.has_error()) {
     return cpp::fail("Failed to get model repository info: " + author + "/" +
                      modelName);
   }
 
-  using json = nlohmann::json;
-  auto body = json::parse(res->body);
+  auto body = result.value();
 
   std::optional<HuggingFaceGgufInfo> gguf = std::nullopt;
   auto gguf_info = body["gguf"];
