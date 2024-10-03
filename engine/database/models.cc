@@ -86,7 +86,7 @@ std::string Models::GenerateShortenedAlias(
   std::vector<std::string> parts;
   std::istringstream iss(model_id);
   std::string part;
-  while (std::getline(iss, part, '/')) {
+  while (std::getline(iss, part, ':')) {
     parts.push_back(part);
   }
 
@@ -115,12 +115,12 @@ std::string Models::GenerateShortenedAlias(
 
   if (parts.size() >= 3) {
     candidates.push_back(parts[parts.size() - 3] + ":" +
-                         parts[parts.size() - 2] + "/" + filename);
+                         parts[parts.size() - 2] + ":" + filename);
   }
 
   if (parts.size() >= 4) {
-    candidates.push_back(parts[0] + ":" + parts[1] + "/" +
-                         parts[parts.size() - 2] + "/" + filename);
+    candidates.push_back(parts[0] + ":" + parts[1] + ":" +
+                         parts[parts.size() - 2] + ":" + filename);
   }
 
   // Find the first unique candidate

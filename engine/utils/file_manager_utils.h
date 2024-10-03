@@ -144,6 +144,9 @@ inline void CreateConfigFileIfNotExist() {
 
   auto config = config_yaml_utils::CortexConfig{
       .logFolderPath = defaultDataFolderPath.string(),
+      .logLlamaCppPath = kLogsLlamacppBaseName,
+      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
+      .logOnnxPath = kLogsOnnxBaseName,
       .dataFolderPath = defaultDataFolderPath.string(),
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
