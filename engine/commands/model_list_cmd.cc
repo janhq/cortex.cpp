@@ -32,9 +32,9 @@ void ModelListCmd::Exec() {
     try {
       count += 1;
       yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.path_to_model_yaml))
-            .string());
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.path_to_model_yaml))
+              .string());
       auto model_config = yaml_handler.GetModelConfig();
       table.add_row({std::to_string(count), model_entry.model,
                      model_entry.model_alias, model_config.engine,

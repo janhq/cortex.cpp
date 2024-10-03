@@ -317,4 +317,14 @@ inline std::filesystem::path Subtract(const std::filesystem::path& path,
   }
 }
 
+inline std::filesystem::path ToRelativeCortexDataPath(
+    const std::filesystem::path& path) {
+  return Subtract(path, GetCortexDataPath());
+}
+
+inline std::filesystem::path ToAbsoluteCortexDataPath(
+    const std::filesystem::path& path) {
+  return GetAbsolutePath(GetCortexDataPath(), path);
+}
+
 }  // namespace file_manager_utils

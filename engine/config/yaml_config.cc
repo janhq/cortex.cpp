@@ -27,7 +27,7 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       if (yaml_node_["engine"] &&
           yaml_node_["engine"].as<std::string>() == "cortex.llamacpp") {
         auto abs_path = s.substr(0, s.find_last_of('/')) + "/model.gguf";
-        auto rel_path = fmu::Subtract(fs::path(abs_path), fmu::GetCortexDataPath());
+        auto rel_path = fmu::ToRelativeCortexDataPath(fs::path(abs_path));
         v.emplace_back(rel_path.string());
       } else {
         v.emplace_back(s.substr(0, s.find_last_of('/')));

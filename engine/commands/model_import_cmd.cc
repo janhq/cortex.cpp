@@ -27,7 +27,7 @@ void ModelImportCmd::Exec() {
   try {
     // Use relative path for model_yaml_path. In case of import, we use absolute path for model
     auto yaml_rel_path =
-        fmu::Subtract(fs::path(model_yaml_path), fmu::GetCortexDataPath());
+        fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
     cortex::db::ModelEntry model_entry{model_handle_, "local", "imported",
                                        yaml_rel_path.string(), model_handle_};
 

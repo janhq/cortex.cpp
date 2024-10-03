@@ -27,8 +27,8 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   model_config.id =
       ggufDownloadItem.localPath.parent_path().filename().string();
   // use relative path for files
-  auto file_rel_path = fmu::Subtract(fs::path(ggufDownloadItem.localPath),
-                                     fmu::GetCortexDataPath());
+  auto file_rel_path =
+      fmu::ToRelativeCortexDataPath(fs::path(ggufDownloadItem.localPath));
   model_config.files = {file_rel_path.string()};
   model_config.model = ggufDownloadItem.id;
   yaml_handler.UpdateModelConfig(model_config);
@@ -44,8 +44,7 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   auto branch = url_obj.pathParams[3];
   CTL_INF("Adding model to modellist with branch: " << branch);
 
-  auto rel = file_manager_utils::Subtract(
-      yaml_name, file_manager_utils::GetCortexDataPath());
+  auto rel = file_manager_utils::ToRelativeCortexDataPath(yaml_name);
   CTL_INF("path_to_model_yaml: " << rel.string());
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
@@ -304,8 +303,8 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
-    auto rel = file_manager_utils::Subtract(
-        model_yml_item->localPath, file_manager_utils::GetCortexDataPath());
+    auto rel =
+        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
@@ -376,9 +375,8 @@ cpp::result<void, std::string> ModelService::DeleteModel(
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    auto yaml_fp =
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml));
+    auto yaml_fp = fmu::ToAbsoluteCortexDataPath(
+        fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
     // Remove yaml file
@@ -389,12 +387,12 @@ cpp::result<void, std::string> ModelService::DeleteModel(
         if (mc.engine == "cortex.llamacpp") {
           for (auto& file : mc.files) {
             std::filesystem::path gguf_p(
-                fmu::GetAbsolutePath(fmu::GetCortexDataPath(), fs::path(file)));
+                fmu::ToAbsoluteCortexDataPath(fs::path(file)));
             std::filesystem::remove(gguf_p);
           }
         } else {
-          std::filesystem::path f(fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                                                       fs::path(mc.files[0])));
+          std::filesystem::path f(
+              fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])));
           std::filesystem::remove_all(f);
         }
       } else {
@@ -428,8 +426,8 @@ cpp::result<bool, std::string> ModelService::StartModel(
       return cpp::fail(model_entry.error());
     }
     yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto mc = yaml_handler.GetModelConfig();
 
@@ -439,8 +437,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
     if (mc.files.size() > 0) {
       // TODO(sang) support multiple files
       json_data["model_path"] =
-          fmu::GetAbsolutePath(fmu::GetCortexDataPath(), fs::path(mc.files[0]))
-              .string();
+          fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
     } else {
       LOG_WARN << "model_path is empty";
       return false;
@@ -489,8 +486,8 @@ cpp::result<bool, std::string> ModelService::StopModel(
       return cpp::fail(model_entry.error());
     }
     yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto mc = yaml_handler.GetModelConfig();
 
@@ -538,8 +535,8 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
       return cpp::fail(model_entry.error());
     }
     yaml_handler.ModelConfigFromFile(
-        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
-                             fs::path(model_entry.value().path_to_model_yaml))
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto mc = yaml_handler.GetModelConfig();
 
