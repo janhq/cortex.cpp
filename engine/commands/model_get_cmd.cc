@@ -11,6 +11,8 @@
 namespace commands {
 
 void ModelGetCmd::Exec(const std::string& model_handle) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
@@ -19,7 +21,10 @@ void ModelGetCmd::Exec(const std::string& model_handle) {
       CLI_LOG("Error: " + model_entry.error());
       return;
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto model_config = yaml_handler.GetModelConfig();
 
     std::cout << model_config.ToString() << std::endl;
