@@ -1,12 +1,8 @@
 #include "models.h"
 #include <algorithm>
-#include <filesystem>
-#include <fstream>
 #include <iostream>
 #include <sstream>
-#include <stdexcept>
 #include "database.h"
-#include "utils/file_manager_utils.h"
 #include "utils/result.hpp"
 #include "utils/scope_exit.h"
 
@@ -52,8 +48,7 @@ bool Models::IsUnique(const std::vector<ModelEntry>& entries,
   return std::none_of(
       entries.begin(), entries.end(), [&](const ModelEntry& entry) {
         return entry.model == model_id || entry.model_alias == model_id ||
-               entry.model == model_alias ||
-               entry.model_alias == model_alias;
+               entry.model == model_alias || entry.model_alias == model_alias;
       });
 }
 
@@ -186,8 +181,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
       std::cout << "Test: " << model_list.error();
       return cpp::fail(model_list.error());
     }
-    if (IsUnique(model_list.value(), new_entry.model,
-                 new_entry.model_alias)) {
+    if (IsUnique(model_list.value(), new_entry.model, new_entry.model_alias)) {
       if (use_short_alias) {
         new_entry.model_alias =
             GenerateShortenedAlias(new_entry.model, model_list.value());

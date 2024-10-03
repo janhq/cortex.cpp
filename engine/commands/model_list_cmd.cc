@@ -12,7 +12,6 @@ namespace commands {
 void ModelListCmd::Exec() {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
-  auto models_path = file_manager_utils::GetModelsContainerPath();
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   tabulate::Table table;
