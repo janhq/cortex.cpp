@@ -245,7 +245,7 @@ void Models::ImportModel(
     auto yaml_rel_path =
         fmu::Subtract(fs::path(model_yaml_path), fmu::GetCortexDataPath());
     cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
-                                       yaml_rel_path, modelHandle};
+                                       yaml_rel_path.string(), modelHandle};
 
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());

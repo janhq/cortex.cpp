@@ -3,7 +3,6 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-using namespace std;
 
 #include "utils/format_utils.h"
 #include "utils/file_manager_utils.h"
