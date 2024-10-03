@@ -17,14 +17,19 @@
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
                std::optional<std::string> author) {
-
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   gguf_handler.Parse(ggufDownloadItem.localPath.string());
+
   config::ModelConfig model_config = gguf_handler.GetModelConfig();
   model_config.id =
       ggufDownloadItem.localPath.parent_path().filename().string();
-  model_config.files = {ggufDownloadItem.localPath.string()};
+  // use relative path for files
+  auto file_rel_path = fmu::Subtract(fs::path(ggufDownloadItem.localPath),
+                                     fmu::GetCortexDataPath());
+  model_config.files = {file_rel_path.string()};
   model_config.model = ggufDownloadItem.id;
   yaml_handler.UpdateModelConfig(model_config);
 
@@ -383,11 +388,13 @@ cpp::result<void, std::string> ModelService::DeleteModel(
       if (mc.files.size() > 0) {
         if (mc.engine == "cortex.llamacpp") {
           for (auto& file : mc.files) {
-            std::filesystem::path gguf_p(file);
+            std::filesystem::path gguf_p(
+                fmu::GetAbsolutePath(fmu::GetCortexDataPath(), fs::path(file)));
             std::filesystem::remove(gguf_p);
           }
         } else {
-          std::filesystem::path f(mc.files[0]);
+          std::filesystem::path f(fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                                                       fs::path(mc.files[0])));
           std::filesystem::remove_all(f);
         }
       } else {
@@ -431,7 +438,9 @@ cpp::result<bool, std::string> ModelService::StartModel(
     Json::Value json_data = mc.ToJson();
     if (mc.files.size() > 0) {
       // TODO(sang) support multiple files
-      json_data["model_path"] = mc.files[0];
+      json_data["model_path"] =
+          fmu::GetAbsolutePath(fmu::GetCortexDataPath(), fs::path(mc.files[0]))
+              .string();
     } else {
       LOG_WARN << "model_path is empty";
       return false;

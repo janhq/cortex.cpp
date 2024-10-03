@@ -224,6 +224,8 @@ void Models::UpdateModel(const HttpRequestPtr& req,
 void Models::ImportModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   if (!http_util::HasFieldInReq(req, callback, "model") ||
       !http_util::HasFieldInReq(req, callback, "modelPath")) {
     return;
@@ -233,14 +235,18 @@ void Models::ImportModel(
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   cortex::db::Models modellist_utils_obj;
-
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(modelHandle + ".yml"))
                                     .string();
-  cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
-                                     model_yaml_path, modelHandle};
+
   try {
+    // Use relative path for model_yaml_path. In case of import, we use absolute path for model
+    auto yaml_rel_path =
+        fmu::Subtract(fs::path(model_yaml_path), fmu::GetCortexDataPath());
+    cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
+                                       yaml_rel_path, modelHandle};
+
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     gguf_handler.Parse(modelPath);
