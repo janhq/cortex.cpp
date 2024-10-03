@@ -72,7 +72,7 @@ cpp::result<bool, std::string> DownloadService::AddDownloadTask(
     if (result.has_error()) {
       dl_err_msg = result.error();
       break;
-    } else if(result) {
+    } else if (result) {
       has_task_done |= result.value();
     }
   }
@@ -174,7 +174,9 @@ cpp::result<bool, std::string> DownloadService::Download(
                                      << download_item.localPath.string()
                                      << " - " << existing_file_size);
       auto missing_bytes = download_item.bytes.value() - existing_file_size;
-      if (missing_bytes > 0) {
+      if (missing_bytes > 0 &&
+          download_item.localPath.extension().string() != ".yaml" &&
+          download_item.localPath.extension().string() != ".yml") {
         CLI_LOG("Found unfinished download! Additional "
                 << format_utils::BytesToHumanReadable(missing_bytes)
                 << " need to be downloaded.");
@@ -185,7 +187,7 @@ cpp::result<bool, std::string> DownloadService::Download(
           mode = "ab";
           CLI_LOG("Resuming download..");
         } else {
-          CLI_LOG("Start over..");          
+          CLI_LOG("Start over..");
         }
       } else {
         CLI_LOG(download_item.localPath.filename().string()

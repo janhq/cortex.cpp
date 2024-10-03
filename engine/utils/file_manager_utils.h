@@ -6,7 +6,6 @@
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
 
-
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
@@ -145,6 +144,9 @@ inline void CreateConfigFileIfNotExist() {
 
   auto config = config_yaml_utils::CortexConfig{
       .logFolderPath = defaultDataFolderPath.string(),
+      .logLlamaCppPath = kLogsLlamacppBaseName,
+      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
+      .logOnnxPath = kLogsOnnxBaseName,
       .dataFolderPath = defaultDataFolderPath.string(),
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
