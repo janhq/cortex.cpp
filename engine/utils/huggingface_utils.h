@@ -4,6 +4,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <cstdlib>
 #include "utils/json.hpp"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
@@ -47,20 +48,41 @@ struct HuggingFaceModelRepoInfo {
   std::string createdAt;
 };
 
+// Helper function to get Hugging Face authorization token from environment
+inline std::optional<std::string> GetHuggingFaceToken() {
+  const char* token = std::getenv("HF_TOKEN");
+  if (token != nullptr) {
+    return std::string(token);
+  }
+  return std::nullopt;
+}
+
+// Function to create the headers with or without the authorization token
+inline httplib::Headers CreateHeaders() {
+  httplib::Headers headers;
+  auto token = GetHuggingFaceToken();
+  if (token) {
+    headers.emplace("Authorization", "Bearer " + token.value());
+  }
+  return headers;
+}
+
 inline cpp::result<std::vector<HuggingFaceBranch>, std::string>
 GetModelRepositoryBranches(const std::string& author,
                            const std::string& modelName) {
   if (author.empty() || modelName.empty()) {
     return cpp::fail("Author and model name cannot be empty");
   }
+  
   auto url_obj = url_parser::Url{
       .protocol = "https",
       .host = kHuggingfaceHost,
       .pathParams = {"api", "models", author, modelName, "refs"}};
 
   httplib::Client cli(url_obj.GetProtocolAndHost());
-  auto res = cli.Get(url_obj.GetPathAndQuery());
-  if (res->status != httplib::StatusCode::OK_200) {
+  auto res = cli.Get(url_obj.GetPathAndQuery(), CreateHeaders());
+
+  if (!res || res->status != httplib::StatusCode::OK_200) {
     return cpp::fail("Failed to get model repository branches: " + author +
                      "/" + modelName);
   }
@@ -89,14 +111,16 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
   if (author.empty() || modelName.empty()) {
     return cpp::fail("Author and model name cannot be empty");
   }
+
   auto url_obj =
       url_parser::Url{.protocol = "https",
                       .host = kHuggingfaceHost,
                       .pathParams = {"api", "models", author, modelName}};
 
   httplib::Client cli(url_obj.GetProtocolAndHost());
-  auto res = cli.Get(url_obj.GetPathAndQuery());
-  if (res->status != httplib::StatusCode::OK_200) {
+  auto res = cli.Get(url_obj.GetPathAndQuery(), CreateHeaders());
+
+  if (!res || res->status != httplib::StatusCode::OK_200) {
     return cpp::fail("Failed to get model repository info: " + author + "/" +
                      modelName);
   }

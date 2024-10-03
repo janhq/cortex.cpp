@@ -120,6 +120,7 @@ jobs:
           rm build/cortex-beta
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN_READ }}
 
 
       - name: Run e2e tests
@@ -136,6 +137,7 @@ jobs:
           rm build/cortex-beta.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN_READ }}
 
       - name: Pre-package
         run: |
