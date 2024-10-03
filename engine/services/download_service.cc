@@ -173,6 +173,7 @@ cpp::result<bool, std::string> DownloadService::Download(
       CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
                                      << download_item.localPath.string()
                                      << " - " << existing_file_size);
+      CTL_INF("Download item size: " << download_item.bytes.value());                               
       auto missing_bytes = download_item.bytes.value() - existing_file_size;
       if (missing_bytes > 0) {
         CLI_LOG("Found unfinished download! Additional "
