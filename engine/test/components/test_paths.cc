@@ -27,27 +27,32 @@ TEST_F(PathTests, IsSubpath_Subpath_ReturnsTrue) {
 
 TEST_F(PathTests, IsSubpath_NotSubpath_ReturnsFalse) {
   auto base = std::filesystem::path("/base");
-  auto notSubpath = std::filesystem::path("/other/path");
-  EXPECT_FALSE(IsSubpath(base, notSubpath));
+  auto not_subpath = std::filesystem::path("/other/path");
+  EXPECT_FALSE(IsSubpath(base, not_subpath));
 }
 
 TEST_F(PathTests, IsSubpath_EmptyRelative_ReturnsFalse) {
   auto base = std::filesystem::path("/base");
-  auto emptyPath = std::filesystem::path("/base/");
-  EXPECT_FALSE(IsSubpath(base, emptyPath));
+  auto empty_path = std::filesystem::path("");
+  EXPECT_FALSE(IsSubpath(base, empty_path));
+}
+
+TEST_F(PathTests, IsSubpath_SamePath_ReturnsTrue) {
+  auto base = std::filesystem::path("/base");  
+  EXPECT_TRUE(IsSubpath(base, base));
 }
 
 // Test cases for Subtract
 TEST_F(PathTests, Subtract_SubtractingBaseFromSubPath_ReturnsRelativePath) {
   auto base = std::filesystem::path("/base");
-  auto subPath = std::filesystem::path("/base/relative/path");
-  EXPECT_EQ(Subtract(subPath, base), std::filesystem::path("relative/path"));
+  auto subpath = std::filesystem::path("/base/relative/path");
+  EXPECT_EQ(Subtract(subpath, base), std::filesystem::path("relative/path"));
 }
 
 TEST_F(PathTests, Subtract_NotASubPath_ReturnsOriginalPath) {
   auto base = std::filesystem::path("/base");
-  auto notSubPath = std::filesystem::path("/other/path");
-  EXPECT_EQ(Subtract(notSubPath, base), notSubPath);
+  auto not_subpath = std::filesystem::path("/other/path");
+  EXPECT_EQ(Subtract(not_subpath, base), not_subpath);
 }
 
 TEST_F(PathTests, Subtract_IdenticalPaths_ReturnsEmptyRelative) {
