@@ -302,6 +302,8 @@ inline std::filesystem::path GetAbsolutePath(const std::filesystem::path& base,
 
 inline bool IsSubpath(const std::filesystem::path& base,
                       const std::filesystem::path& path) {
+  if (base == path)
+    return true;
   auto rel = std::filesystem::relative(path, base);
   return !rel.empty() && rel.native()[0] != '.';
 }

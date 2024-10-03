@@ -14,6 +14,8 @@ ModelImportCmd::ModelImportCmd(std::string model_handle, std::string model_path)
       model_path_(std::move(model_path)) {}
 
 void ModelImportCmd::Exec() {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   cortex::db::Models modellist_utils_obj;
@@ -22,10 +24,13 @@ void ModelImportCmd::Exec() {
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(model_handle_ + ".yml"))
                                     .string();
-  cortex::db::ModelEntry model_entry{
-      model_handle_,   "local",       "imported",
-      model_yaml_path, model_handle_};
   try {
+    // Use relative path for model_yaml_path. In case of import, we use absolute path for model
+    auto yaml_rel_path =
+        fmu::Subtract(fs::path(model_yaml_path), fmu::GetCortexDataPath());
+    cortex::db::ModelEntry model_entry{model_handle_, "local", "imported",
+                                       yaml_rel_path, model_handle_};
+
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     gguf_handler.Parse(model_path_);

@@ -6,6 +6,7 @@
 using namespace std;
 
 #include "utils/format_utils.h"
+#include "utils/file_manager_utils.h"
 #include "yaml_config.h"
 namespace config {
 // Method to read YAML file
@@ -14,6 +15,8 @@ void YamlHandler::Reset() {
   yaml_node_.reset();
 };
 void YamlHandler::ReadYamlFile(const std::string& file_path) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   try {
     yaml_node_ = YAML::LoadFile(file_path);
     // incase of model.yml file, we don't have files yet, create them
@@ -24,8 +27,9 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       std::vector<std::string> v;
       if (yaml_node_["engine"] &&
           yaml_node_["engine"].as<std::string>() == "cortex.llamacpp") {
-        // TODO: change prefix to models:// with source from cortexso
-        v.emplace_back(s.substr(0, s.find_last_of('/')) + "/model.gguf");
+        auto abs_path = s.substr(0, s.find_last_of('/')) + "/model.gguf";
+        auto rel_path = fmu::Subtract(fs::path(abs_path), fmu::GetCortexDataPath());
+        v.emplace_back(rel_path.string());
       } else {
         v.emplace_back(s.substr(0, s.find_last_of('/')));
       }
