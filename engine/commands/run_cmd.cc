@@ -32,12 +32,17 @@ void RunCmd::Exec(bool chat_flag) {
   }
 
   try {
+    namespace fs = std::filesystem;
+    namespace fmu = file_manager_utils;
     auto model_entry = modellist_handler.GetModelInfo(*model_id);
     if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                             fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto mc = yaml_handler.GetModelConfig();
 
     // Check if engine existed. If not, download it

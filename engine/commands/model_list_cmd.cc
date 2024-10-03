@@ -10,6 +10,8 @@
 namespace commands {
 
 void ModelListCmd::Exec() {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   auto models_path = file_manager_utils::GetModelsContainerPath();
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
@@ -29,7 +31,10 @@ void ModelListCmd::Exec() {
     // auto model_entry = modellist_handler.GetModelInfo(model_handle);
     try {
       count += 1;
-      yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+      yaml_handler.ModelConfigFromFile(
+        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                             fs::path(model_entry.path_to_model_yaml))
+            .string());
       auto model_config = yaml_handler.GetModelConfig();
       table.add_row({std::to_string(count), model_entry.model,
                      model_entry.model_alias, model_config.engine,

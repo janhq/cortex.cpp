@@ -1,5 +1,5 @@
 #include "model_upd_cmd.h"
-
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -9,13 +9,18 @@ ModelUpdCmd::ModelUpdCmd(std::string model_handle)
 
 void ModelUpdCmd::Exec(
     const std::unordered_map<std::string, std::string>& options) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   try {
     auto model_entry = model_list_utils_.GetModelInfo(model_handle_);
     if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
     }
-    yaml_handler_.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    auto yaml_fp =
+        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                             fs::path(model_entry.value().path_to_model_yaml));
+    yaml_handler_.ModelConfigFromFile(yaml_fp.string());
     model_config_ = yaml_handler_.GetModelConfig();
 
     for (const auto& [key, value] : options) {
@@ -25,7 +30,7 @@ void ModelUpdCmd::Exec(
     }
 
     yaml_handler_.UpdateModelConfig(model_config_);
-    yaml_handler_.WriteYamlFile(model_entry.value().path_to_model_yaml);
+    yaml_handler_.WriteYamlFile(yaml_fp.string());
     CLI_LOG("Successfully updated model ID '" + model_handle_ + "'!");
   } catch (const std::exception& e) {
     CLI_LOG("Failed to update model with model ID '" + model_handle_ +

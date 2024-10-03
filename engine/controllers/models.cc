@@ -59,6 +59,8 @@ void Models::PullModel(const HttpRequestPtr& req,
 void Models::ListModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
@@ -73,8 +75,10 @@ void Models::ListModel(
     for (const auto& model_entry : list_entry.value()) {
       // auto model_entry = modellist_handler.GetModelInfo(model_handle);
       try {
-
-        yaml_handler.ModelConfigFromFile(model_entry.path_to_model_yaml);
+        yaml_handler.ModelConfigFromFile(
+            fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                                 fs::path(model_entry.path_to_model_yaml))
+                .string());
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
 
@@ -106,6 +110,8 @@ void Models::ListModel(
 void Models::GetModel(const HttpRequestPtr& req,
                       std::function<void(const HttpResponsePtr&)>&& callback,
                       const std::string& model_id) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   LOG_DEBUG << "GetModel, Model handle: " << model_id;
   Json::Value ret;
   ret["object"] = "list";
@@ -125,7 +131,10 @@ void Models::GetModel(const HttpRequestPtr& req,
       callback(resp);
       return;
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                             fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto model_config = yaml_handler.GetModelConfig();
 
     Json::Value obj = model_config.ToJson();
@@ -137,8 +146,8 @@ void Models::GetModel(const HttpRequestPtr& req,
     resp->setStatusCode(k200OK);
     callback(resp);
   } catch (const std::exception& e) {
-    std::string message = "Fail to get model information with ID '" +
-                          model_id + "': " + e.what();
+    std::string message =
+        "Fail to get model information with ID '" + model_id + "': " + e.what();
     LOG_ERROR << message;
     ret["data"] = data;
     ret["result"] = "Fail to get model information";
@@ -171,16 +180,21 @@ void Models::DeleteModel(const HttpRequestPtr& req,
 void Models::UpdateModel(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
                          const std::string& model_id) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   auto json_body = *(req->getJsonObject());
   try {
     cortex::db::Models model_list_utils;
     auto model_entry = model_list_utils.GetModelInfo(model_id);
     config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    auto yaml_fp =
+        fmu::GetAbsolutePath(fmu::GetCortexDataPath(),
+                             fs::path(model_entry.value().path_to_model_yaml));
+    yaml_handler.ModelConfigFromFile(yaml_fp.string());
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
     model_config.FromJson(json_body);
     yaml_handler.UpdateModelConfig(model_config);
-    yaml_handler.WriteYamlFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.WriteYamlFile(yaml_fp.string());
     std::string message = "Successfully update model ID '" + model_id +
                           "': " + json_body.toStyledString();
     LOG_INFO << message;
@@ -295,13 +309,13 @@ void Models::SetModelAlias(
     if (result.has_error()) {
       std::string message = result.error();
       LOG_ERROR << message;
-        Json::Value ret;
-        ret["result"] = "Set alias failed!";
-        ret["modelHandle"] = model_handle;
-        ret["message"] = message;
-        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-        resp->setStatusCode(k400BadRequest);
-        callback(resp);
+      Json::Value ret;
+      ret["result"] = "Set alias failed!";
+      ret["modelHandle"] = model_handle;
+      ret["message"] = message;
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
     } else {
       if (result.value()) {
         std::string message = "Successfully set model alias '" + model_alias +

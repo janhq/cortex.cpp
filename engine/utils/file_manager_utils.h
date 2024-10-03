@@ -6,7 +6,6 @@
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
 
-
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
@@ -289,6 +288,30 @@ inline std::string DownloadTypeToString(DownloadType type) {
       return "Cortex";
     default:
       return "UNKNOWN";
+  }
+}
+
+inline std::filesystem::path GetAbsolutePath(const std::filesystem::path& base,
+                                             const std::filesystem::path& r) {
+  if (r.is_absolute()) {
+    return r;
+  } else {
+    return base / r;
+  }
+}
+
+inline bool IsSubpath(const std::filesystem::path& base,
+                      const std::filesystem::path& path) {
+  auto rel = std::filesystem::relative(path, base);
+  return !rel.empty() && rel.native()[0] != '.';
+}
+
+inline std::filesystem::path Subtract(const std::filesystem::path& path,
+                                      const std::filesystem::path& base) {
+  if (IsSubpath(base, path)) {
+    return path.lexically_relative(base);
+  } else {
+    return path;
   }
 }
 
