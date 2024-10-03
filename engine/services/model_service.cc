@@ -17,14 +17,19 @@
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
                std::optional<std::string> author) {
-
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   gguf_handler.Parse(ggufDownloadItem.localPath.string());
+
   config::ModelConfig model_config = gguf_handler.GetModelConfig();
   model_config.id =
       ggufDownloadItem.localPath.parent_path().filename().string();
-  model_config.files = {ggufDownloadItem.localPath.string()};
+  // use relative path for files
+  auto file_rel_path =
+      fmu::ToRelativeCortexDataPath(fs::path(ggufDownloadItem.localPath));
+  model_config.files = {file_rel_path.string()};
   model_config.model = ggufDownloadItem.id;
   yaml_handler.UpdateModelConfig(model_config);
 
@@ -39,12 +44,15 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   auto branch = url_obj.pathParams[3];
   CTL_INF("Adding model to modellist with branch: " << branch);
 
+  auto rel = file_manager_utils::ToRelativeCortexDataPath(yaml_name);
+  CTL_INF("path_to_model_yaml: " << rel.string());
+
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
   cortex::db::ModelEntry model_entry{.model = ggufDownloadItem.id,
                                      .author_repo_id = author_id,
                                      .branch_name = branch,
-                                     .path_to_model_yaml = yaml_name.string(),
+                                     .path_to_model_yaml = rel.string(),
                                      .model_alias = ggufDownloadItem.id};
   modellist_utils_obj.AddModelEntry(model_entry, true);
 }
@@ -295,13 +303,16 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
+    auto rel =
+        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
+    CTL_INF("path_to_model_yaml: " << rel.string());
+
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{
-        .model = model_id,
-        .author_repo_id = "cortexso",
-        .branch_name = branch,
-        .path_to_model_yaml = model_yml_item->localPath.string(),
-        .model_alias = model_id};
+    cortex::db::ModelEntry model_entry{.model = model_id,
+                                       .author_repo_id = "cortexso",
+                                       .branch_name = branch,
+                                       .path_to_model_yaml = rel.string(),
+                                       .model_alias = model_id};
     modellist_utils_obj.AddModelEntry(model_entry);
   };
 
@@ -353,7 +364,8 @@ ModelService::DownloadHuggingFaceGgufModel(const std::string& author,
 
 cpp::result<void, std::string> ModelService::DeleteModel(
     const std::string& model_handle) {
-
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
@@ -363,20 +375,24 @@ cpp::result<void, std::string> ModelService::DeleteModel(
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    auto yaml_fp = fmu::ToAbsoluteCortexDataPath(
+        fs::path(model_entry.value().path_to_model_yaml));
+    yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
     // Remove yaml file
-    std::filesystem::remove(model_entry.value().path_to_model_yaml);
+    std::filesystem::remove(yaml_fp);
     // Remove model files if they are not imported locally
     if (model_entry.value().branch_name != "imported") {
       if (mc.files.size() > 0) {
         if (mc.engine == "cortex.llamacpp") {
           for (auto& file : mc.files) {
-            std::filesystem::path gguf_p(file);
+            std::filesystem::path gguf_p(
+                fmu::ToAbsoluteCortexDataPath(fs::path(file)));
             std::filesystem::remove(gguf_p);
           }
         } else {
-          std::filesystem::path f(mc.files[0]);
+          std::filesystem::path f(
+              fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])));
           std::filesystem::remove_all(f);
         }
       } else {
@@ -398,7 +414,8 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 
 cpp::result<bool, std::string> ModelService::StartModel(
     const std::string& host, int port, const std::string& model_handle) {
-
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
@@ -408,7 +425,10 @@ cpp::result<bool, std::string> ModelService::StartModel(
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto mc = yaml_handler.GetModelConfig();
 
     httplib::Client cli(host + ":" + std::to_string(port));
@@ -416,7 +436,8 @@ cpp::result<bool, std::string> ModelService::StartModel(
     Json::Value json_data = mc.ToJson();
     if (mc.files.size() > 0) {
       // TODO(sang) support multiple files
-      json_data["model_path"] = mc.files[0];
+      json_data["model_path"] =
+          fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
     } else {
       LOG_WARN << "model_path is empty";
       return false;
@@ -453,6 +474,8 @@ cpp::result<bool, std::string> ModelService::StartModel(
 
 cpp::result<bool, std::string> ModelService::StopModel(
     const std::string& host, int port, const std::string& model_handle) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
@@ -462,7 +485,10 @@ cpp::result<bool, std::string> ModelService::StopModel(
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto mc = yaml_handler.GetModelConfig();
 
     httplib::Client cli(host + ":" + std::to_string(port));
@@ -497,6 +523,8 @@ cpp::result<bool, std::string> ModelService::StopModel(
 
 cpp::result<bool, std::string> ModelService::GetModelStatus(
     const std::string& host, int port, const std::string& model_handle) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
@@ -506,7 +534,10 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto mc = yaml_handler.GetModelConfig();
 
     httplib::Client cli(host + ":" + std::to_string(port));

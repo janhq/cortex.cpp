@@ -6,7 +6,6 @@
 #include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
 
-
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
 #elif defined(__linux__)
@@ -145,6 +144,9 @@ inline void CreateConfigFileIfNotExist() {
 
   auto config = config_yaml_utils::CortexConfig{
       .logFolderPath = defaultDataFolderPath.string(),
+      .logLlamaCppPath = kLogsLlamacppBaseName,
+      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
+      .logOnnxPath = kLogsOnnxBaseName,
       .dataFolderPath = defaultDataFolderPath.string(),
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
@@ -290,6 +292,42 @@ inline std::string DownloadTypeToString(DownloadType type) {
     default:
       return "UNKNOWN";
   }
+}
+
+inline std::filesystem::path GetAbsolutePath(const std::filesystem::path& base,
+                                             const std::filesystem::path& r) {
+  if (r.is_absolute()) {
+    return r;
+  } else {
+    return base / r;
+  }
+}
+
+inline bool IsSubpath(const std::filesystem::path& base,
+                      const std::filesystem::path& path) {
+  if (base == path)
+    return true;
+  auto rel = std::filesystem::relative(path, base);
+  return !rel.empty() && rel.native()[0] != '.';
+}
+
+inline std::filesystem::path Subtract(const std::filesystem::path& path,
+                                      const std::filesystem::path& base) {
+  if (IsSubpath(base, path)) {
+    return path.lexically_relative(base);
+  } else {
+    return path;
+  }
+}
+
+inline std::filesystem::path ToRelativeCortexDataPath(
+    const std::filesystem::path& path) {
+  return Subtract(path, GetCortexDataPath());
+}
+
+inline std::filesystem::path ToAbsoluteCortexDataPath(
+    const std::filesystem::path& path) {
+  return GetAbsolutePath(GetCortexDataPath(), path);
 }
 
 }  // namespace file_manager_utils

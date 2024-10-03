@@ -1,6 +1,7 @@
 #include "chat_completion_cmd.h"
 #include "httplib.h"
 
+#include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
 #include "model_status_cmd.h"
@@ -8,7 +9,6 @@
 #include "server_start_cmd.h"
 #include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
-#include "config/yaml_config.h"
 
 namespace commands {
 namespace {
@@ -41,6 +41,8 @@ struct ChunkParser {
 
 void ChatCompletionCmd::Exec(const std::string& host, int port,
                              const std::string& model_handle, std::string msg) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
@@ -49,7 +51,10 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       CLI_LOG("Error: " + model_entry.error());
       return;
     }
-    yaml_handler.ModelConfigFromFile(model_entry.value().path_to_model_yaml);
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
     auto mc = yaml_handler.GetModelConfig();
     Exec(host, port, model_handle, mc, std::move(msg));
   } catch (const std::exception& e) {
