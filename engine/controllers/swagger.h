@@ -8,7 +8,7 @@ using namespace drogon;
 class SwaggerController : public drogon::HttpController<SwaggerController> {
  public:
   METHOD_LIST_BEGIN
-  ADD_METHOD_TO(SwaggerController::serveSwaggerUI, "/swagger", Get);
+  ADD_METHOD_TO(SwaggerController::serveSwaggerUI, "/", Get);
   ADD_METHOD_TO(SwaggerController::serveOpenAPISpec, "/openapi.json", Get);
   METHOD_LIST_END
 
