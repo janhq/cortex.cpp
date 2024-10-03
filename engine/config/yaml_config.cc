@@ -289,9 +289,7 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
       outFile << "version: " << yaml_node_["version"].as<std::string>() << "\n";
     }
     if (yaml_node_["files"] && yaml_node_["files"].size()) {
-      outFile << "files:             # can be universal protocol (models://) "
-                 "OR absolute local file path (file://) OR https remote URL "
-                 "(https://)\n";
+      outFile << "files:             # Can be relative OR absolute local file path\n";
       for (const auto& source : yaml_node_["files"]) {
         outFile << "  - " << source << "\n";
       }
