@@ -1,13 +1,13 @@
 #include "run_cmd.h"
 #include "chat_completion_cmd.h"
 #include "config/yaml_config.h"
+#include "cortex_upd_cmd.h"
 #include "database/models.h"
 #include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
+#include "utils/cli_selection_utils.h"
 #include "utils/logging_utils.h"
-
-#include "cortex_upd_cmd.h"
 
 namespace commands {
 
@@ -33,14 +33,21 @@ void RunCmd::Exec(bool chat_flag) {
 
   // Download model if it does not exist
   {
-    if (!modellist_handler.HasModel(model_handle_)) {
+    auto related_models_ids = modellist_handler.FindRelatedModel(model_handle_);
+    if (related_models_ids.has_error() || related_models_ids.value().empty()) {
       auto result = model_service_.DownloadModel(model_handle_);
-      if (result.has_error()) {
-        CTL_ERR("Error: " << result.error());
-        return;
-      }
       model_id = result.value();
       CTL_INF("model_id: " << model_id.value());
+    } else if (related_models_ids.value().size() == 1) {
+      model_id = related_models_ids.value().front();
+    } else {  // multiple models with nearly same name found
+      auto selection = cli_selection_utils::PrintSelection(
+          related_models_ids.value(), "Local Models: (press enter to select)");
+      if (!selection.has_value()) {
+        return;
+      }
+      model_id = selection.value();
+      CLI_LOG("Selected: " << selection.value());
     }
   }
 
