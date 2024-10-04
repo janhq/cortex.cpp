@@ -71,7 +71,7 @@ inline std::filesystem::path GetHomeDirectoryPath() {
       throw std::runtime_error("Cannot determine the home directory");
     }
   }
-#else 
+#else
   const char* homeDir = std::getenv("HOME");
   if (!homeDir) {
     throw std::runtime_error("Cannot determine the home directory");
