@@ -140,7 +140,7 @@ inline void CreateConfigFileIfNotExist() {
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto defaultDataFolderPath =
       file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
-  CTL_INF("Default data folder path: " + defaultDataFolderPath.string());
+  CLI_LOG("Default data folder path: " + defaultDataFolderPath.string());
 
   auto config = config_yaml_utils::CortexConfig{
       .logFolderPath = defaultDataFolderPath.string(),
@@ -188,7 +188,7 @@ inline std::filesystem::path GetCortexDataPath() {
   }
 
   if (!std::filesystem::exists(data_folder_path)) {
-    CTL_INF("Cortex home folder not found. Create one: " +
+    CLI_LOG("Cortex home folder not found. Create one: " +
             data_folder_path.string());
     std::filesystem::create_directory(data_folder_path);
   }
