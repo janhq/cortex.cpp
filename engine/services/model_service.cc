@@ -151,17 +151,46 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
     return cpp::fail(branches.error());
   }
 
-  std::vector<std::string> options{};
+  auto default_model_branch = huggingface_utils::GetDefaultBranch(modelName);
+
+  cortex::db::Models modellist_handler;
+  auto downloaded_model_ids =
+      modellist_handler.FindRelatedModel(modelName).value_or(
+          std::vector<std::string>{});
+
+  std::vector<std::string> avai_download_opts{};
   for (const auto& branch : branches.value()) {
-    if (branch.second.name != "main") {
-      options.emplace_back(branch.second.name);
+    if (branch.second.name == "main") {  // main branch only have metadata. skip
+      continue;
     }
+    auto model_id = modelName + ":" + branch.second.name;
+    if (std::find(downloaded_model_ids.begin(), downloaded_model_ids.end(),
+                  model_id) !=
+        downloaded_model_ids.end()) {  // if downloaded, we skip it
+      continue;
+    }
+    avai_download_opts.emplace_back(model_id);
   }
-  if (options.empty()) {
+
+  if (avai_download_opts.empty()) {
+    // TODO: only with pull, we return
     return cpp::fail("No variant available");
   }
-  auto selection = cli_selection_utils::PrintSelection(options);
-  return DownloadModelFromCortexso(modelName, selection.value());
+  std::optional<std::string> normalized_def_branch = std::nullopt;
+  if (default_model_branch.has_value()) {
+    normalized_def_branch = modelName + ":" + default_model_branch.value();
+  }
+  string_utils::SortStrings(downloaded_model_ids);
+  string_utils::SortStrings(avai_download_opts);
+  auto selection = cli_selection_utils::PrintModelSelection(
+      downloaded_model_ids, avai_download_opts, normalized_def_branch);
+  if (!selection.has_value()) {
+    return cpp::fail("Invalid selection");
+  }
+
+  CLI_LOG("Selected: " << selection.value());
+  auto branch_name = selection.value().substr(modelName.size() + 1);
+  return DownloadModelFromCortexso(modelName, branch_name, false);
 }
 
 std::optional<config::ModelConfig> ModelService::GetDownloadedModel(

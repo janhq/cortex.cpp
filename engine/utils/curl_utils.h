@@ -1,7 +1,6 @@
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include <string>
-#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "yaml-cpp/yaml.h"
 
