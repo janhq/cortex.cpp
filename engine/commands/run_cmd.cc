@@ -91,7 +91,8 @@ void RunCmd::Exec(bool chat_flag) {
     // Always start model if not llamacpp
     // If it is llamacpp, then check model status first
     {
-      if ((mc.engine.find("llamacpp") == std::string::npos) ||
+      if ((mc.engine.find(kLlamaRepo) == std::string::npos &&
+           mc.engine.find(kLlamaEngine) == std::string::npos) ||
           !commands::ModelStatusCmd().IsLoaded(host_, port_, *model_id)) {
         if (!ModelStartCmd().Exec(host_, port_, *model_id)) {
           return;
