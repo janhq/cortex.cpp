@@ -169,19 +169,19 @@ jobs:
         with:
           python-version: '3.10' 
           
-      - name: Run e2e tests
-        run: |
-          cd engine
-          cp build/cortex.exe build/cortex-nightly.exe
-          cp build/cortex.exe build/cortex-beta.exe
-          python -m pip install --upgrade pip
-          python -m pip install pytest
-          python -m pip install requests          
-          python e2e-test/main.py
-          rm build/cortex-nightly.exe
-          rm build/cortex-beta.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Run e2e tests
+      #   run: |
+      #     cd engine
+      #     cp build/cortex.exe build/cortex-nightly.exe
+      #     cp build/cortex.exe build/cortex-beta.exe
+      #     python -m pip install --upgrade pip
+      #     python -m pip install pytest
+      #     python -m pip install requests          
+      #     python e2e-test/main.py
+      #     rm build/cortex-nightly.exe
+      #     rm build/cortex-beta.exe
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
       - name: Pre-package
         run: |

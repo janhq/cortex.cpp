@@ -22,7 +22,7 @@ find_package(LibArchive REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gtest_main yaml-cpp::yaml-cpp
+target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gtest_main yaml-cpp::yaml-cpp 
                                               ${CMAKE_THREAD_LIBS_INIT})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE httplib::httplib)
