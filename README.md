@@ -81,13 +81,13 @@ Cortex.cpp is a multi-engine that uses `llama.cpp` as the default engine but als
   <tr style="text-align:center">
     <td style="text-align:center"><b>Beta (Preview)</b></td>
     <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/windowns-amd64-local'>
+      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
         <b>cortex-local-installer.exe</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/windowns-amd64-network'>
+      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
         <b>cortex-network-installer.exe</b>
       </a>
