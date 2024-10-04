@@ -30,7 +30,7 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
   uint32_t size = sizeof(buffer);
 
   if (_NSGetExecutablePath(buffer, &size) == 0) {
-    CTL_INF("Executable path: " << buffer);
+    // CTL_DBG("Executable path: " << buffer);
     return std::filesystem::path{buffer}.parent_path();
   } else {
     CTL_ERR("Failed to get executable path");
@@ -41,7 +41,7 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
   ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
   if (len != -1) {
     buffer[len] = '\0';
-    CTL_INF("Executable path: " << buffer);
+    // CTL_DBG("Executable path: " << buffer);
     return std::filesystem::path{buffer}.parent_path();
   } else {
     CTL_ERR("Failed to get executable path");
@@ -50,7 +50,7 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
 #elif defined(_WIN32)
   char buffer[MAX_PATH];
   GetModuleFileNameA(NULL, buffer, MAX_PATH);
-  CTL_INF("Executable path: " << buffer);
+  // CTL_DBG("Executable path: " << buffer);
   return std::filesystem::path{buffer}.parent_path();
 #else
   LOG_ERROR << "Unsupported platform!";
@@ -105,7 +105,7 @@ inline std::filesystem::path GetConfigurationPath() {
 
   std::string config_file_name{kCortexConfigurationFileName};
   config_file_name.append(env_postfix);
-  CTL_INF("Config file name: " + config_file_name);
+  // CTL_INF("Config file name: " + config_file_name);
 
   auto home_path = GetHomeDirectoryPath();
   auto configuration_path = home_path / config_file_name;
@@ -144,6 +144,9 @@ inline void CreateConfigFileIfNotExist() {
 
   auto config = config_yaml_utils::CortexConfig{
       .logFolderPath = defaultDataFolderPath.string(),
+      .logLlamaCppPath = kLogsLlamacppBaseName,
+      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
+      .logOnnxPath = kLogsOnnxBaseName,
       .dataFolderPath = defaultDataFolderPath.string(),
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,

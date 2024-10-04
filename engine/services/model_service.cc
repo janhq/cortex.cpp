@@ -153,8 +153,8 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
 
   std::vector<std::string> options{};
   for (const auto& branch : branches.value()) {
-    if (branch.name != "main") {
-      options.emplace_back(branch.name);
+    if (branch.second.name != "main") {
+      options.emplace_back(branch.second.name);
     }
   }
   if (options.empty()) {
