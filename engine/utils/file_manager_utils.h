@@ -8,6 +8,7 @@
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
+#include <unistd.h>
 #elif defined(__linux__)
 #include <unistd.h>
 #elif defined(_WIN32)
