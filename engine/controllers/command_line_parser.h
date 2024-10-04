@@ -44,4 +44,5 @@ class CommandLineParser {
     std::unordered_map<std::string, std::string> model_update_options;
   };
   CmlData cml_data_;
+  bool executed_ = false;
 };

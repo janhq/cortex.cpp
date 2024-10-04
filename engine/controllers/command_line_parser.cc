@@ -111,6 +111,8 @@ void CommandLineParser::SetupCommonCommands() {
                         " pull [options] [model_id]");
   model_pull_cmd->add_option("model_id", cml_data_.model_id, "");
   model_pull_cmd->callback([this, model_pull_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(model_pull_cmd->help());
@@ -130,6 +132,8 @@ void CommandLineParser::SetupCommonCommands() {
   run_cmd->add_option("model_id", cml_data_.model_id, "");
   run_cmd->add_flag("--chat", cml_data_.chat_flag, "Flag for interactive mode");
   run_cmd->callback([this, run_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(run_cmd->help());
@@ -151,6 +155,8 @@ void CommandLineParser::SetupCommonCommands() {
   chat_cmd->add_option("-m,--message", cml_data_.msg,
                        "Message to chat with model");
   chat_cmd->callback([this, chat_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(chat_cmd->help());
@@ -184,7 +190,9 @@ void CommandLineParser::SetupModelCommands() {
                     " models [options] [subcommand]");
   models_cmd->group(kModelsGroup);
 
-  models_cmd->callback([models_cmd] {
+  models_cmd->callback([this, models_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (models_cmd->get_subcommands().empty()) {
       CLI_LOG(models_cmd->help());
     }
@@ -197,6 +205,8 @@ void CommandLineParser::SetupModelCommands() {
   model_start_cmd->add_option("model_id", cml_data_.model_id, "");
   model_start_cmd->group(kSubcommands);
   model_start_cmd->callback([this, model_start_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(model_start_cmd->help());
@@ -214,6 +224,8 @@ void CommandLineParser::SetupModelCommands() {
   stop_model_cmd->group(kSubcommands);
   stop_model_cmd->add_option("model_id", cml_data_.model_id, "");
   stop_model_cmd->callback([this, stop_model_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(stop_model_cmd->help());
@@ -227,7 +239,11 @@ void CommandLineParser::SetupModelCommands() {
   auto list_models_cmd =
       models_cmd->add_subcommand("list", "List all models locally");
   list_models_cmd->group(kSubcommands);
-  list_models_cmd->callback([]() { commands::ModelListCmd().Exec(); });
+  list_models_cmd->callback([this]() {
+    if (std::exchange(executed_, true))
+      return;
+    commands::ModelListCmd().Exec();
+  });
 
   auto get_models_cmd =
       models_cmd->add_subcommand("get", "Get info of {model_id} locally");
@@ -236,6 +252,8 @@ void CommandLineParser::SetupModelCommands() {
   get_models_cmd->group(kSubcommands);
   get_models_cmd->add_option("model_id", cml_data_.model_id, "");
   get_models_cmd->callback([this, get_models_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(get_models_cmd->help());
@@ -251,6 +269,8 @@ void CommandLineParser::SetupModelCommands() {
   model_del_cmd->group(kSubcommands);
   model_del_cmd->add_option("model_id", cml_data_.model_id, "");
   model_del_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty()) {
       CLI_LOG("[model_id] is required\n");
       CLI_LOG(model_del_cmd->help());
@@ -271,6 +291,8 @@ void CommandLineParser::SetupModelCommands() {
   model_alias_cmd->add_option("--alias", cml_data_.model_alias,
                               "new alias to be set");
   model_alias_cmd->callback([this, model_alias_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty() || cml_data_.model_alias.empty()) {
       CLI_LOG("[model_id] and [alias] are required\n");
       CLI_LOG(model_alias_cmd->help());
@@ -294,6 +316,8 @@ void CommandLineParser::SetupModelCommands() {
                                "Absolute path to .gguf model, the path should "
                                "include the gguf file name");
   model_import_cmd->callback([this, model_import_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.model_id.empty() || cml_data_.model_path.empty()) {
       CLI_LOG("[model_id] and [model_path] are required\n");
       CLI_LOG(model_import_cmd->help());
@@ -310,7 +334,9 @@ void CommandLineParser::SetupEngineCommands() {
   engines_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                      " engines [options] [subcommand]");
   engines_cmd->group(kEngineGroup);
-  engines_cmd->callback([engines_cmd] {
+  engines_cmd->callback([this, engines_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (engines_cmd->get_subcommands().empty()) {
       CLI_LOG("A subcommand is required\n");
       CLI_LOG(engines_cmd->help());
@@ -320,7 +346,9 @@ void CommandLineParser::SetupEngineCommands() {
   auto list_engines_cmd =
       engines_cmd->add_subcommand("list", "List all cortex engines");
   list_engines_cmd->group(kSubcommands);
-  list_engines_cmd->callback([]() {
+  list_engines_cmd->callback([this]() {
+    if (std::exchange(executed_, true))
+      return;
     commands::EngineListCmd command;
     command.Exec();
   });
@@ -329,7 +357,9 @@ void CommandLineParser::SetupEngineCommands() {
   install_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                      " engines install [engine_name] [options]");
   install_cmd->group(kSubcommands);
-  install_cmd->callback([install_cmd] {
+  install_cmd->callback([this, install_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (install_cmd->get_subcommands().empty()) {
       CLI_LOG("[engine_name] is required\n");
       CLI_LOG(install_cmd->help());
@@ -345,7 +375,9 @@ void CommandLineParser::SetupEngineCommands() {
       engines_cmd->add_subcommand("uninstall", "Uninstall engine");
   uninstall_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                        " engines uninstall [engine_name] [options]");
-  uninstall_cmd->callback([uninstall_cmd] {
+  uninstall_cmd->callback([this, uninstall_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (uninstall_cmd->get_subcommands().empty()) {
       CLI_LOG("[engine_name] is required\n");
       CLI_LOG(uninstall_cmd->help());
@@ -366,6 +398,8 @@ void CommandLineParser::SetupSystemCommands() {
   cml_data_.port = std::stoi(cml_data_.config.apiServerPort);
   start_cmd->add_option("-p, --port", cml_data_.port, "Server port to listen");
   start_cmd->callback([this] {
+    if (std::exchange(executed_, true))
+      return;
     if (cml_data_.port != stoi(cml_data_.config.apiServerPort)) {
       CTL_INF("apiServerPort changed from " << cml_data_.config.apiServerPort
                                             << " to " << cml_data_.port);
@@ -381,6 +415,8 @@ void CommandLineParser::SetupSystemCommands() {
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
   stop_cmd->group(kSystemGroup);
   stop_cmd->callback([this] {
+    if (std::exchange(executed_, true))
+      return;
     commands::ServerStopCmd ssc(cml_data_.config.apiServerHost,
                                 std::stoi(cml_data_.config.apiServerPort));
     ssc.Exec();
@@ -391,6 +427,8 @@ void CommandLineParser::SetupSystemCommands() {
   ps_cmd->group(kSystemGroup);
   ps_cmd->usage("Usage:\n" + commands::GetCortexBinary() + "ps");
   ps_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
     commands::PsCmd().Exec(cml_data_.config.apiServerHost,
                            std::stoi(cml_data_.config.apiServerPort));
   });
@@ -399,6 +437,8 @@ void CommandLineParser::SetupSystemCommands() {
   update_cmd->group(kSystemGroup);
   update_cmd->add_option("-v", cml_data_.cortex_version, "");
   update_cmd->callback([this] {
+    if (std::exchange(executed_, true))
+      return;
 #if !defined(_WIN32)
     if (getuid()) {
       CLI_LOG("Error: Not root user. Please run with sudo.");
@@ -425,7 +465,9 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
   install_engine_cmd->add_option("-s, --source", src,
                                  "Install engine by local path");
 
-  install_engine_cmd->callback([engine_name, &version, &src] {
+  install_engine_cmd->callback([this, engine_name, &version, &src] {
+    if (std::exchange(executed_, true))
+      return;
     try {
       commands::EngineInstallCmd().Exec(engine_name, version, src);
     } catch (const std::exception& e) {
@@ -441,7 +483,9 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
                               " engines install " + engine_name + " [options]");
   uninstall_engine_cmd->group(kEngineGroup);
 
-  uninstall_engine_cmd->callback([engine_name] {
+  uninstall_engine_cmd->callback([this, engine_name] {
+    if (std::exchange(executed_, true))
+      return;
     try {
       commands::EngineUninstallCmd().Exec(engine_name);
     } catch (const std::exception& e) {
@@ -455,7 +499,9 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
   get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " engines get [engine_name] [options]");
   get_cmd->group(kSubcommands);
-  get_cmd->callback([get_cmd] {
+  get_cmd->callback([this, get_cmd] {
+    if (std::exchange(executed_, true))
+      return;
     if (get_cmd->get_subcommands().empty()) {
       CLI_LOG("[engine_name] is required\n");
       CLI_LOG(get_cmd->help());
@@ -470,8 +516,11 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                           " engines get " + engine_name + " [options]");
     engine_get_cmd->group(kEngineGroup);
-    engine_get_cmd->callback(
-        [engine_name] { commands::EngineGetCmd().Exec(engine_name); });
+    engine_get_cmd->callback([this, engine_name] {
+      if (std::exchange(executed_, true))
+        return;
+      commands::EngineGetCmd().Exec(engine_name);
+    });
   }
 }
 
@@ -536,6 +585,8 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
   }
 
   model_update_cmd->callback([this]() {
+    if (std::exchange(executed_, true))
+      return;
     commands::ModelUpdCmd command(cml_data_.model_id);
     command.Exec(cml_data_.model_update_options);
   });

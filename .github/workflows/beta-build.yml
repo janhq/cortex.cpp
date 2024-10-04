@@ -36,7 +36,7 @@ jobs:
           draft: true
           prerelease: false
 
-  build-macos-x64:
+  build-macos:
     uses: ./.github/workflows/template-build-macos.yml
     needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
     secrets: inherit
@@ -44,25 +44,8 @@ jobs:
       ref: ${{ github.ref }}
       public_provider: github
       new_version: ${{ needs.get-update-version.outputs.new_version }}
-      runs-on: macos-12
-      cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: beta
-      arch: amd64
-      upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
-      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
-
-  build-macos-arm64:
-    uses: ./.github/workflows/template-build-macos.yml
-    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
-    secrets: inherit
-    with:
-      ref: ${{ github.ref }}
-      public_provider: github
-      new_version: ${{ needs.get-update-version.outputs.new_version }}
-      runs-on: macos-latest
-      cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=/Users/runner/work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
-      channel: beta
-      arch: arm64
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
@@ -97,7 +80,7 @@ jobs:
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
   update_release_draft:
-    needs: [build-macos-x64, build-macos-arm64, build-windows-x64, build-linux-x64]
+    needs: [build-macos, build-windows-x64, build-linux-x64]
     permissions:
       # write permission is required to create a github release
       contents: write

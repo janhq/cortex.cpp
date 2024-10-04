@@ -27,6 +27,16 @@ std::chrono::seconds GetTimeSinceEpochMillisec() {
   using namespace std::chrono;
   return duration_cast<seconds>(system_clock::now().time_since_epoch());
 }
+
+std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (system_info->os == "mac") {
+    CTL_INF("Change arch from " << system_info->arch << " to universal");
+    system_info->arch = "universal";
+  }
+  return system_info;
+}
+
 }  // namespace
 
 std::optional<std::string> CheckNewUpdate(
@@ -222,7 +232,7 @@ void CortexUpdCmd::Exec(const std::string& v) {
 }
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
-  auto system_info = system_info_utils::GetSystemInfo();
+  auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
@@ -276,7 +286,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
-  auto system_info = system_info_utils::GetSystemInfo();
+  auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
@@ -407,11 +417,11 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
 }
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
-  auto system_info = system_info_utils::GetSystemInfo();
+  auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
   // Download file
-  std::string version = v.empty() ? "latest" : std::move(v);
+  std::string version = v.empty() ? "latest" : v;
   std::string os_arch{system_info->os + "-" + system_info->arch};
   const char* paths[] = {
       "cortex",
@@ -447,7 +457,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
                        .localPath = localPath,
                    }}};
 
-  DownloadService().AddDownloadTask(
+  auto res = DownloadService().AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
         CTL_INF("Downloaded engine path: "
@@ -461,6 +471,11 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
         CTL_INF("Finished!");
       });
+
+  if (res.has_error()) {
+    CLI_LOG("Download failed!");
+    return false;
+  }
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
