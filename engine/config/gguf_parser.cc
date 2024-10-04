@@ -25,6 +25,7 @@
 
 #include "gguf_parser.h"
 #include "trantor/utils/Logger.h"
+#include "utils/engine_constants.h"
 
 namespace config {
 #define NOMINMAX
@@ -401,7 +402,7 @@ void GGUFHandler::ModelConfigFromMetadata() {
   model_config_.frequency_penalty = 0;
   model_config_.presence_penalty = 0;
   model_config_.stream = true;
-  model_config_.engine = "cortex.llamacpp";
+  model_config_.engine = kLlamaEngine;
   model_config_.created = std::time(nullptr);
   model_config_.model = "model";
   model_config_.owned_by = "";

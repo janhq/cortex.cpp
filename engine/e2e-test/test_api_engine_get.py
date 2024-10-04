@@ -18,5 +18,5 @@ class TestApiEngineGet:
         stop_server()
 
     def test_engines_get_llamacpp_should_be_successful(self):
-        response = requests.get("http://localhost:3928/engines/cortex.llamacpp")
+        response = requests.get("http://localhost:3928/engines/llama-cpp")
         assert response.status_code == 200
