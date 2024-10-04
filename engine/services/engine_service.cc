@@ -109,7 +109,7 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
     if (engine.status == kReady) {
       // try to read the version.txt
       auto engine_info_path = file_manager_utils::GetEnginesContainerPath() /
-                              engine.name / "version.txt";
+                              NormalizeEngine(engine.name) / "version.txt";
       if (!std::filesystem::exists(engine_info_path)) {
         continue;
       }
