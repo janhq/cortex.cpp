@@ -24,7 +24,7 @@ class Models {
                 const std::string& model_id,
                 const std::string& model_alias) const;
 
-  cpp::result<std::vector<ModelEntry>, std::string> LoadModelListNoLock() const;              
+  cpp::result<std::vector<ModelEntry>, std::string> LoadModelListNoLock() const;
 
  public:
   static const std::string kModelListPath;
@@ -35,15 +35,19 @@ class Models {
   std::string GenerateShortenedAlias(
       const std::string& model_id,
       const std::vector<ModelEntry>& entries) const;
-  cpp::result<ModelEntry, std::string> GetModelInfo(const std::string& identifier) const;
+  cpp::result<ModelEntry, std::string> GetModelInfo(
+      const std::string& identifier) const;
   void PrintModelInfo(const ModelEntry& entry) const;
   cpp::result<bool, std::string> AddModelEntry(ModelEntry new_entry,
                                                bool use_short_alias = false);
-  cpp::result<bool, std::string> UpdateModelEntry(const std::string& identifier,
-                        const ModelEntry& updated_entry);
-  cpp::result<bool, std::string> DeleteModelEntry(const std::string& identifier);
-  cpp::result<bool, std::string> UpdateModelAlias(const std::string& model_id,
-                        const std::string& model_alias);
+  cpp::result<bool, std::string> UpdateModelEntry(
+      const std::string& identifier, const ModelEntry& updated_entry);
+  cpp::result<bool, std::string> DeleteModelEntry(
+      const std::string& identifier);
+  cpp::result<bool, std::string> UpdateModelAlias(
+      const std::string& model_id, const std::string& model_alias);
+  cpp::result<std::vector<std::string>, std::string> FindRelatedModel(
+      const std::string& identifier) const;
   bool HasModel(const std::string& identifier) const;
 };
 }  // namespace cortex::db

@@ -140,6 +140,15 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
   return model_repo_info;
 }
 
+inline std::string GetMetadataUrl(const std::string& model_id) {
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = kHuggingfaceHost,
+      .pathParams = {"cortexso", model_id, "resolve", "main", "metadata.yml"}};
+
+  return url_obj.ToFullPath();
+}
+
 inline std::string GetDownloadableUrl(const std::string& author,
                                       const std::string& modelName,
                                       const std::string& fileName,
@@ -150,5 +159,22 @@ inline std::string GetDownloadableUrl(const std::string& author,
       .pathParams = {author, modelName, "resolve", branch, fileName},
   };
   return url_parser::FromUrl(url_obj);
+}
+
+inline std::optional<std::string> GetDefaultBranch(
+    const std::string& model_name) {
+  auto default_model_branch =
+      curl_utils::ReadRemoteYaml(GetMetadataUrl(model_name));
+
+  if (default_model_branch.has_error()) {
+    return std::nullopt;
+  }
+
+  auto metadata = default_model_branch.value();
+  auto default_branch = metadata["default"];
+  if (default_branch.IsDefined()) {
+    return default_branch.as<std::string>();
+  }
+  return std::nullopt;
 }
 }  // namespace huggingface_utils
