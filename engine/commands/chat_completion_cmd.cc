@@ -97,7 +97,9 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       std::string user_input = std::move(msg);
       if (user_input.empty()) {
         std::cout << "> ";
-        std::getline(std::cin, user_input);
+        if (!std::getline(std::cin, user_input)) {
+          break;
+        }
       }
       if (user_input == kExitChat) {
         break;
