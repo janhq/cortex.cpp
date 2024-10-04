@@ -8,6 +8,7 @@
 #include "database/models.h"
 #include "httplib.h"
 #include "utils/cli_selection_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
@@ -152,8 +153,8 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
 
   std::vector<std::string> options{};
   for (const auto& branch : branches.value()) {
-    if (branch.name != "main") {
-      options.emplace_back(branch.name);
+    if (branch.second.name != "main") {
+      options.emplace_back(branch.second.name);
     }
   }
   if (options.empty()) {
@@ -384,7 +385,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
     // Remove model files if they are not imported locally
     if (model_entry.value().branch_name != "imported") {
       if (mc.files.size() > 0) {
-        if (mc.engine == "cortex.llamacpp") {
+        if (mc.engine == kLlamaRepo || mc.engine == kLlamaEngine) {
           for (auto& file : mc.files) {
             std::filesystem::path gguf_p(
                 fmu::ToAbsoluteCortexDataPath(fs::path(file)));

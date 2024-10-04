@@ -77,7 +77,8 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
   }
 
   // Only check if llamacpp engine
-  if ((mc.engine.find("llamacpp") != std::string::npos) &&
+  if ((mc.engine.find(kLlamaEngine) != std::string::npos ||
+       mc.engine.find(kLlamaRepo) != std::string::npos) &&
       !commands::ModelStatusCmd().IsLoaded(host, port, model_handle)) {
     CLI_LOG("Model is not loaded yet!");
     return;

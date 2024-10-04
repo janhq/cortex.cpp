@@ -6,8 +6,8 @@
 #include <string_view>
 #include <vector>
 #include "utils/cpuid/cpu_info.h"
+#include "utils/engine_constants.h"
 #include "utils/result.hpp"
-
 struct EngineInfo {
   std::string name;
   std::string description;
@@ -28,7 +28,7 @@ class EngineService {
   constexpr static auto kNotInstalled = "Not Installed";
 
   const std::vector<std::string_view> kSupportEngines = {
-      "cortex.llamacpp", "cortex.onnx", "cortex.tensorrt-llm"};
+      kLlamaEngine, kOnnxEngine, kTrtLlmEngine};
 
   EngineService();
   ~EngineService();

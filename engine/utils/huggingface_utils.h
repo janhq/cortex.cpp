@@ -47,7 +47,8 @@ struct HuggingFaceModelRepoInfo {
   std::string createdAt;
 };
 
-inline cpp::result<std::vector<HuggingFaceBranch>, std::string>
+inline cpp::result<std::unordered_map<std::string, HuggingFaceBranch>,
+                   std::string>
 GetModelRepositoryBranches(const std::string& author,
                            const std::string& modelName) {
   if (author.empty() || modelName.empty()) {
@@ -65,14 +66,14 @@ GetModelRepositoryBranches(const std::string& author,
   }
 
   auto branches_json = result.value()["branches"];
-  std::vector<HuggingFaceBranch> branches{};
+  std::unordered_map<std::string, HuggingFaceBranch> branches{};
 
   for (const auto& branch : branches_json) {
-    branches.push_back(HuggingFaceBranch{
+    branches[branch["name"]] = HuggingFaceBranch{
         .name = branch["name"],
         .ref = branch["ref"],
         .targetCommit = branch["targetCommit"],
-    });
+    };
   }
 
   return branches;

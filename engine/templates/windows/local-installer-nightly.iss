@@ -52,7 +52,7 @@ begin
   WizardForm.StatusLabel.Update;
 
   // Run the installation command with the -s option pointing to TempFolder
-  CortexInstallCmd := Format('"%s\cortex-nightly.exe" engines install cortex.llamacpp -s "%s"', [ExpandedAppDir, TempFolder]);
+  CortexInstallCmd := Format('"%s\cortex-nightly.exe" engines install llama-cpp -s "%s"', [ExpandedAppDir, TempFolder]);
   Exec('powershell.exe', '-Command ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Clear the status message after completion

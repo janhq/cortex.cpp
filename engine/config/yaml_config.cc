@@ -4,8 +4,9 @@
 #include <iostream>
 #include <string>
 
-#include "utils/format_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
+#include "utils/format_utils.h"
 #include "yaml_config.h"
 namespace config {
 // Method to read YAML file
@@ -25,10 +26,12 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       std::replace(s.begin(), s.end(), '\\', '/');
       std::vector<std::string> v;
       if (yaml_node_["engine"] &&
-          yaml_node_["engine"].as<std::string>() == "cortex.llamacpp") {
+          (yaml_node_["engine"].as<std::string>() == kLlamaRepo ||
+           (yaml_node_["engine"].as<std::string>() == kLlamaEngine))) {
         auto abs_path = s.substr(0, s.find_last_of('/')) + "/model.gguf";
         auto rel_path = fmu::ToRelativeCortexDataPath(fs::path(abs_path));
         v.emplace_back(rel_path.string());
+
       } else {
         v.emplace_back(s.substr(0, s.find_last_of('/')));
       }
@@ -289,7 +292,8 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
       outFile << "version: " << yaml_node_["version"].as<std::string>() << "\n";
     }
     if (yaml_node_["files"] && yaml_node_["files"].size()) {
-      outFile << "files:             # Can be relative OR absolute local file path\n";
+      outFile << "files:             # Can be relative OR absolute local file "
+                 "path\n";
       for (const auto& source : yaml_node_["files"]) {
         outFile << "  - " << source << "\n";
       }

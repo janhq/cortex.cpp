@@ -60,7 +60,7 @@ begin
   WizardForm.ProgressGauge.Update;
 
   // Download llamacpp engine by default
-  CortexInstallCmd := Format('"%s\cortex.exe" engines install cortex.llamacpp', [ExpandedAppDir]);
+  CortexInstallCmd := Format('"%s\cortex.exe" engines install llama-cpp', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Set the progress bar to 90% after downloading the engine

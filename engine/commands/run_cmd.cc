@@ -11,6 +11,19 @@
 
 namespace commands {
 
+namespace {
+std::string Repo2Engine(const std::string& r) {
+  if (r == kLlamaRepo) {
+    return kLlamaEngine;
+  } else if (r == kOnnxRepo) {
+    return kOnnxEngine;
+  } else if (r == kTrtLlmRepo) {
+    return kTrtLlmEngine;
+  }
+  return r;
+};
+}  // namespace
+
 void RunCmd::Exec(bool chat_flag) {
   std::optional<std::string> model_id = model_handle_;
 
@@ -47,7 +60,9 @@ void RunCmd::Exec(bool chat_flag) {
 
     // Check if engine existed. If not, download it
     {
-      auto required_engine = engine_service_.GetEngineInfo(mc.engine);
+      auto required_engine =
+          engine_service_.GetEngineInfo(Repo2Engine(mc.engine));
+
       if (!required_engine.has_value()) {
         throw std::runtime_error("Engine not found: " + mc.engine);
       }
