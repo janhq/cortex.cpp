@@ -25,7 +25,12 @@ inline std::string GetRole() {
 #if defined(_WIN32)
   return "";
 #else
-  return "sudo ";
+  // not root
+  if (getuid()) {
+    return "sudo ";
+  } else {
+    return "";
+  }
 #endif
 }
 
