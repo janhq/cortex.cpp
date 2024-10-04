@@ -72,6 +72,14 @@ inline std::filesystem::path GetHomeDirectoryPath() {
     }
   }
 #else
+  // If running with root
+  if (!getuid()) {
+    auto data_folder_path = std::filesystem::temp_directory_path() / "cortex-su";
+    if (!std::filesystem::exists(data_folder_path)) {
+      std::filesystem::create_directory(data_folder_path);
+    }
+    return data_folder_path;
+  }
   const char* homeDir = std::getenv("HOME");
   if (!homeDir) {
     throw std::runtime_error("Cannot determine the home directory");
