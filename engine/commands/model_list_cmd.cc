@@ -29,11 +29,19 @@ void ModelListCmd::Exec() {
   for (const auto& model_entry : list_entry.value()) {
     // auto model_entry = modellist_handler.GetModelInfo(model_handle);
     try {
+      try {
+        yaml_handler.ModelConfigFromFile(
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.path_to_model_yaml))
+                .string());
+      } catch (const std::exception& e) {
+        CTL_WRN("Fail to get model '" + model_entry.model +
+                "' information: " + std::string(e.what()));
+        yaml_handler.Reset();
+        continue;
+      }
+
       count += 1;
-      yaml_handler.ModelConfigFromFile(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.path_to_model_yaml))
-              .string());
       auto model_config = yaml_handler.GetModelConfig();
       table.add_row({std::to_string(count), model_entry.model,
                      model_entry.model_alias, model_config.engine,
