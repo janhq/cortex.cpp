@@ -13,6 +13,10 @@ inline bool StartsWith(const std::string& str, const std::string& prefix) {
   return str.rfind(prefix, 0) == 0;
 }
 
+inline void SortStrings(std::vector<std::string>& strings) {
+  std::sort(strings.begin(), strings.end());
+}
+
 inline bool EndsWith(const std::string& str, const std::string& suffix) {
   if (str.length() >= suffix.length()) {
     return (0 == str.compare(str.length() - suffix.length(), suffix.length(),
