@@ -31,7 +31,7 @@ void Models::PullModel(const HttpRequestPtr& req,
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
       return model_service_.HandleUrl(model_handle, true);
-    } else if (model_handle.find(":") == std::string::npos) {
+    } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
       return model_service_.DownloadModelFromCortexso(
           model_and_branch[0], model_and_branch[1], true);
