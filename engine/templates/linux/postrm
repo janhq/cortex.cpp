@@ -3,28 +3,40 @@ set +e
 DATA_FOLDER_NAME=.cortex
 CONFIGURATION_FILE_NAME=.cortexrc
 
-echo "Do you want to delete the ~/$DATA_FOLDER_NAME data folder and file ~/$CONFIGURATION_FILE_NAME? (yes/no)"
+echo "Do you want to delete the ~/$DATA_FOLDER_NAME data folder and file ~/$CONFIGURATION_FILE_NAME? (yes/no) [default: no]"
 read -r answer
 
+# Determine the home directory based on the user
 USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
+if [ "$USER_TO_RUN_AS" = "root" ]; then
+    USER_HOME="/root"
+else
+    USER_HOME="/home/$USER_TO_RUN_AS"
+fi
 
-case "$answer" in
-    [yY][eE][sS]|[yY])
-        echo "Deleting cortex data folders..."
-        if [ -d "/home/$USER_TO_RUN_AS/$DATA_FOLDER_NAME" ]; then
-            echo "Removing /home/$USER_TO_RUN_AS/$DATA_FOLDER_NAME"
-            rm -rf "/home/$USER_TO_RUN_AS/$DATA_FOLDER_NAME" > /dev/null 2>&1
-        fi
-        if [ -f "/home/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME" ]; then
-            echo "Removing /home/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME"
-            rm -f "/home/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME" > /dev/null 2>&1
-        fi
-        ;;
-    [nN][oO]|[nN])
-        echo "Keeping the 'cortex' data folders."
-        ;;
-    *)
-        echo "Invalid response. Please type 'yes' or 'no'."
-        ;;
-esac
+while true; do
+    case "$answer" in
+        [yY][eE][sS]|[yY])
+            echo "Deleting cortex data folders..."
+            if [ -d "$USER_HOME/$DATA_FOLDER_NAME" ]; then
+                echo "Removing $USER_HOME/$DATA_FOLDER_NAME"
+                rm -rf "$USER_HOME/$DATA_FOLDER_NAME" > /dev/null 2>&1
+            fi
+            if [ -f "$USER_HOME/$CONFIGURATION_FILE_NAME" ]; then
+                echo "Removing $USER_HOME/$CONFIGURATION_FILE_NAME"
+                rm -f "$USER_HOME/$CONFIGURATION_FILE_NAME" > /dev/null 2>&1
+            fi
+            break
+            ;;
+        [nN][oO]|[nN]|"")
+            echo "Keeping the 'cortex' data folders."
+            break
+            ;;
+        *)
+            echo "Invalid response. Please type 'yes', 'no', 'y', or 'n' (case-insensitive)."
+            read -r answer
+            ;;
+    esac
+done
+
 exit 0
