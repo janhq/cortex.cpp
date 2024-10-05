@@ -29,159 +29,38 @@ Cortex.cpp is a multi-engine that uses `llama.cpp` as the default engine but als
 - [`tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
 
 ## Installation
+This Local Installer packages all required dependencies, so that you don’t need an internet connection during the installation process.
 
-### Download
+Alternatively, Cortex is available with a [Network Installer](#network-installer) which downloads the necessary dependencies from the internet during the installation.
+### Beta Preview (Stable version coming soon!)
+### Windows: 
+<a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
+  <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+  <b>cortex-local-installer.exe</b>
+</a>
 
-<table>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Version Type</b></td>
-    <td colspan="2" style="text-align:center"><b>Windows</b></td>
-    <td colspan="2" style="text-align:center"><b>MacOS</b></td>
-    <td colspan="2" style="text-align:center"><b>Linux</b></td>
-  </tr>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Stable (Recommended)</b></td>
-    <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>Coming soon</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>Coming soon</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>Coming soon</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>Coming soon</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>Coming soon</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>Coming soon</b>
-      </a>
-    </td>
-  </tr>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Beta (Preview)</b></td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-local-installer.exe</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-network'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-network-installer.exe</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-local-installer.pkg</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/mac-universal-network'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-network-installer.pkg</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-local-installer.deb</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-network'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-network-installer.deb</b>
-      </a>
-    </td>
-  </tr>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Nightly Build (Experimental)</b></td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/windowns-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-local-installer.exe</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/windowns-amd64-network'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-network-installer.exe</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/mac-universal-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-local-installer.pkg</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/mac-universal-network'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-network-installer.pkg</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-local-installer.deb</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-network'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-network-installer.deb</b>
-      </a>
-    </td>
-  </tr>
-</table>
+### MacOS: 
+<a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
+  <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+  <b>cortex-local-installer.pkg</b>
+</a>
 
-### Instructions
+### Linux: 
+<a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
+  <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+  <b>cortex-local-installer.deb</b>
+</a>
 
-The local installer packages all required dependencies inside the installer itself, so you don’t need an internet connection during the installation process.
-The network installer downloads the necessary dependencies from the internet during the installation. This option provides a smaller installer, but requires an internet connection.
-
-After installation, you can run Cortex.cpp from the command line by typing `cortex --help`. For beta and nightly builds, you can run `cortex-beta --help` and `cortex-nightly --help` respectively.
-
-#### Windows and MacOS
-
-Download the installer and double-click to the exe file to start the installation process. Follow the on-screen instructions to complete the installation.
-
-For MacOS, there is a uninstaller script comes with the binary and added to the `/usr/local/bin/` directory. The script is named `cortex-uninstall.sh` for stable builds, `cortex-beta-uninstall.sh` for beta builds and `cortex-nightly-uninstall.sh` for nightly builds.
-
-#### Linux
-
-Download the installer and run the following command in the terminal:
-
+Download the installer and run the following command in terminal:
 ```bash
     sudo apt install ./cortex-local-installer.deb
     # or
     sudo apt install ./cortex-network-installer.deb
 ```
-
 The binary will be installed in the `/usr/bin/` directory.
+
+## Usage
+After installation, you can run Cortex.cpp from the command line by typing `cortex --help`. For Beta preview, you can run `cortex-beta --help`.
 
 ## Built-in Model Library
 
@@ -213,33 +92,137 @@ For complete details on CLI commands, please refer to our [CLI documentation](ht
 ## REST API
 Cortex.cpp includes a REST API accessible at `localhost:3928`. For a complete list of endpoints and their usage, visit our [API documentation](https://cortex.so/api-reference).
 
-## Uninstallation
+## Advanced Installation
 
-### Windows
-1. Open the Windows Control Panel.
-2. Navigate to `Add or Remove Programs`.
-3. Search for `cortexcpp` and double click to uninstall. (for beta and nightly builds, search for `cortexcpp-beta` and `cortexcpp-nightly` respectively)
+### Local Installer: Beta & Nightly Versions 
+Beta is an early preview for new versions of Cortex. It is for users who want to try new features early - we appreciate your feedback.
 
-### MacOs
-Run the uninstaller script:
-```bash
-# For stable builds
-sudo sh cortex-uninstall.sh
-# For beta builds
-sudo sh cortex-beta-uninstall.sh
-# For nightly builds
-sudo sh cortex-nightly-uninstall.sh
-```
+Nightly is our development version of Brave. It is released every night and may contain bugs and experimental features.
 
-### Linux
-```bash
-# For stable builds
-sudo apt remove cortexcpp
-# For beta builds
-sudo apt remove cortexcpp-beta
-# For nightly builds
-sudo apt remove cortexcpp-nightly
-```
+<table>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Version Type</b></td>
+    <td style="text-align:center"><b>Windows</b></td>
+    <td style="text-align:center"><b>MacOS</b></td>
+    <td style="text-align:center"><b>Linux</b></td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Beta (Preview)</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/windowns-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-local-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-local-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-local-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Nightly Build (Experimental)</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/windowns-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-local-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/mac-universal-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-local-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-local-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+</table>
+
+### Network Installer
+Cortex.cpp is available with a Network Installer, which is a smaller installer but requires internet connection during installation to download the necessary dependencies.
+
+<table>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Version Type</b></td>
+    <td style="text-align:center"><b>Windows</b></td>
+    <td style="text-align:center"><b>MacOS</b></td>
+    <td style="text-align:center"><b>Linux</b></td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Stable (Recommended)</b></td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>Coming soon</b>
+      </a>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>Coming soon</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://github.com/janhq/cortex.cpp'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>Coming soon</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Beta (Preview)</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-network'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-network-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/mac-universal-network'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-network-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-network'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-network-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Nightly Build (Experimental)</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/windowns-amd64-network'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-network-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/mac-universal-network'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-network-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-network'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-network-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+</table>
 
 ### Build from Source
 
@@ -318,9 +301,26 @@ make -j4
 cortex
 ```
 
+## Uninstallation
+### Windows
+1. Open the Windows Control Panel.
+2. Navigate to `Add or Remove Programs`.
+3. Search for `cortexcpp` and double click to uninstall. (for beta and nightly builds, search for `cortexcpp-beta` and `cortexcpp-nightly` respectively)
+
+### MacOs
+Run the uninstaller script:
+```bash
+sudo sh cortex-uninstall.sh
+```
+For MacOS, there is a uninstaller script comes with the binary and added to the `/usr/local/bin/` directory. The script is named `cortex-uninstall.sh` for stable builds, `cortex-beta-uninstall.sh` for beta builds and `cortex-nightly-uninstall.sh` for nightly builds.
+
+### Linux
+```bash
+# For stable builds
+sudo apt remove cortexcpp
+```
+
 ## Contact Support
-- For support, please file a [GitHub ticket](https://github.com/janhq/cortex/issues/new/choose).
+- For support, please file a [GitHub ticket](https://github.com/janhq/cortex.cpp/issues/new/choose).
 - For questions, join our Discord [here](https://discord.gg/FTk2MvZwJH).
 - For long-form inquiries, please email [hello@jan.ai](mailto:hello@jan.ai).
-
-
