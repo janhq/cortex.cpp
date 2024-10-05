@@ -1,21 +1,20 @@
 {
-    "dependencies": [
-      "curl",
-      "gtest",
-      "cli11",
-      {
-        "name": "cpp-httplib",
-        "features": [
-          "openssl"
-        ]
-      },
-      "drogon",
-      "jsoncpp",
-      "minizip",
-      "nlohmann-json",
-      "yaml-cpp",
-      "libarchive",
-      "tabulate",
-      "sqlitecpp"
-    ]
+  "dependencies": [
+    "curl",
+    "gtest",
+    "cli11",
+    {
+      "name": "cpp-httplib",
+      "features": ["openssl"]
+    },
+    "drogon",
+    "jsoncpp",
+    "minizip",
+    "nlohmann-json",
+    "yaml-cpp",
+    "libarchive",
+    "tabulate",
+    "eventpp",
+    "sqlitecpp"
+  ]
 }

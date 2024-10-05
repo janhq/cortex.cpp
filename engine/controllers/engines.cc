@@ -21,7 +21,7 @@ void Engines::InstallEngine(
   }
 
   auto version{"latest"};
-  auto result = engine_service_.InstallEngine(engine, version);
+  auto result = engine_service_->InstallEngine(engine, version);
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();
@@ -40,7 +40,7 @@ void Engines::InstallEngine(
 void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
-  auto status_list = engine_service_.GetEngineInfoList();
+  auto status_list = engine_service_->GetEngineInfoList();
 
   Json::Value ret;
   ret["object"] = "list";
@@ -67,7 +67,7 @@ void Engines::ListEngine(
 void Engines::GetEngine(const HttpRequestPtr& req,
                         std::function<void(const HttpResponsePtr&)>&& callback,
                         const std::string& engine) const {
-  auto status = engine_service_.GetEngineInfo(engine);
+  auto status = engine_service_->GetEngineInfo(engine);
   Json::Value ret;
   if (status.has_value()) {
     ret["name"] = status->name;
@@ -94,7 +94,7 @@ void Engines::UninstallEngine(
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) {
 
-  auto result = engine_service_.UninstallEngine(engine);
+  auto result = engine_service_->UninstallEngine(engine);
   Json::Value ret;
 
   if (result.has_error()) {

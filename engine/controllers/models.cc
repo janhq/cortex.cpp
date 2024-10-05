@@ -1,8 +1,8 @@
-#include "models.h"
+#include "database/models.h"
 #include <drogon/HttpTypes.h>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
-#include "database/models.h"
+#include "models.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
@@ -30,10 +30,10 @@ void Models::PullModel(const HttpRequestPtr& req,
       [&, model_handle]() -> cpp::result<std::string, std::string> {
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_.HandleUrl(model_handle, true);
+      return model_service_->HandleUrl(model_handle, true);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
-      return model_service_.DownloadModelFromCortexso(
+      return model_service_->DownloadModelFromCortexso(
           model_and_branch[0], model_and_branch[1], true);
     }
 
@@ -161,7 +161,7 @@ void Models::GetModel(const HttpRequestPtr& req,
 void Models::DeleteModel(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
                          const std::string& model_id) {
-  auto result = model_service_.DeleteModel(model_id);
+  auto result = model_service_->DeleteModel(model_id);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -220,6 +220,7 @@ void Models::UpdateModel(const HttpRequestPtr& req,
     callback(resp);
   }
 }
+
 void Models::ImportModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
@@ -368,7 +369,7 @@ void Models::StartModel(
     return;
   auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto result = model_service_.StartModel(
+  auto result = model_service_->StartModel(
       config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
   if (result.has_error()) {
     Json::Value ret;
@@ -391,7 +392,7 @@ void Models::StopModel(const HttpRequestPtr& req,
     return;
   auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto result = model_service_.StopModel(
+  auto result = model_service_->StopModel(
       config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
   if (result.has_error()) {
     Json::Value ret;

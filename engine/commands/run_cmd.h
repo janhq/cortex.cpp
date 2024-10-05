@@ -11,7 +11,8 @@ class RunCmd {
       : host_{std::move(host)},
         port_{port},
         model_handle_{std::move(model_handle)},
-        model_service_{ModelService()} {};
+        engine_service_{EngineService(std::make_shared<DownloadService>())},
+        model_service_{ModelService(std::make_shared<DownloadService>())} {};
 
   void Exec(bool chat_flag);
 

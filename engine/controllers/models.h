@@ -6,10 +6,8 @@
 
 using namespace drogon;
 
-class Models : public drogon::HttpController<Models> {
+class Models : public drogon::HttpController<Models, false> {
  public:
-  explicit Models() : model_service_{ModelService()} {};
-
   METHOD_LIST_BEGIN
   METHOD_ADD(Models::PullModel, "/pull", Post);
   METHOD_ADD(Models::ListModel, "", Get);
@@ -21,6 +19,9 @@ class Models : public drogon::HttpController<Models> {
   METHOD_ADD(Models::StartModel, "/start", Post);
   METHOD_ADD(Models::StopModel, "/stop", Post);
   METHOD_LIST_END
+
+  explicit Models(std::shared_ptr<ModelService> model_service)
+      : model_service_{model_service} {}
 
   void PullModel(const HttpRequestPtr& req,
                  std::function<void(const HttpResponsePtr&)>&& callback);
@@ -49,5 +50,5 @@ class Models : public drogon::HttpController<Models> {
                  std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
-  ModelService model_service_;
+  std::shared_ptr<ModelService> model_service_;
 };

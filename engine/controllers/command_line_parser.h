@@ -2,6 +2,7 @@
 
 #include "CLI/CLI.hpp"
 #include "services/engine_service.h"
+#include "services/model_service.h"
 #include "utils/config_yaml_utils.h"
 class CommandLineParser {
  public:
@@ -29,6 +30,8 @@ class CommandLineParser {
 
   CLI::App app_;
   EngineService engine_service_;
+  ModelService model_service_;
+
   struct CmlData {
     std::string model_id;
     std::string msg;
