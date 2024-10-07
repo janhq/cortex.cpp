@@ -32,21 +32,21 @@ Cortex.cpp is a multi-engine that uses `llama.cpp` as the default engine but als
 This Local Installer packages all required dependencies, so that you don’t need an internet connection during the installation process.
 
 Alternatively, Cortex is available with a [Network Installer](#network-installer) which downloads the necessary dependencies from the internet during the installation.
-### Beta Preview (Stable version coming soon!)
+### Stable
 ### Windows: 
-<a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
+<a href='https://app.cortexcpp.com/download/latest/windows-amd64-local'>
   <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
   <b>cortex-local-installer.exe</b>
 </a>
 
 ### MacOS: 
-<a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
+<a href='https://app.cortexcpp.com/download/latest/mac-universal-local'>
   <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
   <b>cortex-local-installer.pkg</b>
 </a>
 
 ### Linux: 
-<a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
+<a href='https://app.cortexcpp.com/download/latest/linux-amd64-local'>
   <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
   <b>cortex-local-installer.deb</b>
 </a>
@@ -107,7 +107,7 @@ Nightly is our development version of Brave. It is released every night and may 
     <td style="text-align:center"><b>Linux</b></td>
   </tr>
   <tr style="text-align:center">
-    <td style="text-align:center"><b>Stable</b></td>
+    <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/latest/windows-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
@@ -184,20 +184,20 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
   <tr style="text-align:center">
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
+      <a href='https://app.cortexcpp.com/download/latest/windows-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>Coming soon</b>
+        <b>cortex-network-installer.exe</b>
       </a>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
+      <a href='https://app.cortexcpp.com/download/beta/mac-universal-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>Coming soon</b>
+        <b>cortex-network-installer.pkg</b>
       </a>
     </td>
     <td style="text-align:center">
-      <a href='https://github.com/janhq/cortex.cpp'>
+      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>Coming soon</b>
+       <b>cortex-network-installer.deb</b>
       </a>
     </td>
   </tr>
