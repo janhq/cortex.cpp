@@ -61,7 +61,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
   // Engines endpoints
   // Install Engine
   {
-    Json::Value& path = spec["paths"]["/engines/install/{engine}"]["post"];
+    Json::Value& path = spec["paths"]["/v1/engines/install/{engine}"]["post"];
     path["summary"] = "Install an engine";
     path["parameters"][0]["name"] = "engine";
     path["parameters"][0]["in"] = "path";
@@ -90,7 +90,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
 
   // Uninstall Engine
   {
-    Json::Value& path = spec["paths"]["/engines/{engine}"]["delete"];
+    Json::Value& path = spec["paths"]["/v1/engines/{engine}"]["delete"];
     path["summary"] = "Uninstall an engine";
     path["parameters"][0]["name"] = "engine";
     path["parameters"][0]["in"] = "path";
@@ -113,7 +113,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
 
   // List Engines
   {
-    Json::Value& path = spec["paths"]["/engines"]["get"];
+    Json::Value& path = spec["paths"]["/v1/engines"]["get"];
     path["summary"] = "List all engines";
 
     Json::Value& response = path["responses"]["200"];
@@ -140,7 +140,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
 
   // Get Engine
   {
-    Json::Value& path = spec["paths"]["/engines/{engine}"]["get"];
+    Json::Value& path = spec["paths"]["/v1/engines/{engine}"]["get"];
     path["summary"] = "Get engine details";
     path["parameters"][0]["name"] = "engine";
     path["parameters"][0]["in"] = "path";
