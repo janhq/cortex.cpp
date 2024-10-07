@@ -67,7 +67,8 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
       .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
 
   httplib::Client cli(url.GetProtocolAndHost());
-  auto res = cli.Get(url.GetPathAndQuery());
+  auto res =
+      cli.Get(url.GetPathAndQuery(), huggingface_utils::CreateHttpHfHeaders());
   if (res->status != httplib::StatusCode::OK_200) {
     return cpp::fail("Model " + modelId + " not found");
   }
