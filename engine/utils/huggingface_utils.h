@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "httplib.h"
 #include "utils/curl_utils.h"
 #include "utils/json.hpp"
 #include "utils/result.hpp"
