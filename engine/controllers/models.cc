@@ -81,7 +81,7 @@ void Models::ListModel(
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
-
+        obj["id"] = model_config.model;
         data.append(std::move(obj));
         yaml_handler.Reset();
       } catch (const std::exception& e) {
@@ -114,8 +114,6 @@ void Models::GetModel(const HttpRequestPtr& req,
   namespace fmu = file_manager_utils;
   LOG_DEBUG << "GetModel, Model handle: " << model_id;
   Json::Value ret;
-  ret["object"] = "list";
-  Json::Value data(Json::arrayValue);
 
   try {
     cortex::db::Models modellist_handler;
@@ -123,7 +121,8 @@ void Models::GetModel(const HttpRequestPtr& req,
     auto model_entry = modellist_handler.GetModelInfo(model_id);
     if (model_entry.has_error()) {
       // CLI_LOG("Error: " + model_entry.error());
-      ret["data"] = data;
+      ret["id"] = model_id;
+      ret["object"] = "model";
       ret["result"] = "Fail to get model information";
       ret["message"] = "Error: " + model_entry.error();
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -137,10 +136,10 @@ void Models::GetModel(const HttpRequestPtr& req,
             .string());
     auto model_config = yaml_handler.GetModelConfig();
 
-    Json::Value obj = model_config.ToJson();
+    ret = model_config.ToJson();
 
-    data.append(std::move(obj));
-    ret["data"] = data;
+    ret["id"] = model_config.model;
+    ret["object"] = "model";
     ret["result"] = "OK";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
@@ -149,7 +148,8 @@ void Models::GetModel(const HttpRequestPtr& req,
     std::string message =
         "Fail to get model information with ID '" + model_id + "': " + e.what();
     LOG_ERROR << message;
-    ret["data"] = data;
+    ret["id"] = model_id;
+    ret["object"] = "model";
     ret["result"] = "Fail to get model information";
     ret["message"] = message;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
