@@ -107,18 +107,21 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
 
       if (!user_input.empty()) {
         httplib::Client cli(address);
-        nlohmann::json json_data;
-        nlohmann::json new_data;
+        Json::Value json_data = mc.ToJson();
+        Json::Value new_data;
         new_data["role"] = kUser;
         new_data["content"] = user_input;
         histories_.push_back(std::move(new_data));
         json_data["engine"] = mc.engine;
-        json_data["messages"] = histories_;
+        Json::Value msgs_array(Json::arrayValue);
+        for (const auto& m : histories_) {
+          msgs_array.append(m);
+        }
+        json_data["messages"] = msgs_array;
         json_data["model"] = model_handle;
         //TODO: support non-stream
         json_data["stream"] = true;
-        json_data["stop"] = mc.stop;
-        auto data_str = json_data.dump();
+        auto data_str = json_data.toStyledString();
         // std::cout << data_str << std::endl;
         cli.set_read_timeout(std::chrono::seconds(60));
         // std::cout << "> ";
@@ -142,7 +145,7 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
         };
         cli.send(req);
 
-        nlohmann::json ai_res;
+        Json::Value ai_res;
         ai_res["role"] = kAssistant;
         ai_res["content"] = ai_chat;
         histories_.push_back(std::move(ai_res));
