@@ -211,7 +211,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
              ["message"]["type"] = "string";
 
     // UpdateModel Endpoint
-    Json::Value& update = spec["paths"]["/v1/models/{model}"]["post"];
+    Json::Value& update = spec["paths"]["/v1/models/{model}"]["patch"];
     update["summary"] = "Update model details";
     update["description"] =
         "Update various attributes of a model based on the ModelConfig "
