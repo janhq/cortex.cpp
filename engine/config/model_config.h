@@ -170,7 +170,6 @@ struct ModelConfig {
   Json::Value ToJson() const {
     Json::Value obj;
 
-    obj["id"] = id;
     obj["name"] = name;
     obj["model"] = model;
     obj["version"] = version;
