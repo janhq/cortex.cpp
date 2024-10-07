@@ -169,7 +169,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
   // Models Endpoints
   {
     // PullModel
-    Json::Value& pull = spec["paths"]["/models/pull"]["post"];
+    Json::Value& pull = spec["paths"]["/v1/models/pull"]["post"];
     pull["summary"] = "Pull a model";
     pull["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
@@ -183,7 +183,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     pull["responses"]["400"]["description"] = "Bad request";
 
     // ListModel
-    Json::Value& list = spec["paths"]["/models"]["get"];
+    Json::Value& list = spec["paths"]["/v1/models"]["get"];
     list["summary"] = "List all models";
     list["responses"]["200"]["description"] =
         "List of models retrieved successfully";
@@ -191,7 +191,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
         "Failed to get list model information";
 
     // GetModel
-    Json::Value& get = spec["paths"]["/models/{model}"]["get"];
+    Json::Value& get = spec["paths"]["/v1/models/{model}"]["get"];
     get["summary"] = "Get model details";
     get["parameters"][0]["name"] = "model";
     get["parameters"][0]["in"] = "path";
@@ -211,7 +211,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
              ["message"]["type"] = "string";
 
     // UpdateModel Endpoint
-    Json::Value& update = spec["paths"]["/models/{model}"]["post"];
+    Json::Value& update = spec["paths"]["/v1/models/{model}"]["post"];
     update["summary"] = "Update model details";
     update["description"] =
         "Update various attributes of a model based on the ModelConfig "
@@ -398,7 +398,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
         "Detailed error message";
 
     // ImportModel
-    Json::Value& import = spec["paths"]["/models/import"]["post"];
+    Json::Value& import = spec["paths"]["/v1/models/import"]["post"];
     import["summary"] = "Import a model";
     import["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
@@ -416,7 +416,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     import["responses"]["400"]["description"] = "Failed to import model";
 
     // DeleteModel
-    Json::Value& del = spec["paths"]["/models/{model}"]["delete"];
+    Json::Value& del = spec["paths"]["/v1/models/{model}"]["delete"];
     del["summary"] = "Delete a model";
     del["parameters"][0]["name"] = "model";
     del["parameters"][0]["in"] = "path";
@@ -426,7 +426,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     del["responses"]["400"]["description"] = "Failed to delete model";
 
     // SetModelAlias
-    Json::Value& alias = spec["paths"]["/models/alias"]["post"];
+    Json::Value& alias = spec["paths"]["/v1/models/alias"]["post"];
     alias["summary"] = "Set model alias";
     alias["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
@@ -444,7 +444,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     alias["responses"]["400"]["description"] = "Failed to set model alias";
 
     // Start Model
-    Json::Value& start = spec["paths"]["/models/start"]["post"];
+    Json::Value& start = spec["paths"]["/v1/models/start"]["post"];
     start["summary"] = "Start model";
     start["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
@@ -458,7 +458,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     start["responses"]["400"]["description"] = "Failed to start model";
 
     // Stop Model
-   Json::Value& stop = spec["paths"]["/models/stop"]["post"];
+   Json::Value& stop = spec["paths"]["/v1/models/stop"]["post"];
     stop["summary"] = "Stop model";
     stop["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
