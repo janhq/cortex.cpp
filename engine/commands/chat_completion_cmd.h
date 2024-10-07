@@ -13,6 +13,6 @@ class ChatCompletionCmd {
             const config::ModelConfig& mc, std::string msg);
 
  private:
-  std::vector<nlohmann::json> histories_;
+  std::vector<Json::Value> histories_;
 };
 }  // namespace commands
