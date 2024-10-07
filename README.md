@@ -90,7 +90,7 @@ Example models:
 For complete details on CLI commands, please refer to our [CLI documentation](https://cortex.so/docs/cli).
 
 ## REST API
-Cortex.cpp includes a REST API accessible at `localhost:3928`. For a complete list of endpoints and their usage, visit our [API documentation](https://cortex.so/api-reference).
+Cortex.cpp includes a REST API accessible at `localhost:39281`. For a complete list of endpoints and their usage, visit our [API documentation](https://cortex.so/api-reference).
 
 ## Advanced Installation
 
@@ -107,9 +107,30 @@ Nightly is our development version of Brave. It is released every night and may 
     <td style="text-align:center"><b>Linux</b></td>
   </tr>
   <tr style="text-align:center">
+    <td style="text-align:center"><b>Stable</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/latest/windows-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-local-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/latest/mac-universal-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-local-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/latest/linux-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-local-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
     <td style="text-align:center"><b>Beta (Preview)</b></td>
     <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/windowns-amd64-local'>
+      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
         <b>cortex-local-installer.exe</b>
       </a>
@@ -130,7 +151,7 @@ Nightly is our development version of Brave. It is released every night and may 
   <tr style="text-align:center">
     <td style="text-align:center"><b>Nightly Build (Experimental)</b></td>
     <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/windowns-amd64-local'>
+      <a href='https://app.cortexcpp.com/download/nightly/windows-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
         <b>cortex-local-installer.exe</b>
       </a>
@@ -204,7 +225,7 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
   <tr style="text-align:center">
     <td style="text-align:center"><b>Nightly Build (Experimental)</b></td>
     <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/windowns-amd64-network'>
+      <a href='https://app.cortexcpp.com/download/nightly/windows-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
         <b>cortex-network-installer.exe</b>
       </a>
