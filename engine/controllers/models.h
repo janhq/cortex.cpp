@@ -14,12 +14,22 @@ class Models : public drogon::HttpController<Models> {
   METHOD_ADD(Models::PullModel, "/pull", Post);
   METHOD_ADD(Models::ListModel, "", Get);
   METHOD_ADD(Models::GetModel, "/{1}", Get);
-  METHOD_ADD(Models::UpdateModel, "/{1}", Post);
+  METHOD_ADD(Models::UpdateModel, "/{1}", Patch);
   METHOD_ADD(Models::ImportModel, "/import", Post);
   METHOD_ADD(Models::DeleteModel, "/{1}", Delete);
   METHOD_ADD(Models::SetModelAlias, "/alias", Post);
   METHOD_ADD(Models::StartModel, "/start", Post);
   METHOD_ADD(Models::StopModel, "/stop", Post);
+
+  ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Post);
+  ADD_METHOD_TO(Models::ListModel, "/v1/models", Get);
+  ADD_METHOD_TO(Models::GetModel, "/v1/models/{1}", Get);
+  ADD_METHOD_TO(Models::UpdateModel, "/v1/models/{1}", Patch);
+  ADD_METHOD_TO(Models::ImportModel, "/v1/models/import", Post);
+  ADD_METHOD_TO(Models::DeleteModel, "/v1/models/{1}", Delete);
+  ADD_METHOD_TO(Models::SetModelAlias, "/v1/models/alias", Post);
+  ADD_METHOD_TO(Models::StartModel, "/v1/models/start", Post);
+  ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Post);
   METHOD_LIST_END
 
   void PullModel(const HttpRequestPtr& req,

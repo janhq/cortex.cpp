@@ -56,7 +56,7 @@ class server : public drogon::HttpController<server>,
 
   // Openai compatible path
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
-  ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
+  // ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
   ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Post);
 
   // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
