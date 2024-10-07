@@ -9,8 +9,10 @@
 #include <thread>
 #include "download_service.h"
 #include "utils/format_utils.h"
+#include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include "utils/url_parser.h"
 
 #ifdef _WIN32
 #define ftell64(f) _ftelli64(f)
@@ -24,6 +26,20 @@ namespace {
 size_t WriteCallback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
   size_t written = fwrite(ptr, size, nmemb, stream);
   return written;
+}
+
+inline curl_slist* CreateHeaders(const std::string& url) {
+  try {
+    auto url_obj = url_parser::FromUrlString(url);
+    if (url_obj.host == huggingface_utils::kHuggingfaceHost) {
+      return huggingface_utils::CreateCurlHfHeaders();
+    } else {
+      return nullptr;
+    }
+  } catch (const std::exception& e) {
+    CTL_WRN(e.what());
+    return nullptr;
+  }
 }
 }  // namespace
 
@@ -99,6 +115,9 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  if (auto headers = CreateHeaders(url); headers) {
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  }
   CURLcode res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
@@ -173,7 +192,7 @@ cpp::result<bool, std::string> DownloadService::Download(
       CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
                                      << download_item.localPath.string()
                                      << " - " << existing_file_size);
-      CTL_INF("Download item size: " << download_item.bytes.value());                               
+      CTL_INF("Download item size: " << download_item.bytes.value());
       auto missing_bytes = download_item.bytes.value() - existing_file_size;
       if (missing_bytes > 0 &&
           download_item.localPath.extension().string() != ".yaml" &&
@@ -213,6 +232,9 @@ cpp::result<bool, std::string> DownloadService::Download(
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
+  if (auto headers = CreateHeaders(download_item.downloadUrl); headers) {
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  }
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);

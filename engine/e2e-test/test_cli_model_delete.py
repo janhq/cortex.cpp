@@ -9,8 +9,7 @@ class TestCliModelDelete:
         # Setup
         # Pull model
 
-        # TODO: using pull with branch for easy testing tinyllama:gguf for example
-        popen(["pull", "tinyllama"], "1\n")
+        run("Pull model", ["pull", "tinyllama:gguf"], timeout=None,)
 
         yield
 
