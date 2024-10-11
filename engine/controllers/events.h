@@ -4,14 +4,16 @@
 #include <drogon/WebSocketController.h>
 #include <eventpp/eventqueue.h>
 #include <unordered_set>
-#include "common/download_event.h"
 #include "common/event.h"
 
 using namespace drogon;
 
 using Event = cortex::event::Event;
+using ExitEvent = cortex::event::ExitEvent;
 using DownloadEvent = cortex::event::DownloadEvent;
-using EventQueue = eventpp::EventQueue<std::string, void(DownloadEvent)>;
+using EventType = cortex::event::EventType;
+using EventQueue =
+    eventpp::EventQueue<EventType, void(const eventpp::AnyData<eventMaxSize>&)>;
 
 class Events : public drogon::WebSocketController<Events, false> {
 
@@ -22,10 +24,13 @@ class Events : public drogon::WebSocketController<Events, false> {
 
   explicit Events(std::shared_ptr<EventQueue> event_queue)
       : event_queue_{event_queue} {
-    // TODO: namh make a list of event
-    event_queue_->appendListener("download-update", [this](DownloadEvent e) {
-      this->broadcast(e.ToJsonString());
-    });
+    event_queue_->appendListener(
+        EventType::DownloadEvent,
+        [this](const DownloadEvent& e) { this->broadcast(e.ToJsonString()); });
+
+    event_queue_->appendListener(
+        EventType::ExitEvent,
+        [this](const ExitEvent& e) { this->broadcast(e.message); });
   };
 
   void handleNewMessage(const WebSocketConnectionPtr& wsConnPtr,

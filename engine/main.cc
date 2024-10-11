@@ -77,7 +77,9 @@ void RunServer() {
 #endif
 
   using Event = cortex::event::Event;
-  using EventQueue = eventpp::EventQueue<std::string, void(DownloadEvent)>;
+  using EventQueue =
+      eventpp::EventQueue<EventType,
+                          void(const eventpp::AnyData<eventMaxSize>&)>;
 
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);

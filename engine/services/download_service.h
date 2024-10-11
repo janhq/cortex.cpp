@@ -6,13 +6,17 @@
 #include <functional>
 #include <optional>
 #include <vector>
-#include "common/download_event.h"
+#include "common/event.h"
 #include "utils/result.hpp"
 
 class DownloadService {
  public:
+  using DownloadEventType = cortex::event::DownloadEventType;
   using DownloadEvent = cortex::event::DownloadEvent;
-  using EventQueue = eventpp::EventQueue<std::string, void(DownloadEvent)>;
+  using EventType = cortex::event::EventType;
+  using EventQueue =
+      eventpp::EventQueue<EventType,
+                          void(const eventpp::AnyData<eventMaxSize>&)>;
 
   explicit DownloadService() = default;
 
@@ -86,10 +90,9 @@ class DownloadService {
     }
 
     service->event_queue_->enqueue(
-        "download-update",
-        DownloadEvent{
-            .type_ = cortex::event::DownloadEventType::DownloadUpdated,
-            .download_task_ = task});
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
+                      .download_task_ = task});
     return 0;
   }
 };

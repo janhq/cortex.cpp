@@ -2,14 +2,16 @@
 
 #include <eventpp/eventqueue.h>
 #include <thread>
-#include "common/download_event.h"
 #include "common/event.h"
 
 namespace cortex::event {
 
-using Event = cortex::event::Event;
-using DownloadEvent = cortex::event::DownloadEvent;
-using EventQueue = eventpp::EventQueue<std::string, void(DownloadEvent)>;
+using EventType = cortex::event::EventType;
+using ExitEvent = cortex::event::ExitEvent;
+using EventQueue =
+    eventpp::EventQueue<EventType, void(const eventpp::AnyData<eventMaxSize>&)>;
+
+struct ExitingEvent {};
 
 class EventProcessor {
  public:
@@ -25,6 +27,9 @@ class EventProcessor {
 
   ~EventProcessor() {
     running_ = false;
+    // to prevent blocking thread on wait
+    event_queue_->enqueue(EventType::ExitEvent,
+                          ExitEvent{.message = "Event queue exitting.."});
     if (thread_.joinable()) {
       thread_.join();
     }
