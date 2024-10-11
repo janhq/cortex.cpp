@@ -3,6 +3,7 @@
 #include <drogon/PubSubService.h>
 #include <drogon/WebSocketController.h>
 #include <eventpp/eventqueue.h>
+#include <unordered_set>
 #include "common/download_event.h"
 #include "common/event.h"
 
@@ -40,5 +41,5 @@ class Events : public drogon::WebSocketController<Events, false> {
   void broadcast(const std::string& message);
 
   std::shared_ptr<EventQueue> event_queue_;
-  std::set<WebSocketConnectionPtr> connections_;
+  std::unordered_set<WebSocketConnectionPtr> connections_;
 };

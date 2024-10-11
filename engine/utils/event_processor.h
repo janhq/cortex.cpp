@@ -17,8 +17,8 @@ class EventProcessor {
       : event_queue_(std::move(queue)), running_(true) {
     thread_ = std::thread([this]() {
       while (running_) {
+        event_queue_->wait();
         event_queue_->process();
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
     });
   }

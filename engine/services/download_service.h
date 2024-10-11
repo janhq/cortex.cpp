@@ -7,7 +7,6 @@
 #include <optional>
 #include <vector>
 #include "common/download_event.h"
-#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 class DownloadService {
@@ -49,7 +48,7 @@ class DownloadService {
 
   curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
 
-  std::optional<std::shared_ptr<EventQueue>> event_queue_;
+  std::shared_ptr<EventQueue> event_queue_;
 
   std::vector<std::string> download_task_list_;
   std::unordered_map<std::string, DownloadTask> download_task_map_;
@@ -64,9 +63,8 @@ class DownloadService {
 
   static int ProgressCallback(void* ptr, double dltotal, double dlnow,
                               double ultotal, double ulnow) {
-    DownloadService* service = static_cast<DownloadService*>(ptr);
-    auto event_queue = service->event_queue_.value();
-    if (event_queue == nullptr) {
+    auto service = static_cast<DownloadService*>(ptr);
+    if (service->event_queue_ == nullptr) {
       return 0;
     }
 
@@ -87,7 +85,7 @@ class DownloadService {
       }
     }
 
-    event_queue->enqueue(
+    service->event_queue_->enqueue(
         "download-update",
         DownloadEvent{
             .type_ = cortex::event::DownloadEventType::DownloadUpdated,
