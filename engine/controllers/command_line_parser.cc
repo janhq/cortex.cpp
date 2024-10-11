@@ -1,4 +1,5 @@
 #include "command_line_parser.h"
+#include <memory>
 #include "commands/chat_cmd.h"
 #include "commands/chat_completion_cmd.h"
 #include "commands/cortex_upd_cmd.h"
@@ -19,7 +20,6 @@
 #include "commands/run_cmd.h"
 #include "commands/server_start_cmd.h"
 #include "commands/server_stop_cmd.h"
-#include "config/yaml_config.h"
 #include "services/engine_service.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -33,7 +33,9 @@ constexpr const auto kSystemGroup = "System";
 constexpr const auto kSubcommands = "Subcommands";
 }  // namespace
 CommandLineParser::CommandLineParser()
-    : app_("Cortex.cpp CLI"), engine_service_{EngineService()} {}
+    : app_("Cortex.cpp CLI"),
+      model_service_{ModelService(std::make_shared<DownloadService>())},
+      engine_service_{EngineService(std::make_shared<DownloadService>())} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
@@ -168,10 +170,10 @@ void CommandLineParser::SetupCommonCommands() {
                                std::stoi(cml_data_.config.apiServerPort),
                                cml_data_.model_id);
     } else {
-      commands::ChatCompletionCmd().Exec(
-          cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-          cml_data_.msg);
+      commands::ChatCompletionCmd(model_service_)
+          .Exec(cml_data_.config.apiServerHost,
+                std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+                cml_data_.msg);
     }
   });
 }
@@ -212,9 +214,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_start_cmd->help());
       return;
     };
-    commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
-                                   std::stoi(cml_data_.config.apiServerPort),
-                                   cml_data_.model_id);
+    commands::ModelStartCmd(model_service_)
+        .Exec(cml_data_.config.apiServerHost,
+              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
   });
 
   auto stop_model_cmd =
@@ -231,9 +233,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(stop_model_cmd->help());
       return;
     };
-    commands::ModelStopCmd().Exec(cml_data_.config.apiServerHost,
-                                  std::stoi(cml_data_.config.apiServerPort),
-                                  cml_data_.model_id);
+    commands::ModelStopCmd(model_service_)
+        .Exec(cml_data_.config.apiServerHost,
+              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
   });
 
   auto list_models_cmd =

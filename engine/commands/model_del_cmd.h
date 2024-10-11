@@ -7,7 +7,8 @@ namespace commands {
 
 class ModelDelCmd {
  public:
-  explicit ModelDelCmd() : model_service_{ModelService()} {};
+  explicit ModelDelCmd()
+      : model_service_{ModelService(std::make_shared<DownloadService>())} {};
 
   void Exec(const std::string& model_handle);
 
