@@ -5,12 +5,18 @@
 #include <filesystem>
 #include <functional>
 #include <optional>
-#include <vector>
+#include <queue>
+#include <thread>
+#include <unordered_set>
 #include "common/event.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 class DownloadService {
  public:
+  using OnDownloadTaskSuccessfully =
+      std::function<void(const DownloadTask& task)>;
+
   using DownloadEventType = cortex::event::DownloadEventType;
   using DownloadEvent = cortex::event::DownloadEvent;
   using EventType = cortex::event::EventType;
@@ -21,16 +27,38 @@ class DownloadService {
   explicit DownloadService() = default;
 
   explicit DownloadService(std::shared_ptr<EventQueue> event_queue)
-      : event_queue_{event_queue} {};
+      : event_queue_{event_queue} {
+    curl_global_init(CURL_GLOBAL_ALL);
+    stop_flag_ = false;
+    multi_handle_ = curl_multi_init();
+    worker_thread_ = std::thread(&DownloadService::WorkerThread, this);
+  };
 
-  using OnDownloadTaskSuccessfully =
-      std::function<void(const DownloadTask& task)>;
+  ~DownloadService() {
+    if (event_queue_ != nullptr) {
+      stop_flag_ = true;
+      queue_condition_.notify_one();
 
+      CTL_INF("DownloadService is being destroyed.");
+      curl_multi_cleanup(multi_handle_);
+      curl_global_cleanup();
+
+      worker_thread_.join();
+      CTL_INF("DownloadService is destroyed.")
+    }
+  }
+
+  /**
+   * Adding new download task to the queue. Asynchronously. This function should 
+   * be used by HTTP API.
+   */
+  cpp::result<DownloadTask, std::string> AddTask(
+      DownloadTask& task, std::function<void(const DownloadTask&)> callback);
+
+  /**
+   * Start download task synchronously.
+   */
   cpp::result<bool, std::string> AddDownloadTask(
-      DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
-                              std::nullopt) noexcept;
-
-  cpp::result<bool, std::string> AddAsyncDownloadTask(
       DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
                               std::nullopt) noexcept;
 
@@ -42,28 +70,53 @@ class DownloadService {
   cpp::result<uint64_t, std::string> GetFileSize(
       const std::string& url) const noexcept;
 
+  cpp::result<void, std::string> StopTask(const std::string& task_id);
+
+  cpp::result<void, std::string> Destroy();
+
  private:
   cpp::result<void, std::string> VerifyDownloadTask(
       DownloadTask& task) const noexcept;
 
-  cpp::result<bool, std::string> Download(const std::string& download_id,
-                                          const DownloadItem& download_item,
-                                          bool allow_resume) noexcept;
+  cpp::result<bool, std::string> Download(
+      const std::string& download_id,
+      const DownloadItem& download_item) noexcept;
 
   curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
 
   std::shared_ptr<EventQueue> event_queue_;
 
-  std::vector<std::string> download_task_list_;
-  std::unordered_map<std::string, DownloadTask> download_task_map_;
+  CURLM* multi_handle_;
+  std::thread worker_thread_;
+  std::atomic<bool> stop_flag_;
 
-  std::optional<std::string> active_download_task_id_;
-  std::optional<std::string> active_download_item_id_;
+  // task queue
+  std::queue<DownloadTask> task_queue_;
+  std::mutex queue_mutex_;
+  std::condition_variable queue_condition_;
 
-  /**
-   * Invoked when download is completed (both failed or success)
-   */
-  void CleanUp(const std::string& task_id);
+  // stop tasks
+  std::unordered_set<std::string> tasks_to_stop_;
+  std::mutex stop_mutex_;
+
+  // callbacks
+  std::unordered_map<std::string, std::function<void(const DownloadTask&)>>
+      callbacks_;
+  std::mutex callbacks_mutex_;
+
+  void WorkerThread();
+
+  void ProcessCompletedTransfers();
+
+  void ProcessTask(const DownloadTask& task);
+
+  bool IsTaskTerminated(const std::string& task_id);
+
+  void RemoveTaskFromStopList(const std::string& task_id);
+
+  void ExecuteCallback(const DownloadTask& task);
+
+  constexpr static auto MAX_WAIT_MSECS = 1000;
 
   static int ProgressCallback(void* ptr, double dltotal, double dlnow,
                               double ultotal, double ulnow) {
@@ -72,27 +125,10 @@ class DownloadService {
       return 0;
     }
 
-    auto active_task_id = service->active_download_task_id_;
-    auto active_item_id = service->active_download_item_id_;
-    if (!active_task_id.has_value() || !active_item_id.has_value()) {
-      return 0;
-    }
-
-    auto task = service->download_task_map_[active_task_id.value()];
-
-    // loop through download items, find the active one and update it
-    for (auto& item : task.items) {
-      if (item.id == active_item_id.value()) {
-        item.downloadedBytes = dlnow;
-        item.bytes = dltotal;
-        break;
-      }
-    }
-
-    service->event_queue_->enqueue(
-        EventType::DownloadEvent,
-        DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-                      .download_task_ = task});
+    // service->event_queue_->enqueue(
+    //     EventType::DownloadEvent,
+    //     DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
+    //                   .download_task_ = task});
     return 0;
   }
 };

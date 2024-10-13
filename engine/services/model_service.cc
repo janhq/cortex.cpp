@@ -109,14 +109,14 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
 }  // namespace
 
 cpp::result<std::string, std::string> ModelService::DownloadModel(
-    const std::string& input, bool async) {
+    const std::string& input) {
   if (input.empty()) {
     return cpp::fail(
         "Input must be Cortex Model Hub handle or HuggingFace url!");
   }
 
   if (string_utils::StartsWith(input, "https://")) {
-    return HandleUrl(input, async);
+    return HandleUrl(input);
   }
 
   if (input.find(":") != std::string::npos) {
@@ -124,7 +124,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModel(
     if (parsed.size() != 2) {
       return cpp::fail("Invalid model handle: " + input);
     }
-    return DownloadModelFromCortexso(parsed[0], parsed[1], false);
+    return DownloadModelFromCortexso(parsed[0], parsed[1]);
   }
 
   if (input.find("/") != std::string::npos) {
@@ -139,8 +139,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModel(
       return HandleCortexsoModel(model_name);
     }
 
-    return DownloadHuggingFaceGgufModel(author, model_name, std::nullopt,
-                                        async);
+    return DownloadHuggingFaceGgufModel(author, model_name, std::nullopt);
   }
 
   return HandleCortexsoModel(input);
@@ -193,7 +192,7 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
 
   CLI_LOG("Selected: " << selection.value());
   auto branch_name = selection.value().substr(modelName.size() + 1);
-  return DownloadModelFromCortexso(modelName, branch_name, false);
+  return DownloadModelFromCortexso(modelName, branch_name);
 }
 
 std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
@@ -222,6 +221,67 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
   return std::nullopt;
 }
 
+cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
+    const std::string& url) {
+  auto url_obj = url_parser::FromUrlString(url);
+
+  if (url_obj.host == kHuggingFaceHost) {
+    if (url_obj.pathParams[2] == "blob") {
+      url_obj.pathParams[2] = "resolve";
+    }
+  }
+  auto author{url_obj.pathParams[0]};
+  auto model_id{url_obj.pathParams[1]};
+  auto file_name{url_obj.pathParams.back()};
+
+  if (author == "cortexso") {
+    return DownloadModelFromCortexsoAsync(model_id);
+  }
+
+  if (url_obj.pathParams.size() < 5) {
+    return cpp::fail("Invalid url: " + url);
+  }
+
+  std::string huggingFaceHost{kHuggingFaceHost};
+  std::string unique_model_id{author + ":" + model_id + ":" + file_name};
+
+  cortex::db::Models modellist_handler;
+  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
+
+  if (model_entry.has_value()) {
+    CLI_LOG("Model already downloaded: " << unique_model_id);
+    return cpp::fail("Please delete the model before downloading again");
+  }
+
+  auto local_path{file_manager_utils::GetModelsContainerPath() /
+                  "huggingface.co" / author / model_id / file_name};
+
+  try {
+    std::filesystem::create_directories(local_path.parent_path());
+  } catch (const std::filesystem::filesystem_error& e) {
+    // if file exist, remove it
+    std::filesystem::remove(local_path.parent_path());
+    std::filesystem::create_directories(local_path.parent_path());
+  }
+
+  auto download_url = url_parser::FromUrl(url_obj);
+  // this assume that the model being downloaded is a single gguf file
+  auto downloadTask{DownloadTask{.id = model_id,
+                                 .type = DownloadType::Model,
+                                 .items = {DownloadItem{
+                                     .id = unique_model_id,
+                                     .downloadUrl = download_url,
+                                     .localPath = local_path,
+                                 }}}};
+
+  auto on_finished = [&](const DownloadTask& finishedTask) {
+    auto gguf_download_item = finishedTask.items[0];
+    ParseGguf(gguf_download_item, author);
+  };
+
+  return download_service_->AddTask(downloadTask, on_finished);
+}
+
 cpp::result<std::string, std::string> ModelService::HandleUrl(
     const std::string& url, bool async) {
   auto url_obj = url_parser::FromUrlString(url);
@@ -243,7 +303,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
     if (url_obj.pathParams.size() < 2) {
       return cpp::fail("Invalid url: " + url);
     }
-    return DownloadHuggingFaceGgufModel(author, model_id, std::nullopt, async);
+    return DownloadHuggingFaceGgufModel(author, model_id, std::nullopt);
   }
 
   std::string huggingFaceHost{kHuggingFaceHost};
@@ -284,8 +344,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   };
 
   if (async) {
-    auto result =
-        download_service_->AddAsyncDownloadTask(downloadTask, on_finished);
+    auto result = download_service_->AddTask(downloadTask, on_finished);
 
     if (result.has_error()) {
       CTL_ERR(result.error());
@@ -304,8 +363,9 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   }
 }
 
-cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
-    const std::string& name, const std::string& branch, bool async) {
+cpp::result<DownloadTask, std::string>
+ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
+                                             const std::string& branch) {
 
   auto download_task = GetDownloadTask(name, branch);
   if (download_task.has_error()) {
@@ -346,28 +406,78 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
                                        .branch_name = branch,
                                        .path_to_model_yaml = rel.string(),
                                        .model_alias = model_id};
-    modellist_utils_obj.AddModelEntry(model_entry);
+    auto result = modellist_utils_obj.AddModelEntry(model_entry);
+    if (result.has_error()) {
+      CTL_ERR("Error adding model to modellist: " + result.error());
+    }
   };
 
-  auto result = async ? download_service_->AddAsyncDownloadTask(
-                            download_task.value(), on_finished)
-                      : download_service_->AddDownloadTask(
-                            download_task.value(), on_finished);
+  return download_service_->AddTask(download_task.value(), on_finished);
+}
 
+cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
+    const std::string& name, const std::string& branch) {
+
+  auto download_task = GetDownloadTask(name, branch);
+  if (download_task.has_error()) {
+    return cpp::fail(download_task.error());
+  }
+
+  std::string model_id{name + ":" + branch};
+  auto on_finished = [&, model_id](const DownloadTask& finishedTask) {
+    const DownloadItem* model_yml_item = nullptr;
+    auto need_parse_gguf = true;
+
+    for (const auto& item : finishedTask.items) {
+      if (item.localPath.filename().string() == "model.yml") {
+        model_yml_item = &item;
+      }
+    }
+
+    if (model_yml_item == nullptr) {
+      CTL_WRN("model.yml not found in the downloaded files for " + model_id);
+      return;
+    }
+    auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
+    CTL_INF("Adding model to modellist with branch: " << branch);
+    config::YamlHandler yaml_handler;
+    yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
+    auto mc = yaml_handler.GetModelConfig();
+    mc.model = model_id;
+    yaml_handler.UpdateModelConfig(mc);
+    yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
+
+    auto rel =
+        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
+    CTL_INF("path_to_model_yaml: " << rel.string());
+
+    cortex::db::Models modellist_utils_obj;
+    cortex::db::ModelEntry model_entry{.model = model_id,
+                                       .author_repo_id = "cortexso",
+                                       .branch_name = branch,
+                                       .path_to_model_yaml = rel.string(),
+                                       .model_alias = model_id};
+    auto result = modellist_utils_obj.AddModelEntry(model_entry);
+    if (result.has_error()) {
+      CTL_ERR("Error adding model to modellist: " + result.error());
+    }
+  };
+
+  auto result =
+      download_service_->AddDownloadTask(download_task.value(), on_finished);
   if (result.has_error()) {
     return cpp::fail(result.error());
   } else if (result && result.value()) {
     CLI_LOG("Model " << model_id << " downloaded successfully!")
+    return model_id;
   }
-
-  return model_id;
+  return cpp::fail("Failed to download model " + model_id);
 }
 
 cpp::result<std::string, std::string>
-ModelService::DownloadHuggingFaceGgufModel(const std::string& author,
-                                           const std::string& modelName,
-                                           std::optional<std::string> fileName,
-                                           bool async) {
+ModelService::DownloadHuggingFaceGgufModel(
+    const std::string& author, const std::string& modelName,
+    std::optional<std::string> fileName) {
   auto repo_info =
       huggingface_utils::GetHuggingFaceModelRepoInfo(author, modelName);
 
@@ -491,7 +601,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
       } else {
         CTL_ERR("Model failed to load with status code: " << res->status);
         return cpp::fail("Model failed to load with status code: " +
-                         res->status);
+                         std::to_string(res->status));
       }
     } else {
       auto err = res.error();
@@ -540,7 +650,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
       } else {
         CTL_ERR("Model failed to unload with status code: " << res->status);
         return cpp::fail("Model failed to unload with status code: " +
-                         res->status);
+                         std::to_string(res->status));
       }
     } else {
       auto err = res.error();
@@ -589,7 +699,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
         CTL_INF("Model failed to get model status with status code: "
                 << res->status);
         return cpp::fail("Model failed to get model status with status code: " +
-                         res->status);
+                         std::to_string(res->status));
       }
     } else {
       auto err = res.error();
@@ -600,4 +710,10 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
   }
+}
+
+cpp::result<void, std::string> ModelService::AbortDownloadModel(
+    const std::string& task_id) {
+  auto result = download_service_->StopTask(task_id);
+  return result;
 }

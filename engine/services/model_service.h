@@ -15,12 +15,15 @@ class ModelService {
   /**
    * Return model id if download successfully
    */
-  cpp::result<std::string, std::string> DownloadModel(const std::string& input,
-                                                      bool async = false);
+  cpp::result<std::string, std::string> DownloadModel(const std::string& input);
+
+  cpp::result<void, std::string> AbortDownloadModel(const std::string& task_id);
 
   cpp::result<std::string, std::string> DownloadModelFromCortexso(
-      const std::string& name, const std::string& branch = "main",
-      bool async = false);
+      const std::string& name, const std::string& branch = "main");
+
+  cpp::result<DownloadTask, std::string> DownloadModelFromCortexsoAsync(
+      const std::string& name, const std::string& branch = "main");
 
   std::optional<config::ModelConfig> GetDownloadedModel(
       const std::string& modelId) const;
@@ -43,13 +46,16 @@ class ModelService {
   cpp::result<std::string, std::string> HandleUrl(const std::string& url,
                                                   bool async = false);
 
+  cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
+      const std::string& url);
+
  private:
   /**
    * Handle downloading model which have following pattern: author/model_name
    */
   cpp::result<std::string, std::string> DownloadHuggingFaceGgufModel(
       const std::string& author, const std::string& modelName,
-      std::optional<std::string> fileName, bool async = false);
+      std::optional<std::string> fileName);
 
   /**
    * Handling cortexso models. Will look through cortexso's HF repository and
