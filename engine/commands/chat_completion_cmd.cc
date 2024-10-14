@@ -1,13 +1,11 @@
 #include "chat_completion_cmd.h"
-#include "httplib.h"
-
 #include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
+#include "httplib.h"
 #include "model_status_cmd.h"
-#include "run_cmd.h"
 #include "server_start_cmd.h"
-#include "trantor/utils/Logger.h"
+#include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -79,7 +77,8 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
   // Only check if llamacpp engine
   if ((mc.engine.find(kLlamaEngine) != std::string::npos ||
        mc.engine.find(kLlamaRepo) != std::string::npos) &&
-      !commands::ModelStatusCmd().IsLoaded(host, port, model_handle)) {
+      !commands::ModelStatusCmd(model_service_)
+           .IsLoaded(host, port, model_handle)) {
     CLI_LOG("Model is not loaded yet!");
     return;
   }

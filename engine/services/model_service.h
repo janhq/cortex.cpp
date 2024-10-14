@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 #include "config/model_config.h"
 #include "services/download_service.h"
@@ -8,7 +9,8 @@ class ModelService {
  public:
   constexpr auto static kHuggingFaceHost = "huggingface.co";
 
-  ModelService() : download_service_{DownloadService()} {};
+  explicit ModelService(std::shared_ptr<DownloadService> download_service)
+      : download_service_{download_service} {};
 
   /**
    * Return model id if download successfully
@@ -56,5 +58,5 @@ class ModelService {
   cpp::result<std::string, std::string> HandleCortexsoModel(
       const std::string& modelName);
 
-  DownloadService download_service_;
+  std::shared_ptr<DownloadService> download_service_;
 };

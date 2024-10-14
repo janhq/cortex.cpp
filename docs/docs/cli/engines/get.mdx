@@ -1,0 +1,40 @@
+---
+title: Cortex Engines Get
+description: Cortex engines subcommands.
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# `cortex engines get`
+
+This command returns an engine detail defined by an engine `name`.
+
+
+
+## Usage
+
+```bash
+cortex engines get <engine_name>
+```
+For example, it returns the following:
+```bash
++-----------+-------------------+---------+----------------------------+--------+
+| Name      | Supported Formats | Version | Variant                    | Status |
++-----------+-------------------+---------+----------------------------+--------+
+| llama-cpp | GGUF              | 0.1.34  | linux-amd64-avx2-cuda-12-0 | Ready  |
++-----------+-------------------+---------+----------------------------+--------+
+```
+:::info
+To get an engine name, run the [`engines list`](/docs/cli/engines/list) command first.
+:::
+
+
+## Options
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `name`        | The name of the engine that you want to retrieve.     | Yes      | -             | `llama-cpp`|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+

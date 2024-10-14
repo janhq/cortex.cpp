@@ -1,4 +1,6 @@
+#include <nlohmann/json.hpp>
 #include <string>
+
 #if defined(_WIN32)
 #define NOMINMAX
 #endif
@@ -20,7 +22,6 @@
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/dylib.h"
-#include "utils/json.hpp"
 
 #ifndef SERVER_VERBOSE
 #define SERVER_VERBOSE 1

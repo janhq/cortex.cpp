@@ -1,0 +1,54 @@
+---
+title: Built-in Models
+description: Cortex Curated Models
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex.cpp maintains a collection of built-in models that cover the most popular open-source models.
+
+## Cortex Model Repos
+Built-in models are [Cortex Model Repositories](/docs/hub/cortex-hub) hosted on HuggingFace and pre-compiled for different engines, allowing one model to have multiple branches in various formats.
+
+## Built-in Model Variants
+Built-in models are made available across the following variants: 
+
+- **By format**: `gguf`, `onnx`, and `tensorrt-llm`
+- **By Size**: `7b`, `13b`, and more.
+- **By quantizations**: `q4`, `q8`, and more.
+:::info
+You can see our full list of Built-in Models [here](/models). 
+:::
+### Run Model 
+
+Built-in models can be run via Docker-like syntax:
+
+```bash
+# Run a model
+cortex run model-id
+# Run a model variant
+cortex run model-id:branch
+```
+For example:
+
+```bash
+# Run Mistral Built-in Model
+cortex pull mistral
+# Run Mistral in GGUF format
+cortex pull mistral:gguf
+# Run Mistral in TensorRT-LLM format
+cortex engines tensorrt-llm init
+cortex pull mistral:7b-tensorrt-llm
+# Run Mistral in ONNX format
+cortex engines onnx init
+cortex pull mistral:onnx
+# Run Mistral with a different size
+cortex pull mistral:7b-gguf
+
+```

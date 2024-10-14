@@ -1,0 +1,189 @@
+---
+title: Using Models
+description: Model Operations
+slug: "using-models"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex's Models API is compatible with OpenAI’s [Models](https://platform.openai.com/docs/api-reference/models) endpoint. It is a fork of the OpenAI API used for model management. Additionally, Cortex exposes lower-level operations for managing models like downloading models from a model hub and model loading.
+
+## Model Operation
+Model Operation allows you to pull, run, and stop models.
+### Run Model
+:::info
+The Run Model CLI and endpoint will automatically pull a model if it has not been downloaded yet.
+:::
+<Tabs>
+  <TabItem  value="API" label="API" default>
+    ```bash
+        curl --request POST \
+        --url http://localhost:39281/v1/models/mistral/start \
+        --header 'Content-Type: application/json' \
+        --data '{
+        "prompt_template": "system\n{system_message}\nuser\n{prompt}\nassistant",
+        "stop": [],
+        "ngl": 4096,
+        "ctx_len": 4096,
+        "cpu_threads": 10,
+        "n_batch": 2048,
+        "caching_enabled": true,
+        "grp_attn_n": 1,
+        "grp_attn_w": 512,
+        "mlock": false,
+        "flash_attn": true,
+        "cache_type": "f16",
+        "use_mmap": true,
+        "engine": "llamacpp"
+      }'
+      ```
+  </TabItem>
+  <TabItem  value="CLI" label="CLI" default>
+    ```bash 
+    cortex models run <model_id>
+    ```
+  </TabItem>
+  <TabItem value="cortex.js" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py" label="cortex.py">
+  </TabItem>
+</Tabs>
+### Stop Model
+<Tabs>
+  <TabItem  value="API-stop" label="API" default>
+    ```bash
+        curl --request POST \
+        --url http://localhost:39281/models/mistral/stop
+
+
+
+      ```
+  </TabItem>
+  <TabItem  value="CLI-stop" label="CLI" default>
+    ```bash 
+    cortex models stop <model_id>
+    ```
+  </TabItem>
+  <TabItem value="cortex.js-stop" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py-stop" label="cortex.py">
+  </TabItem>
+</Tabs>
+### Pull Model
+<Tabs>
+  <TabItem  value="API-pull" label="API" default>
+    ```bash
+        curl --request POST \
+        --url http://localhost:39281/v1/models/mistral/pull
+
+
+
+      ```
+  </TabItem>
+  <TabItem  value="CLI-pull" label="CLI" default>
+    ```bash 
+    # Download a built-in model
+    cortex models pull mistral
+    # Download a specific variant
+    cortex models pull bartowski/Hermes-2-Theta-Llama-3-70B-GGUF
+    ```
+  </TabItem>
+  <TabItem value="cortex.js-pull" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py-pull" label="cortex.py">
+  </TabItem>
+</Tabs>
+
+## Models Management
+Model Management allows you to manage your local models, which can be found in `~users/user_name/cortex/models`.
+### List Models
+<Tabs>
+  <TabItem  value="API-pull" label="API" default>
+    ```bash
+        curl --request GET \
+        --url http://localhost:39281/v1/models
+
+
+
+      ```
+  </TabItem>
+  <TabItem  value="CLI-pull" label="CLI" default>
+    ```bash 
+    cortex models list
+    ```
+  </TabItem>
+  <TabItem value="cortex.js-pull" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py-pull" label="cortex.py">
+  </TabItem>
+</Tabs>
+### Get Model
+<Tabs>
+  <TabItem  value="API-pull" label="API" default>
+    ```bash
+        curl --request GET \
+        --url http://localhost:39281/v1/models/mistral
+
+
+
+      ```
+  </TabItem>
+  <TabItem  value="CLI-pull" label="CLI" default>
+    ```bash 
+    cortex models get <model_id>
+    ```
+  </TabItem>
+  <TabItem value="cortex.js-pull" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py-pull" label="cortex.py">
+  </TabItem>
+</Tabs>
+### Delete Model
+<Tabs>
+  <TabItem  value="API-pull" label="API" default>
+    ```bash
+        curl --request DELETE \
+        --url http://localhost:39281/v1/models/mistral
+
+
+
+      ```
+  </TabItem>
+  <TabItem  value="CLI-pull" label="CLI" default>
+    ```bash 
+    cortex models remove <model_id>
+    ```
+  </TabItem>
+  <TabItem value="cortex.js-pull" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py-pull" label="cortex.py">
+  </TabItem>
+</Tabs>
+### Update Model
+<Tabs>
+  <TabItem  value="API-pull" label="API" default>
+    ```bash
+      curl --request PATCH \
+        --url http://localhost:39281/v1/models/mistral \
+        --header 'Content-Type: application/json' \
+        --data '{}'
+
+
+
+      ```
+  </TabItem>
+  <TabItem  value="CLI-pull" label="CLI" default>
+    ```bash 
+    cortex models update
+    ```
+  </TabItem>
+  <TabItem value="cortex.js-pull" label="cortex.js">
+  </TabItem>
+  <TabItem value="cortex.py-pull" label="cortex.py">
+  </TabItem>
+</Tabs>

@@ -3,7 +3,6 @@
 #include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
-#include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
@@ -100,8 +99,16 @@ void RunCmd::Exec(bool chat_flag) {
     {
       if ((mc.engine.find(kLlamaRepo) == std::string::npos &&
            mc.engine.find(kLlamaEngine) == std::string::npos) ||
-          !commands::ModelStatusCmd().IsLoaded(host_, port_, *model_id)) {
-        if (!ModelStartCmd().Exec(host_, port_, *model_id)) {
+          !commands::ModelStatusCmd(model_service_)
+               .IsLoaded(host_, port_, *model_id)) {
+
+        auto result = model_service_.StartModel(host_, port_, *model_id);
+        if (result.has_error()) {
+          CLI_LOG("Error: " + result.error());
+          return;
+        }
+        if (!result.value()) {
+          CLI_LOG("Error: Failed to start model");
           return;
         }
       }
@@ -109,7 +116,7 @@ void RunCmd::Exec(bool chat_flag) {
 
     // Chat
     if (chat_flag) {
-      ChatCompletionCmd().Exec(host_, port_, *model_id, mc, "");
+      ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
     } else {
       CLI_LOG(*model_id << " model started successfully. Use `"
                         << commands::GetCortexBinary() << " chat " << *model_id
