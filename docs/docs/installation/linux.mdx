@@ -1,0 +1,131 @@
+---
+title: Linux Installation
+description: Install Cortex CLI on Linux.
+slug: 'linux'
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Admonition from '@theme/Admonition';
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+## Cortex.cpp Installation
+Cortex.cpp offers two installer types:
+- Network Installers download a minimal system and require an internet connection to fetch packages during installation.
+- Local Installers include all necessary packages, enabling offline installation without internet access.
+:::info
+Before installation, make sure that you have met the required [dependencies](#dependencies) and [hardware](#hardware) to run Cortex.
+:::
+1. Download the Linux installer:
+    - `.deb`:
+        - Stable: https://github.com/janhq/cortex.cpp/releases
+        - Beta: https://github.com/janhq/cortex.cpp/releases
+        - Nightly: https://github.com/janhq/cortex.cpp/releases
+    - `.appImage`:
+        - Stable: https://github.com/janhq/cortex.cpp/releases
+        - Beta: https://github.com/janhq/cortex.cpp/releases
+        - Nightly: https://github.com/janhq/cortex.cpp/releases
+
+2. Ensure that Cortex.cpp is sucessfulyy installed:
+```bash
+# Stable
+cortex
+
+# Beta
+cortex-beta
+
+# Nightly
+cortex-nightly
+```
+
+### Data Folder
+By default, Cortex.cpp is installed in the following directory:
+```
+# Binary Location
+/usr/bin/cortexcpp<env>
+
+# Application Data (Engines, Models and Logs folders)
+/home/<username>/.cortexcpp<env>
+```
+## Uninstall Cortex.cpp
+```bash
+# Stable version
+sudo apt remove cortexcpp
+
+# Beta version
+sudo apt remove cortexcpp-beta
+
+# Nightly version
+sudo apt remove cortexcpp-nightly
+```
+
+## Build from Source
+1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
+2. Navigate to the `engine > vcpkg` folder.
+3. Configure the vpkg:
+
+```bash
+cd vcpkg
+./bootstrap-vcpkg.sh
+vcpkg install
+```
+4. Build the Cortex.cpp inside the `build` folder:
+
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake
+make -j4
+```
+5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
+6. Verify that Cortex.cpp is installed correctly by getting help information.
+
+```sh
+# Get the help information
+cortex -h
+```
+
+## Prerequisites
+### Dependencies
+- Node.js version 18 and higher
+- NPM
+- Homebrew
+- OpenMPI
+
+### Hardware
+#### Operating System
+- Debian-based (Supports `.deb` and `AppImage` )
+- Ubuntu version 22.04 and higher
+#### CPU
+:::info
+- Cortex.cpp supports a processor that can handle AVX2. For the full list, please see [here](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#CPUs_with_AVX2).
+- We support older processors with AVX and AVX-512, though this is not recommended.
+:::
+##### Intel CPU
+- Haswell processors (Q2 2013) and newer.
+- Tiger Lake (Q3 2020) and newer for Celeron and Pentium processors.
+##### AMD CPU
+- Excavator processors (Q2 2015) and newer.
+#### RAM
+:::info
+We support DDR2 RAM as the minimum requirement but recommend using newer generations of RAM for improved performance.
+:::
+- 8GB for running up to 3B models (int4).
+- 16GB for running up to 7B models (int4).
+- 32GB for running up to 13B models (int4).
+#### GPU
+:::info
+Having at least 6GB VRAM when using NVIDIA, AMD, or Intel Arc GPUs is recommended.
+:::
+- 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+- 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+- 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+:::info
+- [NVIDIA driver](https://www.nvidia.com/Download/index.aspx) version 470.63.01 or higher.
+- [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) version 12.3 or higher.
+:::
+#### Disk
+- At least 10GB for app storage and model download.

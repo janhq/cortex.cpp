@@ -1,0 +1,68 @@
+---
+title: Cortex Embeddings
+description: Cortex embeddings command.
+slug: "embeddings"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# `cortex embeddings`
+:::info
+This CLI command calls the following API endpoint:
+- [Embeddings](/api-reference#tag/embeddings/post/v1/embeddings)
+:::
+This command creates the embedding vector representing the input text.
+
+
+
+## Usage
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  # Stable
+  cortex embeddings [options] [model_id] [message]
+
+  # Beta
+  cortex-beta embeddings [options] [model_id] [message]
+
+  # Nightly
+  cortex-nightly embeddings [options] [model_id] [message]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  # Stable
+  cortex.exe embeddings [options] [model_id] [message]
+  
+  # Beta
+  cortex-beta.exe embeddings [options] [model_id] [message]
+
+  # Nightly
+  cortex-nightly.exe embeddings [options] [model_id] [message]
+  ```
+  </TabItem>
+</Tabs>
+
+:::info
+This command uses a `model_id` from the model that you have downloaded or available in your file system.
+:::
+
+## Options
+
+
+| Option                                    | Description                                                                                                             | Required | Default value                                | Example                                               |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|----------|----------------------------------------------|-------------------------------------------------------|
+| `model_id`                                | Specify the models to generate the embeddings.                                                                          | No       | `Prompt to select from the available models` | `mistral`                         |
+| `-i`, `--input <input>`                   | Input text to embed, encoded as a string or array of tokens. For multiple inputs, pass an array of strings or token arrays. | Yes      | -                                            | `-i "Hello, world!"`  |
+| `-e`, `--encoding_format <encoding_format>`| Encoding format for the embeddings. Supported formats are float and int.                                                 | No       | `float`                                      | `-e float`                               |
+| `-d`, `--dimensions <dimensions>`         | Specify the number of dimensions for the resulting output embeddings. Supported only in some models.                     | No       | -                                            | `-d 128`                                    |
+| `-h`, `--help`                            | Display help information for the command.                                                                                | No       | -                                            | `-h`                                              |
+

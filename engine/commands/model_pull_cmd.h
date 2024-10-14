@@ -6,7 +6,8 @@ namespace commands {
 
 class ModelPullCmd {
  public:
-  explicit ModelPullCmd() : model_service_{ModelService()} {};
+  explicit ModelPullCmd()
+      : model_service_{ModelService(std::make_shared<DownloadService>())} {};
   void Exec(const std::string& input);
 
  private:

@@ -1,4 +1,6 @@
+#include <nlohmann/json.hpp>
 #include <string>
+
 #if defined(_WIN32)
 #define NOMINMAX
 #endif
@@ -18,7 +20,6 @@
 
 #include "common/base.h"
 #include "services/inference_service.h"
-#include "utils/json.hpp"
 
 #ifndef SERVER_VERBOSE
 #define SERVER_VERBOSE 1
@@ -34,8 +35,6 @@ class server : public drogon::HttpController<server>,
                public BaseModel,
                public BaseChatCompletion,
                public BaseEmbedding {
-  struct SyncQueue;
-
  public:
   server();
   ~server();

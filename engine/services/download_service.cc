@@ -115,24 +115,40 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
 cpp::result<bool, std::string> DownloadService::AddAsyncDownloadTask(
     DownloadTask& task,
     std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
-  auto verifying_result = VerifyDownloadTask(task);
-  if (verifying_result.has_error()) {
-    return cpp::fail(verifying_result.error());
+
+  if (std::find(download_task_list_.begin(), download_task_list_.end(),
+                task.id) != download_task_list_.end()) {
+    return cpp::fail("Download task already exists: " + task.id);
+  }
+
+  download_task_list_.push_back(task.id);
+  download_task_map_.insert({task.id, task});
+
+  {
+    // verify download task
+    auto result = VerifyDownloadTask(task);
+    if (result.has_error()) {
+      CleanUp(task.id);
+      return cpp::fail(result.error());
+    }
   }
 
   auto execute_download_async = [&, task, callback]() {
-    std::optional<std::string> dl_err_msg = std::nullopt;
+    active_download_task_id_ = task.id;
+    std::optional<std::string> err_msg = std::nullopt;
     for (const auto& item : task.items) {
+      active_download_item_id_ = item.id;
       CTL_INF("Start downloading: " + item.localPath.filename().string());
       auto result = Download(task.id, item, false);
       if (result.has_error()) {
-        dl_err_msg = result.error();
+        err_msg = result.error();
         break;
       }
     }
 
-    if (dl_err_msg.has_value()) {
-      CTL_ERR(dl_err_msg.value());
+    if (err_msg.has_value()) {
+      CTL_ERR(err_msg.value());
+      CleanUp(task.id);
       return;
     }
 
@@ -140,6 +156,7 @@ cpp::result<bool, std::string> DownloadService::AddAsyncDownloadTask(
       CTL_INF("Download success, executing post download lambda!");
       callback.value()(task);
     }
+    CleanUp(task.id);
   };
 
   std::thread t(execute_download_async);
@@ -173,7 +190,7 @@ cpp::result<bool, std::string> DownloadService::Download(
       CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
                                      << download_item.localPath.string()
                                      << " - " << existing_file_size);
-      CTL_INF("Download item size: " << download_item.bytes.value());                               
+      CTL_INF("Download item size: " << download_item.bytes.value());
       auto missing_bytes = download_item.bytes.value() - existing_file_size;
       if (missing_bytes > 0 &&
           download_item.localPath.extension().string() != ".yaml" &&
@@ -218,6 +235,9 @@ cpp::result<bool, std::string> DownloadService::Download(
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+  curl_easy_setopt(curl, CURLOPT_PROGRESSFUNCTION, ProgressCallback);
+  curl_easy_setopt(curl, CURLOPT_PROGRESSDATA, this);
+
   if (mode == "ab") {
     auto local_file_size = GetLocalFileSize(download_item.localPath);
     if (local_file_size != -1) {
@@ -254,4 +274,18 @@ curl_off_t DownloadService::GetLocalFileSize(
   curl_off_t file_size = ftell64(file);
   fclose(file);
   return file_size;
+}
+
+void DownloadService::CleanUp(const std::string& task_id) {
+  CTL_INF("Cleaning up download task: " << task_id);
+  // TODO: might need to be wrap with mutex
+  // remove from task list
+  download_task_list_.erase(std::remove(download_task_list_.begin(),
+                                        download_task_list_.end(), task_id),
+                            download_task_list_.end());
+  // remove from task map
+  download_task_map_.erase(task_id);
+
+  active_download_task_id_ = std::nullopt;
+  active_download_item_id_ = std::nullopt;
 }

@@ -1,12 +1,16 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
-#include <climits>  // for PATH_MAX
-#include "commands/cortex_upd_cmd.h"
+#include <memory>
 #include "controllers/command_line_parser.h"
+#include "controllers/engines.h"
+#include "controllers/events.h"
+#include "controllers/models.h"
 #include "cortex-common/cortexpythoni.h"
+#include "services/model_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/event_processor.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -18,6 +22,7 @@
 #include <sys/types.h>
 #elif defined(__linux__)
 #include <libgen.h>  // for dirname()
+#include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>  // for readlink()
 #elif defined(_WIN32)
@@ -64,12 +69,33 @@ void RunServer() {
 
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
-  // cortex_utils::nitro_logo();
+
 #ifdef CORTEX_CPP_VERSION
   LOG_INFO << "cortex.cpp version: " << CORTEX_CPP_VERSION;
 #else
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
+
+  using Event = cortex::event::Event;
+  using EventQueue =
+      eventpp::EventQueue<EventType,
+                          void(const eventpp::AnyData<eventMaxSize>&)>;
+
+  auto event_queue_ptr = std::make_shared<EventQueue>();
+  cortex::event::EventProcessor event_processor(event_queue_ptr);
+
+  auto download_service = std::make_shared<DownloadService>(event_queue_ptr);
+  auto engine_service = std::make_shared<EngineService>(download_service);
+  auto model_service = std::make_shared<ModelService>(download_service);
+
+  // initialize custom controllers
+  auto engine_ctl = std::make_shared<Engines>(engine_service);
+  auto model_ctl = std::make_shared<Models>(model_service);
+  auto event_ctl = std::make_shared<Events>(event_queue_ptr);
+
+  drogon::app().registerController(engine_ctl);
+  drogon::app().registerController(model_ctl);
+  drogon::app().registerController(event_ctl);
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
@@ -81,7 +107,6 @@ void RunServer() {
   drogon::app().disableSigtermHandling();
 
   drogon::app().run();
-  // return 0;
 }
 
 int main(int argc, char* argv[]) {

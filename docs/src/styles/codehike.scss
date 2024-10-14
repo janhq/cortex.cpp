@@ -1,0 +1,13 @@
+.ch-codeblock {
+  box-shadow: none !important;
+
+  .ch-code-button {
+    display: none;
+  }
+
+  &:hover {
+    .ch-code-button {
+      display: block;
+    }
+  }
+}

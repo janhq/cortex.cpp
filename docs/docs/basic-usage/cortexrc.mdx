@@ -1,0 +1,45 @@
+---
+title: .cortexrc
+description: .cortexrc Overview.
+slug: "cortexrc"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex.cpp supports reading its configuration from a file called `.cortexrc`. Using this file, you can also change the data folder, Cortex.cpp API server port, and host.
+
+## File Location
+The configuration file is stored in the following locations:
+
+- **Windows**:
+  - Stable: `C:\Users\<username>\.cortexrc`
+  - Beta: `C:\Users\<username>\.cortexrc-beta`
+  - Nighty: `C:\Users\<username>\.cortexrc-nightly`
+- **Linux**:
+  - Stable: `/home/<username>/.cortexrc`
+  - Beta: `/home/<username>/.cortexrc-beta`
+  - Nighty: `/home/<username>/.cortexrc-nightly`
+- **macOS**:
+  - Stable: `/Users/<username>/.cortexrc`
+  - Beta: `/Users/<username>/.cortexrc-beta`
+  - Nighty: `/Users/<username>/.cortexrc-nightly`
+
+## Configuration Parameters
+You can configure the following parameters in the `.cortexrc` file:
+| Parameter        | Description                                      | Default Value                  |
+|------------------|--------------------------------------------------|--------------------------------|
+| `dataFolderPath` | Path to the folder where `.cortexrc` located.  | User's home folder.  |
+| `apiServerHost`  | Host address for the Cortex.cpp API server.       | `127.0.0.1`                    |
+| `apiServerPort`  | Port number for the Cortex.cpp API server.        | `39281`                         |
+
+Example of the `.cortexrc` file:
+```
+dataFolderPath: /Users/<username>/cortexcpp
+apiServerHost: 127.0.0.1
+apiServerPort: 39281
+```
