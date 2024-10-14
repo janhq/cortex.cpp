@@ -17,9 +17,7 @@
 #include <variant>
 
 #include "common/base.h"
-#include "cortex-common/EngineI.h"
-#include "cortex-common/cortexpythoni.h"
-#include "utils/dylib.h"
+#include "services/inference_service.h"
 #include "utils/json.hpp"
 
 #ifndef SERVER_VERBOSE
@@ -98,66 +96,11 @@ class server : public drogon::HttpController<server>,
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                        std::shared_ptr<SyncQueue> q);
+                        std::shared_ptr<services::SyncQueue> q);
   void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                           SyncQueue& q);
-  bool IsEngineLoaded(const std::string& e);
-
-  bool HasFieldInReq(const HttpRequestPtr& req,
-                     std::function<void(const HttpResponsePtr&)>& callback,
-                     const std::string& field);
-
-  bool HasFieldInReq(const HttpRequestPtr& req, const std::string& field);
+                           services::SyncQueue& q);
 
  private:
-  struct SyncQueue {
-    void push(std::pair<Json::Value, Json::Value>&& p) {
-      std::unique_lock<std::mutex> l(mtx);
-      q.push(p);
-      cond.notify_one();
-    }
-
-    std::pair<Json::Value, Json::Value> wait_and_pop() {
-      std::unique_lock<std::mutex> l(mtx);
-      cond.wait(l, [this] { return !q.empty(); });
-      auto res = q.front();
-      q.pop();
-      return res;
-    }
-
-    std::mutex mtx;
-    std::condition_variable cond;
-    // Status and result
-    std::queue<std::pair<Json::Value, Json::Value>> q;
-  };
-  struct StreamStatus {
-    void Done() {
-      std::unique_lock<std::mutex> l(m);
-      stream_done = true;
-      cv.notify_all();
-    }
-
-    void Wait() {
-      std::unique_lock<std::mutex> l(m);
-      cv.wait(l, [this] { return stream_done; });
-    }
-
-   private:
-    std::mutex m;
-    std::condition_variable cv;
-    bool stream_done = false;
-  };
-
- private:
-  using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
-  struct EngineInfo {
-    std::unique_ptr<cortex_cpp::dylib> dl;
-    EngineV engine;
-#if defined(_WIN32)
-    DLL_DIRECTORY_COOKIE cookie;
-#endif
-  };
-  std::unordered_map<std::string, EngineInfo> engines_;
-  std::string cur_engine_type_;
+  services::InferenceService inference_svc_;
 };
 };  // namespace inferences
