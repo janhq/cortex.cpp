@@ -1,0 +1,35 @@
+.sidebar-divider {
+  padding-left: 10px;
+  margin-top: 32px;
+  margin-bottom: 8px;
+  @apply text-gray-900 dark:text-neutral-100 uppercase font-semibold text-sm;
+}
+
+.menu__caret:before {
+  background: var(--ifm-menu-link-sublist-icon) 50% / 1.4rem 2rem;
+}
+
+.sidebar-search-shortcut .sidebar-search-key {
+  box-shadow: none !important;
+}
+
+.menu__link {
+  @apply text-gray-700 dark:text-neutral-300 text-sm;
+  font-weight: 400;
+}
+
+.menu__link--active {
+  color: var(--ifm-menu-color-active);
+  font-weight: 600;
+}
+
+.menu__list-item {
+  margin-top: 0 !important;
+}
+
+.plugin-id-changelog {
+  .menu,
+  .theme-doc-toc-desktop {
+    display: none;
+  }
+}

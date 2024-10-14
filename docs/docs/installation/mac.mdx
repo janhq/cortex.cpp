@@ -1,0 +1,103 @@
+---
+title: Mac Installation
+description: Install Cortex CLI on Mac.
+slug: 'mac'
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+## Cortex.cpp Installation
+Cortex.cpp offers two installer types:
+- Network Installers download a minimal system and require an internet connection to fetch packages during installation.
+- Local Installers include all necessary packages, enabling offline installation without internet access.
+:::info
+Before installation, make sure that you have met the required [dependencies](#dependencies) and [hardware](#hardware) to run Cortex.
+:::
+1. Download the MacOs installer:
+    - Stable: https://github.com/janhq/cortex.cpp/releases
+    - Beta: https://github.com/janhq/cortex.cpp/releases
+    - Nightly: https://github.com/janhq/cortex.cpp/releases
+2. Ensure that Cortex.cpp is sucessfulyy installed:
+```bash
+# Stable
+cortex
+
+# Beta
+cortex-beta
+
+# Nightly
+cortex-nightly
+```
+
+### Data Folder
+By default, Cortex.cpp is installed in the following directory:
+```
+# Binary Location
+/usr/local/bin/cortexcpp<env>
+
+# Application Data (Engines, Models and Logs folders)
+/Users/<username>/.cortexcpp<env>
+```
+## Uninstall Cortex.cpp
+Run the uninstaller script:
+```bash
+# Stable version
+sudo sh cortex-uninstall.sh
+
+# Beta version
+sudo sh cortex-beta-uninstall.sh
+
+# Stable version
+sudo sh cortex-nightly-uninstall.sh
+```
+:::info
+The script requires sudo permission.
+:::
+## Build from Source
+1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
+2. Navigate to the `engine > vcpkg` folder.
+3. Configure the vpkg:
+
+```bash
+cd vcpkg
+./bootstrap-vcpkg.sh
+vcpkg install
+```
+4. Build the Cortex.cpp inside the `build` folder:
+
+```bash
+mkdir build
+cd build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake
+make -j4
+```
+5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
+6. Verify that Cortex.cpp is installed correctly by getting help information.
+
+```sh
+# Get the help information
+cortex -h
+```
+
+## Prerequisites
+
+### Dependencies
+- Homebrew
+
+### Hardware
+#### Operating System
+- MacOSX 13.6 or higher.
+#### CPU
+- Mac Intel CPU
+- Mac Apple Silicon
+#### RAM
+- 8GB for running up to 3B models.
+- 16GB for running up to 7B models.
+- 32GB for running up to 13B models.
+#### Disk
+- At least 10GB for app storage and model download.

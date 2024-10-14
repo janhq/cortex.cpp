@@ -1,0 +1,42 @@
+---
+title: Model Overview
+description: The Model section overview
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+When Cortex.cpp is started, it automatically starts an API server, this is inspired by Docker CLI. This server manages various model endpoints. These endpoints facilitate the following:
+- **Model Operations**: Run and stop models.
+- **Model Management**: Manage your local models.
+:::info
+The model in the API server is automatically loaded/unloaded by using the [`/chat/completions`](/api-reference#tag/inference/post/v1/chat/completions) endpoint.
+:::
+## Model Formats
+Cortex.cpp supports three model formats:
+- GGUF
+- ONNX
+- TensorRT-LLM
+
+:::info
+For details on each format, see the [Model Formats](/docs/model-yaml#model-formats) page.
+:::
+
+## Built-in Models 
+Cortex.cpp offers a range of built-in models that include popular open-source options. These models, hosted on HuggingFace as [Cortex Model Repositories](/docs/hub/cortex-hub), are pre-compiled for different engines, enabling each model to have multiple branches in various formats.
+
+### Built-in Model Variants
+Built-in models are made available across the following variants: 
+
+- **By format**: `gguf`, `onnx`, and `tensorrt-llm`
+- **By Size**: `7b`, `13b`, and more.
+- **By quantizations**: `q4`, `q8`, and more.
+
+:::info
+You can see our full list of Built-in Models [here](/models). 
+:::
+
+## Next steps
+- Cortex requires a `model.yaml` file to run a model. Find out more [here](/docs/model-yaml).
+- Cortex supports multiple model hubs hosting built-in models. See details [here](/docs/model-sources).

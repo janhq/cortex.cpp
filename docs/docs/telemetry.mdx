@@ -1,0 +1,118 @@
+---
+title: Telemetry
+description: Telemetry
+slug: "telemetry"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex collects telemetry data to enhance our product. This data provides detailed insights into your usage, including crash reports for your Cortex or Jan applications. By analyzing this information, we can identify and fix bugs, optimize performance, and improve overall stability and user experience.
+:::info
+We do not collect any sensitive or personal information.
+:::
+## Usage
+```bash
+cortex telemetry crash
+```
+## Dataflow
+To understand how our telemetry system operates and how data flows from your hardware into our system, please refer to the [Telemetry architecture](/docs/telemetry-architecture).
+## Telemetry Metrics
+The collected telemetry metrics for Cortex are divided into two main categories: 
+- `CrashReportResource`
+- `CrashReportPayload`
+<Tabs>
+  <TabItem value="1" label="`CrashReportResource`" default>
+This category includes metrics related to the operating system and hardware details. It captures the following metrics:
+
+| Metric             | Description                    |
+|-----------------|--------------------------------|
+| `osName`        | Name of the operating system.   |
+| `osVersion`     | Version of the operating system.|
+| `architecture`  | Architecture of the operating system. |
+| `appVersion`    | Version of Cortex.              |
+| `service.name`  | Name of the Cortex service.     |
+| `source`        | Source of the report (`cli`, `cortex-server`, or `cortex-cpp`). |
+| `cpu`           | Model of the CPU.               |
+| `gpus`          | Model of the GPU, vendor, VRAM, and VRAM dynamic. |
+  </TabItem>
+  <TabItem value="2" label="`CrashReportPayload`" default>
+This category focuses on metrics related to specific operations within Cortex. It captures the following metrics:
+
+| Metric         | Description                    |
+|-------------|--------------------------------|
+| `modelId`   | ID of the currently used model. |
+| `endpoint`  | Endpoint of the Cortex Server.  |
+| `command`   | Command executed by Cortex CLI. |
+  </TabItem>
+</Tabs>
+
+## Turn Off Telemetry
+<Tabs>
+  <TabItem value="linux" label="Linux" default>
+  ```bash
+  ## 1. First Command
+  echo "export CORTEX_CRASH_REPORT=0" >>~/.profile
+  ## 2. Second Command
+  source ~/.profile
+  ```
+  </TabItem>
+  <TabItem value="mac" label="macOS" default>
+    ```bash
+    ## 1. First Command
+    echo "export CORTEX_CRASH_REPORT=0" >>~/.profile
+    ## 2. Second Command
+    source ~/.profile
+    ```
+  </TabItem>
+  <TabItem value="windows" label="Windows" default>
+    ```bash
+    ## Command Prompt
+    set CORTEX_CRASH_REPORT 0
+    ## PowerShell
+    $env:CORTEX_CRASH_REPORT 0
+    ## To set the env permanently
+    setx CORTEX_CRASH_REPORT 0
+    ```
+  </TabItem>
+</Tabs>
+
+
+## Export to Otel Collector
+<Tabs>
+  <TabItem value="linux" label="Linux" default>
+  ```bash
+  ## 1. First Command
+  echo "export CORTEX_EXPORTER_OLTP_ENDPOINT=<your_OTEL_endpoint>" >>~/.profile
+  ## 2. Second Command
+  source ~/.profile
+  ```
+  </TabItem>
+  <TabItem value="mac" label="macOS" default>
+    ```bash
+    ## 1. First Command
+    echo "export CORTEX_EXPORTER_OLTP_ENDPOINT=<your_OTEL_endpoint>" >>~/.profile
+    ## 2. Second Command
+    source ~/.profile
+    ```
+  </TabItem>
+  <TabItem value="windows" label="Windows" default>
+    ```bash
+    ## Command Prompt
+    set CORTEX_EXPORTER_OLTP_ENDPOINT <your_OTEL_endpoint>
+    ## PowerShell
+    $env:CORTEX_EXPORTER_OLTP_ENDPOINT <your_OTEL_endpoint>
+    ## To set the env permanently
+    setx CORTEX_EXPORTER_OLTP_ENDPOINT <your_OTEL_endpoint>
+    ```
+  </TabItem>
+</Tabs>
+
+:::info
+Learn more about Telemetry:
+- [Telemetry CLI command](/docs/cli/telemetry).
+:::

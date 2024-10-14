@@ -1,0 +1,60 @@
+---
+title: Cortex Start
+description: Cortex CLI.
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# Start
+:::info
+This is the initial command you need to run to start using Cortex.cpp.
+:::
+
+This command start the Cortex.cpp's API server processes.
+
+## Usage
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  # Stable
+  cortex start [options]
+
+  # Beta
+  cortex-beta start [options]
+
+  # Nightly
+  cortex-nightly start [options]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  # Stable
+  cortex.exe start [options]
+
+  # Beta
+  cortex-beta.exe start [options]
+
+  # Nightly
+  cortex-nightly.exe start [options]
+  ```
+  </TabItem>
+</Tabs>
+
+
+## Options
+
+| Option                       | Description                               | Required | Default value | Example                       |
+| ---------------------------- | ----------------------------------------- | -------- | ------------- | ----------------------------- |
+| `-h`, `--help`               | Display help information for the command.  | No       | -             | `-h`                          |
+| `-p`, `--port <port>`        | Port to serve the application.             | No       | -             | `-p 39281`                     |
+<!-- | `-a`, `--address <address>`  | Address to use.                            | No       | -             | `-a 192.168.1.1`              | -->
+<!--| `--dataFolder <dataFolder>`  | Set the data folder directory             | No       | -             | `--dataFolder /path/to/data`  | -->
+

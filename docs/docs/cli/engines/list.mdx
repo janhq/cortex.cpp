@@ -1,0 +1,38 @@
+---
+title: Cortex Engines List
+description: Cortex engines subcommands.
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# `cortex engines list`
+
+This command lists all the Cortex's engines.
+
+
+
+## Usage
+
+```bash
+cortex engines list [options]
+```
+For example, it returns the following:
+```bash
++---+---------------+--------------------+---------+--------------+
+| # | Name          | Supported Formats  | Version | Status       |
++---+---------------+--------------------+---------+--------------+
+| 1 | onnxruntime   | ONNX               | 0.0.1   | Incompatible |
+| 2 | llama-cpp     | GGUF               | 0.0.1   | Ready        |
+| 3 | tensorrt-llm  | TensorRT Engines   | 0.0.1   | Incompatible |
++---+---------------+--------------------+---------+--------------+
+```
+
+## Options
+
+| Option                    | Description                                        | Required | Default value | Example              |
+|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
+| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |
+
+

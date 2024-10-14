@@ -1,0 +1,140 @@
+---
+title: model.yaml
+description: The model.yaml
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex.cpp uses a `model.yaml` file to specify the configuration for running a model. Models can be downloaded from the Cortex Model Hub or Hugging Face repositories. Once downloaded, the model data is parsed and stored in the `models` folder.
+
+## `model.list`
+The `model.list` file acts as a registry for all model files used by Cortex.cpp. It keeps track of every downloaded and imported model by listing their details in a structured format. Each time a model is downloaded or imported, Cortex.cpp will automatically append an entry to `model.list` with the following format:
+```
+# Downloaded model
+<model-id> <author_repo-id> <branch-name> <path-to-model.yaml> <model-alias>
+
+# Imported model
+<model-id> local imported <path-to-model-id.yaml> <model-alias>
+
+```
+## `model.yaml` High Level Structure
+Here is an example of `model.yaml` format:
+```yaml
+# BEGIN GENERAL METADATA
+model: gemma-2-9b-it-Q8_0 ## Model ID which is used for request construct - should be unique between models (author / quantization)
+name: Llama 3.1      ## metadata.general.name
+version: 1           ## metadata.version
+sources:             ## can be universal protocol (models://) OR absolute local file path (file://) OR https remote URL (https://)
+  - models://huggingface/bartowski/Mixtral-8x22B-v0.1/main/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf # for downloaded model from HF
+  - files://C:/Users/user/Downloads/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf # for imported model
+# END GENERAL METADATA
+
+# BEGIN INFERENCE PARAMETERS
+## BEGIN REQUIRED
+stop:                ## tokenizer.ggml.eos_token_id
+  - <|end_of_text|>
+  - <|eot_id|>
+  - <|eom_id|>
+## END REQUIRED
+## BEGIN OPTIONAL
+stream: true         # Default true?
+top_p: 0.9           # Ranges: 0 to 1
+temperature: 0.6     # Ranges: 0 to 1
+frequency_penalty: 0 # Ranges: 0 to 1
+presence_penalty: 0  # Ranges: 0 to 1
+max_tokens: 8192     # Should be default to context length
+## END OPTIONAL
+# END INFERENCE PARAMETERS
+
+# BEGIN MODEL LOAD PARAMETERS
+## BEGIN REQUIRED
+prompt_template: |+  # tokenizer.chat_template
+  <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+  {system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+  {prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+## END REQUIRED
+## BEGIN OPTIONAL
+ctx_len: 0          # llama.context_length | 0 or undefined = loaded from model
+ngl: 33             # Undefined = loaded from model
+## END OPTIONAL
+# END MODEL LOAD PARAMETERS
+
+```
+
+The `model.yaml` is composed of three high-level sections:
+
+### Cortex Meta
+```yaml
+model: gemma-2-9b-it-Q8_0 
+name: Llama 3.1      
+version: 1          
+sources:             
+  - models://huggingface/bartowski/Mixtral-8x22B-v0.1/main/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf 
+  - files://C:/Users/user/Downloads/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf 
+```
+Cortex Meta consists of essential metadata that identifies the model within Cortex.cpp. The required parameters include:
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `name`        | The identifier name of the model, used as the `model_id`. |Yes          |
+| `model`       | Details specifying the variant of the model, including size or quantization. |Yes          |
+| `version`     | The version number of the model. |Yes          |
+| `sources`     | The source file of the model. |Yes          |
+
+### Inference Parameters
+```yaml
+stop:                
+  - <|end_of_text|>
+  - <|eot_id|>
+  - <|eom_id|>
+stream: true         
+top_p: 0.9           
+temperature: 0.6     
+frequency_penalty: 0 
+presence_penalty: 0  
+max_tokens: 8192     
+```
+Inference parameters define how the results will be produced. The required parameters include:
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `top_p`                | The cumulative probability threshold for token sampling.                             | No  |
+| `temperature`          | Controls the randomness of predictions by scaling logits before applying softmax.    | No   |
+| `frequency_penalty`    | Penalizes new tokens based on their existing frequency in the sequence so far.       | No   |
+| `presence_penalty`     | Penalizes new tokens based on whether they appear in the sequence so far.            | No   |
+| `max_tokens`           | Maximum number of tokens in the output.              | No   |
+| `stream`               | Enables or disables streaming mode for the output (true or false).                   | No   |
+| `stop`               | Specifies the stopping condition for the model, which can be a word, a letter, or a specific text. | Yes   |
+
+
+### Model Load Parameters
+```yaml
+prompt_template: |+  
+  <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+  {system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+  {prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+ctx_len: 0          
+ngl: 33 
+```
+Model load parameters include the options that control how Cortex.cpp runs the model. The required parameters include:
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `ngl`                  | Number of attention heads.                                                           | No          |
+| `ctx_len`              | Context length (maximum number of tokens).                                           | No          |
+| `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
+
+
+:::info
+You can download all the supported model formats from the following:
+- [Cortex Model Repos](/docs/hub/cortex-hub)
+- [HuggingFace Model Repos](/docs/hub/hugging-face)
+:::

@@ -1,0 +1,102 @@
+---
+title: Overview
+description: Cortex Overview.
+slug: /
+---
+
+import OAICoverage from "@site/src/components/OAICoverage"
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# Cortex
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+![Cortex Cover Image](/img/social-card.jpg)
+
+Cortex.cpp lets you run AI easily on your computer. 
+
+Cortex.cpp is a C++ command-line interface (CLI) designed as an alternative to Ollama. By default, it runs on the `llama.cpp` engine but also supports other engines, including `ONNX` and `TensorRT-LLM`, making it a multi-engine platform.
+
+## Supported Accelerators
+- Nvidia CUDA
+- Apple Metal
+- Qualcomm AI Engine
+
+## Supported Inference Backends
+- [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
+- [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs
+- [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports Nvidia GPUs 
+
+If GPU hardware is available, Cortex is GPU accelerated by default.
+
+:::info
+**Real-world Use**: Cortex.cpp powers [Jan](https://jan.ai), our on-device ChatGPT-alternative.
+
+Cortex.cpp has been battle-tested across 1 million+ downloads and handles a variety of hardware configurations.
+:::
+
+## Supported Models
+
+Cortex.cpp supports the following list of [Built-in Models](/models):
+
+<Tabs>
+ <TabItem  value="Llama.cpp" label="Llama.cpp" default>
+| Model ID         | Variant (Branch) | Model size        | CLI command                        |
+|------------------|------------------|-------------------|------------------------------------|
+| codestral        | 22b-gguf         | 22B               | `cortex run codestral:22b-gguf`    |
+| command-r        | 35b-gguf         | 35B               | `cortex run command-r:35b-gguf`    |
+| gemma            | 7b-gguf          | 7B                | `cortex run gemma:7b-gguf`         |
+| llama3           | gguf             | 8B                | `cortex run llama3:gguf`           |
+| llama3.1         | gguf             | 8B                | `cortex run llama3.1:gguf`         |
+| mistral          | 7b-gguf          | 7B                | `cortex run mistral:7b-gguf`       |
+| mixtral          | 7x8b-gguf        | 46.7B             | `cortex run mixtral:7x8b-gguf`     |
+| openhermes-2.5   | 7b-gguf          | 7B                | `cortex run openhermes-2.5:7b-gguf`|
+| phi3             | medium-gguf      | 14B - 4k ctx len  | `cortex run phi3:medium-gguf`      |
+| phi3             | mini-gguf        | 3.82B - 4k ctx len| `cortex run phi3:mini-gguf`        |
+| qwen2            | 7b-gguf          | 7B                | `cortex run qwen2:7b-gguf`         |
+| tinyllama        | 1b-gguf          | 1.1B              | `cortex run tinyllama:1b-gguf`     |
+  </TabItem>
+  <TabItem  value="ONNX" label="ONNX" default>
+| Model ID         | Variant (Branch) | Model size        | CLI command                        |
+|------------------|------------------|-------------------|------------------------------------|
+| gemma            | 7b-onnx          | 7B                | `cortex run gemma:7b-onnx`         |
+| llama3           | onnx             | 8B                | `cortex run llama3:onnx`           |
+| mistral          | 7b-onnx          | 7B                | `cortex run mistral:7b-onnx`       |
+| openhermes-2.5   | 7b-onnx          | 7B                | `cortex run openhermes-2.5:7b-onnx`|
+| phi3             | mini-onnx        | 3.82B - 4k ctx len| `cortex run phi3:mini-onnx`        |
+| phi3             | medium-onnx      | 14B - 4k ctx len  | `cortex run phi3:medium-onnx`      |
+
+  </TabItem>
+  <TabItem value="TensorRT-LLM" label="TensorRT-LLM">
+| Model ID         | Variant (Branch)              | Model size        | CLI command                        |
+|------------------|-------------------------------|-------------------|------------------------------------|
+| llama3           | 8b-tensorrt-llm-windows-ampere       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ampere`   |
+| llama3           | 8b-tensorrt-llm-linux-ampere     | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ampere` |
+| llama3           | 8b-tensorrt-llm-linux-ada   | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ada`|
+| llama3           | 8b-tensorrt-llm-windows-ada       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ada`   |
+| mistral          | 7b-tensorrt-llm-linux-ampere     | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ampere`|
+| mistral          | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ampere`  |
+| mistral          | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ada`|
+| mistral          | 7b-tensorrt-llm-windows-ada       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ada`  |
+| openhermes-2.5   | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ampere`|
+| openhermes-2.5   | 7b-tensorrt-llm-windows-ada     | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ada`|
+| openhermes-2.5   | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-linux-ada`|
+
+  </TabItem>
+</Tabs>
+:::info
+Cortex.cpp supports pulling `GGUF` and `ONNX` models from the [Hugging Face Hub](https://huggingface.co). Read how to [Pull models from Hugging Face](/docs/hub/hugging-face/)
+:::
+
+## Cortex.cpp Versions
+Cortex.cpp offers three different versions of the app, each serving a unique purpose:
+- **Stable**: The official release version of Cortex.cpp, designed for general use with proven stability.
+- **Beta**: This version includes upcoming features still in testing, allowing users to try new functionality before the next official release.
+- **Nightly**:  Automatically built every night, this version includes the latest updates and changes from the engineering team but may be unstable.
+
+:::info
+Each of these versions has a different CLI prefix command.
+:::

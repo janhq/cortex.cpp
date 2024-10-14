@@ -1,0 +1,140 @@
+---
+title: Requirements
+description: Hardware, OS, and driver requirements
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Admonition from '@theme/Admonition';
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+To run LLMs on-device or on-premise, Cortex has the following requirements:
+
+## Hardware Requirements
+<Tabs>
+  <TabItem value="CPU" label="CPU">
+    <Tabs>
+      <TabItem value="macOs" label="macOs">
+        - Mac Intel CPU.
+        - Mac Apple Silicon.
+      </TabItem>
+      <TabItem value="Intel" label="Intel" default>
+        <Admonition type="info">
+          - Jan supports a processor that can handle AVX2. For the full list, please see [here](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#CPUs_with_AVX2).
+          - We support older processors with AVX and AVX-512, though this is not recommended.
+        </Admonition>
+        - Haswell processors (Q2 2013) and newer.
+        - Tiger Lake (Q3 2020) and newer for Celeron and Pentium processors.
+      </TabItem>
+      <TabItem value="AMD" label="AMD">
+        <Admonition type="info">
+          - Jan supports a processor that can handle AVX2. For the full list, please see [here](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#CPUs_with_AVX2).
+          - We support older processors with AVX and AVX-512, though this is not recommended.
+        </Admonition>
+        - Excavator processors (Q2 2015) and newer.
+      </TabItem>
+    </Tabs>
+  </TabItem>
+  <TabItem value="RAM" label="RAM">
+    - 8GB for running up to 3B models (int4).
+    - 16GB for running up to 7B models (int4).
+    - 32GB for running up to 13B models (int4).
+    <Admonition type="info">  
+    We support DDR2 RAM as the minimum requirement but recommend using newer generations of RAM for improved performance.
+    </Admonition>
+  </TabItem>
+  <TabItem value="GPU" label="GPU">
+    - 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+    - 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+    - 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+    <Admonition type="info">  
+      Having at least 6GB VRAM when using NVIDIA, AMD, or Intel Arc GPUs is recommended.
+    </Admonition>
+  </TabItem>
+  <TabItem value="Disk" label="Disk">
+    - Having at least 10GB is recommended.
+    <Admonition type="info">  
+      The app is 1.02 MB, but models are usually 4GB+.
+    </Admonition>
+  </TabItem>
+</Tabs>
+
+## Operating System Requirements
+<Tabs>
+  <TabItem value="Mac" label="Mac">
+    - MacOSX 13.6 or higher.
+    - **Dependencies**:
+        - Node.js version 18 or higher.
+        - NPM version 9 or higher.
+        - Homebrew version 3 or higher.
+        - CPU Instructions Sets: AVX AVX2 AVX512.
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+    - Windows 10 or higher.
+    - **Dependencies**:
+        - Node.js version 18 or higher.
+        - NPM version 9 or higher.
+        - CPU Instructions Sets: AVX AVX2 AVX512.
+  </TabItem>
+  <TabItem value="Linux" label="Linux">
+    - Debian-based (Supports `.deb` and `AppImage` )
+    - Ubuntu-based
+        - Ubuntu Desktop LTS (official)/ Ubuntu Server LTS (only for server)
+        - Edubuntu (Mainly desktop)
+        - Kubuntu (Desktop only)
+        - Lubuntu (Both desktop and server, though mainly desktop)
+        - Ubuntu Budgie (Mainly desktop)
+        - Ubuntu Cinnamon (Desktop only)
+        - Ubuntu Kylin (Both desktop and server)
+        - Ubuntu MATE (Desktop only)
+    - Pacman-based
+        - Arch Linux based
+            - Arch Linux (Mainly desktop)
+            - SteamOS (Desktop only)
+    - RPM-based (Supports `.rpm` and `AppImage` )
+    - Fedora-based
+        - RHEL-based (Server only)
+    - openSUSE (Both desktop and server)
+    - **Dependencies**:
+        - Node.js version 18 or higher.
+        - NPM version 9 or higher.
+        - Homebrew version 3 or higher.
+        - CPU Instructions Sets: AVX AVX2 AVX512.
+        - MPI or OpenMPI.
+    <Admonition type="info">
+      - Please check whether your Linux distribution supports desktop, server, or both environments.
+      - For server versions, please refer to the [server installation](https://jan.ai/docs/server-installation).
+    </Admonition>
+  </TabItem>
+</Tabs>
+
+## GPU Requirements
+<Tabs>
+  <TabItem value="nvidia" label="NVIDIA">
+    - [NVIDIA driver](https://www.nvidia.com/Download/index.aspx) version 470.63.01 or higher.
+    - [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) version 12.3 or higher.
+    <Admonition type="info">  
+      CUDA Toolkit dependencies will be installed when you install Cortex.
+    </Admonition>
+  </TabItem>
+  <TabItem value="amd" label="AMD">
+    - [AMD driver](https://www.amd.com/en/support/download/drivers.html) version 22.7.1 or higher.
+  </TabItem>
+  <TabItem value="mpi" label="MPI/OpenMPI">
+    <Tabs>
+      <TabItem value="linux-mpi" label="Linux">
+        1. Update the package list:
+        ```bash
+        sudo apt update
+        ```
+        2. Install the OpenMPI binaries and development libraries:
+        ```bash
+        sudo apt install openmpi-bin libopenmpi-dev
+        ```
+      </TabItem>
+    </Tabs>
+  </TabItem>
+</Tabs>
