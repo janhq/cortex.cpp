@@ -1,5 +1,0 @@
-# Block IPv4 of domain  openai.com and all subdomains *.openai.com
-address=/openai.com/0.0.0.0
-
-# Block IPv6 of domain  openai.com and all subdomains *.openai.com
-address=/openai.com/::
