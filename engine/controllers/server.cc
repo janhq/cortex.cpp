@@ -5,7 +5,7 @@
 #include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
-
+#include "utils/function_calling/common.h"
 using namespace inferences;
 using json = nlohmann::json;
 namespace inferences {
@@ -168,6 +168,8 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
 void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                  services::SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
+  function_calling_utils::PostProcessResponse(res);
+  std::cout << Json::StyledWriter().write(res) << std::endl;
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
   resp->setStatusCode(
       static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
