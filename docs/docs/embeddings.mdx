@@ -1,0 +1,87 @@
+---
+title: Embeddings
+description: Inference engine for embedding, the same as OpenAI's
+slug: "embeddings"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+An embedding is a vector that represents a piece of text, with the distance between vectors indicating similarity, which means closer distances mean more similar texts, while farther distances mean less similar texts.
+:::note
+The Cortex Embeddings feature is fully compatible with OpenAI's [Embeddings API](https://platform.openai.com/docs/api-reference/embeddings) endpoints.
+:::
+
+## Usage
+### CLI
+```bash 
+# Without Flag
+cortex embeddings "Hello World"
+# With model_id Flag
+cortex embeddings [options] [model_id] "Hello World"
+```
+### API
+<Tabs>
+  <TabItem value="request" label="Request Example">
+  To generate an embedding, send a text string and the embedding model name **(e.g., 'nomic-embed-text-v1.5.f16')** to the Embeddings API endpoint.
+  The Cortex-cpp server will return a list of floating-point numbers, which can be stored in a vector database for later use.
+  ```bash
+curl http://127.0.0.1:39281/v1/embeddings \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "Your text string goes here",
+    "model": "nomic-embed-text-v1.5.f16",
+    "stream": false
+ }'
+
+
+  ```
+  </TabItem>
+  <TabItem value="response" label="Endpoint Response">
+  ```bash
+{
+    "data": [
+        {
+            "embedding": [
+                0.065036498010158539,
+                0.036638252437114716,
+                -0.15189965069293976,
+                ... (omitted for spacing)
+                -0.021707100793719292,
+                -0.010746118612587452,
+                0.0078709172084927559
+            ],
+            "index": 0,
+            "object": "embedding"
+        }
+    ],
+    "model": "_",
+    "object": "list",
+    "usage": {
+        "prompt_tokens": 0,
+        "total_tokens": 0
+    }
+}
+  ```
+  </TabItem>
+</Tabs>
+## Capabilities
+### Batch Embeddings
+Cortex's Embedding feature, powered by the [`llamacpp`](/docs/cortex-llamacpp) engine, offers an OpenAI-compatible endpoint. It supports processing multiple input data prompts simultaneously for batch embeddings.
+### Pre-configured Models
+We provide a selection of pre-configured models designed to integrate seamlessly with embedding features. These optimized models include:
+- Mistral Instruct 7B Q4
+- Llama 3 8B Q4
+- Aya 23 8B Q4
+:::info
+For a complete list of models, please visit the [Cortex Hub](https://huggingface.co/cortexso).
+:::
+:::note
+Learn more about Embeddings capabilities:
+- [Embeddings API Reference](/api-reference#tag/embeddings/post/embeddings)
+- [Embeddings CLI command](/docs/cli/embeddings)
+:::

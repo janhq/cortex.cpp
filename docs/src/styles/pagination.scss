@@ -1,0 +1,10 @@
+.pagination-nav {
+  padding-top: 24px;
+  border-top: 1px;
+  border-style: solid;
+  @apply dark:border-neutral-800 border-neutral-200;
+
+  &__link {
+    border: none;
+  }
+}
