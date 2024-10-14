@@ -17,6 +17,11 @@ std::string NormalizeEngine(const std::string& engine) {
   }
   return engine;
 };
+
+constexpr const int k200OK = 200;
+constexpr const int k400BadRequest = 400;
+constexpr const int k409Conflict = 409;
+constexpr const int k500InternalServerError = 500;
 }  // namespace
 
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
@@ -32,7 +37,7 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     Json::Value stt;
-    stt["status_code"] = 409;
+    stt["status_code"] = k409Conflict;
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
@@ -58,7 +63,7 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
     Json::Value stt;
-    stt["status_code"] = 409;
+    stt["status_code"] = k409Conflict;
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
@@ -146,7 +151,7 @@ InferResult InferenceService::LoadModel(
       engines_.erase(ne);
 
       r["message"] = "Could not load engine " + ne;
-      stt["status_code"] = 500;
+      stt["status_code"] = k500InternalServerError;
       return std::make_pair(stt, r);
     }
 
@@ -191,7 +196,7 @@ InferResult InferenceService::UnloadModel(
   Json::Value stt;
   if (!IsEngineLoaded(ne)) {
     r["message"] = "Engine is not loaded yet";
-    stt["status_code"] = 409;
+    stt["status_code"] = k409Conflict;
     LOG_WARN << "Engine is not loaded yet";
     return std::make_pair(stt, r);
   }
@@ -219,7 +224,7 @@ InferResult InferenceService::GetModelStatus(
 
   if (!IsEngineLoaded(ne)) {
     r["message"] = "Engine is not loaded yet";
-    stt["status_code"] = 409;
+    stt["status_code"] = k409Conflict;
     LOG_WARN << "Engine is not loaded yet";
     return std::make_pair(stt, r);
   }
@@ -240,7 +245,7 @@ InferResult InferenceService::GetModels(
   Json::Value stt;
   if (engines_.empty()) {
     r["message"] = "Engine is not loaded yet";
-    stt["status_code"] = 409;
+    stt["status_code"] = k409Conflict;
     return std::make_pair(stt, r);
   }
 
@@ -260,7 +265,7 @@ InferResult InferenceService::GetModels(
   Json::Value root;
   root["data"] = resp_data;
   root["object"] = "list";
-  stt["status_code"] = 200;
+  stt["status_code"] = k200OK;
   return std::make_pair(stt, root);
   // LOG_TRACE << "Done get models";
 }
@@ -302,7 +307,7 @@ InferResult InferenceService::FineTuning(
 
       Json::Value res;
       r["message"] = "Could not load engine " + ne;
-      stt["status_code"] = 500;
+      stt["status_code"] = k500InternalServerError;
       return std::make_pair(stt, r);
     }
 
@@ -323,7 +328,7 @@ InferResult InferenceService::FineTuning(
   } else {
     LOG_WARN << "Method is not supported yet";
     r["message"] = "Method is not supported yet";
-    stt["status_code"] = 500;
+    stt["status_code"] = k500InternalServerError;
     return std::make_pair(stt, r);
   }
   LOG_TRACE << "Done fine-tuning";
@@ -345,7 +350,7 @@ InferResult InferenceService::UnloadEngine(
 
   if (!IsEngineLoaded(ne)) {
     r["message"] = "Engine is not loaded yet";
-    stt["status_code"] = 409;
+    stt["status_code"] = k409Conflict;
     LOG_WARN << "Engine is not loaded yet";
     return std::make_pair(stt, r);
   }
@@ -362,7 +367,7 @@ InferResult InferenceService::UnloadEngine(
   engines_.erase(ne);
   LOG_INFO << "Unloaded engine " + ne;
   r["message"] = "Unloaded engine " + ne;
-  stt["status_code"] = 200;
+  stt["status_code"] = k200OK;
   return std::make_pair(stt, r);
 }
 
