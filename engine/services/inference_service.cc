@@ -3,6 +3,7 @@
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/function_calling/common.h"
+
 namespace services {
 
 namespace {
@@ -41,8 +42,9 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
+
   function_calling_utils::PreprocessRequest(json_body);
-  std::cout << Json::StyledWriter().write(*json_body) << std::endl;
+
   std::get<EngineI*>(engines_[ne].engine)
       ->HandleChatCompletion(json_body,
                              [q](Json::Value status, Json::Value res) {

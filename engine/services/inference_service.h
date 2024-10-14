@@ -7,6 +7,7 @@
 #include "cortex-common/cortexpythoni.h"
 #include "utils/dylib.h"
 #include "utils/result.hpp"
+
 namespace services {
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;
