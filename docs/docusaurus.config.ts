@@ -342,7 +342,7 @@ const config: Config = {
           sidebarPath: "./sidebars.ts",
           // Please change this to your repo.
           // Remove this to remove the "edit this page" links.
-          editUrl: "https://github.com/janhq/cortex.so/tree/main/",
+          editUrl: "https://github.com/janhq/cortex.cpp/blob/dev/docs/",
         },
         sitemap: {
           changefreq: "daily",

@@ -138,8 +138,8 @@ int main(int argc, char* argv[]) {
       std::string py_home_path = (argc > 3) ? argv[3] : "";
       std::unique_ptr<cortex_cpp::dylib> dl;
       try {
-        std::string abs_path = cortex_utils::GetCurrentPath() +
-                               cortex_utils::kPythonRuntimeLibPath;
+        std::string abs_path =
+            cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
         dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
       } catch (const cortex_cpp::dylib::load_error& e) {
         LOG_ERROR << "Could not load engine: " << e.what();
