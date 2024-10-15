@@ -24,7 +24,6 @@ void ModelImportCmd::Exec(const std::string& host, int port,
     }
   }
 
-  // Call API to delete model
   httplib::Client cli(host + ":" + std::to_string(port));
   Json::Value json_data;
   json_data["model"] = model_handle;

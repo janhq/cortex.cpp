@@ -245,7 +245,7 @@ void CommandLineParser::SetupModelCommands() {
     if (std::exchange(executed_, true))
       return;
     commands::ModelListCmd().Exec(cml_data_.config.apiServerHost,
-              std::stoi(cml_data_.config.apiServerPort));
+                                  std::stoi(cml_data_.config.apiServerPort));
   });
 
   auto get_models_cmd =
@@ -598,6 +598,8 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
     if (std::exchange(executed_, true))
       return;
     commands::ModelUpdCmd command(cml_data_.model_id);
-    command.Exec(cml_data_.model_update_options);
+    command.Exec(cml_data_.config.apiServerHost,
+                 std::stoi(cml_data_.config.apiServerPort),
+                 cml_data_.model_update_options);
   });
 }
