@@ -261,7 +261,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(get_models_cmd->help());
       return;
     };
-    commands::ModelGetCmd().Exec(cml_data_.model_id);
+    commands::ModelGetCmd().Exec(cml_data_.config.apiServerHost,
+                                 std::stoi(cml_data_.config.apiServerPort),
+                                 cml_data_.model_id);
   });
 
   auto model_del_cmd =
