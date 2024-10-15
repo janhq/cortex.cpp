@@ -51,7 +51,8 @@ inline std::string ReplaceCustomFunctions(const std::string& original,
 }
 
 inline bool HasTools(const std::shared_ptr<Json::Value>& request) {
-  return request->isMember("tools") && (*request)["tools"].isArray();
+  return request->isMember("tools") && (*request)["tools"].isArray() &&
+         (*request)["tools"].size() > 0;
 }
 
 inline std::string ProcessTools(const std::shared_ptr<Json::Value>& request) {
