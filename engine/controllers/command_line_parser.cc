@@ -331,8 +331,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_import_cmd->help());
       return;
     }
-    commands::ModelImportCmd command(cml_data_.model_id, cml_data_.model_path);
-    command.Exec();
+    commands::ModelImportCmd().Exec(cml_data_.config.apiServerHost,
+                                    std::stoi(cml_data_.config.apiServerPort),
+                                    cml_data_.model_id, cml_data_.model_path);
   });
 }
 

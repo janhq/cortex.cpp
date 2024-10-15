@@ -5,11 +5,7 @@ namespace commands {
 
 class ModelImportCmd {
  public:
-  ModelImportCmd(std::string model_handle, std::string model_path);
-  void Exec();
-
- private:
-  std::string model_handle_;
-  std::string model_path_;
+  void Exec(const std::string& host, int port, const std::string& model_handle,
+            const std::string& model_path);
 };
 }  // namespace commands

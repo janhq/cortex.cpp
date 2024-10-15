@@ -4,54 +4,44 @@
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "database/models.h"
+#include "httplib.h"
+#include "json/json.h"
+#include "server_start_cmd.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
 
-ModelImportCmd::ModelImportCmd(std::string model_handle, std::string model_path)
-    : model_handle_(std::move(model_handle)),
-      model_path_(std::move(model_path)) {}
-
-void ModelImportCmd::Exec() {
-  namespace fs = std::filesystem;
-  namespace fmu = file_manager_utils;
-  config::GGUFHandler gguf_handler;
-  config::YamlHandler yaml_handler;
-  cortex::db::Models modellist_utils_obj;
-
-  std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
-                                 std::filesystem::path("imported") /
-                                 std::filesystem::path(model_handle_ + ".yml"))
-                                    .string();
-  try {
-    // Use relative path for model_yaml_path. In case of import, we use absolute path for model
-    auto yaml_rel_path =
-        fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
-    cortex::db::ModelEntry model_entry{model_handle_, "local", "imported",
-                                       yaml_rel_path.string(), model_handle_};
-
-    std::filesystem::create_directories(
-        std::filesystem::path(model_yaml_path).parent_path());
-    gguf_handler.Parse(model_path_);
-    auto model_config = gguf_handler.GetModelConfig();
-    model_config.files.push_back(model_path_);
-    model_config.model = model_handle_;
-    yaml_handler.UpdateModelConfig(model_config);
-
-    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
-      yaml_handler.WriteYamlFile(model_yaml_path);
-      CLI_LOG("Model is imported successfully!");
-    } else {
-      CLI_LOG("Fail to import model, model_id '" + model_handle_ +
-              "' already exists!");
+void ModelImportCmd::Exec(const std::string& host, int port,
+                          const std::string& model_handle,
+                          const std::string& model_path) {
+  // Start server if server is not started yet
+  if (!commands::IsServerAlive(host, port)) {
+    CLI_LOG("Starting server ...");
+    commands::ServerStartCmd ssc;
+    if (!ssc.Exec(host, port)) {
+      return;
     }
+  }
 
-  } catch (const std::exception& e) {
-    // don't need to remove yml file here, because it's written only if model entry is successfully added,
-    // remove file here can make it fail with edge case when user try to import new model with existed model_id
-    CLI_LOG("Error importing model path '" + model_path_ + "' with model_id '" +
-            model_handle_ + "': " + e.what());
+  // Call API to delete model
+  httplib::Client cli(host + ":" + std::to_string(port));
+  Json::Value json_data;
+  json_data["model"] = model_handle;
+  json_data["modelPath"] = model_path;
+  auto data_str = json_data.toStyledString();
+  auto res = cli.Post("/v1/models/import", httplib::Headers(), data_str.data(),
+                      data_str.size(), "application/json");
+  if (res) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      CLI_LOG("Successfully import model from  '" + model_path +
+              "' for modeID '" + model_handle + "'.");
+    } else {
+      CTL_ERR("Model failed to import model with status code: " << res->status);
+    }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
   }
 }
 }  // namespace commands

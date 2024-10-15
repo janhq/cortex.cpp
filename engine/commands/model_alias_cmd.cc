@@ -22,6 +22,7 @@ void ModelAliasCmd::Exec(const std::string& host, int port,
   httplib::Client cli(host + ":" + std::to_string(port));
   Json::Value json_data;
   json_data["model"] = model_handle;
+  json_data["modelAlias"] = model_alias;
   auto data_str = json_data.toStyledString();
   auto res = cli.Post("/v1/models/alias", httplib::Headers(), data_str.data(),
                       data_str.size(), "application/json");
