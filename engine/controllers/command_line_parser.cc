@@ -498,7 +498,9 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
     if (std::exchange(executed_, true))
       return;
     try {
-      commands::EngineUninstallCmd().Exec(engine_name);
+      commands::EngineUninstallCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), engine_name);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
     }
