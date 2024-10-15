@@ -360,7 +360,8 @@ void CommandLineParser::SetupEngineCommands() {
     if (std::exchange(executed_, true))
       return;
     commands::EngineListCmd command;
-    command.Exec();
+    command.Exec(cml_data_.config.apiServerHost,
+                 std::stoi(cml_data_.config.apiServerPort));
   });
 
   auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");

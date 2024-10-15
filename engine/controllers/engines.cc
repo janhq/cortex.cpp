@@ -53,6 +53,7 @@ void Engines::ListEngine(
     ret["variant"] = status.variant.value_or("");
     ret["productName"] = status.product_name;
     ret["status"] = status.status;
+    ret["format"] = status.format;
 
     data.append(std::move(ret));
   }
