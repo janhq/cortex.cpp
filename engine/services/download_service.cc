@@ -2,14 +2,12 @@
 #include <curl/curl.h>
 #include <httplib.h>
 #include <stdio.h>
-#include <trantor/utils/Logger.h>
 #include <filesystem>
 #include <mutex>
 #include <optional>
 #include <ostream>
 #include "download_service.h"
 #include "utils/format_utils.h"
-#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 #ifdef _WIN32
@@ -240,7 +238,7 @@ void DownloadService::WorkerThread() {
   }
 }
 
-void DownloadService::ProcessTask(const DownloadTask& task) {
+void DownloadService::ProcessTask(DownloadTask& task) {
   CTL_INF("Processing task: " + task.id);
   std::vector<CURL*> task_handles;
 
@@ -259,14 +257,29 @@ void DownloadService::ProcessTask(const DownloadTask& task) {
       return;
     }
 
+    downloading_data_ = std::make_shared<DownloadingData>(DownloadingData{
+        .download_item = &item,
+        .download_task = &task,
+        .event_queue = event_queue_.get(),
+    });
+
     curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
+    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, ProgressCallback);
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, downloading_data_.get());
+
     curl_multi_add_handle(multi_handle_, handle);
     task_handles.push_back(handle);
     CTL_INF("Adding item to multi curl: " + item.ToString());
   }
+
+  event_queue_->enqueue(
+      EventType::DownloadEvent,
+      DownloadEvent{.type_ = DownloadEventType::DownloadStarted,
+                    .download_task_ = task});
 
   int still_running = 0;
   bool is_terminated = false;
@@ -288,12 +301,27 @@ void DownloadService::ProcessTask(const DownloadTask& task) {
   for (auto handle : task_handles) {
     curl_multi_remove_handle(multi_handle_, handle);
     curl_easy_cleanup(handle);
+    downloading_data_.reset();
+  }
+
+  // if terminate by API calling and not from process stopping, we emit
+  // DownloadStopped event
+  if (is_terminated && !stop_flag_) {
+    event_queue_->enqueue(
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
+                      .download_task_ = task});
   }
 
   if (!is_terminated) {
     RemoveTaskFromStopList(task.id);
     CTL_INF("Executing callback..");
     ExecuteCallback(task);
+
+    event_queue_->enqueue(
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadSuccess,
+                      .download_task_ = task});
   }
 }
 
@@ -378,9 +406,8 @@ void DownloadService::ExecuteCallback(const DownloadTask& task) {
 }
 
 cpp::result<void, std::string> DownloadService::Destroy() {
-  // CTL_INF("Destroying download service..");
+  CTL_INF("Destroying download service..");
   stop_flag_ = true;
   queue_condition_.notify_one();
-  // CTL_INF("Destroying download service.. notified");
   return {};
 }

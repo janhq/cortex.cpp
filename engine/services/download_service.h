@@ -4,6 +4,7 @@
 #include <eventpp/eventqueue.h>
 #include <filesystem>
 #include <functional>
+#include <iostream>
 #include <optional>
 #include <queue>
 #include <thread>
@@ -44,7 +45,7 @@ class DownloadService {
       curl_global_cleanup();
 
       worker_thread_.join();
-      CTL_INF("DownloadService is destroyed.")
+      CTL_INF("DownloadService is destroyed.");
     }
   }
 
@@ -75,6 +76,12 @@ class DownloadService {
   cpp::result<void, std::string> Destroy();
 
  private:
+  struct DownloadingData {
+    DownloadItem* download_item;
+    DownloadTask* download_task;
+    EventQueue* event_queue;
+  };
+
   cpp::result<void, std::string> VerifyDownloadTask(
       DownloadTask& task) const noexcept;
 
@@ -104,11 +111,16 @@ class DownloadService {
       callbacks_;
   std::mutex callbacks_mutex_;
 
+  std::shared_ptr<DownloadingData> downloading_data_;
+
+  // active task that being downloaded atm
+  std::unordered_map<std::string, DownloadTask> active_tasks_;
+
   void WorkerThread();
 
   void ProcessCompletedTransfers();
 
-  void ProcessTask(const DownloadTask& task);
+  void ProcessTask(DownloadTask& task);
 
   bool IsTaskTerminated(const std::string& task_id);
 
@@ -118,17 +130,41 @@ class DownloadService {
 
   constexpr static auto MAX_WAIT_MSECS = 1000;
 
-  static int ProgressCallback(void* ptr, double dltotal, double dlnow,
-                              double ultotal, double ulnow) {
-    auto service = static_cast<DownloadService*>(ptr);
-    if (service->event_queue_ == nullptr) {
-      return 0;
+  static int ProgressCallback(void* ptr, curl_off_t dltotal, curl_off_t dlnow,
+                              curl_off_t ultotal, curl_off_t ulnow) {
+    auto* downloading_data = static_cast<DownloadingData*>(ptr);
+    auto& event_queue = *downloading_data->event_queue;
+    auto& download_item = *downloading_data->download_item;
+    auto& download_task = *downloading_data->download_task;
+
+    // update the download task with corresponding download item
+    for (auto& item : download_task.items) {
+      if (item.id == download_item.id) {
+        item.downloadedBytes = dlnow;
+        item.bytes = dltotal;
+        break;
+      }
     }
 
-    // service->event_queue_->enqueue(
-    //     EventType::DownloadEvent,
-    //     DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-    //                   .download_task_ = task});
+    // Check if one second has passed since the last event
+    static auto last_event_time = std::chrono::steady_clock::now();
+    auto current_time = std::chrono::steady_clock::now();
+    auto time_since_last_event =
+        std::chrono::duration_cast<std::chrono::milliseconds>(current_time -
+                                                              last_event_time)
+            .count();
+
+    // throttle event by 1 sec
+    if (time_since_last_event >= 1000) {
+      event_queue.enqueue(
+          EventType::DownloadEvent,
+          DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
+                        .download_task_ = download_task});
+
+      // Update the last event time
+      last_event_time = current_time;
+    }
+
     return 0;
   }
 };
