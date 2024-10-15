@@ -82,6 +82,7 @@ void Models::ListModel(
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
         obj["id"] = model_config.model;
+        obj["model_alias"] = model_entry.model_alias;
         data.append(std::move(obj));
         yaml_handler.Reset();
       } catch (const std::exception& e) {

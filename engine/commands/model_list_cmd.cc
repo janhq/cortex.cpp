@@ -1,19 +1,26 @@
 #include "model_list_cmd.h"
 #include <iostream>
-#include <tabulate/table.hpp>
-#include <vector>
-#include "config/yaml_config.h"
-#include "database/models.h"
-#include "utils/file_manager_utils.h"
-#include "utils/logging_utils.h"
 
+#include <vector>
+#include "httplib.h"
+#include "json/json.h"
+#include "server_start_cmd.h"
+#include "utils/logging_utils.h"
+// clang-format off
+#include <tabulate/table.hpp>
+// clang-format on
 namespace commands {
 
-void ModelListCmd::Exec() {
-  namespace fs = std::filesystem;
-  namespace fmu = file_manager_utils;
-  cortex::db::Models modellist_handler;
-  config::YamlHandler yaml_handler;
+void ModelListCmd::Exec(const std::string& host, int port) {
+  // Start server if server is not started yet
+  if (!commands::IsServerAlive(host, port)) {
+    CLI_LOG("Starting server ...");
+    commands::ServerStartCmd ssc;
+    if (!ssc.Exec(host, port)) {
+      return;
+    }
+  }
+
   tabulate::Table table;
 
   table.add_row({"(Index)", "ID", "model alias", "engine", "version"});
@@ -21,35 +28,30 @@ void ModelListCmd::Exec() {
   int count = 0;
   // Iterate through directory
 
-  auto list_entry = modellist_handler.LoadModelList();
-  if (list_entry.has_error()) {
-    CTL_ERR("Fail to get list model information: " << list_entry.error());
-    return;
-  }
-  for (const auto& model_entry : list_entry.value()) {
-    // auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    try {
-      try {
-        yaml_handler.ModelConfigFromFile(
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.path_to_model_yaml))
-                .string());
-      } catch (const std::exception& e) {
-        CTL_WRN("Fail to get model '" + model_entry.model +
-                "' information: " + std::string(e.what()));
-        yaml_handler.Reset();
-        continue;
+  httplib::Client cli(host + ":" + std::to_string(port));
+  auto res = cli.Get("/v1/models");
+  if (res) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      // CLI_LOG(res->body);
+      Json::Value body;
+      Json::Reader reader;
+      reader.parse(res->body, body);
+      if (!body["data"].isNull()) {
+        for (auto const& v : body["data"]) {
+          count += 1;
+          table.add_row({std::to_string(count), v["model"].asString(),
+                         v["model_alias"].asString(), v["engine"].asString(),
+                         v["version"].asString()});
+        }
       }
-
-      count += 1;
-      auto model_config = yaml_handler.GetModelConfig();
-      table.add_row({std::to_string(count), model_entry.model,
-                     model_entry.model_alias, model_config.engine,
-                     model_config.version});
-      yaml_handler.Reset();
-    } catch (const std::exception& e) {
-      CTL_ERR("Fail to get list model information: " + std::string(e.what()));
+    } else {
+      CTL_ERR("Failed to get model list with status code: " << res->status);
+      return;
     }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    return;
   }
 
   for (int i = 0; i < 5; i++) {

@@ -244,7 +244,8 @@ void CommandLineParser::SetupModelCommands() {
   list_models_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::ModelListCmd().Exec();
+    commands::ModelListCmd().Exec(cml_data_.config.apiServerHost,
+              std::stoi(cml_data_.config.apiServerPort));
   });
 
   auto get_models_cmd =
