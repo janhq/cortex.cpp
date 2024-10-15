@@ -408,3 +408,26 @@ void Models::StopModel(const HttpRequestPtr& req,
     callback(resp);
   }
 }
+
+void Models::GetModelStatus(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& model_id) {
+  auto config = file_manager_utils::GetCortexConfig();
+
+  auto result = model_service_->GetModelStatus(
+      config.apiServerHost, std::stoi(config.apiServerPort), model_id);
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["message"] = "Model is running";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
