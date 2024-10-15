@@ -56,6 +56,11 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   app_.add_flag("--verbose", log_verbose, "Verbose logging");
 
+  // Logic is handled in main.cc, just for cli helper command
+  std::string path;
+  app_.add_option("--config_file_path", path, "Configuration file path");
+  app_.add_option("--data_folder_path", path, "Data folder path");
+
   // cortex version
   auto cb = [&](int c) {
 #ifdef CORTEX_CPP_VERSION
