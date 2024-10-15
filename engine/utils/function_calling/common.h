@@ -6,7 +6,7 @@
 #include <string>
 #include <vector>
 #include "llama3.1.h"
-
+#include "utils/logging_utils.h"
 namespace function_calling_utils {
 constexpr auto custom_template_function = "<CUSTOM_FUNCTIONS>";
 
@@ -137,9 +137,26 @@ inline std::string CreateCustomFunctionsString(
 
   return "```\n" + customFunctions + "```";
 }
-
-inline void UpdateMessages(const std::string& system_prompt,
+inline bool IsValidToolChoiceFormat(const Json::Value& root) {
+  return root.isObject() && root.isMember("type") && root["type"].isString() &&
+         root["type"].asString() == "function" && root.isMember("function") &&
+         root["function"].isObject() && root["function"].isMember("name") &&
+         root["function"]["name"].isString();
+}
+inline void UpdateMessages(std::string& system_prompt,
                            std::shared_ptr<Json::Value> request) {
+  Json::Value tool_choice = request->get("tool_choice", "auto");
+  if (tool_choice.isString() && tool_choice.asString() == "required") {
+    system_prompt +=
+        "\n\nYou must use a function to answer the user's question.";
+  } else if (!tool_choice.isString()) {
+
+    system_prompt +=
+        "\n\nNow this is your first priority: You must call the function '" +
+        tool_choice["function"]["name"].asString() +
+        "' to answer the user's question.";
+  }
+
   bool original_stream_config = (*request).get("stream", false).asBool();
   //   (*request)["grammar"] = function_calling_utils::gamma_json;
   (*request)["stream"] =
@@ -190,7 +207,12 @@ inline void PreprocessRequest(std::shared_ptr<Json::Value> request) {
   if (!function_calling_utils::HasTools(request)) {
     return;  // Exit if no tools present
   }
-
+  if (request->get("tool_choice", "auto").isString()) {
+    std::string tool_choice = request->get("tool_choice", "auto").asString();
+    if (tool_choice == "none") {
+      return;  // Exit if tool_choice is none
+    }
+  }
   std::string customFunctionsString =
       function_calling_utils::CreateCustomFunctionsString(request);
   std::string new_system_prompt =
@@ -219,7 +241,16 @@ inline void PostProcessResponse(Json::Value& response) {
     Json::Value toolCall = ParseMultipleFunctionStrings(content);
     if (toolCall.size() > 0) {
       // Add tool_calls to the message
-      firstChoice["finish_reason"] = "tool_calls";
+      if (response.get("tool_choice", "auto").isString()) {
+        std::string tool_choice =
+            response.get("tool_choice", "auto").asString();
+        if (tool_choice == "auto") {
+          firstChoice["finish_reason"] = "tool_calls";
+        } else {
+          firstChoice["finish_reason"] = "stop";
+        }
+      }
+
       firstChoice["message"]["tool_calls"] = toolCall;
 
       // Clear the content as it's now represented in tool_calls

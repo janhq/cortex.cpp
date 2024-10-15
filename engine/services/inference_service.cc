@@ -44,12 +44,15 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   }
 
   function_calling_utils::PreprocessRequest(json_body);
-
+  Json::Value tool_choice = json_body->get("tool_choice", Json::Value::null);
   std::get<EngineI*>(engines_[ne].engine)
-      ->HandleChatCompletion(json_body,
-                             [q](Json::Value status, Json::Value res) {
-                               q->push(std::make_pair(status, res));
-                             });
+      ->HandleChatCompletion(
+          json_body, [q, tool_choice](Json::Value status, Json::Value res) {
+            if (!tool_choice.isNull()) {
+              res["tool_choice"] = tool_choice;
+            }
+            q->push(std::make_pair(status, res));
+          });
   return {};
 }
 

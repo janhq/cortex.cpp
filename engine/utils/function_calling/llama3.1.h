@@ -16,7 +16,7 @@ You have access to the following CUSTOM functions:
 <CUSTOM_FUNCTIONS>
 
 
-If a you choose to call a CUSTOM function ONLY reply in the following format:
+If a you choose to call a function ONLY reply in the following format:
 <{start_tag}={function_name}>{parameters}{end_tag}
 where
 
