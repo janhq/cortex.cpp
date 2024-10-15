@@ -5,8 +5,6 @@
 #include "utils/file_manager_utils.h"
 
 namespace cortex::db {
-const std::string kDefaultDbPath =
-    file_manager_utils::GetCortexDataPath().string() + "/cortex.db";
 class Database {
  public:
   Database(Database const&) = delete;
@@ -22,7 +20,8 @@ class Database {
 
  private:
   Database()
-      : db_(kDefaultDbPath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {}
+      : db_(file_manager_utils::GetCortexDataPath().string() + "/cortex.db",
+            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {}
   SQLite::Database db_;
 };
 }  // namespace cortex::db

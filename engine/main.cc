@@ -119,6 +119,15 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  for (int i = 0; i < argc; i++) {
+    if (strcmp(argv[i], "--config_file_path") == 0) {
+      file_manager_utils::cortex_config_file_path = argv[i + 1];
+
+    } else if(strcmp(argv[i], "--data_folder_path") == 0) {
+      file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    }
+  }
+
   { file_manager_utils::CreateConfigFileIfNotExist(); }
 
   // Delete temporary file if it exists

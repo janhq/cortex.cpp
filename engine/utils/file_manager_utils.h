@@ -24,6 +24,10 @@ constexpr char kLogsLlamacppBaseName[] = "./logs/cortex.log";
 constexpr char kLogsTensorrtllmBaseName[] = "./logs/cortex.log";
 constexpr char kLogsOnnxBaseName[] = "./logs/cortex.log";
 
+inline std::string cortex_config_file_path;
+
+inline std::string cortex_data_folder_path;
+
 inline std::filesystem::path GetExecutableFolderContainerPath() {
 #if defined(__APPLE__) && defined(__MACH__)
   char buffer[1024];
@@ -88,10 +92,15 @@ inline std::filesystem::path GetConfigurationPath() {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT kProdVariant
 #endif
-  std::string config_file_path{CORTEX_CONFIG_FILE_PATH};
+  std::string config_file_path;
+  if (cortex_config_file_path.empty()) {
+    config_file_path = CORTEX_CONFIG_FILE_PATH;
+  } else {
+    config_file_path = cortex_config_file_path;
+  }
 
   if (config_file_path != kDefaultConfigurationPath) {
-    CTL_INF("Config file path: " + config_file_path);
+    // CTL_INF("Config file path: " + config_file_path);
     return std::filesystem::path(config_file_path);
   }
 
@@ -139,7 +148,11 @@ inline void CreateConfigFileIfNotExist() {
 
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto defaultDataFolderPath =
-      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
+      cortex_data_folder_path.empty()
+          ? file_manager_utils::GetHomeDirectoryPath() /
+                default_data_folder_name
+          : std::filesystem::path(cortex_data_folder_path) /
+                default_data_folder_name;
   CLI_LOG("Default data folder path: " + defaultDataFolderPath.string());
 
   auto config = config_yaml_utils::CortexConfig{
