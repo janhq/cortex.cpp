@@ -25,4 +25,4 @@ sed -i '' "3s/.*/DATA_FOLDER_NAME=$DATA_FOLDER_NAME/" installer/$UNINSTALLER_FIL
 sed -i '' "4s/.*/CONFIGURATION_FILE_NAME=$CONFIGURATION_FILE_NAME/" installer/$UNINSTALLER_FILE_NAME
 sed -i '' "5s/.*/UNINSTALLER_FILE_NAME=$UNINSTALLER_FILE_NAME/" installer/$UNINSTALLER_FILE_NAME
 
-pkgbuild --identifier ai.cortexcpp.pkg --version $VERSION --scripts Scripts --install-location /usr/local/bin --root ./installer ${PACKAGE_NAME}.pkg
+pkgbuild --identifier ai.${PACKAGE_NAME}.pkg --version $VERSION --scripts Scripts --install-location /usr/local/bin --root ./installer ${PACKAGE_NAME}.pkg
