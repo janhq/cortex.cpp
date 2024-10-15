@@ -77,6 +77,7 @@ void Engines::GetEngine(const HttpRequestPtr& req,
     ret["variant"] = status->variant.value_or("");
     ret["productName"] = status->product_name;
     ret["status"] = status->status;
+    ret["format"] = status->format;
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);

@@ -530,7 +530,9 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback([this, engine_name] {
       if (std::exchange(executed_, true))
         return;
-      commands::EngineGetCmd().Exec(engine_name);
+      commands::EngineGetCmd().Exec(cml_data_.config.apiServerHost,
+                                    std::stoi(cml_data_.config.apiServerPort),
+                                    engine_name);
     });
   }
 }

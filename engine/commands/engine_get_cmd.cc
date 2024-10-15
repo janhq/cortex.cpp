@@ -1,24 +1,53 @@
 #include "engine_get_cmd.h"
 #include <iostream>
-#include <tabulate/table.hpp>
-#include "services/engine_service.h"
+
+#include "httplib.h"
+#include "json/json.h"
+#include "server_start_cmd.h"
 #include "utils/logging_utils.h"
+
+// clang-format off
+#include <tabulate/table.hpp>
+// clang-format on
 
 namespace commands {
 
-void EngineGetCmd::Exec(const std::string& engine_name) const {
-  auto engine = engine_service_.GetEngineInfo(engine_name);
-  if (engine.has_error()) {
-    CLI_LOG(engine.error());
+void EngineGetCmd::Exec(const std::string& host, int port,
+                        const std::string& engine_name) const {
+  // Start server if server is not started yet
+  if (!commands::IsServerAlive(host, port)) {
+    CLI_LOG("Starting server ...");
+    commands::ServerStartCmd ssc;
+    if (!ssc.Exec(host, port)) {
+      return;
+    }
+  }
+
+  tabulate::Table table;
+  table.add_row({"Name", "Supported Formats", "Version", "Variant", "Status"});
+  httplib::Client cli(host + ":" + std::to_string(port));
+  auto res = cli.Get("/v1/engines/" + engine_name);
+  if (res) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      // CLI_LOG(res->body);
+      Json::Value v;
+      Json::Reader reader;
+      reader.parse(res->body, v);
+
+      table.add_row({v["name"].asString(), v["format"].asString(),
+                     v["version"].asString(), v["variant"].asString(),
+                     v["status"].asString()});
+
+    } else {
+      CTL_ERR("Failed to get engine list with status code: " << res->status);
+      return;
+    }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
     return;
   }
 
-  auto version = engine->version.value_or("");
-  auto variant = engine->variant.value_or("");
-  tabulate::Table table;
-  table.add_row({"Name", "Supported Formats", "Version", "Variant", "Status"});
-  table.add_row(
-      {engine->product_name, engine->format, version, variant, engine->status});
   std::cout << table << std::endl;
 }
 };  // namespace commands
