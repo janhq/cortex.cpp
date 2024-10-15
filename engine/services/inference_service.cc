@@ -2,6 +2,7 @@
 #include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
+#include "utils/function_calling/common.h"
 
 namespace services {
 
@@ -41,11 +42,17 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
+
+  function_calling_utils::PreprocessRequest(json_body);
+  Json::Value tool_choice = json_body->get("tool_choice", Json::Value::null);
   std::get<EngineI*>(engines_[ne].engine)
-      ->HandleChatCompletion(json_body,
-                             [q](Json::Value status, Json::Value res) {
-                               q->push(std::make_pair(status, res));
-                             });
+      ->HandleChatCompletion(
+          json_body, [q, tool_choice](Json::Value status, Json::Value res) {
+            if (!tool_choice.isNull()) {
+              res["tool_choice"] = tool_choice;
+            }
+            q->push(std::make_pair(status, res));
+          });
   return {};
 }
 
