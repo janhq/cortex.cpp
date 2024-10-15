@@ -29,7 +29,7 @@ TEST_F(FunctionCallingUtilsTest, HasTools) {
 
   (*request)["tools"] = "random";
   EXPECT_FALSE(function_calling_utils::HasTools(request));
-  
+
   (*request)["tools"] = Json::Value::null;
   EXPECT_FALSE(function_calling_utils::HasTools(request));
 }

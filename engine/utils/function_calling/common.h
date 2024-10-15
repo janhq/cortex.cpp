@@ -173,7 +173,7 @@ inline void UpdateMessages(std::string& system_prompt,
     Json::Value& firstMessage = (*request)["messages"][0];
     if (firstMessage["role"] == "system") {
       bool addCustomPrompt =
-          request->get("add_custom_system_prompt", false).asBool();
+          request->get("add_custom_system_prompt", true).asBool();
       if (addCustomPrompt) {
         firstMessage["content"] =
             system_prompt + "\n" + firstMessage["content"].asString();
