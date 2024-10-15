@@ -305,7 +305,9 @@ void CommandLineParser::SetupModelCommands() {
       return;
     }
     commands::ModelAliasCmd mdc;
-    mdc.Exec(cml_data_.model_id, cml_data_.model_alias);
+    mdc.Exec(cml_data_.config.apiServerHost,
+             std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+             cml_data_.model_alias);
   });
   // Model update parameters comment
   ModelUpdate(models_cmd);
