@@ -242,6 +242,12 @@ void DownloadService::ProcessTask(DownloadTask& task) {
   CTL_INF("Processing task: " + task.id);
   std::vector<CURL*> task_handles;
 
+  downloading_data_ = std::make_shared<DownloadingData>(DownloadingData{
+      .item_id = "",
+      .download_task = &task,
+      .event_queue = event_queue_.get(),
+  });
+
   for (auto& item : task.items) {
     auto handle = curl_easy_init();
     if (handle == nullptr) {
@@ -256,13 +262,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
       CTL_ERR("Failed to open output file " + item.localPath.string());
       return;
     }
-
-    downloading_data_ = std::make_shared<DownloadingData>(DownloadingData{
-        .download_item = &item,
-        .download_task = &task,
-        .event_queue = event_queue_.get(),
-    });
-
+    downloading_data_->item_id = item.id;
     curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);

@@ -43,8 +43,7 @@ class ModelService {
   cpp::result<bool, std::string> GetModelStatus(
       const std::string& host, int port, const std::string& model_handle);
 
-  cpp::result<std::string, std::string> HandleUrl(const std::string& url,
-                                                  bool async = false);
+  cpp::result<std::string, std::string> HandleUrl(const std::string& url);
 
   cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
       const std::string& url);

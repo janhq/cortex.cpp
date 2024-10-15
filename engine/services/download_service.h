@@ -4,7 +4,6 @@
 #include <eventpp/eventqueue.h>
 #include <filesystem>
 #include <functional>
-#include <iostream>
 #include <optional>
 #include <queue>
 #include <thread>
@@ -77,7 +76,7 @@ class DownloadService {
 
  private:
   struct DownloadingData {
-    DownloadItem* download_item;
+    std::string item_id;
     DownloadTask* download_task;
     EventQueue* event_queue;
   };
@@ -134,12 +133,11 @@ class DownloadService {
                               curl_off_t ultotal, curl_off_t ulnow) {
     auto* downloading_data = static_cast<DownloadingData*>(ptr);
     auto& event_queue = *downloading_data->event_queue;
-    auto& download_item = *downloading_data->download_item;
     auto& download_task = *downloading_data->download_task;
 
     // update the download task with corresponding download item
     for (auto& item : download_task.items) {
-      if (item.id == download_item.id) {
+      if (item.id == downloading_data->item_id) {
         item.downloadedBytes = dlnow;
         item.bytes = dltotal;
         break;

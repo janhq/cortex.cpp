@@ -279,11 +279,12 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     ParseGguf(gguf_download_item, author);
   };
 
+  downloadTask.id = unique_model_id;
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
 cpp::result<std::string, std::string> ModelService::HandleUrl(
-    const std::string& url, bool async) {
+    const std::string& url) {
   auto url_obj = url_parser::FromUrlString(url);
 
   if (url_obj.host == kHuggingFaceHost) {
@@ -343,24 +344,14 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
     ParseGguf(gguf_download_item, author);
   };
 
-  if (async) {
-    auto result = download_service_->AddTask(downloadTask, on_finished);
-
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-      return cpp::fail(result.error());
-    }
-    return unique_model_id;
-  } else {
-    auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
-    if (result.has_error()) {
-      CTL_ERR(result.error());
-      return cpp::fail(result.error());
-    } else if (result && result.value()) {
-      CLI_LOG("Model " << model_id << " downloaded successfully!")
-    }
-    return unique_model_id;
+  auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
+  if (result.has_error()) {
+    CTL_ERR(result.error());
+    return cpp::fail(result.error());
+  } else if (result && result.value()) {
+    CLI_LOG("Model " << model_id << " downloaded successfully!")
   }
+  return unique_model_id;
 }
 
 cpp::result<DownloadTask, std::string>
@@ -411,6 +402,9 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
       CTL_ERR("Error adding model to modellist: " + result.error());
     }
   };
+
+  auto task = download_task.value();
+  task.id = model_id;
 
   return download_service_->AddTask(download_task.value(), on_finished);
 }
