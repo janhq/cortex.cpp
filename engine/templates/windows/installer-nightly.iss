@@ -10,6 +10,7 @@ Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 AllowNoIcons=yes
+DisableDirPage=yes
 
 ; Define the languages section
 [Languages]
