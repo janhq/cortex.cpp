@@ -5,10 +5,7 @@
 #include <unistd.h>
 #endif
 
-#include "httplib.h"
-#include "nlohmann/json.hpp"
 #include "utils/file_manager_utils.h"
-#include "utils/logging_utils.h"
 
 namespace commands {
 #ifndef CORTEX_VARIANT
@@ -81,9 +78,14 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
 // - Nightly: Enables retrieval of the latest nightly build and specific versions using the -v flag
 class CortexUpdCmd {
  public:
+  explicit CortexUpdCmd(std::shared_ptr<DownloadService> download_service)
+      : download_service_{download_service} {};
+
   void Exec(const std::string& v);
 
  private:
+  std::shared_ptr<DownloadService> download_service_;
+
   bool GetStable(const std::string& v);
   bool GetBeta(const std::string& v);
   bool HandleGithubRelease(const nlohmann::json& assets,
