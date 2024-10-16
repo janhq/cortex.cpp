@@ -49,6 +49,13 @@ begin
   CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
+  // Check if the parameter /SkipPostInstall is passed
+  if ParamStr(1) = '/SkipPostInstall' then
+  begin
+    Log('Skipping post-install actions.');
+    Exit;  // Exit the procedure without doing anything
+  end;
+
   // Update status message for installing engines
   WizardForm.StatusLabel.Caption := 'Installing engines from offline package...';
   WizardForm.StatusLabel.Update;
