@@ -284,6 +284,9 @@ void DownloadService::ProcessTask(DownloadTask& task) {
       return;
     }
     downloading_data_->item_id = item.id;
+    if (auto headers = CreateHeaders(item.downloadUrl); headers) {
+      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+    }
     curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
