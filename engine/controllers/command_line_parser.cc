@@ -32,10 +32,12 @@ constexpr const auto kEngineGroup = "Engines";
 constexpr const auto kSystemGroup = "System";
 constexpr const auto kSubcommands = "Subcommands";
 }  // namespace
+
 CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"),
-      model_service_{ModelService(std::make_shared<DownloadService>())},
-      engine_service_{EngineService(std::make_shared<DownloadService>())} {}
+      download_service_{std::make_shared<DownloadService>()},
+      model_service_{ModelService(download_service_)},
+      engine_service_{EngineService(download_service_)} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
@@ -461,7 +463,7 @@ void CommandLineParser::SetupSystemCommands() {
       return;
     }
 #endif
-    commands::CortexUpdCmd cuc;
+    auto cuc = commands::CortexUpdCmd(download_service_);
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
   });

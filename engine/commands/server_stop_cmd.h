@@ -1,9 +1,10 @@
 #pragma once
+
 #include <string>
 
 namespace commands {
 
-class ServerStopCmd{
+class ServerStopCmd {
  public:
   ServerStopCmd(std::string host, int port);
   void Exec();

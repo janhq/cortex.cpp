@@ -34,7 +34,7 @@ std::string DownloadEventTypeToString(DownloadEventType type) {
     case DownloadEventType::DownloadStarted:
       return "DownloadStarted";
     case DownloadEventType::DownloadStopped:
-      return "DownloadPaused";
+      return "DownloadStopped";
     case DownloadEventType::DownloadUpdated:
       return "DownloadUpdated";
     case DownloadEventType::DownloadSuccess:

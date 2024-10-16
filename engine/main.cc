@@ -5,6 +5,7 @@
 #include "controllers/engines.h"
 #include "controllers/events.h"
 #include "controllers/models.h"
+#include "controllers/process_manager.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
@@ -92,10 +93,12 @@ void RunServer() {
   auto engine_ctl = std::make_shared<Engines>(engine_service);
   auto model_ctl = std::make_shared<Models>(model_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
+  auto pm_ctl = std::make_shared<ProcessManager>(download_service);
 
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
+  drogon::app().registerController(pm_ctl);
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
