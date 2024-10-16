@@ -30,6 +30,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 ServerStartCmd::ServerStartCmd() {}
 
 bool ServerStartCmd::Exec(const std::string& host, int port) {
+  auto exe = commands::GetCortexServerBinary();
 #if defined(_WIN32) || defined(_WIN64)
   // Windows-specific code to create a new process
   STARTUPINFO si;
@@ -38,7 +39,6 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-  auto exe = commands::GetCortexBinary();
   std::string cmds =
       cortex_utils::GetCurrentPath() + "/" + exe + " --start-server";
   // Create child process
@@ -58,11 +58,12 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
   } else {
-    if(!TryConnectToServer(host, port)) {
-        return false;
+    if (!TryConnectToServer(host, port)) {
+      return false;
     }
     std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":" << port << std::endl;
+    std::cout << "API Documentation available at: http://" << host << ":"
+              << port << std::endl;
   }
 
 #else
@@ -90,16 +91,16 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
     setenv(name, new_v.c_str(), true);
     CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
 #endif
-    auto exe = commands::GetCortexBinary();
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", (char*)0);
   } else {
     // Parent process
-    if(!TryConnectToServer(host, port)) {
-        return false;
+    if (!TryConnectToServer(host, port)) {
+      return false;
     }
     std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":" << port << std::endl;
+    std::cout << "API Documentation available at: http://" << host << ":"
+              << port << std::endl;
   }
 #endif
   return true;

@@ -165,34 +165,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (argc > 1 && strcmp(argv[1], "--start-server") == 0) {
-    RunServer();
-    return 0;
-  }
 
-  bool verbose = false;
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "--verbose") == 0) {
-      verbose = true;
-    }
-  }
-  trantor::FileLogger asyncFileLogger;
-  if (!verbose) {
-    auto config = file_manager_utils::GetCortexConfig();
-    std::filesystem::create_directories(
-        std::filesystem::path(config.logFolderPath) /
-        std::filesystem::path(cortex_utils::logs_folder));
-    asyncFileLogger.setFileName(config.logFolderPath + "/" +
-                                cortex_utils::logs_cli_base_name);
-    asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
-    asyncFileLogger.startLogging();
-    trantor::Logger::setOutputFunction(
-        [&](const char* msg, const uint64_t len) {
-          asyncFileLogger.output_(msg, len);
-        },
-        [&]() { asyncFileLogger.flush(); });
-  }
-  CommandLineParser clp;
-  clp.SetupCommand(argc, argv);
+  RunServer();
   return 0;
 }

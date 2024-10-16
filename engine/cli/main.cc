@@ -1,4 +1,6 @@
 #include <memory>
+#include "commands/cortex_upd_cmd.h"
+#include "commands/cortex_upd_server_cmd.h"
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/model_service.h"
@@ -41,7 +43,7 @@ int main(int argc, char* argv[]) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
 
-    } else if(strcmp(argv[i], "--data_folder_path") == 0) {
+    } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     }
   }
@@ -57,6 +59,18 @@ int main(int argc, char* argv[]) {
     } catch (const std::exception& e) {
       std::cerr << e.what() << '\n';
     }
+  }
+
+  // Check if server exists, if not notify to user to install server
+  auto exe = commands::GetCortexServerBinary();
+  auto server_binary_path =
+      std::filesystem::path(cortex_utils::GetCurrentPath()) /
+      std::filesystem::path(exe);
+  if (!std::filesystem::exists(server_binary_path)) {
+    std::cout << CORTEX_CPP_VERSION
+              << " requires server binary, run xxx to install server"
+              << std::endl;
+    return 0;
   }
 
   // Check if this process is for python execution
@@ -78,11 +92,6 @@ int main(int argc, char* argv[]) {
       e->ExecutePythonFile(argv[0], argv[2], py_home_path);
       return 0;
     }
-  }
-
-  if (argc > 1 && strcmp(argv[1], "--start-server") == 0) {
-    // RunServer();
-    return 0;
   }
 
   bool verbose = false;
