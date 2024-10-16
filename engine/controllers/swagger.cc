@@ -630,10 +630,21 @@ Json::Value SwaggerController::generateOpenAPISpec() {
       "#/components/schemas/ChatMessage";
   schemas["ChatCompletionRequest"]["properties"]["stream"]["type"] = "boolean";
   schemas["ChatCompletionRequest"]["properties"]["engine"]["type"] = "string";
+  schemas["ChatCompletionRequest"]["properties"]["tools"]["type"] = "array";
+  schemas["ChatCompletionRequest"]["properties"]["tools"]["items"]["$ref"] =
+      "#/components/schemas/ToolsCall";
+  schemas["ChatCompletionRequest"]["properties"]["tools_call_in_user_message"]
+         ["type"] = "boolean";
+  schemas["ChatCompletionRequest"]["properties"]["tools_call_in_user_message"]
+         ["default"] = false;
+  schemas["ToolsCall"]["type"] = "object";
 
   schemas["ChatMessage"]["type"] = "object";
   schemas["ChatMessage"]["properties"]["role"]["type"] = "string";
   schemas["ChatMessage"]["properties"]["content"]["type"] = "string";
+  schemas["ChatMessage"]["properties"]["tools"]["type"] = "array";
+  schemas["ChatMessage"]["properties"]["tools"]["items"]["$ref"] =
+      "#/components/schemas/ToolsCall";
 
   schemas["ChatCompletionResponse"]["type"] = "object";
   // Add properties based on your implementation
