@@ -5,6 +5,7 @@
 #include "controllers/engines.h"
 #include "controllers/events.h"
 #include "controllers/models.h"
+#include "controllers/process_manager.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
@@ -50,7 +51,7 @@ void RunServer() {
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
       std::filesystem::path(cortex_utils::logs_folder));
-  trantor::FileLogger asyncFileLogger;
+  static trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(
       (std::filesystem::path(config.logFolderPath) /
        std::filesystem::path(cortex_utils::logs_base_name))
@@ -92,10 +93,12 @@ void RunServer() {
   auto engine_ctl = std::make_shared<Engines>(engine_service);
   auto model_ctl = std::make_shared<Models>(model_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
+  auto pm_ctl = std::make_shared<ProcessManager>();
 
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
+  drogon::app().registerController(pm_ctl);
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
@@ -117,6 +120,15 @@ int main(int argc, char* argv[]) {
     CTL_ERR("Unsupported OS or architecture: " << system_info->os << ", "
                                                << system_info->arch);
     return 1;
+  }
+
+  for (int i = 0; i < argc; i++) {
+    if (strcmp(argv[i], "--config_file_path") == 0) {
+      file_manager_utils::cortex_config_file_path = argv[i + 1];
+
+    } else if (strcmp(argv[i], "--data_folder_path") == 0) {
+      file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    }
   }
 
   { file_manager_utils::CreateConfigFileIfNotExist(); }

@@ -5,8 +5,8 @@
 namespace commands {
 class EngineListCmd {
  public:
-  explicit EngineListCmd()
-      : engine_service_{EngineService(std::make_shared<DownloadService>())} {};
+  explicit EngineListCmd(std::shared_ptr<DownloadService> download_service)
+      : engine_service_{EngineService(download_service)} {};
 
   bool Exec();
 

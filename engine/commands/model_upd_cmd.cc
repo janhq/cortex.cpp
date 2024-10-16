@@ -12,7 +12,8 @@ void ModelUpdCmd::Exec(
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   try {
-    auto model_entry = model_list_utils_.GetModelInfo(model_handle_);
+    cortex::db::Models modellist_handler;
+    auto model_entry = modellist_handler.GetModelInfo(model_handle_);
     if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
