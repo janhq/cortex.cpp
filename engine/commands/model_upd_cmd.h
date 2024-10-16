@@ -17,7 +17,6 @@ class ModelUpdCmd {
   std::string model_handle_;
   config::ModelConfig model_config_;
   config::YamlHandler yaml_handler_;
-  cortex::db::Models model_list_utils_;
 
   void UpdateConfig(const std::string& key, const std::string& value);
   void UpdateVectorField(const std::string& key, const std::string& value);

@@ -1,12 +1,10 @@
 #include "engine_list_cmd.h"
 #include <tabulate/table.hpp>
-#include "services/engine_service.h"
 
 namespace commands {
 
 bool EngineListCmd::Exec() {
-  auto engine_service = EngineService();
-  auto status_list = engine_service.GetEngineInfoList();
+  auto status_list = engine_service_.GetEngineInfoList();
 
   tabulate::Table table;
   table.add_row(

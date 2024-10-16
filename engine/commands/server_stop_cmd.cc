@@ -1,6 +1,5 @@
 #include "server_stop_cmd.h"
 #include "httplib.h"
-#include "trantor/utils/Logger.h"
 #include "utils/logging_utils.h"
 
 namespace commands {

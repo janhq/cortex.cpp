@@ -1,0 +1,31 @@
+---
+title: Cortex Telemetry
+description: Cortex telemetry command.
+slug: "telemetry"
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# `cortex telemetry`
+
+This command is used to fetch telemetry logs, providing vital data for assessing the cortex's performance, usage, and health.
+
+
+
+## Usage
+
+```bash
+cortex telemetry [options]
+```
+
+## Options
+
+| Option               | Description                                          | Required | Default value | Example              |
+|----------------------|------------------------------------------------------|----------|---------------|----------------------|
+| `-t`, `--type`         | Configure the type of the telemetry log you want to get. Currently, only `crash`. | No       | `crash`        | `-t crash`       |
+| `-h`, `--help`         | Display help information for the command.            | No       | -             | `-h`             |
+
+
+

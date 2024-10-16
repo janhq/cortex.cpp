@@ -3,20 +3,27 @@
 #include <drogon/HttpController.h>
 #include <drogon/HttpRequest.h>
 #include <trantor/utils/Logger.h>
+#include <memory>
 #include "services/engine_service.h"
 
 using namespace drogon;
 
-class Engines : public drogon::HttpController<Engines> {
+class Engines : public drogon::HttpController<Engines, false> {
  public:
-  Engines() : engine_service_{EngineService()} {};
-
   METHOD_LIST_BEGIN
   METHOD_ADD(Engines::InstallEngine, "/install/{1}", Post);
   METHOD_ADD(Engines::UninstallEngine, "/{1}", Delete);
   METHOD_ADD(Engines::ListEngine, "", Get);
   METHOD_ADD(Engines::GetEngine, "/{1}", Get);
+
+  ADD_METHOD_TO(Engines::InstallEngine, "/v1/engines/install/{1}", Post);
+  ADD_METHOD_TO(Engines::UninstallEngine, "/v1/engines/{1}", Delete);
+  ADD_METHOD_TO(Engines::ListEngine, "/v1/engines", Get);
+  ADD_METHOD_TO(Engines::GetEngine, "/v1/engines/{1}", Get);
   METHOD_LIST_END
+
+  explicit Engines(std::shared_ptr<EngineService> engine_service)
+      : engine_service_{engine_service} {}
 
   void InstallEngine(const HttpRequestPtr& req,
                      std::function<void(const HttpResponsePtr&)>&& callback,
@@ -34,5 +41,5 @@ class Engines : public drogon::HttpController<Engines> {
                        const std::string& engine);
 
  private:
-  EngineService engine_service_;
+  std::shared_ptr<EngineService> engine_service_;
 };

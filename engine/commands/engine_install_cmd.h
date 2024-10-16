@@ -7,7 +7,8 @@ namespace commands {
 
 class EngineInstallCmd {
  public:
-  explicit EngineInstallCmd() : engine_service_{EngineService()} {};
+  explicit EngineInstallCmd(std::shared_ptr<DownloadService> download_service)
+      : engine_service_{EngineService(download_service)} {};
 
   void Exec(const std::string& engine, const std::string& version = "latest",
             const std::string& src = "");

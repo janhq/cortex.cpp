@@ -2,7 +2,6 @@
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "server_stop_cmd.h"
-#include "services/download_service.h"
 #include "utils/archive_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -395,7 +394,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
                                           .localPath = local_path,
                                       }}}};
 
-      DownloadService().AddDownloadTask(
+      auto result = download_service_->AddDownloadTask(
           download_task, [](const DownloadTask& finishedTask) {
             // try to unzip the downloaded file
             CTL_INF("Downloaded engine path: "
@@ -410,6 +409,9 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
 
             CTL_INF("Finished!");
           });
+      if (result.has_error()) {
+        CTL_ERR("Failed to download: " << result.error());
+      }
       break;
     }
   }
@@ -457,7 +459,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
                        .localPath = localPath,
                    }}};
 
-  auto res = DownloadService().AddDownloadTask(
+  auto result = download_service_->AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
         CTL_INF("Downloaded engine path: "
@@ -471,9 +473,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
         CTL_INF("Finished!");
       });
-
-  if (res.has_error()) {
-    CLI_LOG("Download failed!");
+  if (result.has_error()) {
+    CTL_ERR("Failed to download: " << result.error());
     return false;
   }
 

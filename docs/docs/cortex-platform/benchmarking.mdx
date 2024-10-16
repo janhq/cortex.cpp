@@ -1,0 +1,57 @@
+---
+title: Benchmarking
+description: Cortex Benchmarking Feature
+slug: "benchmarking"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex Platform is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Benchmark is a feature to benchmark and analyze the performance of a specific AI model in your hardware system. This will determine how the hardware impacts the model's response time and overall throughput in different scenarios.
+
+## Usage
+```bash
+cortex benchmark mistral
+```
+## Collected Data
+### Hardware Data
+| Metrics Name        | Metric Data Type    | Example Value                                        | Description                                      |
+|---------------------|---------------------|------------------------------------------------------|--------------------------------------------------|
+| `cpu`                 | Object              | `{"avgLoad": 0.26, "currentLoad": 10.714285714285714, ...}` | CPU usage details, including average and current load. |
+| `gpu`                 | Array of Objects    | `[{"vendor": "Apple", "model": "Apple M3 Pro", ...}]`  | Details about the GPU, including vendor and model. |
+| `mem`                 | Object              | `{"total": 38654705664, "free": 368312320, "used": 38286393344, ...}` | Memory details, including total, free, and used memory. |
+| `resourceChange`      | Object              | `{"cpu": null, "mem": 0.15513102213541669}`            | Changes in resource usage, such as CPU and memory. |
+
+### Model Data
+Model ID with runtime parameters:
+- `max_length`
+- `temperature`
+- `kv-cache size` (TBU)
+### Model Inference Performance
+
+| Metrics Name                     | Metric Data Type    | Example Value                                        | Description                                                                                                                                                         |
+|----------------------------------|---------------------|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `tokens`                           | Integer             | 2048                                                 | The total number of tokens processed.                                                                                                                                |
+| `token_length`                     | Integer             | 78                                                   | The length of each token processed.                                                                                                                                  |
+| `latency`                          | Integer             | 662 ms                                               | The overall time it takes for the model to generate the full response for a user. Calculated as: latency = (TTFT) + (TPOT) * (the number of tokens to be generated). |
+| `tpot` (Time per Output Token)     | Float               | 8.487179487179487                                    | Time to generate an output token for each user querying our system.                                                                                                  |
+| `throughput `                      | Float               | 117.82477341389728 tokens/s                          | The number of output tokens per second an inference server can generate across all users and requests.                                                               |
+| `ttft` (Time to First Token)       | Integer             | 257 ms                                               | How quickly users start seeing the model's output after entering their query.                                                                                       |
+
+### Data per Round of Testing
+
+The overall metrics data of:
+- **P50 (50th Percentile / Median)**: The value below which 50% of the data points fall.
+- **P75 (75th Percentile)**: The value below which 75% of the data points fall.
+- **P95 (95th Percentile)**: The value below which 95% of the data points fall.
+- **avg (Average / Mean)**: The arithmetic mean of all the data points.
+
+:::note
+Learn more about Benchmarking capabilities:
+- [Benchmarking Architecture](/docs/benchmarking-architecture)
+- [Benchmarking CLI command](/docs/cli/benchmark)
+:::

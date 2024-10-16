@@ -1,12 +1,17 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
-#include <climits>  // for PATH_MAX
-#include "commands/cortex_upd_cmd.h"
+#include <memory>
 #include "controllers/command_line_parser.h"
+#include "controllers/engines.h"
+#include "controllers/events.h"
+#include "controllers/models.h"
+#include "controllers/process_manager.h"
 #include "cortex-common/cortexpythoni.h"
+#include "services/model_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/dylib.h"
+#include "utils/event_processor.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -18,6 +23,7 @@
 #include <sys/types.h>
 #elif defined(__linux__)
 #include <libgen.h>  // for dirname()
+#include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>  // for readlink()
 #elif defined(_WIN32)
@@ -45,9 +51,11 @@ void RunServer() {
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
       std::filesystem::path(cortex_utils::logs_folder));
-  trantor::FileLogger asyncFileLogger;
-  asyncFileLogger.setFileName((std::filesystem::path(config.logFolderPath) /
-      std::filesystem::path(cortex_utils::logs_base_name)).string());
+  static trantor::FileLogger asyncFileLogger;
+  asyncFileLogger.setFileName(
+      (std::filesystem::path(config.logFolderPath) /
+       std::filesystem::path(cortex_utils::logs_base_name))
+          .string());
   asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
   asyncFileLogger.startLogging();
   trantor::Logger::setOutputFunction(
@@ -62,12 +70,35 @@ void RunServer() {
 
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
-  // cortex_utils::nitro_logo();
+
 #ifdef CORTEX_CPP_VERSION
   LOG_INFO << "cortex.cpp version: " << CORTEX_CPP_VERSION;
 #else
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
+
+  using Event = cortex::event::Event;
+  using EventQueue =
+      eventpp::EventQueue<EventType,
+                          void(const eventpp::AnyData<eventMaxSize>&)>;
+
+  auto event_queue_ptr = std::make_shared<EventQueue>();
+  cortex::event::EventProcessor event_processor(event_queue_ptr);
+
+  auto download_service = std::make_shared<DownloadService>(event_queue_ptr);
+  auto engine_service = std::make_shared<EngineService>(download_service);
+  auto model_service = std::make_shared<ModelService>(download_service);
+
+  // initialize custom controllers
+  auto engine_ctl = std::make_shared<Engines>(engine_service);
+  auto model_ctl = std::make_shared<Models>(model_service);
+  auto event_ctl = std::make_shared<Events>(event_queue_ptr);
+  auto pm_ctl = std::make_shared<ProcessManager>();
+
+  drogon::app().registerController(engine_ctl);
+  drogon::app().registerController(model_ctl);
+  drogon::app().registerController(event_ctl);
+  drogon::app().registerController(pm_ctl);
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
@@ -79,7 +110,6 @@ void RunServer() {
   drogon::app().disableSigtermHandling();
 
   drogon::app().run();
-  // return 0;
 }
 
 int main(int argc, char* argv[]) {
@@ -90,6 +120,15 @@ int main(int argc, char* argv[]) {
     CTL_ERR("Unsupported OS or architecture: " << system_info->os << ", "
                                                << system_info->arch);
     return 1;
+  }
+
+  for (int i = 0; i < argc; i++) {
+    if (strcmp(argv[i], "--config_file_path") == 0) {
+      file_manager_utils::cortex_config_file_path = argv[i + 1];
+
+    } else if (strcmp(argv[i], "--data_folder_path") == 0) {
+      file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    }
   }
 
   { file_manager_utils::CreateConfigFileIfNotExist(); }
@@ -111,8 +150,8 @@ int main(int argc, char* argv[]) {
       std::string py_home_path = (argc > 3) ? argv[3] : "";
       std::unique_ptr<cortex_cpp::dylib> dl;
       try {
-        std::string abs_path = cortex_utils::GetCurrentPath() +
-                               cortex_utils::kPythonRuntimeLibPath;
+        std::string abs_path =
+            cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
         dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
       } catch (const cortex_cpp::dylib::load_error& e) {
         LOG_ERROR << "Could not load engine: " << e.what();

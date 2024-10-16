@@ -1,0 +1,73 @@
+
+{
+  "quickstart_models": [
+     {
+      "url": "https://huggingface.co/cortexso/gemma2/blob/2b-gguf/model.gguf",
+      "author": "Google",
+      "logo": "https://cdn-avatars.huggingface.co/v1/production/uploads/5dd96eb166059660ed1ee413/WtA3YYitedOr9n02eHfJe.png",
+      "model_name": "Gemma2 2B Instruct Q4_K_M GGUF",
+      "note": "Small + Smart"
+    },
+    {
+      "url": "https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf",
+      "author": "Mistral AI",
+      "logo": "https://raw.githubusercontent.com/janhq/cortex-web/main/static/img/logos/mistral.svg",
+      "model_name": "Mistral 7B Instruct v0.3 Q4_K_M GGUF",
+      "note": "Small + Chat"
+    },
+    {
+      "url": "https://huggingface.co/legraphista/llm-compiler-7b-ftd-IMat-GGUF/blob/main/llm-compiler-7b-ftd.Q4_K_S.gguf",
+      "author": "Meta",
+      "logo": "https://cdn-avatars.huggingface.co/v1/production/uploads/646cf8084eefb026fb8fd8bc/oCTqufkdTkjyGodsx1vo1.png",
+      "model_name": "LLM Compiler 7B FTD IMat Q4_K_S GGUF",
+      "note": "Small + Code"
+    },
+    {
+      "url": "https://huggingface.co/QuantFactory/Qwen2-7B-Instruct-GGUF/blob/main/Qwen2-7B-Instruct.Q4_K_M.gguf",
+      "author": "Qwen",
+      "logo": "https://cdn-avatars.huggingface.co/v1/production/uploads/62088594a5943c8a8fc94560/y5SEKiE8TkjBKs9xfjCx5.png",
+      "model_name": "Qwen2 7B Instruct Q4_K_M GGUF",
+      "note": "Small + Chat (Chinese)"
+    },
+    {
+      "url": "https://huggingface.co/QuantFactory/Phi-3-mini-4k-instruct-GGUF-v3/blob/main/Phi-3-mini-4k-instruct.Q4_K_M.gguf",
+      "author": "Microsoft",
+      "logo": "https://cdn-avatars.huggingface.co/v1/production/uploads/1583646260758-5e64858c87403103f9f1055d.png",
+      "model_name": "Phi 3 Mini 4k Instruct Q4 GGUF",
+      "note": "Tiny + Chat"
+    },
+    {
+      "url": "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/blob/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf",
+      "author": "Tiny‌Llama",
+      "logo": "https://cdn-avatars.huggingface.co/v1/production/uploads/63565cc56d7fcf1bedb7d347/DRv8Ln7nvK22iXkLmAGb_.png",
+      "model_name": "TinyLlama v1.1B Chat Q4_K_M GGUF",
+      "note": "Super Tiny + Chat"
+    }
+  ],
+  "popular_models": [
+    {
+      "note": "Large + Smart (use with hardware warning)",
+      "url": "https://huggingface.co/bartowski/Meta-Llama-3-70B-Instruct-GGUF"
+    },
+    {
+      "note": "Super Large + Code (use with hardware warning)",
+      "url": "https://huggingface.co/LoneStriker/DeepSeek-Coder-V2-Lite-Instruct-GGUF"
+    },
+    {
+      "note": "Small + Chat",
+      "url": "https://huggingface.co/bartowski/Mistral-7B-Instruct-v0.3-GGUF"
+    },
+    {
+      "note": "Small + Code",
+      "url": "https://huggingface.co/legraphista/llm-compiler-7b-ftd-IMat-GGUF"
+    },
+    {
+      "note": "Small + Chat (Chinese)",
+      "url": "https://huggingface.co/QuantFactory/Qwen2-7B-Instruct-GGUF"
+    },
+    {
+      "note": "Tiny + Chat",
+      "url": "https://huggingface.co/QuantFactory/Phi-3-mini-4k-instruct-GGUF-v3"
+    }
+  ]
+}
