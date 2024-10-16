@@ -496,14 +496,14 @@ Json::Value SwaggerController::generateOpenAPISpec() {
           ["$ref"] = "#/components/schemas/ModelList";
 
     // Create Fine-tuning Job
-    Json::Value& finetune = spec["paths"]["/v1/fine_tuning/job"]["post"];
-    finetune["summary"] = "Create fine-tuning job";
-    finetune["description"] = "Creates a job that fine-tunes a specified model";
-    finetune["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/FineTuningRequest";
-    finetune["responses"]["200"]["description"] = "Successful response";
-    finetune["responses"]["200"]["content"]["application/json"]["schema"]
-            ["$ref"] = "#/components/schemas/FineTuningResponse";
+    // Json::Value& finetune = spec["paths"]["/v1/fine_tuning/job"]["post"];
+    // finetune["summary"] = "Create fine-tuning job";
+    // finetune["description"] = "Creates a job that fine-tunes a specified model";
+    // finetune["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/FineTuningRequest";
+    // finetune["responses"]["200"]["description"] = "Successful response";
+    // finetune["responses"]["200"]["content"]["application/json"]["schema"]
+    //         ["$ref"] = "#/components/schemas/FineTuningResponse";
 
     // Create Embeddings
     Json::Value& embed = spec["paths"]["/v1/embeddings"]["post"];
@@ -520,104 +520,104 @@ Json::Value SwaggerController::generateOpenAPISpec() {
   // Custom Cortex Endpoints
   {
     // Chat Completion
-    Json::Value& chat =
-        spec["paths"]["/inferences/server/chat_completion"]["post"];
-    chat["summary"] = "Create chat completion (Cortex)";
-    chat["description"] =
-        "Creates a completion for the chat message using Cortex engine";
-    chat["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/CortexChatCompletionRequest";
-    chat["responses"]["200"]["description"] = "Successful response";
-    chat["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/CortexChatCompletionResponse";
+    // Json::Value& chat =
+    //     spec["paths"]["/inferences/server/chat_completion"]["post"];
+    // chat["summary"] = "Create chat completion (Cortex)";
+    // chat["description"] =
+    //     "Creates a completion for the chat message using Cortex engine";
+    // chat["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/CortexChatCompletionRequest";
+    // chat["responses"]["200"]["description"] = "Successful response";
+    // chat["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/CortexChatCompletionResponse";
 
     // Embedding
-    Json::Value& embed = spec["paths"]["/inferences/server/embedding"]["post"];
-    embed["summary"] = "Create embeddings (Cortex)";
-    embed["description"] = "Creates an embedding vector using Cortex engine";
-    embed["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/CortexEmbeddingRequest";
-    embed["responses"]["200"]["description"] = "Successful response";
-    embed["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/CortexEmbeddingResponse";
+    // Json::Value& embed = spec["paths"]["/inferences/server/embedding"]["post"];
+    // embed["summary"] = "Create embeddings (Cortex)";
+    // embed["description"] = "Creates an embedding vector using Cortex engine";
+    // embed["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/CortexEmbeddingRequest";
+    // embed["responses"]["200"]["description"] = "Successful response";
+    // embed["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/CortexEmbeddingResponse";
 
     // Load Model
-    Json::Value& load = spec["paths"]["/inferences/server/loadmodel"]["post"];
-    load["summary"] = "Load a model";
-    load["description"] = "Loads a specified model into the engine";
-    load["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/LoadModelRequest";
-    load["responses"]["200"]["description"] = "Model loaded successfully";
-    load["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/SuccessResponse";
+    // Json::Value& load = spec["paths"]["/inferences/server/loadmodel"]["post"];
+    // load["summary"] = "Load a model";
+    // load["description"] = "Loads a specified model into the engine";
+    // load["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/LoadModelRequest";
+    // load["responses"]["200"]["description"] = "Model loaded successfully";
+    // load["responses"]["200"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/SuccessResponse";
 
     // Unload Model
-    Json::Value& unload =
-        spec["paths"]["/inferences/server/unloadmodel"]["post"];
-    unload["summary"] = "Unload a model";
-    unload["description"] = "Unloads a specified model from the engine";
-    unload["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/UnloadModelRequest";
-    unload["responses"]["200"]["description"] = "Model unloaded successfully";
-    unload["responses"]["200"]["content"]["application/json"]["schema"]
-          ["$ref"] = "#/components/schemas/SuccessResponse";
+    // Json::Value& unload =
+    //     spec["paths"]["/inferences/server/unloadmodel"]["post"];
+    // unload["summary"] = "Unload a model";
+    // unload["description"] = "Unloads a specified model from the engine";
+    // unload["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/UnloadModelRequest";
+    // unload["responses"]["200"]["description"] = "Model unloaded successfully";
+    // unload["responses"]["200"]["content"]["application/json"]["schema"]
+    //       ["$ref"] = "#/components/schemas/SuccessResponse";
 
     // Model Status
-    Json::Value& status =
-        spec["paths"]["/inferences/server/modelstatus"]["post"];
-    status["summary"] = "Get model status";
-    status["description"] = "Retrieves the status of a specified model";
-    status["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/ModelStatusRequest";
-    status["responses"]["200"]["description"] =
-        "Model status retrieved successfully";
-    status["responses"]["200"]["content"]["application/json"]["schema"]
-          ["$ref"] = "#/components/schemas/ModelStatusResponse";
+    // Json::Value& status =
+    //     spec["paths"]["/inferences/server/modelstatus"]["post"];
+    // status["summary"] = "Get model status";
+    // status["description"] = "Retrieves the status of a specified model";
+    // status["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/ModelStatusRequest";
+    // status["responses"]["200"]["description"] =
+    //     "Model status retrieved successfully";
+    // status["responses"]["200"]["content"]["application/json"]["schema"]
+    //       ["$ref"] = "#/components/schemas/ModelStatusResponse";
 
     // Get Models
-    Json::Value& getModels = spec["paths"]["/inferences/server/models"]["get"];
-    getModels["summary"] = "Get all models (Cortex)";
-    getModels["description"] =
-        "Retrieves a list of all available models in Cortex";
-    getModels["responses"]["200"]["description"] =
-        "Models retrieved successfully";
-    getModels["responses"]["200"]["content"]["application/json"]["schema"]
-             ["$ref"] = "#/components/schemas/CortexModelList";
+    // Json::Value& getModels = spec["paths"]["/inferences/server/models"]["get"];
+    // getModels["summary"] = "Get all models (Cortex)";
+    // getModels["description"] =
+    //     "Retrieves a list of all available models in Cortex";
+    // getModels["responses"]["200"]["description"] =
+    //     "Models retrieved successfully";
+    // getModels["responses"]["200"]["content"]["application/json"]["schema"]
+    //          ["$ref"] = "#/components/schemas/CortexModelList";
 
     // Get Engines
-    Json::Value& getEngines =
-        spec["paths"]["/inferences/server/engines"]["get"];
-    getEngines["summary"] = "Get all engines";
-    getEngines["description"] = "Retrieves a list of all available engines";
-    getEngines["responses"]["200"]["description"] =
-        "Engines retrieved successfully";
-    getEngines["responses"]["200"]["content"]["application/json"]["schema"]
-              ["$ref"] = "#/components/schemas/EngineList";
+    // Json::Value& getEngines =
+    //     spec["paths"]["/inferences/server/engines"]["get"];
+    // getEngines["summary"] = "Get all engines";
+    // getEngines["description"] = "Retrieves a list of all available engines";
+    // getEngines["responses"]["200"]["description"] =
+    //     "Engines retrieved successfully";
+    // getEngines["responses"]["200"]["content"]["application/json"]["schema"]
+    //           ["$ref"] = "#/components/schemas/EngineList";
 
     // Fine Tuning
-    Json::Value& fineTuning =
-        spec["paths"]["/inferences/server/finetuning"]["post"];
-    fineTuning["summary"] = "Create fine-tuning job (Cortex)";
-    fineTuning["description"] =
-        "Creates a job that fine-tunes a specified model using Cortex engine";
-    fineTuning["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
-        "#/components/schemas/CortexFineTuningRequest";
-    fineTuning["responses"]["200"]["description"] =
-        "Fine-tuning job created successfully";
-    fineTuning["responses"]["200"]["content"]["application/json"]["schema"]
-              ["$ref"] = "#/components/schemas/CortexFineTuningResponse";
+    // Json::Value& fineTuning =
+    //     spec["paths"]["/inferences/server/finetuning"]["post"];
+    // fineTuning["summary"] = "Create fine-tuning job (Cortex)";
+    // fineTuning["description"] =
+    //     "Creates a job that fine-tunes a specified model using Cortex engine";
+    // fineTuning["requestBody"]["content"]["application/json"]["schema"]["$ref"] =
+    //     "#/components/schemas/CortexFineTuningRequest";
+    // fineTuning["responses"]["200"]["description"] =
+    //     "Fine-tuning job created successfully";
+    // fineTuning["responses"]["200"]["content"]["application/json"]["schema"]
+    //           ["$ref"] = "#/components/schemas/CortexFineTuningResponse";
 
     // Unload Engine
-    Json::Value& unloadEngine =
-        spec["paths"]["/inferences/server/unloadengine"]["post"];
-    unloadEngine["summary"] = "Unload an engine";
-    unloadEngine["description"] = "Unloads a specified engine";
-    unloadEngine["requestBody"]["content"]["application/json"]["schema"]
-                ["$ref"] = "#/components/schemas/UnloadEngineRequest";
-    unloadEngine["responses"]["200"]["description"] =
-        "Engine unloaded successfully";
-    unloadEngine["responses"]["200"]["content"]["application/json"]["schema"]
-                ["$ref"] = "#/components/schemas/SuccessResponse";
+    // Json::Value& unloadEngine =
+    //     spec["paths"]["/inferences/server/unloadengine"]["post"];
+    // unloadEngine["summary"] = "Unload an engine";
+    // unloadEngine["description"] = "Unloads a specified engine";
+    // unloadEngine["requestBody"]["content"]["application/json"]["schema"]
+    //             ["$ref"] = "#/components/schemas/UnloadEngineRequest";
+    // unloadEngine["responses"]["200"]["description"] =
+    //     "Engine unloaded successfully";
+    // unloadEngine["responses"]["200"]["content"]["application/json"]["schema"]
+    //             ["$ref"] = "#/components/schemas/SuccessResponse";
   }
 
   // Define schemas
@@ -659,12 +659,12 @@ Json::Value SwaggerController::generateOpenAPISpec() {
   schemas["Model"]["properties"]["id"]["type"] = "string";
   schemas["Model"]["properties"]["object"]["type"] = "string";
 
-  schemas["FineTuningRequest"]["type"] = "object";
-  schemas["FineTuningRequest"]["properties"]["model"]["type"] = "string";
-  schemas["FineTuningRequest"]["properties"]["training_file"]["type"] =
-      "string";
+//   schemas["FineTuningRequest"]["type"] = "object";
+//   schemas["FineTuningRequest"]["properties"]["model"]["type"] = "string";
+//   schemas["FineTuningRequest"]["properties"]["training_file"]["type"] =
+//       "string";
 
-  schemas["FineTuningResponse"]["type"] = "object";
+//   schemas["FineTuningResponse"]["type"] = "object";
   // Add properties based on your implementation
 
   schemas["EmbeddingRequest"]["type"] = "object";
@@ -681,117 +681,117 @@ Json::Value SwaggerController::generateOpenAPISpec() {
   schemas["EmbeddingResponse"]["properties"]["data"]["items"]["properties"]
          ["embedding"]["items"]["type"] = "number";
 
-  schemas["CortexChatCompletionRequest"]["type"] = "object";
-  schemas["CortexChatCompletionRequest"]["properties"]["engine"]["type"] =
-      "string";
-  schemas["CortexChatCompletionRequest"]["properties"]["model"]["type"] =
-      "string";
-  schemas["CortexChatCompletionRequest"]["properties"]["messages"]["type"] =
-      "array";
-  schemas["CortexChatCompletionRequest"]["properties"]["messages"]["items"]
-         ["$ref"] = "#/components/schemas/ChatMessage";
-  schemas["CortexChatCompletionRequest"]["properties"]["stream"]["type"] =
-      "boolean";
+//   schemas["CortexChatCompletionRequest"]["type"] = "object";
+//   schemas["CortexChatCompletionRequest"]["properties"]["engine"]["type"] =
+//       "string";
+//   schemas["CortexChatCompletionRequest"]["properties"]["model"]["type"] =
+//       "string";
+//   schemas["CortexChatCompletionRequest"]["properties"]["messages"]["type"] =
+//       "array";
+//   schemas["CortexChatCompletionRequest"]["properties"]["messages"]["items"]
+//          ["$ref"] = "#/components/schemas/ChatMessage";
+//   schemas["CortexChatCompletionRequest"]["properties"]["stream"]["type"] =
+//       "boolean";
   // Add other properties based on your implementation
 
-  schemas["CortexChatCompletionResponse"]["type"] = "object";
+//   schemas["CortexChatCompletionResponse"]["type"] = "object";
   // Add properties based on your implementation
 
-  schemas["CortexEmbeddingRequest"]["type"] = "object";
-  schemas["CortexEmbeddingRequest"]["properties"]["engine"]["type"] = "string";
-  schemas["CortexEmbeddingRequest"]["properties"]["input"]["type"] = "string";
+//   schemas["CortexEmbeddingRequest"]["type"] = "object";
+//   schemas["CortexEmbeddingRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["CortexEmbeddingRequest"]["properties"]["input"]["type"] = "string";
 
-  schemas["CortexEmbeddingResponse"]["type"] = "object";
+//   schemas["CortexEmbeddingResponse"]["type"] = "object";
   // Add properties based on your implementation
 
-  schemas["LoadModelRequest"]["type"] = "object";
-  schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["model_path"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["model"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["stop"]["type"] = "array";
-  schemas["LoadModelRequest"]["properties"]["stop"]["items"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["stop"]["description"] =
-      "List of stop sequences";
+//   schemas["LoadModelRequest"]["type"] = "object";
+//   schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["model_path"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["model"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["stop"]["type"] = "array";
+//   schemas["LoadModelRequest"]["properties"]["stop"]["items"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["stop"]["description"] =
+//       "List of stop sequences";
 
-  schemas["LoadModelRequest"]["properties"]["stream"]["type"] = "boolean";
-  schemas["LoadModelRequest"]["properties"]["stream"]["description"] =
-      "Whether to stream the output";
+//   schemas["LoadModelRequest"]["properties"]["stream"]["type"] = "boolean";
+//   schemas["LoadModelRequest"]["properties"]["stream"]["description"] =
+//       "Whether to stream the output";
 
-  schemas["LoadModelRequest"]["properties"]["ngl"]["type"] = "integer";
-  schemas["LoadModelRequest"]["properties"]["ngl"]["description"] =
-      "Number of GPU layers";
+//   schemas["LoadModelRequest"]["properties"]["ngl"]["type"] = "integer";
+//   schemas["LoadModelRequest"]["properties"]["ngl"]["description"] =
+//       "Number of GPU layers";
 
-  schemas["LoadModelRequest"]["properties"]["ctx_len"]["type"] = "integer";
-  schemas["LoadModelRequest"]["properties"]["ctx_len"]["description"] =
-      "Context length";
+//   schemas["LoadModelRequest"]["properties"]["ctx_len"]["type"] = "integer";
+//   schemas["LoadModelRequest"]["properties"]["ctx_len"]["description"] =
+//       "Context length";
 
-  schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["engine"]["description"] =
-      "Engine used for the model";
+//   schemas["LoadModelRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["engine"]["description"] =
+//       "Engine used for the model";
 
-  schemas["LoadModelRequest"]["properties"]["system_template"]["type"] =
-      "string";
-  schemas["LoadModelRequest"]["properties"]["system_template"]["description"] =
-      "Template for system messages";
+//   schemas["LoadModelRequest"]["properties"]["system_template"]["type"] =
+//       "string";
+//   schemas["LoadModelRequest"]["properties"]["system_template"]["description"] =
+//       "Template for system messages";
 
-  schemas["LoadModelRequest"]["properties"]["user_template"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["user_template"]["description"] =
-      "Template for user messages";
+//   schemas["LoadModelRequest"]["properties"]["user_template"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["user_template"]["description"] =
+//       "Template for user messages";
 
-  schemas["LoadModelRequest"]["properties"]["ai_template"]["type"] = "string";
-  schemas["LoadModelRequest"]["properties"]["ai_template"]["description"] =
-      "Template for AI responses";
+//   schemas["LoadModelRequest"]["properties"]["ai_template"]["type"] = "string";
+//   schemas["LoadModelRequest"]["properties"]["ai_template"]["description"] =
+//       "Template for AI responses";
 
-  schemas["LoadModelRequest"]["properties"]["n_probs"]["type"] = "integer";
-  schemas["LoadModelRequest"]["properties"]["n_probs"]["description"] =
-      "Number of probabilities to return";
+//   schemas["LoadModelRequest"]["properties"]["n_probs"]["type"] = "integer";
+//   schemas["LoadModelRequest"]["properties"]["n_probs"]["description"] =
+//       "Number of probabilities to return";
 
   // Add other properties based on your implementation
 
-  schemas["UnloadModelRequest"]["type"] = "object";
-  schemas["UnloadModelRequest"]["properties"]["engine"]["type"] = "string";
-  schemas["UnloadModelRequest"]["properties"]["model"]["type"] = "string";
+//   schemas["UnloadModelRequest"]["type"] = "object";
+//   schemas["UnloadModelRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["UnloadModelRequest"]["properties"]["model"]["type"] = "string";
   // Add other properties based on your implementation
 
-  schemas["ModelStatusRequest"]["type"] = "object";
-  schemas["ModelStatusRequest"]["properties"]["engine"]["type"] = "string";
-  schemas["ModelStatusRequest"]["properties"]["model"]["type"] = "string";
+//   schemas["ModelStatusRequest"]["type"] = "object";
+//   schemas["ModelStatusRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["ModelStatusRequest"]["properties"]["model"]["type"] = "string";
   // Add other properties based on your implementation
 
-  schemas["ModelStatusResponse"]["type"] = "object";
+//   schemas["ModelStatusResponse"]["type"] = "object";
   // Add properties based on your implementation
 
-  schemas["CortexModelList"]["type"] = "object";
-  schemas["CortexModelList"]["properties"]["data"]["type"] = "array";
-  schemas["CortexModelList"]["properties"]["data"]["items"]["$ref"] =
-      "#/components/schemas/CortexModel";
+//   schemas["CortexModelList"]["type"] = "object";
+//   schemas["CortexModelList"]["properties"]["data"]["type"] = "array";
+//   schemas["CortexModelList"]["properties"]["data"]["items"]["$ref"] =
+//       "#/components/schemas/CortexModel";
 
-  schemas["CortexModel"]["type"] = "object";
+//   schemas["CortexModel"]["type"] = "object";
   // Add properties based on your implementation
 
-  schemas["EngineList"]["type"] = "object";
-  schemas["EngineList"]["properties"]["object"]["type"] = "string";
-  schemas["EngineList"]["properties"]["data"]["type"] = "array";
-  schemas["EngineList"]["properties"]["data"]["items"]["$ref"] =
-      "#/components/schemas/Engine";
+//   schemas["EngineList"]["type"] = "object";
+//   schemas["EngineList"]["properties"]["object"]["type"] = "string";
+//   schemas["EngineList"]["properties"]["data"]["type"] = "array";
+//   schemas["EngineList"]["properties"]["data"]["items"]["$ref"] =
+//       "#/components/schemas/Engine";
 
-  schemas["Engine"]["type"] = "object";
-  schemas["Engine"]["properties"]["id"]["type"] = "string";
-  schemas["Engine"]["properties"]["object"]["type"] = "string";
+//   schemas["Engine"]["type"] = "object";
+//   schemas["Engine"]["properties"]["id"]["type"] = "string";
+//   schemas["Engine"]["properties"]["object"]["type"] = "string";
 
-  schemas["CortexFineTuningRequest"]["type"] = "object";
-  schemas["CortexFineTuningRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["CortexFineTuningRequest"]["type"] = "object";
+//   schemas["CortexFineTuningRequest"]["properties"]["engine"]["type"] = "string";
   // Add other properties based on your implementation
 
-  schemas["CortexFineTuningResponse"]["type"] = "object";
+//   schemas["CortexFineTuningResponse"]["type"] = "object";
   // Add properties based on your implementation
 
-  schemas["UnloadEngineRequest"]["type"] = "object";
-  schemas["UnloadEngineRequest"]["properties"]["engine"]["type"] = "string";
+//   schemas["UnloadEngineRequest"]["type"] = "object";
+//   schemas["UnloadEngineRequest"]["properties"]["engine"]["type"] = "string";
 
-  schemas["SuccessResponse"]["type"] = "object";
-  schemas["SuccessResponse"]["properties"]["message"]["type"] = "string";
+//   schemas["SuccessResponse"]["type"] = "object";
+//   schemas["SuccessResponse"]["properties"]["message"]["type"] = "string";
   // TODO: Add more paths and details based on your API
 
   return spec;

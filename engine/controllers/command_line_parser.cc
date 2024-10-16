@@ -251,7 +251,8 @@ void CommandLineParser::SetupModelCommands() {
   list_models_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::ModelListCmd().Exec();
+    commands::ModelListCmd().Exec(cml_data_.config.apiServerHost,
+                                  std::stoi(cml_data_.config.apiServerPort));
   });
 
   auto get_models_cmd =
@@ -268,7 +269,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(get_models_cmd->help());
       return;
     };
-    commands::ModelGetCmd().Exec(cml_data_.model_id);
+    commands::ModelGetCmd().Exec(cml_data_.config.apiServerHost,
+                                 std::stoi(cml_data_.config.apiServerPort),
+                                 cml_data_.model_id);
   });
 
   auto model_del_cmd =
@@ -285,7 +288,10 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_del_cmd->help());
       return;
     };
-    commands::ModelDelCmd(download_service_).Exec(cml_data_.model_id);
+
+    commands::ModelDelCmd().Exec(cml_data_.config.apiServerHost,
+                                 std::stoi(cml_data_.config.apiServerPort),
+                                 cml_data_.model_id);
   });
 
   std::string model_alias;
@@ -308,7 +314,9 @@ void CommandLineParser::SetupModelCommands() {
       return;
     }
     commands::ModelAliasCmd mdc;
-    mdc.Exec(cml_data_.model_id, cml_data_.model_alias);
+    mdc.Exec(cml_data_.config.apiServerHost,
+             std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+             cml_data_.model_alias);
   });
   // Model update parameters comment
   ModelUpdate(models_cmd);
@@ -332,8 +340,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_import_cmd->help());
       return;
     }
-    commands::ModelImportCmd command(cml_data_.model_id, cml_data_.model_path);
-    command.Exec();
+    commands::ModelImportCmd().Exec(cml_data_.config.apiServerHost,
+                                    std::stoi(cml_data_.config.apiServerPort),
+                                    cml_data_.model_id, cml_data_.model_path);
   });
 }
 
@@ -358,7 +367,9 @@ void CommandLineParser::SetupEngineCommands() {
   list_engines_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::EngineListCmd(download_service_).Exec();
+    commands::EngineListCmd command;
+    command.Exec(cml_data_.config.apiServerHost,
+                 std::stoi(cml_data_.config.apiServerPort));
   });
 
   auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
@@ -496,7 +507,9 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
     if (std::exchange(executed_, true))
       return;
     try {
-      commands::EngineUninstallCmd(download_service_).Exec(engine_name);
+      commands::EngineUninstallCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), engine_name);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
     }
@@ -528,7 +541,9 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback([this, engine_name] {
       if (std::exchange(executed_, true))
         return;
-      commands::EngineGetCmd(download_service_).Exec(engine_name);
+      commands::EngineGetCmd().Exec(cml_data_.config.apiServerHost,
+                                    std::stoi(cml_data_.config.apiServerPort),
+                                    engine_name);
     });
   }
 }
@@ -597,6 +612,8 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
     if (std::exchange(executed_, true))
       return;
     commands::ModelUpdCmd command(cml_data_.model_id);
-    command.Exec(cml_data_.model_update_options);
+    command.Exec(cml_data_.config.apiServerHost,
+                 std::stoi(cml_data_.config.apiServerPort),
+                 cml_data_.model_update_options);
   });
 }

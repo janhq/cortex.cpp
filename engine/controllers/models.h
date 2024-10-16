@@ -19,6 +19,7 @@ class Models : public drogon::HttpController<Models, false> {
   METHOD_ADD(Models::SetModelAlias, "/alias", Post);
   METHOD_ADD(Models::StartModel, "/start", Post);
   METHOD_ADD(Models::StopModel, "/stop", Post);
+  METHOD_ADD(Models::GetModelStatus, "/status/{1}", Get);
 
   ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Post);
   ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Delete);
@@ -30,6 +31,7 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::SetModelAlias, "/v1/models/alias", Post);
   ADD_METHOD_TO(Models::StartModel, "/v1/models/start", Post);
   ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Post);
+  ADD_METHOD_TO(Models::GetModelStatus, "/v1/models/status/{1}", Get);
   METHOD_LIST_END
 
   explicit Models(std::shared_ptr<ModelService> model_service)
@@ -62,6 +64,10 @@ class Models : public drogon::HttpController<Models, false> {
 
   void StopModel(const HttpRequestPtr& req,
                  std::function<void(const HttpResponsePtr&)>&& callback);
+
+  void GetModelStatus(const HttpRequestPtr& req,
+                      std::function<void(const HttpResponsePtr&)>&& callback,
+                      const std::string& model_id);
 
  private:
   std::shared_ptr<ModelService> model_service_;
