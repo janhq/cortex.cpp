@@ -477,14 +477,14 @@ cpp::result<bool, std::string> ModelService::StartModel(
       return false;
     }
     json_data["model"] = model_handle;
-    if (custom_prompt_template.has_value() &&
-        !custom_prompt_template.value_or("").empty()) {
-      auto& pt = custom_prompt_template.value();
-      json_data["system_prompt"] = pt.substr(0, pt.find_first_of('{'));
+    if (!custom_prompt_template.value_or("").empty()) {
+
+      json_data["system_prompt"] =
+          string_utils::ParseSystemPrompt(custom_prompt_template.value());
       json_data["user_prompt"] =
-          pt.substr(pt.find_first_of('}') + 1,
-                    pt.find_last_of('{') - pt.find_first_of('}') - 1);
-      json_data["ai_prompt"] = pt.substr(pt.find_last_of('}') + 1);
+          string_utils::ParseUserPrompt(custom_prompt_template.value());
+      json_data["ai_prompt"] =
+          string_utils::ParseAIPrompt(custom_prompt_template.value());
     } else {
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;

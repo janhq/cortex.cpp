@@ -2,8 +2,34 @@
 #include <sstream>
 #include "gtest/gtest.h"
 #include "utils/string_utils.h"
-class StringUtilsTestSuite : public ::testing::Test {};
+class StringUtilsTestSuite : public ::testing::Test {
+ protected:
+  std::string prompt =
+      "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_"
+      "message}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|"
+      "eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n";
+};
+TEST_F(StringUtilsTestSuite, ParseUserPrompt) {
+  {
+    EXPECT_EQ(string_utils::ParseUserPrompt(prompt),
+              "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n");
+  }
+}
 
+TEST_F(StringUtilsTestSuite, ParseSystemPrompt) {
+  {
+    EXPECT_EQ(
+        string_utils::ParseSystemPrompt(prompt),
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n");
+  }
+}
+
+TEST_F(StringUtilsTestSuite, ParseAIPrompt) {
+  {
+    EXPECT_EQ(string_utils::ParseAIPrompt(prompt),
+              "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n");
+  }
+}
 TEST_F(StringUtilsTestSuite, TestSplitBy) {
   auto input = "this is a test";
   std::string delimiter{' '};
