@@ -108,6 +108,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "stable" ]; then
             echo "::set-output name=package_name::cortexcpp"
             echo "::set-output name=destination_binary_name::cortex"
+            echo "::set-output name=destination_binary_server_name::cortex-server"
             echo "::set-output name=data_folder_name::cortexcpp"
             echo "::set-output name=configuration_file_name::.cortexrc"
             echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
@@ -118,6 +119,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "beta" ]; then
             echo "::set-output name=package_name::cortexcpp-beta"
             echo "::set-output name=destination_binary_name::cortex-beta"
+            echo "::set-output name=destination_binary_server_name::cortex-server-beta"
             echo "::set-output name=data_folder_name::cortexcpp-beta"
             echo "::set-output name=configuration_file_name::.cortexrc-beta"
             echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
@@ -128,6 +130,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "nightly" ]; then
             echo "::set-output name=package_name::cortexcpp-nightly"
             echo "::set-output name=destination_binary_name::cortex-nightly"
+            echo "::set-output name=destination_binary_server_name::cortex-server-nightly"
             echo "::set-output name=data_folder_name::cortexcpp-nightly"
             echo "::set-output name=configuration_file_name::.cortexrc-nightly"
             echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
@@ -164,7 +167,7 @@ jobs:
       - name: Pre-package
         run: |
           cd engine
-          make pre-package DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
+          make pre-package DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -192,6 +195,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "stable" ]; then
             echo "::set-output name=package_name::cortexcpp"
             echo "::set-output name=destination_binary_name::cortex"
+            echo "::set-output name=destination_binary_server_name::cortex-server"
             echo "::set-output name=data_folder_name::cortexcpp"
             echo "::set-output name=configuration_file_name::.cortexrc"
             echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
@@ -202,6 +206,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "beta" ]; then
             echo "::set-output name=package_name::cortexcpp-beta"
             echo "::set-output name=destination_binary_name::cortex-beta"
+            echo "::set-output name=destination_binary_server_name::cortex-server-beta"
             echo "::set-output name=data_folder_name::cortexcpp-beta"
             echo "::set-output name=configuration_file_name::.cortexrc-beta"
             echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
@@ -212,6 +217,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "nightly" ]; then
             echo "::set-output name=package_name::cortexcpp-nightly"
             echo "::set-output name=destination_binary_name::cortex-nightly"
+            echo "::set-output name=destination_binary_server_name::cortex-server-nightly"
             echo "::set-output name=data_folder_name::cortexcpp-nightly"
             echo "::set-output name=configuration_file_name::.cortexrc-nightly"
             echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
@@ -250,13 +256,16 @@ jobs:
           mkdir -p engine/cortex
           ls -al
           find . | grep ${{ steps.set-output-params.outputs.destination_binary_name }}
+          find . | grep ${{ steps.set-output-params.outputs.destination_binary_server_name }}
           lipo -create cortex-${{ inputs.new_version }}-mac-arm64/${{ steps.set-output-params.outputs.destination_binary_name }} cortex-${{ inputs.new_version }}-mac-amd64/${{ steps.set-output-params.outputs.destination_binary_name }} -output engine/cortex/${{ steps.set-output-params.outputs.destination_binary_name }}
+          lipo -create cortex-${{ inputs.new_version }}-mac-arm64/${{ steps.set-output-params.outputs.destination_binary_server_name }} cortex-${{ inputs.new_version }}-mac-amd64/${{ steps.set-output-params.outputs.destination_binary_server_name }} -output engine/cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}
           chmod +x engine/cortex/${{ steps.set-output-params.outputs.destination_binary_name }}
+          chmod +x engine/cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}
 
       - name: Code Signing binaries
         run: |
           cd engine
-          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
+          make codesign-binary CODE_SIGN=true DEVELOPER_ID="${{ secrets.DEVELOPER_ID }}" DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}"
 
       - name: Notary macOS Binary
         run: |
@@ -264,6 +273,7 @@ jobs:
           cd engine/cortex
           # Notarize the binary
           quill notarize ./${{ steps.set-output-params.outputs.destination_binary_name }}
+          quill notarize ./${{ steps.set-output-params.outputs.destination_binary_server_name }}
         env:
           QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
@@ -273,7 +283,7 @@ jobs:
         shell: bash
         run: |
           cd engine
-          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" VERSION=${{ inputs.new_version }} SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}"
+          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" VERSION=${{ inputs.new_version }} SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" SOURCE_BINARY_SERVER_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}" DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}"
           cat templates/macos/Scripts/postinstall
 
       - name: Codesign and notary for macos installer
@@ -298,7 +308,7 @@ jobs:
 
           cd ../../
           chmod +x create_pkg_local.sh
-          ./create_pkg_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }} ${{ steps.set-output-params.outputs.uninstaller_file_name }}
+          ./create_pkg_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }} ${{ steps.set-output-params.outputs.uninstaller_file_name }}
           cp ${{ steps.set-output-params.outputs.package_name }}.pkg ../../
 
       - name: Codesign and notary for macos installer

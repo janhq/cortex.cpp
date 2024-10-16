@@ -18,6 +18,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Define the files to be installed
 [Files]
 Source: "cortex.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cortex-server.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
