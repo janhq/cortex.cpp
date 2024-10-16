@@ -44,6 +44,7 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
   }
 
   function_calling_utils::PreprocessRequest(json_body);
+  std::cout<<"json_body: "<<json_body->toStyledString()<<std::endl;
   Json::Value tool_choice = json_body->get("tool_choice", Json::Value::null);
   std::get<EngineI*>(engines_[ne].engine)
       ->HandleChatCompletion(
