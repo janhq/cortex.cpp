@@ -7,8 +7,8 @@
 namespace commands {
 class EngineUninstallCmd {
  public:
-  explicit EngineUninstallCmd()
-      : engine_service_{EngineService(std::make_shared<DownloadService>())} {};
+  explicit EngineUninstallCmd(std::shared_ptr<DownloadService> download_service)
+      : engine_service_{EngineService(download_service)} {};
 
   void Exec(const std::string& engine);
 
