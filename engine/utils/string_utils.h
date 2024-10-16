@@ -13,6 +13,11 @@ struct ParsePromptResult {
   std::string ai_prompt;
 };
 
+inline bool EqualsIgnoreCase(const std::string& a, const std::string& b) {
+  return std::equal(a.begin(), a.end(), b.begin(), b.end(),
+                    [](char a, char b) { return tolower(a) == tolower(b); });
+}
+
 inline ParsePromptResult ParsePrompt(const std::string& prompt) {
   auto& pt = prompt;
   ParsePromptResult result;

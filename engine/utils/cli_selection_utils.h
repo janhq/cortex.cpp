@@ -2,7 +2,7 @@
 #include <optional>
 #include <string>
 #include <vector>
-#include "utils/logging_utils.h"
+#include "utils/string_utils.h"
 
 namespace cli_selection_utils {
 const std::string indent = std::string(4, ' ');
@@ -13,7 +13,8 @@ inline void PrintMenu(
   auto index{start_index};
   for (const auto& option : options) {
     bool is_default = false;
-    if (default_option.has_value() && option == default_option.value()) {
+    if (default_option.has_value() &&
+        string_utils::EqualsIgnoreCase(option, default_option.value())) {
       is_default = true;
     }
     std::string selection{std::to_string(index) + ". " + option +
@@ -48,10 +49,13 @@ inline std::optional<std::string> PrintModelSelection(
 
   // if selection is empty and default selection is inside availables, return default_selection
   if (selection.empty()) {
-    if (default_selection.has_value() &&
-        std::find(availables.begin(), availables.end(),
-                  default_selection.value()) != availables.end()) {
-      return default_selection;
+    if (default_selection.has_value()) {
+      for (const auto& available : availables) {
+        if (string_utils::EqualsIgnoreCase(available,
+                                           default_selection.value())) {
+          return available;
+        }
+      }
     }
     return std::nullopt;
   }
