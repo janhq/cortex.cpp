@@ -1,10 +1,10 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include "config/model_config.h"
 #include "services/download_service.h"
-
 class ModelService {
  public:
   constexpr auto static kHuggingFaceHost = "huggingface.co";
@@ -31,8 +31,9 @@ class ModelService {
    */
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
-  cpp::result<bool, std::string> StartModel(const std::string& host, int port,
-                                            const std::string& model_handle);
+  cpp::result<bool, std::string> StartModel(
+      const std::string& host, int port, const std::string& model_handle,
+      std::optional<std::string> custom_prompt_template = std::nullopt);
 
   cpp::result<bool, std::string> StopModel(const std::string& host, int port,
                                            const std::string& model_handle);

@@ -369,8 +369,11 @@ void Models::StartModel(
     return;
   auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto custom_prompt_template =
+      (*(req->getJsonObject())).get("prompt_template", "").asString();
   auto result = model_service_->StartModel(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
+      config.apiServerHost, std::stoi(config.apiServerPort), model_handle,
+      custom_prompt_template);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
