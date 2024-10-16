@@ -27,11 +27,6 @@
 #endif
 
 namespace cortex_utils {
-constexpr static auto kLlamaLibPath = "/engines/cortex.llamacpp";
-constexpr static auto kPythonRuntimeLibPath = "/engines/cortex.python";
-constexpr static auto kOnnxLibPath = "/engines/cortex.onnx";
-constexpr static auto kTensorrtLlmPath = "/engines/cortex.tensorrt-llm";
-
 inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";

@@ -488,6 +488,9 @@ cpp::result<bool, std::string> ModelService::StartModel(
     if (res) {
       if (res->status == httplib::StatusCode::OK_200) {
         return true;
+      } else if (res->status == httplib::StatusCode::Conflict_409) {
+        CTL_INF("Model '" + model_handle + "' is already loaded");
+        return true;
       } else {
         CTL_ERR("Model failed to load with status code: " << res->status);
         return cpp::fail("Model failed to load with status code: " +

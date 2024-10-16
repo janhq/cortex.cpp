@@ -119,6 +119,15 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  for (int i = 0; i < argc; i++) {
+    if (strcmp(argv[i], "--config_file_path") == 0) {
+      file_manager_utils::cortex_config_file_path = argv[i + 1];
+
+    } else if(strcmp(argv[i], "--data_folder_path") == 0) {
+      file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    }
+  }
+
   { file_manager_utils::CreateConfigFileIfNotExist(); }
 
   // Delete temporary file if it exists
@@ -138,8 +147,8 @@ int main(int argc, char* argv[]) {
       std::string py_home_path = (argc > 3) ? argv[3] : "";
       std::unique_ptr<cortex_cpp::dylib> dl;
       try {
-        std::string abs_path = cortex_utils::GetCurrentPath() +
-                               cortex_utils::kPythonRuntimeLibPath;
+        std::string abs_path =
+            cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
         dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
       } catch (const cortex_cpp::dylib::load_error& e) {
         LOG_ERROR << "Could not load engine: " << e.what();
