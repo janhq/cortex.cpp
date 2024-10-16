@@ -294,8 +294,12 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     }
   } while (still_running);
 
-  ProcessCompletedTransfers();
+  if (stop_flag_) {
+    CTL_INF("Download service is stopping..");
+    return;
+  }
 
+  ProcessCompletedTransfers();
   for (auto handle : task_handles) {
     curl_multi_remove_handle(multi_handle_, handle);
     curl_easy_cleanup(handle);
@@ -304,14 +308,12 @@ void DownloadService::ProcessTask(DownloadTask& task) {
 
   // if terminate by API calling and not from process stopping, we emit
   // DownloadStopped event
-  if (is_terminated && !stop_flag_) {
+  if (is_terminated) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
         DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
                       .download_task_ = task});
-  }
-
-  if (!is_terminated) {
+  } else {
     RemoveTaskFromStopList(task.id);
     CTL_INF("Executing callback..");
     ExecuteCallback(task);
@@ -401,11 +403,4 @@ void DownloadService::ExecuteCallback(const DownloadTask& task) {
     it->second(task);
     callbacks_.erase(it);
   }
-}
-
-cpp::result<void, std::string> DownloadService::Destroy() {
-  CTL_INF("Destroying download service..");
-  stop_flag_ = true;
-  queue_condition_.notify_one();
-  return {};
 }

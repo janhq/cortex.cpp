@@ -50,6 +50,9 @@ class DownloadService {
     }
   }
 
+  DownloadService(const DownloadService&) = delete;
+  DownloadService& operator=(const DownloadService&) = delete;
+
   /**
    * Adding new download task to the queue. Asynchronously. This function should 
    * be used by HTTP API.
@@ -73,8 +76,6 @@ class DownloadService {
       const std::string& url) const noexcept;
 
   cpp::result<void, std::string> StopTask(const std::string& task_id);
-
-  cpp::result<void, std::string> Destroy();
 
  private:
   struct DownloadingData {

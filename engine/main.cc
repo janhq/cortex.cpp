@@ -51,7 +51,7 @@ void RunServer() {
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
       std::filesystem::path(cortex_utils::logs_folder));
-  trantor::FileLogger asyncFileLogger;
+  static trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(
       (std::filesystem::path(config.logFolderPath) /
        std::filesystem::path(cortex_utils::logs_base_name))
@@ -93,7 +93,7 @@ void RunServer() {
   auto engine_ctl = std::make_shared<Engines>(engine_service);
   auto model_ctl = std::make_shared<Models>(model_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
-  auto pm_ctl = std::make_shared<ProcessManager>(download_service);
+  auto pm_ctl = std::make_shared<ProcessManager>();
 
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
 
-    } else if(strcmp(argv[i], "--data_folder_path") == 0) {
+    } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     }
   }

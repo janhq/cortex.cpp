@@ -7,12 +7,13 @@
 namespace commands {
 class RunCmd {
  public:
-  explicit RunCmd(std::string host, int port, std::string model_handle)
+  explicit RunCmd(std::string host, int port, std::string model_handle,
+                  std::shared_ptr<DownloadService> download_service)
       : host_{std::move(host)},
         port_{port},
         model_handle_{std::move(model_handle)},
-        engine_service_{EngineService(std::make_shared<DownloadService>())},
-        model_service_{ModelService(std::make_shared<DownloadService>())} {};
+        engine_service_{EngineService(download_service)},
+        model_service_{ModelService(download_service)} {};
 
   void Exec(bool chat_flag);
 
