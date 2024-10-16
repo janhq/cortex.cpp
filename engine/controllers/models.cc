@@ -82,7 +82,8 @@ void Models::AbortPullModel(
     callback(resp);
   } else {
     Json::Value ret;
-    ret["message"] = "Task stopped!";
+    ret["message"] = "Download stopped successfully";
+    ret["taskId"] = result.value();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);

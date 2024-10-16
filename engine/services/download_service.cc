@@ -306,6 +306,8 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     downloading_data_.reset();
   }
 
+  RemoveTaskFromStopList(task.id);
+
   // if terminate by API calling and not from process stopping, we emit
   // DownloadStopped event
   if (is_terminated) {
@@ -314,7 +316,6 @@ void DownloadService::ProcessTask(DownloadTask& task) {
         DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
                       .download_task_ = task});
   } else {
-    RemoveTaskFromStopList(task.id);
     CTL_INF("Executing callback..");
     ExecuteCallback(task);
 
@@ -325,13 +326,13 @@ void DownloadService::ProcessTask(DownloadTask& task) {
   }
 }
 
-cpp::result<void, std::string> DownloadService::StopTask(
+cpp::result<std::string, std::string> DownloadService::StopTask(
     const std::string& task_id) {
   std::lock_guard<std::mutex> lock(stop_mutex_);
 
   tasks_to_stop_.insert(task_id);
   CTL_INF("Added task to stop list: " << task_id);
-  return {};
+  return task_id;
 }
 
 void DownloadService::ProcessCompletedTransfers() {

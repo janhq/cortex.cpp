@@ -718,8 +718,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
   }
 }
 
-cpp::result<void, std::string> ModelService::AbortDownloadModel(
+cpp::result<std::string, std::string> ModelService::AbortDownloadModel(
     const std::string& task_id) {
-  auto result = download_service_->StopTask(task_id);
-  return result;
+  return download_service_->StopTask(task_id);
 }
