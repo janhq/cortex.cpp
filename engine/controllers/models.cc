@@ -27,14 +27,14 @@ void Models::PullModel(const HttpRequestPtr& req,
   }
 
   auto handle_model_input =
-      [&, model_handle]() -> cpp::result<std::string, std::string> {
+      [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleUrl(model_handle, true);
+      return model_service_->HandleDownloadUrlAsync(model_handle);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
-      return model_service_->DownloadModelFromCortexso(
-          model_and_branch[0], model_and_branch[1], true);
+      return model_service_->DownloadModelFromCortexsoAsync(
+          model_and_branch[0], model_and_branch[1]);
     }
 
     return cpp::fail("Invalid model handle or not supported!");
@@ -50,6 +50,39 @@ void Models::PullModel(const HttpRequestPtr& req,
   } else {
     Json::Value ret;
     ret["message"] = "Model start downloading!";
+    ret["task"] = result.value().ToJsonCpp();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::AbortPullModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!http_util::HasFieldInReq(req, callback, "taskId")) {
+    return;
+  }
+  auto task_id = (*(req->getJsonObject())).get("taskId", "").asString();
+  if (task_id.empty()) {
+    Json::Value ret;
+    ret["result"] = "Bad Request";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto result = model_service_->AbortDownloadModel(task_id);
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["message"] = "Task stopped!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -370,8 +403,11 @@ void Models::StartModel(
     return;
   auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto custom_prompt_template =
+      (*(req->getJsonObject())).get("prompt_template", "").asString();
   auto result = model_service_->StartModel(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
+      config.apiServerHost, std::stoi(config.apiServerPort), model_handle,
+      custom_prompt_template);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();

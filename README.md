@@ -112,7 +112,7 @@ Cortex.cpp includes a REST API accessible at `localhost:39281`. For a complete l
 
 Beta is an early preview for new versions of Cortex. It is for users who want to try new features early - we appreciate your feedback.
 
-Nightly is our development version of Brave. It is released every night and may contain bugs and experimental features.
+Nightly is our development version of Cortex. It is released every night and may contain bugs and experimental features.
 
 <table>
   <tr style="text-align:center">
