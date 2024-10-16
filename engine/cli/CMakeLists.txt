@@ -60,11 +60,6 @@ add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
-option(CMAKE_BUILD_TEST "Enable testing" OFF)
-if(CMAKE_BUILD_TEST)
-  add_subdirectory(test)
-endif()
-
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(httplib CONFIG REQUIRED)
