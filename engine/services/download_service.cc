@@ -229,10 +229,8 @@ void DownloadService::WorkerThread() {
         CTL_INF("Stopping download service..");
         break;
       }
-      if (!task_queue_.empty()) {
-        task = std::move(task_queue_.front());
-        task_queue_.pop();
-      }
+      task = std::move(task_queue_.front());
+      task_queue_.pop();
     }
     ProcessTask(task);
   }
