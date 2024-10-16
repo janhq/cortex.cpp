@@ -1,12 +1,13 @@
-#include "processManager.h"
+#include "process_manager.h"
 #include "utils/cortex_utils.h"
 
 #include <trantor/utils/Logger.h>
 #include <cstdlib>
 
-void processManager::destroy(
+void ProcessManager::destroy(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+
   app().quit();
   Json::Value ret;
   ret["message"] = "Program is exitting, goodbye!";

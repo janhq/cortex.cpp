@@ -1,9 +1,11 @@
 #pragma once
 
+#include <memory>
 #include "CLI/CLI.hpp"
 #include "services/engine_service.h"
 #include "services/model_service.h"
 #include "utils/config_yaml_utils.h"
+
 class CommandLineParser {
  public:
   CommandLineParser();
@@ -29,6 +31,7 @@ class CommandLineParser {
   void ModelUpdate(CLI::App* parent);
 
   CLI::App app_;
+  std::shared_ptr<DownloadService> download_service_;
   EngineService engine_service_;
   ModelService model_service_;
 
