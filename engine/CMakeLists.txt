@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(cortex C CXX)
+project(cortex-server C CXX)
 
 include(CheckIncludeFileCXX)
 

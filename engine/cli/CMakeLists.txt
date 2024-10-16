@@ -1,4 +1,4 @@
-project(cortex-cli C CXX)
+project(cortex C CXX)
 
 include(CheckIncludeFileCXX)
 
