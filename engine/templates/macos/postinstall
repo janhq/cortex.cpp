@@ -4,7 +4,7 @@ DESTINATION_BINARY_NAME=cortex
 DATA_FOLDER_NAME=.cortex
 CONFIGURATION_FILE_NAME=.cortexrc
 
-if [ "$SKIP_POSTINSTALL" = "true" ]; then
+if [ -f "/tmp/cortex_installer_skip_postinstall" ]; then
     echo "Skipping postinstall script."
     exit 0
 fi
