@@ -32,10 +32,12 @@ constexpr const auto kEngineGroup = "Engines";
 constexpr const auto kSystemGroup = "System";
 constexpr const auto kSubcommands = "Subcommands";
 }  // namespace
+
 CommandLineParser::CommandLineParser()
     : app_("Cortex.cpp CLI"),
-      model_service_{ModelService(std::make_shared<DownloadService>())},
-      engine_service_{EngineService(std::make_shared<DownloadService>())} {}
+      download_service_{std::make_shared<DownloadService>()},
+      model_service_{ModelService(download_service_)},
+      engine_service_{EngineService(download_service_)} {}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
@@ -126,7 +128,7 @@ void CommandLineParser::SetupCommonCommands() {
       return;
     }
     try {
-      commands::ModelPullCmd().Exec(cml_data_.model_id);
+      commands::ModelPullCmd(download_service_).Exec(cml_data_.model_id);
     } catch (const std::exception& e) {
       CLI_LOG(e.what());
     }
@@ -148,7 +150,7 @@ void CommandLineParser::SetupCommonCommands() {
     }
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
-                        cml_data_.model_id);
+                        cml_data_.model_id, download_service_);
     rc.Exec(cml_data_.chat_flag);
   });
 
@@ -173,7 +175,7 @@ void CommandLineParser::SetupCommonCommands() {
     if (cml_data_.msg.empty()) {
       commands::ChatCmd().Exec(cml_data_.config.apiServerHost,
                                std::stoi(cml_data_.config.apiServerPort),
-                               cml_data_.model_id);
+                               cml_data_.model_id, download_service_);
     } else {
       commands::ChatCompletionCmd(model_service_)
           .Exec(cml_data_.config.apiServerHost,
@@ -283,7 +285,7 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_del_cmd->help());
       return;
     };
-    commands::ModelDelCmd().Exec(cml_data_.model_id);
+    commands::ModelDelCmd(download_service_).Exec(cml_data_.model_id);
   });
 
   std::string model_alias;
@@ -356,8 +358,7 @@ void CommandLineParser::SetupEngineCommands() {
   list_engines_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::EngineListCmd command;
-    command.Exec();
+    commands::EngineListCmd(download_service_).Exec();
   });
 
   auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
@@ -452,7 +453,7 @@ void CommandLineParser::SetupSystemCommands() {
       return;
     }
 #endif
-    commands::CortexUpdCmd cuc;
+    auto cuc = commands::CortexUpdCmd(download_service_);
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
   });
@@ -476,7 +477,8 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
     if (std::exchange(executed_, true))
       return;
     try {
-      commands::EngineInstallCmd().Exec(engine_name, version, src);
+      commands::EngineInstallCmd(download_service_)
+          .Exec(engine_name, version, src);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
     }
@@ -494,7 +496,7 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
     if (std::exchange(executed_, true))
       return;
     try {
-      commands::EngineUninstallCmd().Exec(engine_name);
+      commands::EngineUninstallCmd(download_service_).Exec(engine_name);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
     }
@@ -526,7 +528,7 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     engine_get_cmd->callback([this, engine_name] {
       if (std::exchange(executed_, true))
         return;
-      commands::EngineGetCmd().Exec(engine_name);
+      commands::EngineGetCmd(download_service_).Exec(engine_name);
     });
   }
 }

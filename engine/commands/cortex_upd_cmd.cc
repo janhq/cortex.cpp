@@ -2,7 +2,6 @@
 #include "httplib.h"
 #include "nlohmann/json.hpp"
 #include "server_stop_cmd.h"
-#include "services/download_service.h"
 #include "utils/archive_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
@@ -395,7 +394,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
                                           .localPath = local_path,
                                       }}}};
 
-      auto result = DownloadService().AddDownloadTask(
+      auto result = download_service_->AddDownloadTask(
           download_task, [](const DownloadTask& finishedTask) {
             // try to unzip the downloaded file
             CTL_INF("Downloaded engine path: "
@@ -460,7 +459,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
                        .localPath = localPath,
                    }}};
 
-  auto result = DownloadService().AddDownloadTask(
+  auto result = download_service_->AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
         CTL_INF("Downloaded engine path: "

@@ -202,7 +202,8 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     responses["200"]["description"] = "Model details retrieved successfully";
     Json::Value& schema =
         responses["200"]["content"]["application/json"]["schema"];
-    responses["responses"]["400"]["description"] = "Failed to get model information";
+    responses["responses"]["400"]["description"] =
+        "Failed to get model information";
 
     responses["400"]["description"] = "Failed to get model information";
     responses["400"]["content"]["application/json"]["schema"]["type"] =
@@ -450,6 +451,8 @@ Json::Value SwaggerController::generateOpenAPISpec() {
         "object";
     start["requestBody"]["content"]["application/json"]["schema"]["properties"]
          ["model"]["type"] = "string";
+    start["requestBody"]["content"]["application/json"]["schema"]["properties"]
+         ["prompt_template"]["type"] = "string";
     start["requestBody"]["content"]["application/json"]["schema"]["required"] =
         Json::Value(Json::arrayValue);
     start["requestBody"]["content"]["application/json"]["schema"]["required"]
@@ -458,12 +461,12 @@ Json::Value SwaggerController::generateOpenAPISpec() {
     start["responses"]["400"]["description"] = "Failed to start model";
 
     // Stop Model
-   Json::Value& stop = spec["paths"]["/v1/models/stop"]["post"];
+    Json::Value& stop = spec["paths"]["/v1/models/stop"]["post"];
     stop["summary"] = "Stop model";
     stop["requestBody"]["content"]["application/json"]["schema"]["type"] =
         "object";
     stop["requestBody"]["content"]["application/json"]["schema"]["properties"]
-         ["model"]["type"] = "string";
+        ["model"]["type"] = "string";
     stop["requestBody"]["content"]["application/json"]["schema"]["required"] =
         Json::Value(Json::arrayValue);
     stop["requestBody"]["content"]["application/json"]["schema"]["required"]
