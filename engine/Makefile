@@ -94,7 +94,7 @@ endif
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "dotnet tool install --global AzureSignTool;"
 	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\$(DESTINATION_BINARY_NAME).exe";'
-	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\$(DESTINATIDESTINATION_BINARY_SERVER_NAMEON_BINARY_NAME).exe";'
+	@powershell -Command '~\.dotnet\tools\azuresigntool.exe sign -kvu "$(AZURE_KEY_VAULT_URI)" -kvi "$(AZURE_CLIENT_ID)" -kvt "$(AZURE_TENANT_ID)" -kvs "$(AZURE_CLIENT_SECRET)" -kvc "$(AZURE_CERT_NAME)" -tr http://timestamp.globalsign.com/tsa/r6advanced1 -v ".\cortex\$(DESTINATION_BINARY_SERVER_NAME).exe";'
 else ifeq ($(shell uname -s),Linux)
 	@echo "Skipping Code Sign for linux"
 	@exit 0
