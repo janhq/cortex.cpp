@@ -75,7 +75,7 @@ class DownloadService {
   cpp::result<uint64_t, std::string> GetFileSize(
       const std::string& url) const noexcept;
 
-  cpp::result<void, std::string> StopTask(const std::string& task_id);
+  cpp::result<std::string, std::string> StopTask(const std::string& task_id);
 
  private:
   struct DownloadingData {

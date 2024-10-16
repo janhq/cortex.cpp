@@ -196,7 +196,66 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PullModelResponse"
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "task": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "bytes": {
+                                "type": "integer"
+                              },
+                              "checksum": {
+                                "type": "string"
+                              },
+                              "downloadUrl": {
+                                "type": "string"
+                              },
+                              "downloadedBytes": {
+                                "type": "integer"
+                              },
+                              "id": {
+                                "type": "string"
+                              },
+                              "localPath": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Model start downloading!",
+                  "task": {
+                    "id": "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q3_K_L.gguf",
+                    "items": [
+                      {
+                        "bytes": 3822024352,
+                        "checksum": "N/A",
+                        "downloadUrl": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q3_K_L.gguf",
+                        "downloadedBytes": 0,
+                        "id": "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q3_K_L.gguf",
+                        "localPath": "/Users/jamesnguyen/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
+                      }
+                    ],
+                    "type": "Model"
+                  }
                 }
               }
             }
@@ -213,6 +272,99 @@
           }
         },
         "tags": ["Models"]
+      },
+      "delete": {
+        "tags": ["Models"],
+        "summary": "Stop model download",
+        "description": "Stops the download of a model with the corresponding taskId provided in the request body",
+        "operationId": "ModelsController_stopModelDownload",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "taskId": {
+                    "type": "string",
+                    "description": "The unique identifier of the download task to be stopped"
+                  }
+                },
+                "required": ["taskId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Download stopped successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Download stopped successfully"
+                    },
+                    "taskId": {
+                      "type": "string",
+                      "example": "task-123456"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Invalid taskId"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Task not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "Download task not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "An unexpected error occurred"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/v1/models": {
