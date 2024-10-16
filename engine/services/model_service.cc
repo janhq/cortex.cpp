@@ -550,7 +550,8 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 }
 
 cpp::result<bool, std::string> ModelService::StartModel(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& host, int port, const std::string& model_handle,
+    std::optional<std::string> custom_prompt_template) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -580,9 +581,17 @@ cpp::result<bool, std::string> ModelService::StartModel(
       return false;
     }
     json_data["model"] = model_handle;
-    json_data["system_prompt"] = mc.system_template;
-    json_data["user_prompt"] = mc.user_template;
-    json_data["ai_prompt"] = mc.ai_template;
+    if (!custom_prompt_template.value_or("").empty()) {
+      auto parse_prompt_result =
+          string_utils::ParsePrompt(custom_prompt_template.value());
+      json_data["system_prompt"] = parse_prompt_result.system_prompt;
+      json_data["user_prompt"] = parse_prompt_result.user_prompt;
+      json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
+    } else {
+      json_data["system_prompt"] = mc.system_template;
+      json_data["user_prompt"] = mc.user_template;
+      json_data["ai_prompt"] = mc.ai_template;
+    }
 
     auto data_str = json_data.toStyledString();
     CTL_INF(data_str);
