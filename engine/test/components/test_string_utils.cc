@@ -2,15 +2,13 @@
 #include <sstream>
 #include "gtest/gtest.h"
 #include "utils/string_utils.h"
-class StringUtilsTestSuite : public ::testing::Test {
- protected:
-  std::string prompt =
-      "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_"
-      "message}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|"
-      "eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n";
-};
+class StringUtilsTestSuite : public ::testing::Test {};
 TEST_F(StringUtilsTestSuite, ParsePrompt) {
   {
+    std::string prompt =
+        "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{"
+        "system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{"
+        "prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n";
     auto result = string_utils::ParsePrompt(prompt);
     EXPECT_EQ(result.user_prompt,
               "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n");
