@@ -7,6 +7,7 @@
 #include "server_start_cmd.h"
 #include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
+#include "utils/string_utils.h"
 
 namespace commands {
 namespace {
@@ -100,6 +101,8 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
           break;
         }
       }
+
+      string_utils::Trim(user_input);
       if (user_input == kExitChat) {
         break;
       }
