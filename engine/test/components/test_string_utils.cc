@@ -1,8 +1,8 @@
-#include <cmath>
-#include <sstream>
 #include "gtest/gtest.h"
 #include "utils/string_utils.h"
+
 class StringUtilsTestSuite : public ::testing::Test {};
+
 TEST_F(StringUtilsTestSuite, ParsePrompt) {
   {
     std::string prompt =
@@ -93,4 +93,83 @@ TEST_F(StringUtilsTestSuite, TestEndsWithWithEmptySuffix) {
   auto input = "this is a test";
   auto suffix = "";
   EXPECT_TRUE(string_utils::EndsWith(input, suffix));
+}
+
+TEST_F(StringUtilsTestSuite, EmptyString) {
+  std::string s = "";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "");
+}
+
+TEST_F(StringUtilsTestSuite, NoWhitespace) {
+  std::string s = "hello";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "hello");
+}
+
+TEST_F(StringUtilsTestSuite, LeadingWhitespace) {
+  std::string s = "   hello";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "hello");
+}
+
+TEST_F(StringUtilsTestSuite, TrailingWhitespace) {
+  std::string s = "hello   ";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "hello");
+}
+
+TEST_F(StringUtilsTestSuite, BothEndsWhitespace) {
+  std::string s = "   hello   ";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "hello");
+}
+
+TEST_F(StringUtilsTestSuite, ExitString) {
+  std::string s = "exit()   ";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "exit()");
+}
+
+TEST_F(StringUtilsTestSuite, AllWhitespace) {
+  std::string s = "     ";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "");
+}
+
+TEST_F(StringUtilsTestSuite, MixedWhitespace) {
+  std::string s = " \t\n  hello world \r\n ";
+  string_utils::Trim(s);
+  EXPECT_EQ(s, "hello world");
+}
+
+TEST_F(StringUtilsTestSuite, EqualStrings) {
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("hello", "hello"));
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("WORLD", "WORLD"));
+}
+
+TEST_F(StringUtilsTestSuite, DifferentCaseStrings) {
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("Hello", "hElLo"));
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("WORLD", "world"));
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("MiXeD", "mIxEd"));
+}
+
+TEST_F(StringUtilsTestSuite, EmptyStrings) {
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("", ""));
+}
+
+TEST_F(StringUtilsTestSuite, DifferentStrings) {
+  EXPECT_FALSE(string_utils::EqualsIgnoreCase("hello", "world"));
+  EXPECT_FALSE(string_utils::EqualsIgnoreCase("HELLO", "hello world"));
+}
+
+TEST_F(StringUtilsTestSuite, DifferentLengthStrings) {
+  EXPECT_FALSE(string_utils::EqualsIgnoreCase("short", "longer string"));
+  EXPECT_FALSE(string_utils::EqualsIgnoreCase("LONG STRING", "long"));
+}
+
+TEST_F(StringUtilsTestSuite, SpecialCharacters) {
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("Hello!", "hElLo!"));
+  EXPECT_TRUE(string_utils::EqualsIgnoreCase("123 ABC", "123 abc"));
+  EXPECT_FALSE(string_utils::EqualsIgnoreCase("Hello!", "Hello"));
 }

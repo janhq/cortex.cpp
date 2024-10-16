@@ -13,6 +13,16 @@ struct ParsePromptResult {
   std::string ai_prompt;
 };
 
+inline void Trim(std::string& s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
+            return !std::isspace(ch);
+          }));
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](unsigned char ch) { return !std::isspace(ch); })
+              .base(),
+          s.end());
+}
+
 inline bool EqualsIgnoreCase(const std::string& a, const std::string& b) {
   return std::equal(a.begin(), a.end(), b.begin(), b.end(),
                     [](char a, char b) { return tolower(a) == tolower(b); });
