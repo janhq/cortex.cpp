@@ -43,7 +43,9 @@ class DownloadService {
       curl_multi_cleanup(multi_handle_);
       curl_global_cleanup();
 
-      worker_thread_.join();
+      if (worker_thread_.joinable()) {
+        worker_thread_.join();
+      }
       CTL_INF("DownloadService is destroyed.");
     }
   }
@@ -111,9 +113,6 @@ class DownloadService {
   std::mutex callbacks_mutex_;
 
   std::shared_ptr<DownloadingData> downloading_data_;
-
-  // active task that being downloaded atm
-  std::unordered_map<std::string, DownloadTask> active_tasks_;
 
   void WorkerThread();
 
