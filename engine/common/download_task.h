@@ -1,5 +1,6 @@
 #pragma once
 
+#include <json/json.h>
 #include <filesystem>
 #include <nlohmann/json.hpp>
 #include <sstream>
@@ -68,6 +69,28 @@ struct DownloadTask {
     }
     output << "]}";
     return output.str();
+  }
+
+  Json::Value ToJsonCpp() const {
+    Json::Value root;
+    root["id"] = id;
+    root["type"] = DownloadTypeToString(type);
+
+    Json::Value itemsArray(Json::arrayValue);
+    for (const auto& item : items) {
+      Json::Value itemObj;
+      itemObj["id"] = item.id;
+      itemObj["downloadUrl"] = item.downloadUrl;
+      itemObj["localPath"] = item.localPath.string();
+      itemObj["checksum"] = item.checksum.value_or("N/A");
+      itemObj["bytes"] = Json::Value::UInt64(item.bytes.value_or(0));
+      itemObj["downloadedBytes"] =
+          Json::Value::UInt64(item.downloadedBytes.value_or(0));
+      itemsArray.append(itemObj);
+    }
+    root["items"] = itemsArray;
+
+    return root;
   }
 
   json ToJson() const {
