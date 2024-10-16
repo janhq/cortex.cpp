@@ -7,18 +7,21 @@
 
 namespace string_utils {
 
-inline std::string ParseUserPrompt(const std::string& prompt) {
+struct ParsePromptResult {
+  std::string user_prompt;
+  std::string system_prompt;
+  std::string ai_prompt;
+};
+
+inline ParsePromptResult ParsePrompt(const std::string& prompt) {
   auto& pt = prompt;
-  return pt.substr(pt.find_first_of('}') + 1,
-                   pt.find_last_of('{') - pt.find_first_of('}') - 1);
-}
-inline std::string ParseSystemPrompt(const std::string& prompt) {
-  auto& pt = prompt;
-  return pt.substr(0, pt.find_first_of('{'));
-}
-inline std::string ParseAIPrompt(const std::string& prompt) {
-  auto& pt = prompt;
-  return pt.substr(pt.find_last_of('}') + 1);
+  ParsePromptResult result;
+  result.user_prompt =
+      pt.substr(pt.find_first_of('}') + 1,
+                pt.find_last_of('{') - pt.find_first_of('}') - 1);
+  result.ai_prompt = pt.substr(pt.find_last_of('}') + 1);
+  result.system_prompt = pt.substr(0, pt.find_first_of('{'));
+  return result;
 }
 inline bool StartsWith(const std::string& str, const std::string& prefix) {
   return str.rfind(prefix, 0) == 0;

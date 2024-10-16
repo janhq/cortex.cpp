@@ -9,27 +9,19 @@ class StringUtilsTestSuite : public ::testing::Test {
       "message}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|"
       "eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n";
 };
-TEST_F(StringUtilsTestSuite, ParseUserPrompt) {
+TEST_F(StringUtilsTestSuite, ParsePrompt) {
   {
-    EXPECT_EQ(string_utils::ParseUserPrompt(prompt),
+    auto result = string_utils::ParsePrompt(prompt);
+    EXPECT_EQ(result.user_prompt,
               "<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n");
-  }
-}
-
-TEST_F(StringUtilsTestSuite, ParseSystemPrompt) {
-  {
+    EXPECT_EQ(result.ai_prompt,
+              "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n");
     EXPECT_EQ(
-        string_utils::ParseSystemPrompt(prompt),
+        result.system_prompt,
         "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n");
   }
 }
 
-TEST_F(StringUtilsTestSuite, ParseAIPrompt) {
-  {
-    EXPECT_EQ(string_utils::ParseAIPrompt(prompt),
-              "<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n");
-  }
-}
 TEST_F(StringUtilsTestSuite, TestSplitBy) {
   auto input = "this is a test";
   std::string delimiter{' '};
