@@ -126,6 +126,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  std::optional<int> server_port;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
@@ -170,6 +171,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  RunServer();
+  RunServer(server_port);
   return 0;
 }
