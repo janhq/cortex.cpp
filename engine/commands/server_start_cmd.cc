@@ -30,6 +30,20 @@ bool TryConnectToServer(const std::string& host, int port) {
 ServerStartCmd::ServerStartCmd() {}
 
 bool ServerStartCmd::Exec(const std::string& host, int port) {
+  auto get_config_file_path = []() -> std::string {
+    if (file_manager_utils::cortex_config_file_path.empty()) {
+      return file_manager_utils::GetConfigurationPath().string();
+    }
+    return file_manager_utils::cortex_config_file_path;
+  };
+
+  auto get_data_folder_path = []() -> std::string {
+    if (file_manager_utils::cortex_data_folder_path.empty()) {
+      return file_manager_utils::GetCortexDataPath().string();
+    }
+    return file_manager_utils::cortex_data_folder_path;
+  };
+
 #if defined(_WIN32) || defined(_WIN64)
   // Windows-specific code to create a new process
   STARTUPINFO si;
@@ -39,8 +53,10 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
   auto exe = commands::GetCortexBinary();
-  std::string cmds =
-      cortex_utils::GetCurrentPath() + "/" + exe + " --start-server";
+  std::string params = "--start-server";
+  params += " --config_file_path " + get_config_file_path();
+  params += " --data_folder_path " + get_data_folder_path();
+  std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
@@ -58,11 +74,12 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
   } else {
-    if(!TryConnectToServer(host, port)) {
-        return false;
+    if (!TryConnectToServer(host, port)) {
+      return false;
     }
     std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":" << port << std::endl;
+    std::cout << "API Documentation available at: http://" << host << ":"
+              << port << std::endl;
   }
 
 #else
@@ -92,14 +109,17 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
 #endif
     auto exe = commands::GetCortexBinary();
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
-    execl(p.c_str(), exe.c_str(), "--start-server", (char*)0);
+    execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
+          get_config_file_path().c_str(), "--data_folder_path",
+          get_data_folder_path().c_str(), (char*)0);
   } else {
     // Parent process
-    if(!TryConnectToServer(host, port)) {
-        return false;
+    if (!TryConnectToServer(host, port)) {
+      return false;
     }
     std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":" << port << std::endl;
+    std::cout << "API Documentation available at: http://" << host << ":"
+              << port << std::endl;
   }
 #endif
   return true;
