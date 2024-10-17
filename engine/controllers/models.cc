@@ -82,7 +82,8 @@ void Models::AbortPullModel(
     callback(resp);
   } else {
     Json::Value ret;
-    ret["message"] = "Task stopped!";
+    ret["message"] = "Download stopped successfully";
+    ret["taskId"] = result.value();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -114,8 +115,9 @@ void Models::ListModel(
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
-        obj["id"] = model_config.model;
+        obj["id"] = model_entry.model;
         obj["model_alias"] = model_entry.model_alias;
+        obj["model"] = model_entry.model;
         data.append(std::move(obj));
         yaml_handler.Reset();
       } catch (const std::exception& e) {
