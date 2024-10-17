@@ -57,7 +57,7 @@ std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
   return "SKIP_POSTINSTALL=true && sudo installer -pkg " + exe_path + " -target /";
 #elif defined(__linux__)
-  return "echo -e "n\n" | sudo SKIP_POSTINSTALL=true apt install -y --allow-downgrades " + exe_path;
+  return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y --allow-downgrades " + exe_path;
 #else
   return "start /wait \"\" " + exe_path +
          " /SkipPostInstall /VERYSILENT /SUPPRESSMSGBOXES /NORESTART";
@@ -494,11 +494,12 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   // Download file
   std::string version = v.empty() ? "latest" : v;
   std::string os_arch{system_info->os + "-" + system_info->arch};
+  std::string installer_name = GetNightlyInstallerName(version, os_arch);
   const char* paths[] = {
       "cortex",
       version.c_str(),
       os_arch.c_str(),
-      GetNightlyInstallerName(version, os_arch).c_str(),
+      installer_name.c_str(),
   };
   std::vector<std::string> path_list(paths, std::end(paths));
   auto url_obj = url_parser::Url{
