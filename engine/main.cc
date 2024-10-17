@@ -32,7 +32,7 @@
 #error "Unsupported platform!"
 #endif
 
-void RunServer() {
+void RunServer(std::optional<int> port) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   signal(SIGINT, SIG_IGN);
 #elif defined(_WIN32)
@@ -43,6 +43,11 @@ void RunServer() {
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
+  if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
+    auto config_path = file_manager_utils::GetConfigurationPath();
+    config.apiServerPort = std::to_string(*port);
+    config_yaml_utils::DumpYamlConfig(config, config_path.string());
+  }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
 
@@ -117,16 +122,17 @@ int main(int argc, char* argv[]) {
   if (system_info->arch == system_info_utils::kUnsupported ||
       system_info->os == system_info_utils::kUnsupported) {
     CLI_LOG_ERROR("Unsupported OS or architecture: " << system_info->os << ", "
-                                               << system_info->arch);
+                                                     << system_info->arch);
     return 1;
   }
 
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
-
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    } else if (strcmp(argv[i], "--port") == 0) {
+      server_port = std::stoi(argv[i + 1]);
     }
   }
 
@@ -163,7 +169,6 @@ int main(int argc, char* argv[]) {
       return 0;
     }
   }
-
 
   RunServer();
   return 0;
