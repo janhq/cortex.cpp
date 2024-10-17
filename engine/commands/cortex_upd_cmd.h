@@ -98,7 +98,7 @@ class CortexUpdCmd {
   explicit CortexUpdCmd(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service} {};
 
-  void Exec(const std::string& v);
+  void Exec(const std::string& v, bool force = false);
 
  private:
   std::shared_ptr<DownloadService> download_service_;

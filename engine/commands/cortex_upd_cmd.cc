@@ -55,9 +55,12 @@ std::string GetNightlyInstallerName(const std::string& v,
 // C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
 std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
-  return "SKIP_POSTINSTALL=true && sudo installer -pkg " + exe_path + " -target /";
+  return "SKIP_POSTINSTALL=true && sudo installer -pkg " + exe_path +
+         " -target /";
 #elif defined(__linux__)
-  return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y --allow-downgrades " + exe_path;
+  return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y "
+         "--allow-downgrades " +
+         exe_path;
 #else
   return "start /wait \"\" " + exe_path +
          " /SkipPostInstall /VERYSILENT /SUPPRESSMSGBOXES /NORESTART";
@@ -83,7 +86,7 @@ bool InstallNewVersion(const std::filesystem::path& dst,
     CommandExecutor c(GetInstallCmd(exe_path));
     auto output = c.execute();
     if (!std::filesystem::exists(dst)) {
-      CTL_ERR("Something went wrong!");     
+      CTL_ERR("Something went wrong!");
       restore_binary();
       return false;
     }
@@ -257,10 +260,11 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
   return true;
 }
 
-void CortexUpdCmd::Exec(const std::string& v) {
+void CortexUpdCmd::Exec(const std::string& v, bool force) {
   // Check for update, if current version is the latest, notify to user
   if (auto latest_version = commands::CheckNewUpdate(std::nullopt);
-      latest_version.has_value() && *latest_version == CORTEX_CPP_VERSION) {
+      latest_version.has_value() && *latest_version == CORTEX_CPP_VERSION &&
+      !force) {
     CLI_LOG("cortex is up to date");
     return;
   }

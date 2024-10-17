@@ -2,6 +2,7 @@
 #include "commands/cortex_upd_cmd.h"
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
+#include "services/download_service.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -44,6 +45,17 @@ int main(int argc, char* argv[]) {
 
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    } else if ((strcmp(argv[i], "--server") == 0) &&
+               (strcmp(argv[i - 1], "update") == 0)) {
+#if !defined(_WIN32)
+      if (getuid()) {
+        CLI_LOG("Error: Not root user. Please run with sudo.");
+        return 0;
+      }
+#endif
+      auto cuc = commands::CortexUpdCmd(std::make_shared<DownloadService>());
+      cuc.Exec({}, true /*force*/);
+      return 0;
     }
   }
 
