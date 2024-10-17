@@ -15,7 +15,7 @@ class TestApiModelStart:
 
         # TODO: using pull with branch for easy testing tinyllama:gguf for example
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
-        popen(["pull", "tinyllama"], "1\n")
+        run("Pull model", ["pull", "tinyllama:gguf"], timeout=None,)
 
         yield
 
