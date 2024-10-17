@@ -5,6 +5,7 @@
 #include <vector>
 #include "httplib.h"
 #include "utils/curl_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
@@ -48,11 +49,10 @@ struct HuggingFaceModelRepoInfo {
 };
 
 inline std::optional<std::string> GetHuggingFaceToken() {
-  const char* token = std::getenv("HF_TOKEN");
-  if (token != nullptr) {
-    return std::string(token);
-  }
-  return std::nullopt;
+  auto const& token = file_manager_utils::GetCortexConfig().hfToken;
+  if (token.empty())
+    return std::nullopt;
+  return token;
 }
 
 inline curl_slist* CreateCurlHfHeaders() {
