@@ -36,6 +36,75 @@ std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
   return system_info;
 }
 
+// https://delta.jan.ai/cortex/v1.0.0-176/windows-amd64/cortex-1.0.0-176-windows-amd64-network-installer.exe
+// https://delta.jan.ai/cortex/v1.0.0-176/mac-universal/cortex-1.0.0-176-mac-universal-network-installer.pkg
+// https://delta.jan.ai/cortex/v1.0.0-176/linux-amd64/cortex-1.0.0-176-linux-amd64-network-installer.deb
+std::string GetNightlyInstallerName(const std::string& v,
+                                    const std::string& os_arch) {
+  const std::string kCortex = "cortex";
+  std::string version = v == "latest" ? "" : (v + "-");
+#if defined(__APPLE__) && defined(__MACH__)
+  return kCortex + "-" + version + os_arch + "-network-installer.pkg";
+#elif defined(__linux__)
+  return kCortex + "-" + version + os_arch + "-network-installer.deb";
+#else
+  return kCortex + "-" + version + os_arch + "-network-installer.exe";
+#endif
+}
+
+// C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
+std::string GetInstallCmd(const std::string& exe_path) {
+#if defined(__APPLE__) && defined(__MACH__)
+  return "SKIP_POSTINSTALL=true && sudo installer -pkg " + exe_path + " -target /";
+#elif defined(__linux__)
+  return "echo -e "n\n" | sudo SKIP_POSTINSTALL=true apt install -y --allow-downgrades " + exe_path;
+#else
+  return "start /wait \"\" " + exe_path +
+         " /SkipPostInstall /VERYSILENT /SUPPRESSMSGBOXES /NORESTART";
+#endif
+}
+
+bool InstallNewVersion(const std::filesystem::path& dst,
+                       const std::string& exe_path) {
+  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
+  auto restore_binary = [&temp, &dst]() {
+    if (std::filesystem::exists(temp)) {
+      std::rename(temp.string().c_str(), dst.string().c_str());
+      CLI_LOG("Restored binary file");
+    }
+  };
+  try {
+    if (std::filesystem::exists(temp)) {
+      std::filesystem::remove(temp);
+    }
+    // rename binary
+    std::rename(dst.string().c_str(), temp.string().c_str());
+    // install here
+    CommandExecutor c(GetInstallCmd(exe_path));
+    auto output = c.execute();
+    if (!std::filesystem::exists(dst)) {
+      CTL_ERR("Something went wrong!");     
+      restore_binary();
+      return false;
+    }
+
+    // delete temp
+#if !defined(_WIN32)
+    if (unlink(temp.string().c_str()) != 0) {
+      CTL_ERR("Error deleting self: " << strerror(errno));
+      restore_binary();
+      return false;
+    }
+#endif
+
+  } catch (const std::exception& e) {
+    CTL_ERR("Something went wrong: " << e.what());
+    restore_binary();
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 std::optional<std::string> CheckNewUpdate(
@@ -429,7 +498,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       "cortex",
       version.c_str(),
       os_arch.c_str(),
-      kNightlyFileName,
+      GetNightlyInstallerName(version, os_arch).c_str(),
   };
   std::vector<std::string> path_list(paths, std::end(paths));
   auto url_obj = url_parser::Url{
@@ -438,7 +507,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       .pathParams = path_list,
   };
 
-  CTL_INF("Engine release path: " << url_parser::FromUrl(url_obj));
+  CTL_INF("Cortex release path: " << url_parser::FromUrl(url_obj));
 
   std::filesystem::path localPath =
       std::filesystem::temp_directory_path() / "cortex" / path_list.back();
@@ -462,14 +531,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto result = download_service_->AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
-        CTL_INF("Downloaded engine path: "
+        CTL_INF("Downloaded cortex path: "
                 << finishedTask.items[0].localPath.string());
-
-        auto extract_path =
-            finishedTask.items[0].localPath.parent_path().parent_path();
-
-        archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
-                                      extract_path.string());
 
         CTL_INF("Finished!");
       });
@@ -480,8 +543,6 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src =
-      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
@@ -492,6 +553,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       CTL_WRN(e.what());
     }
   });
-  return ReplaceBinaryInflight(src, dst);
+
+  return InstallNewVersion(dst, localPath.string());
 }
 }  // namespace commands
