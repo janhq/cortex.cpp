@@ -10,6 +10,7 @@ Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 AllowNoIcons=yes
+DisableDirPage=yes
 
 ; Define the languages section
 [Languages]
@@ -18,6 +19,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Define the files to be installed
 [Files]
 Source: "cortex-beta.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cortex-server-beta.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -50,6 +52,13 @@ begin
   // Add {app} to PATH
   CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // Check if the parameter /SkipPostInstall is passed
+  if ParamStr(1) = '/SkipPostInstall' then
+  begin
+    Log('Skipping post-install actions.');
+    Exit;  // Exit the procedure without doing anything
+  end;
 
   // Update status message for downloading llamacpp engine
   WizardForm.StatusLabel.Caption := 'Downloading llama.cpp engine and dependencies ...';
