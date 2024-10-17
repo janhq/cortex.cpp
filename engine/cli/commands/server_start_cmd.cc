@@ -30,6 +30,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 ServerStartCmd::ServerStartCmd() {}
 
 bool ServerStartCmd::Exec(const std::string& host, int port) {
+  auto exe = commands::GetCortexServerBinary();
   auto get_config_file_path = []() -> std::string {
     if (file_manager_utils::cortex_config_file_path.empty()) {
       return file_manager_utils::GetConfigurationPath().string();
@@ -52,7 +53,6 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-  auto exe = commands::GetCortexBinary();
   std::string params = "--start-server";
   params += " --config_file_path " + get_config_file_path();
   params += " --data_folder_path " + get_data_folder_path();
@@ -107,7 +107,6 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
     setenv(name, new_v.c_str(), true);
     CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
 #endif
-    auto exe = commands::GetCortexBinary();
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
           get_config_file_path().c_str(), "--data_folder_path",

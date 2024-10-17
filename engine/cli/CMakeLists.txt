@@ -1,6 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
-
-project(cortex-server C CXX)
+project(cortex C CXX)
 
 include(CheckIncludeFileCXX)
 
@@ -62,38 +60,38 @@ add_compile_definitions(CORTEX_VARIANT="${CORTEX_VARIANT}")
 add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
-option(CMAKE_BUILD_TEST "Enable testing" OFF)
-if(CMAKE_BUILD_TEST)
-  add_subdirectory(test)
-endif()
-
-add_subdirectory(cli)
-
 find_package(jsoncpp CONFIG REQUIRED)
-find_package(Drogon CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
 find_package(httplib CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
+find_package(CLI11 CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
+find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
-find_package(eventpp CONFIG REQUIRED)
+find_package(Trantor CONFIG REQUIRED)
 
 add_executable(${TARGET_NAME} main.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/command_line_parser.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../services/download_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../services/engine_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
+target_link_libraries(${TARGET_NAME} PRIVATE tabulate::tabulate)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
-target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
+target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
-target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
+target_link_libraries(${TARGET_NAME} PRIVATE Trantor::Trantor)
 
 # ##############################################################################
 
@@ -108,17 +106,17 @@ else()
   message(STATUS "use c++20")
 endif()
 
-aux_source_directory(controllers CTL_SRC)
-aux_source_directory(services SERVICES_SRC)
-aux_source_directory(common COMMON_SRC)
-aux_source_directory(models MODEL_SRC)
-aux_source_directory(cortex-common CORTEX_COMMON)
-aux_source_directory(config CONFIG_SRC)
-aux_source_directory(database DB_SRC)
+aux_source_directory(../common COMMON_SRC)
+aux_source_directory(../models MODEL_SRC)
+aux_source_directory(../cortex-common CORTEX_COMMON)
+aux_source_directory(../config CONFIG_SRC)
+aux_source_directory(commands COMMANDS_SRC)
+aux_source_directory(../database DB_SRC)
  
-target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.. )
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_sources(${TARGET_NAME} PRIVATE ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC})
 
 set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}

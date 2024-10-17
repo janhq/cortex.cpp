@@ -36,6 +36,80 @@ std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
   return system_info;
 }
 
+// https://delta.jan.ai/cortex/v1.0.0-176/windows-amd64/cortex-1.0.0-176-windows-amd64-network-installer.exe
+// https://delta.jan.ai/cortex/v1.0.0-176/mac-universal/cortex-1.0.0-176-mac-universal-network-installer.pkg
+// https://delta.jan.ai/cortex/v1.0.0-176/linux-amd64/cortex-1.0.0-176-linux-amd64-network-installer.deb
+std::string GetNightlyInstallerName(const std::string& v,
+                                    const std::string& os_arch) {
+  const std::string kCortex = "cortex";
+  std::string version = v == "latest" ? "" : (v + "-");
+#if defined(__APPLE__) && defined(__MACH__)
+  return kCortex + "-" + version + os_arch + "-network-installer.pkg";
+#elif defined(__linux__)
+  return kCortex + "-" + version + os_arch + "-network-installer.deb";
+#else
+  return kCortex + "-" + version + os_arch + "-network-installer.exe";
+#endif
+}
+
+// C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
+std::string GetInstallCmd(const std::string& exe_path) {
+#if defined(__APPLE__) && defined(__MACH__)
+  return "touch /var/tmp/cortex_installer_skip_postinstall && sudo installer "
+         "-pkg " +
+         exe_path +
+         " -target / && rm /var/tmp/cortex_installer_skip_postinstall";
+#elif defined(__linux__)
+  return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y "
+         "--allow-downgrades " +
+         exe_path;
+#else
+  return "start /wait \"\" " + exe_path +
+         " /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SkipPostInstall";
+#endif
+}
+
+bool InstallNewVersion(const std::filesystem::path& dst,
+                       const std::string& exe_path) {
+  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
+  auto restore_binary = [&temp, &dst]() {
+    if (std::filesystem::exists(temp)) {
+      std::rename(temp.string().c_str(), dst.string().c_str());
+      CLI_LOG("Restored binary file");
+    }
+  };
+  try {
+    if (std::filesystem::exists(temp)) {
+      std::filesystem::remove(temp);
+    }
+    // rename binary
+    std::rename(dst.string().c_str(), temp.string().c_str());
+    // install here
+    CommandExecutor c(GetInstallCmd(exe_path));
+    auto output = c.execute();
+    if (!std::filesystem::exists(dst)) {
+      CLI_LOG_ERROR("Something went wrong: could not execute command");
+      restore_binary();
+      return false;
+    }
+
+    // delete temp
+#if !defined(_WIN32)
+    if (unlink(temp.string().c_str()) != 0) {
+      CLI_LOG_ERROR("Error deleting self: " << strerror(errno));
+      restore_binary();
+      return false;
+    }
+#endif
+
+  } catch (const std::exception& e) {
+    CLI_LOG_ERROR("Something went wrong: " << e.what());
+    restore_binary();
+    return false;
+  }
+  return true;
+}
+
 }  // namespace
 
 std::optional<std::string> CheckNewUpdate(
@@ -143,7 +217,8 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
     // Get permissions of the executable file
     struct stat dst_file_stat;
     if (stat(dst.string().c_str(), &dst_file_stat) != 0) {
-      CLI_LOG_ERROR("Error getting permissions of executable file: " << dst.string());
+      CLI_LOG_ERROR(
+          "Error getting permissions of executable file: " << dst.string());
       return false;
     }
 
@@ -159,7 +234,8 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
 #if !defined(_WIN32)
     // Set permissions of the executable file
     if (chmod(dst.string().c_str(), dst_file_stat.st_mode) != 0) {
-      CLI_LOG_ERROR("Error setting permissions of executable file: " << dst.string());
+      CLI_LOG_ERROR(
+          "Error setting permissions of executable file: " << dst.string());
       restore_binary();
       return false;
     }
@@ -188,10 +264,11 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
   return true;
 }
 
-void CortexUpdCmd::Exec(const std::string& v) {
+void CortexUpdCmd::Exec(const std::string& v, bool force) {
   // Check for update, if current version is the latest, notify to user
   if (auto latest_version = commands::CheckNewUpdate(std::nullopt);
-      latest_version.has_value() && *latest_version == CORTEX_CPP_VERSION) {
+      latest_version.has_value() && *latest_version == CORTEX_CPP_VERSION &&
+      !force) {
     CLI_LOG("cortex is up to date");
     return;
   }
@@ -231,6 +308,7 @@ void CortexUpdCmd::Exec(const std::string& v) {
 }
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
+  std::optional<std::string> downloaded_exe_path;
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
@@ -249,8 +327,10 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
           return false;
         }
 
-        if (!HandleGithubRelease(json_data["assets"],
-                                 {system_info->os + "-" + system_info->arch})) {
+        if (downloaded_exe_path = HandleGithubRelease(
+                json_data["assets"],
+                {system_info->os + "-" + system_info->arch});
+            !downloaded_exe_path) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
@@ -267,10 +347,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
     return false;
   }
 
-  // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src =
-      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
@@ -281,10 +358,13 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
       CTL_WRN(e.what());
     }
   });
-  return ReplaceBinaryInflight(src, dst);
+
+  assert(!!downloaded_exe_path);
+  return InstallNewVersion(dst, downloaded_exe_path.value());
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
+  std::optional<std::string> downloaded_exe_path;
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
@@ -315,8 +395,10 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
           return false;
         }
 
-        if (!HandleGithubRelease(json_data["assets"],
-                                 {system_info->os + "-" + system_info->arch})) {
+        if (downloaded_exe_path = HandleGithubRelease(
+                json_data["assets"],
+                {system_info->os + "-" + system_info->arch});
+            !downloaded_exe_path) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
@@ -333,10 +415,7 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
     return false;
   }
 
-  // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src =
-      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
@@ -347,11 +426,14 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
       CTL_WRN(e.what());
     }
   });
-  return ReplaceBinaryInflight(src, dst);
+
+  assert(!!downloaded_exe_path);
+  return InstallNewVersion(dst, downloaded_exe_path.value());
+  ;
 }
 
-bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
-                                       const std::string& os_arch) {
+std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
+    const nlohmann::json& assets, const std::string& os_arch) {
   std::string matched_variant = "";
   for (auto& asset : assets) {
     auto asset_name = asset["name"].get<std::string>();
@@ -365,7 +447,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
   }
   if (matched_variant.empty()) {
     CLI_LOG_ERROR("No variant found for " << os_arch);
-    return false;
+    return std::nullopt;
   }
   CTL_INF("Matched variant: " << matched_variant);
 
@@ -384,7 +466,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
         }
       } catch (const std::filesystem::filesystem_error& e) {
         CLI_LOG_ERROR("Failed to create directories: " << e.what());
-        return false;
+        return std::nullopt;
       }
       auto download_task{DownloadTask{.id = "cortex",
                                       .type = DownloadType::Cortex,
@@ -400,22 +482,16 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
             CTL_INF("Downloaded engine path: "
                     << finishedTask.items[0].localPath.string());
 
-            auto extract_path =
-                finishedTask.items[0].localPath.parent_path().parent_path();
-
-            archive_utils::ExtractArchive(
-                finishedTask.items[0].localPath.string(),
-                extract_path.string());
-
             CTL_INF("Finished!");
           });
       if (result.has_error()) {
         CLI_LOG_ERROR("Failed to download: " << result.error());
+        return std::nullopt;
       }
-      break;
+      return local_path.string();
     }
   }
-  return true;
+  return std::nullopt;
 }
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
@@ -425,11 +501,12 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   // Download file
   std::string version = v.empty() ? "latest" : v;
   std::string os_arch{system_info->os + "-" + system_info->arch};
+  std::string installer_name = GetNightlyInstallerName(version, os_arch);
   const char* paths[] = {
       "cortex",
       version.c_str(),
       os_arch.c_str(),
-      kNightlyFileName,
+      installer_name.c_str(),
   };
   std::vector<std::string> path_list(paths, std::end(paths));
   auto url_obj = url_parser::Url{
@@ -438,7 +515,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       .pathParams = path_list,
   };
 
-  CTL_INF("Engine release path: " << url_parser::FromUrl(url_obj));
+  CTL_INF("Cortex release path: " << url_parser::FromUrl(url_obj));
 
   std::filesystem::path localPath =
       std::filesystem::temp_directory_path() / "cortex" / path_list.back();
@@ -462,14 +539,8 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
   auto result = download_service_->AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
-        CTL_INF("Downloaded engine path: "
+        CTL_INF("Downloaded cortex path: "
                 << finishedTask.items[0].localPath.string());
-
-        auto extract_path =
-            finishedTask.items[0].localPath.parent_path().parent_path();
-
-        archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
-                                      extract_path.string());
 
         CTL_INF("Finished!");
       });
@@ -478,10 +549,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
     return false;
   }
 
-  // Replace binary file
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
-  auto src =
-      std::filesystem::temp_directory_path() / "cortex" / GetCortexBinary();
   auto dst = executable_path / GetCortexBinary();
   utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
@@ -492,6 +560,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       CTL_WRN(e.what());
     }
   });
-  return ReplaceBinaryInflight(src, dst);
+
+  return InstallNewVersion(dst, localPath.string());
 }
 }  // namespace commands

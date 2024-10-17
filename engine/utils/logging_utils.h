@@ -7,19 +7,14 @@ inline bool log_verbose = false;
 
 // Only use trantor log
 #define CTL_DBG(msg)  \
-  if (!log_verbose) { \
-    LOG_DEBUG << msg; \
-  }
+  LOG_DEBUG << msg; 
+  
 
 #define CTL_INF(msg)  \
-  if (!log_verbose) { \
-    LOG_INFO << msg;  \
-  }
+  LOG_INFO << msg; 
 
 #define CTL_WRN(msg)  \
-  if (!log_verbose) { \
-    LOG_WARN << msg;  \
-  }
+  LOG_WARN << msg;  
 
 // Use std::cout if not verbose, use trantor log if verbose
 #define CTL_ERR(msg) LOG_ERROR << msg;

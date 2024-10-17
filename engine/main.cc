@@ -1,7 +1,6 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <memory>
-#include "controllers/command_line_parser.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
 #include "controllers/models.h"
@@ -33,7 +32,7 @@
 #error "Unsupported platform!"
 #endif
 
-void RunServer() {
+void RunServer(std::optional<int> port) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   signal(SIGINT, SIG_IGN);
 #elif defined(_WIN32)
@@ -44,6 +43,11 @@ void RunServer() {
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
+  if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
+    auto config_path = file_manager_utils::GetConfigurationPath();
+    config.apiServerPort = std::to_string(*port);
+    config_yaml_utils::DumpYamlConfig(config, config_path.string());
+  }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
 
@@ -118,16 +122,18 @@ int main(int argc, char* argv[]) {
   if (system_info->arch == system_info_utils::kUnsupported ||
       system_info->os == system_info_utils::kUnsupported) {
     CLI_LOG_ERROR("Unsupported OS or architecture: " << system_info->os << ", "
-                                               << system_info->arch);
+                                                     << system_info->arch);
     return 1;
   }
 
+  std::optional<int> server_port;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
-
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    } else if (strcmp(argv[i], "--port") == 0) {
+      server_port = std::stoi(argv[i + 1]);
     }
   }
 
@@ -165,34 +171,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (argc > 1 && strcmp(argv[1], "--start-server") == 0) {
-    RunServer();
-    return 0;
-  }
-
-  bool verbose = false;
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "--verbose") == 0) {
-      verbose = true;
-    }
-  }
-  trantor::FileLogger asyncFileLogger;
-  if (!verbose) {
-    auto config = file_manager_utils::GetCortexConfig();
-    std::filesystem::create_directories(
-        std::filesystem::path(config.logFolderPath) /
-        std::filesystem::path(cortex_utils::logs_folder));
-    asyncFileLogger.setFileName(config.logFolderPath + "/" +
-                                cortex_utils::logs_cli_base_name);
-    asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
-    asyncFileLogger.startLogging();
-    trantor::Logger::setOutputFunction(
-        [&](const char* msg, const uint64_t len) {
-          asyncFileLogger.output_(msg, len);
-        },
-        [&]() { asyncFileLogger.flush(); });
-  }
-  CommandLineParser clp;
-  clp.SetupCommand(argc, argv);
+  RunServer(server_port);
   return 0;
 }
