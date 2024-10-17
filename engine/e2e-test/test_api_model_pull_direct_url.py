@@ -22,7 +22,6 @@ class TestApiModelPullDirectUrl:
         yield
 
         # Teardown
-        stop_server()
         run(
             "Delete model",
             [
@@ -31,6 +30,7 @@ class TestApiModelPullDirectUrl:
                 "TheBloke:TinyLlama-1.1B-Chat-v0.3-GGUF:tinyllama-1.1b-chat-v0.3.Q2_K.gguf",
             ],
         )
+        stop_server()        
 
     def test_model_pull_with_direct_url_should_be_success(self):
         myobj = {
