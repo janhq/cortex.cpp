@@ -55,15 +55,15 @@ std::string GetNightlyInstallerName(const std::string& v,
 // C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
 std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
-  return "SKIP_POSTINSTALL=true && sudo installer -pkg " + exe_path +
-         " -target /";
+  return "touch /var/tmp/cortex_installer_skip_postinstall && sudo installer -pkg " + exe_path +
+         " -target / && rm /var/tmp/cortex_installer_skip_postinstall";
 #elif defined(__linux__)
   return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y "
          "--allow-downgrades " +
          exe_path;
 #else
   return "start /wait \"\" " + exe_path +
-         " /SkipPostInstall /VERYSILENT /SUPPRESSMSGBOXES /NORESTART";
+         " /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SkipPostInstall";
 #endif
 }
 
