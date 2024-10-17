@@ -1,6 +1,6 @@
 #include <memory>
 #include "commands/cortex_upd_cmd.h"
-#include "controllers/command_line_parser.h"
+#include "command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/download_service.h"
 #include "services/model_service.h"

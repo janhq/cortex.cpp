@@ -70,13 +70,12 @@ find_package(LibArchive REQUIRED)
 find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
-find_package(eventpp CONFIG REQUIRED)
 find_package(Trantor CONFIG REQUIRED)
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_logger.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../controllers/command_line_parser.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/command_line_parser.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/download_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/engine_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
@@ -92,7 +91,6 @@ target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
 target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenSSL::Crypto yaml-cpp::yaml-cpp
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
-target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
 target_link_libraries(${TARGET_NAME} PRIVATE Trantor::Trantor)
 
 # ##############################################################################
@@ -108,16 +106,15 @@ else()
   message(STATUS "use c++20")
 endif()
 
-# aux_source_directory(../controllers CTL_SRC)
-# aux_source_directory(../services SERVICES_SRC)
 aux_source_directory(../common COMMON_SRC)
 aux_source_directory(../models MODEL_SRC)
 aux_source_directory(../cortex-common CORTEX_COMMON)
 aux_source_directory(../config CONFIG_SRC)
-aux_source_directory(../commands COMMANDS_SRC)
+aux_source_directory(commands COMMANDS_SRC)
 aux_source_directory(../database DB_SRC)
  
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.. )
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC})
 

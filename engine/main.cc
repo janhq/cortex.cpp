@@ -1,7 +1,6 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <memory>
-#include "controllers/command_line_parser.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
 #include "controllers/models.h"
