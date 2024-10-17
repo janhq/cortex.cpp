@@ -287,7 +287,7 @@ void ModelUpdCmd::UpdateConfig(Json::Value& data, const std::string& key,
           {"created",
            [this](Json::Value &data, const std::string& k, const std::string& v) {
              UpdateNumericField(k, v, [&data](float f) {
-               data["created"] = static_cast<std::size_t>(f);
+               data["created"] = static_cast<uint64_t>(f);
              });
            }},
       };
