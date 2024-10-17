@@ -23,11 +23,8 @@ inline bool log_verbose = false;
 
 // Use std::cout if not verbose, use trantor log if verbose
 #define CTL_ERR(msg)  \
-  if (log_verbose) {  \
-    LOG_ERROR << msg; \
-  } else {            \
-    LOG_ERROR << msg; \
-  }
+    LOG_ERROR << msg; 
+
 
 #define CLI_LOG(msg)               \
   if (log_verbose) {               \
