@@ -1,6 +1,6 @@
 #include <memory>
-#include "commands/cortex_upd_cmd.h"
 #include "command_line_parser.h"
+#include "commands/cortex_upd_cmd.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/download_service.h"
 #include "services/model_service.h"
@@ -29,6 +29,47 @@
 #error "Unsupported platform!"
 #endif
 
+void RemoveBinaryTempFileIfExists() {
+  auto temp =
+      file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
+  if (std::filesystem::exists(temp)) {
+    try {
+      std::filesystem::remove(temp);
+    } catch (const std::exception& e) {
+      std::cerr << e.what() << '\n';
+    }
+  }
+}
+
+void SetupLogger(trantor::FileLogger& async_logger, bool verbose) {
+  if (!verbose) {
+    auto config = file_manager_utils::GetCortexConfig();
+    std::filesystem::create_directories(
+        std::filesystem::path(config.logFolderPath) /
+        std::filesystem::path(cortex_utils::logs_folder));
+    async_logger.setFileName(config.logFolderPath + "/" +
+                                cortex_utils::logs_cli_base_name);
+    async_logger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
+    async_logger.startLogging();
+    trantor::Logger::setOutputFunction(
+        [&](const char* msg, const uint64_t len) {
+          async_logger.output_(msg, len);
+        },
+        [&]() { async_logger.flush(); });
+  }
+}
+
+void InstallServer() {
+#if !defined(_WIN32)
+  if (getuid()) {
+    CLI_LOG("Error: Not root user. Please run with sudo.");
+    return 0;
+  }
+#endif
+  auto cuc = commands::CortexUpdCmd(std::make_shared<DownloadService>());
+  cuc.Exec({}, true /*force*/);
+}
+
 int main(int argc, char* argv[]) {
   // Stop the program if the system is not supported
   auto system_info = system_info_utils::GetSystemInfo();
@@ -39,6 +80,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  bool should_install_server = false;
+  bool verbose = false;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
@@ -47,29 +90,22 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if ((strcmp(argv[i], "--server") == 0) &&
                (strcmp(argv[i - 1], "update") == 0)) {
-#if !defined(_WIN32)
-      if (getuid()) {
-        CLI_LOG("Error: Not root user. Please run with sudo.");
-        return 0;
-      }
-#endif
-      auto cuc = commands::CortexUpdCmd(std::make_shared<DownloadService>());
-      cuc.Exec({}, true /*force*/);
-      return 0;
+      should_install_server = true;
+    } else if (strcmp(argv[i], "--verbose") == 0) {
+      verbose = true;
     }
   }
 
   { file_manager_utils::CreateConfigFileIfNotExist(); }
 
-  // Delete temporary file if it exists
-  auto temp =
-      file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
-  if (std::filesystem::exists(temp)) {
-    try {
-      std::filesystem::remove(temp);
-    } catch (const std::exception& e) {
-      std::cerr << e.what() << '\n';
-    }
+  RemoveBinaryTempFileIfExists();
+
+  trantor::FileLogger async_file_logger;
+  SetupLogger(async_file_logger, verbose);
+
+  if (should_install_server) {
+    InstallServer(); 
+    return 0;
   }
 
   // Check if server exists, if not notify to user to install server
@@ -85,49 +121,6 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  // Check if this process is for python execution
-  if (argc > 1) {
-    if (strcmp(argv[1], "--run_python_file") == 0) {
-      std::string py_home_path = (argc > 3) ? argv[3] : "";
-      std::unique_ptr<cortex_cpp::dylib> dl;
-      try {
-        std::string abs_path =
-            cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
-        dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
-      } catch (const cortex_cpp::dylib::load_error& e) {
-        LOG_ERROR << "Could not load engine: " << e.what();
-        return 1;
-      }
-
-      auto func = dl->get_function<CortexPythonEngineI*()>("get_engine");
-      auto e = func();
-      e->ExecutePythonFile(argv[0], argv[2], py_home_path);
-      return 0;
-    }
-  }
-
-  bool verbose = false;
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "--verbose") == 0) {
-      verbose = true;
-    }
-  }
-  trantor::FileLogger asyncFileLogger;
-  if (!verbose) {
-    auto config = file_manager_utils::GetCortexConfig();
-    std::filesystem::create_directories(
-        std::filesystem::path(config.logFolderPath) /
-        std::filesystem::path(cortex_utils::logs_folder));
-    asyncFileLogger.setFileName(config.logFolderPath + "/" +
-                                cortex_utils::logs_cli_base_name);
-    asyncFileLogger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
-    asyncFileLogger.startLogging();
-    trantor::Logger::setOutputFunction(
-        [&](const char* msg, const uint64_t len) {
-          asyncFileLogger.output_(msg, len);
-        },
-        [&]() { asyncFileLogger.flush(); });
-  }
   CommandLineParser clp;
   clp.SetupCommand(argc, argv);
   return 0;
