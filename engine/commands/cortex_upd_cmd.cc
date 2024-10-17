@@ -486,7 +486,7 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
         CTL_ERR("Failed to download: " << result.error());
         return std::nullopt;
       }
-      return local_path;
+      return local_path.string();
     }
   }
   return std::nullopt;
