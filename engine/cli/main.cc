@@ -1,6 +1,5 @@
 #include <memory>
 #include "commands/cortex_upd_cmd.h"
-#include "commands/cortex_upd_server_cmd.h"
 #include "controllers/command_line_parser.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/model_service.h"
@@ -68,8 +67,9 @@ int main(int argc, char* argv[]) {
       std::filesystem::path(exe);
   if (!std::filesystem::exists(server_binary_path)) {
     std::cout << CORTEX_CPP_VERSION
-              << " requires server binary, run xxx to install server"
-              << std::endl;
+              << " requires server binary, to install server, run: "
+              << commands::GetRole() << commands::GetCortexBinary()
+              << " update --server" << std::endl;
     return 0;
   }
 
