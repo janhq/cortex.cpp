@@ -88,7 +88,7 @@ bool InstallNewVersion(const std::filesystem::path& dst,
     CommandExecutor c(GetInstallCmd(exe_path));
     auto output = c.execute();
     if (!std::filesystem::exists(dst)) {
-      CTL_ERR("Something went wrong!");
+      CLI_LOG_ERROR("Something went wrong: could not execute command");
       restore_binary();
       return false;
     }
@@ -96,14 +96,14 @@ bool InstallNewVersion(const std::filesystem::path& dst,
     // delete temp
 #if !defined(_WIN32)
     if (unlink(temp.string().c_str()) != 0) {
-      CTL_ERR("Error deleting self: " << strerror(errno));
+      CLI_LOG_ERROR("Error deleting self: " << strerror(errno));
       restore_binary();
       return false;
     }
 #endif
 
   } catch (const std::exception& e) {
-    CTL_ERR("Something went wrong: " << e.what());
+    CLI_LOG_ERROR("Something went wrong: " << e.what());
     restore_binary();
     return false;
   }
@@ -446,7 +446,7 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
     CTL_INF(asset_name);
   }
   if (matched_variant.empty()) {
-    CTL_ERR("No variant found for " << os_arch);
+    CLI_LOG_ERROR("No variant found for " << os_arch);
     return std::nullopt;
   }
   CTL_INF("Matched variant: " << matched_variant);
@@ -465,7 +465,7 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
           std::filesystem::create_directories(local_path.parent_path());
         }
       } catch (const std::filesystem::filesystem_error& e) {
-        CTL_ERR("Failed to create directories: " << e.what());
+        CLI_LOG_ERROR("Failed to create directories: " << e.what());
         return std::nullopt;
       }
       auto download_task{DownloadTask{.id = "cortex",
@@ -485,7 +485,7 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
             CTL_INF("Finished!");
           });
       if (result.has_error()) {
-        CTL_ERR("Failed to download: " << result.error());
+        CLI_LOG_ERROR("Failed to download: " << result.error());
         return std::nullopt;
       }
       return local_path.string();
