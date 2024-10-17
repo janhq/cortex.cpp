@@ -12,11 +12,10 @@ namespace commands {
 #define CORTEX_VARIANT file_manager_utils::kProdVariant
 #endif
 constexpr const auto kNightlyHost = "delta.jan.ai";
-constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
 const std::string kCortexServerBinary = "cortex-server";
 constexpr const auto kBetaComp = "-rc";
-constexpr const auto kReleaseFormat = ".tar.gz";
+constexpr const auto kReleaseFormat = "network-installer";
 constexpr const auto kTimeoutCheckUpdate = std::chrono::milliseconds(1000);
 
 inline std::string GetRole() {
@@ -105,7 +104,7 @@ class CortexUpdCmd {
 
   bool GetStable(const std::string& v);
   bool GetBeta(const std::string& v);
-  bool HandleGithubRelease(const nlohmann::json& assets,
+  std::optional<std::string> HandleGithubRelease(const nlohmann::json& assets,
                            const std::string& os_arch);
   bool GetNightly(const std::string& v);
 };
