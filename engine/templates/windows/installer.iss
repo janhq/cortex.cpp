@@ -10,7 +10,6 @@ Compression=lzma
 SolidCompression=yes
 PrivilegesRequired=lowest
 AllowNoIcons=yes
-DisableDirPage=yes
 
 ; Define the languages section
 [Languages]
@@ -39,7 +38,20 @@ var
   ExpandedAppDir: String;
   CmdLine, CortexInstallCmd: String;
   ResultCode: Integer;
+  i: Integer;
+  SkipPostInstall: Boolean;
 begin
+  SkipPostInstall := False;
+  
+  // Loop through all parameters to check for /SkipPostInstall
+  for i := 1 to ParamCount do
+  begin
+    if ParamStr(i) = '/SkipPostInstall' then
+    begin
+      SkipPostInstall := True;
+    end;
+  end;
+
   ExpandedAppDir := ExpandConstant('{app}');
 
   // Set the maximum value for the progress bar to 100 (representing 100%)
@@ -53,11 +65,11 @@ begin
   CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
-  // Check if the parameter /SkipPostInstall is passed
-  if ParamStr(1) = '/SkipPostInstall' then
+  // If the /SkipPostInstall flag is set, exit after setting the PATH
+  if SkipPostInstall then
   begin
-    Log('Skipping post-install actions.');
-    Exit;  // Exit the procedure without doing anything
+    Log('Skipping post-install actions after setting the PATH.');
+    Exit;
   end;
 
   // Update status message for downloading llamacpp engine
