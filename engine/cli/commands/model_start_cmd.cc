@@ -19,6 +19,7 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
   Json::Value json_data;
   json_data["model"] = model_handle;
   auto data_str = json_data.toStyledString();
+  cli.set_read_timeout(std::chrono::seconds(60));
   auto res = cli.Post("/v1/models/start", httplib::Headers(), data_str.data(),
                       data_str.size(), "application/json");
   if (res) {
