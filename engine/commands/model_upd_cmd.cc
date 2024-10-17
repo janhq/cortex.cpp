@@ -1,4 +1,7 @@
 #include "model_upd_cmd.h"
+#include "httplib.h"
+
+#include "server_start_cmd.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 
@@ -8,280 +11,305 @@ ModelUpdCmd::ModelUpdCmd(std::string model_handle)
     : model_handle_(std::move(model_handle)) {}
 
 void ModelUpdCmd::Exec(
+    const std::string& host, int port,
     const std::unordered_map<std::string, std::string>& options) {
-  namespace fs = std::filesystem;
-  namespace fmu = file_manager_utils;
-  try {
-    cortex::db::Models modellist_handler;
-    auto model_entry = modellist_handler.GetModelInfo(model_handle_);
-    if (model_entry.has_error()) {
-      CLI_LOG("Error: " + model_entry.error());
+  // Start server if server is not started yet
+  if (!commands::IsServerAlive(host, port)) {
+    CLI_LOG("Starting server ...");
+    commands::ServerStartCmd ssc;
+    if (!ssc.Exec(host, port)) {
       return;
     }
-    auto yaml_fp = fmu::ToAbsoluteCortexDataPath(
-        fs::path(model_entry.value().path_to_model_yaml));
-    yaml_handler_.ModelConfigFromFile(yaml_fp.string());
-    model_config_ = yaml_handler_.GetModelConfig();
+  }
 
-    for (const auto& [key, value] : options) {
-      if (!value.empty()) {
-        UpdateConfig(key, value);
-      }
+  httplib::Client cli(host + ":" + std::to_string(port));
+  Json::Value json_data;
+  for (const auto& [key, value] : options) {
+    if (!value.empty()) {
+      UpdateConfig(json_data, key, value);
     }
-
-    yaml_handler_.UpdateModelConfig(model_config_);
-    yaml_handler_.WriteYamlFile(yaml_fp.string());
-    CLI_LOG("Successfully updated model ID '" + model_handle_ + "'!");
-  } catch (const std::exception& e) {
-    CLI_LOG("Failed to update model with model ID '" + model_handle_ +
-            "': " + e.what());
+  }
+  auto data_str = json_data.toStyledString();
+  auto res = cli.Patch("/v1/models/" + model_handle_, httplib::Headers(),
+                       data_str.data(), data_str.size(), "application/json");
+  if (res) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      CLI_LOG("Successfully updated model ID '" + model_handle_ + "'!");
+      return;
+    } else {
+      CTL_ERR("Model failed to update with status code: " << res->status);
+      return;
+    }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    return;
   }
 }
 
-void ModelUpdCmd::UpdateConfig(const std::string& key,
+void ModelUpdCmd::UpdateConfig(Json::Value& data, const std::string& key,
                                const std::string& value) {
   static const std::unordered_map<
       std::string,
-      std::function<void(ModelUpdCmd*, const std::string&, const std::string&)>>
+      std::function<void(Json::Value &, const std::string&, const std::string&)>>
       updaters = {
           {"name",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.name = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["name"] = v;
            }},
           {"model",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.model = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["model"] = v;
            }},
           {"version",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.version = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["version"] = v;
            }},
           {"engine",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.engine = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["engine"] = v;
            }},
           {"prompt_template",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.prompt_template = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["prompt_template"] = v;
            }},
           {"system_template",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.system_template = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["system_template"] = v;
            }},
           {"user_template",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.user_template = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["user_template"] = v;
            }},
           {"ai_template",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.ai_template = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["ai_template"] = v;
            }},
           {"os",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.os = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["os"] = v;
            }},
           {"gpu_arch",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.gpu_arch = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["gpu_arch"] = v;
            }},
           {"quantization_method",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.quantization_method = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["quantization_method"] = v;
            }},
           {"precision",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.precision = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["precision"] = v;
            }},
           {"trtllm_version",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.trtllm_version = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["trtllm_version"] = v;
            }},
           {"object",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.object = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["object"] = v;
            }},
           {"owned_by",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.owned_by = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["owned_by"] = v;
            }},
           {"grammar",
-           [](ModelUpdCmd* self, const std::string&, const std::string& v) {
-             self->model_config_.grammar = v;
+           [](Json::Value &data, const std::string&, const std::string& v) {
+             data["grammar"] = v;
            }},
-          {"stop", &ModelUpdCmd::UpdateVectorField},
-          {"files", &ModelUpdCmd::UpdateVectorField},
+          {"stop", [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateVectorField(
+                 k, v, [&data](const std::vector<std::string>& stops) { 
+                  Json::Value d(Json::arrayValue);
+                  for (auto const& s: stops) {
+                    d.append(s);
+                  }
+                  data["stop"] = d; 
+                  });
+           }},
+          {"files", [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateVectorField(
+                 k, v, [&data](const std::vector<std::string>& fs) { 
+                  Json::Value d(Json::arrayValue);
+                  for (auto const& f: fs) {
+                    d.append(f);
+                  }
+                  data["files"] = d; 
+                  });
+           }},
           {"top_p",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(
-                 k, v, [self](float f) { self->model_config_.top_p = f; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(
+                 k, v, [&data](float f) { data["top_p"] = f; });
            }},
           {"temperature",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.temperature = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["temperature"] = f;
              });
            }},
           {"frequency_penalty",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.frequency_penalty = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["frequency_penalty"] = f;
              });
            }},
           {"presence_penalty",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.presence_penalty = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["presence_penalty"] = f;
              });
            }},
           {"dynatemp_range",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.dynatemp_range = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["dynatemp_range"] = f;
              });
            }},
           {"dynatemp_exponent",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.dynatemp_exponent = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["dynatemp_exponent"] = f;
              });
            }},
           {"min_p",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(
-                 k, v, [self](float f) { self->model_config_.min_p = f; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(
+                 k, v, [&data](float f) { data["min_p"] = f; });
            }},
           {"tfs_z",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(
-                 k, v, [self](float f) { self->model_config_.tfs_z = f; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(
+                 k, v, [&data](float f) { data["tfs_z"] = f; });
            }},
           {"typ_p",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(
-                 k, v, [self](float f) { self->model_config_.typ_p = f; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(
+                 k, v, [&data](float f) { data["typ_p"] = f; });
            }},
           {"repeat_penalty",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.repeat_penalty = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["repeat_penalty"] = f;
              });
            }},
           {"mirostat_tau",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.mirostat_tau = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["mirostat_tau"] = f;
              });
            }},
           {"mirostat_eta",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.mirostat_eta = f;
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["mirostat_eta"] = f;
              });
            }},
           {"max_tokens",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.max_tokens = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["max_tokens"] = static_cast<int>(f);
              });
            }},
           {"ngl",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.ngl = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["ngl"] = static_cast<int>(f);
              });
            }},
           {"ctx_len",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.ctx_len = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["ctx_len"] = static_cast<int>(f);
              });
            }},
           {"tp",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.tp = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["tp"] = static_cast<int>(f);
              });
            }},
           {"seed",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.seed = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["seed"] = static_cast<int>(f);
              });
            }},
           {"top_k",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.top_k = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["top_k"] = static_cast<int>(f);
              });
            }},
           {"repeat_last_n",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.repeat_last_n = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["repeat_last_n"] = static_cast<int>(f);
              });
            }},
           {"n_probs",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.n_probs = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["n_probs"] = static_cast<int>(f);
              });
            }},
           {"min_keep",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.min_keep = static_cast<int>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["min_keep"] = static_cast<int>(f);
              });
            }},
           {"stream",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateBooleanField(
-                 k, v, [self](bool b) { self->model_config_.stream = b; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateBooleanField(
+                 k, v, [&data](bool b) { data["stream"] = b; });
            }},
           {"text_model",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateBooleanField(
-                 k, v, [self](bool b) { self->model_config_.text_model = b; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateBooleanField(
+                 k, v, [&data](bool b) { data["text_model"] = b; });
            }},
           {"mirostat",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateBooleanField(
-                 k, v, [self](bool b) { self->model_config_.mirostat = b; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateBooleanField(
+                 k, v, [&data](bool b) { data["mirostat"] = b; });
            }},
           {"penalize_nl",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateBooleanField(
-                 k, v, [self](bool b) { self->model_config_.penalize_nl = b; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateBooleanField(
+                 k, v, [&data](bool b) { data["penalize_nl"] = b; });
            }},
           {"ignore_eos",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateBooleanField(
-                 k, v, [self](bool b) { self->model_config_.ignore_eos = b; });
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateBooleanField(
+                 k, v, [&data](bool b) { data["ignore_eos"] = b; });
            }},
           {"created",
-           [](ModelUpdCmd* self, const std::string& k, const std::string& v) {
-             self->UpdateNumericField(k, v, [self](float f) {
-               self->model_config_.created = static_cast<std::size_t>(f);
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["created"] = static_cast<uint64_t>(f);
              });
            }},
       };
 
   if (auto it = updaters.find(key); it != updaters.end()) {
-    it->second(this, key, value);
-    LogUpdate(key, value);
+    it->second(data, key, value);
+    CLI_LOG("Updated " << key << " to: " << value);
   } else {
     CLI_LOG("Warning: Unknown configuration key '" << key << "' ignored.");
   }
 }
 
-void ModelUpdCmd::UpdateVectorField(const std::string& key,
-                                    const std::string& value) {
+void ModelUpdCmd::UpdateVectorField(
+    const std::string& key, const std::string& value,
+    std::function<void(const std::vector<std::string>&)> setter) {
   std::vector<std::string> tokens;
   std::istringstream iss(value);
   std::string token;
   while (std::getline(iss, token, ',')) {
     tokens.push_back(token);
   }
-  model_config_.stop = tokens;
+  setter(tokens);
 }
 
 void ModelUpdCmd::UpdateNumericField(const std::string& key,
@@ -301,9 +329,4 @@ void ModelUpdCmd::UpdateBooleanField(const std::string& key,
   bool boolValue = (value == "true" || value == "1");
   setter(boolValue);
 }
-
-void ModelUpdCmd::LogUpdate(const std::string& key, const std::string& value) {
-  CLI_LOG("Updated " << key << " to: " << value);
-}
-
 }  // namespace commands

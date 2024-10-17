@@ -6,6 +6,7 @@
 #include <mutex>
 #include <optional>
 #include <ostream>
+#include <utility>
 #include "download_service.h"
 #include "utils/format_utils.h"
 #include "utils/huggingface_utils.h"
@@ -261,7 +262,7 @@ void DownloadService::WorkerThread() {
 
 void DownloadService::ProcessTask(DownloadTask& task) {
   CTL_INF("Processing task: " + task.id);
-  std::vector<CURL*> task_handles;
+  std::vector<std::pair<CURL*, FILE*>> task_handles;
 
   downloading_data_ = std::make_shared<DownloadingData>(DownloadingData{
       .item_id = "",
@@ -270,7 +271,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
   });
 
   for (auto& item : task.items) {
-    auto handle = curl_easy_init();
+    CURL* handle = curl_easy_init();
     if (handle == nullptr) {
       // skip the task
       CTL_ERR("Failed to init curl!");
@@ -296,7 +297,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     curl_easy_setopt(handle, CURLOPT_XFERINFODATA, downloading_data_.get());
 
     curl_multi_add_handle(multi_handle_, handle);
-    task_handles.push_back(handle);
+    task_handles.push_back(std::make_pair(handle, file));
     CTL_INF("Adding item to multi curl: " + item.ToString());
   }
 
@@ -322,15 +323,24 @@ void DownloadService::ProcessTask(DownloadTask& task) {
 
   if (stop_flag_) {
     CTL_INF("Download service is stopping..");
+
+    // try to close file
+    for (auto pair : task_handles) {
+      fclose(pair.second);
+    }
+
     return;
   }
 
   ProcessCompletedTransfers();
-  for (auto handle : task_handles) {
-    curl_multi_remove_handle(multi_handle_, handle);
-    curl_easy_cleanup(handle);
-    downloading_data_.reset();
+  for (auto pair : task_handles) {
+    curl_multi_remove_handle(multi_handle_, pair.first);
+    curl_easy_cleanup(pair.first);
+    fclose(pair.second);
   }
+  downloading_data_.reset();
+
+  RemoveTaskFromStopList(task.id);
 
   // if terminate by API calling and not from process stopping, we emit
   // DownloadStopped event
@@ -340,7 +350,6 @@ void DownloadService::ProcessTask(DownloadTask& task) {
         DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
                       .download_task_ = task});
   } else {
-    RemoveTaskFromStopList(task.id);
     CTL_INF("Executing callback..");
     ExecuteCallback(task);
 
@@ -351,13 +360,13 @@ void DownloadService::ProcessTask(DownloadTask& task) {
   }
 }
 
-cpp::result<void, std::string> DownloadService::StopTask(
+cpp::result<std::string, std::string> DownloadService::StopTask(
     const std::string& task_id) {
   std::lock_guard<std::mutex> lock(stop_mutex_);
 
   tasks_to_stop_.insert(task_id);
   CTL_INF("Added task to stop list: " << task_id);
-  return {};
+  return task_id;
 }
 
 void DownloadService::ProcessCompletedTransfers() {

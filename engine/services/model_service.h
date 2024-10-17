@@ -17,7 +17,8 @@ class ModelService {
    */
   cpp::result<std::string, std::string> DownloadModel(const std::string& input);
 
-  cpp::result<void, std::string> AbortDownloadModel(const std::string& task_id);
+  cpp::result<std::string, std::string> AbortDownloadModel(
+      const std::string& task_id);
 
   cpp::result<std::string, std::string> DownloadModelFromCortexso(
       const std::string& name, const std::string& branch = "main");

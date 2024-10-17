@@ -82,7 +82,8 @@ void Models::AbortPullModel(
     callback(resp);
   } else {
     Json::Value ret;
-    ret["message"] = "Task stopped!";
+    ret["message"] = "Download stopped successfully";
+    ret["taskId"] = result.value();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -114,7 +115,9 @@ void Models::ListModel(
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
-        obj["id"] = model_config.model;
+        obj["id"] = model_entry.model;
+        obj["model_alias"] = model_entry.model_alias;
+        obj["model"] = model_entry.model;
         data.append(std::move(obj));
         yaml_handler.Reset();
       } catch (const std::exception& e) {
@@ -439,6 +442,29 @@ void Models::StopModel(const HttpRequestPtr& req,
   } else {
     Json::Value ret;
     ret["message"] = "Stopped successfully!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::GetModelStatus(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& model_id) {
+  auto config = file_manager_utils::GetCortexConfig();
+
+  auto result = model_service_->GetModelStatus(
+      config.apiServerHost, std::stoi(config.apiServerPort), model_id);
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+  } else {
+    Json::Value ret;
+    ret["message"] = "Model is running";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
