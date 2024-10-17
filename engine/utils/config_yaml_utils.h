@@ -18,7 +18,7 @@ struct CortexConfig {
   std::string apiServerPort;
   uint64_t checkedForUpdateAt;
   std::string latestRelease;
-  std::string hfToken;
+  std::string huggingFaceToken;
 };
 
 const std::string kCortexFolderName = "cortexcpp";
@@ -48,7 +48,7 @@ inline void DumpYamlConfig(const CortexConfig& config,
     node["apiServerPort"] = config.apiServerPort;
     node["checkedForUpdateAt"] = config.checkedForUpdateAt;
     node["latestRelease"] = config.latestRelease;
-    node["hfToken"] = config.hfToken;
+    node["huggingFaceToken"] = config.huggingFaceToken;
 
     out_file << node;
     out_file.close();
@@ -73,7 +73,7 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["apiServerPort"] || !node["checkedForUpdateAt"] ||
          !node["latestRelease"] || !node["logLlamaCppPath"] ||
          !node["logOnnxPath"] || !node["logTensorrtLLMPath"] ||
-         !node["hfToken"]);
+         !node["huggingFaceToken"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -105,7 +105,7 @@ inline CortexConfig FromYaml(const std::string& path,
         .latestRelease = node["latestRelease"]
                              ? node["latestRelease"].as<std::string>()
                              : default_cfg.latestRelease,
-        .hfToken = node["hfToken"] ? node["hfToken"].as<std::string>() : "",
+        .huggingFaceToken = node["huggingFaceToken"] ? node["huggingFaceToken"].as<std::string>() : "",
     };
     if (should_update_config) {
       DumpYamlConfig(config, path);

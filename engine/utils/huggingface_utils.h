@@ -49,7 +49,7 @@ struct HuggingFaceModelRepoInfo {
 };
 
 inline std::optional<std::string> GetHuggingFaceToken() {
-  auto const& token = file_manager_utils::GetCortexConfig().hfToken;
+  auto const& token = file_manager_utils::GetCortexConfig().huggingFaceToken;
   if (token.empty())
     return std::nullopt;
   return token;
