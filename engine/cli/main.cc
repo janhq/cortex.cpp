@@ -63,7 +63,7 @@ void InstallServer() {
 #if !defined(_WIN32)
   if (getuid()) {
     CLI_LOG("Error: Not root user. Please run with sudo.");
-    return 0;
+    return;
   }
 #endif
   auto cuc = commands::CortexUpdCmd(std::make_shared<DownloadService>());
