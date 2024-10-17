@@ -70,18 +70,18 @@ pre-package:
 ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex;"
 	@powershell -Command "cp build\cortex-server.exe .\cortex\$(DESTINATION_BINARY_SERVER_NAME).exe;"
-	@powershell -Command "cp build\cli\cortex.exe .\cortex\$(DESTINATION_BINARY_NAME).exe;"
+	@powershell -Command "cp build\cortex.exe .\cortex\$(DESTINATION_BINARY_NAME).exe;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
 else ifeq ($(shell uname -s),Linux)
 	@mkdir -p cortex; \
 	cp build/cortex-server cortex/$(DESTINATION_BINARY_SERVER_NAME); \
-	cp build/cli/cortex cortex/$(DESTINATION_BINARY_NAME);
+	cp build/cortex cortex/$(DESTINATION_BINARY_NAME);
 else
 	@mkdir -p cortex; \
 	cp build/cortex-server cortex/$(DESTINATION_BINARY_SERVER_NAME); \
-	cp build/cli/cortex cortex/$(DESTINATION_BINARY_NAME);
+	cp build/cortex cortex/$(DESTINATION_BINARY_NAME);
 endif
 
 codesign-binary:
