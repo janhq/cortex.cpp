@@ -31,11 +31,11 @@ void ModelAliasCmd::Exec(const std::string& host, int port,
       CLI_LOG("Successfully set model alias '" + model_alias +
                 "' for modeID '" + model_handle + "'.");
     } else {
-      CTL_ERR("Model failed to set alias with status code: " << res->status);
+      CLI_LOG_ERROR("Model failed to set alias with status code: " << res->status);
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
   }
 }
 

@@ -143,7 +143,7 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
     // Get permissions of the executable file
     struct stat dst_file_stat;
     if (stat(dst.string().c_str(), &dst_file_stat) != 0) {
-      CTL_ERR("Error getting permissions of executable file: " << dst.string());
+      CLI_LOG_ERROR("Error getting permissions of executable file: " << dst.string());
       return false;
     }
 
@@ -159,14 +159,14 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
 #if !defined(_WIN32)
     // Set permissions of the executable file
     if (chmod(dst.string().c_str(), dst_file_stat.st_mode) != 0) {
-      CTL_ERR("Error setting permissions of executable file: " << dst.string());
+      CLI_LOG_ERROR("Error setting permissions of executable file: " << dst.string());
       restore_binary();
       return false;
     }
 
     // Set owner and group of the executable file
     if (chown(dst.string().c_str(), dst_file_owner, dst_file_group) != 0) {
-      CTL_ERR(
+      CLI_LOG_ERROR(
           "Error setting owner and group of executable file: " << dst.string());
       restore_binary();
       return false;
@@ -174,13 +174,13 @@ bool ReplaceBinaryInflight(const std::filesystem::path& src,
 
     // Remove cortex_temp
     if (unlink(temp.string().c_str()) != 0) {
-      CTL_ERR("Error deleting self: " << strerror(errno));
+      CLI_LOG_ERROR("Error deleting self: " << strerror(errno));
       restore_binary();
       return false;
     }
 #endif
   } catch (const std::exception& e) {
-    CTL_ERR("Something went wrong: " << e.what());
+    CLI_LOG_ERROR("Something went wrong: " << e.what());
     restore_binary();
     return false;
   }
@@ -254,16 +254,16 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
-        CTL_ERR("JSON parse error: " << e.what());
+        CLI_LOG_ERROR("JSON parse error: " << e.what());
         return false;
       }
     } else {
-      CTL_ERR("HTTP error: " << res->status);
+      CLI_LOG_ERROR("HTTP error: " << res->status);
       return false;
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
     return false;
   }
 
@@ -320,16 +320,16 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
           return false;
         }
       } catch (const nlohmann::json::parse_error& e) {
-        CTL_ERR("JSON parse error: " << e.what());
+        CLI_LOG_ERROR("JSON parse error: " << e.what());
         return false;
       }
     } else {
-      CTL_ERR("HTTP error: " << res->status);
+      CLI_LOG_ERROR("HTTP error: " << res->status);
       return false;
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
     return false;
   }
 
@@ -364,7 +364,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
     CTL_INF(asset_name);
   }
   if (matched_variant.empty()) {
-    CTL_ERR("No variant found for " << os_arch);
+    CLI_LOG_ERROR("No variant found for " << os_arch);
     return false;
   }
   CTL_INF("Matched variant: " << matched_variant);
@@ -383,7 +383,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
           std::filesystem::create_directories(local_path.parent_path());
         }
       } catch (const std::filesystem::filesystem_error& e) {
-        CTL_ERR("Failed to create directories: " << e.what());
+        CLI_LOG_ERROR("Failed to create directories: " << e.what());
         return false;
       }
       auto download_task{DownloadTask{.id = "cortex",
@@ -410,7 +410,7 @@ bool CortexUpdCmd::HandleGithubRelease(const nlohmann::json& assets,
             CTL_INF("Finished!");
           });
       if (result.has_error()) {
-        CTL_ERR("Failed to download: " << result.error());
+        CLI_LOG_ERROR("Failed to download: " << result.error());
       }
       break;
     }
@@ -447,7 +447,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
       std::filesystem::create_directories(localPath.parent_path());
     }
   } catch (const std::filesystem::filesystem_error& e) {
-    CTL_ERR("Failed to create directories: " << e.what());
+    CLI_LOG_ERROR("Failed to create directories: " << e.what());
     return false;
   }
   auto download_task =
@@ -474,7 +474,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
         CTL_INF("Finished!");
       });
   if (result.has_error()) {
-    CTL_ERR("Failed to download: " << result.error());
+    CLI_LOG_ERROR("Failed to download: " << result.error());
     return false;
   }
 
