@@ -123,7 +123,11 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
 
 cpp::result<bool, std::string> EngineService::InstallEngine(
     const std::string& engine, const std::string& version,
-    const std::string& src) {
+    const std::string& src, bool cpu_only) {
+  cpu_only_ = cpu_only;
+  if(cpu_only_) {
+    CTL_INF("Activated CPU only mode");
+  }
   auto ne = NormalizeEngine(engine);
   if (!src.empty()) {
     return UnzipEngine(ne, version, src);
@@ -156,12 +160,20 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
   // Loop through all files in the directory
   // 1. Push all engine variants to a list
   // 2. If cuda version is matched, extract it
+  // 3. If cpu_only, ignore cuda binaries
   if (std::filesystem::exists(path) && std::filesystem::is_directory(path)) {
     for (const auto& entry : std::filesystem::directory_iterator(path)) {
       CTL_INF("file path: " << entry.path().string());
       if (entry.is_regular_file() && (entry.path().extension() == ".tar.gz" ||
                                       entry.path().extension() == ".gz")) {
         CTL_INF("file name: " << entry.path().filename().string());
+        if (cpu_only_ && entry.path().filename().string().find("cuda") !=
+                             std::string::npos) {
+          CTL_INF("CPU only mode, ignore CUDA binary: "
+                  << entry.path().filename().string());
+          continue;
+        }
+        
         variants.push_back(entry.path().filename().string());
         if (std::string cf = entry.path().filename().string();
             cf == cuda_variant) {
@@ -352,7 +364,7 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine) {
   if (hw_inf_.sys_inf->os == "mac" || engine == kOnnxRepo ||
-      engine == kOnnxEngine) {
+      engine == kOnnxEngine || cpu_only_) {
     // mac and onnx engine does not require cuda toolkit
     return true;
   }
@@ -432,7 +444,7 @@ std::string EngineService::GetMatchedVariant(
         engine_matcher_utils::GetSuitableAvxVariant(hw_inf_.cpu_inf);
     matched_variant = engine_matcher_utils::Validate(
         variants, hw_inf_.sys_inf->os, hw_inf_.sys_inf->arch, suitable_avx,
-        hw_inf_.cuda_driver_version);
+        hw_inf_.cuda_driver_version, cpu_only_);
   }
   return matched_variant;
 }

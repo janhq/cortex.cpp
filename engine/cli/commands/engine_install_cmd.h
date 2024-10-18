@@ -11,7 +11,7 @@ class EngineInstallCmd {
       : engine_service_{EngineService(download_service)} {};
 
   void Exec(const std::string& engine, const std::string& version = "latest",
-            const std::string& src = "");
+            const std::string& src = "", bool cpu_only = false);
 
  private:
   EngineService engine_service_;

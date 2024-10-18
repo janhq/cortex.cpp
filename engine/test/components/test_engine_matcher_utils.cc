@@ -73,12 +73,12 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidateTensorrt) {
     auto windows_expect_matched_variant{cortex_tensorrt_variants[1]};
     auto linux_expect_matched_variant{cortex_tensorrt_variants[0]};
     auto windows{"windows"};
-    auto linux{"linux"};
+    auto lnx{"linux"};
     auto cuda_version{"12.4"};
     auto windows_result = engine_matcher_utils::ValidateTensorrtLlm(
         cortex_tensorrt_variants, windows, cuda_version);
     auto linux_result = engine_matcher_utils::ValidateTensorrtLlm(
-        cortex_tensorrt_variants, linux, cuda_version);
+        cortex_tensorrt_variants, lnx, cuda_version);
 
     EXPECT_EQ(windows_result, windows_expect_matched_variant);
     EXPECT_EQ(linux_result, linux_expect_matched_variant);
@@ -102,7 +102,8 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
     auto cuda_version{"12.4"};
 
     auto variant = engine_matcher_utils::Validate(
-        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
+        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version,
+        false /*cpu_only*/);
 
     EXPECT_EQ(
         variant,
@@ -116,7 +117,8 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
     auto cuda_version{""};
 
     auto variant = engine_matcher_utils::Validate(
-        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
+        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version,
+        false /*cpu_only*/);
 
     EXPECT_EQ(variant, "cortex.llamacpp-0.1.25-25.08.24-mac-amd64.tar.gz");
   }
@@ -128,10 +130,26 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
     auto cuda_version{"10"};
 
     auto variant = engine_matcher_utils::Validate(
-        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
+        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version,
+        false /*cpu_only*/);
 
     // fallback to no cuda version
     EXPECT_EQ(variant,
               "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2.tar.gz");
+  }
+
+  {
+    auto os{"windows"};
+    auto cpu_arch{"amd64"};
+    auto suitable_avx{"avx2"};
+    auto cuda_version{"12.4"};
+
+    auto variant = engine_matcher_utils::Validate(
+        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version,
+        true /*cpu_only*/);
+
+    EXPECT_EQ(
+        variant,
+        "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2.tar.gz");
   }
 }

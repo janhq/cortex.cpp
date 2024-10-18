@@ -20,8 +20,16 @@ void Engines::InstallEngine(
     return;
   }
 
+  auto engine_src = !req->getJsonObject()
+                        ? ""
+                        : (*(req->getJsonObject())).get("src", "").asString();
+  auto cpu_only = !req->getJsonObject()
+                      ? false
+                      : (*(req->getJsonObject())).get("cpu", false).asBool();
+
   auto version{"latest"};
-  auto result = engine_service_->InstallEngine(engine, version);
+  auto result =
+      engine_service_->InstallEngine(engine, version, engine_src, cpu_only);
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();
