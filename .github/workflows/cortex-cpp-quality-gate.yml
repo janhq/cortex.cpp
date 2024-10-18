@@ -106,6 +106,21 @@ jobs:
           cd engine
           make run-unit-tests
 
+      - name: Run setup config for macos
+        if: runner.os == 'macOS'
+        run: |
+          cd engine
+          ./build/cortex --version
+          sed -i '' 's/huggingFaceToken: ""/huggingFaceToken: "${{ secrets.HUGGINGFACE_TOKEN_READ }}"/' ~/.cortexrc
+
+      - name: Run setup config for linux
+        if: runner.os != 'macOS'
+        shell: bash
+        run: |
+          cd engine
+          ./build/cortex --version
+          sed -i 's/huggingFaceToken: ""/huggingFaceToken: "${{ secrets.HUGGINGFACE_TOKEN_READ }}"/' ~/.cortexrc
+
       - name: Run e2e tests
         if: runner.os != 'Windows' && github.event.pull_request.draft == false
         run: |
@@ -114,7 +129,7 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install pytest
-          python -m pip install requests          
+          python -m pip install requests
           python e2e-test/main.py
           rm build/cortex-nightly
           rm build/cortex-beta
@@ -129,7 +144,7 @@ jobs:
           cp build/cortex.exe build/cortex-beta.exe
           python -m pip install --upgrade pip
           python -m pip install pytest
-          python -m pip install requests          
+          python -m pip install requests
           python e2e-test/main.py
           rm build/cortex-nightly.exe
           rm build/cortex-beta.exe
