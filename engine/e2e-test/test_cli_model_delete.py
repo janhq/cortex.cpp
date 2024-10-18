@@ -1,22 +1,26 @@
 import pytest
 from test_runner import popen, run
-
+from test_runner import start_server, stop_server
 
 class TestCliModelDelete:
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
+
         # Pull model
 
-        # TODO: using pull with branch for easy testing tinyllama:gguf for example
-        popen(["pull", "tinyllama"], "1\n")
+        run("Pull model", ["pull", "tinyllama:gguf"], timeout=None,)
 
         yield
 
         # Teardown
         # Clean up
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
+        stop_server()
 
     def test_models_delete_should_be_successful(self):
         exit_code, output, error = run(
