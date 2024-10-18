@@ -386,8 +386,7 @@ void CommandLineParser::SetupEngineCommands() {
   });
   for (auto& engine : engine_service_.kSupportEngines) {
     std::string engine_name{engine};
-    EngineInstall(install_cmd, engine_name, cml_data_.engine_version,
-                  cml_data_.engine_src);
+    EngineInstall(install_cmd, engine_name);
   }
 
   auto uninstall_cmd =
@@ -471,25 +470,27 @@ void CommandLineParser::SetupSystemCommands() {
 }
 
 void CommandLineParser::EngineInstall(CLI::App* parent,
-                                      const std::string& engine_name,
-                                      std::string& version, std::string& src) {
+                                      const std::string& engine_name) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
   install_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                             " engines install " + engine_name + " [options]");
   install_engine_cmd->group(kEngineGroup);
 
-  install_engine_cmd->add_option("-v, --version", version,
+  install_engine_cmd->add_option("-v, --version", cml_data_.engine_version,
                                  "Engine version to download");
 
-  install_engine_cmd->add_option("-s, --source", src,
+  install_engine_cmd->add_option("-s, --source", cml_data_.engine_src,
                                  "Install engine by local path");
 
-  install_engine_cmd->callback([this, engine_name, &version, &src] {
+  install_engine_cmd->add_flag("--cpu", cml_data_.cpu_only, "CPU only mode");
+
+  install_engine_cmd->callback([this, engine_name] {
     if (std::exchange(executed_, true))
       return;
     try {
       commands::EngineInstallCmd(download_service_)
-          .Exec(engine_name, version, src);
+          .Exec(engine_name, cml_data_.engine_version, cml_data_.engine_src,
+                cml_data_.cpu_only);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
     }

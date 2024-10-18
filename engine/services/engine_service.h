@@ -45,7 +45,7 @@ class EngineService {
 
   cpp::result<bool, std::string> InstallEngine(
       const std::string& engine, const std::string& version = "latest",
-      const std::string& src = "");
+      const std::string& src = "", bool cpu_only = false);
 
   cpp::result<bool, std::string> UninstallEngine(const std::string& engine);
 
@@ -71,4 +71,5 @@ class EngineService {
     std::string cuda_driver_version;
   };
   HardwareInfo hw_inf_;
+  bool cpu_only_ = false;
 };

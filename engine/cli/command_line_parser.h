@@ -22,8 +22,7 @@ class CommandLineParser {
 
   void SetupSystemCommands();
 
-  void EngineInstall(CLI::App* parent, const std::string& engine_name,
-                     std::string& version, std::string& src);
+  void EngineInstall(CLI::App* parent, const std::string& engine_name);
 
   void EngineUninstall(CLI::App* parent, const std::string& engine_name);
 
@@ -48,6 +47,7 @@ class CommandLineParser {
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
+    bool cpu_only = false;
   };
   CmlData cml_data_;
   bool executed_ = false;
