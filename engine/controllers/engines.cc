@@ -23,9 +23,14 @@ void Engines::InstallEngine(
   auto engine_src = !req->getJsonObject()
                         ? ""
                         : (*(req->getJsonObject())).get("src", "").asString();
-  auto cpu_only = !req->getJsonObject()
-                      ? false
-                      : (*(req->getJsonObject())).get("cpu", false).asBool();
+  auto cpu_only = false;
+  if (auto o = req->getJsonObject(); !o) {
+    if ((*o)["cpu"].isArray()) {
+      cpu_only = true;
+    } else if ((*o)["cpu"].isBool()) {
+      cpu_only = (*o).get("cpu", false).asBool();
+    }
+  }
 
   auto version{"latest"};
   auto result =
