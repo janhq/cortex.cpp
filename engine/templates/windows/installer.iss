@@ -18,6 +18,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 ; Define the files to be installed
 [Files]
 Source: "cortex.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cortex-server.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "msvcp140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "vcruntime140_1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -37,7 +38,20 @@ var
   ExpandedAppDir: String;
   CmdLine, CortexInstallCmd: String;
   ResultCode: Integer;
+  i: Integer;
+  SkipPostInstall: Boolean;
 begin
+  SkipPostInstall := False;
+  
+  // Loop through all parameters to check for /SkipPostInstall
+  for i := 1 to ParamCount do
+  begin
+    if ParamStr(i) = '/SkipPostInstall' then
+    begin
+      SkipPostInstall := True;
+    end;
+  end;
+
   ExpandedAppDir := ExpandConstant('{app}');
 
   // Set the maximum value for the progress bar to 100 (representing 100%)
@@ -50,6 +64,13 @@ begin
   // Add {app} to PATH
   CmdLine := Format('setx PATH "%s;%%PATH%%"', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CmdLine, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // If the /SkipPostInstall flag is set, exit after setting the PATH
+  if SkipPostInstall then
+  begin
+    Log('Skipping post-install actions after setting the PATH.');
+    Exit;
+  end;
 
   // Update status message for downloading llamacpp engine
   WizardForm.StatusLabel.Caption := 'Downloading llama.cpp engine and dependencies ...';

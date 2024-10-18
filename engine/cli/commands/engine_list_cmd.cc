@@ -41,12 +41,12 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
         }
       }
     } else {
-      CTL_ERR("Failed to get engine list with status code: " << res->status);
+      CLI_LOG_ERROR("Failed to get engine list with status code: " << res->status);
       return false;
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
     return false;
   }
 

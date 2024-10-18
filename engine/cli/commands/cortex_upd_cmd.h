@@ -12,10 +12,10 @@ namespace commands {
 #define CORTEX_VARIANT file_manager_utils::kProdVariant
 #endif
 constexpr const auto kNightlyHost = "delta.jan.ai";
-constexpr const auto kNightlyFileName = "cortex-nightly.tar.gz";
 const std::string kCortexBinary = "cortex";
+const std::string kCortexServerBinary = "cortex-server";
 constexpr const auto kBetaComp = "-rc";
-constexpr const auto kReleaseFormat = ".tar.gz";
+constexpr const auto kReleaseFormat = "network-installer";
 constexpr const auto kTimeoutCheckUpdate = std::chrono::milliseconds(1000);
 
 inline std::string GetRole() {
@@ -44,6 +44,22 @@ inline std::string GetCortexBinary() {
     return has_exe ? kCortexBinary + "-beta.exe" : kCortexBinary + "-beta";
   } else {
     return has_exe ? kCortexBinary + ".exe" : kCortexBinary;
+  }
+}
+
+inline std::string GetCortexServerBinary() {
+#if defined(_WIN32)
+  constexpr const bool has_exe = true;
+#else
+  constexpr const bool has_exe = false;
+#endif
+  if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
+    return has_exe ? kCortexServerBinary + "-nightly.exe"
+                   : kCortexServerBinary + "-nightly";
+  } else if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
+    return has_exe ? kCortexServerBinary + "-beta.exe" : kCortexServerBinary + "-beta";
+  } else {
+    return has_exe ? kCortexServerBinary + ".exe" : kCortexServerBinary;
   }
 }
 
@@ -81,14 +97,14 @@ class CortexUpdCmd {
   explicit CortexUpdCmd(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service} {};
 
-  void Exec(const std::string& v);
+  void Exec(const std::string& v, bool force = false);
 
  private:
   std::shared_ptr<DownloadService> download_service_;
 
   bool GetStable(const std::string& v);
   bool GetBeta(const std::string& v);
-  bool HandleGithubRelease(const nlohmann::json& assets,
+  std::optional<std::string> HandleGithubRelease(const nlohmann::json& assets,
                            const std::string& os_arch);
   bool GetNightly(const std::string& v);
 };
