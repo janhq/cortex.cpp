@@ -151,8 +151,7 @@ inline void CreateConfigFileIfNotExist() {
       cortex_data_folder_path.empty()
           ? file_manager_utils::GetHomeDirectoryPath() /
                 default_data_folder_name
-          : std::filesystem::path(cortex_data_folder_path) /
-                default_data_folder_name;
+          : std::filesystem::path(cortex_data_folder_path);
   CLI_LOG("Default data folder path: " + defaultDataFolderPath.string());
 
   auto config = config_yaml_utils::CortexConfig{

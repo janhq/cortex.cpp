@@ -1,4 +1,4 @@
-#include "commands/cortex_upd_cmd.h"
+#include "cli/commands/cortex_upd_cmd.h"
 #include "gtest/gtest.h"
 
 namespace {
