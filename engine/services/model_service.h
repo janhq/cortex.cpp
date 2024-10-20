@@ -24,7 +24,8 @@ class ModelService {
       const std::string& name, const std::string& branch = "main");
 
   cpp::result<DownloadTask, std::string> DownloadModelFromCortexsoAsync(
-      const std::string& name, const std::string& branch = "main");
+      const std::string& name, const std::string& branch = "main",
+      std::optional<std::string> temp_model_id = std::nullopt);
 
   std::optional<config::ModelConfig> GetDownloadedModel(
       const std::string& modelId) const;
@@ -48,7 +49,7 @@ class ModelService {
   cpp::result<std::string, std::string> HandleUrl(const std::string& url);
 
   cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
-      const std::string& url);
+      const std::string& url, std::optional<std::string> temp_model_id);
 
  private:
   /**

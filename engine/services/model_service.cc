@@ -223,7 +223,7 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
 }
 
 cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
-    const std::string& url) {
+    const std::string& url, std::optional<std::string> temp_model_id) {
   auto url_obj = url_parser::FromUrlString(url);
 
   if (url_obj.host == kHuggingFaceHost) {
@@ -244,11 +244,15 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   }
 
   std::string huggingFaceHost{kHuggingFaceHost};
-  std::string unique_model_id{author + ":" + model_id + ":" + file_name};
-
   cortex::db::Models modellist_handler;
-  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
+  std::string unique_model_id = "";
+  if (temp_model_id.has_value()) {
+    unique_model_id = temp_model_id.value();
+  } else {
+    unique_model_id = author + ":" + model_id + ":" + file_name;
+  }
 
+  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
   if (model_entry.has_value()) {
     CLI_LOG("Model already downloaded: " << unique_model_id);
     return cpp::fail("Please delete the model before downloading again");
@@ -356,16 +360,28 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
 }
 
 cpp::result<DownloadTask, std::string>
-ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
-                                             const std::string& branch) {
+ModelService::DownloadModelFromCortexsoAsync(
+    const std::string& name, const std::string& branch,
+    std::optional<std::string> temp_model_id) {
 
   auto download_task = GetDownloadTask(name, branch);
   if (download_task.has_error()) {
     return cpp::fail(download_task.error());
   }
 
-  std::string model_id{name + ":" + branch};
-  auto on_finished = [&, model_id](const DownloadTask& finishedTask) {
+  cortex::db::Models modellist_handler;
+  std::string unique_model_id = "";
+  if (temp_model_id.has_value()) {
+    unique_model_id = temp_model_id.value();
+  } else {
+    unique_model_id = name + ":" + branch;
+  }
+
+  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
+  if (model_entry.has_value()) {
+    return cpp::fail("Please delete the model before downloading again");
+  }
+  auto on_finished = [&, unique_model_id](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
@@ -376,7 +392,8 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
     }
 
     if (model_yml_item == nullptr) {
-      CTL_WRN("model.yml not found in the downloaded files for " + model_id);
+      CTL_WRN("model.yml not found in the downloaded files for " +
+              unique_model_id);
       return;
     }
     auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
@@ -384,7 +401,7 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
-    mc.model = model_id;
+    mc.model = unique_model_id;
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
@@ -393,11 +410,11 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{.model = model_id,
+    cortex::db::ModelEntry model_entry{.model = unique_model_id,
                                        .author_repo_id = "cortexso",
                                        .branch_name = branch,
                                        .path_to_model_yaml = rel.string(),
-                                       .model_alias = model_id};
+                                       .model_alias = unique_model_id};
     auto result = modellist_utils_obj.AddModelEntry(model_entry);
     if (result.has_error()) {
       CTL_ERR("Error adding model to modellist: " + result.error());
@@ -405,9 +422,8 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
   };
 
   auto task = download_task.value();
-  task.id = model_id;
-
-  return download_service_->AddTask(download_task.value(), on_finished);
+  task.id = unique_model_id;
+  return download_service_->AddTask(task, on_finished);
 }
 
 cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(

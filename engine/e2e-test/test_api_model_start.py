@@ -12,8 +12,7 @@ class TestApiModelStart:
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
-
-        # TODO: using pull with branch for easy testing tinyllama:gguf for example
+        run("Install Engine", ["engines", "install", "llama-cpp"], timeout=None)
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
         run("Pull model", ["pull", "tinyllama:gguf"], timeout=None,)
 

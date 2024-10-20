@@ -1,5 +1,6 @@
 #include "database/models.h"
 #include <drogon/HttpTypes.h>
+#include <optional>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "models.h"
@@ -26,15 +27,22 @@ void Models::PullModel(const HttpRequestPtr& req,
     return;
   }
 
+  std::optional<std::string> desired_model_id = std::nullopt;
+  auto id = (*(req->getJsonObject())).get("id", "").asString();
+  if (!id.empty()) {
+    desired_model_id = id;
+  }
+
   auto handle_model_input =
       [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleDownloadUrlAsync(model_handle);
+      return model_service_->HandleDownloadUrlAsync(model_handle,
+                                                    desired_model_id);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
       return model_service_->DownloadModelFromCortexsoAsync(
-          model_and_branch[0], model_and_branch[1]);
+          model_and_branch[0], model_and_branch[1], desired_model_id);
     }
 
     return cpp::fail("Invalid model handle or not supported!");
@@ -107,7 +115,6 @@ void Models::ListModel(
   auto list_entry = modellist_handler.LoadModelList();
   if (list_entry) {
     for (const auto& model_entry : list_entry.value()) {
-      // auto model_entry = modellist_handler.GetModelInfo(model_handle);
       try {
         yaml_handler.ModelConfigFromFile(
             fmu::ToAbsoluteCortexDataPath(
@@ -116,7 +123,6 @@ void Models::ListModel(
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
         obj["id"] = model_entry.model;
-        obj["model_alias"] = model_entry.model_alias;
         obj["model"] = model_entry.model;
         data.append(std::move(obj));
         yaml_handler.Reset();
@@ -327,71 +333,6 @@ void Models::ImportModel(
     ret["modelHandle"] = modelHandle;
     ret["message"] = error_message;
 
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-  }
-}
-
-void Models::SetModelAlias(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "model") ||
-      !http_util::HasFieldInReq(req, callback, "modelAlias")) {
-    return;
-  }
-  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto model_alias = (*(req->getJsonObject())).get("modelAlias", "").asString();
-  LOG_DEBUG << "GetModel, Model handle: " << model_handle
-            << ", Model alias: " << model_alias;
-
-  cortex::db::Models modellist_handler;
-  try {
-    auto result = modellist_handler.UpdateModelAlias(model_handle, model_alias);
-    if (result.has_error()) {
-      std::string message = result.error();
-      LOG_ERROR << message;
-      Json::Value ret;
-      ret["result"] = "Set alias failed!";
-      ret["modelHandle"] = model_handle;
-      ret["message"] = message;
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-    } else {
-      if (result.value()) {
-        std::string message = "Successfully set model alias '" + model_alias +
-                              "' for modeID '" + model_handle + "'.";
-        LOG_INFO << message;
-        Json::Value ret;
-        ret["result"] = "OK";
-        ret["modelHandle"] = model_handle;
-        ret["message"] = message;
-        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-        resp->setStatusCode(k200OK);
-        callback(resp);
-      } else {
-        std::string message = "Unable to set model alias for modelID '" +
-                              model_handle + "': model alias '" + model_alias +
-                              "' is not unique!";
-        LOG_ERROR << message;
-        Json::Value ret;
-        ret["result"] = "Set alias failed!";
-        ret["modelHandle"] = model_handle;
-        ret["message"] = message;
-        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-        resp->setStatusCode(k400BadRequest);
-        callback(resp);
-      }
-    }
-  } catch (const std::exception& e) {
-    std::string message = "Error when setting model alias ('" + model_alias +
-                          "') for modelID '" + model_handle + "':" + e.what();
-    LOG_ERROR << message;
-    Json::Value ret;
-    ret["result"] = "Set alias failed!";
-    ret["modelHandle"] = model_handle;
-    ret["message"] = message;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k400BadRequest);
     callback(resp);
