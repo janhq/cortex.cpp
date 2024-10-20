@@ -16,7 +16,6 @@ class Models : public drogon::HttpController<Models, false> {
   METHOD_ADD(Models::UpdateModel, "/{1}", Patch);
   METHOD_ADD(Models::ImportModel, "/import", Post);
   METHOD_ADD(Models::DeleteModel, "/{1}", Delete);
-  METHOD_ADD(Models::SetModelAlias, "/alias", Post);
   METHOD_ADD(Models::StartModel, "/start", Post);
   METHOD_ADD(Models::StopModel, "/stop", Post);
   METHOD_ADD(Models::GetModelStatus, "/status/{1}", Get);
@@ -28,7 +27,6 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::UpdateModel, "/v1/models/{1}", Patch);
   ADD_METHOD_TO(Models::ImportModel, "/v1/models/import", Post);
   ADD_METHOD_TO(Models::DeleteModel, "/v1/models/{1}", Delete);
-  ADD_METHOD_TO(Models::SetModelAlias, "/v1/models/alias", Post);
   ADD_METHOD_TO(Models::StartModel, "/v1/models/start", Post);
   ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Post);
   ADD_METHOD_TO(Models::GetModelStatus, "/v1/models/status/{1}", Get);

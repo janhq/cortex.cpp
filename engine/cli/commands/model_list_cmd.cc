@@ -17,8 +17,9 @@ using namespace tabulate;
 using Row_t =
     std::vector<variant<std::string, const char*, string_view, Table>>;
 
-void ModelListCmd::Exec(const std::string& host, int port, std::string filter,
-                        bool display_engine, bool display_version) {
+void ModelListCmd::Exec(const std::string& host, int port,
+                        const std::string& filter, bool display_engine,
+                        bool display_version) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
