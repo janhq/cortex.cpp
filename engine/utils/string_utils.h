@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <sstream>
 #include <string>
@@ -21,6 +23,25 @@ inline void Trim(std::string& s) {
                        [](unsigned char ch) { return !std::isspace(ch); })
               .base(),
           s.end());
+}
+
+inline bool StringContainsIgnoreCase(const std::string& haystack,
+                                     const std::string& needle) {
+  if (needle.empty()) {
+    return true;
+  }
+
+  if (haystack.length() < needle.length()) {
+    return false;
+  }
+
+  auto it =
+      std::search(haystack.begin(), haystack.end(), needle.begin(),
+                  needle.end(), [](char ch1, char ch2) {
+                    return std::tolower(static_cast<unsigned char>(ch1)) ==
+                           std::tolower(static_cast<unsigned char>(ch2));
+                  });
+  return it != haystack.end();
 }
 
 inline bool EqualsIgnoreCase(const std::string& a, const std::string& b) {

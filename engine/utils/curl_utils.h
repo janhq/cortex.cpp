@@ -1,8 +1,9 @@
 #include <curl/curl.h>
+#include <yaml-cpp/node/node.h>
+#include <yaml-cpp/node/parse.h>
 #include <nlohmann/json.hpp>
 #include <string>
 #include "utils/result.hpp"
-#include "yaml-cpp/yaml.h"
 
 namespace curl_utils {
 namespace {
