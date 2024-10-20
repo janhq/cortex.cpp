@@ -3,6 +3,7 @@
 #include <json/value.h>
 #include <iostream>
 
+#include <tabulate/table.hpp>
 #include <vector>
 #include "httplib.h"
 #include "server_start_cmd.h"
