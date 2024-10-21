@@ -35,6 +35,10 @@ void RunCmd::Exec(bool run_detach) {
     auto related_models_ids = modellist_handler.FindRelatedModel(model_handle_);
     if (related_models_ids.has_error() || related_models_ids.value().empty()) {
       auto result = model_service_.DownloadModel(model_handle_);
+      if(result.has_error()) {
+        CLI_LOG(result.error());
+        return;
+      }
       model_id = result.value();
       CTL_INF("model_id: " << model_id.value());
     } else if (related_models_ids.value().size() == 1) {
