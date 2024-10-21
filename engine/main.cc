@@ -126,6 +126,9 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  // avoid printing logs to terminal
+  is_server = true;
+
   std::optional<int> server_port;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {

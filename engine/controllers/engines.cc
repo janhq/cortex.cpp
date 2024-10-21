@@ -21,7 +21,7 @@ void Engines::InstallEngine(
   }
 
   auto version{"latest"};
-  auto result = engine_service_->InstallEngine(engine, version);
+  auto result = engine_service_->InstallEngineAsync(engine, version);
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();
@@ -30,7 +30,7 @@ void Engines::InstallEngine(
     callback(resp);
   } else {
     Json::Value res;
-    res["message"] = "Engine " + engine + " installed successfully!";
+    res["message"] = "Engine " + engine + " starts installing!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k200OK);
     callback(resp);
