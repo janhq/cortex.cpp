@@ -1,17 +1,24 @@
 #include "model_list_cmd.h"
+#include <json/reader.h>
+#include <json/value.h>
 #include <iostream>
 
 #include <vector>
 #include "httplib.h"
-#include "json/json.h"
 #include "server_start_cmd.h"
 #include "utils/logging_utils.h"
+#include "utils/string_utils.h"
 // clang-format off
 #include <tabulate/table.hpp>
 // clang-format on
-namespace commands {
 
-void ModelListCmd::Exec(const std::string& host, int port) {
+namespace commands {
+using namespace tabulate;
+using Row_t =
+    std::vector<variant<std::string, const char*, string_view, Table>>;
+
+void ModelListCmd::Exec(const std::string& host, int port, std::string filter,
+                        bool display_engine, bool display_version) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
@@ -21,10 +28,18 @@ void ModelListCmd::Exec(const std::string& host, int port) {
     }
   }
 
-  tabulate::Table table;
+  Table table;
+  std::vector<std::string> column_headers{"(Index)", "ID"};
+  if (display_engine) {
+    column_headers.push_back("Engine");
+  }
+  if (display_version) {
+    column_headers.push_back("Version");
+  }
 
-  table.add_row({"(Index)", "ID", "model alias", "engine", "version"});
-  table.format().font_color(tabulate::Color::green);
+  Row_t header{column_headers.begin(), column_headers.end()};
+  table.add_row(header);
+  table.format().font_color(Color::green);
   int count = 0;
   // Iterate through directory
 
@@ -32,16 +47,29 @@ void ModelListCmd::Exec(const std::string& host, int port) {
   auto res = cli.Get("/v1/models");
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      // CLI_LOG(res->body);
       Json::Value body;
       Json::Reader reader;
       reader.parse(res->body, body);
       if (!body["data"].isNull()) {
         for (auto const& v : body["data"]) {
+          auto model_id = v["model"].asString();
+          if (!filter.empty() &&
+              !string_utils::StringContainsIgnoreCase(model_id, filter)) {
+            continue;
+          }
+
           count += 1;
-          table.add_row({std::to_string(count), v["model"].asString(),
-                         v["model_alias"].asString(), v["engine"].asString(),
-                         v["version"].asString()});
+
+          std::vector<std::string> row = {std::to_string(count),
+                                          v["model"].asString()};
+          if (display_engine) {
+            row.push_back(v["engine"].asString());
+          }
+          if (display_version) {
+            row.push_back(v["version"].asString());
+          }
+
+          table.add_row({row.begin(), row.end()});
         }
       }
     } else {
@@ -54,24 +82,6 @@ void ModelListCmd::Exec(const std::string& host, int port) {
     return;
   }
 
-  for (int i = 0; i < 5; i++) {
-    table[0][i]
-        .format()
-        .font_color(tabulate::Color::white)  // Set font color
-        .font_style({tabulate::FontStyle::bold})
-        .font_align(tabulate::FontAlign::center);
-  }
-  for (int i = 1; i <= count; i++) {
-    table[i][0]  //index value
-        .format()
-        .font_color(tabulate::Color::white)  // Set font color
-        .font_align(tabulate::FontAlign::center);
-    table[i][4]  //version value
-        .format()
-        .font_align(tabulate::FontAlign::center);
-  }
   std::cout << table << std::endl;
 }
-}
-
-;  // namespace commands
+};  // namespace commands

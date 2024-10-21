@@ -1,5 +1,6 @@
 #include "command_line_parser.h"
 #include <memory>
+#include <optional>
 #include "commands/chat_cmd.h"
 #include "commands/chat_completion_cmd.h"
 #include "commands/cortex_upd_cmd.h"
@@ -82,27 +83,30 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   // Check new update
 #ifdef CORTEX_CPP_VERSION
   if (cml_data_.check_upd) {
-    // TODO(sang) find a better way to handle
-    // This is an extremely ungly way to deal with connection
-    // hang when network down
-    std::atomic<bool> done = false;
-    std::thread t([&]() {
-      if (auto latest_version =
-              commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
-          latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
-        CLI_LOG("\nA new release of cortex is available: "
-                << CORTEX_CPP_VERSION << " -> " << *latest_version);
-        CLI_LOG("To upgrade, run: " << commands::GetRole()
-                                    << commands::GetCortexBinary()
-                                    << " update");
+    if (strcmp(CORTEX_CPP_VERSION, "default_version") != 0) {
+      // TODO(sang) find a better way to handle
+      // This is an extremely ugly way to deal with connection
+      // hang when network down
+      std::atomic<bool> done = false;
+      std::thread t([&]() {
+        if (auto latest_version =
+                commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
+            latest_version.has_value() &&
+            *latest_version != CORTEX_CPP_VERSION) {
+          CLI_LOG("\nA new release of cortex is available: "
+                  << CORTEX_CPP_VERSION << " -> " << *latest_version);
+          CLI_LOG("To upgrade, run: " << commands::GetRole()
+                                      << commands::GetCortexBinary()
+                                      << " update");
+        }
+        done = true;
+      });
+      // Do not wait for http connection timeout
+      t.detach();
+      int retry = 10;
+      while (!done && retry--) {
+        std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 10);
       }
-      done = true;
-    });
-    // Do not wait for http connection timeout
-    t.detach();
-    int retry = 10;
-    while (!done && retry--) {
-      std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 10);
     }
   }
 #endif
@@ -143,11 +147,6 @@ void CommandLineParser::SetupCommonCommands() {
   run_cmd->callback([this, run_cmd] {
     if (std::exchange(executed_, true))
       return;
-    if (cml_data_.model_id.empty()) {
-      CLI_LOG("[model_id] is required\n");
-      CLI_LOG(run_cmd->help());
-      return;
-    }
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
                         cml_data_.model_id, download_service_);
@@ -247,12 +246,19 @@ void CommandLineParser::SetupModelCommands() {
 
   auto list_models_cmd =
       models_cmd->add_subcommand("list", "List all models locally");
+  list_models_cmd->add_option("filter", cml_data_.filter, "Filter model id");
+  list_models_cmd->add_flag("-e,--engine", cml_data_.display_engine,
+                            "Display engine");
+  list_models_cmd->add_flag("-v,--version", cml_data_.display_version,
+                            "Display version");
   list_models_cmd->group(kSubcommands);
   list_models_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
     commands::ModelListCmd().Exec(cml_data_.config.apiServerHost,
-                                  std::stoi(cml_data_.config.apiServerPort));
+                                  std::stoi(cml_data_.config.apiServerPort),
+                                  cml_data_.filter, cml_data_.display_engine,
+                                  cml_data_.display_version);
   });
 
   auto get_models_cmd =

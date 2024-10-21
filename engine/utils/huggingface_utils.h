@@ -193,18 +193,22 @@ inline std::string GetDownloadableUrl(const std::string& author,
 
 inline std::optional<std::string> GetDefaultBranch(
     const std::string& model_name) {
-  auto default_model_branch = curl_utils::ReadRemoteYaml(
-      GetMetadataUrl(model_name), CreateCurlHfHeaders());
+  try {
+    auto default_model_branch = curl_utils::ReadRemoteYaml(
+        GetMetadataUrl(model_name), CreateCurlHfHeaders());
 
-  if (default_model_branch.has_error()) {
+    if (default_model_branch.has_error()) {
+      return std::nullopt;
+    }
+
+    auto metadata = default_model_branch.value();
+    auto default_branch = metadata["default"];
+    if (default_branch.IsDefined()) {
+      return default_branch.as<std::string>();
+    }
+    return std::nullopt;
+  } catch (const std::exception& e) {
     return std::nullopt;
   }
-
-  auto metadata = default_model_branch.value();
-  auto default_branch = metadata["default"];
-  if (default_branch.IsDefined()) {
-    return default_branch.as<std::string>();
-  }
-  return std::nullopt;
 }
 }  // namespace huggingface_utils
