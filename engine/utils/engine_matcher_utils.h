@@ -111,7 +111,7 @@ inline std::string ValidateOnnx(const std::vector<std::string>& variants,
 inline std::string Validate(const std::vector<std::string>& variants,
                             const std::string& os, const std::string& cpu_arch,
                             const std::string& suitable_avx,
-                            const std::string& cuda_version) {
+                            const std::string& cuda_version, bool cpu_only) {
   // Early return if the OS is not supported
   if (os != "mac" && os != "windows" && os != "linux") {
     return "";
@@ -136,11 +136,26 @@ inline std::string Validate(const std::vector<std::string>& variants,
   std::copy_if(os_and_arch_compatible_list.begin(),
                os_and_arch_compatible_list.end(),
                std::back_inserter(avx_compatible_list),
-               [&suitable_avx](const std::string& variant) {
+               [&suitable_avx, &os](const std::string& variant) {
+                 auto os_match = "-" + os;
                  auto suitable_avx_match = "-" + suitable_avx;
 
-                 return variant.find(suitable_avx_match) != std::string::npos;
+                 return variant.find(os_match) != std::string::npos &&
+                        variant.find(suitable_avx_match) != std::string::npos;
                });
+
+  if (cpu_only) {
+    std::string selected_variant;
+    LOG_INFO << "CPU mode only, selecting a variant without CUDA";
+    for (const auto& variant : avx_compatible_list) {
+      if (variant.find("cuda") == std::string::npos) {
+        selected_variant = variant;
+        LOG_INFO << "Found variant without CUDA: " << selected_variant << "\n";
+        break;
+      }
+    }
+    return selected_variant;
+  }
 
   auto cuda_compatible =
       GetSuitableCudaVariant(avx_compatible_list, cuda_version);
