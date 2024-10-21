@@ -1,8 +1,9 @@
 #include "engine_get_cmd.h"
+#include <json/reader.h>
+#include <json/value.h>
 #include <iostream>
 
 #include "httplib.h"
-#include "json/json.h"
 #include "server_start_cmd.h"
 #include "utils/logging_utils.h"
 
@@ -29,7 +30,6 @@ void EngineGetCmd::Exec(const std::string& host, int port,
   auto res = cli.Get("/v1/engines/" + engine_name);
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      // CLI_LOG(res->body);
       Json::Value v;
       Json::Reader reader;
       reader.parse(res->body, v);
@@ -39,7 +39,8 @@ void EngineGetCmd::Exec(const std::string& host, int port,
                      v["status"].asString()});
 
     } else {
-      CLI_LOG_ERROR("Failed to get engine list with status code: " << res->status);
+      CLI_LOG_ERROR(
+          "Failed to get engine list with status code: " << res->status);
       return;
     }
   } else {

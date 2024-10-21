@@ -1651,6 +1651,15 @@
                 "value": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q2_K.gguf"
               }
             ]
+          },
+          "id": {
+            "type": "string",
+            "description": "The id which will be used to register the model.",
+            "examples": [
+              {
+                "value": "my-custom-model-id"
+              }
+            ]
           }
         }
       },

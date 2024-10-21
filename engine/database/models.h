@@ -1,9 +1,9 @@
 #pragma once
 
+#include <SQLiteCpp/Database.h>
 #include <trantor/utils/Logger.h>
 #include <string>
 #include <vector>
-#include "SQLiteCpp/SQLiteCpp.h"
 #include "utils/result.hpp"
 
 namespace cortex::db {
