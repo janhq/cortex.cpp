@@ -316,7 +316,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
 
   if (model_entry.has_value()) {
     CLI_LOG("Model already downloaded: " << unique_model_id);
-    return cpp::fail("Please delete the model before downloading again");
+    return unique_model_id;
   }
 
   auto local_path{file_manager_utils::GetModelsContainerPath() /
