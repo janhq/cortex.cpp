@@ -35,7 +35,7 @@ void RunCmd::Exec(bool run_detach) {
     auto related_models_ids = modellist_handler.FindRelatedModel(model_handle_);
     if (related_models_ids.has_error() || related_models_ids.value().empty()) {
       auto result = model_service_.DownloadModel(model_handle_);
-      if(result.has_error()) {
+      if (result.has_error()) {
         CLI_LOG(result.error());
         return;
       }
