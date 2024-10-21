@@ -7,9 +7,11 @@
 #include <string>
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
+
 using namespace nlohmann;
 
 struct DownloadItem {
+
   std::string id;
 
   std::string downloadUrl;
@@ -54,7 +56,11 @@ inline std::string DownloadTypeToString(DownloadType type) {
 }
 
 struct DownloadTask {
+  enum class Status { Pending, InProgress, Completed, Cancelled, Error };
+
   std::string id;
+
+  Status status;
 
   DownloadType type;
 

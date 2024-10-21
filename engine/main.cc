@@ -95,7 +95,7 @@ void RunServer(std::optional<int> port) {
 
   // initialize custom controllers
   auto engine_ctl = std::make_shared<Engines>(engine_service);
-  auto model_ctl = std::make_shared<Models>(model_service);
+  auto model_ctl = std::make_shared<Models>(model_service, engine_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
 
