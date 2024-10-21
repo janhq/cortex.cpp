@@ -45,6 +45,12 @@ class CommandLineParser {
     std::string cortex_version;
     bool check_upd = true;
     bool run_detach = false;
+
+    // for model list
+    bool display_engine = false;
+    bool display_version = false;
+    std::string filter = "";
+
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;

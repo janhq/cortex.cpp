@@ -173,3 +173,56 @@ TEST_F(StringUtilsTestSuite, SpecialCharacters) {
   EXPECT_TRUE(string_utils::EqualsIgnoreCase("123 ABC", "123 abc"));
   EXPECT_FALSE(string_utils::EqualsIgnoreCase("Hello!", "Hello"));
 }
+
+TEST_F(StringUtilsTestSuite, BasicMatching) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Hello, World!", "world"));
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Hello, World!", "Hello"));
+  EXPECT_TRUE(
+      string_utils::StringContainsIgnoreCase("Hello, World!", "lo, wo"));
+}
+
+TEST_F(StringUtilsTestSuite, CaseSensitivity) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("HELLO", "hello"));
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("hello", "HELLO"));
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("HeLLo", "ELL"));
+}
+
+TEST_F(StringUtilsTestSuite, EdgeCases) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("", ""));
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Hello", ""));
+  EXPECT_FALSE(string_utils::StringContainsIgnoreCase("", "Hello"));
+}
+
+TEST_F(StringUtilsTestSuite, NoMatch) {
+  EXPECT_FALSE(
+      string_utils::StringContainsIgnoreCase("Hello, World!", "Goodbye"));
+  EXPECT_FALSE(string_utils::StringContainsIgnoreCase("Hello", "HelloWorld"));
+}
+
+TEST_F(StringUtilsTestSuite, StringContainsWithSpecialCharacters) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Hello, World!", "o, W"));
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Hello! @#$%", "@#$"));
+}
+
+TEST_F(StringUtilsTestSuite, StringContainsWithModelId) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase(
+      "TheBloke:TinyLlama-1.1B-Chat-v0.3-GGUF:tinyllama-1.1b-chat-v0.3.Q2_K."
+      "gguf",
+      "thebloke"));
+}
+
+TEST_F(StringUtilsTestSuite, RepeatingPatterns) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Mississippi", "ssi"));
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase("Mississippi", "ssippi"));
+}
+
+TEST_F(StringUtilsTestSuite, LongStrings) {
+  EXPECT_TRUE(string_utils::StringContainsIgnoreCase(
+      "This is a very long string to test our "
+      "function's performance with larger inputs",
+      "PERFORMANCE"));
+  EXPECT_FALSE(string_utils::StringContainsIgnoreCase(
+      "This is a very long string to test our "
+      "function's performance with larger inputs",
+      "not here"));
+}
