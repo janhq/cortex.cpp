@@ -3,7 +3,9 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "httplib.h"
 #include "utils/curl_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
@@ -46,6 +48,33 @@ struct HuggingFaceModelRepoInfo {
   std::string createdAt;
 };
 
+inline std::optional<std::string> GetHuggingFaceToken() {
+  auto const& token = file_manager_utils::GetCortexConfig().huggingFaceToken;
+  if (token.empty())
+    return std::nullopt;
+  return token;
+}
+
+inline curl_slist* CreateCurlHfHeaders() {
+  struct curl_slist* headers = nullptr;
+  auto hf_token = GetHuggingFaceToken();
+  if (hf_token) {
+    std::string auth_header = "Authorization: Bearer " + hf_token.value();
+    headers = curl_slist_append(headers, auth_header.c_str());
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+  }
+  return headers;
+}
+
+inline httplib::Headers CreateHttpHfHeaders() {
+  httplib::Headers headers;
+  auto token = GetHuggingFaceToken();
+  if (token) {
+    headers.emplace("Authorization", "Bearer " + token.value());
+  }
+  return headers;
+}
+
 inline cpp::result<std::unordered_map<std::string, HuggingFaceBranch>,
                    std::string>
 GetModelRepositoryBranches(const std::string& author,
@@ -58,7 +87,8 @@ GetModelRepositoryBranches(const std::string& author,
       .host = kHuggingfaceHost,
       .pathParams = {"api", "models", author, modelName, "refs"}};
 
-  auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+  auto result =
+      curl_utils::SimpleGetJson(url_obj.ToFullPath(), CreateCurlHfHeaders());
   if (result.has_error()) {
     return cpp::fail("Failed to get model repository branches: " + author +
                      "/" + modelName);
@@ -90,7 +120,8 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
                       .host = kHuggingfaceHost,
                       .pathParams = {"api", "models", author, modelName}};
 
-  auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+  auto result =
+      curl_utils::SimpleGetJson(url_obj.ToFullPath(), CreateCurlHfHeaders());
   if (result.has_error()) {
     return cpp::fail("Failed to get model repository info: " + author + "/" +
                      modelName);
@@ -162,8 +193,8 @@ inline std::string GetDownloadableUrl(const std::string& author,
 
 inline std::optional<std::string> GetDefaultBranch(
     const std::string& model_name) {
-  auto default_model_branch =
-      curl_utils::ReadRemoteYaml(GetMetadataUrl(model_name));
+  auto default_model_branch = curl_utils::ReadRemoteYaml(
+      GetMetadataUrl(model_name), CreateCurlHfHeaders());
 
   if (default_model_branch.has_error()) {
     return std::nullopt;
