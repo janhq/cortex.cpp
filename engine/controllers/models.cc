@@ -162,7 +162,6 @@ void Models::GetModel(const HttpRequestPtr& req,
     config::YamlHandler yaml_handler;
     auto model_entry = modellist_handler.GetModelInfo(model_id);
     if (model_entry.has_error()) {
-      // CLI_LOG("Error: " + model_entry.error());
       ret["id"] = model_id;
       ret["object"] = "model";
       ret["result"] = "Fail to get model information";
@@ -348,6 +347,34 @@ void Models::StartModel(
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   auto custom_prompt_template =
       (*(req->getJsonObject())).get("prompt_template", "").asString();
+  auto model_entry = model_service_->GetDownloadedModel(model_handle);
+  if (!model_entry.has_value()) {
+    Json::Value ret;
+    ret["message"] = "Cannot find model: " + model_handle;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  auto engine_name = model_entry.value().engine;
+  auto engine_entry = engine_service_->GetEngineInfo(engine_name);
+  if (engine_entry.has_error()) {
+    Json::Value ret;
+    ret["message"] = "Cannot find engine: " + engine_name;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  if (engine_entry->status != "Ready") {
+    Json::Value ret;
+    ret["message"] = "Engine is not ready! Please install first!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+
   auto result = model_service_->StartModel(
       config.apiServerHost, std::stoi(config.apiServerPort), model_handle,
       custom_prompt_template);

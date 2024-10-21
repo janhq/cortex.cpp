@@ -2,6 +2,7 @@
 
 #include <drogon/HttpController.h>
 #include <trantor/utils/Logger.h>
+#include "services/engine_service.h"
 #include "services/model_service.h"
 
 using namespace drogon;
@@ -32,8 +33,9 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::GetModelStatus, "/v1/models/status/{1}", Get);
   METHOD_LIST_END
 
-  explicit Models(std::shared_ptr<ModelService> model_service)
-      : model_service_{model_service} {}
+  explicit Models(std::shared_ptr<ModelService> model_service,
+                  std::shared_ptr<EngineService> engine_service)
+      : model_service_{model_service}, engine_service_{engine_service} {}
 
   void PullModel(const HttpRequestPtr& req,
                  std::function<void(const HttpResponsePtr&)>&& callback);
@@ -69,4 +71,5 @@ class Models : public drogon::HttpController<Models, false> {
 
  private:
   std::shared_ptr<ModelService> model_service_;
+  std::shared_ptr<EngineService> engine_service_;
 };

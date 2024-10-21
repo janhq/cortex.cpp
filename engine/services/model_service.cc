@@ -198,28 +198,28 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
 
 std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     const std::string& modelId) const {
-  auto models_path = file_manager_utils::GetModelsContainerPath();
-  if (!std::filesystem::exists(models_path) ||
-      !std::filesystem::is_directory(models_path)) {
+
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+  auto model_entry = modellist_handler.GetModelInfo(modelId);
+  if (!model_entry.has_value()) {
     return std::nullopt;
   }
 
-  for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
-    if (entry.is_regular_file() &&
-        entry.path().filename().string() == modelId &&
-        entry.path().extension() == ".yaml") {
-      try {
-        config::YamlHandler handler;
-        handler.ModelConfigFromFile(entry.path().string());
-        auto model_conf = handler.GetModelConfig();
-        return model_conf;
-      } catch (const std::exception& e) {
-        LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                  << "': " << e.what();
-      }
-    }
+  try {
+    config::YamlHandler yaml_handler;
+    namespace fs = std::filesystem;
+    namespace fmu = file_manager_utils;
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
+    return yaml_handler.GetModelConfig();
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Error reading yaml file '" << model_entry->path_to_model_yaml
+              << "': " << e.what();
+    return std::nullopt;
   }
-  return std::nullopt;
 }
 
 cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
