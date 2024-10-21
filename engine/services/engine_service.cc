@@ -136,6 +136,23 @@ cpp::result<bool, std::string> EngineService::InstallEngine(
   }
 }
 
+cpp::result<bool, std::string> EngineService::InstallEngineAsync(
+    const std::string& engine, const std::string& version,
+    const std::string& src) {
+  // Although this function is called async, only download tasks are performed async
+  // TODO(sang) better handler for unzip and download scenarios
+  auto ne = NormalizeEngine(engine);
+  if (!src.empty()) {
+    return UnzipEngine(ne, version, src);
+  } else {
+    auto result = DownloadEngine(ne, version, true /*async*/);
+    if (result.has_error()) {
+      return result;
+    }
+    return DownloadCuda(ne, true /*async*/);
+  }
+}
+
 cpp::result<bool, std::string> EngineService::UnzipEngine(
     const std::string& engine, const std::string& version,
     const std::string& path) {
@@ -222,7 +239,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngine(
 }
 
 cpp::result<bool, std::string> EngineService::DownloadEngine(
-    const std::string& engine, const std::string& version) {
+    const std::string& engine, const std::string& version, bool async) {
 
   // Check if GITHUB_TOKEN env exist
   const char* github_token = std::getenv("GITHUB_TOKEN");
@@ -320,27 +337,34 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
                                            .localPath = local_path,
                                        }}}};
 
-        return download_service_->AddDownloadTask(
-            downloadTask, [](const DownloadTask& finishedTask) {
-              // try to unzip the downloaded file
-              CTL_INF("Engine zip path: "
-                      << finishedTask.items[0].localPath.string());
+        auto on_finished = [](const DownloadTask& finishedTask) {
+          // try to unzip the downloaded file
+          CTL_INF(
+              "Engine zip path: " << finishedTask.items[0].localPath.string());
 
-              std::filesystem::path extract_path =
-                  finishedTask.items[0].localPath.parent_path().parent_path();
+          std::filesystem::path extract_path =
+              finishedTask.items[0].localPath.parent_path().parent_path();
 
-              archive_utils::ExtractArchive(
-                  finishedTask.items[0].localPath.string(),
-                  extract_path.string());
+          archive_utils::ExtractArchive(
+              finishedTask.items[0].localPath.string(), extract_path.string());
 
-              // remove the downloaded file
-              try {
-                std::filesystem::remove(finishedTask.items[0].localPath);
-              } catch (const std::exception& e) {
-                CTL_WRN("Could not delete file: " << e.what());
-              }
-              CTL_INF("Finished!");
-            });
+          // remove the downloaded file
+          try {
+            std::filesystem::remove(finishedTask.items[0].localPath);
+          } catch (const std::exception& e) {
+            CTL_WRN("Could not delete file: " << e.what());
+          }
+          CTL_INF("Finished!");
+        };
+        if (async) {
+          auto res = download_service_->AddTask(downloadTask, on_finished);
+          if (res.has_error()) {
+            return cpp::fail(res.error());
+          }
+          return true;
+        } else {
+          return download_service_->AddDownloadTask(downloadTask, on_finished);
+        }
       }
     }
     return true;
@@ -350,7 +374,7 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
 }
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
-    const std::string& engine) {
+    const std::string& engine, bool async) {
   if (hw_inf_.sys_inf->os == "mac" || engine == kOnnxRepo ||
       engine == kOnnxEngine) {
     // mac and onnx engine does not require cuda toolkit
@@ -403,19 +427,27 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
                              .localPath = cuda_toolkit_local_path}},
   }};
 
-  return download_service_->AddDownloadTask(
-      downloadCudaToolkitTask, [&](const DownloadTask& finishedTask) {
-        auto engine_path =
-            file_manager_utils::GetEnginesContainerPath() / engine;
-        archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
-                                      engine_path.string());
+  auto on_finished = [engine](const DownloadTask& finishedTask) {
+    auto engine_path = file_manager_utils::GetEnginesContainerPath() / engine;
+    archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
+                                  engine_path.string());
 
-        try {
-          std::filesystem::remove(finishedTask.items[0].localPath);
-        } catch (std::exception& e) {
-          CTL_ERR("Error removing downloaded file: " << e.what());
-        }
-      });
+    try {
+      std::filesystem::remove(finishedTask.items[0].localPath);
+    } catch (std::exception& e) {
+      CTL_ERR("Error removing downloaded file: " << e.what());
+    }
+  };
+  if (async) {
+    auto res = download_service_->AddTask(downloadCudaToolkitTask, on_finished);
+    if (res.has_error()) {
+      return cpp::fail(res.error());
+    }
+    return true;
+  } else {
+    return download_service_->AddDownloadTask(downloadCudaToolkitTask,
+                                              on_finished);
+  }
 }
 
 std::string EngineService::GetMatchedVariant(

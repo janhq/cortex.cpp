@@ -47,6 +47,10 @@ class EngineService {
       const std::string& engine, const std::string& version = "latest",
       const std::string& src = "");
 
+  cpp::result<bool, std::string> InstallEngineAsync(
+      const std::string& engine, const std::string& version = "latest",
+      const std::string& src = "");
+
   cpp::result<bool, std::string> UninstallEngine(const std::string& engine);
 
  private:
@@ -55,9 +59,9 @@ class EngineService {
                                              const std::string& path);
 
   cpp::result<bool, std::string> DownloadEngine(
-      const std::string& engine, const std::string& version = "latest");
+      const std::string& engine, const std::string& version = "latest", bool async = false);
 
-  cpp::result<bool, std::string> DownloadCuda(const std::string& engine);
+  cpp::result<bool, std::string> DownloadCuda(const std::string& engine, bool async = false);
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);
