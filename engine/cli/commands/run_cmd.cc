@@ -23,7 +23,7 @@ std::string Repo2Engine(const std::string& r) {
 };
 }  // namespace
 
-void RunCmd::Exec(bool chat_flag) {
+void RunCmd::Exec(bool run_detach) {
   std::optional<std::string> model_id = model_handle_;
 
   cortex::db::Models modellist_handler;
@@ -115,12 +115,12 @@ void RunCmd::Exec(bool chat_flag) {
     }
 
     // Chat
-    if (chat_flag) {
-      ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
-    } else {
+    if (run_detach) {
       CLI_LOG(*model_id << " model started successfully. Use `"
                         << commands::GetCortexBinary() << " chat " << *model_id
                         << "` for interactive chat shell");
+    } else {
+      ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
     }
   } catch (const std::exception& e) {
     CLI_LOG("Fail to run model with ID '" + model_handle_ + "': " + e.what());
