@@ -140,9 +140,9 @@ InferResult InferenceService::LoadModel(
       if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo) {
         // Remove llamacpp dll directory
         if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
-          LOG_INFO << "Could not remove dll directory: " << kLlamaRepo;
+          LOG_WARN << "Could not remove dll directory: " << kLlamaRepo;
         } else {
-          LOG_WARN << "Removed dll directory: " << kLlamaRepo;
+          LOG_INFO << "Removed dll directory: " << kLlamaRepo;
         }
 
         add_dll(ne, abs_path);
@@ -158,7 +158,7 @@ InferResult InferenceService::LoadModel(
       LOG_ERROR << "Could not load engine: " << e.what();
       engines_.erase(ne);
 
-      r["message"] = "Could not load engine " + ne;
+      r["message"] = "Could not load engine " + ne + ": " + e.what();
       stt["status_code"] = k500InternalServerError;
       return std::make_pair(stt, r);
     }

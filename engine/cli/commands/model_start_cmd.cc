@@ -6,6 +6,7 @@
 #include "run_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -14,7 +15,7 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
   std::optional<std::string> model_id =
       SelectLocalModel(model_service_, model_handle);
 
-  if(!model_id.has_value()) {
+  if (!model_id.has_value()) {
     return false;
   }
 
@@ -41,7 +42,8 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
                                << *model_id << "` for interactive chat shell");
       return true;
     } else {
-      CTL_ERR("Model failed to load with status code: " << res->status);
+      auto root = json_helper::ParseJsonString(res->body);
+      CLI_LOG(root["message"].asString());
       return false;
     }
   } else {
