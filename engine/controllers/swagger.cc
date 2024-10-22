@@ -24,7 +24,7 @@ constexpr auto ScalarUi = R"(
 Json::Value SwaggerController::generateOpenAPISpec() {
   Json::Value root;
   Json::Reader reader;
-  reader.parse(CortexOpenApi::JSON_CONTENT, root);
+  reader.parse(CortexOpenApi::GetOpenApiJson(), root);
   return root;
 }
 
