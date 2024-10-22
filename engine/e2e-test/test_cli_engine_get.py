@@ -2,9 +2,21 @@ import platform
 
 import pytest
 from test_runner import run
-
+from test_runner import start_server, stop_server
 
 class TestCliEngineGet:
+    
+    @pytest.fixture(autouse=True)
+    def setup_and_teardown(self):
+        # Setup
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
+
+        yield
+
+        # Teardown
+        stop_server()
 
     @pytest.mark.skipif(platform.system() != "Windows", reason="Windows-specific test")
     def test_engines_get_tensorrt_llm_should_not_be_incompatible(self):

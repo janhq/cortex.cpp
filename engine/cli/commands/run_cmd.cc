@@ -23,30 +23,61 @@ std::string Repo2Engine(const std::string& r) {
 };
 }  // namespace
 
-void RunCmd::Exec(bool chat_flag) {
+void RunCmd::Exec(bool run_detach) {
   std::optional<std::string> model_id = model_handle_;
 
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   auto address = host_ + ":" + std::to_string(port_);
 
-  // Download model if it does not exist
   {
-    auto related_models_ids = modellist_handler.FindRelatedModel(model_handle_);
-    if (related_models_ids.has_error() || related_models_ids.value().empty()) {
-      auto result = model_service_.DownloadModel(model_handle_);
-      model_id = result.value();
-      CTL_INF("model_id: " << model_id.value());
-    } else if (related_models_ids.value().size() == 1) {
-      model_id = related_models_ids.value().front();
-    } else {  // multiple models with nearly same name found
-      auto selection = cli_selection_utils::PrintSelection(
-          related_models_ids.value(), "Local Models: (press enter to select)");
-      if (!selection.has_value()) {
+    if (model_handle_.empty()) {
+      auto all_local_models = modellist_handler.LoadModelList();
+      if (all_local_models.has_error() || all_local_models.value().empty()) {
+        CLI_LOG("No local models available!");
         return;
       }
-      model_id = selection.value();
-      CLI_LOG("Selected: " << selection.value());
+
+      if (all_local_models.value().size() == 1) {
+        model_id = all_local_models.value().front().model;
+      } else {
+        std::vector<std::string> model_id_list{};
+        for (const auto& model : all_local_models.value()) {
+          model_id_list.push_back(model.model);
+        }
+
+        auto selection = cli_selection_utils::PrintSelection(
+            model_id_list, "Please select an option");
+        if (!selection.has_value()) {
+          return;
+        }
+        model_id = selection.value();
+        CLI_LOG("Selected: " << selection.value());
+      }
+    } else {
+      auto related_models_ids =
+          modellist_handler.FindRelatedModel(model_handle_);
+      if (related_models_ids.has_error() ||
+          related_models_ids.value().empty()) {
+        auto result = model_service_.DownloadModel(model_handle_);
+        if (result.has_error()) {
+          CLI_LOG("Model " << model_handle_ << " not found!");
+          return;
+        }
+        model_id = result.value();
+        CTL_INF("model_id: " << model_id.value());
+      } else if (related_models_ids.value().size() == 1) {
+        model_id = related_models_ids.value().front();
+      } else {  // multiple models with nearly same name found
+        auto selection = cli_selection_utils::PrintSelection(
+            related_models_ids.value(),
+            "Local Models: (press enter to select)");
+        if (!selection.has_value()) {
+          return;
+        }
+        model_id = selection.value();
+        CLI_LOG("Selected: " << selection.value());
+      }
     }
   }
 
@@ -115,12 +146,12 @@ void RunCmd::Exec(bool chat_flag) {
     }
 
     // Chat
-    if (chat_flag) {
-      ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
-    } else {
+    if (run_detach) {
       CLI_LOG(*model_id << " model started successfully. Use `"
                         << commands::GetCortexBinary() << " chat " << *model_id
                         << "` for interactive chat shell");
+    } else {
+      ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
     }
   } catch (const std::exception& e) {
     CLI_LOG("Fail to run model with ID '" + model_handle_ + "': " + e.what());

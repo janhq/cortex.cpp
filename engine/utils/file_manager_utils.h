@@ -252,7 +252,9 @@ inline std::filesystem::path GetModelsContainerPath() {
 }
 
 inline std::filesystem::path GetEnginesContainerPath() {
-  auto cortex_path = GetCortexDataPath();
+  auto cortex_path = getenv("ENGINE_PATH")
+                         ? std::filesystem::path(getenv("ENGINE_PATH"))
+                         : GetCortexDataPath();
   auto engines_container_path = cortex_path / "engines";
 
   if (!std::filesystem::exists(engines_container_path)) {

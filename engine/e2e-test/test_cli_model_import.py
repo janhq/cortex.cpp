@@ -1,7 +1,20 @@
 import pytest
 from test_runner import run
+from test_runner import start_server, stop_server
 
 class TestCliModelImport:
+    
+    @pytest.fixture(autouse=True)
+    def setup_and_teardown(self):
+        # Setup
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
+
+        yield
+
+        # Teardown
+        stop_server()
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
     def test_model_import_should_be_success(self):

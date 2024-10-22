@@ -95,7 +95,7 @@ void RunServer(std::optional<int> port) {
 
   // initialize custom controllers
   auto engine_ctl = std::make_shared<Engines>(engine_service);
-  auto model_ctl = std::make_shared<Models>(model_service);
+  auto model_ctl = std::make_shared<Models>(model_service, engine_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
 
@@ -125,6 +125,9 @@ int main(int argc, char* argv[]) {
                                                      << system_info->arch);
     return 1;
   }
+
+  // avoid printing logs to terminal
+  is_server = true;
 
   std::optional<int> server_port;
   for (int i = 0; i < argc; i++) {

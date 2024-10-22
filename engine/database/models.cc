@@ -275,17 +275,11 @@ cpp::result<bool, std::string> Models::DeleteModelEntry(
 
 cpp::result<std::vector<std::string>, std::string> Models::FindRelatedModel(
     const std::string& identifier) const {
-  // TODO (namh): add check for alias as well
   try {
     std::vector<std::string> related_models;
     SQLite::Statement query(
-        db_,
-        "SELECT model_id FROM models WHERE model_id LIKE ? OR model_id LIKE ? "
-        "OR model_id LIKE ? OR model_id LIKE ?");
-    query.bind(1, identifier + ":%");
-    query.bind(2, "%:" + identifier);
-    query.bind(3, "%:" + identifier + ":%");
-    query.bind(4, identifier);
+        db_, "SELECT model_id FROM models WHERE model_id LIKE ?");
+    query.bind(1, "%" + identifier + "%");
 
     while (query.executeStep()) {
       related_models.push_back(query.getColumn(0).getString());

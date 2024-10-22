@@ -21,7 +21,7 @@ void EngineUninstallCmd::Exec(const std::string& host, int port,
   auto res = cli.Delete("/v1/engines/" + engine);
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      CLI_LOG("Engine " + engine + " uninstalled successfully");
+      CLI_LOG("Engine " + engine + " uninstalled successfully!");
     } else {
       CTL_ERR("Engine failed to uninstall with status code: " << res->status);
     }

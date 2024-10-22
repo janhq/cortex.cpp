@@ -1,7 +1,6 @@
 import pytest
 import requests
-from test_runner import popen
-from test_runner import start_server, stop_server, run
+from test_runner import run, start_server, stop_server
 
 
 class TestApiModelStart:
@@ -12,10 +11,13 @@ class TestApiModelStart:
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
-
-        # TODO: using pull with branch for easy testing tinyllama:gguf for example
+        run("Install Engine", ["engines", "install", "llama-cpp"], timeout=None)
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
-        popen(["pull", "tinyllama"], "1\n")
+        run(
+            "Pull model",
+            ["pull", "tinyllama:gguf"],
+            timeout=None,
+        )
 
         yield
 
@@ -23,6 +25,6 @@ class TestApiModelStart:
         stop_server()
 
     def test_models_start_should_be_successful(self):
-        json_body = {'model': 'tinyllama:gguf'}
-        response = requests.post("http://localhost:3928/models/start", json = json_body)
+        json_body = {"model": "tinyllama:gguf"}
+        response = requests.post("http://localhost:3928/models/start", json=json_body)
         assert response.status_code == 200, f"status_code: {response.status_code}"
