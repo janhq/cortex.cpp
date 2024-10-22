@@ -97,9 +97,9 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
       v += g;
     }
     CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto data_path = file_manager_utils::GetCortexDataPath();
-    auto llamacpp_path = data_path / "engines" / "cortex.llamacpp/";
-    auto trt_path = data_path / "engines" / "cortex.tensorrt-llm/";
+    auto data_path = file_manager_utils::GetEnginesContainerPath();
+    auto llamacpp_path = data_path / "cortex.llamacpp/";
+    auto trt_path = data_path / "cortex.tensorrt-llm/";
     auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
     setenv(name, new_v.c_str(), true);
     CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
