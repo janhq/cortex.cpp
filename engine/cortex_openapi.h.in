@@ -1,0 +1,5 @@
+#pragma once
+
+namespace CortexOpenApi {
+constexpr const char JSON_CONTENT[] = "@JSON_CONTENT@";
+}
