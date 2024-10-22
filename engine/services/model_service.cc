@@ -14,6 +14,7 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/json_helper.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -622,9 +623,9 @@ cpp::result<bool, std::string> ModelService::StartModel(
         CTL_INF("Model '" + model_handle + "' is already loaded");
         return true;
       } else {
+        auto root = json_helper::ParseJsonString(res->body);       
         CTL_ERR("Model failed to load with status code: " << res->status);
-        return cpp::fail("Model failed to load with status code: " +
-                         std::to_string(res->status));
+        return cpp::fail("Model failed to start: " + root["message"].asString());
       }
     } else {
       auto err = res.error();
