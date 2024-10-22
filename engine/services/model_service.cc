@@ -15,6 +15,7 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/json_helper.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
