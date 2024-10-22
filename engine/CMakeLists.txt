@@ -80,10 +80,73 @@ find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(eventpp CONFIG REQUIRED)
 
+## Generating openapi json
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../docs/static/openapi/jan.json" JSON_CONTENT)
+string(LENGTH "${JSON_CONTENT}" CONTENT_LENGTH)
+message("Content length: ${CONTENT_LENGTH}")
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
+    "#pragma once\n"
+    "#include <string>\n"
+    "#include <sstream>\n\n"
+    "namespace CortexOpenApi {\n"
+)
+
+set(CHUNK_SIZE 2000)
+set(OFFSET 0)
+set(CHUNK_INDEX 0)
+
+while(${OFFSET} LESS ${CONTENT_LENGTH})
+    math(EXPR REMAINING "${CONTENT_LENGTH} - ${OFFSET}")
+    
+    if(${REMAINING} LESS ${CHUNK_SIZE})
+        string(SUBSTRING "${JSON_CONTENT}" ${OFFSET} ${REMAINING} CHUNK_CONTENT)
+        math(EXPR OFFSET "${OFFSET} + ${REMAINING}")
+    else()
+        string(SUBSTRING "${JSON_CONTENT}" ${OFFSET} ${CHUNK_SIZE} CHUNK_CONTENT)
+        math(EXPR OFFSET "${OFFSET} + ${CHUNK_SIZE}")
+    endif()
+    
+    # Escape special characters
+    string(REPLACE "\\" "\\\\" CHUNK_CONTENT "${CHUNK_CONTENT}")
+    string(REPLACE "\"" "\\\"" CHUNK_CONTENT "${CHUNK_CONTENT}")
+    string(REPLACE "\n" "\\n" CHUNK_CONTENT "${CHUNK_CONTENT}")
+    
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
+        "    inline std::string const json_part_${CHUNK_INDEX} = \"${CHUNK_CONTENT}\";\n"
+    )
+    
+    math(EXPR CHUNK_INDEX "${CHUNK_INDEX} + 1")
+endwhile()
+
+# Add the get function that concatenates all parts
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
+    "\n    inline std::string GetOpenApiJson() {\n"
+    "        std::ostringstream ss;\n"
+)
+
+# Add each part to the stream
+set(INDEX 0)
+while(${INDEX} LESS ${CHUNK_INDEX})
+    file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
+        "        ss << json_part_${INDEX};\n"
+    )
+    math(EXPR INDEX "${INDEX} + 1")
+endwhile()
+
+file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
+    "        return ss.str();\n"
+    "    }\n"
+    "}\n"
+)
+## End of generating openapi json
+
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
-  )
+)
+
+target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE nlohmann_json::nlohmann_json)
