@@ -5,6 +5,10 @@
 #include "services/model_service.h"
 
 namespace commands {
+
+std::optional<std::string> SelectLocalModel(ModelService& model_service,
+                                            const std::string& model_handle);
+
 class RunCmd {
  public:
   explicit RunCmd(std::string host, int port, std::string model_handle,
