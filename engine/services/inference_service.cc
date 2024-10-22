@@ -116,6 +116,7 @@ InferResult InferenceService::LoadModel(
                ? getenv("ENGINE_PATH")
                : file_manager_utils::GetCortexDataPath().string()) +
           get_engine_path(ne);
+      LOG_INFO << "engine path: " << abs_path;
 #if defined(_WIN32)
       // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
       // We would like to support running multiple engines at the same time. Therefore,
