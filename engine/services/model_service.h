@@ -5,12 +5,20 @@
 #include <string>
 #include "config/model_config.h"
 #include "services/download_service.h"
+#include "services/inference_service.h"
+
 class ModelService {
  public:
   constexpr auto static kHuggingFaceHost = "huggingface.co";
 
   explicit ModelService(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service} {};
+
+  explicit ModelService(
+      std::shared_ptr<DownloadService> download_service,
+      std::shared_ptr<services::InferenceService> inference_service)
+      : download_service_{download_service},
+        inference_svc_(inference_service) {};
 
   /**
    * Return model id if download successfully
@@ -67,4 +75,5 @@ class ModelService {
       const std::string& modelName);
 
   std::shared_ptr<DownloadService> download_service_;
+  std::shared_ptr<services::InferenceService> inference_svc_;
 };

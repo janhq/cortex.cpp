@@ -1,10 +1,12 @@
+
+#pragma once
 #include <nlohmann/json.hpp>
 #include <string>
+#include <memory>
 
 #if defined(_WIN32)
 #define NOMINMAX
 #endif
-#pragma once
 
 #include <drogon/HttpController.h>
 
@@ -31,12 +33,12 @@ using namespace drogon;
 
 namespace inferences {
 
-class server : public drogon::HttpController<server>,
+class server : public drogon::HttpController<server, false>,
                public BaseModel,
                public BaseChatCompletion,
                public BaseEmbedding {
  public:
-  server();
+  server(std::shared_ptr<services::InferenceService> inference_service);
   ~server();
   METHOD_LIST_BEGIN
   // list path definitions here;
@@ -100,6 +102,6 @@ class server : public drogon::HttpController<server>,
                            services::SyncQueue& q);
 
  private:
-  services::InferenceService inference_svc_;
+  std::shared_ptr<services::InferenceService> inference_svc_;
 };
 };  // namespace inferences

@@ -11,7 +11,8 @@
 
 namespace commands {
 bool ModelStartCmd::Exec(const std::string& host, int port,
-                         const std::string& model_handle) {
+                         const std::string& model_handle,
+                         bool print_success_log) {
   std::optional<std::string> model_id =
       SelectLocalModel(model_service_, model_handle);
 
@@ -37,9 +38,12 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
                       data_str.size(), "application/json");
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      CLI_LOG(model_id.value() << " model started successfully. Use `"
-                               << commands::GetCortexBinary() << " run "
-                               << *model_id << "` for interactive chat shell");
+      if (print_success_log) {
+        CLI_LOG(model_id.value()
+                << " model started successfully. Use `"
+                << commands::GetCortexBinary() << " run " << *model_id
+                << "` for interactive chat shell");
+      }
       return true;
     } else {
       auto root = json_helper::ParseJsonString(res->body);

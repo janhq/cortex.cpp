@@ -2,7 +2,9 @@
 
 #include <optional>
 #include <variant>
-#include "common/base.h"
+#include <mutex>
+#include <queue>
+#include <condition_variable>
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/dylib.h"
