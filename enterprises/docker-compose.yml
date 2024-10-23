@@ -1,4 +1,4 @@
-version: '3'
+version: '3.5'
 
 services:
   web:
@@ -7,22 +7,51 @@ services:
       - LLM_ENPOINT=http://cortex.cpp:8000
     ports:
       - "${API_PORT:-8000}:8000"
+    volumes:
+      - .:/app
     depends_on:
       - redis
       - cortex.cpp
+    command: [ uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
   cortex.cpp:
-    build: 
-      context: .
-      dockerfile: cortex.cpp/Dockerfile
+    build:
+      context: ./ai-services/cortex/
+      dockerfile: Dockerfile
     ports:
-      - "${CORTEX_PORT:-8000}:8000"
-    
+      - "${CORTEX_PORT:-39281}:39281"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+
+  whisper-speech:
+    build:
+      context: ./ai-services/whisper
+      dockerfile: Dockerfile
+    # network_mode: host
+    volumes:
+      - ./whisper/:/app/ # Change me
+    ports:
+      - "3348:3348"
+    command: [ "python", "app.py" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+
   worker:
     build:
       context: .
-      dockerfile: worker/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
       - redis
+    command: [ "celery", "-A", "app.workers.tasks", "worker", "--loglevel=info", "--concurrency", "4", "-Q", "job_queue" ]
 
   redis:
     image: "redis:alpine"
@@ -31,7 +60,7 @@ services:
 
   celery-flower:
     image: mher/flower
-    command: ["flower", "--broker=redis://redis:6379/0", "--port=5555"]
+    command: [ "flower", "--broker=redis://redis:6379/0", "--port=5555" ]
     ports:
       - "${FLOWER_PORT:-5555}:5555"
     depends_on:

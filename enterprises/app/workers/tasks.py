@@ -6,7 +6,7 @@ import aiohttp
 import json
 from app.logger import get_task_logger
 from app.config import get_config
-from app.models.chat_completion import ChatCompletionRequest
+from app.models.chat_completion import *
 from app.utils import decode_base64_to_audio, encode_audio_to_base64
 
 logger = get_task_logger()
@@ -34,10 +34,10 @@ async def CreateChatCompletionAudio(request: ChatCompletionRequest):
                     data = aiohttp.FormData()
                     data.add_field('file',
                                    byte,
-                                   filename=f"file.{audio_format}",
-                                   content_type=f"audio/{audio_format}")
+                                   filename=f"file{AUDIO_FILE_EXTENSIONS[audio_format]}",
+                                   content_type=AUDIO_MIME_TYPES[audio_format])
                     async with aiohttp.ClientSession() as session:
-                        async with session.post(get_config().whisper_endpoint+"/tokenize", data=data) as response:
+                        async with session.post(get_config().whisper_endpoint+f"/tokenize/{audio_format}", data=data) as response:
                             res = await response.json()
 
                     content += res["tokens"]

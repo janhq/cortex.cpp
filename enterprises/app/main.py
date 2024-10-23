@@ -13,33 +13,13 @@ import traceback
 redirect_stdout_stderr()
 
 
-# @asynccontextmanager
-# async def lifespan(app: FastAPI):
-#     # On start up
-#     config = get_config()
-#     # Initialize database
-#     await init_db()
-
-#     # Add default admin user if not exists
-#     async for session in get_async_session():
-#         admin_email = "admin@foundary.com"
-#         result = await session.execute(select(responses.User).filter(responses.User.email == admin_email))
-#         existing_admin = result.scalar_one_or_none()
-#         if not existing_admin:
-#             default_admin = responses.User(
-#                 email=admin_email,
-#                 username="admin",
-#                 hashed_password=get_auth_service().get_password_hash("admin"),
-#                 role=UserRole.ADMIN
-#             )
-#             session.add(default_admin)
-#             await session.commit()
-#             print("Default admin user created.")
-#         else:
-#             print("Default admin user already exists.")
-
-#     yield
-#     # On shut down
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # On start up
+    # Initialize database
+    await init_db()
+    yield
+    # On shut down
 
 chat_completion_service = get_chat_completion_service()
 
@@ -56,7 +36,7 @@ async def handle_chat_completions_v1(request: ChatCompletionRequest):
             else:
                 return await chat_completion_service.HandleAudioRequest(request)
         else:
-            # Todo handle new logic to call TTS here, when we can decide TTS will be used, now only response text
+            # TODO: handle new logic to call TTS here, when we can decide TTS will be used, now only response text
             return await chat_completion_service.HandleAudioRequest(request)
     if request.stream:
         return StreamingResponse(chat_completion_service.CreateChatCompletionStream(request))
@@ -73,7 +53,7 @@ async def handle_chat_completions(request: ChatCompletionRequest):
             else:
                 return await chat_completion_service.HandleAudioRequest(request)
         else:
-            # Todo handle new logic to call TTS here, when we can decide TTS will be used, now only response text
+            # TODO:  handle new logic to call TTS here, when we can decide TTS will be used, now only response text
             return await chat_completion_service.HandleAudioRequest(request)
     if request.stream:
         return StreamingResponse(chat_completion_service.CreateChatCompletionStream(request))

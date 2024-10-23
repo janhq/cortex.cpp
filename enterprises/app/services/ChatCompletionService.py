@@ -22,7 +22,7 @@ class ChatCompletionService:
         result = run_completion_task.delay(chat_completion_request.dict())
         return await a_get_result(result)
 
-    async def CreateChatCompletionAudioStreamText(self, chat_completion_request: ChatCompletionRequest) :
+    async def CreateChatCompletionAudioStreamText(self, chat_completion_request: ChatCompletionRequest):
         # print(chat_completion_request.dict())
         for message in chat_completion_request.messages:
             if message.role == "user":
@@ -36,12 +36,11 @@ class ChatCompletionService:
                         data = aiohttp.FormData()
                         data.add_field('file',
                                        byte,
-                                       filename=f"file.{audio_format}",
-                                       content_type=f"audio/{audio_format}")
+                                       filename=f"file{AUDIO_FILE_EXTENSIONS[audio_format]}",
+                                       content_type=AUDIO_MIME_TYPES[audio_format])
                         async with aiohttp.ClientSession() as session:
-                            async with session.post(get_config().whisper_endpoint+"/tokenize", data=data) as response:
+                            async with session.post(get_config().whisper_endpoint+f"/tokenize/{audio_format}", data=data) as response:
                                 res = await response.json()
-
                         content += res["tokens"]
                     else:
                         content += obj.text

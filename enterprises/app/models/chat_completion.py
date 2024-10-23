@@ -4,6 +4,36 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 
+class AudioFormat(str, PyEnum):
+    MP3 = "mp3"
+    OPUS = "opus"
+    AAC = "aac"
+    FLAC = "flac"
+    WAV = "wav"
+    PCM = "pcm"
+
+
+# Map audio formats to MIME types
+AUDIO_MIME_TYPES = {
+    AudioFormat.MP3: "audio/mpeg",
+    AudioFormat.OPUS: "audio/opus",
+    AudioFormat.AAC: "audio/aac",
+    AudioFormat.FLAC: "audio/flac",
+    AudioFormat.WAV: "audio/wav",
+    AudioFormat.PCM: "audio/l16"  # Linear PCM
+}
+
+# Map file extensions
+AUDIO_FILE_EXTENSIONS = {
+    AudioFormat.MP3: ".mp3",
+    AudioFormat.OPUS: ".opus",
+    AudioFormat.AAC: ".aac",
+    AudioFormat.FLAC: ".flac",
+    AudioFormat.WAV: ".wav",
+    AudioFormat.PCM: ".pcm"
+}
+
+
 class CompletionTokensDetails(BaseModel):
     reasoning_tokens: int = Field(default=0)
 
@@ -22,7 +52,8 @@ class UsageInfo(BaseModel):
 
 class AudioData(BaseModel):
     data: str
-    format: Literal["wav", "mp3",  "ogg", "mpeg"]
+    format: Literal["wav", "mp3", "opus",
+                    "aac", "flac", "pcm"]
 
 
 class AudioInput(BaseModel):
@@ -71,7 +102,8 @@ class StreamOptions(BaseModel):
 class AudioConfig(BaseModel):
     # Add audio parameters as per documentation
     voice: Optional[str] = None
-    format: Optional[str] = "wav"
+    format: Optional[Literal["mp3", "opus",
+                             "aac", "flac", "wav", "pcm"]] = "wav"
 
 
 class ModalitiesOption(str, PyEnum):
