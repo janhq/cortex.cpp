@@ -228,7 +228,7 @@ cpp::result<bool, std::string> DownloadService::Download(
 
 curl_off_t DownloadService::GetLocalFileSize(
     const std::filesystem::path& path) const {
-  FILE* file = fopen(path.string().c_str(), "r");
+  auto file = fopen(path.string().c_str(), "r");
   if (!file) {
     return -1;
   }
@@ -237,7 +237,7 @@ curl_off_t DownloadService::GetLocalFileSize(
     return -1;
   }
 
-  curl_off_t file_size = ftell64(file);
+  auto file_size = ftell64(file);
   fclose(file);
   return file_size;
 }
@@ -264,11 +264,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
   CTL_INF("Processing task: " + task.id);
   std::vector<std::pair<CURL*, FILE*>> task_handles;
 
-  downloading_data_ = std::make_shared<DownloadingData>(DownloadingData{
-      .item_id = "",
-      .download_task = &task,
-      .event_queue = event_queue_.get(),
-  });
+  active_task_ = std::make_shared<DownloadTask>(task);
 
   for (auto& item : task.items) {
     CURL* handle = curl_easy_init();
@@ -284,7 +280,13 @@ void DownloadService::ProcessTask(DownloadTask& task) {
       CTL_ERR("Failed to open output file " + item.localPath.string());
       return;
     }
-    downloading_data_->item_id = item.id;
+
+    auto dl_data_ptr = std::make_shared<DownloadingData>(DownloadingData{
+        .item_id = item.id,
+        .download_service = this,
+    });
+    downloading_data_map_.insert(std::make_pair(item.id, dl_data_ptr));
+
     if (auto headers = CreateHeaders(item.downloadUrl); headers) {
       curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
     }
@@ -294,7 +296,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
     curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
     curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, ProgressCallback);
-    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, downloading_data_.get());
+    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, dl_data_ptr.get());
 
     curl_multi_add_handle(multi_handle_, handle);
     task_handles.push_back(std::make_pair(handle, file));
@@ -329,6 +331,8 @@ void DownloadService::ProcessTask(DownloadTask& task) {
       fclose(pair.second);
     }
 
+    active_task_.reset();
+    downloading_data_map_.clear();
     return;
   }
 
@@ -338,7 +342,8 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     curl_easy_cleanup(pair.first);
     fclose(pair.second);
   }
-  downloading_data_.reset();
+  downloading_data_map_.clear();
+  active_task_.reset();
 
   RemoveTaskFromStopList(task.id);
 
