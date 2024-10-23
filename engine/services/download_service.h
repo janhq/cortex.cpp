@@ -80,8 +80,7 @@ class DownloadService {
  private:
   struct DownloadingData {
     std::string item_id;
-    DownloadTask* download_task;
-    EventQueue* event_queue;
+    DownloadService* download_service;
   };
 
   cpp::result<void, std::string> VerifyDownloadTask(
@@ -113,7 +112,9 @@ class DownloadService {
       callbacks_;
   std::mutex callbacks_mutex_;
 
-  std::shared_ptr<DownloadingData> downloading_data_;
+  std::shared_ptr<DownloadTask> active_task_;
+  std::unordered_map<std::string, std::shared_ptr<DownloadingData>>
+      downloading_data_map_;
 
   void WorkerThread();
 
@@ -131,13 +132,23 @@ class DownloadService {
 
   static int ProgressCallback(void* ptr, curl_off_t dltotal, curl_off_t dlnow,
                               curl_off_t ultotal, curl_off_t ulnow) {
-    auto* downloading_data = static_cast<DownloadingData*>(ptr);
-    auto& event_queue = *downloading_data->event_queue;
-    auto& download_task = *downloading_data->download_task;
+    auto downloading_data = static_cast<DownloadingData*>(ptr);
+    if (downloading_data == nullptr) {
+      return 0;
+    }
+    const auto dl_item_id = downloading_data->item_id;
+    if (dltotal <= 0) {
+      return 0;
+    }
 
-    // update the download task with corresponding download item
-    for (auto& item : download_task.items) {
-      if (item.id == downloading_data->item_id) {
+    auto dl_srv = downloading_data->download_service;
+    auto active_task = dl_srv->active_task_;
+    if (active_task == nullptr) {
+      return 0;
+    }
+
+    for (auto& item : active_task->items) {
+      if (item.id == dl_item_id) {
         item.downloadedBytes = dlnow;
         item.bytes = dltotal;
         break;
@@ -154,10 +165,10 @@ class DownloadService {
 
     // throttle event by 1 sec
     if (time_since_last_event >= 1000) {
-      event_queue.enqueue(
+      dl_srv->event_queue_->enqueue(
           EventType::DownloadEvent,
           DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-                        .download_task_ = download_task});
+                        .download_task_ = *active_task});
 
       // Update the last event time
       last_event_time = current_time;
