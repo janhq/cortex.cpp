@@ -136,7 +136,7 @@ class DownloadService {
     if (downloading_data == nullptr) {
       return 0;
     }
-    auto dl_item_id = downloading_data->item_id;
+    const auto dl_item_id = downloading_data->item_id;
     if (dltotal <= 0) {
       return 0;
     }
