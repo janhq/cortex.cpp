@@ -5,6 +5,7 @@
 #include "controllers/events.h"
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
+#include "controllers/server.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
@@ -88,21 +89,25 @@ void RunServer(std::optional<int> port) {
 
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
+  auto inference_svc = std::make_shared<services::InferenceService>();
 
   auto download_service = std::make_shared<DownloadService>(event_queue_ptr);
   auto engine_service = std::make_shared<EngineService>(download_service);
-  auto model_service = std::make_shared<ModelService>(download_service);
+  auto model_service =
+      std::make_shared<ModelService>(download_service, inference_svc);
 
   // initialize custom controllers
   auto engine_ctl = std::make_shared<Engines>(engine_service);
   auto model_ctl = std::make_shared<Models>(model_service, engine_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
+  auto server_ctl = std::make_shared<inferences::server>(inference_svc);
 
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
   drogon::app().registerController(pm_ctl);
+  drogon::app().registerController(server_ctl);
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;

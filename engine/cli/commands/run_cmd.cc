@@ -3,6 +3,7 @@
 #include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
+#include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
@@ -82,7 +83,7 @@ void RunCmd::Exec(bool run_detach) {
   if (!model_id.has_value()) {
     return;
   }
-  
+
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   auto address = host_ + ":" + std::to_string(port_);
@@ -139,12 +140,10 @@ void RunCmd::Exec(bool run_detach) {
           !commands::ModelStatusCmd(model_service_)
                .IsLoaded(host_, port_, *model_id)) {
 
-        auto result = model_service_.StartModel(host_, port_, *model_id);
-        if (result.has_error()) {
-          CLI_LOG("Error: " + result.error());
-          return;
-        }
-        if (!result.value()) {
+        auto res =
+            commands::ModelStartCmd(model_service_)
+                .Exec(host_, port_, *model_id, false /*print_success_log*/);
+        if (!res) {
           CLI_LOG("Error: Failed to start model");
           return;
         }

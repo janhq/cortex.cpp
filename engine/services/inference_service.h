@@ -1,8 +1,11 @@
 #pragma once
 
+#include <condition_variable>
+#include <mutex>
 #include <optional>
+#include <queue>
+#include <unordered_map>
 #include <variant>
-#include "common/base.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
 #include "utils/dylib.h"

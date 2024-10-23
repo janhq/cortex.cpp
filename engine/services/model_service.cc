@@ -11,6 +11,7 @@
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
@@ -611,28 +612,21 @@ cpp::result<bool, std::string> ModelService::StartModel(
       json_data["ai_prompt"] = mc.ai_template;
     }
 
-    auto data_str = json_data.toStyledString();
-    CTL_INF(data_str);
-    cli.set_read_timeout(std::chrono::seconds(60));
-    auto res = cli.Post("/inferences/server/loadmodel", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else if (res->status == httplib::StatusCode::Conflict_409) {
-        CTL_INF("Model '" + model_handle + "' is already loaded");
-        return true;
-      } else {
-        auto root = json_helper::ParseJsonString(res->body);       
-        CTL_ERR("Model failed to load with status code: " << res->status);
-        return cpp::fail("Model failed to start: " + root["message"].asString());
-      }
+    CTL_INF(json_data.toStyledString());
+    assert(!!inference_svc_);
+    auto ir =
+        inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      return true;
+    } else if (status == httplib::StatusCode::Conflict_409) {
+      CTL_INF("Model '" + model_handle + "' is already loaded");
+      return true;
     } else {
-      auto err = res.error();
-      CTL_ERR("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      CTL_ERR("Model failed to start with status code: " << status);
+      return cpp::fail("Model failed to start: " + data["message"].asString());
     }
-
   } catch (const std::exception& e) {
     return cpp::fail("Fail to load model with ID '" + model_handle +
                      "': " + e.what());
@@ -663,25 +657,18 @@ cpp::result<bool, std::string> ModelService::StopModel(
     Json::Value json_data;
     json_data["model"] = model_handle;
     json_data["engine"] = mc.engine;
-    auto data_str = json_data.toStyledString();
-    CTL_INF(data_str);
-    cli.set_read_timeout(std::chrono::seconds(60));
-    auto res = cli.Post("/inferences/server/unloadmodel", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else {
-        CTL_ERR("Model failed to unload with status code: " << res->status);
-        return cpp::fail("Model failed to unload with status code: " +
-                         std::to_string(res->status));
-      }
+    CTL_INF(json_data.toStyledString());
+    assert(inference_svc_);
+    auto ir =
+        inference_svc_->UnloadModel(std::make_shared<Json::Value>(json_data));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      return true;
     } else {
-      auto err = res.error();
-      CTL_ERR("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      CTL_ERR("Model failed to stop with status code: " << status);
+      return cpp::fail("Model failed to stop: " + data["message"].asString());
     }
-
   } catch (const std::exception& e) {
     return cpp::fail("Fail to unload model with ID '" + model_handle +
                      "': " + e.what());
