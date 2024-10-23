@@ -1,12 +1,15 @@
 import os
 import torch
 import torchaudio
+
 from fastapi import FastAPI, File, UploadFile, HTTPException
+
 from fastapi.responses import JSONResponse
 from transformers import WhisperModel, WhisperProcessor
 import uvicorn
 from huggingface_hub import hf_hub_download
 from whisperspeech.vq_stoks import RQBottleneckTransformer
+from custom_component import CustomRQBottleneckTransformer
 import logging
 import io
 from enum import Enum
@@ -15,27 +18,23 @@ import tempfile
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Use the first GPU
 app = FastAPI()
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
+
 if not os.path.exists("whisper-vq-stoks-v3-7lang-fixed.model"):
     hf_hub_download(
         repo_id="jan-hq/WhisperVQ",
         filename="whisper-vq-stoks-v3-7lang-fixed.model",
         local_dir=".",
     )
-vq_model = RQBottleneckTransformer.load_model(
+vq_model = CustomRQBottleneckTransformer.load_vq_only(
     "whisper-vq-stoks-v3-7lang-fixed.model"
 ).to(device)
-vq_model.ensure_whisper(device)
+vq_model.load_encoder(device)
 vq_model.eval()
-
-vq_model.whmodel[0].eval()
-del vq_model.whmodel[0].decoder  # we don't need this
-del vq_model._out_blocks
-del vq_model.positional_embedding
-torch.cuda.empty_cache()
 vq_model = torch.compile(vq_model)
 
 
@@ -166,7 +165,7 @@ async def get_supported_formats():
 
 
 @app.post("/tokenize/{format}")
-async def tokenize_audio(format: AudioFormat, file: UploadFile = File(...)):
+async def tokenize_audio(format: AudioFormat = "wav", file: UploadFile = File(...)):
     try:
         # Read file
         file_obj = await file.read()

@@ -29,3 +29,4 @@ RUN pip install transformers
 RUN pip install python-multipart
 COPY app.py /app/
 COPY whisper-vq-stoks-v3-7lang-fixed.model /app/
+COPY custom_component.py /app/

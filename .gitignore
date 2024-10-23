@@ -24,3 +24,4 @@ engine/test.db
 !docs/yarn.lock
 __pycache__
 *.log
+*.db

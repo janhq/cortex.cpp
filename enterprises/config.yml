@@ -2,8 +2,8 @@ database:
   url: "sqlite:///./sql_app.db"
 
 celery:
-  broker_url: "redis://localhost:6379/0"
-  result_backend: "redis://localhost:6379/1"
+  broker_url: "redis://redis:6379/0"
+  result_backend: "redis://redis:6379/1"
   result_expires: 3600  # Results expire after 1 hour (in seconds)
   job_queue: "job_queue"
   task_routes:
@@ -29,9 +29,9 @@ jwt:
   algorithm: "HS256"
   access_token_expire_minutes: 90
 llm:
-  endpoint: "http://127.0.0.1:39281"
+  endpoint: "http://cortex-cpp:39281"
 whisper:
-  endpoint: "http://127.0.0.1:3348"
+  endpoint: "http://whisper-speech:3348"
 
 storage:
   type: "local"

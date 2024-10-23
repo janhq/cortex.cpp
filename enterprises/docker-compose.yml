@@ -4,21 +4,32 @@ services:
   web:
     build: .
     environment:
-      - LLM_ENPOINT=http://cortex.cpp:8000
+      - LLM_ENPOINT=http://cortex-cpp:39281
     ports:
       - "${API_PORT:-8000}:8000"
     volumes:
-      - .:/app
+      - ./:/app
     depends_on:
-      - redis
-      - cortex.cpp
-    command: [ uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
-  cortex.cpp:
+      redis:
+        condition: service_started
+      cortex-cpp:
+        condition: service_healthy
+    # network_mode: host
+    command: [ "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload" ]
+  cortex-cpp:
     build:
-      context: ./ai-services/cortex/
+      context: ./ai-services/cortex
       dockerfile: Dockerfile
+    volumes:
+      - /home/thuan/cortex/models/mini-ichigi/ichigo/:/app/
     ports:
       - "${CORTEX_PORT:-39281}:39281"
+    healthcheck:
+      test: [ "CMD-SHELL", "curl http://localhost:39281/healthz" ]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
     deploy:
       resources:
         reservations:
@@ -33,7 +44,7 @@ services:
       dockerfile: Dockerfile
     # network_mode: host
     volumes:
-      - ./whisper/:/app/ # Change me
+      - ./ai-services/whisper/:/app/ # Change me
     ports:
       - "3348:3348"
     command: [ "python", "app.py" ]
@@ -52,15 +63,15 @@ services:
     depends_on:
       - redis
     command: [ "celery", "-A", "app.workers.tasks", "worker", "--loglevel=info", "--concurrency", "4", "-Q", "job_queue" ]
-
+    volumes:
+      - ./:/app
   redis:
     image: "redis:alpine"
     ports:
       - "${REDIS_PORT:-6379}:6379"
-
   celery-flower:
     image: mher/flower
-    command: [ "flower", "--broker=redis://redis:6379/0", "--port=5555" ]
+    command: [ "celery", "--broker=redis://redis:6379/0", "flower", "--port=5555" ]
     ports:
       - "${FLOWER_PORT:-5555}:5555"
     depends_on:

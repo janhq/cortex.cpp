@@ -1,3 +1,4 @@
+import requests
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.database import init_db, get_async_session
@@ -17,13 +18,16 @@ redirect_stdout_stderr()
 async def lifespan(app: FastAPI):
     # On start up
     # Initialize database
+    from app.config import get_config
     await init_db()
+    res = requests.post(get_config().llm_endpoint+"/v1/models/start", json={"model":"ichigo:3b-gguf-q8-0"}).json()
+    print(res)
     yield
     # On shut down
 
 chat_completion_service = get_chat_completion_service()
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 # Global exception handler
 
 
