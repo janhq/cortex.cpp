@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    environment:
+      - LLM_ENPOINT=http://cortex.cpp:8000
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      - redis
+      - cortex.cpp
+  cortex.cpp:
+    build: 
+      context: .
+      dockerfile: cortex.cpp/Dockerfile
+    ports:
+      - "${CORTEX_PORT:-8000}:8000"
+    
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    depends_on:
+      - redis
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+
+  celery-flower:
+    image: mher/flower
+    command: ["flower", "--broker=redis://redis:6379/0", "--port=5555"]
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      - redis

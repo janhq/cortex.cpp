@@ -22,3 +22,5 @@ platform/src/infrastructure/commanders/test/test_data
 **/vcpkg_installed
 engine/test.db
 !docs/yarn.lock
+__pycache__
+*.log
