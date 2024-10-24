@@ -121,36 +121,23 @@ std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
   return engines;
 }
 
-cpp::result<bool, std::string> EngineService::InstallEngine(
-    const std::string& engine, const std::string& version,
-    const std::string& src) {
-  auto ne = NormalizeEngine(engine);
-  if (!src.empty()) {
-    return UnzipEngine(ne, version, src);
-  } else {
-    auto result = DownloadEngine(ne, version);
-    if (result.has_error()) {
-      return result;
-    }
-    return DownloadCuda(ne);
-  }
-}
-
 cpp::result<bool, std::string> EngineService::InstallEngineAsync(
     const std::string& engine, const std::string& version,
     const std::string& src) {
   // Although this function is called async, only download tasks are performed async
-  // TODO(sang) better handler for unzip and download scenarios
   auto ne = NormalizeEngine(engine);
   if (!src.empty()) {
-    return UnzipEngine(ne, version, src);
-  } else {
-    auto result = DownloadEngine(ne, version, true /*async*/);
-    if (result.has_error()) {
-      return result;
+    auto res = UnzipEngine(ne, version, src);
+    // If has error or engine is installed successfully
+    if (res.has_error() || res.value()) {
+      return res;
     }
-    return DownloadCuda(ne, true /*async*/);
   }
+  auto result = DownloadEngine(ne, version, true /*async*/);
+  if (result.has_error()) {
+    return result;
+  }
+  return DownloadCuda(ne, true /*async*/);
 }
 
 cpp::result<bool, std::string> EngineService::UnzipEngine(
@@ -198,12 +185,16 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
 
   auto matched_variant = GetMatchedVariant(engine, variants);
   CTL_INF("Matched variant: " << matched_variant);
+  if (!found_cuda || matched_variant.empty()) {
+    return false;
+  }
+
   if (matched_variant.empty()) {
     CTL_INF("No variant found for " << hw_inf_.sys_inf->os << "-"
                                     << hw_inf_.sys_inf->arch
                                     << ", will get engine from remote");
     // Go with the remote flow
-    return DownloadEngine(engine, version);
+    // return DownloadEngine(engine, version);
   } else {
     auto engine_path = file_manager_utils::GetEnginesContainerPath();
     archive_utils::ExtractArchive(path + "/" + matched_variant,
@@ -211,9 +202,9 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
   }
 
   // Not match any cuda binary, download from remote
-  if (!found_cuda) {
-    return DownloadCuda(engine);
-  }
+  // if (!found_cuda) {
+  //   return DownloadCuda(engine);
+  // }
 
   return true;
 }

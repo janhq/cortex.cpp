@@ -8,6 +8,7 @@
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/logging_utils.h"
+#include "engine_install_cmd.h"
 
 namespace commands {
 
@@ -114,9 +115,8 @@ void RunCmd::Exec(bool run_detach) {
         throw std::runtime_error("Engine " + mc.engine + " is incompatible");
       }
       if (required_engine.value().status == EngineService::kNotInstalled) {
-        auto install_engine_result = engine_service_.InstallEngine(mc.engine);
-        if (install_engine_result.has_error()) {
-          throw std::runtime_error(install_engine_result.error());
+        if(!EngineInstallCmd(download_service_, host_, port_).Exec(mc.engine)) {
+          return;
         }
       }
     }

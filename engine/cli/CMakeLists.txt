@@ -81,6 +81,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/inference_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_manager.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
