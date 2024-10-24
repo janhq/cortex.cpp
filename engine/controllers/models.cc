@@ -355,7 +355,7 @@ void Models::StartModel(
   }
 
   if (auto& o = (*(req->getJsonObject()))["ngl"]; !o.isNull()) {
-    o.asInt();
+    params_override.ngl = o.asInt();
   }
 
   if (auto& o = (*(req->getJsonObject()))["n_parallel"]; !o.isNull()) {
@@ -369,7 +369,7 @@ void Models::StartModel(
   if (auto& o = (*(req->getJsonObject()))["cache_type"]; !o.isNull()) {
     params_override.cache_type = o.asString();
   }
-  
+
   auto model_entry = model_service_->GetDownloadedModel(model_handle);
   if (!model_entry.has_value()) {
     Json::Value ret;
