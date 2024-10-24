@@ -4,9 +4,9 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "httplib.h"
 #include "utils/curl_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/json_parser_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
@@ -87,13 +87,14 @@ struct HuggingFaceModelRepoInfo {
         .isPrivate = body["private"].asBool(),
         .disabled = body["disabled"].asBool(),
         .gated = body["gated"].asBool(),
-        // .tags = json_parser_utils::ParseJsonArray<std::string>(body["tags"]),
+        .tags = json_parser_utils::ParseJsonArray<std::string>(body["tags"]),
         .downloads = body["downloads"].asInt(),
 
         .likes = body["likes"].asInt(),
         .gguf = gguf,
         .siblings = siblings,
-        // .spaces = json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
+        .spaces =
+            json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
         .createdAt = body["createdAt"].asString(),
     };
   }
@@ -118,26 +119,6 @@ GetHuggingFaceHeaders() {
     };
   }
 
-  return headers;
-}
-
-inline curl_slist* CreateCurlHfHeaders() {
-  struct curl_slist* headers = nullptr;
-  auto hf_token = GetHuggingFaceToken();
-  if (hf_token) {
-    std::string auth_header = "Authorization: Bearer " + hf_token.value();
-    headers = curl_slist_append(headers, auth_header.c_str());
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-  }
-  return headers;
-}
-
-inline httplib::Headers CreateHttpHfHeaders() {
-  httplib::Headers headers;
-  auto token = GetHuggingFaceToken();
-  if (token) {
-    headers.emplace("Authorization", "Bearer " + token.value());
-  }
   return headers;
 }
 

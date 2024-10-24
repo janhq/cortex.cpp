@@ -1,0 +1,25 @@
+#include "gtest/gtest.h"
+#include "utils/github_release_utils.h"
+
+class GitHubReleaseUtilsTest : public ::testing::Test {
+ protected:
+  void SetUp() override {}
+
+  void TearDown() override {}
+};
+
+TEST_F(GitHubReleaseUtilsTest, AbleToGetReleaseByVersion) {
+  auto version{"v0.1.36"};
+  auto result = github_release_utils::GetReleaseByVersion(
+      "janhq", "cortex.llamacpp", version);
+
+  ASSERT_TRUE(result.has_value());
+  ASSERT_EQ(result->tag_name, version);
+}
+
+TEST_F(GitHubReleaseUtilsTest, AbleToGetReleaseList) {
+  auto result = github_release_utils::GetReleases("janhq", "cortex.llamacpp");
+
+  ASSERT_TRUE(result.has_value());
+  ASSERT_TRUE(result->size() > 0);
+}

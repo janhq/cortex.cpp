@@ -1,9 +1,8 @@
 #pragma once
 
 #include <Security/cssmconfig.h>
-#include <unordered_map>
-#include "utils/huggingface_utils.h"
-#include "utils/json_parser_utils.h"
+#include <json/value.h>
+#include "utils/curl_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
@@ -23,6 +22,23 @@ struct GitHubAsset {
 
   std::string updated_at;
   std::string browser_download_url;
+
+  static GitHubAsset FromJson(const Json::Value& json) {
+    return GitHubAsset{
+        .url = json["url"].asString(),
+        .id = json["id"].asInt(),
+        .node_id = json["node_id"].asString(),
+        .name = json["name"].asString(),
+        .label = json["label"].asString(),
+        .content_type = json["content_type"].asString(),
+        .state = json["state"].asString(),
+        .size = json["size"].asUInt64(),
+        .download_count = json["download_count"].asUInt(),
+        .created_at = json["created_at"].asString(),
+        .updated_at = json["updated_at"].asString(),
+        .browser_download_url = json["browser_download_url"].asString(),
+    };
+  }
 };
 
 struct GitHubRelease {
@@ -38,6 +54,13 @@ struct GitHubRelease {
   std::vector<GitHubAsset> assets;
 
   static GitHubRelease FromJson(const Json::Value& json) {
+    std::vector<GitHubAsset> assets = {};
+    if (json["assets"].isArray()) {
+      for (const auto& asset : json["assets"]) {
+        assets.push_back(GitHubAsset::FromJson(asset));
+      }
+    }
+
     return GitHubRelease{
         .url = json["url"].asString(),
         .id = json["id"].asInt(),
@@ -47,8 +70,7 @@ struct GitHubRelease {
         .prerelease = json["prerelease"].asBool(),
         .created_at = json["created_at"].asString(),
         .published_at = json["published_at"].asString(),
-        .assets =
-            json_parser_utils::ParseJsonArray<GitHubAsset>(json["assets"]),
+        .assets = assets,
     };
   }
 };
@@ -64,16 +86,43 @@ inline cpp::result<std::vector<GitHubRelease>, std::string> GetReleases(
       .pathParams = {"repos", author, repo, "releases"},
   };
 
-  auto result = curl_utils::SimpleGetJson(url_parser::FromUrl(url));
+  std::unordered_map<std::string, std::string> headers;
+  headers["Accept"] = "application/vnd.github.v3+json";
+  headers["User-Agent"] = "cortex-cli";
+  auto result = curl_utils::SimpleGetJson(url_parser::FromUrl(url), headers);
 
   if (result.has_error()) {
     return cpp::fail(result.error());
   }
 
-  if (!result->isArray()) {
+  if (!result.value().isArray()) {
     return cpp::fail("Releases returned is not an array!");
   }
 
-  return json_parser_utils::ParseJsonArray<GitHubRelease>(result.value());
+  std::vector<GitHubRelease> releases{};
+  for (const auto& release : result.value()) {
+    releases.push_back(GitHubRelease::FromJson(release));
+  }
+  return releases;
+}
+
+inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
+    const std::string& author, const std::string& repo,
+    const std::string& tag) {
+  auto url = url_parser::Url{
+      .protocol = "https",
+      .host = "api.github.com",
+      .pathParams = {"repos", author, repo, "releases", "tags", tag},
+  };
+
+  std::unordered_map<std::string, std::string> headers;
+  headers["Accept"] = "application/vnd.github.v3+json";
+  headers["User-Agent"] = "cortex-cli";  // TODO: namh recheck this
+  auto result = curl_utils::SimpleGetJson(url_parser::FromUrl(url), headers);
+
+  if (result.has_error()) {
+    return cpp::fail(result.error());
+  }
+  return GitHubRelease::FromJson(result.value());
 }
 };  // namespace github_release_utils

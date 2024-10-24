@@ -73,7 +73,10 @@ class DownloadService {
    * @param url - url to get file size
    */
   cpp::result<uint64_t, std::string> GetFileSize(
-      const std::string& url) const noexcept;
+      const std::string& url,
+      const std::optional<
+          std::reference_wrapper<std::unordered_map<std::string, std::string>>>&
+          headers = std::nullopt) const noexcept;
 
   cpp::result<std::string, std::string> StopTask(const std::string& task_id);
 

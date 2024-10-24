@@ -70,20 +70,19 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
       .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
 
   httplib::Client cli(url.GetProtocolAndHost());
-  auto res =
-      cli.Get(url.GetPathAndQuery(), huggingface_utils::CreateHttpHfHeaders());
-  if (res->status != httplib::StatusCode::OK_200) {
+  // TODO: namh add header here
+  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (result.has_error()) {
     return cpp::fail("Model " + modelId + " not found");
   }
-  auto jsonResponse = json::parse(res->body);
 
   std::vector<DownloadItem> download_items{};
   auto model_container_path = file_manager_utils::GetModelsContainerPath() /
                               "cortex.so" / modelId / branch;
   file_manager_utils::CreateDirectoryRecursively(model_container_path.string());
 
-  for (const auto& [key, value] : jsonResponse.items()) {
-    auto path = value["path"].get<std::string>();
+  for (const auto& value : result.value()) {
+    auto path = value["path"].asString();
     if (path == ".gitattributes" || path == ".gitignore" ||
         path == "README.md") {
       continue;
@@ -100,12 +99,9 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
                      .localPath = local_path});
   }
 
-  DownloadTask download_tasks{
-      .id = branch == "main" ? modelId : modelId + "-" + branch,
-      .type = DownloadType::Model,
-      .items = download_items};
-
-  return download_tasks;
+  return DownloadTask{.id = branch == "main" ? modelId : modelId + "-" + branch,
+                      .type = DownloadType::Model,
+                      .items = download_items};
 }
 }  // namespace
 
@@ -620,7 +616,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
     ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
     ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
     ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
-#undef ASSIGN_IF_PRESENT;
+#undef ASSIGN_IF_PRESENT
 
     CTL_INF(json_data.toStyledString());
     assert(!!inference_svc_);

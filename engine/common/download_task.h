@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
 
@@ -13,6 +14,8 @@ using namespace nlohmann;
 struct DownloadItem {
 
   std::string id;
+
+  std::optional<std::unordered_map<std::string, std::string>> headers;
 
   std::string downloadUrl;
 
