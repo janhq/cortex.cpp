@@ -14,6 +14,8 @@ std::optional<int> n_parallel;
 std::optional<int> ctx_len;
 std::optional<std::string> custom_prompt_template;
 std::optional<std::string> cache_type;
+std::optional<std::string> mmproj;
+std::optional<std::string> model_path;
 };
 class ModelService {
  public:
