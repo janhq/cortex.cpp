@@ -32,7 +32,8 @@ llm:
   endpoint: "http://cortex-cpp:39281"
 whisper:
   endpoint: "http://whisper-speech:3348"
-
+tts:
+  endpoint: "http://text-to-speech:22312"
 storage:
   type: "local"
   path: ./storage/

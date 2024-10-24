@@ -79,6 +79,9 @@ class Config:
     def llm_endpoint(self):
         return os.environ.get("LLM_ENDPOINT",self.config["llm"]["endpoint"] )
     @property
+    def tts_endpoint(self):
+        return os.environ.get("TTS_ENDPOINT",self.config["tts"]["endpoint"] )
+    @property
     def api_host(self):
         return self.config["api"]["host"]
 

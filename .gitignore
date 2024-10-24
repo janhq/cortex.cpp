@@ -25,3 +25,4 @@ engine/test.db
 __pycache__
 *.log
 *.db
+.pytest_cache/

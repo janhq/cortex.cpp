@@ -55,7 +55,23 @@ services:
             - driver: nvidia
               count: all
               capabilities: [ gpu ]
-
+  text-to-speech:
+    build:
+      context: ./ai-services/tts
+      dockerfile: Dockerfile
+    # network_mode: host
+    volumes:
+      - ./ai-services/tts/:/app/ # Change me
+    ports:
+      - "22312:22312"
+    command: [ "python", "app.py" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
   worker:
     build:
       context: .

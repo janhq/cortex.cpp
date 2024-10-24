@@ -90,9 +90,13 @@ class Tool(BaseModel):
     function: Dict[str, Any]
 
 
+class ToolChoiceFunction(BaseModel):
+    name: str
+
+
 class ToolChoice(BaseModel):
     type: Literal["function"]
-    function: Dict[str, str]
+    function: ToolChoiceFunction
 
 
 class StreamOptions(BaseModel):

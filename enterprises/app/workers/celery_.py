@@ -31,6 +31,7 @@ def get_celery() -> Celery:
                 "accept_content": ["json", "msgpack"],
                 "task_serializer": "msgpack",
                 "task_compression": "zstd",
+                "task_annotations": {'*': {'rate_limit': '1000/m'}}
             }
         )
         __celery.conf.task_routes = {
@@ -40,7 +41,6 @@ def get_celery() -> Celery:
     return __celery
 
 # Configure logging
-
 
 
 async def a_get_result(result, poll_interval=0.05):

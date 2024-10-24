@@ -20,7 +20,8 @@ async def lifespan(app: FastAPI):
     # Initialize database
     from app.config import get_config
     await init_db()
-    res = requests.post(get_config().llm_endpoint+"/v1/models/start", json={"model":"ichigo:3b-gguf-q8-0"}).json()
+    res = requests.post(get_config().llm_endpoint+"/v1/models/start",
+                        json={"model": "ichigo:3b-gguf-q8-0"}).json()
     print(res)
     yield
     # On shut down
@@ -41,7 +42,7 @@ async def handle_chat_completions_v1(request: ChatCompletionRequest):
                 return await chat_completion_service.HandleAudioRequest(request)
         else:
             # TODO: handle new logic to call TTS here, when we can decide TTS will be used, now only response text
-            return await chat_completion_service.HandleAudioRequest(request)
+            return await chat_completion_service.HandleAudioRequestWithTTS(request)
     if request.stream:
         return StreamingResponse(chat_completion_service.CreateChatCompletionStream(request))
     else:
@@ -58,7 +59,7 @@ async def handle_chat_completions(request: ChatCompletionRequest):
                 return await chat_completion_service.HandleAudioRequest(request)
         else:
             # TODO:  handle new logic to call TTS here, when we can decide TTS will be used, now only response text
-            return await chat_completion_service.HandleAudioRequest(request)
+            return await chat_completion_service.HandleAudioRequestWithTTS(request)
     if request.stream:
         return StreamingResponse(chat_completion_service.CreateChatCompletionStream(request))
     else:

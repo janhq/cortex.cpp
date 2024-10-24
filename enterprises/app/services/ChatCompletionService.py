@@ -4,7 +4,7 @@ import aiohttp
 import base64
 from pathlib import Path
 from typing import Union, Optional
-from app.workers.tasks import run_completion_task, run_completion_audio_task
+from app.workers.tasks import run_completion_task, run_completion_audio_task, run_completion_with_tts_task
 from app.workers.celery_ import a_get_result
 from app.utils import decode_base64_to_audio, encode_audio_to_base64, get_audio_content_by_id
 
@@ -12,6 +12,11 @@ from app.utils import decode_base64_to_audio, encode_audio_to_base64, get_audio_
 class ChatCompletionService:
     def __init__(self) -> None:
         pass
+
+    async def HandleAudioRequestWithTTS(self, chat_completion_request: ChatCompletionRequest) -> ChatCompletionResponse:
+        result = run_completion_with_tts_task.delay(
+            chat_completion_request.dict())
+        return await a_get_result(result)
 
     async def HandleAudioRequest(self, chat_completion_request: ChatCompletionRequest) -> ChatCompletionResponse:
         result = run_completion_audio_task.delay(
@@ -52,19 +57,7 @@ class ChatCompletionService:
         async with aiohttp.ClientSession() as session:
             async with session.post(get_config().llm_endpoint+"/v1/chat/completions", json=chat_completion_request.dict(), headers={"Accept": "text/event-stream"}) as response:
                 async for line in response.content:
-                    if line:
-                        decoded_line = line.decode("utf-8")
-                        if decoded_line.startswith("data: "):
-                            json_str = decoded_line[6:]
-                            if json_str.strip() == "[DONE]":
-                                break
-                            else:
-                                yield decoded_line
-                        elif decoded_line.strip() != "":
-                            yield "data: " + decoded_line
-                    else:
-                        yield "data: " + "\n\n"
-        yield "data: [DONE]"
+                    yield line
 
     async def CreateChatCompletion(self, chat_completion_request: ChatCompletionRequest) -> ChatCompletionResponse:
         # print(chat_completion_request.dict())
@@ -78,19 +71,7 @@ class ChatCompletionService:
         async with aiohttp.ClientSession() as session:
             async with session.post(get_config().llm_endpoint+"/v1/chat/completions", json=chat_completion_request.dict(), headers={"Accept": "text/event-stream"}) as response:
                 async for line in response.content:
-                    if line:
-                        decoded_line = line.decode("utf-8")
-                        if decoded_line.startswith("data: "):
-                            json_str = decoded_line[6:]
-                            if json_str.strip() == "[DONE]":
-                                break
-                            else:
-                                yield decoded_line
-                        elif decoded_line.strip() != "":
-                            yield "data: " + decoded_line
-                    else:
-                        yield "data: " + "\n\n"
-        yield "data: [DONE]"
+                    yield line
 
 
 __chat_completion_service = None
