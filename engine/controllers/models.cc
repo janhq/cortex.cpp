@@ -370,6 +370,20 @@ void Models::StartModel(
     params_override.cache_type = o.asString();
   }
 
+  if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
+    params_override.mmproj = o.asString();
+  }
+
+  // Support both llama_model_path and model_path for backward compatible
+  // model_path has higher priority
+  if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
+    params_override.model_path = o.asString();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["model_path"]; !o.isNull()) {
+    params_override.model_path = o.asString();
+  }
+
   auto model_entry = model_service_->GetDownloadedModel(model_handle);
   if (!model_entry.has_value()) {
     Json::Value ret;

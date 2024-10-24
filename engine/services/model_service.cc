@@ -622,6 +622,8 @@ cpp::result<bool, std::string> ModelService::StartModel(
     ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
     ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
     ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
+    ASSIGN_IF_PRESENT(json_data, params_override, mmproj);
+    ASSIGN_IF_PRESENT(json_data, params_override, model_path);
 #undef ASSIGN_IF_PRESENT;
 
     CTL_INF(json_data.toStyledString());
