@@ -570,7 +570,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 
 cpp::result<bool, std::string> ModelService::StartModel(
     const std::string& host, int port, const std::string& model_handle,
-    std::optional<std::string> custom_prompt_template) {
+    const StartParameterOverride& params_override) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -600,9 +600,9 @@ cpp::result<bool, std::string> ModelService::StartModel(
       return false;
     }
     json_data["model"] = model_handle;
-    if (!custom_prompt_template.value_or("").empty()) {
-      auto parse_prompt_result =
-          string_utils::ParsePrompt(custom_prompt_template.value());
+    if (auto& cpt = params_override.custom_prompt_template;
+        !cpt.value_or("").empty()) {
+      auto parse_prompt_result = string_utils::ParsePrompt(cpt.value());
       json_data["system_prompt"] = parse_prompt_result.system_prompt;
       json_data["user_prompt"] = parse_prompt_result.user_prompt;
       json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
@@ -611,6 +611,18 @@ cpp::result<bool, std::string> ModelService::StartModel(
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
     }
+
+#define ASSIGN_IF_PRESENT(json_obj, param_override, param_name) \
+  if (param_override.param_name) {                              \
+    json_obj[#param_name] = param_override.param_name.value();  \
+  }
+
+    ASSIGN_IF_PRESENT(json_data, params_override, cache_enabled);
+    ASSIGN_IF_PRESENT(json_data, params_override, ngl);
+    ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
+    ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
+    ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
+#undef ASSIGN_IF_PRESENT;
 
     CTL_INF(json_data.toStyledString());
     assert(!!inference_svc_);
