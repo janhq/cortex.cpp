@@ -1,7 +1,8 @@
 #include <curl/curl.h>
+#include <json/reader.h>
+#include <json/value.h>
 #include <yaml-cpp/node/node.h>
 #include <yaml-cpp/node/parse.h>
-#include <nlohmann/json.hpp>
 #include <string>
 #include "utils/result.hpp"
 
@@ -16,7 +17,9 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb,
 }  // namespace
 
 inline cpp::result<std::string, std::string> SimpleGet(
-    const std::string& url, curl_slist* headers = nullptr) {
+    const std::string& url,
+    std::optional<std::unordered_map<std::string, std::string>> headers =
+        std::nullopt) {
   CURL* curl;
   CURLcode res;
   std::string readBuffer;
@@ -29,8 +32,15 @@ inline cpp::result<std::string, std::string> SimpleGet(
     return cpp::fail("Failed to init CURL");
   }
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  if(headers) {
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  if (headers.has_value()) {
+    struct curl_slist* curl_headers = nullptr;
+
+    for (const auto& [key, value] : headers.value()) {
+      std::string header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
 
   // Set write function callback and data buffer
@@ -50,7 +60,9 @@ inline cpp::result<std::string, std::string> SimpleGet(
 }
 
 inline cpp::result<YAML::Node, std::string> ReadRemoteYaml(
-    const std::string& url, curl_slist* headers = nullptr) {
+    const std::string& url,
+    std::optional<std::unordered_map<std::string, std::string>> headers =
+        std::nullopt) {
   auto result = SimpleGet(url, headers);
   if (result.has_error()) {
     return cpp::fail(result.error());
@@ -64,18 +76,22 @@ inline cpp::result<YAML::Node, std::string> ReadRemoteYaml(
   }
 }
 
-inline cpp::result<nlohmann::json, std::string> SimpleGetJson(
-    const std::string& url, curl_slist* headers = nullptr) {
+inline cpp::result<Json::Value, std::string> SimpleGetJson(
+    const std::string& url,
+    std::optional<std::unordered_map<std::string, std::string>> headers =
+        std::nullopt) {
   auto result = SimpleGet(url, headers);
   if (result.has_error()) {
     return cpp::fail(result.error());
   }
+  Json::Value root;
+  Json::Reader reader;
 
-  try {
-    return nlohmann::json::parse(result.value());
-  } catch (const std::exception& e) {
+  if (!reader.parse(result.value(), root)) {
     return cpp::fail("JSON from " + url +
-                     " parsing error: " + std::string(e.what()));
+                     " parsing error: " + reader.getFormattedErrorMessages());
   }
+
+  return root;
 }
 }  // namespace curl_utils

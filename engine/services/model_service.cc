@@ -11,11 +11,9 @@
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
-#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
-#include "utils/json_helper.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
