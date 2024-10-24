@@ -1,12 +1,13 @@
 #include "command_line_parser.h"
 #include <memory>
 #include <optional>
+#include <string>
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
+#include "commands/engine_release_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
-#include "commands/model_alias_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_import_cmd.h"
@@ -94,8 +95,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
           CLI_LOG("\nNew Cortex release available: "
                   << CORTEX_CPP_VERSION << " -> " << *latest_version);
           CLI_LOG("To update, run: " << commands::GetRole()
-                                      << commands::GetCortexBinary()
-                                      << " update");
+                                     << commands::GetCortexBinary()
+                                     << " update");
         }
         done = true;
       });
@@ -138,7 +139,8 @@ void CommandLineParser::SetupCommonCommands() {
     }
   });
 
-  auto run_cmd = app_.add_subcommand("run", "Shortcut: pull, start & chat with a model");
+  auto run_cmd =
+      app_.add_subcommand("run", "Shortcut: pull, start & chat with a model");
   run_cmd->group(kCommonCommandsGroup);
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
@@ -270,30 +272,6 @@ void CommandLineParser::SetupModelCommands() {
                                  cml_data_.model_id);
   });
 
-  std::string model_alias;
-  auto model_alias_cmd =
-      models_cmd->add_subcommand("alias", "Add a model alias instead of ID");
-  model_alias_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                         " models alias --model_id [model_id] --alias [alias]");
-  model_alias_cmd->group(kSubcommands);
-  model_alias_cmd->add_option(
-      "--model_id", cml_data_.model_id,
-      "Can be a model ID or model alias");
-  model_alias_cmd->add_option("--alias", cml_data_.model_alias,
-                              "new alias to be set");
-  model_alias_cmd->callback([this, model_alias_cmd]() {
-    if (std::exchange(executed_, true))
-      return;
-    if (cml_data_.model_id.empty() || cml_data_.model_alias.empty()) {
-      CLI_LOG("[model_id] and [alias] are required\n");
-      CLI_LOG(model_alias_cmd->help());
-      return;
-    }
-    commands::ModelAliasCmd mdc;
-    mdc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-             cml_data_.model_alias);
-  });
   // Model update parameters comment
   ModelUpdate(models_cmd);
 
@@ -347,6 +325,21 @@ void CommandLineParser::SetupEngineCommands() {
     command.Exec(cml_data_.config.apiServerHost,
                  std::stoi(cml_data_.config.apiServerPort));
   });
+
+  auto installv2_cmd = engines_cmd->add_subcommand("release", "Install engine");
+  installv2_cmd->group(kSubcommands);
+  installv2_cmd->callback([this, installv2_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (installv2_cmd->get_subcommands().empty()) {
+      CLI_LOG("[engine_name] is required\n");
+      CLI_LOG(installv2_cmd->help());
+    }
+  });
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineInstallV2(installv2_cmd, engine_name);
+  }
 
   auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
   install_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
@@ -417,8 +410,7 @@ void CommandLineParser::SetupSystemCommands() {
     ssc.Exec();
   });
 
-  auto ps_cmd =
-      app_.add_subcommand("ps", "Show active model statuses");
+  auto ps_cmd = app_.add_subcommand("ps", "Show active model statuses");
   ps_cmd->group(kSystemGroup);
   ps_cmd->usage("Usage:\n" + commands::GetCortexBinary() + "ps");
   ps_cmd->callback([&]() {
@@ -443,6 +435,25 @@ void CommandLineParser::SetupSystemCommands() {
     auto cuc = commands::CortexUpdCmd(download_service_);
     cuc.Exec(cml_data_.cortex_version);
     cml_data_.check_upd = false;
+  });
+}
+
+void CommandLineParser::EngineInstallV2(CLI::App* parent,
+                                        const std::string& engine_name) {
+  auto install_engine_cmd = parent->add_subcommand(engine_name, "");
+  install_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                            " engines install " + engine_name + " [options]");
+  install_engine_cmd->group(kEngineGroup);
+  install_engine_cmd->callback([this, engine_name] {
+    if (std::exchange(executed_, true))
+      return;
+    auto result = commands::EngineReleaseCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), engine_name);
+
+    if (result.has_error()) {
+      CLI_LOG(result.error());
+    }
   });
 }
 

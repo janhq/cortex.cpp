@@ -19,9 +19,8 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
 TEST_F(HuggingFaceUtilTestSuite, TestGetHuggingFaceModelRepoInfoSuccessfully) {
   auto model_info =
       huggingface_utils::GetHuggingFaceModelRepoInfo("cortexso", "tinyllama");
-  auto not_null = model_info.has_value();
 
-  EXPECT_TRUE(not_null);
+  EXPECT_TRUE(model_info.has_value());
   EXPECT_EQ(model_info->id, "cortexso/tinyllama");
   EXPECT_EQ(model_info->modelId, "cortexso/tinyllama");
   EXPECT_EQ(model_info->author, "cortexso");
@@ -44,9 +43,8 @@ TEST_F(HuggingFaceUtilTestSuite,
        TestGetHuggingFaceModelRepoInfoReturnNullGgufInfoWhenNotAGgufModel) {
   auto model_info = huggingface_utils::GetHuggingFaceModelRepoInfo(
       "BAAI", "bge-reranker-v2-m3");
-  auto not_null = model_info.has_value();
 
-  EXPECT_TRUE(not_null);
+  EXPECT_TRUE(model_info.has_value());
   EXPECT_EQ(model_info->disabled, false);
   EXPECT_EQ(model_info->gated, false);
 

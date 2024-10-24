@@ -2,9 +2,10 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include "common/download_task.h"
 #include "logging_utils.h"
-#include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
+#include "utils/engine_constants.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -125,7 +126,7 @@ inline std::string GetDefaultDataFolderName() {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT "prod"
 #endif
-  std::string default_data_folder_name{config_yaml_utils::kCortexFolderName};
+  std::string default_data_folder_name{kCortexFolderName};
   std::string variant{CORTEX_VARIANT};
   std::string env_postfix{""};
   if (variant == kBetaVariant) {
@@ -196,7 +197,7 @@ inline std::filesystem::path GetCortexDataPath() {
     data_folder_path = std::filesystem::path(config.dataFolderPath);
   } else {
     auto home_path = GetHomeDirectoryPath();
-    data_folder_path = home_path / config_yaml_utils::kCortexFolderName;
+    data_folder_path = home_path / kCortexFolderName;
   }
 
   if (!std::filesystem::exists(data_folder_path)) {
@@ -217,7 +218,7 @@ inline std::filesystem::path GetCortexLogPath() {
     log_folder_path = std::filesystem::path(config.logFolderPath);
   } else {
     auto home_path = GetHomeDirectoryPath();
-    log_folder_path = home_path / config_yaml_utils::kCortexFolderName;
+    log_folder_path = home_path / kCortexFolderName;
   }
 
   if (!std::filesystem::exists(log_folder_path)) {

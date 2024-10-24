@@ -7,6 +7,7 @@
 #include <variant>
 #include <vector>
 #include "exceptions/malformed_url_exception.h"
+#include "utils/result.hpp"
 
 namespace url_parser {
 
@@ -37,7 +38,9 @@ struct Url {
   std::string protocol;
   std::string host;
   std::vector<std::string> pathParams;
-  std::unordered_map<std::string, std::variant<std::string, explicit_int, explicit_bool>> queries;
+  std::unordered_map<std::string,
+                     std::variant<std::string, explicit_int, explicit_bool>>
+      queries;
 
   std::string GetProtocolAndHost() const { return protocol + "://" + host; }
 
@@ -79,7 +82,8 @@ inline void SplitPathParams(const std::string& input,
   }
 }
 
-inline Url FromUrlString(const std::string& urlString) {
+inline cpp::result<Url, std::string> FromUrlString(
+    const std::string& urlString) {
   Url url = {
       .protocol = "",
       .host = "",
@@ -108,8 +112,7 @@ inline Url FromUrlString(const std::string& urlString) {
       counter++;
     }
   } else {
-    auto message{"Malformed URL: " + urlString};
-    throw MalformedUrlException(message);
+    return cpp::fail("Malformed URL: " + urlString);
   }
   return url;
 }

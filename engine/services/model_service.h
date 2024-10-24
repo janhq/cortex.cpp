@@ -30,8 +30,6 @@ struct StartParameterOverride {
 
 class ModelService {
  public:
-  constexpr auto static kHuggingFaceHost = "huggingface.co";
-
   explicit ModelService(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service} {};
 

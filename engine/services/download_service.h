@@ -83,9 +83,6 @@ class DownloadService {
     DownloadService* download_service;
   };
 
-  cpp::result<void, std::string> VerifyDownloadTask(
-      DownloadTask& task) const noexcept;
-
   cpp::result<bool, std::string> Download(
       const std::string& download_id,
       const DownloadItem& download_item) noexcept;

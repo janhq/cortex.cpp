@@ -1,17 +1,19 @@
 #include "engine_service.h"
-#include <httplib.h>
+#include <cstdlib>
+#include <filesystem>
+#include <iostream>
 #include <optional>
 #include "algorithm"
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/github_release_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-
-using json = nlohmann::json;
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -55,81 +57,32 @@ std::string Repo2Engine(const std::string& r) {
   }
   return r;
 };
+
+std::string GetEnginePath(std::string_view e) {
+  if (e == kLlamaRepo) {
+    return kLlamaLibPath;
+  } else if (e == kOnnxRepo) {
+    return kOnnxLibPath;
+  } else if (e == kTrtLlmRepo) {
+    return kTensorrtLlmPath;
+  }
+  return kLlamaLibPath;
+};
 }  // namespace
 
-cpp::result<EngineInfo, std::string> EngineService::GetEngineInfo(
-    const std::string& engine) const {
-
-  if (std::find(kSupportEngines.begin(), kSupportEngines.end(), engine) ==
-      kSupportEngines.end()) {
-    return cpp::fail("Engine " + engine + " is not supported!");
+cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
+    const std::string& engine, const std::string& version,
+    const std::string& variant_name) {
+  auto ne = NormalizeEngine(engine);
+  auto result = DownloadEngineV2(ne, version, variant_name, true /*async*/);
+  if (result.has_error()) {
+    return result;
   }
-
-  auto engine_status_list = GetEngineInfoList();
-
-  return *std::find_if(
-      engine_status_list.begin(), engine_status_list.end(),
-      [&engine](const EngineInfo& e) { return e.name == engine; });
-}
-
-std::vector<EngineInfo> EngineService::GetEngineInfoList() const {
-  auto ecp = file_manager_utils::GetEnginesContainerPath();
-
-  std::string onnx_status{kIncompatible};
-  std::string llamacpp_status =
-      std::filesystem::exists(ecp / kLlamaRepo) ? kReady : kNotInstalled;
-  std::string tensorrt_status{kIncompatible};
-
-#ifdef _WIN32
-  onnx_status =
-      std::filesystem::exists(ecp / kOnnxRepo) ? kReady : kNotInstalled;
-  tensorrt_status =
-      std::filesystem::exists(ecp / kTrtLlmRepo) ? kReady : kNotInstalled;
-#elif defined(__linux__)
-  tensorrt_status =
-      std::filesystem::exists(ecp / kTrtLlmRepo) ? kReady : kNotInstalled;
-#endif
-  std::vector<EngineInfo> engines = {
-      {.name = kOnnxEngine,
-       .description = "This extension enables chat completion API calls using "
-                      "the Onnx engine",
-       .format = "ONNX",
-       .product_name = kOnnxEngine,
-       .status = onnx_status},
-      {.name = kLlamaEngine,
-       .description = "This extension enables chat completion API calls using "
-                      "the LlamaCPP engine",
-       .format = "GGUF",
-       .product_name = kLlamaEngine,
-       .status = llamacpp_status},
-      {.name = kTrtLlmEngine,
-       .description = "This extension enables chat completion API calls using "
-                      "the TensorrtLLM engine",
-       .format = "TensorRT Engines",
-       .product_name = kTrtLlmEngine,
-       .status = tensorrt_status},
-  };
-
-  for (auto& engine : engines) {
-    if (engine.status == kReady) {
-      // try to read the version.txt
-      auto engine_info_path = file_manager_utils::GetEnginesContainerPath() /
-                              NormalizeEngine(engine.name) / "version.txt";
-      if (!std::filesystem::exists(engine_info_path)) {
-        continue;
-      }
-      try {
-        auto node = YAML::LoadFile(engine_info_path.string());
-        engine.version = node["version"].as<std::string>();
-        engine.variant = node["name"].as<std::string>();
-      } catch (const YAML::Exception& e) {
-        CTL_ERR("Error reading version.txt: " << e.what());
-        continue;
-      }
-    }
+  auto cuda_res = DownloadCuda(ne, true /*async*/);
+  if (cuda_res.has_error()) {
+    return cpp::fail(cuda_res.error());
   }
-
-  return engines;
+  return {};
 }
 
 cpp::result<bool, std::string> EngineService::InstallEngineAsync(
@@ -214,12 +167,13 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
   return true;
 }
 
-cpp::result<bool, std::string> EngineService::UninstallEngine(
-    const std::string& engine) {
+cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
+    const std::string& engine, const std::string& variant,
+    const std::string& version) {
   auto ne = NormalizeEngine(engine);
-  auto ecp = file_manager_utils::GetEnginesContainerPath();
-  auto engine_path = ecp / ne;
-
+  auto engine_path =
+      file_manager_utils::GetEnginesContainerPath() / ne / variant / version;
+  std::cout << "engine_path: " << engine_path.string() << std::endl;
   if (!std::filesystem::exists(engine_path)) {
     return cpp::fail("Engine " + ne + " is not installed!");
   }
@@ -234,139 +188,196 @@ cpp::result<bool, std::string> EngineService::UninstallEngine(
   }
 }
 
+cpp::result<void, std::string> EngineService::DownloadEngineV2(
+    const std::string& engine, const std::string& version,
+    const std::string& variant_name, bool async) {
+
+  // check if engine variant is installed
+  bool is_installed = false;
+  if (is_installed) {
+    // set default
+    // TODO: namh implement this
+    return {};
+  }
+
+  // TODO: namh add back the github_token
+
+  auto normalized_version = string_utils::RemoveSubstring(version, "v");
+  auto merged_variant_name =
+      engine + "-" + normalized_version + "-" + variant_name + ".tar.gz";
+  auto res = GetEngineVariants(engine, version);
+  if (res.has_error()) {
+    return cpp::fail("Failed to fetch engine releases: " + res.error());
+  }
+
+  if (res.value().empty()) {
+    return cpp::fail("No release found for " + version);
+  }
+
+  std::optional<EngineVariant> selected_variant = std::nullopt;
+  for (const auto& asset : res.value()) {
+    if (asset.name == merged_variant_name) {
+      selected_variant = asset;
+      break;
+    }
+  }
+
+  if (selected_variant == std::nullopt) {
+    return cpp::fail("Not found variant: " + variant_name);
+  }
+
+  auto engine_folder_path =
+      file_manager_utils::GetEnginesContainerPath() / engine;
+  auto variant_folder_path = engine_folder_path / variant_name / version;
+  auto variant_path = variant_folder_path / merged_variant_name;
+  std::filesystem::create_directories(variant_folder_path);
+  CLI_LOG("variant_folder_path: " + variant_folder_path.string());
+
+  auto on_finished = [](const DownloadTask& finishedTask) {
+    // try to unzip the downloaded file
+    CLI_LOG("Engine zip path: " << finishedTask.items[0].localPath.string());
+
+    auto extract_path = finishedTask.items[0].localPath.parent_path();
+
+    archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
+                                  extract_path.string(), true);
+
+    // remove the downloaded file
+    try {
+      std::filesystem::remove(finishedTask.items[0].localPath);
+    } catch (const std::exception& e) {
+      CTL_WRN("Could not delete file: " << e.what());
+    }
+    CTL_INF("Finished!");
+  };
+
+  auto downloadTask{
+      DownloadTask{.id = engine,
+                   .type = DownloadType::Engine,
+                   .items = {DownloadItem{
+                       .id = engine,
+                       .downloadUrl = selected_variant->browser_download_url,
+                       .localPath = variant_path,
+                   }}}};
+  std::cout << downloadTask.ToString() << std::endl;
+  auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
+  if (res.has_error()) {
+    return cpp::fail(res.error());
+  }
+  return {};
+}
+
 cpp::result<bool, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version, bool async) {
 
+  // auto get_params = [&engine, &version]() -> std::vector<std::string> {
+  //   if (version == "latest") {
+  //     return {"repos", "janhq", engine, "releases", version};
+  //   } else {
+  //     return {"repos", "janhq", engine, "releases"};
+  //   }
+  // };
+  //
+  // auto url_obj = url_parser::Url{
+  //     .protocol = "https",
+  //     .host = "api.github.com",
+  //     .pathParams = get_params(),
+  // };
+
+  // std::unordered_map<std::string, std::string> headers;
+
   // Check if GITHUB_TOKEN env exist
-  const char* github_token = std::getenv("GITHUB_TOKEN");
+  // const char* github_token = std::getenv("GITHUB_TOKEN");
+  // if (github_token) {
+  //   std::string auth_header = "token " + std::string(github_token);
+  //   headers.insert({"Authorization", auth_header});
+  //   CTL_INF("Using authentication with GitHub token.");
+  // } else {
+  //   CTL_INF("No GitHub token found. Sending request without authentication.");
+  // }
 
-  auto get_params = [&engine, &version]() -> std::vector<std::string> {
-    if (version == "latest") {
-      return {"repos", "janhq", engine, "releases", version};
-    } else {
-      return {"repos", "janhq", engine, "releases"};
-    }
-  };
-
-  auto url_obj = url_parser::Url{
-      .protocol = "https",
-      .host = "api.github.com",
-      .pathParams = get_params(),
-  };
-
-  httplib::Client cli(url_obj.GetProtocolAndHost());
-
-  httplib::Headers headers;
-
-  if (github_token) {
-    std::string auth_header = "token " + std::string(github_token);
-    headers.insert({"Authorization", auth_header});
-    CTL_INF("Using authentication with GitHub token.");
-  } else {
-    CTL_INF("No GitHub token found. Sending request without authentication.");
+  auto res = GetEngineVariants(engine, version);
+  if (res.has_error()) {
+    return cpp::fail("Failed to fetch engine releases: " + res.error());
   }
 
-  if (auto res = cli.Get(url_obj.GetPathAndQuery(), headers);
-      res->status == httplib::StatusCode::OK_200) {
-    auto body = json::parse(res->body);
-    auto get_data =
-        [&version](const nlohmann::json& json_data) -> nlohmann::json {
-      for (auto& jr : json_data) {
-        // Get the latest or match version
-        if (auto tag = jr["tag_name"].get<std::string>(); tag == version) {
-          return jr;
-        }
-      }
-      return nlohmann::json();
-    };
-
-    if (version != "latest") {
-      body = get_data(body);
-    }
-    if (body.empty()) {
-      return cpp::fail("No release found for " + version);
-    }
-
-    auto assets = body["assets"];
-    auto os_arch{hw_inf_.sys_inf->os + "-" + hw_inf_.sys_inf->arch};
-
-    std::vector<std::string> variants;
-    for (auto& asset : assets) {
-      auto asset_name = asset["name"].get<std::string>();
-      variants.push_back(asset_name);
-    }
-
-    CTL_INF("engine: " << engine);
-    CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
-    auto matched_variant = GetMatchedVariant(engine, variants);
-    CTL_INF("Matched variant: " << matched_variant);
-    if (matched_variant.empty()) {
-      CTL_ERR("No variant found for " << os_arch);
-      return cpp::fail("No variant found for " + os_arch);
-    }
-
-    for (auto& asset : assets) {
-      auto assetName = asset["name"].get<std::string>();
-      if (assetName == matched_variant) {
-        auto download_url = asset["browser_download_url"].get<std::string>();
-        auto file_name = asset["name"].get<std::string>();
-        CTL_INF("Download url: " << download_url);
-
-        std::filesystem::path engine_folder_path =
-            file_manager_utils::GetContainerFolderPath(
-                file_manager_utils::DownloadTypeToString(
-                    DownloadType::Engine)) /
-            engine;
-
-        if (!std::filesystem::exists(engine_folder_path)) {
-          CTL_INF("Creating " << engine_folder_path.string());
-          std::filesystem::create_directories(engine_folder_path);
-        }
-
-        CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
-        auto local_path = engine_folder_path / file_name;
-        auto downloadTask{DownloadTask{.id = Repo2Engine(engine),
-                                       .type = DownloadType::Engine,
-                                       .items = {DownloadItem{
-                                           .id = Repo2Engine(engine),
-                                           .downloadUrl = download_url,
-                                           .localPath = local_path,
-                                       }}}};
-
-        auto on_finished = [](const DownloadTask& finishedTask) {
-          // try to unzip the downloaded file
-          CTL_INF(
-              "Engine zip path: " << finishedTask.items[0].localPath.string());
-
-          std::filesystem::path extract_path =
-              finishedTask.items[0].localPath.parent_path().parent_path();
-
-          archive_utils::ExtractArchive(
-              finishedTask.items[0].localPath.string(), extract_path.string());
-
-          // remove the downloaded file
-          try {
-            std::filesystem::remove(finishedTask.items[0].localPath);
-          } catch (const std::exception& e) {
-            CTL_WRN("Could not delete file: " << e.what());
-          }
-          CTL_INF("Finished!");
-        };
-        if (async) {
-          auto res = download_service_->AddTask(downloadTask, on_finished);
-          if (res.has_error()) {
-            return cpp::fail(res.error());
-          }
-          return true;
-        } else {
-          return download_service_->AddDownloadTask(downloadTask, on_finished);
-        }
-      }
-    }
-    return true;
-  } else {
-    return cpp::fail("Failed to fetch engine release: " + engine);
+  if (res.value().empty()) {
+    return cpp::fail("No release found for " + version);
   }
+
+  auto os_arch{hw_inf_.sys_inf->os + "-" + hw_inf_.sys_inf->arch};
+
+  std::vector<std::string> variants;
+  for (const auto& asset : res.value()) {
+    variants.push_back(asset.name);
+  }
+
+  CTL_INF("engine: " << engine);
+  CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
+  auto matched_variant = GetMatchedVariant(engine, variants);
+  CTL_INF("Matched variant: " << matched_variant);
+  if (matched_variant.empty()) {
+    CTL_ERR("No variant found for " << os_arch);
+    return cpp::fail("No variant found for " + os_arch);
+  }
+
+  for (const auto& asset : res.value()) {
+    if (asset.name == matched_variant) {
+      CTL_INF("Download url: " << asset.browser_download_url);
+
+      std::filesystem::path engine_folder_path =
+          file_manager_utils::GetContainerFolderPath(
+              file_manager_utils::DownloadTypeToString(DownloadType::Engine)) /
+          engine;
+
+      if (!std::filesystem::exists(engine_folder_path)) {
+        CTL_INF("Creating " << engine_folder_path.string());
+        std::filesystem::create_directories(engine_folder_path);
+      }
+
+      CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
+      auto local_path = engine_folder_path / asset.name;
+      auto downloadTask{
+          DownloadTask{.id = engine,
+                       .type = DownloadType::Engine,
+                       .items = {DownloadItem{
+                           .id = engine,
+                           .downloadUrl = asset.browser_download_url,
+                           .localPath = local_path,
+                       }}}};
+
+      auto on_finished = [](const DownloadTask& finishedTask) {
+        // try to unzip the downloaded file
+        CTL_INF(
+            "Engine zip path: " << finishedTask.items[0].localPath.string());
+
+        std::filesystem::path extract_path =
+            finishedTask.items[0].localPath.parent_path().parent_path();
+
+        archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
+                                      extract_path.string());
+
+        // remove the downloaded file
+        try {
+          std::filesystem::remove(finishedTask.items[0].localPath);
+        } catch (const std::exception& e) {
+          CTL_WRN("Could not delete file: " << e.what());
+        }
+        CTL_INF("Finished!");
+      };
+
+      if (async) {
+        auto res = download_service_->AddTask(downloadTask, on_finished);
+        if (res.has_error()) {
+          return cpp::fail(res.error());
+        }
+        return true;
+      } else {
+        return download_service_->AddDownloadTask(downloadTask, on_finished);
+      }
+    }
+  }
+  return true;
 }
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
@@ -463,4 +474,321 @@ std::string EngineService::GetMatchedVariant(
         hw_inf_.cuda_driver_version);
   }
   return matched_variant;
+}
+
+cpp::result<std::vector<EngineService::EngineRelease>, std::string>
+EngineService::GetEngineReleases(const std::string& engine) const {
+  auto ne = NormalizeEngine(engine);
+  return github_release_utils::GetReleases("janhq", ne);
+}
+
+cpp::result<std::vector<EngineService::EngineVariant>, std::string>
+EngineService::GetEngineVariants(const std::string& engine,
+                                 const std::string& version) const {
+  auto ne = NormalizeEngine(engine);
+  auto engine_release =
+      github_release_utils::GetReleaseByVersion("janhq", ne, version);
+
+  if (engine_release.has_error()) {
+    return cpp::fail("Failed to get engine release: " + engine_release.error());
+  }
+
+  std::vector<EngineVariant> compatible_variants;
+  for (const auto& variant : engine_release.value().assets) {
+    if (variant.content_type != "application/gzip") {
+      continue;
+    }
+    if (variant.state != "uploaded") {
+      continue;
+    }
+    compatible_variants.push_back(variant);
+  }
+
+  if (compatible_variants.empty()) {
+    return cpp::fail("No compatible variants found for " + engine);
+  }
+
+  return compatible_variants;
+}
+
+cpp::result<DefaultEngineVariant, std::string>
+EngineService::SetDefaultEngineVariant(const std::string& engine,
+                                       const std::string& version,
+                                       const std::string& variant) {
+  auto ne = NormalizeEngine(engine);
+  auto is_installed = IsEngineVariantReady(engine, version, variant);
+  if (is_installed.has_error()) {
+    return cpp::fail(is_installed.error());
+  }
+
+  if (!is_installed.value()) {
+    return cpp::fail("Engine variant " + version + "-" + variant +
+                     " is not installed yet!");
+  }
+
+  default_variants_[ne] = DefaultEngineVariant{
+      .engine = engine,
+      .version = version,
+      .variant = variant,
+  };
+  return default_variants_[ne];
+}
+
+cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
+    const std::string& engine, const std::string& version,
+    const std::string& variant) {
+  auto ne = NormalizeEngine(engine);
+  auto normalized_version = string_utils::RemoveSubstring(version, "v");
+  auto installed_engines = GetInstalledEngineVariants(ne);
+  if (installed_engines.has_error()) {
+    return cpp::fail("Failed to get installed engines: " +
+                     installed_engines.error());
+  }
+
+  for (const auto& installed_engine : installed_engines.value()) {
+    if (installed_engine.name == variant &&
+        installed_engine.version == normalized_version) {
+      return true;
+    }
+  }
+  return false;
+}
+
+cpp::result<DefaultEngineVariant, std::string>
+EngineService::GetDefaultEngineVariant(const std::string& engine) {
+  auto ne = NormalizeEngine(engine);
+  if (default_variants_.find(ne) == default_variants_.end()) {
+    return cpp::fail("Engine variant for " + engine + " is not set yet!");
+  }
+
+  return default_variants_[ne];
+}
+
+cpp::result<std::vector<EngineVariantResponse>, std::string>
+EngineService::GetInstalledEngineVariants(const std::string& engine) const {
+  auto ne = NormalizeEngine(engine);
+  auto engines_variants_dir =
+      file_manager_utils::GetEnginesContainerPath() / ne;
+
+  if (!std::filesystem::exists(engines_variants_dir)) {
+    return {};
+  }
+
+  std::vector<EngineVariantResponse> variants;
+  for (const auto& entry :
+       std::filesystem::directory_iterator(engines_variants_dir)) {
+    if (entry.is_directory()) {
+      // epectation is each directory is a variant
+      for (const auto& version_entry :
+           std::filesystem::directory_iterator(entry.path())) {
+        // try to find version.txt
+        auto version_txt_path = version_entry.path() / "version.txt";
+        if (!std::filesystem::exists(version_txt_path)) {
+          continue;
+        }
+
+        try {
+          auto node = YAML::LoadFile(version_txt_path.string());
+          auto ev = EngineVariantResponse{
+              .name = node["name"].as<std::string>(),
+              .version = node["version"].as<std::string>(),
+              .engine = engine,
+          };
+          variants.push_back(ev);
+        } catch (const YAML::Exception& e) {
+          CTL_ERR("Error reading version.txt: " << e.what());
+          continue;
+        }
+      }
+    }
+  }
+
+  return variants;
+}
+
+bool EngineService::IsEngineLoaded(const std::string& engine) const {
+  auto ne = NormalizeEngine(engine);
+  return engines_.find(ne) != engines_.end();
+}
+
+cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
+    const std::string& engine_name) {
+  auto ne = NormalizeEngine(engine_name);
+  if (engines_.find(ne) == engines_.end()) {
+    return cpp::fail("Engine " + engine_name + " is not loaded yet!");
+  }
+
+  return engines_[ne].engine;
+}
+
+cpp::result<void, std::string> EngineService::LoadEngine(
+    const std::string& engine_name) {
+  auto ne = NormalizeEngine(engine_name);
+
+  if (IsEngineLoaded(ne)) {
+    CTL_INF("Engine " << ne << " is already loaded");
+    return {};
+  }
+
+  CTL_INF("Loading engine: " << ne);
+
+  auto selected_engine_variant = GetDefaultEngineVariant(ne);
+
+  if (selected_engine_variant.has_error()) {
+    // TODO: namh need to fallback
+    return cpp::fail(selected_engine_variant.error());
+  }
+
+  CTL_INF("Selected engine variant: "
+          << json_helper::DumpJsonString(selected_engine_variant->ToJson()));
+
+  auto user_defined_engine_path = getenv("ENGINE_PATH");
+  const std::filesystem::path engine_dir_path = [&] {
+    if (user_defined_engine_path != nullptr) {
+      // for backward compatible
+      return std::filesystem::path(user_defined_engine_path +
+                                   GetEnginePath(ne));
+    } else {
+      return file_manager_utils::GetEnginesContainerPath() / ne /
+             selected_engine_variant->variant /
+             selected_engine_variant->version;
+    }
+  }();
+
+  if (!std::filesystem::exists(engine_dir_path)) {
+    CTL_ERR("Directory " + engine_dir_path.string() + " is not exist!");
+    return cpp::fail("Directory " + engine_dir_path.string() +
+                     " is not exist!");
+  }
+
+  CTL_INF("Engine path: " << engine_dir_path.string());
+
+  try {
+#if defined(_WIN32)
+    // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
+    // We would like to support running multiple engines at the same time. Therefore,
+    // the adding/removing dll directory logic is quite complicated:
+    // 1. If llamacpp is loaded and new requested engine is tensorrt-llm:
+    // Unload the llamacpp dll directory then load the tensorrt-llm
+    // 2. If tensorrt-llm is loaded and new requested engine is llamacpp:
+    // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
+    // 3. Add dll directory if met other conditions
+
+    auto add_dll = [this](const std::string& e_type, const std::string& p) {
+      auto ws = std::wstring(p.begin(), p.end());
+      if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
+        LOG_INFO << "Added dll directory: " << p;
+        engines_[e_type].cookie = cookie;
+      } else {
+        LOG_WARN << "Could not add dll directory: " << p;
+      }
+    };
+
+    if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
+        should_use_dll_search_path) {
+      if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo &&
+          should_use_dll_search_path) {
+        // Remove llamacpp dll directory
+        if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
+          LOG_WARN << "Could not remove dll directory: " << kLlamaRepo;
+        } else {
+          LOG_INFO << "Removed dll directory: " << kLlamaRepo;
+        }
+
+        add_dll(ne, engine_dir_path.string());
+      } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
+        // Do nothing
+      } else {
+        add_dll(ne, engine_dir_path.string());
+      }
+    }
+#endif
+    engines_[ne].dl =
+        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
+
+  } catch (const cortex_cpp::dylib::load_error& e) {
+    LOG_ERROR << "Could not load engine: " << e.what();
+    engines_.erase(ne);
+    return cpp::fail("Could not load engine " + ne + ": " + e.what());
+  }
+
+  auto func = engines_[ne].dl->get_function<EngineI*()>("get_engine");
+  engines_[ne].engine = func();
+
+  auto& en = std::get<EngineI*>(engines_[ne].engine);
+  if (ne == kLlamaRepo) {  //fix for llamacpp engine first
+    auto config = file_manager_utils::GetCortexConfig();
+    // TODO: crash issue with trantor logging destructor.
+    // if (en->IsSupported("SetFileLogger")) {
+    //   en->SetFileLogger(config.maxLogLines,
+    //                     (std::filesystem::path(config.logFolderPath) /
+    //                      std::filesystem::path(config.logLlamaCppPath))
+    //                         .string());
+    // } else {
+    //   LOG_WARN << "Method SetFileLogger is not supported yet";
+    // }
+  }
+  LOG_INFO << "Loaded engine: " << ne;
+  return {};
+}
+
+cpp::result<void, std::string> EngineService::UnloadEngine(
+    const std::string& engine) {
+  auto ne = NormalizeEngine(engine);
+  if (!IsEngineLoaded(ne)) {
+    return cpp::fail("Engine " + ne + " is not loaded yet!");
+  }
+  EngineI* e = std::get<EngineI*>(engines_[ne].engine);
+  delete e;
+#if defined(_WIN32)
+  if (!RemoveDllDirectory(engines_[ne].cookie)) {
+    LOG_WARN << "Could not remove dll directory: " << ne;
+  } else {
+    LOG_INFO << "Removed dll directory: " << ne;
+  }
+#endif
+  engines_.erase(ne);
+  LOG_INFO << "Unloaded engine " + ne;
+  return {};
+}
+
+std::vector<EngineV> EngineService::GetLoadedEngines() {
+  std::vector<EngineV> loaded_engines;
+  for (const auto& [key, value] : engines_) {
+    loaded_engines.push_back(value.engine);
+  }
+  return loaded_engines;
+}
+
+cpp::result<github_release_utils::GitHubRelease, std::string>
+EngineService::GetLatestEngineVersion(const std::string& engine) const {
+  auto ne = NormalizeEngine(engine);
+  auto res = github_release_utils::GetReleaseByVersion("janhq", ne, "latest");
+  if (res.has_error()) {
+    return cpp::fail("Failed to fetch engine " + engine + " latest version!");
+  }
+  return res.value();
+}
+
+cpp::result<bool, std::string> EngineService::IsEngineReady(
+    const std::string& engine) const {
+  auto ne = NormalizeEngine(engine);
+  auto installed_variants = GetInstalledEngineVariants(engine);
+  if (installed_variants.has_error()) {
+    CTL_WRN("Failed to get installed engine variants: " +
+            installed_variants.error());
+    return cpp::fail("Failed to get installed engine variants: " +
+                     installed_variants.error());
+  }
+
+  auto os = hw_inf_.sys_inf->os;
+  if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
+    return cpp::fail("Engine " + engine + " is not supported on macOS");
+  }
+
+  if (os == kLinuxOs && ne == kOnnxRepo) {
+    return cpp::fail("Engine " + engine + " is not supported on Linux");
+  }
+
+  return installed_variants.value().size() > 0;
 }

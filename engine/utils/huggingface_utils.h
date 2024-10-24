@@ -2,16 +2,14 @@
 
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <vector>
-#include "httplib.h"
 #include "utils/curl_utils.h"
-#include "utils/file_manager_utils.h"
+#include "utils/json_parser_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
 namespace huggingface_utils {
-
-constexpr static auto kHuggingfaceHost{"huggingface.co"};
 
 struct HuggingFaceBranch {
   std::string name;
@@ -26,6 +24,28 @@ struct HuggingFaceFileSibling {
 struct HuggingFaceGgufInfo {
   uint64_t total;
   std::string architecture;
+
+  static cpp::result<HuggingFaceGgufInfo, std::string> FromJson(
+      const Json::Value& json) {
+    if (json.isNull() || json.type() == Json::ValueType::nullValue) {
+      return cpp::fail("gguf info is null");
+    }
+    try {
+      return HuggingFaceGgufInfo{
+          .total = json["total"].asUInt64(),
+          .architecture = json["architecture"].asString(),
+      };
+    } catch (const std::exception& e) {
+      return cpp::fail("Failed to parse gguf info: " + std::string(e.what()));
+    }
+  }
+
+  Json::Value ToJson() {
+    Json::Value root;
+    root["total"] = total;
+    root["architecture"] = architecture;
+    return root;
+  }
 };
 
 struct HuggingFaceModelRepoInfo {
@@ -46,34 +66,52 @@ struct HuggingFaceModelRepoInfo {
   std::vector<HuggingFaceFileSibling> siblings;
   std::vector<std::string> spaces;
   std::string createdAt;
+
+  static cpp::result<HuggingFaceModelRepoInfo, std::string> FromJson(
+      const Json::Value& body) {
+    std::optional<HuggingFaceGgufInfo> gguf = std::nullopt;
+    auto gguf_result = HuggingFaceGgufInfo::FromJson(body["gguf"]);
+    if (gguf_result.has_value()) {
+      gguf = gguf_result.value();
+    }
+
+    std::vector<HuggingFaceFileSibling> siblings{};
+    auto siblings_info = body["siblings"];
+    for (const auto& sibling : siblings_info) {
+      auto sibling_info = HuggingFaceFileSibling{
+          .rfilename = sibling["rfilename"].asString(),
+      };
+      siblings.push_back(sibling_info);
+    }
+
+    return HuggingFaceModelRepoInfo{
+        .id = body["id"].asString(),
+        .modelId = body["modelId"].asString(),
+        .author = body["author"].asString(),
+        .sha = body["sha"].asString(),
+        .lastModified = body["lastModified"].asString(),
+
+        .isPrivate = body["private"].asBool(),
+        .disabled = body["disabled"].asBool(),
+        .gated = body["gated"].asBool(),
+        .tags = json_parser_utils::ParseJsonArray<std::string>(body["tags"]),
+        .downloads = body["downloads"].asInt(),
+
+        .likes = body["likes"].asInt(),
+        .gguf = gguf,
+        .siblings = siblings,
+        .spaces =
+            json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
+        .createdAt = body["createdAt"].asString(),
+    };
+  }
+
+  Json::Value ToJson() {
+    Json::Value root;
+    root["gguf"] = gguf->ToJson();
+    return root;
+  }
 };
-
-inline std::optional<std::string> GetHuggingFaceToken() {
-  auto const& token = file_manager_utils::GetCortexConfig().huggingFaceToken;
-  if (token.empty())
-    return std::nullopt;
-  return token;
-}
-
-inline curl_slist* CreateCurlHfHeaders() {
-  struct curl_slist* headers = nullptr;
-  auto hf_token = GetHuggingFaceToken();
-  if (hf_token) {
-    std::string auth_header = "Authorization: Bearer " + hf_token.value();
-    headers = curl_slist_append(headers, auth_header.c_str());
-    headers = curl_slist_append(headers, "Content-Type: application/json");
-  }
-  return headers;
-}
-
-inline httplib::Headers CreateHttpHfHeaders() {
-  httplib::Headers headers;
-  auto token = GetHuggingFaceToken();
-  if (token) {
-    headers.emplace("Authorization", "Bearer " + token.value());
-  }
-  return headers;
-}
 
 inline cpp::result<std::unordered_map<std::string, HuggingFaceBranch>,
                    std::string>
@@ -84,11 +122,10 @@ GetModelRepositoryBranches(const std::string& author,
   }
   auto url_obj = url_parser::Url{
       .protocol = "https",
-      .host = kHuggingfaceHost,
+      .host = kHuggingFaceHost,
       .pathParams = {"api", "models", author, modelName, "refs"}};
 
-  auto result =
-      curl_utils::SimpleGetJson(url_obj.ToFullPath(), CreateCurlHfHeaders());
+  auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
   if (result.has_error()) {
     return cpp::fail("Failed to get model repository branches: " + author +
                      "/" + modelName);
@@ -98,10 +135,10 @@ GetModelRepositoryBranches(const std::string& author,
   std::unordered_map<std::string, HuggingFaceBranch> branches{};
 
   for (const auto& branch : branches_json) {
-    branches[branch["name"]] = HuggingFaceBranch{
-        .name = branch["name"],
-        .ref = branch["ref"],
-        .targetCommit = branch["targetCommit"],
+    branches[branch["name"].asString()] = HuggingFaceBranch{
+        .name = branch["name"].asString(),
+        .ref = branch["ref"].asString(),
+        .targetCommit = branch["targetCommit"].asString(),
     };
   }
 
@@ -117,63 +154,22 @@ GetHuggingFaceModelRepoInfo(const std::string& author,
   }
   auto url_obj =
       url_parser::Url{.protocol = "https",
-                      .host = kHuggingfaceHost,
+                      .host = kHuggingFaceHost,
                       .pathParams = {"api", "models", author, modelName}};
 
-  auto result =
-      curl_utils::SimpleGetJson(url_obj.ToFullPath(), CreateCurlHfHeaders());
+  auto result = curl_utils::SimpleGetJson(url_obj.ToFullPath());
   if (result.has_error()) {
     return cpp::fail("Failed to get model repository info: " + author + "/" +
                      modelName);
   }
 
-  auto body = result.value();
-
-  std::optional<HuggingFaceGgufInfo> gguf = std::nullopt;
-  auto gguf_info = body["gguf"];
-  if (!gguf_info.is_null()) {
-    gguf = HuggingFaceGgufInfo{
-        .total = gguf_info["total"],
-        .architecture = gguf_info["architecture"],
-    };
-  }
-
-  std::vector<HuggingFaceFileSibling> siblings{};
-  auto siblings_info = body["siblings"];
-  for (const auto& sibling : siblings_info) {
-    auto sibling_info = HuggingFaceFileSibling{
-        .rfilename = sibling["rfilename"],
-    };
-    siblings.push_back(sibling_info);
-  }
-
-  auto model_repo_info = HuggingFaceModelRepoInfo{
-      .id = body["id"],
-      .modelId = body["modelId"],
-      .author = body["author"],
-      .sha = body["sha"],
-      .lastModified = body["lastModified"],
-
-      .isPrivate = body["private"],
-      .disabled = body["disabled"],
-      .gated = body["gated"],
-      .tags = body["tags"],
-      .downloads = body["downloads"],
-
-      .likes = body["likes"],
-      .gguf = gguf,
-      .siblings = siblings,
-      .spaces = body["spaces"],
-      .createdAt = body["createdAt"],
-  };
-
-  return model_repo_info;
+  return HuggingFaceModelRepoInfo::FromJson(result.value());
 }
 
 inline std::string GetMetadataUrl(const std::string& model_id) {
   auto url_obj = url_parser::Url{
       .protocol = "https",
-      .host = kHuggingfaceHost,
+      .host = kHuggingFaceHost,
       .pathParams = {"cortexso", model_id, "resolve", "main", "metadata.yml"}};
 
   return url_obj.ToFullPath();
@@ -185,7 +181,7 @@ inline std::string GetDownloadableUrl(const std::string& author,
                                       const std::string& branch = "main") {
   auto url_obj = url_parser::Url{
       .protocol = "https",
-      .host = kHuggingfaceHost,
+      .host = kHuggingFaceHost,
       .pathParams = {author, modelName, "resolve", branch, fileName},
   };
   return url_parser::FromUrl(url_obj);
@@ -194,8 +190,8 @@ inline std::string GetDownloadableUrl(const std::string& author,
 inline std::optional<std::string> GetDefaultBranch(
     const std::string& model_name) {
   try {
-    auto default_model_branch = curl_utils::ReadRemoteYaml(
-        GetMetadataUrl(model_name), CreateCurlHfHeaders());
+    auto default_model_branch =
+        curl_utils::ReadRemoteYaml(GetMetadataUrl(model_name));
 
     if (default_model_branch.has_error()) {
       return std::nullopt;

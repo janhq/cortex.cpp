@@ -1,3 +1,5 @@
+#pragma once
+
 #include <trantor/utils/Logger.h>
 #include <algorithm>
 #include <iterator>
@@ -6,8 +8,30 @@
 #include <vector>
 #include "utils/cpuid/cpu_info.h"
 #include "utils/logging_utils.h"
+#include "utils/result.hpp"
+#include "utils/string_utils.h"
 
 namespace engine_matcher_utils {
+/**
+ * Extracting variant and version info from file name.
+ */
+inline cpp::result<std::string, std::string> GetVariantFromNameAndVersion(
+    const std::string& engine_file_name, const std::string& engine,
+    const std::string& version) {
+  if (engine_file_name.empty()) {
+    return cpp::fail("Engine file name is empty");
+  }
+  if (engine.empty()) {
+    return cpp::fail("Engine name is empty");
+  }
+  using namespace string_utils;
+  auto removed_extension = RemoveSubstring(engine_file_name, ".tar.gz");
+  auto version_and_variant = RemoveSubstring(removed_extension, engine + "-");
+
+  auto variant = RemoveSubstring(version_and_variant, version + "-");
+  return variant;
+}
+
 inline std::string GetSuitableAvxVariant(cortex::cpuid::CpuInfo& cpu_info) {
   CTL_INF("GetSuitableAvxVariant:" << "\n" << cpu_info.to_string());
 

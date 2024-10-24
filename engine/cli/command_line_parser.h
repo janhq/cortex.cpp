@@ -22,6 +22,8 @@ class CommandLineParser {
 
   void SetupSystemCommands();
 
+  void EngineInstallV2(CLI::App* parent, const std::string& engine_name);
+
   void EngineInstall(CLI::App* parent, const std::string& engine_name,
                      std::string& version, std::string& src);
 

@@ -25,6 +25,29 @@ inline void Trim(std::string& s) {
           s.end());
 }
 
+inline std::string RemoveSubstring(std::string_view full_str,
+                                   std::string_view to_remove) {
+  if (to_remove.empty()) {
+    return std::string(full_str);
+  }
+  std::string result;
+  result.reserve(full_str.length());
+
+  size_t pos = 0;
+  size_t prev = 0;
+
+  // Find each occurrence and copy only the parts we want to keep
+  while ((pos = full_str.find(to_remove, prev)) != std::string_view::npos) {
+    result.append(full_str.substr(prev, pos - prev));
+    prev = pos + to_remove.length();
+  }
+
+  // Append the remaining part
+  result.append(full_str.substr(prev));
+
+  return result;
+}
+
 inline bool StringContainsIgnoreCase(const std::string& haystack,
                                      const std::string& needle) {
   if (needle.empty()) {

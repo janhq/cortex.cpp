@@ -462,16 +462,16 @@ void Models::StartModel(
   std::string engine_name = params_override.bypass_model_check()
                                 ? kLlamaEngine
                                 : model_entry.value().engine;
-  auto engine_entry = engine_service_->GetEngineInfo(engine_name);
-  if (engine_entry.has_error()) {
+  auto engine_validate = engine_service_->IsEngineReady(engine_name);
+  if (engine_validate.has_error()) {
     Json::Value ret;
-    ret["message"] = "Cannot find engine: " + engine_name;
+    ret["message"] = engine_validate.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(drogon::k400BadRequest);
     callback(resp);
     return;
   }
-  if (engine_entry->status != "Ready") {
+  if (!engine_validate.value()) {
     Json::Value ret;
     ret["message"] = "Engine is not ready! Please install first!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);

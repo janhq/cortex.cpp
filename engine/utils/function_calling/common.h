@@ -1,12 +1,11 @@
 #pragma once
+
 #include <json/json.h>
-#include <algorithm>
 #include <regex>
 #include <sstream>
 #include <string>
-#include <vector>
 #include "llama3.1.h"
-#include "utils/logging_utils.h"
+
 namespace function_calling_utils {
 constexpr auto custom_template_function = "<CUSTOM_FUNCTIONS>";
 

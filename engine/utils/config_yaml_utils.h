@@ -13,15 +13,21 @@ struct CortexConfig {
   std::string logTensorrtLLMPath;
   std::string logOnnxPath;
   std::string dataFolderPath;
+
   int maxLogLines;
   std::string apiServerHost;
   std::string apiServerPort;
   uint64_t checkedForUpdateAt;
   std::string latestRelease;
+
   std::string huggingFaceToken;
+
+  /**
+   * Github's API requires a user-agent string.
+   */
+  std::string gitHubUserAgent;
 };
 
-const std::string kCortexFolderName = "cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
 const std::string kDefaultPort{"39281"};
 const int kDefaultMaxLines{100000};
@@ -49,6 +55,7 @@ inline void DumpYamlConfig(const CortexConfig& config,
     node["checkedForUpdateAt"] = config.checkedForUpdateAt;
     node["latestRelease"] = config.latestRelease;
     node["huggingFaceToken"] = config.huggingFaceToken;
+    node["gitHubUserAgent"] = config.gitHubUserAgent;
 
     out_file << node;
     out_file.close();
@@ -73,7 +80,7 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["apiServerPort"] || !node["checkedForUpdateAt"] ||
          !node["latestRelease"] || !node["logLlamaCppPath"] ||
          !node["logOnnxPath"] || !node["logTensorrtLLMPath"] ||
-         !node["huggingFaceToken"]);
+         !node["huggingFaceToken"] || !node["gitHubUserAgent"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -105,7 +112,12 @@ inline CortexConfig FromYaml(const std::string& path,
         .latestRelease = node["latestRelease"]
                              ? node["latestRelease"].as<std::string>()
                              : default_cfg.latestRelease,
-        .huggingFaceToken = node["huggingFaceToken"] ? node["huggingFaceToken"].as<std::string>() : "",
+        .huggingFaceToken = node["huggingFaceToken"]
+                                ? node["huggingFaceToken"].as<std::string>()
+                                : "",
+        .gitHubUserAgent = node["gitHubUserAgent"]
+                               ? node["gitHubUserAgent"].as<std::string>()
+                               : "",
     };
     if (should_update_config) {
       DumpYamlConfig(config, path);
