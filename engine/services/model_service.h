@@ -7,6 +7,14 @@
 #include "services/download_service.h"
 #include "services/inference_service.h"
 
+struct StartParameterOverride {
+std::optional<bool> cache_enabled;
+std::optional<int> ngl;
+std::optional<int> n_parallel;
+std::optional<int> ctx_len;
+std::optional<std::string> custom_prompt_template;
+std::optional<std::string> cache_type;
+};
 class ModelService {
  public:
   constexpr auto static kHuggingFaceHost = "huggingface.co";
@@ -46,7 +54,7 @@ class ModelService {
 
   cpp::result<bool, std::string> StartModel(
       const std::string& host, int port, const std::string& model_handle,
-      std::optional<std::string> custom_prompt_template = std::nullopt);
+      const StartParameterOverride& params_override);
 
   cpp::result<bool, std::string> StopModel(const std::string& host, int port,
                                            const std::string& model_handle);
