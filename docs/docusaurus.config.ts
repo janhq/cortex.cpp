@@ -20,7 +20,7 @@ const formattedDate = `${month}-${day}-${year}`;
 
 async function fetchDataDaily(date: string) {
   const response = await fetch(
-    `https://delta.jan.ai/openai-api-collection-test/${date}.json`
+    `https://delta.jan.ai/openai-api-collection-test/${date}.json`,
   );
   if (!response.ok) {
     return {};
@@ -120,7 +120,7 @@ const config: Config = {
                 try {
                   let refs = {};
                   const response = await fetch(
-                    `https://huggingface.co/api/models/${model.name}/refs`
+                    `https://huggingface.co/api/models/${model.name}/refs`,
                   );
                   refs = await response.json();
                   fetchedModels.push({
@@ -153,7 +153,7 @@ const config: Config = {
                   path: `/models/${page.name.replace("cortexso/", "")}`,
                   // the page component used to render the page
                   component: require.resolve(
-                    "./src/components/MyModelPage/index.tsx"
+                    "./src/components/MyModelPage/index.tsx",
                   ),
                   // will only match for exactly matching paths
                   exact: true,
@@ -164,7 +164,7 @@ const config: Config = {
                   // in this case, we merge the page data together with the loaded content data
                   customData: { ...page },
                 });
-              })
+              }),
             );
           } catch (error) {
             console.error("Error fetching models:", error);
@@ -201,7 +201,7 @@ const config: Config = {
           changelog.sort(
             (a, b) =>
               new Date(b.frontmatter.date).getTime() -
-              new Date(a.frontmatter.date).getTime()
+              new Date(a.frontmatter.date).getTime(),
           );
           setGlobalData(changelog);
         },
@@ -214,7 +214,7 @@ const config: Config = {
         async contentLoaded({ content, actions }) {
           const { setGlobalData } = actions;
           const fetchRepoInfo = await fetch(
-            "https://api.github.com/repos/janhq/cortex.cpp"
+            "https://api.github.com/repos/janhq/cortex.cpp",
           );
           const repoInfo = await fetchRepoInfo.json();
           setGlobalData(repoInfo);
@@ -227,7 +227,7 @@ const config: Config = {
         async contentLoaded({ content, actions }) {
           const { setGlobalData } = actions;
           const fetchLatestRelease = await fetch(
-            "https://api.github.com/repos/janhq/cortex.cpp/releases/latest"
+            "https://api.github.com/repos/janhq/cortex.cpp/releases/latest",
           );
           const latestRelease = await fetchLatestRelease.json();
           setGlobalData(latestRelease);
@@ -240,7 +240,7 @@ const config: Config = {
         async contentLoaded({ content, actions }) {
           const { setGlobalData } = actions;
           const fetchTotalCoverage = await fetch(
-            "https://delta.jan.ai/openai-api-collection-test/total-coverage.json"
+            "https://delta.jan.ai/openai-api-collection-test/total-coverage.json",
           );
           const totalCoverage = await fetchTotalCoverage.json();
           setGlobalData(totalCoverage);
@@ -275,7 +275,7 @@ const config: Config = {
         route: "/api-reference",
         configuration: {
           spec: {
-            url: "/openapi/jan.json",
+            url: "/openapi/cortex.json",
           },
           hideModels: true,
         },

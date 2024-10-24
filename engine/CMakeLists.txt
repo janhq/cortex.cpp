@@ -81,7 +81,7 @@ find_package(SQLiteCpp REQUIRED)
 find_package(eventpp CONFIG REQUIRED)
 
 ## Generating openapi json
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../docs/static/openapi/jan.json" JSON_CONTENT)
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../docs/static/openapi/cortex.json" JSON_CONTENT)
 string(LENGTH "${JSON_CONTENT}" CONTENT_LENGTH)
 message("Content length: ${CONTENT_LENGTH}")
 
