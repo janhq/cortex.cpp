@@ -385,7 +385,7 @@ void Models::StartModel(
   }
 
   auto model_entry = model_service_->GetDownloadedModel(model_handle);
-  if (!model_entry.has_value()) {
+  if (!model_entry.has_value() && !params_override.bypass_model_check()) {
     Json::Value ret;
     ret["message"] = "Cannot find model: " + model_handle;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -393,7 +393,9 @@ void Models::StartModel(
     callback(resp);
     return;
   }
-  auto engine_name = model_entry.value().engine;
+  std::string engine_name = params_override.bypass_model_check()
+                                ? kLlamaEngine
+                                : model_entry.value().engine;
   auto engine_entry = engine_service_->GetEngineInfo(engine_name);
   if (engine_entry.has_error()) {
     Json::Value ret;
