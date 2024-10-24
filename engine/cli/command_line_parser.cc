@@ -130,7 +130,9 @@ void CommandLineParser::SetupCommonCommands() {
       return;
     }
     try {
-      commands::ModelPullCmd(download_service_).Exec(cml_data_.model_id);
+      commands::ModelPullCmd(download_service_)
+          .Exec(cml_data_.config.apiServerHost,
+                std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
     } catch (const std::exception& e) {
       CLI_LOG(e.what());
     }

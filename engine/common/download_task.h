@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
+#include <optional>
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
 
@@ -52,6 +53,22 @@ inline std::string DownloadTypeToString(DownloadType type) {
       return "Cortex";
     default:
       return "Unknown";
+  }
+}
+
+inline DownloadType DownloadTypeFromString(const std::string& str) {
+  if (str == "Model") {
+    return DownloadType::Model;
+  } else if (str == "Engine") {
+    return DownloadType::Engine;
+  } else if (str == "Miscellaneous") {
+    return DownloadType::Miscellaneous;
+  } else if (str == "CudaToolkit") {
+    return DownloadType::CudaToolkit;
+  } else if (str == "Cortex") {
+    return DownloadType::Cortex;
+  } else {
+    return DownloadType::Miscellaneous;
   }
 }
 
@@ -116,3 +133,52 @@ struct DownloadTask {
         {"id", id}, {"type", DownloadTypeToString(type)}, {"items", dl_items}};
   }
 };
+
+namespace common {
+inline DownloadItem GetDownloadItemFromJson(const Json::Value item_json) {
+  DownloadItem item;
+  if (!item_json["id"].isNull()) {
+    item.id = item_json["id"].asString();
+  }
+  if (!item_json["downloadUrl"].isNull()) {
+    item.downloadUrl = item_json["downloadUrl"].asString();
+  }
+
+  if (!item_json["localPath"].isNull()) {
+    item.localPath = std::filesystem::path(item_json["localPath"].asString());
+  }
+
+  if (!item_json["checksum"].isNull()) {
+    item.checksum = item_json["checksum"].asString();
+  }
+
+  if (!item_json["bytes"].isNull()) {
+    item.bytes = item_json["bytes"].asUInt64();
+  }
+
+  if (!item_json["downloadedBytes"].isNull()) {
+    item.downloadedBytes = item_json["downloadedBytes"].asUInt64();
+  }
+
+  return item;
+}
+
+inline DownloadTask GetDownloadTaskFromJson(const Json::Value item_json) {
+  DownloadTask task;
+
+  if (!item_json["id"].isNull()) {
+    task.id = item_json["id"].asString();
+  }
+
+  if (!item_json["type"].isNull()) {
+    task.type = DownloadTypeFromString(item_json["type"].asString());
+  }
+
+  if (!item_json["items"].isNull() && item_json["items"].isArray()) {
+    for (auto const& i_json : item_json["items"]) {
+      task.items.emplace_back(GetDownloadItemFromJson(i_json));
+    }
+  }
+  return task;
+}
+}  // namespace common
