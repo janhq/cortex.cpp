@@ -1,6 +1,8 @@
 #pragma once
+
 #include <json/json.h>
 #include <string>
+
 namespace json_helper {
 inline Json::Value ParseJsonString(const std::string& json_str) {
   Json::Value root;
@@ -8,4 +10,4 @@ inline Json::Value ParseJsonString(const std::string& json_str) {
   reader.parse(json_str, root);
   return root;
 }
-}
+}  // namespace json_helper
