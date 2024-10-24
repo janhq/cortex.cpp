@@ -39,6 +39,23 @@ struct GitHubAsset {
         .browser_download_url = json["browser_download_url"].asString(),
     };
   }
+
+  Json::Value ToJson() const {
+    Json::Value root;
+    root["url"] = url;
+    root["id"] = id;
+    root["node_id"] = node_id;
+    root["name"] = name;
+    root["label"] = label;
+    root["content_type"] = content_type;
+    root["state"] = state;
+    root["size"] = size;
+    root["download_count"] = download_count;
+    root["created_at"] = created_at;
+    root["updated_at"] = updated_at;
+    root["browser_download_url"] = browser_download_url;
+    return root;
+  }
 };
 
 struct GitHubRelease {
@@ -72,6 +89,24 @@ struct GitHubRelease {
         .published_at = json["published_at"].asString(),
         .assets = assets,
     };
+  }
+
+  Json::Value ToJson() const {
+    Json::Value assetsArray(Json::arrayValue);
+    for (const auto& asset : assets) {
+      assetsArray.append(asset.ToJson());
+    }
+    Json::Value root;
+    root["url"] = url;
+    root["id"] = id;
+    root["tag_name"] = tag_name;
+    root["name"] = name;
+    root["draft"] = draft;
+    root["prerelease"] = prerelease;
+    root["created_at"] = created_at;
+    root["published_at"] = published_at;
+    root["assets"] = assetsArray;
+    return root;
   }
 };
 

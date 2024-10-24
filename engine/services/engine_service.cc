@@ -468,3 +468,9 @@ std::string EngineService::GetMatchedVariant(
   }
   return matched_variant;
 }
+
+cpp::result<std::vector<github_release_utils::GitHubRelease>, std::string>
+EngineService::GetEngineReleases(const std::string& engine) const {
+  auto ne = NormalizeEngine(engine);
+  return github_release_utils::GetReleases("janhq", ne);
+}

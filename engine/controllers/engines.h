@@ -16,10 +16,14 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::ListEngine, "", Get);
   METHOD_ADD(Engines::GetEngine, "/{1}", Get);
 
+  METHOD_ADD(Engines::GetReleasedEngines, "/{1}/releases", Get);
+
   ADD_METHOD_TO(Engines::InstallEngine, "/v1/engines/install/{1}", Post);
   ADD_METHOD_TO(Engines::UninstallEngine, "/v1/engines/{1}", Delete);
   ADD_METHOD_TO(Engines::ListEngine, "/v1/engines", Get);
   ADD_METHOD_TO(Engines::GetEngine, "/v1/engines/{1}", Get);
+
+  ADD_METHOD_TO(Engines::GetEngine, "/v1/engines/{1}/releases", Get);
   METHOD_LIST_END
 
   explicit Engines(std::shared_ptr<EngineService> engine_service)
@@ -39,6 +43,11 @@ class Engines : public drogon::HttpController<Engines, false> {
   void UninstallEngine(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback,
                        const std::string& engine);
+
+  void GetReleasedEngines(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback,
+      const std::string& engine) const;
 
  private:
   std::shared_ptr<EngineService> engine_service_;

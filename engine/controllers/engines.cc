@@ -113,3 +113,38 @@ void Engines::UninstallEngine(
     callback(resp);
   }
 }
+
+void Engines::GetReleasedEngines(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& engine) const {
+  if (engine.empty()) {
+    Json::Value res;
+    res["message"] = "Engine name is required";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k409Conflict);
+    callback(resp);
+    LOG_WARN << "No engine field in path param";
+    return;
+  }
+
+  // TODO: namh support pagination
+  auto result = engine_service_->GetEngineReleases(engine);
+  if (result.has_error()) {
+    Json::Value res;
+    res["message"] = "Failed to get engine releases: " + result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k409Conflict);
+    callback(resp);
+    LOG_WARN << "No engine field in path param";
+    return;
+  }
+
+  Json::Value releases(Json::arrayValue);
+  for (const auto& release : result.value()) {
+    releases.append(release.ToJson());
+  }
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
+  resp->setStatusCode(k200OK);
+  callback(resp);
+}

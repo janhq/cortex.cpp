@@ -8,6 +8,7 @@
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
+#include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
 
@@ -53,15 +54,20 @@ class EngineService {
 
   cpp::result<bool, std::string> UninstallEngine(const std::string& engine);
 
+  cpp::result<std::vector<github_release_utils::GitHubRelease>, std::string>
+  GetEngineReleases(const std::string& engine) const;
+
  private:
   cpp::result<bool, std::string> UnzipEngine(const std::string& engine,
                                              const std::string& version,
                                              const std::string& path);
 
   cpp::result<bool, std::string> DownloadEngine(
-      const std::string& engine, const std::string& version = "latest", bool async = false);
+      const std::string& engine, const std::string& version = "latest",
+      bool async = false);
 
-  cpp::result<bool, std::string> DownloadCuda(const std::string& engine, bool async = false);
+  cpp::result<bool, std::string> DownloadCuda(const std::string& engine,
+                                              bool async = false);
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);
