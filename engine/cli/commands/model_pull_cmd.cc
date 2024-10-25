@@ -119,13 +119,8 @@ cpp::result<std::string, std::string> GetModelId(const std::string& input) {
 }  // namespace
 void ModelPullCmd::Exec(const std::string& host, int port,
                         const std::string& input) {
-  auto r = GetModelId(input);
-  if (r.has_error()) {
-    CLI_LOG(r.error());
-    return;
-  }
-  auto const& model_id = r.value();
-  CTL_INF(model_id);
+  std::string model_id = input;
+
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
@@ -136,16 +131,72 @@ void ModelPullCmd::Exec(const std::string& host, int port,
   }
 
   httplib::Client cli(host + ":" + std::to_string(port));
+  cli.set_read_timeout(std::chrono::seconds(60));
+  Json::Value j_data;
+  j_data["model"] = input;
+  auto d_str = j_data.toStyledString();
+  auto res = cli.Post("/models/pull/info", httplib::Headers(), d_str.data(),
+                      d_str.size(), "application/json");
+
+  if (res) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      // CLI_LOG(res->body);
+      auto root = json_helper::ParseJsonString(res->body);
+      std::string id = root["id"].asString();
+      bool is_cortexso = root["cortexso"].asBool();
+      std::string default_branch = root["defaultBranch"].asString();
+      std::vector<std::string> downloaded;
+      for (auto const& v : root["downloadedModels"]) {
+        downloaded.push_back(v.asString());
+      }
+      std::vector<std::string> avails;
+      for (auto const& v : root["availableModels"]) {
+        avails.push_back(v.asString());
+      }
+
+      if (downloaded.empty() && avails.empty()) {
+
+      } else {
+        if (is_cortexso) {
+          auto selection = cli_selection_utils::PrintModelSelection(
+              downloaded, avails,
+              default_branch.empty()
+                  ? std::nullopt
+                  : std::optional<std::string>(default_branch));
+
+          if (!selection.has_value()) {
+            CLI_LOG("Invalid selection");
+            return;
+          }
+          model_id = selection.value();
+
+        } else {
+          auto selection = cli_selection_utils::PrintSelection(avails);
+          std::cout << "Selected: " << selection.value() << std::endl;
+          model_id = selection.value();
+        }
+      }
+    } else {
+      auto root = json_helper::ParseJsonString(res->body);
+      CLI_LOG(root["message"].asString());
+      return;
+    }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    return;
+  }
+
   Json::Value json_data;
   json_data["model"] = model_id;
   auto data_str = json_data.toStyledString();
   cli.set_read_timeout(std::chrono::seconds(60));
-  auto res = cli.Post("/v1/models/pull", httplib::Headers(), data_str.data(),
-                      data_str.size(), "application/json");
+  res = cli.Post("/v1/models/pull", httplib::Headers(), data_str.data(),
+                 data_str.size(), "application/json");
 
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      // CLI_LOG("OK");
+
     } else {
       auto root = json_helper::ParseJsonString(res->body);
       CLI_LOG(root["message"].asString());

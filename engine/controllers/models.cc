@@ -65,6 +65,45 @@ void Models::PullModel(const HttpRequestPtr& req,
   }
 }
 
+void Models::GetModelPullInfo(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  if (!http_util::HasFieldInReq(req, callback, "model")) {
+    return;
+  }
+
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  std::cout << model_handle << std::endl;
+  auto res = model_service_->GetModelPullInfo(model_handle);
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto const& info = res.value();
+    Json::Value ret;
+    Json::Value downloaded(Json::arrayValue);
+    for (auto const& s : info.downloaded_models) {
+      downloaded.append(s);
+    }
+    Json::Value avails(Json::arrayValue);
+    for (auto const& s : info.available_models) {
+      avails.append(s);
+    }
+    ret["id"] = info.id;
+    ret["cortexso"] = info.cortexso;
+    ret["defaultBranch"] = info.default_branch;
+    ret["message"] = "Get model pull information successfully";
+    ret["downloadedModels"] = downloaded;
+    ret["availableModels"] = avails;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
 void Models::AbortPullModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {

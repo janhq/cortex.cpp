@@ -15,7 +15,6 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
-#include "utils/json_helper.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -383,7 +382,8 @@ ModelService::DownloadModelFromCortexsoAsync(
   if (model_entry.has_value()) {
     return cpp::fail("Please delete the model before downloading again");
   }
-  auto on_finished = [unique_model_id, branch](const DownloadTask& finishedTask) {
+  auto on_finished = [unique_model_id,
+                      branch](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
@@ -721,6 +721,118 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
   }
+}
+
+cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
+    const std::string& input) {
+  if (input.empty()) {
+    return cpp::fail(
+        "Input must be Cortex Model Hub handle or HuggingFace url!");
+  }
+
+  if (string_utils::StartsWith(input, "https://")) {
+    return ModelPullInfo{
+        .id = input, .downloaded_models = {}, .available_models = {}};
+  }
+
+  if (input.find(":") != std::string::npos) {
+    auto parsed = string_utils::SplitBy(input, ":");
+    if (parsed.size() != 2) {
+      return cpp::fail("Invalid model handle: " + input);
+    }
+    return ModelPullInfo{
+        .id = input, .downloaded_models = {}, .available_models = {}};
+  }
+
+  if (input.find("/") != std::string::npos) {
+    auto parsed = string_utils::SplitBy(input, "/");
+    if (parsed.size() != 2) {
+      return cpp::fail("Invalid model handle: " + input);
+    }
+
+    auto author = parsed[0];
+    auto model_name = parsed[1];
+    if (author == "cortexso") {
+      return ModelPullInfo{
+          .id = author + ":" + model_name,
+          .downloaded_models = {},
+          .available_models = {},
+          .cortexso = true,
+      };
+    }
+
+    auto repo_info =
+        huggingface_utils::GetHuggingFaceModelRepoInfo(author, model_name);
+
+    if (!repo_info.has_value()) {
+      return cpp::fail("Model not found");
+    }
+
+    if (!repo_info->gguf.has_value()) {
+      return cpp::fail(
+          "Not a GGUF model. Currently, only GGUF single file is "
+          "supported.");
+    }
+
+    std::vector<std::string> options{};
+    for (const auto& sibling : repo_info->siblings) {
+      if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
+        options.push_back(sibling.rfilename);
+      }
+    }
+    // auto selection = cli_selection_utils::PrintSelection(options);
+    // std::cout << "Selected: " << selection.value() << std::endl;
+
+    return ModelPullInfo{
+        .id = input, .downloaded_models = {}, .available_models = options};
+  }
+  auto branches =
+      huggingface_utils::GetModelRepositoryBranches("cortexso", input);
+  if (branches.has_error()) {
+    return cpp::fail(branches.error());
+  }
+
+  auto default_model_branch = huggingface_utils::GetDefaultBranch(input);
+
+  cortex::db::Models modellist_handler;
+  auto downloaded_model_ids =
+      modellist_handler.FindRelatedModel(input).value_or(
+          std::vector<std::string>{});
+
+  std::vector<std::string> avai_download_opts{};
+  for (const auto& branch : branches.value()) {
+    if (branch.second.name == "main") {  // main branch only have metadata. skip
+      continue;
+    }
+    auto model_id = input + ":" + branch.second.name;
+    if (std::find(downloaded_model_ids.begin(), downloaded_model_ids.end(),
+                  model_id) !=
+        downloaded_model_ids.end()) {  // if downloaded, we skip it
+      continue;
+    }
+    avai_download_opts.emplace_back(model_id);
+  }
+
+  if (avai_download_opts.empty()) {
+    // TODO: only with pull, we return
+    return cpp::fail("No variant available");
+  }
+  std::optional<std::string> normalized_def_branch = std::nullopt;
+  if (default_model_branch.has_value()) {
+    normalized_def_branch = input + ":" + default_model_branch.value();
+  }
+  string_utils::SortStrings(downloaded_model_ids);
+  string_utils::SortStrings(avai_download_opts);
+  // auto selection = cli_selection_utils::PrintModelSelection(
+  //     downloaded_model_ids, avai_download_opts, normalized_def_branch);
+  // if (!selection.has_value()) {
+  //   return cpp::fail("Invalid selection");
+  // }
+  return ModelPullInfo{.id = input,
+                       .default_branch = normalized_def_branch.value_or(""),
+                       .downloaded_models = downloaded_model_ids,
+                       .available_models = avai_download_opts,
+                       .cortexso = true};
 }
 
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(
