@@ -384,10 +384,47 @@ void Models::StartModel(
     return;
   auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto custom_prompt_template =
-      (*(req->getJsonObject())).get("prompt_template", "").asString();
+  StartParameterOverride params_override;
+  if (auto& o = (*(req->getJsonObject()))["prompt_template"]; !o.isNull()) {
+    params_override.custom_prompt_template = o.asString();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["cache_enabled"]; !o.isNull()) {
+    params_override.cache_enabled = o.asBool();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["ngl"]; !o.isNull()) {
+    params_override.ngl = o.asInt();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["n_parallel"]; !o.isNull()) {
+    params_override.n_parallel = o.asInt();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["ctx_len"]; !o.isNull()) {
+    params_override.ctx_len = o.asInt();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["cache_type"]; !o.isNull()) {
+    params_override.cache_type = o.asString();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
+    params_override.mmproj = o.asString();
+  }
+
+  // Support both llama_model_path and model_path for backward compatible
+  // model_path has higher priority
+  if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
+    params_override.model_path = o.asString();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["model_path"]; !o.isNull()) {
+    params_override.model_path = o.asString();
+  }
+
   auto model_entry = model_service_->GetDownloadedModel(model_handle);
-  if (!model_entry.has_value()) {
+  if (!model_entry.has_value() && !params_override.bypass_model_check()) {
     Json::Value ret;
     ret["message"] = "Cannot find model: " + model_handle;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -395,7 +432,9 @@ void Models::StartModel(
     callback(resp);
     return;
   }
-  auto engine_name = model_entry.value().engine;
+  std::string engine_name = params_override.bypass_model_check()
+                                ? kLlamaEngine
+                                : model_entry.value().engine;
   auto engine_entry = engine_service_->GetEngineInfo(engine_name);
   if (engine_entry.has_error()) {
     Json::Value ret;
@@ -414,9 +453,9 @@ void Models::StartModel(
     return;
   }
 
-  auto result = model_service_->StartModel(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_handle,
-      custom_prompt_template);
+  auto result = model_service_->StartModel(config.apiServerHost,
+                                           std::stoi(config.apiServerPort),
+                                           model_handle, params_override);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();

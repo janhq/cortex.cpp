@@ -155,9 +155,9 @@ void CommandLineParser::SetupCommonCommands() {
 }
 
 void CommandLineParser::SetupInferenceCommands() {
-  auto embeddings_cmd = app_.add_subcommand(
-      "embeddings", "Creates an embedding vector representing the input text");
-  embeddings_cmd->group(kInferenceGroup);
+  // auto embeddings_cmd = app_.add_subcommand(
+  //     "embeddings", "Creates an embedding vector representing the input text");
+  // embeddings_cmd->group(kInferenceGroup);
 }
 
 void CommandLineParser::SetupModelCommands() {

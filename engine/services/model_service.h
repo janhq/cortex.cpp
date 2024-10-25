@@ -15,6 +15,18 @@ struct ModelPullInfo {
   bool cortexso = false;
 };
 
+struct StartParameterOverride {
+  std::optional<bool> cache_enabled;
+  std::optional<int> ngl;
+  std::optional<int> n_parallel;
+  std::optional<int> ctx_len;
+  std::optional<std::string> custom_prompt_template;
+  std::optional<std::string> cache_type;
+  std::optional<std::string> mmproj;
+  std::optional<std::string> model_path;
+  bool bypass_model_check() const { return mmproj.has_value(); }
+};
+
 class ModelService {
  public:
   constexpr auto static kHuggingFaceHost = "huggingface.co";
@@ -54,7 +66,7 @@ class ModelService {
 
   cpp::result<bool, std::string> StartModel(
       const std::string& host, int port, const std::string& model_handle,
-      std::optional<std::string> custom_prompt_template = std::nullopt);
+      const StartParameterOverride& params_override);
 
   cpp::result<bool, std::string> StopModel(const std::string& host, int port,
                                            const std::string& model_handle);
@@ -87,4 +99,5 @@ class ModelService {
 
   std::shared_ptr<DownloadService> download_service_;
   std::shared_ptr<services::InferenceService> inference_svc_;
+  std::unordered_set<std::string> bypass_stop_check_set_;
 };
