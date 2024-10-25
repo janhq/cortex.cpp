@@ -16,7 +16,7 @@ void PsCmd::Exec(const std::string& host, int port) {
 
   auto res = cli.Get("/inferences/server/models");
   if (!res || res->status != httplib::StatusCode::OK_200) {
-    CLI_LOG("No model loaded!");
+    CLI_LOG("No models loaded!");
     return;
   }
 
@@ -44,7 +44,7 @@ void PsCmd::Exec(const std::string& host, int port) {
 void PsCmd::PrintModelStatusList(
     const std::vector<ModelLoadedStatus>& model_status_list) const {
   if (model_status_list.empty()) {
-    CLI_LOG("No model loaded!");
+    CLI_LOG("No models loaded!");
     return;
   }
 

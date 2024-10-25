@@ -304,7 +304,7 @@ void CortexUpdCmd::Exec(const std::string& v, bool force) {
     if (!GetNightly(v))
       return;
   }
-  CLI_LOG("Update cortex sucessfully");
+  CLI_LOG("Updated cortex successfully");
 }
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
