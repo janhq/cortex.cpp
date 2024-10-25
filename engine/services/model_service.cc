@@ -11,7 +11,6 @@
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
-#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
@@ -382,7 +381,8 @@ ModelService::DownloadModelFromCortexsoAsync(
   if (model_entry.has_value()) {
     return cpp::fail("Please delete the model before downloading again");
   }
-  auto on_finished = [&, unique_model_id](const DownloadTask& finishedTask) {
+  auto on_finished = [branch,
+                      unique_model_id](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
