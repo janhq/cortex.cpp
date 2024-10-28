@@ -1,6 +1,6 @@
 #include "engine_install_cmd.h"
 #include "server_start_cmd.h"
-#include "utils/download_manager.h"
+#include "utils/download_progress.h"
 #include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 #include "utils/json_helper.h"
@@ -65,7 +65,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   }
 
   CLI_LOG("Pulling ...")
-  DownloadManager dm;
+  DownloadProgress dm;
   dm.Connect(host_, port_);
   if (!dm.Handle(NormalizeEngine(engine)))
     return false;

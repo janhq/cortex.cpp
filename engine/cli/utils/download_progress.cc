@@ -1,4 +1,4 @@
-#include "download_manager.h"
+#include "download_progress.h"
 #include <chrono>
 #include "common/event.h"
 #include "indicators.hpp"
@@ -6,7 +6,7 @@
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 
-bool DownloadManager::Connect(const std::string& host, int port) {
+bool DownloadProgress::Connect(const std::string& host, int port) {
   if (ws_) {
     CTL_INF("Already connected!");
     return true;
@@ -19,7 +19,7 @@ bool DownloadManager::Connect(const std::string& host, int port) {
   return true;
 }
 
-bool DownloadManager::Handle(const std::string& id) {
+bool DownloadProgress::Handle(const std::string& id) {
   assert(!!ws_);
   status_ = DownloadStatus::DownloadStarted;
   std::unique_ptr<indicators::DynamicProgress<indicators::BlockProgressBar>>

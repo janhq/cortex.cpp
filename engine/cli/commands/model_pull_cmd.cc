@@ -6,7 +6,7 @@
 #include "database/models.h"
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
-#include "utils/download_manager.h"
+#include "utils/download_progress.h"
 #include "utils/format_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/json_helper.h"
@@ -209,7 +209,7 @@ void ModelPullCmd::Exec(const std::string& host, int port,
   }
 
   CLI_LOG("Pulling ...")
-  DownloadManager dm;
+  DownloadProgress dm;
   dm.Connect(host, port);
   if (!dm.Handle(model_id))
     return;

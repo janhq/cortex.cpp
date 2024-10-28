@@ -6,7 +6,7 @@
 #include "easywsclient.hpp"
 
 using DownloadStatus = cortex::event::DownloadEventType;
-class DownloadManager {
+class DownloadProgress {
  public:
   bool Connect(const std::string& host, int port);
 
@@ -19,7 +19,6 @@ class DownloadManager {
   }
 
  private:
-  // TODO(sang) open multiple sockets
   std::unique_ptr<easywsclient::WebSocket> ws_;
   std::atomic<DownloadStatus> status_ = DownloadStatus::DownloadStarted;
 };
