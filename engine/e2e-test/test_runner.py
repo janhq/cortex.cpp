@@ -168,6 +168,8 @@ def stop_server():
 
 
 async def wait_for_websocket_download_success_event(timeout: float = 30):
+    if platform.system() == 'Windows':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     async with websockets.connect("ws://127.0.0.1:3928/events") as websocket:
         try:
             # Using wait_for instead of timeout context manager
