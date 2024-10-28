@@ -237,7 +237,7 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   auto file_name{url_obj.pathParams.back()};
 
   if (author == "cortexso") {
-    return DownloadModelFromCortexsoAsync(model_id);
+    return DownloadModelFromCortexsoAsync(model_id, url_obj.pathParams[3]);
   }
 
   if (url_obj.pathParams.size() < 5) {
@@ -280,7 +280,7 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
                                      .localPath = local_path,
                                  }}}};
 
-  auto on_finished = [&](const DownloadTask& finishedTask) {
+  auto on_finished = [author](const DownloadTask& finishedTask) {
     auto gguf_download_item = finishedTask.items[0];
     ParseGguf(gguf_download_item, author);
   };
@@ -345,7 +345,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
                                      .localPath = local_path,
                                  }}}};
 
-  auto on_finished = [&](const DownloadTask& finishedTask) {
+  auto on_finished = [author](const DownloadTask& finishedTask) {
     auto gguf_download_item = finishedTask.items[0];
     ParseGguf(gguf_download_item, author);
   };
@@ -437,7 +437,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
   }
 
   std::string model_id{name + ":" + branch};
-  auto on_finished = [&, model_id](const DownloadTask& finishedTask) {
+  auto on_finished = [branch, model_id](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
@@ -760,8 +760,26 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
   auto model_name = input;
 
   if (string_utils::StartsWith(input, "https://")) {
-    return ModelPullInfo{
-        .id = input, .downloaded_models = {}, .available_models = {}};
+    auto url_obj = url_parser::FromUrlString(input);
+
+    if (url_obj.host == kHuggingFaceHost) {
+      if (url_obj.pathParams[2] == "blob") {
+        url_obj.pathParams[2] = "resolve";
+      }
+    }
+    auto author{url_obj.pathParams[0]};
+    auto model_id{url_obj.pathParams[1]};
+    auto file_name{url_obj.pathParams.back()};
+    if (author == "cortexso") {      
+      return ModelPullInfo{.id = model_id + ":" + url_obj.pathParams[3],
+                           .downloaded_models = {},
+                           .available_models = {},
+                           .download_url = url_parser::FromUrl(url_obj)};
+    }
+    return ModelPullInfo{.id = author + ":" + model_id + ":" + file_name,
+                         .downloaded_models = {},
+                         .available_models = {},
+                         .download_url = url_parser::FromUrl(url_obj)};
   }
 
   if (input.find(":") != std::string::npos) {
@@ -770,7 +788,7 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
       return cpp::fail("Invalid model handle: " + input);
     }
     return ModelPullInfo{
-        .id = input, .downloaded_models = {}, .available_models = {}};
+        .id = input, .downloaded_models = {}, .available_models = {}, .download_url = input};
   }
 
   if (input.find("/") != std::string::npos) {
@@ -803,7 +821,11 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
       }
 
       return ModelPullInfo{
-          .id = input, .downloaded_models = {}, .available_models = options};
+          .id = author + ":" + model_name,
+          .downloaded_models = {},
+          .available_models = options,
+          .download_url =
+              huggingface_utils::GetDownloadableUrl(author, model_name, "")};
     }
   }
   auto branches =
@@ -815,9 +837,8 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
   auto default_model_branch = huggingface_utils::GetDefaultBranch(model_name);
 
   cortex::db::Models modellist_handler;
-  auto downloaded_model_ids =
-      modellist_handler.FindRelatedModel(model_name).value_or(
-          std::vector<std::string>{});
+  auto downloaded_model_ids = modellist_handler.FindRelatedModel(model_name)
+                                  .value_or(std::vector<std::string>{});
 
   std::vector<std::string> avai_download_opts{};
   for (const auto& branch : branches.value()) {

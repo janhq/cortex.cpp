@@ -13,6 +13,7 @@ struct ModelPullInfo {
   std::vector<std::string> downloaded_models;
   std::vector<std::string> available_models;
   std::string model_source;
+  std::string download_url;
 };
 
 struct StartParameterOverride {

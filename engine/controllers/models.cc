@@ -98,6 +98,7 @@ void Models::GetModelPullInfo(
     ret["message"] = "Get model pull information successfully";
     ret["downloadedModels"] = downloaded;
     ret["availableModels"] = avails;
+    ret["downloadUrl"] = info.download_url;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
