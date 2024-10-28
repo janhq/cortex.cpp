@@ -73,7 +73,6 @@ void Models::GetModelPullInfo(
   }
 
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  std::cout << model_handle << std::endl;
   auto res = model_service_->GetModelPullInfo(model_handle);
   if (res.has_error()) {
     Json::Value ret;
