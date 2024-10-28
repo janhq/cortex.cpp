@@ -23,7 +23,7 @@ class TestCliEngineInstall:
             "Install Engine", ["engines", "install", "llama-cpp"], timeout=None, capture = False
         )
         root = Path.home()
-        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp")
+        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt")
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
@@ -47,7 +47,7 @@ class TestCliEngineInstall:
             "Install Engine", ["engines", "install", "llama-cpp", "-v", "v0.1.29"], timeout=None, capture = False
         )
         root = Path.home()
-        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp")
+        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt")
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
