@@ -10,16 +10,16 @@ This guide will help you set up and run Cortex using Docker.
 1. Clone the Cortex repository
     ```bash
     git clone https://github.com/janhq/cortex.cpp.git
-
-    cd cortex.cpp/docker
+    cd cortex.cpp
+    git submodule update --init
     ```
 2. Build the Docker image
     ```bash
     # Default always uses the latest cortex.cpp and cortex.llamacpp
-    docker build -t cortex .
+    docker build -t cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
 
     # Use specific version of cortex.cpp and cortex.llamacpp
-    docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 -t cortex .
+    docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
     ```
 
 3. Run the Docker container
