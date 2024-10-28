@@ -64,7 +64,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     return false;
   }
 
-  CLI_LOG("Pulling ...")
+  CLI_LOG("Start downloading ...")
   DownloadProgress dp;
   dp.Connect(host_, port_);
   if (!dp.Handle(NormalizeEngine(engine)))
