@@ -15,8 +15,8 @@
 
 namespace commands {
 
-void ModelPullCmd::Exec(const std::string& host, int port,
-                        const std::string& input) {
+std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
+                                              const std::string& input) {
   // model_id: use to check the download progress
   // model: use as a parameter for pull API
   std::string model_id = input;
@@ -27,7 +27,7 @@ void ModelPullCmd::Exec(const std::string& host, int port,
     CLI_LOG("Starting server ...");
     commands::ServerStartCmd ssc;
     if (!ssc.Exec(host, port)) {
-      return;
+      return std::nullopt;
     }
   }
 
@@ -70,7 +70,7 @@ void ModelPullCmd::Exec(const std::string& host, int port,
 
           if (!selection.has_value()) {
             CLI_LOG("Invalid selection");
-            return;
+            return std::nullopt;
           }
           model_id = selection.value();
           model = model_id;
@@ -84,12 +84,12 @@ void ModelPullCmd::Exec(const std::string& host, int port,
     } else {
       auto root = json_helper::ParseJsonString(res->body);
       CLI_LOG(root["message"].asString());
-      return;
+      return std::nullopt;
     }
   } else {
     auto err = res.error();
     CTL_ERR("HTTP error: " << httplib::to_string(err));
-    return;
+    return std::nullopt;
   }
 
   Json::Value json_data;
@@ -105,20 +105,21 @@ void ModelPullCmd::Exec(const std::string& host, int port,
     } else {
       auto root = json_helper::ParseJsonString(res->body);
       CLI_LOG(root["message"].asString());
-      return;
+      return std::nullopt;
     }
   } else {
     auto err = res.error();
     CTL_ERR("HTTP error: " << httplib::to_string(err));
-    return;
+    return std::nullopt;
   }
 
   CLI_LOG("Start downloading ...")
   DownloadProgress dp;
   dp.Connect(host, port);
   if (!dp.Handle(model_id))
-    return;
+    return std::nullopt;
 
   CLI_LOG("Model " << model_id << " downloaded successfully!")
+  return model_id;
 }
 };  // namespace commands

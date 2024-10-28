@@ -6,7 +6,8 @@
 
 namespace commands {
 
-std::optional<std::string> SelectLocalModel(ModelService& model_service,
+std::optional<std::string> SelectLocalModel(std::string host, int port,
+                                            ModelService& model_service,
                                             const std::string& model_handle);
 
 class RunCmd {
@@ -27,9 +28,8 @@ class RunCmd {
   int port_;
   std::string model_handle_;
 
-std::shared_ptr<DownloadService> download_service_;
+  std::shared_ptr<DownloadService> download_service_;
   ModelService model_service_;
   EngineService engine_service_;
-  
 };
 }  // namespace commands
