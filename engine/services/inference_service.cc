@@ -137,19 +137,23 @@ InferResult InferenceService::LoadModel(
         }
       };
 
-      if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo) {
-        // Remove llamacpp dll directory
-        if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
-          LOG_WARN << "Could not remove dll directory: " << kLlamaRepo;
-        } else {
-          LOG_INFO << "Removed dll directory: " << kLlamaRepo;
-        }
+      if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
+          should_use_dll_search_path) {
+        if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo &&
+            should_use_dll_search_path) {
+          // Remove llamacpp dll directory
+          if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
+            LOG_WARN << "Could not remove dll directory: " << kLlamaRepo;
+          } else {
+            LOG_INFO << "Removed dll directory: " << kLlamaRepo;
+          }
 
-        add_dll(ne, abs_path);
-      } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
-        // Do nothing
-      } else {
-        add_dll(ne, abs_path);
+          add_dll(ne, abs_path);
+        } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
+          // Do nothing
+        } else {
+          add_dll(ne, abs_path);
+        }
       }
 #endif
       engines_[ne].dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
@@ -366,10 +370,13 @@ InferResult InferenceService::UnloadEngine(
   EngineI* e = std::get<EngineI*>(engines_[ne].engine);
   delete e;
 #if defined(_WIN32)
-  if (!RemoveDllDirectory(engines_[ne].cookie)) {
-    LOG_WARN << "Could not remove dll directory: " << ne;
-  } else {
-    LOG_INFO << "Removed dll directory: " << ne;
+  if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
+      should_use_dll_search_path) {
+    if (!RemoveDllDirectory(engines_[ne].cookie)) {
+      LOG_WARN << "Could not remove dll directory: " << ne;
+    } else {
+      LOG_INFO << "Removed dll directory: " << ne;
+    }
   }
 #endif
   engines_.erase(ne);
