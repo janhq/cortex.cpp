@@ -17,13 +17,14 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@calcom/embed-react": "^1.5.1",
     "@code-hike/mdx": "^0.9.0",
     "@docsearch/js": "^3.6.0",
     "@docsearch/react": "^3.6.0",
-    "@docusaurus/core": "3.4.0",
-    "@docusaurus/preset-classic": "^3.4.0",
-    "@docusaurus/theme-live-codeblock": "^3.4.0",
-    "@docusaurus/theme-mermaid": "^3.4.0",
+    "@docusaurus/core": "^3.5.2",
+    "@docusaurus/preset-classic": "^3.5.2",
+    "@docusaurus/theme-live-codeblock": "^3.5.2",
+    "@docusaurus/theme-mermaid": "^3.5.2",
     "@excalidraw/excalidraw": "^0.17.6",
     "@huggingface/hub": "^0.15.1",
     "@mdx-js/react": "3.0.1",

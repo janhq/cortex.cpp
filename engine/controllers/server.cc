@@ -13,7 +13,10 @@ namespace inferences {
 server::server(std::shared_ptr<services::InferenceService> inference_service)
     : inference_svc_(inference_service) {
 #if defined(_WIN32)
-  SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+  if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
+      should_use_dll_search_path) {
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+  }
 #endif
 };
 
