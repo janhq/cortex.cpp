@@ -12,7 +12,7 @@ struct ModelPullInfo {
   std::string default_branch;
   std::vector<std::string> downloaded_models;
   std::vector<std::string> available_models;
-  bool cortexso = false;
+  std::string model_source;
 };
 
 struct StartParameterOverride {

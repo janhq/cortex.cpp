@@ -143,7 +143,7 @@ void ModelPullCmd::Exec(const std::string& host, int port,
       // CLI_LOG(res->body);
       auto root = json_helper::ParseJsonString(res->body);
       std::string id = root["id"].asString();
-      bool is_cortexso = root["cortexso"].asBool();
+      bool is_cortexso = root["modelSource"].asString() == "cortexso";
       std::string default_branch = root["defaultBranch"].asString();
       std::vector<std::string> downloaded;
       for (auto const& v : root["downloadedModels"]) {

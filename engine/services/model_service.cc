@@ -785,7 +785,7 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
           .id = author + ":" + model_name,
           .downloaded_models = {},
           .available_models = {},
-          .cortexso = true,
+          .model_source = "cortexso",
       };
     }
 
@@ -851,16 +851,12 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
   }
   string_utils::SortStrings(downloaded_model_ids);
   string_utils::SortStrings(avai_download_opts);
-  // auto selection = cli_selection_utils::PrintModelSelection(
-  //     downloaded_model_ids, avai_download_opts, normalized_def_branch);
-  // if (!selection.has_value()) {
-  //   return cpp::fail("Invalid selection");
-  // }
+
   return ModelPullInfo{.id = input,
                        .default_branch = normalized_def_branch.value_or(""),
                        .downloaded_models = downloaded_model_ids,
                        .available_models = avai_download_opts,
-                       .cortexso = true};
+                       .model_source = "cortexso"};
 }
 
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(

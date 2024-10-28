@@ -93,7 +93,7 @@ void Models::GetModelPullInfo(
       avails.append(s);
     }
     ret["id"] = info.id;
-    ret["cortexso"] = info.cortexso;
+    ret["modelSource"] = info.model_source;
     ret["defaultBranch"] = info.default_branch;
     ret["message"] = "Get model pull information successfully";
     ret["downloadedModels"] = downloaded;
