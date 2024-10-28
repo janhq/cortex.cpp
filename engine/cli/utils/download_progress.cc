@@ -22,13 +22,10 @@ bool DownloadProgress::Connect(const std::string& host, int port) {
 bool DownloadProgress::Handle(const std::string& id) {
   assert(!!ws_);
   status_ = DownloadStatus::DownloadStarted;
-  std::unique_ptr<indicators::DynamicProgress<indicators::BlockProgressBar>>
-      bars;
+  std::unique_ptr<indicators::DynamicProgress<indicators::ProgressBar>> bars;
 
-  std::vector<std::unique_ptr<indicators::BlockProgressBar>> items;
-  auto handle_message = [this, &bars, &items,
-                         id](const std::string& message) {
-
+  std::vector<std::unique_ptr<indicators::ProgressBar>> items;
+  auto handle_message = [this, &bars, &items, id](const std::string& message) {
     CTL_INF(message);
 
     auto pad_string = [](const std::string& str,
@@ -58,13 +55,14 @@ bool DownloadProgress::Handle(const std::string& id) {
     // std::cout << downloaded << " " << total << std::endl;
     if (!bars) {
       bars = std::make_unique<
-          indicators::DynamicProgress<indicators::BlockProgressBar>>();
+          indicators::DynamicProgress<indicators::ProgressBar>>();
       for (auto& i : ev.download_task_.items) {
-        items.emplace_back(std::make_unique<indicators::BlockProgressBar>(
-            indicators::option::BarWidth{50}, indicators::option::Start{"|"},
+        items.emplace_back(std::make_unique<indicators::ProgressBar>(
+            indicators::option::BarWidth{50}, indicators::option::Start{"["},
             // indicators::option::Fill{"■"}, indicators::option::Lead{"■"},
+            indicators::option::Fill{"="}, indicators::option::Lead{">"},
             // indicators::option::Remainder{" "},
-            indicators::option::End{"|"},
+            indicators::option::End{"]"},
             indicators::option::PrefixText{pad_string(i.id)},
             // indicators::option::PostfixText{"Downloading files"},
             indicators::option::ForegroundColor{indicators::Color::white},
@@ -82,11 +80,17 @@ bool DownloadProgress::Handle(const std::string& id) {
         if (status_ == DownloadStatus::DownloadUpdated) {
           (*bars)[i].set_progress(static_cast<double>(downloaded) / total *
                                   100);
+          (*bars)[i].set_option(indicators::option::PrefixText{
+              pad_string(it.id) +
+              std::to_string(int(static_cast<double>(downloaded) / total * 100)) +
+              '%'});
           (*bars)[i].set_option(indicators::option::PostfixText{
               format_utils::BytesToHumanReadable(downloaded) + "/" +
               format_utils::BytesToHumanReadable(total)});
         } else if (status_ == DownloadStatus::DownloadSuccess) {
           (*bars)[i].set_progress(100);
+          (*bars)[i].set_option(
+              indicators::option::PrefixText{pad_string(it.id) + "100%"});
           (*bars)[i].set_option(indicators::option::PostfixText{
               format_utils::BytesToHumanReadable(total) + "/" +
               format_utils::BytesToHumanReadable(total)});
