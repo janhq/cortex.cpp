@@ -65,14 +65,14 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   }
 
   CLI_LOG("Pulling ...")
-  DownloadProgress dm;
-  dm.Connect(host_, port_);
-  if (!dm.Handle(NormalizeEngine(engine)))
+  DownloadProgress dp;
+  dp.Connect(host_, port_);
+  if (!dp.Handle(NormalizeEngine(engine)))
     return false;
 
   bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
   if (check_cuda_download) {
-    if (!dm.Handle("cuda"))
+    if (!dp.Handle("cuda"))
       return false;
   }
 

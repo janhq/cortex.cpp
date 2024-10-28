@@ -114,9 +114,9 @@ void ModelPullCmd::Exec(const std::string& host, int port,
   }
 
   CLI_LOG("Pulling ...")
-  DownloadProgress dm;
-  dm.Connect(host, port);
-  if (!dm.Handle(model_id))
+  DownloadProgress dp;
+  dp.Connect(host, port);
+  if (!dp.Handle(model_id))
     return;
 
   CLI_LOG("Model " << model_id << " downloaded successfully!")
