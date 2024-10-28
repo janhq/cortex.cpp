@@ -194,17 +194,11 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
                                     << hw_inf_.sys_inf->arch
                                     << ", will get engine from remote");
     // Go with the remote flow
-    // return DownloadEngine(engine, version);
   } else {
     auto engine_path = file_manager_utils::GetEnginesContainerPath();
     archive_utils::ExtractArchive(path + "/" + matched_variant,
                                   engine_path.string());
   }
-
-  // Not match any cuda binary, download from remote
-  // if (!found_cuda) {
-  //   return DownloadCuda(engine);
-  // }
 
   return true;
 }
