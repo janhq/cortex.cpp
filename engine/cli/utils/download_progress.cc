@@ -48,29 +48,22 @@ bool DownloadProgress::Handle(const std::string& id) {
         json_helper::ParseJsonString(message));
     // Ignore other task ids
     if (ev.download_task_.id != id) {
-
       return;
     }
 
     status_ = ev.type_;
-    // std::cout << downloaded << " " << total << std::endl;
+
     if (!bars) {
       bars = std::make_unique<
           indicators::DynamicProgress<indicators::ProgressBar>>();
       for (auto& i : ev.download_task_.items) {
         items.emplace_back(std::make_unique<indicators::ProgressBar>(
             indicators::option::BarWidth{50}, indicators::option::Start{"["},
-            // indicators::option::Fill{"■"}, indicators::option::Lead{"■"},
             indicators::option::Fill{"="}, indicators::option::Lead{">"},
-            // indicators::option::Remainder{" "},
             indicators::option::End{"]"},
             indicators::option::PrefixText{pad_string(i.id)},
-            // indicators::option::PostfixText{"Downloading files"},
             indicators::option::ForegroundColor{indicators::Color::white},
-            indicators::option::ShowRemainingTime{true}
-            // indicators::option::FontStyles{std::vector<indicators::FontStyle>{
-            //     indicators::FontStyle::bold}}
-            ));
+            indicators::option::ShowRemainingTime{true}));
         bars->push_back(*(items.back()));
       }
     } else {
