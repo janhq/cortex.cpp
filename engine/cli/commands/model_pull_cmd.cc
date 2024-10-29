@@ -29,8 +29,8 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
 
   // model_id: use to check the download progress
   // model: use as a parameter for pull API
-  std::string model_id = input;
-  std::string model = input;
+  auto model_id = input;
+  auto model = input;
 
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
@@ -54,9 +54,9 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
     if (res->status == httplib::StatusCode::OK_200) {
       // CLI_LOG(res->body);
       auto root = json_helper::ParseJsonString(res->body);
-      std::string id = root["id"].asString();
+      auto id = root["id"].asString();
       bool is_cortexso = root["modelSource"].asString() == "cortexso";
-      std::string default_branch = root["defaultBranch"].asString();
+      auto default_branch = root["defaultBranch"].asString();
       std::vector<std::string> downloaded;
       for (auto const& v : root["downloadedModels"]) {
         downloaded.push_back(v.asString());
@@ -65,7 +65,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
       for (auto const& v : root["availableModels"]) {
         avails.push_back(v.asString());
       }
-      std::string download_url = root["downloadUrl"].asString();
+      auto download_url = root["downloadUrl"].asString();
 
       if (downloaded.empty() && avails.empty()) {
         model_id = id;
