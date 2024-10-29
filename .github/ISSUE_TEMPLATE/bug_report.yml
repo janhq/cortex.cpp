@@ -28,12 +28,10 @@ body:
         2. Click on '...'
 
   - type: textarea
-    validations:
-      required: true
     attributes:
       label: "Screenshots / Logs"
       description: |
-        You can find cortex-cli.log and cortex.log files in: ~/cortex/logs/
+        Please include cortex-cli.log and cortex.log files in: ~/cortex/logs/
 
   - type: checkboxes
     attributes:
@@ -43,13 +41,6 @@ body:
         - label: Mac Silicon 
         - label: Mac Intel
         - label: Linux / Ubuntu
-
-  - type: input
-    validations:
-      required: true
-    attributes:
-      label: "What OS Version are you running?"
-      description: "Eg Windows 10, Ubuntu 22, Mac M1"
 
   - type: checkboxes
     attributes:
