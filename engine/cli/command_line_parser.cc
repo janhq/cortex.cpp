@@ -546,6 +546,7 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
                                            "stream",
                                            "ngl",
                                            "ctx_len",
+                                           "n_parallel",
                                            "engine",
                                            "prompt_template",
                                            "system_template",
