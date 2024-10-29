@@ -13,6 +13,9 @@
 #include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
 #include "utils/string_utils.h"
+#if defined(_WIN32)
+#include <signal.h>
+#endif
 
 namespace commands {
 std::function<void(int)> shutdown_handler;
@@ -166,7 +169,7 @@ bool ModelPullCmd::AbortModelPull(const std::string& host, int port,
                         data_str.size(), "application/json");
   if (res) {
     if (res->status == httplib::StatusCode::OK_200) {
-      std::cout << "OK" << std::endl;
+      CTL_INF("Abort model pull successfully: " << task_id);
       return true;
     } else {
       auto root = json_helper::ParseJsonString(res->body);
