@@ -52,8 +52,6 @@ bool DownloadProgress::Handle(const std::string& id) {
       return;
     }
 
-    status_ = ev.type_;
-
     if (!bars) {
       bars = std::make_unique<
           indicators::DynamicProgress<indicators::ProgressBar>>();
@@ -72,7 +70,7 @@ bool DownloadProgress::Handle(const std::string& id) {
         auto& it = ev.download_task_.items[i];
         uint64_t downloaded = it.downloadedBytes.value_or(0);
         uint64_t total = it.bytes.value_or(9999);
-        if (status_ == DownloadStatus::DownloadUpdated) {
+        if (ev.type_ == DownloadStatus::DownloadUpdated) {
           (*bars)[i].set_option(indicators::option::PrefixText{
               pad_string(it.id) +
               std::to_string(
@@ -83,18 +81,20 @@ bool DownloadProgress::Handle(const std::string& id) {
           (*bars)[i].set_option(indicators::option::PostfixText{
               format_utils::BytesToHumanReadable(downloaded) + "/" +
               format_utils::BytesToHumanReadable(total)});
-        } else if (status_ == DownloadStatus::DownloadSuccess) {
-          (*bars)[i].set_option(
-              indicators::option::PrefixText{pad_string(it.id) + "100%"});
+        } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
           (*bars)[i].set_progress(100);
           auto total_str = format_utils::BytesToHumanReadable(total);
           (*bars)[i].set_option(
               indicators::option::PostfixText{total_str + "/" + total_str});
+          (*bars)[i].set_option(
+              indicators::option::PrefixText{pad_string(it.id) + "100%"});
+          (*bars)[i].set_progress(100);
 
           CTL_INF("Download success");
         }
       }
     }
+    status_ = ev.type_;
   };
 
   while (ws_->getReadyState() != easywsclient::WebSocket::CLOSED &&
