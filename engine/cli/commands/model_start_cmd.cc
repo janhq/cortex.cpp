@@ -14,7 +14,7 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
                          const std::string& model_handle,
                          bool print_success_log) {
   std::optional<std::string> model_id =
-      SelectLocalModel(model_service_, model_handle);
+      SelectLocalModel(host, port, model_service_, model_handle);
 
   if (!model_id.has_value()) {
     return false;

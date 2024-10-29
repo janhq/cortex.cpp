@@ -100,6 +100,10 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
     auto data_path = file_manager_utils::GetEnginesContainerPath();
     auto llamacpp_path = data_path / "cortex.llamacpp/";
     auto trt_path = data_path / "cortex.tensorrt-llm/";
+    if (!std::filesystem::exists(llamacpp_path)) {
+      std::filesystem::create_directory(llamacpp_path);
+    }
+
     auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
     setenv(name, new_v.c_str(), true);
     CTL_INF("LD_LIBRARY_PATH: " << getenv(name));

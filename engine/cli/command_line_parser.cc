@@ -130,7 +130,9 @@ void CommandLineParser::SetupCommonCommands() {
       return;
     }
     try {
-      commands::ModelPullCmd(download_service_).Exec(cml_data_.model_id);
+      commands::ModelPullCmd(download_service_)
+          .Exec(cml_data_.config.apiServerHost,
+                std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
     } catch (const std::exception& e) {
       CLI_LOG(e.what());
     }
@@ -462,7 +464,9 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
     if (std::exchange(executed_, true))
       return;
     try {
-      commands::EngineInstallCmd(download_service_)
+      commands::EngineInstallCmd(download_service_,
+                                 cml_data_.config.apiServerHost,
+                                 std::stoi(cml_data_.config.apiServerPort))
           .Exec(engine_name, version, src);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());

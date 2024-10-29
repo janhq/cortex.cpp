@@ -4,6 +4,17 @@ from test_runner import popen
 
 class TestCliModelPullHuggingFaceRepository:
 
+    def setup_and_teardown(self):
+        # Setup
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
+
+        yield
+
+        # Teardown
+        stop_server()
+    
     def test_model_pull_hugging_face_repository(self):
         """
         Test pull model pervll/bge-reranker-v2-gemma-Q4_K_M-GGUF from issue #1017

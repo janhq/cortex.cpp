@@ -2,6 +2,8 @@ FROM ubuntu:22.04 as base
 
 FROM base as build
 
+ARG CORTEX_CPP_VERSION=latest
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
@@ -41,9 +43,11 @@ RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/nul
 
 WORKDIR /app
 
-COPY . /app/
+COPY ./engine /app/engine
 
-RUN git submodule update --init && cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=$(git rev-parse HEAD) -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+COPY ./docs/static/openapi/cortex.json /app/docs/static/openapi/cortex.json
+
+RUN cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
 
 FROM base as runtime
 
@@ -73,6 +77,8 @@ RUN chmod +x /tmp/download-cortex.llamacpp.sh && /bin/bash /tmp/download-cortex.
 
 # Copy the entrypoint script
 COPY ./docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 39281
 
