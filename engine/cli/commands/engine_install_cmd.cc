@@ -6,19 +6,6 @@
 #include "utils/logging_utils.h"
 
 namespace commands {
-namespace {
-std::string NormalizeEngine(const std::string& engine) {
-  if (engine == kLlamaEngine) {
-    return kLlamaRepo;
-  } else if (engine == kOnnxEngine) {
-    return kOnnxRepo;
-  } else if (engine == kTrtLlmEngine) {
-    return kTrtLlmRepo;
-  }
-  return engine;
-};
-}  // namespace
-
 bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& version,
                             const std::string& src) {
@@ -66,7 +53,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   CLI_LOG("Start downloading ...")
   DownloadProgress dp;
   dp.Connect(host_, port_);
-  if (!dp.Handle(NormalizeEngine(engine)))
+  if (!dp.Handle(engine))
     return false;
 
   bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();

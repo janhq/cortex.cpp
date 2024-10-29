@@ -44,6 +44,17 @@ std::string NormalizeEngine(const std::string& engine) {
   }
   return engine;
 };
+
+std::string Repo2Engine(const std::string& r) {
+  if (r == kLlamaRepo) {
+    return kLlamaEngine;
+  } else if (r == kOnnxRepo) {
+    return kOnnxEngine;
+  } else if (r == kTrtLlmRepo) {
+    return kTrtLlmEngine;
+  }
+  return r;
+};
 }  // namespace
 
 cpp::result<EngineInfo, std::string> EngineService::GetEngineInfo(
@@ -314,10 +325,10 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
 
         CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
         auto local_path = engine_folder_path / file_name;
-        auto downloadTask{DownloadTask{.id = engine,
+        auto downloadTask{DownloadTask{.id = Repo2Engine(engine),
                                        .type = DownloadType::Engine,
                                        .items = {DownloadItem{
-                                           .id = engine,
+                                           .id = Repo2Engine(engine),
                                            .downloadUrl = download_url,
                                            .localPath = local_path,
                                        }}}};
