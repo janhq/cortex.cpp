@@ -11,6 +11,7 @@ class Models : public drogon::HttpController<Models, false> {
  public:
   METHOD_LIST_BEGIN
   METHOD_ADD(Models::PullModel, "/pull", Post);
+  METHOD_ADD(Models::GetModelPullInfo, "/pull/info", Post);
   METHOD_ADD(Models::AbortPullModel, "/pull", Delete);
   METHOD_ADD(Models::ListModel, "", Get);
   METHOD_ADD(Models::GetModel, "/{1}", Get);
@@ -39,6 +40,8 @@ class Models : public drogon::HttpController<Models, false> {
 
   void PullModel(const HttpRequestPtr& req,
                  std::function<void(const HttpResponsePtr&)>&& callback);
+  void GetModelPullInfo(const HttpRequestPtr& req,
+                        std::function<void(const HttpResponsePtr&)>&& callback) const;
   void AbortPullModel(const HttpRequestPtr& req,
                       std::function<void(const HttpResponsePtr&)>&& callback);
   void ListModel(const HttpRequestPtr& req,

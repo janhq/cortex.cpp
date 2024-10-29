@@ -7,6 +7,15 @@
 #include "services/download_service.h"
 #include "services/inference_service.h"
 
+struct ModelPullInfo {
+  std::string id;
+  std::string default_branch;
+  std::vector<std::string> downloaded_models;
+  std::vector<std::string> available_models;
+  std::string model_source;
+  std::string download_url;
+};
+
 struct StartParameterOverride {
   std::optional<bool> cache_enabled;
   std::optional<int> ngl;
@@ -18,6 +27,7 @@ struct StartParameterOverride {
   std::optional<std::string> model_path;
   bool bypass_model_check() const { return mmproj.has_value(); }
 };
+
 class ModelService {
  public:
   constexpr auto static kHuggingFaceHost = "huggingface.co";
@@ -64,6 +74,9 @@ class ModelService {
 
   cpp::result<bool, std::string> GetModelStatus(
       const std::string& host, int port, const std::string& model_handle);
+
+  cpp::result<ModelPullInfo, std::string> GetModelPullInfo(
+      const std::string& model_handle);
 
   cpp::result<std::string, std::string> HandleUrl(const std::string& url);
 

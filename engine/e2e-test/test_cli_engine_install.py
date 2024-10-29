@@ -1,17 +1,29 @@
 import platform
 import tempfile
-
+import os
+from pathlib import Path
 import pytest
 from test_runner import run
 
 
 class TestCliEngineInstall:
+    def setup_and_teardown(self):
+        # Setup
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
+
+        yield
+
+        # Teardown
+        stop_server()
 
     def test_engines_install_llamacpp_should_be_successfully(self):
         exit_code, output, error = run(
-            "Install Engine", ["engines", "install", "llama-cpp"], timeout=None
+            "Install Engine", ["engines", "install", "llama-cpp"], timeout=None, capture = False
         )
-        assert "Start downloading" in output, "Should display downloading message"
+        root = Path.home()
+        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt")
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
@@ -32,9 +44,10 @@ class TestCliEngineInstall:
         
     def test_engines_install_pre_release_llamacpp(self):
         exit_code, output, error = run(
-            "Install Engine", ["engines", "install", "llama-cpp", "-v", "v0.1.29"], timeout=600
+            "Install Engine", ["engines", "install", "llama-cpp", "-v", "v0.1.29"], timeout=None, capture = False
         )
-        assert "Start downloading" in output, "Should display downloading message"
+        root = Path.home()
+        assert os.path.exists(root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt")
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):

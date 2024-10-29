@@ -3,6 +3,8 @@
 #include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
+#include "engine_install_cmd.h"
+#include "model_pull_cmd.h"
 #include "model_start_cmd.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
@@ -11,7 +13,8 @@
 
 namespace commands {
 
-std::optional<std::string> SelectLocalModel(ModelService& model_service,
+std::optional<std::string> SelectLocalModel(std::string host, int port,
+                                            ModelService& model_service,
                                             const std::string& model_handle) {
   std::optional<std::string> model_id = model_handle;
   cortex::db::Models modellist_handler;
@@ -42,8 +45,8 @@ std::optional<std::string> SelectLocalModel(ModelService& model_service,
   } else {
     auto related_models_ids = modellist_handler.FindRelatedModel(model_handle);
     if (related_models_ids.has_error() || related_models_ids.value().empty()) {
-      auto result = model_service.DownloadModel(model_handle);
-      if (result.has_error()) {
+      auto result = ModelPullCmd(model_service).Exec(host, port, model_handle);
+      if (!result) {
         CLI_LOG("Model " << model_handle << " not found!");
         return std::nullopt;
       }
@@ -79,7 +82,7 @@ std::string Repo2Engine(const std::string& r) {
 
 void RunCmd::Exec(bool run_detach) {
   std::optional<std::string> model_id =
-      SelectLocalModel(model_service_, model_handle_);
+      SelectLocalModel(host_, port_, model_service_, model_handle_);
   if (!model_id.has_value()) {
     return;
   }
@@ -114,9 +117,9 @@ void RunCmd::Exec(bool run_detach) {
         throw std::runtime_error("Engine " + mc.engine + " is incompatible");
       }
       if (required_engine.value().status == EngineService::kNotInstalled) {
-        auto install_engine_result = engine_service_.InstallEngine(mc.engine);
-        if (install_engine_result.has_error()) {
-          throw std::runtime_error(install_engine_result.error());
+        if (!EngineInstallCmd(download_service_, host_, port_)
+                 .Exec(mc.engine)) {
+          return;
         }
       }
     }

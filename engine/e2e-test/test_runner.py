@@ -24,14 +24,14 @@ def getExecutablePath() -> str:
 
 
 # Execute a command
-def run(test_name: str, arguments: List[str], timeout=timeout) -> (int, str, str):
+def run(test_name: str, arguments: List[str], timeout=timeout, capture = True) -> (int, str, str):
     executable_path = getExecutablePath()
     print("Running:", test_name)
     print("Command:", [executable_path] + arguments)
 
     result = subprocess.run(
         [executable_path] + arguments,
-        capture_output=True,
+        capture_output=capture,
         text=True,
         timeout=timeout,
     )

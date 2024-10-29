@@ -10,6 +10,7 @@ class TestCreateLogFolder:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
+        stop_server()
         root = Path.home()
         if os.path.exists(root / "cortexcpp" / "logs"):
             shutil.rmtree(root / "cortexcpp" / "logs")
