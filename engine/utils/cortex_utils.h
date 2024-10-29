@@ -129,40 +129,6 @@ inline void processLocalImage(
   }
 }
 
-inline std::vector<std::string> listFilesInDir(const std::string& path) {
-  std::vector<std::string> files;
-
-#ifdef _WIN32
-  // Windows-specific code
-  WIN32_FIND_DATA findFileData;
-  HANDLE hFind = FindFirstFile((path + "\\*").c_str(), &findFileData);
-
-  if (hFind != INVALID_HANDLE_VALUE) {
-    do {
-      if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-        files.push_back(findFileData.cFileName);
-      }
-    } while (FindNextFile(hFind, &findFileData) != 0);
-    FindClose(hFind);
-  }
-#else
-  // POSIX-specific code (Linux, Unix, MacOS)
-  DIR* dir;
-  struct dirent* ent;
-
-  if ((dir = opendir(path.c_str())) != NULL) {
-    while ((ent = readdir(dir)) != NULL) {
-      if (ent->d_type == DT_REG) {  // Check if it's a regular file
-        files.push_back(ent->d_name);
-      }
-    }
-    closedir(dir);
-  }
-#endif
-
-  return files;
-}
-
 inline std::string rtrim(const std::string& str) {
   size_t end = str.find_last_not_of("\n\t ");
   return (end == std::string::npos) ? "" : str.substr(0, end + 1);

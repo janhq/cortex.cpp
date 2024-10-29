@@ -28,6 +28,9 @@ if(MSVC)
       $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
       $<$<CONFIG:Release>:/MT> #--|
   )
+  add_compile_options(/utf-8)
+  add_definitions(-DUNICODE -D_UNICODE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DUNICODE /D_UNICODE")
 endif()
 
 if(DEBUG)
@@ -67,7 +70,7 @@ if(CMAKE_BUILD_TEST)
   add_subdirectory(test)
 endif()
 
-add_subdirectory(cli)
+# add_subdirectory(cli)
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
@@ -79,6 +82,9 @@ find_package(LibArchive REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(eventpp CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+# find_package(indicators CONFIG REQUIRED)
+    
 
 ## Generating openapi json
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../docs/static/openapi/cortex.json" JSON_CONTENT)
@@ -157,6 +163,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon Ope
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
+target_link_libraries(${TARGET_NAME} PRIVATE fmt::fmt)
+# target_link_libraries(${TARGET_NAME} PRIVATE indicators::indicators)
 
 # ##############################################################################
 

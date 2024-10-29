@@ -17,6 +17,6 @@
     "eventpp",
     "sqlitecpp",
     "trantor",
-    "indicators"
+    "fmt"
   ]
 }

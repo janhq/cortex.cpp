@@ -54,11 +54,12 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
   params += " --config_file_path " + get_config_file_path();
   params += " --data_folder_path " + get_data_folder_path();
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
+  std::wstring w = std::wstring(cmds.begin(), cmds.end());
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          const_cast<char*>(
-              cmds.c_str()),  // Command line (replace with your actual executable)
+          const_cast<wchar_t*>(
+              w.c_str()),  // Command line (replace with your actual executable)
           NULL,               // Process handle not inheritable
           NULL,               // Thread handle not inheritable
           FALSE,              // Set handle inheritance to FALSE
