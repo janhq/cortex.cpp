@@ -111,9 +111,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
                  data_str.size(), "application/json");
 
   if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-
-    } else {
+    if (res->status != httplib::StatusCode::OK_200) {
       auto root = json_helper::ParseJsonString(res->body);
       CLI_LOG(root["message"].asString());
       return std::nullopt;
