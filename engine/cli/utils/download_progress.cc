@@ -1,7 +1,8 @@
 #include "download_progress.h"
 #include <chrono>
 #include "common/event.h"
-#include "indicators.hpp"
+#include "indicators/dynamic_progress.hpp"
+#include "indicators/progress_bar.hpp"
 #include "utils/format_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"

@@ -1,7 +1,5 @@
 #include "model_pull_cmd.h"
 #include <memory>
-#include "cli/utils/easywsclient.hpp"
-#include "cli/utils/indicators.hpp"
 #include "common/event.h"
 #include "database/models.h"
 #include "server_start_cmd.h"

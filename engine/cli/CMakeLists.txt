@@ -71,6 +71,8 @@ find_package(tabulate CONFIG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(Trantor CONFIG REQUIRED)
+find_package(indicators CONFIG REQUIRED)
+
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
@@ -95,6 +97,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenS
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE Trantor::Trantor)
+target_link_libraries(${TARGET_NAME} PRIVATE indicators::indicators)
 
 # ##############################################################################
 
