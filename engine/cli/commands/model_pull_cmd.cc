@@ -11,12 +11,19 @@
 #include "utils/huggingface_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
+#include "utils/scope_exit.h"
 #include "utils/string_utils.h"
 
 namespace commands {
-
+std::function<void(int)> shutdown_handler;
+inline void signal_handler(int signal) {
+  if (shutdown_handler) {
+    shutdown_handler(signal);
+  }
+}
 std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
                                               const std::string& input) {
+
   // model_id: use to check the download progress
   // model: use as a parameter for pull API
   std::string model_id = input;
@@ -92,6 +99,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
     return std::nullopt;
   }
 
+  // Send request download model to server
   Json::Value json_data;
   json_data["model"] = model;
   auto data_str = json_data.toStyledString();
@@ -115,11 +123,60 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
 
   CLI_LOG("Start downloading ...")
   DownloadProgress dp;
+  bool force_stop = false;
+
+  shutdown_handler = [this, &dp, &host, &port, &model_id, &force_stop](int) {
+    force_stop = true;
+    AbortModelPull(host, port, model_id);
+    dp.ForceStop();
+  };
+
+  utils::ScopeExit se([]() { shutdown_handler = {}; });
+#if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+  struct sigaction sigint_action;
+  sigint_action.sa_handler = signal_handler;
+  sigemptyset(&sigint_action.sa_mask);
+  sigint_action.sa_flags = 0;
+  sigaction(SIGINT, &sigint_action, NULL);
+  sigaction(SIGTERM, &sigint_action, NULL);
+#elif defined(_WIN32)
+  auto console_ctrl_handler = +[](DWORD ctrl_type) -> BOOL {
+    return (ctrl_type == CTRL_C_EVENT) ? (signal_handler(SIGINT), true) : false;
+  };
+  SetConsoleCtrlHandler(
+      reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
+#endif
   dp.Connect(host, port);
   if (!dp.Handle(model_id))
     return std::nullopt;
-
+  if (force_stop)
+    return std::nullopt;
   CLI_LOG("Model " << model_id << " downloaded successfully!")
   return model_id;
+}
+
+bool ModelPullCmd::AbortModelPull(const std::string& host, int port,
+                                  const std::string& task_id) {
+  Json::Value json_data;
+  json_data["taskId"] = task_id;
+  auto data_str = json_data.toStyledString();
+  httplib::Client cli(host + ":" + std::to_string(port));
+  cli.set_read_timeout(std::chrono::seconds(60));
+  auto res = cli.Delete("/v1/models/pull", httplib::Headers(), data_str.data(),
+                        data_str.size(), "application/json");
+  if (res) {
+    if (res->status == httplib::StatusCode::OK_200) {
+      std::cout << "OK" << std::endl;
+      return true;
+    } else {
+      auto root = json_helper::ParseJsonString(res->body);
+      CLI_LOG(root["message"].asString());
+      return false;
+    }
+  } else {
+    auto err = res.error();
+    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    return false;
+  }
 }
 };  // namespace commands

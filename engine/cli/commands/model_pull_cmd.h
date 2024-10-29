@@ -14,6 +14,10 @@ class ModelPullCmd {
                                   const std::string& input);
 
  private:
+  bool AbortModelPull(const std::string& host, int port,
+                      const std::string& task_id);
+
+ private:
   ModelService model_service_;
 };
 }  // namespace commands

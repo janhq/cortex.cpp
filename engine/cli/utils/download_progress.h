@@ -12,13 +12,17 @@ class DownloadProgress {
 
   bool Handle(const std::string& id);
 
+  void ForceStop() { force_stop_ = true; }
+
  private:
   bool should_stop() const {
-    return status_ != DownloadStatus::DownloadStarted &&
-           status_ != DownloadStatus::DownloadUpdated;
+    return (status_ != DownloadStatus::DownloadStarted &&
+            status_ != DownloadStatus::DownloadUpdated) ||
+           force_stop_;
   }
 
  private:
   std::unique_ptr<easywsclient::WebSocket> ws_;
   std::atomic<DownloadStatus> status_ = DownloadStatus::DownloadStarted;
+  std::atomic<bool> force_stop_ = false;
 };
