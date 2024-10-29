@@ -2,8 +2,8 @@
 #include "server_start_cmd.h"
 #include "utils/download_progress.h"
 #include "utils/engine_constants.h"
-#include "utils/logging_utils.h"
 #include "utils/json_helper.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 namespace {
@@ -23,13 +23,13 @@ bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& version,
                             const std::string& src) {
   // Handle local install, if fails, fallback to remote install
-  if (!src.empty()) {    
+  if (!src.empty()) {
     auto res = engine_service_.UnzipEngine(engine, version, src);
-    if(res.has_error()) {
+    if (res.has_error()) {
       CLI_LOG(res.error());
       return false;
     }
-    if(res.value()) {
+    if (res.value()) {
       CLI_LOG("Engine " << engine << " installed successfully!");
       return true;
     }
@@ -52,8 +52,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
                       data_str.data(), data_str.size(), "application/json");
 
   if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-    } else {
+    if (res->status != httplib::StatusCode::OK_200) {
       auto root = json_helper::ParseJsonString(res->body);
       CLI_LOG(root["message"].asString());
       return false;
