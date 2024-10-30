@@ -35,11 +35,6 @@ Key Features:
 
 Cortex's roadmap is to implement the full OpenAI API including Tools, Runs, Multi-modal and Realtime APIs.
 
-Quick links:
-- Documentation: https://cortex.so/
-- API Reference: https://cortex.so/api-reference/
-- Discord Community: https://discord.gg/Exe46xPMbK
-
 ## Local Installation
 
 Cortex has an Local Installer that packages all required dependencies, so that no internet connection is required during the installation process.
