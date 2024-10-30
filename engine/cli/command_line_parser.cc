@@ -28,12 +28,12 @@ constexpr const auto kCommonCommandsGroup = "Common Commands";
 constexpr const auto kInferenceGroup = "Inference";
 constexpr const auto kModelsGroup = "Models";
 constexpr const auto kEngineGroup = "Engines";
-constexpr const auto kSystemGroup = "System";
+constexpr const auto kSystemGroup = "Server";
 constexpr const auto kSubcommands = "Subcommands";
 }  // namespace
 
 CommandLineParser::CommandLineParser()
-    : app_("Cortex.cpp CLI"),
+    : app_("\nCortex.cpp CLI\n"),
       download_service_{std::make_shared<DownloadService>()},
       model_service_{ModelService(download_service_)},
       engine_service_{EngineService(download_service_)} {}
@@ -55,12 +55,12 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   SetupSystemCommands();
 
-  app_.add_flag("--verbose", log_verbose, "Verbose logging");
+  app_.add_flag("--verbose", log_verbose, "Get verbose logs");
 
   // Logic is handled in main.cc, just for cli helper command
   std::string path;
-  app_.add_option("--config_file_path", path, "Configuration file path");
-  app_.add_option("--data_folder_path", path, "Data folder path");
+  app_.add_option("--config_file_path", path, "Configure .rc file path");
+  app_.add_option("--data_folder_path", path, "Configure data folder path");
 
   // cortex version
   auto cb = [&](int c) {
@@ -70,7 +70,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
     CLI_LOG("default");
 #endif
   };
-  app_.add_flag_function("-v,--version", cb, "Cortex version");
+  app_.add_flag_function("-v,--version", cb, "Get Cortex version");
 
   CLI11_PARSE(app_, argc, argv);
   if (argc == 1) {
@@ -91,9 +91,9 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
                 commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
             latest_version.has_value() &&
             *latest_version != CORTEX_CPP_VERSION) {
-          CLI_LOG("\nA new release of cortex is available: "
+          CLI_LOG("\nNew Cortex release available: "
                   << CORTEX_CPP_VERSION << " -> " << *latest_version);
-          CLI_LOG("To upgrade, run: " << commands::GetRole()
+          CLI_LOG("To update, run: " << commands::GetRole()
                                       << commands::GetCortexBinary()
                                       << " update");
         }
@@ -115,7 +115,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 void CommandLineParser::SetupCommonCommands() {
   auto model_pull_cmd = app_.add_subcommand(
       "pull",
-      "Download a model by URL (or HuggingFace ID) "
+      "Download models by HuggingFace Repo/ModelID"
       "See built-in models: https://huggingface.co/cortexso");
   model_pull_cmd->group(kCommonCommandsGroup);
   model_pull_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
@@ -138,7 +138,7 @@ void CommandLineParser::SetupCommonCommands() {
     }
   });
 
-  auto run_cmd = app_.add_subcommand("run", "Shortcut to start a model");
+  auto run_cmd = app_.add_subcommand("run", "Shortcut: pull, start & chat with a model");
   run_cmd->group(kCommonCommandsGroup);
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
@@ -215,7 +215,7 @@ void CommandLineParser::SetupModelCommands() {
   });
 
   auto list_models_cmd =
-      models_cmd->add_subcommand("list", "List all models locally");
+      models_cmd->add_subcommand("list", "List all local models");
   list_models_cmd->add_option("filter", cml_data_.filter, "Filter model id");
   list_models_cmd->add_flag("-e,--engine", cml_data_.display_engine,
                             "Display engine");
@@ -232,7 +232,7 @@ void CommandLineParser::SetupModelCommands() {
   });
 
   auto get_models_cmd =
-      models_cmd->add_subcommand("get", "Get info of {model_id} locally");
+      models_cmd->add_subcommand("get", "Get a local model info by ID");
   get_models_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                         " models get [model_id]");
   get_models_cmd->group(kSubcommands);
@@ -251,7 +251,7 @@ void CommandLineParser::SetupModelCommands() {
   });
 
   auto model_del_cmd =
-      models_cmd->add_subcommand("delete", "Delete a model by ID locally");
+      models_cmd->add_subcommand("delete", "Delete a local model by ID");
   model_del_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                        " models delete [model_id]");
   model_del_cmd->group(kSubcommands);
@@ -272,13 +272,13 @@ void CommandLineParser::SetupModelCommands() {
 
   std::string model_alias;
   auto model_alias_cmd =
-      models_cmd->add_subcommand("alias", "Add alias name for a modelID");
+      models_cmd->add_subcommand("alias", "Add a model alias instead of ID");
   model_alias_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " models alias --model_id [model_id] --alias [alias]");
   model_alias_cmd->group(kSubcommands);
   model_alias_cmd->add_option(
       "--model_id", cml_data_.model_id,
-      "Can be modelID or model alias to identify model");
+      "Can be a model ID or model alias");
   model_alias_cmd->add_option("--alias", cml_data_.model_alias,
                               "new alias to be set");
   model_alias_cmd->callback([this, model_alias_cmd]() {
@@ -299,7 +299,7 @@ void CommandLineParser::SetupModelCommands() {
 
   std::string model_path;
   auto model_import_cmd = models_cmd->add_subcommand(
-      "import", "Import a gguf model from local file");
+      "import", "Import a model from a local filepath");
   model_import_cmd->usage(
       "Usage:\n" + commands::GetCortexBinary() +
       " models import --model_id [model_id] --model_path [model_path]");
@@ -418,7 +418,7 @@ void CommandLineParser::SetupSystemCommands() {
   });
 
   auto ps_cmd =
-      app_.add_subcommand("ps", "Show running models and their status");
+      app_.add_subcommand("ps", "Show active model statuses");
   ps_cmd->group(kSystemGroup);
   ps_cmd->usage("Usage:\n" + commands::GetCortexBinary() + "ps");
   ps_cmd->callback([&]() {
@@ -495,7 +495,7 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
 }
 
 void CommandLineParser::EngineGet(CLI::App* parent) {
-  auto get_cmd = parent->add_subcommand("get", "Get an engine info");
+  auto get_cmd = parent->add_subcommand("get", "Get engine info");
   get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " engines get [engine_name] [options]");
   get_cmd->group(kSubcommands);
@@ -528,7 +528,7 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
 
 void CommandLineParser::ModelUpdate(CLI::App* parent) {
   auto model_update_cmd =
-      parent->add_subcommand("update", "Update configuration of a model");
+      parent->add_subcommand("update", "Update model configurations");
   model_update_cmd->group(kSubcommands);
   model_update_cmd->add_option("--model_id", cml_data_.model_id, "Model ID")
       ->required();
@@ -546,6 +546,7 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
                                            "stream",
                                            "ngl",
                                            "ctx_len",
+                                           "n_parallel",
                                            "engine",
                                            "prompt_template",
                                            "system_template",

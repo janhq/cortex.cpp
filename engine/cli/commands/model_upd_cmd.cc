@@ -223,6 +223,12 @@ void ModelUpdCmd::UpdateConfig(Json::Value& data, const std::string& key,
                data["ctx_len"] = static_cast<int>(f);
              });
            }},
+           {"n_parallel",
+           [this](Json::Value &data, const std::string& k, const std::string& v) {
+             UpdateNumericField(k, v, [&data](float f) {
+               data["n_parallel"] = static_cast<int>(f);
+             });
+           }},
           {"tp",
            [this](Json::Value &data, const std::string& k, const std::string& v) {
              UpdateNumericField(k, v, [&data](float f) {
