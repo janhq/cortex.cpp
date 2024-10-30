@@ -21,7 +21,7 @@ void Engines::InstallEngine(
   }
 
   std::string version = "latest";
-  if (auto o = req->getJsonObject(); !o) {
+  if (auto o = req->getJsonObject(); o) {
     version = (*o).get("version", "latest").asString();
   }
 
