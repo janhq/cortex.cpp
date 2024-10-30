@@ -85,7 +85,7 @@ inline DownloadEvent GetDownloadEventFromJson(const Json::Value& item_json) {
   }
   return ev;
 }
-};  // namespace cortex::event
+}  // namespace cortex::event
 
 constexpr std::size_t eventMaxSize =
     eventpp::maxSizeOf<cortex::event::Event, cortex::event::DownloadEvent,

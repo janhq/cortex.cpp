@@ -44,6 +44,22 @@ struct EngineVariantResponse {
   }
 };
 
+struct EngineUpdateResult {
+  std::string engine;
+  std::string variant;
+  std::string from;
+  std::string to;
+
+  Json::Value ToJson() const {
+    Json::Value root;
+    root["engine"] = engine;
+    root["variant"] = variant;
+    root["from"] = from;
+    root["to"] = to;
+    return root;
+  }
+};
+
 namespace system_info_utils {
 struct SystemInfo;
 }
@@ -116,8 +132,8 @@ class EngineService {
   cpp::result<DefaultEngineVariant, std::string> GetDefaultEngineVariant(
       const std::string& engine);
 
-  cpp::result<std::vector<EngineVariantResponse>, std::string>
-  GetInstalledEngineVariants(const std::string& engine) const;
+  std::vector<EngineVariantResponse> GetInstalledEngineVariants(
+      const std::string& engine) const;
 
   bool IsEngineLoaded(const std::string& engine) const;
 
@@ -136,6 +152,9 @@ class EngineService {
   cpp::result<bool, std::string> UnzipEngine(const std::string& engine,
                                              const std::string& version,
                                              const std::string& path);
+
+  cpp::result<EngineUpdateResult, std::string> UpdateEngine(
+      const std::string& engine);
 
  private:
   cpp::result<bool, std::string> DownloadEngine(
@@ -156,7 +175,6 @@ class EngineService {
       const std::string& engine, const std::string& version,
       const std::string& variant);
 
- private:
   std::shared_ptr<DownloadService> download_service_;
 
   struct HardwareInfo {

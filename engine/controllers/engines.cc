@@ -63,14 +63,10 @@ void Engines::ListEngine(
                                              kTrtLlmEngine};
   Json::Value ret;
   for (const auto& engine : supported_engines) {
-    std::cout << engine << std::endl;
-
-    auto result = engine_service_->GetInstalledEngineVariants(engine);
-    if (result.has_error()) {
-      continue;
-    }
+    auto installed_engines =
+        engine_service_->GetInstalledEngineVariants(engine);
     Json::Value variants(Json::arrayValue);
-    for (const auto& variant : result.value()) {
+    for (const auto& variant : installed_engines) {
       variants.append(variant.ToJson());
     }
     ret[engine] = variants;
@@ -205,6 +201,20 @@ void Engines::GetEnginesInstalledVariants(
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {
   auto result = engine_service_->GetInstalledEngineVariants(engine);
+  Json::Value releases(Json::arrayValue);
+  for (const auto& variant : result) {
+    releases.append(variant.ToJson());
+  }
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
+  resp->setStatusCode(k200OK);
+  callback(resp);
+}
+
+void Engines::UpdateEngine(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& engine) {
+  auto result = engine_service_->UpdateEngine(engine);
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();
@@ -212,27 +222,18 @@ void Engines::GetEnginesInstalledVariants(
     resp->setStatusCode(k400BadRequest);
     callback(resp);
   } else {
-    Json::Value releases(Json::arrayValue);
-    for (const auto& variant : result.value()) {
-      releases.append(variant.ToJson());
-    }
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
+    auto resp =
+        cortex_utils::CreateCortexHttpJsonResponse(result.value().ToJson());
     resp->setStatusCode(k200OK);
     callback(resp);
   }
 }
-
-void Engines::UpdateEngine(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine) {}
 
 void Engines::GetLatestEngineVersion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) {
   auto result = engine_service_->GetLatestEngineVersion(engine);
-  std::cout << result->ToJson() << std::endl;
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();

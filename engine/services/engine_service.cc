@@ -1,7 +1,6 @@
 #include "engine_service.h"
 #include <cstdlib>
 #include <filesystem>
-#include <iostream>
 #include <optional>
 #include "algorithm"
 #include "utils/archive_utils.h"
@@ -74,6 +73,9 @@ cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
     const std::string& engine, const std::string& version,
     const std::string& variant_name) {
   auto ne = NormalizeEngine(engine);
+  CTL_INF("InstallEngineAsyncV2: " << ne << ", " << version << ", "
+                                   << variant_name);
+
   auto result = DownloadEngineV2(ne, version, variant_name, true /*async*/);
   if (result.has_error()) {
     return result;
@@ -173,7 +175,6 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   auto ne = NormalizeEngine(engine);
   auto engine_path =
       file_manager_utils::GetEnginesContainerPath() / ne / variant / version;
-  std::cout << "engine_path: " << engine_path.string() << std::endl;
   if (!std::filesystem::exists(engine_path)) {
     return cpp::fail("Engine " + ne + " is not installed!");
   }
@@ -259,7 +260,7 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
                        .downloadUrl = selected_variant->browser_download_url,
                        .localPath = variant_path,
                    }}}};
-  std::cout << downloadTask.ToString() << std::endl;
+
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
   if (res.has_error()) {
     return cpp::fail(res.error());
@@ -540,12 +541,8 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
   auto ne = NormalizeEngine(engine);
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
   auto installed_engines = GetInstalledEngineVariants(ne);
-  if (installed_engines.has_error()) {
-    return cpp::fail("Failed to get installed engines: " +
-                     installed_engines.error());
-  }
 
-  for (const auto& installed_engine : installed_engines.value()) {
+  for (const auto& installed_engine : installed_engines) {
     if (installed_engine.name == variant &&
         installed_engine.version == normalized_version) {
       return true;
@@ -564,8 +561,8 @@ EngineService::GetDefaultEngineVariant(const std::string& engine) {
   return default_variants_[ne];
 }
 
-cpp::result<std::vector<EngineVariantResponse>, std::string>
-EngineService::GetInstalledEngineVariants(const std::string& engine) const {
+std::vector<EngineVariantResponse> EngineService::GetInstalledEngineVariants(
+    const std::string& engine) const {
   auto ne = NormalizeEngine(engine);
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
@@ -774,12 +771,6 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     const std::string& engine) const {
   auto ne = NormalizeEngine(engine);
   auto installed_variants = GetInstalledEngineVariants(engine);
-  if (installed_variants.has_error()) {
-    CTL_WRN("Failed to get installed engine variants: " +
-            installed_variants.error());
-    return cpp::fail("Failed to get installed engine variants: " +
-                     installed_variants.error());
-  }
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
@@ -790,5 +781,62 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     return cpp::fail("Engine " + engine + " is not supported on Linux");
   }
 
-  return installed_variants.value().size() > 0;
+  return installed_variants.size() > 0;
+}
+
+cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
+    const std::string& engine) {
+  auto ne = NormalizeEngine(engine);
+  auto default_variant = GetDefaultEngineVariant(ne);
+
+  if (default_variant.has_error()) {
+    // if we don't have a default variant, just stop
+    CTL_INF("No default variant found for " << ne << ". Exit update engine");
+    return cpp::fail(default_variant.error());
+  }
+  CTL_INF("Default variant: " << default_variant->variant
+                              << ", version: " + default_variant->version);
+
+  auto latest_version = GetLatestEngineVersion(ne);
+  if (latest_version.has_error()) {
+    // if can't get latest version, stop
+    CTL_INF("Can't get latest version for "
+            << ne << " error: " << latest_version.error());
+    return cpp::fail("Failed to get latest version: " + latest_version.error());
+  }
+  CTL_INF("Latest version: " + latest_version.value().name);
+
+  // check if local engines variants if latest version already exist
+  auto installed_variants = GetInstalledEngineVariants(ne);
+
+  bool is_installed = false;
+  for (const auto& v : installed_variants) {
+    CTL_INF("Installed version: " + v.version);
+    if (default_variant->variant == v.name &&
+        v.version == latest_version.value().name) {
+      is_installed = true;
+      break;
+    }
+  }
+
+  if (is_installed) {
+    CTL_INF("Engine " + ne + ", " + default_variant->variant +
+            " is already up-to-date! Version " +
+            latest_version.value().tag_name);
+    return cpp::fail("Engine " + ne + ", " + default_variant->variant +
+                     " is already up-to-date! Version " +
+                     latest_version.value().tag_name);
+  }
+
+  CTL_INF("Engine variant "
+          << default_variant->variant << " is not up-to-date! Current: "
+          << default_variant->version << ", latest: " << latest_version->name);
+
+  auto res = InstallEngineAsyncV2(engine, latest_version->tag_name,
+                                  default_variant->variant);
+
+  return EngineUpdateResult{.engine = engine,
+                            .variant = default_variant->variant,
+                            .from = default_variant->version,
+                            .to = latest_version->name};
 }

@@ -13,7 +13,7 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_LIST_BEGIN
 
   // TODO: update this API
-  METHOD_ADD(Engines::InstallEngine, "/install/{1}", Post);
+  // METHOD_ADD(Engines::InstallEngine, "/install/{1}", Post);
   METHOD_ADD(Engines::UninstallEngine, "/{1}/{2}/{3}", Delete);
   METHOD_ADD(Engines::ListEngine, "", Get);
 
@@ -22,7 +22,7 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::InstallEngineVariant, "/{1}/versions/{2}/{3}", Post);
   METHOD_ADD(Engines::GetEnginesInstalledVariants, "/{1}", Get);
 
-  METHOD_ADD(Engines::GetLatestEngineVersion, "/{1}/update", Get);
+  // METHOD_ADD(Engines::GetLatestEngineVersion, "/{1}/update", Get);
   METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Post);
   METHOD_ADD(Engines::SetDefaultEngineVariant, "/{1}/default/{2}/{3}", Post);
   METHOD_ADD(Engines::GetDefaultEngineVariant, "/{1}/default", Get);
