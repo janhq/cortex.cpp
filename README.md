@@ -103,7 +103,7 @@ Cortex.cpp includes a REST API accessible at `localhost:39281`. For a complete l
 
 ## Advanced Installation
 
-### Network Installer
+### Network Installer (Stable)
 
 Cortex.cpp is available with a Network Installer, which is a smaller installer but requires internet connection during installation to download the necessary dependencies.
 
@@ -126,11 +126,63 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
 </h4>
   
 
-### Beta & Nightly Versions
+### Beta & Nightly Versions 
 
-Beta is an early preview for new versions of Cortex. It is for users who want to try new features early and provide us feedback.
+Cortex releases 2 preview versions for advanced users to try new features early (we appreciate your feedback!)
+- Beta (early preview)
+- Nightly (released every night). Nightly pulls the latest changes from upstream [llama.cpp](https://github.com/ggerganov/llama.cpp/) repo, creates a PR and runs our tests. If all test pass, the PR is automatically merged into our repo, with the latest llama.cpp version.
 
-Nightly is our development version of Cortex. It is released every night and may contain bugs and experimental features.
+#### Local Installer (Default)
+<table>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Version Type</b></td>
+    <td style="text-align:center"><b>Windows</b></td>
+    <td style="text-align:center"><b>MacOS</b></td>
+    <td style="text-align:center"><b>Linux</b></td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Beta (Preview)</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-beta-windows-local-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-beta-mac-local-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-beta-linux-local-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+  <tr style="text-align:center">
+    <td style="text-align:center"><b>Nightly (Experimental)</b></td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/windows-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+        <b>cortex-nightly-windows-local-installer.exe</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/mac-universal-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+        <b>cortex-nightly-mac-local-installer.pkg</b>
+      </a>
+    </td>
+    <td style="text-align:center">
+      <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-local'>
+        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
+        <b>cortex-nightly-linux-local-installer.deb</b>
+      </a>
+    </td>
+  </tr>
+</table>
 
 #### Network Installer
 
@@ -180,58 +232,6 @@ Nightly is our development version of Cortex. It is released every night and may
       <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:15px; width: 15px" />
         <b>cortex-nightly-linux-network-installer.deb</b>
-      </a>
-    </td>
-  </tr>
-</table>
-
-#### Local Installer
-<table>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Version Type</b></td>
-    <td style="text-align:center"><b>Windows</b></td>
-    <td style="text-align:center"><b>MacOS</b></td>
-    <td style="text-align:center"><b>Linux</b></td>
-  </tr>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Beta (Preview)</b></td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-beta-windows-local-installer.exe</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-beta-mac-local-installer.pkg</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-beta-linux-local-installer.deb</b>
-      </a>
-    </td>
-  </tr>
-  <tr style="text-align:center">
-    <td style="text-align:center"><b>Nightly (Experimental)</b></td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/windows-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-nightly-windows-local-installer.exe</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/mac-universal-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-nightly-mac-local-installer.pkg</b>
-      </a>
-    </td>
-    <td style="text-align:center">
-      <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-local'>
-        <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-nightly-linux-local-installer.deb</b>
       </a>
     </td>
   </tr>
