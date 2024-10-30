@@ -20,7 +20,7 @@ void Engines::InstallEngine(
     return;
   }
 
-  auto version{"latest"};
+  auto version = (*(req->getJsonObject())).get("version", "latest").asString();
   auto result = engine_service_->InstallEngineAsync(engine, version);
   if (result.has_error()) {
     Json::Value res;
