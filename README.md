@@ -284,6 +284,8 @@ cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder_in_
 cmake --build . --config Release
 ```
 
+5. Verify that Cortex.cpp is installed correctly by getting help information.
+
 ```sh
 # Get the help information
 cortex -h
@@ -310,6 +312,8 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder_in_cortex_repo/vcpkg/script
 make -j4
 ```
 
+5. Verify that Cortex.cpp is installed correctly by getting help information.
+
 ```sh
 # Get the help information
 cortex -h
@@ -335,6 +339,8 @@ cd build
 cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder_in_cortex_repo/vcpkg/scripts/buildsystems/vcpkg.cmake
 make -j4
 ```
+
+5. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
 # Get help
