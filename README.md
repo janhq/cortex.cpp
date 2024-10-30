@@ -19,17 +19,26 @@
   - <a href="https://github.com/janhq/cortex.cpp/releases">Changelog</a> - <a href="https://github.com/janhq/cortex.cpp/issues">Bug reports</a> - <a href="https://discord.gg/AsJ8krTT3N">Discord</a>
 </p>
 
-> ⚠️ **Cortex.cpp is currently in active development. This outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.**
+> **Cortex.cpp is currently in active development.**
 
 ## Overview
 
-Cortex.cpp is a Local AI engine that is used to run and customize LLMs. Cortex can be deployed as a standalone server, or integrated into apps like [Jan.ai](https://jan.ai/).
+Cortex is a Local AI API Platform that is used to run and customize LLMs. 
 
-Cortex.cpp is a multi-engine that uses `llama.cpp` as the default engine but also supports the following:
+Key Features:
+- Straightforward CLI (inspired by Ollama)
+- Full C++ implementation, packageable into Desktop and Mobile apps
+- Pull from Huggingface of Cortex Built-in Model Library
+- Models stored in universal file formats (vs blobs)
+- Swappable Engines (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp), future: [`ONNXRuntime`](https://github.com/janhq/cortex.onnx), [`TensorRT-LLM`](https://github.com/janhq/cortex.tensorrt-llm))
+- Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
 
-- [`llamacpp`](https://github.com/janhq/cortex.llamacpp)
-- [`onnx`](https://github.com/janhq/cortex.onnx)
-- [`tensorrt-llm`](https://github.com/janhq/cortex.tensorrt-llm)
+Cortex's roadmap is to implement the full OpenAI API including Tools, Runs, Multi-modal and Realtime APIs.
+
+Quick links:
+- Documentation: https://cortex.so/
+- API Reference: https://cortex.so/api-reference/
+- Discord Community: https://discord.gg/Exe46xPMbK
 
 ## Local Installation
 
@@ -59,47 +68,82 @@ Cortex also has a [Network Installer](#network-installer) which downloads the ne
 
 ```bash
     sudo apt install ./cortex-local-installer.deb
-    # or
-    sudo apt install ./cortex-network-installer.deb
 ```
 
 - The binary will be installed in the `/usr/bin/` directory.
 
 ## Usage
 
-After installation, you can run Cortex.cpp from the command line by typing `cortex --help`. For Beta preview, you can run `cortex-beta --help`.
+### CLI
 
-## Built-in Model Library
+After installation, you can run Cortex.cpp from the command line by typing `cortex --help`.
 
-Cortex.cpp supports various models available on the [Cortex Hub](https://huggingface.co/cortexso). 
+```
+cortex pull llama3.2                                    
+cortex pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+cortex run llama3.2                                  
+cortex models ps                                      
+cortex models stop llama3.2                       
+cortex stop                                       
+```
+
+Refer to our [Quickstart](https://cortex.so/docs/quickstart/) and 
+[CLI documentation](https://cortex.so/docs/cli) for more details.
+
+### API:
+Cortex.cpp includes a REST API accessible at `localhost:39281`.
+
+Refer to our [API documentation](https://cortex.so/api-reference) for more details
+
+## Models & Quantizations
+
+Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access. 
+
+Currently Cortex supports pulling from:
+- Hugging Face: GGUF models eg `author/Model-GGUF`
+- Cortex Built-in Models 
+
 Once downloaded, the model `.gguf` and `model.yml` files are stored in `~\cortexcpp\models`.
-
-Example models:
-
-| Model /Engine  | llama.cpp             | Command                       |
-| -------------- | --------------------- | ----------------------------- |
-| llama3.1       | ✅                    | cortex run llama3.1           |
-| llama3         | ✅                    | cortex run llama3             |
-| mistral        | ✅                    | cortex run mistral            |
-| qwen2          | ✅                    | cortex run qwen2              |
-| codestral      | ✅                    | cortex run codestral          |
-| command-r      | ✅                    | cortex run command-r          |
-| gemma          | ✅                    | cortex run gemma              |
-| mixtral        | ✅                    | cortex run mixtral            |
-| openhermes-2.5 | ✅                    | cortex run openhermes-2.5     |
-| phi3           | ✅                    | cortex run phi3               |
-| tinyllama      | ✅                    | cortex run tinyllama          |
 
 > **Note**:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
-## Cortex.cpp CLI Commands
+### Cortex Model Hub & Quantizations
 
-For complete details on CLI commands, please refer to our [CLI documentation](https://cortex.so/docs/cli).
+| Model /Engine  | llama.cpp             | Command                       |
+| -------------- | --------------------- | ----------------------------- |
+| phi-3.5        | ✅                    | cortex run phi3.5             |
+| llama3.2       | ✅                    | cortex run llama3.1           |
+| llama3.1       | ✅                    | cortex run llama3.1           |
+| codestral      | ✅                    | cortex run codestral          |
+| gemma2         | ✅                    | cortex run gemma2             |
+| mistral        | ✅                    | cortex run mistral            |
+| ministral      | ✅                    | cortex run ministral          |
+| qwen2          | ✅                    | cortex run qwen2.5            |
+| openhermes-2.5 | ✅                    | cortex run openhermes-2.5     |
+| tinyllama      | ✅                    | cortex run tinyllama          |
 
-## REST API
+View all [Cortex Built-in Models](https://cortex.so/models).
 
-Cortex.cpp includes a REST API accessible at `localhost:39281`. For a complete list of endpoints and their usage, visit our [API documentation](https://cortex.so/api-reference).
+Cortex supports multiple quantizations for each model.
+```
+❯ cortex-nightly pull llama3.2
+Downloaded models:
+    llama3.2:3b-gguf-q2-k
+
+Available to download:
+    1. llama3.2:3b-gguf-q3-kl
+    2. llama3.2:3b-gguf-q3-km
+    3. llama3.2:3b-gguf-q3-ks
+    4. llama3.2:3b-gguf-q4-km (default)
+    5. llama3.2:3b-gguf-q4-ks
+    6. llama3.2:3b-gguf-q5-km
+    7. llama3.2:3b-gguf-q5-ks
+    8. llama3.2:3b-gguf-q6-k
+    9. llama3.2:3b-gguf-q8-0
+
+Select a model (1-9): 
+```
 
 ## Advanced Installation
 
@@ -129,13 +173,17 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
 ### Beta & Nightly Versions 
 
 Cortex releases 2 preview versions for advanced users to try new features early (we appreciate your feedback!)
-- Beta (early preview)
-- Nightly (released every night). Nightly pulls the latest changes from upstream [llama.cpp](https://github.com/ggerganov/llama.cpp/) repo, creates a PR and runs our tests. If all test pass, the PR is automatically merged into our repo, with the latest llama.cpp version.
+- Beta (early preview) 
+  - CLI command: `cortex-beta`
+- Nightly (released every night) 
+  - CLI Command: `cortex-nightly`
+  - Nightly automatically pulls the latest changes from upstream [llama.cpp](https://github.com/ggerganov/llama.cpp/) repo, creates a PR and runs tests. 
+  - If all test pass, the PR is automatically merged into our repo, with the latest llama.cpp version.
 
 #### Local Installer (Default)
 <table>
   <tr style="text-align:center">
-    <td style="text-align:center"><b>Version Type</b></td>
+    <td style="text-align:center"><b>Version</b></td>
     <td style="text-align:center"><b>Windows</b></td>
     <td style="text-align:center"><b>MacOS</b></td>
     <td style="text-align:center"><b>Linux</b></td>
@@ -145,19 +193,19 @@ Cortex releases 2 preview versions for advanced users to try new features early 
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/beta/windows-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-beta-windows-local-installer.exe</b>
+        cortex-beta-windows-local-installer.exe
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/beta/mac-universal-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-beta-mac-local-installer.pkg</b>
+        cortex-beta-mac-local-installer.pkg
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/beta/linux-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-beta-linux-local-installer.deb</b>
+        cortex-beta-linux-local-installer.deb
       </a>
     </td>
   </tr>
@@ -166,19 +214,19 @@ Cortex releases 2 preview versions for advanced users to try new features early 
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/nightly/windows-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-nightly-windows-local-installer.exe</b>
+        cortex-nightly-windows-local-installer.exe
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/nightly/mac-universal-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-nightly-mac-local-installer.pkg</b>
+        cortex-nightly-mac-local-installer.pkg
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-local'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 14px" />
-        <b>cortex-nightly-linux-local-installer.deb</b>
+        cortex-nightly-linux-local-installer.deb
       </a>
     </td>
   </tr>
@@ -198,19 +246,19 @@ Cortex releases 2 preview versions for advanced users to try new features early 
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/beta/windows-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
-        <b>cortex-beta-windows-network-installer.exe</b>
+        cortex-beta-windows-network-installer.exe
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/beta/mac-universal-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-beta-mac-network-installer.pkg</b>
+        cortex-beta-mac-network-installer.pkg
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/beta/linux-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:15px; width: 15px" />
-        <b>cortex-beta-linux-network-installer.deb</b>
+        cortex-beta-linux-network-installer.deb
       </a>
     </td>
   </tr>
@@ -219,19 +267,19 @@ Cortex releases 2 preview versions for advanced users to try new features early 
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/nightly/windows-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:15px; width: 15px" />
-        <b>cortex-nightly-windows-network-installer.exe</b>
+        cortex-nightly-windows-network-installer.exe
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/nightly/mac-universal-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
-        <b>cortex-nightly-mac-network-installer.pkg</b>
+        cortex-nightly-mac-network-installer.pkg
       </a>
     </td>
     <td style="text-align:center">
       <a href='https://app.cortexcpp.com/download/nightly/linux-amd64-network'>
         <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:15px; width: 15px" />
-        <b>cortex-nightly-linux-network-installer.deb</b>
+        cortex-nightly-linux-network-installer.deb
       </a>
     </td>
   </tr>
@@ -263,7 +311,6 @@ cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcp
 6. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
-# Get the help information
 cortex -h
 ```
 
@@ -292,7 +339,6 @@ make -j4
 6. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
-# Get the help information
 cortex -h
 ```
 
@@ -321,8 +367,7 @@ make -j4
 6. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
-# Get help
-cortex
+cortex -h
 ```
 
 ## Uninstallation
@@ -346,7 +391,6 @@ For MacOS, there is a uninstaller script comes with the binary and added to the 
 ### Linux
 
 ```bash
-# For stable builds
 sudo apt remove cortexcpp
 ```
 
