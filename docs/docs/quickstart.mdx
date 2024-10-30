@@ -8,76 +8,51 @@ import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::info
+Cortex.cpp is in active development. If you have any questions, please reach out to us:
+- [GitHub](https://github.com/janhq/cortex.cpp/issues/new/choose)
+- [Discord](https://discord.com/invite/FTk2MvZwJH)
 :::
 
-## Installation
-To install Cortex, download the installer for your operating system from the following options:
-- **Stable Version**
-  - [Windows](https://github.com/janhq/cortex.cpp/releases)
-  - [Mac](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Debian)](https://github.com/janhq/cortex.cpp/releases)
-  - [Linux (Fedora)](https://github.com/janhq/cortex.cpp/releases)
+## Local Installation
+Cortex has an Local Installer that packages all required dependencies, so that no internet connection is required during the installation process.
+  - [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
+  - [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
+  - [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
+
 ## Start Cortex.cpp Processes and API Server
 This command starts the Cortex.cpp API server at `localhost:39281`.
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex start
-
-  # Beta
-  cortex-beta start
-
-  # Nightly
-  cortex-nightly start
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe start
-
-  # Beta
-  cortex-beta.exe start
-
-  # Nightly
-  cortex-nightly.exe start
   ```
   </TabItem>
 </Tabs>
+
 ## Run a Model
 This command downloads the default `gguf` model format from the [Cortex Hub](https://huggingface.co/cortexso), starts the model, and chat with the model.
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex run mistral
-
-  # Beta
-  cortex-beta run mistral
-
-  # Nightly
-  cortex-nightly run mistral
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe run mistral
-
-  # Beta
-  cortex-beta.exe run mistral
-
-  # Nightly
-  cortex-nightly.exe run mistral
   ```
   </TabItem>
 </Tabs>
 :::info
-All model files are stored in the `~users/cortex/models` folder.
+All model files are stored in the `~/cortex/models` folder.
 :::
+
 ## Using the Model
 ### API
 ```curl
@@ -103,153 +78,58 @@ curl http://localhost:39281/v1/chat/completions \
   "top_p": 1
 }'
 ```
-### Cortex.js
-```js
-const resp = await cortex.chat.completions.create({
-    model: "mistral",
-    messages: [
-      { role: "system", content: "You are a chatbot." },
-      { role: "user", content: "What is the capital of the United States?" },
-    ],
-  });
-```
-### Cortex.py
-```py
-completion = client.chat.completions.create(
-    model=mistral,
-    messages=[
-        {
-            "role": "user",
-            "content": "Say this is a test",
-        },
-    ],
-)
-```
+
 ## Stop a Model
 This command stops the running model.
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models stop mistral
-
-  # Beta
-  cortex-beta models stop mistral
-
-  # Nightly
-  cortex-nightly models stop mistral
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models stop mistral
-
-  # Beta
-  cortex-beta.exe models stop mistral
-
-  # Nightly
-  cortex-nightly.exe models stop mistral
   ```
   </TabItem>
 </Tabs>
+
 ## Show the System State
 This command displays the running model and the hardware system status.
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex ps
-
-  # Beta
-  cortex-beta ps
-
-  # Nightly
-  cortex-nightly ps
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe ps
-
-  # Beta
-  cortex-beta.exe ps
-
-  # Nightly
-  cortex-nightly.exe ps
   ```
   </TabItem>
 </Tabs>
-## Run Different Model Variants
+
+<!-- ## Run Different Model Variants
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
-  ## Run HuggingFace model with HuggingFace Repo
-  cortex run TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-
   # Run Mistral in ONNX format
   cortex run mistral:onnx
 
   # Run Mistral in TensorRT-LLM format
   cortex run mistral:tensorrt-llm
-
-  # Beta
-  ## Run HuggingFace model with HuggingFace Repo
-  cortex-beta run TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-
-  # Run Mistral in ONNX format
-  cortex-beta run mistral:onnx
-
-  # Run Mistral in TensorRT-LLM format
-  cortex-beta run mistral:tensorrt-llm
-
-  # Nightly
-  ## Run HuggingFace model with HuggingFace Repo
-  cortex-nightly run TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-
-  # Run Mistral in ONNX format
-  cortex-nightly run mistral:onnx
-
-  # Run Mistral in TensorRT-LLM format
-  cortex-nightly run mistral:tensorrt-llm
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
-  ## Run HuggingFace model with HuggingFace Repo
-  cortex.exe run TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-
   # Run Mistral in ONNX format
   cortex.exe run mistral:onnx
 
   # Run Mistral in TensorRT-LLM format
   cortex.exe run mistral:tensorrt-llm
-
-  # Beta
-  ## Run HuggingFace model with HuggingFace Repo
-  cortex-beta.exe run TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-
-  # Run Mistral in ONNX format
-  cortex-beta.exe run mistral:onnx
-
-  # Run Mistral in TensorRT-LLM format
-  cortex-beta.exe run mistral:tensorrt-llm
-
-  # Nightly
-  ## Run HuggingFace model with HuggingFace Repo
-  cortex-nightly.exe run TheBloke/Mistral-7B-Instruct-v0.2-GGUF
-
-  # Run Mistral in ONNX format
-  cortex-nightly.exe run mistral:onnx
-
-  # Run Mistral in TensorRT-LLM format
-  cortex-nightly.exe run mistral:tensorrt-llm
   ```
   </TabItem>
-</Tabs>
+</Tabs> -->
 
 ## What's Next?
 Now that Cortex.cpp is set up, here are the next steps to explore:
@@ -258,11 +138,3 @@ Now that Cortex.cpp is set up, here are the next steps to explore:
 2. Explore the Cortex.cpp [data folder](/docs/data-folder) to understand how it stores data.
 3. Learn about the structure of the [`model.yaml`](/docs/model-yaml) file in Cortex.cpp.
 4. Integrate Cortex.cpp [libraries](/docs/category/libraries) seamlessly into your Python or JavaScript applications.
-
-
-:::info
-Cortex.cpp is still in early development, so if you have any questions, please reach out to us:
-
-- [GitHub](https://github.com/janhq/cortex)
-- [Discord](https://discord.gg/YFKKeuVu)
-  :::
