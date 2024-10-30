@@ -113,6 +113,8 @@ void YamlHandler::ModelConfigFromYaml() {
       tmp.ngl = yaml_node_["ngl"].as<int>();
     if (yaml_node_["ctx_len"])
       tmp.ctx_len = yaml_node_["ctx_len"].as<int>();
+    if (yaml_node_["n_parallel"])
+      tmp.n_parallel = yaml_node_["n_parallel"].as<int>();
     if (yaml_node_["tp"])
       tmp.tp = yaml_node_["tp"].as<int>();
     if (yaml_node_["stream"])
@@ -216,6 +218,8 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
       yaml_node_["ngl"] = model_config_.ngl;
     if (!std::isnan(static_cast<double>(model_config_.ctx_len)))
       yaml_node_["ctx_len"] = model_config_.ctx_len;
+    if (!std::isnan(static_cast<double>(model_config_.n_parallel))) 
+      yaml_node_["n_parallel"] = model_config_.n_parallel;
     if (!std::isnan(static_cast<double>(model_config_.tp)))
       yaml_node_["tp"] = model_config_.tp;
     if (!std::isnan(static_cast<double>(model_config_.stream)))
@@ -368,6 +372,7 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     outFile << format_utils::writeKeyValue(
         "ctx_len", yaml_node_["ctx_len"],
         "llama.context_length | 0 or undefined = loaded from model");
+    outFile << format_utils::writeKeyValue("n_parallel", yaml_node_["n_parallel"]);
     outFile << format_utils::writeKeyValue("ngl", yaml_node_["ngl"],
                                            "Undefined = loaded from model");
     outFile << "# END OPTIONAL\n";

@@ -22,6 +22,7 @@ struct ModelConfig {
   bool stream = std::numeric_limits<bool>::quiet_NaN();
   int ngl = std::numeric_limits<int>::quiet_NaN();
   int ctx_len = std::numeric_limits<int>::quiet_NaN();
+  int n_parallel = 1;
   std::string engine;
   std::string prompt_template;
   std::string system_template;
@@ -125,6 +126,8 @@ struct ModelConfig {
       ngl = json["ngl"].asInt();
     if (json.isMember("ctx_len"))
       ctx_len = json["ctx_len"].asInt();
+    if (json.isMember("n_parallel"))
+      n_parallel = json["n_parallel"].asInt();
     if (json.isMember("engine"))
       engine = json["engine"].asString();
     if (json.isMember("prompt_template"))
@@ -204,6 +207,7 @@ struct ModelConfig {
     obj["min_keep"] = min_keep;
     obj["ngl"] = ngl;
     obj["ctx_len"] = ctx_len;
+    obj["n_parallel"] = n_parallel;
     obj["engine"] = engine;
     obj["prompt_template"] = prompt_template;
     obj["system_template"] = system_template;
@@ -313,6 +317,8 @@ struct ModelConfig {
     if (ctx_len != std::numeric_limits<int>::quiet_NaN())
       oss << format_utils::print_kv("ctx_len", std::to_string(ctx_len),
                                     format_utils::MAGENTA);
+    oss << format_utils::print_kv("n_parallel", std::to_string(n_parallel),
+                                  format_utils::MAGENTA);
     if (ngl != std::numeric_limits<int>::quiet_NaN())
       oss << format_utils::print_kv("ngl", std::to_string(ngl),
                                     format_utils::MAGENTA);
