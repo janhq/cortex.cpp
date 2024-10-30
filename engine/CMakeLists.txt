@@ -79,6 +79,8 @@ find_package(LibArchive REQUIRED)
 find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(eventpp CONFIG REQUIRED)
+find_package(lfreist-hwinfo CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 ## Generating openapi json
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../docs/static/openapi/cortex.json" JSON_CONTENT)
@@ -157,6 +159,8 @@ target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon Ope
   ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
+target_link_libraries(${TARGET_NAME} PRIVATE lfreist-hwinfo::hwinfo)
+ target_link_libraries(${TARGET_NAME} PRIVATE fmt::fmt)
 
 # ##############################################################################
 

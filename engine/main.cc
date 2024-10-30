@@ -17,6 +17,10 @@
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
 
+// TODO(sang) To check compiling, remove it after done implementation
+#include "utils/hardware/cpu_info.h"
+#include "utils/hardware/ram_info.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
 #include <mach-o/dyld.h>
