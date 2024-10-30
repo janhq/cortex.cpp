@@ -10,39 +10,82 @@ import TabItem from "@theme/TabItem";
 
 # Cortex
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::info
+**Real-world Use**: Cortex.cpp powers [Jan](https://jan.ai), our on-device ChatGPT-alternative.
+
+Cortex.cpp is in active development. If you have any questions, please reach out to us on [GitHub](https://github.com/janhq/cortex.cpp/issues/new/choose)
+or [Discord](https://discord.com/invite/FTk2MvZwJH)
 :::
 
 ![Cortex Cover Image](/img/social-card.jpg)
 
-Cortex.cpp lets you run AI easily on your computer. 
+Cortex is a Local AI API Platform that is used to run and customize LLMs. 
 
-Cortex.cpp is a C++ command-line interface (CLI) designed as an alternative to Ollama. By default, it runs on the `llama.cpp` engine but also supports other engines, including `ONNX` and `TensorRT-LLM`, making it a multi-engine platform.
+Key Features:
+- Straightforward CLI (inspired by Ollama)
+- Full C++ implementation, packageable into Desktop and Mobile apps
+- Pull from Huggingface, or Cortex Built-in Model Library
+- Models stored in universal file formats (vs blobs)
+- Swappable Inference Backends (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp), future: [`ONNXRuntime`](https://github.com/janhq/cortex.onnx), [`TensorRT-LLM`](https://github.com/janhq/cortex.tensorrt-llm))
+- Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
 
-## Supported Accelerators
-- Nvidia CUDA
-- Apple Metal
-- Qualcomm AI Engine
+Cortex's roadmap is to implement the full OpenAI API including Tools, Runs, Multi-modal and Realtime APIs.
 
-## Supported Inference Backends
-- [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
-- [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs
-- [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports Nvidia GPUs 
+
+## Inference Backends
+- Default: [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
+- Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs
+- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports Nvidia GPUs 
 
 If GPU hardware is available, Cortex is GPU accelerated by default.
 
-:::info
-**Real-world Use**: Cortex.cpp powers [Jan](https://jan.ai), our on-device ChatGPT-alternative.
+## Models
+Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access. 
+- [Hugging Face](https://huggingface.co)
+- [Cortex Built-in Models](https://cortex.so/models)
 
-Cortex.cpp has been battle-tested across 1 million+ downloads and handles a variety of hardware configurations.
-:::
+> **Note**:
+> As a very general guide: You should have >8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
-## Supported Models
+### Cortex Built-in Models & Quantizations
+| Model /Engine  | llama.cpp             | Command                       |
+| -------------- | --------------------- | ----------------------------- |
+| phi-3.5        | ✅                    | cortex run phi3.5             |
+| llama3.2       | ✅                    | cortex run llama3.1           |
+| llama3.1       | ✅                    | cortex run llama3.1           |
+| codestral      | ✅                    | cortex run codestral          |
+| gemma2         | ✅                    | cortex run gemma2             |
+| mistral        | ✅                    | cortex run mistral            |
+| ministral      | ✅                    | cortex run ministral          |
+| qwen2          | ✅                    | cortex run qwen2.5            |
+| openhermes-2.5 | ✅                    | cortex run openhermes-2.5     |
+| tinyllama      | ✅                    | cortex run tinyllama          |
 
-Cortex.cpp supports the following list of [Built-in Models](/models):
+View all [Cortex Built-in Models](https://cortex.so/models).
 
-<Tabs>
+Cortex supports multiple quantizations for each model.
+```
+❯ cortex-nightly pull llama3.2
+Downloaded models:
+    llama3.2:3b-gguf-q2-k
+
+Available to download:
+    1. llama3.2:3b-gguf-q3-kl
+    2. llama3.2:3b-gguf-q3-km
+    3. llama3.2:3b-gguf-q3-ks
+    4. llama3.2:3b-gguf-q4-km (default)
+    5. llama3.2:3b-gguf-q4-ks
+    6. llama3.2:3b-gguf-q5-km
+    7. llama3.2:3b-gguf-q5-ks
+    8. llama3.2:3b-gguf-q6-k
+    9. llama3.2:3b-gguf-q8-0
+
+Select a model (1-9): 
+```
+
+
+{/*
+ <Tabs>
  <TabItem  value="Llama.cpp" label="Llama.cpp" default>
 | Model ID         | Variant (Branch) | Model size        | CLI command                        |
 |------------------|------------------|-------------------|------------------------------------|
@@ -86,17 +129,4 @@ Cortex.cpp supports the following list of [Built-in Models](/models):
 | openhermes-2.5   | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-linux-ada`|
 
   </TabItem>
-</Tabs>
-:::info
-Cortex.cpp supports pulling `GGUF` and `ONNX` models from the [Hugging Face Hub](https://huggingface.co). Read how to [Pull models from Hugging Face](/docs/hub/hugging-face/)
-:::
-
-## Cortex.cpp Versions
-Cortex.cpp offers three different versions of the app, each serving a unique purpose:
-- **Stable**: The official release version of Cortex.cpp, designed for general use with proven stability.
-- **Beta**: This version includes upcoming features still in testing, allowing users to try new functionality before the next official release.
-- **Nightly**:  Automatically built every night, this version includes the latest updates and changes from the engineering team but may be unstable.
-
-:::info
-Each of these versions has a different CLI prefix command.
-:::
+</Tabs> */}

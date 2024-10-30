@@ -186,7 +186,7 @@ const sidebars: SidebarsConfig = {
     { type: "doc", id: "cli/cortex", label: "cortex" },
     { type: "doc", id: "cli/start", label: "cortex start" },
     { type: "doc", id: "cli/chat", label: "cortex chat" },
-    { type: "doc", id: "cli/embeddings", label: "cortex embeddings" },
+    // { type: "doc", id: "cli/embeddings", label: "cortex embeddings" },
     // { type: "doc", id: "cli/presets", label: "cortex presets" },
     { type: "doc", id: "cli/pull", label: "cortex pull" },
     { type: "doc", id: "cli/run", label: "cortex run" },

@@ -2061,6 +2061,11 @@
   resolved "https://registry.yarnpkg.com/@excalidraw/excalidraw/-/excalidraw-0.17.6.tgz#5fd208ce69d33ca712d1804b50d7d06d5c46ac4d"
   integrity sha512-fyCl+zG/Z5yhHDh5Fq2ZGmphcrALmuOdtITm8gN4d8w4ntnaopTXcTfnAAaU3VleDC6LhTkoLOTG6P5kgREiIg==
 
+"@fillout/react@^1.1.2":
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/@fillout/react/-/react-1.1.2.tgz#833c28aa53aa79a712b61e915e3fc710312f02f9"
+  integrity sha512-XyzLY74Zhxxwym3A9770Tb3NINwaaWyWwvaw1lMJ5sA/P6hgsdzvefUOqohzR3+KVyspvBOR4BoR0nBMPFd/Vw==
+
 "@floating-ui/core@^1.0.0":
   version "1.6.2"
   resolved "https://registry.yarnpkg.com/@floating-ui/core/-/core-1.6.2.tgz#d37f3e0ac1f1c756c7de45db13303a266226851a"
