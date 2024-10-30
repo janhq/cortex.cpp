@@ -100,6 +100,8 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
     return std::nullopt;
   }
 
+  CTL_INF("model: " << model << ", model_id: " << model_id);
+
   // Send request download model to server
   Json::Value json_data;
   json_data["model"] = model;

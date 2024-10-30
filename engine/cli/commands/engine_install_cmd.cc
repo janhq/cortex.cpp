@@ -33,6 +33,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
 
   httplib::Client cli(host_ + ":" + std::to_string(port_));
   Json::Value json_data;
+  json_data["version"] =  version.empty() ? "latest" : version;
   auto data_str = json_data.toStyledString();
   cli.set_read_timeout(std::chrono::seconds(60));
   auto res = cli.Post("/v1/engines/install/" + engine, httplib::Headers(),
