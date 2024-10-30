@@ -1,0 +1,110 @@
+name: Test cortexso Model Hub
+
+on:
+  schedule:
+    - cron: "0 16 * * *" # every day at 23:00 UTC+7
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 1440
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-20-04-e2e-cortexcpp-model-hub"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.head_ref}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            build-deps-cmake-flags: ""
+            ccache-dir: ""
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: use python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install tools on Linux
+        run: |
+          sudo chown -R runner:runner /home/runner/cortexcpp
+          python3 -m pip install awscli
+
+      - name: Download vcpkg cache from s3
+        continue-on-error: true
+        run: |
+          aws s3 sync s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-vcpkg-linux /home/runner/.cache/vcpkg  --endpoint ${{ secrets.MINIO_ENDPOINT }} --cli-read-timeout 0
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
+
+      - name: Configure vcpkg
+        run: |
+          cd engine
+          make configure-vcpkg
+
+      - name: Build
+        run: |
+          cd engine
+          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+
+      - name: Run unit tests
+        run: |
+          cd engine
+          make run-unit-tests
+
+      - name: Run setup config for linux
+        shell: bash
+        run: |
+          cd engine
+          ./build/cortex --version
+          sed -i 's/huggingFaceToken: ""/huggingFaceToken: "${{ secrets.HUGGINGFACE_TOKEN_READ }}"/' ~/.cortexrc
+
+      - name: Run e2e tests
+        run: |
+          cd engine
+          cp build/cortex build/cortex-nightly
+          cp build/cortex build/cortex-beta
+          python -m pip install --upgrade pip
+          python -m pip install -r e2e-test/requirements.txt
+          python e2e-test/main.py
+          pytest e2e-test/test_api_cortexso_hub_llamacpp_engine.py
+          rm build/cortex-nightly
+          rm build/cortex-beta
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HF_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN_E2E }}
+
+      - name: Pre-package
+        run: |
+          cd engine
+          make pre-package DESTINATION_BINARY_NAME="cortex"
+
+      - name: Package
+        run: |
+          cd engine
+          make package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cortex-${{ matrix.os }}-${{ matrix.name }}
+          path: ./engine/cortex
+
+
+      - name: Upload linux vcpkg cache to s3
+        continue-on-error: true
+        if: always()
+        run: |
+          aws s3 sync /home/runner/.cache/vcpkg s3://${{ secrets.MINIO_BUCKET_NAME }}/cortex-cpp-vcpkg-linux  --endpoint ${{ secrets.MINIO_ENDPOINT }}
+        env:
+          AWS_ACCESS_KEY_ID: "${{ secrets.MINIO_ACCESS_KEY_ID }}"
+          AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
+          AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"

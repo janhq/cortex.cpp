@@ -26,6 +26,7 @@
     "@docusaurus/theme-live-codeblock": "^3.5.2",
     "@docusaurus/theme-mermaid": "^3.5.2",
     "@excalidraw/excalidraw": "^0.17.6",
+    "@fillout/react": "^1.1.2",
     "@huggingface/hub": "^0.15.1",
     "@mdx-js/react": "3.0.1",
     "@radix-ui/react-select": "^2.1.1",
