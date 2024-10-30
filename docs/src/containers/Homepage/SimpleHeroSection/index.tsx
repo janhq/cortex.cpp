@@ -52,11 +52,24 @@ const SimpleHeroSection = () => {
               <code className="bg-transparent border-none inline-block">
                 <p className="text-neutral-500 mb-0"># Run Local LLMs</p>
                 <p className="mb-0">
-                  <span className="text-green-600">cortex&nbsp;</span>
-                  <span className="text-white">run&nbsp;</span>
-                  <span className="text-cyan-600">llama3.1</span>
+                  <span className="text-white">❯ </span>
+                  <span className="text-green-600">cortex run </span>
+                  <span className="text-cyan-600">llama3.2</span>
                 </p>
-                <p className="mb-0">
+                <p className="text-white mb-0">Available to download:</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;1. llama3.2:3b-gguf-q2-k</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;2. llama3.2:3b-gguf-q3-kl</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;3. llama3.2:3b-gguf-q3-km</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;4. llama3.2:3b-gguf-q3-ks</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;5. llama3.2:3b-gguf-q4-km (default)</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;6. llama3.2:3b-gguf-q4-ks</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;7. llama3.2:3b-gguf-q5-km</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;8. llama3.2:3b-gguf-q5-ks</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;9. llama3.2:3b-gguf-q6-k</p>
+                <p className="text-white mb-0">&nbsp;&nbsp;&nbsp;&nbsp;10. llama3.2:3b-gguf-q8-0</p>
+                <p className="mb-0"></p>
+                <p className="text-white mb-0">Select a model (1-10): 5</p>
+                {/* <p className="mb-0">
                   <span className="text-green-600">cortex&nbsp;</span>
                   <span className="text-white">run&nbsp;</span>
                   <span className="text-cyan-600">llama3.1:tensorrt-llm</span>
@@ -65,7 +78,7 @@ const SimpleHeroSection = () => {
                   <span className="text-green-600">cortex&nbsp;</span>
                   <span className="text-white">run&nbsp;</span>
                   <span className="text-cyan-600">llama3.1:onnx</span>
-                </p>
+                </p> */}
               </code>
             </div>
           </div>
