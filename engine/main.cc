@@ -47,7 +47,11 @@ void RunServer(std::optional<int> port) {
   if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
     auto config_path = file_manager_utils::GetConfigurationPath();
     config.apiServerPort = std::to_string(*port);
-    config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    auto result =
+        config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    if (result.has_error()) {
+      CTL_ERR("Error update " << config_path.string() << result.error());
+    }
   }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
@@ -150,7 +154,12 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  { file_manager_utils::CreateConfigFileIfNotExist(); }
+  {
+    auto result = file_manager_utils::CreateConfigFileIfNotExist();
+    if (result.has_error()) {
+      LOG_ERROR << "Error creating config file: " << result.error();
+    }
+  }
 
   // Delete temporary file if it exists
   auto temp =

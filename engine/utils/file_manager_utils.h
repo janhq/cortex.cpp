@@ -6,6 +6,7 @@
 #include "logging_utils.h"
 #include "utils/config_yaml_utils.h"
 #include "utils/engine_constants.h"
+#include "utils/result.hpp"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -138,11 +139,22 @@ inline std::string GetDefaultDataFolderName() {
   return default_data_folder_name;
 }
 
-inline void CreateConfigFileIfNotExist() {
+inline cpp::result<void, std::string> UpdateCortexConfig(
+    const config_yaml_utils::CortexConfig& config) {
+  auto config_path = GetConfigurationPath();
+  if (!std::filesystem::exists(config_path)) {
+    CTL_ERR("Config file not found: " << config_path.string());
+    return cpp::fail("Config file not found: " + config_path.string());
+  }
+
+  return DumpYamlConfig(config, config_path.string());
+}
+
+inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
   auto config_path = GetConfigurationPath();
   if (std::filesystem::exists(config_path)) {
-    // already exists
-    return;
+    // already exists, no need to create
+    return {};
   }
 
   auto default_data_folder_name = GetDefaultDataFolderName();
@@ -165,7 +177,7 @@ inline void CreateConfigFileIfNotExist() {
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,
   };
-  DumpYamlConfig(config, config_path.string());
+  return DumpYamlConfig(config, config_path.string());
 }
 
 inline config_yaml_utils::CortexConfig GetCortexConfig() {
@@ -190,7 +202,12 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
 }
 
 inline std::filesystem::path GetCortexDataPath() {
-  CreateConfigFileIfNotExist();
+  auto result = CreateConfigFileIfNotExist();
+  if (result.has_error()) {
+    CTL_ERR("Error creating config file: " << result.error());
+    return std::filesystem::path{};
+  }
+
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {
@@ -239,7 +256,10 @@ inline void CreateDirectoryRecursively(const std::string& path) {
 }
 
 inline std::filesystem::path GetModelsContainerPath() {
-  CreateConfigFileIfNotExist();
+  auto result = CreateConfigFileIfNotExist();
+  if (result.has_error()) {
+    CTL_ERR("Error creating config file: " << result.error());
+  }
   auto cortex_path = GetCortexDataPath();
   auto models_container_path = cortex_path / "models";
 

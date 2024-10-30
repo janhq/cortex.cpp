@@ -183,6 +183,4 @@ class EngineService {
     std::string cuda_driver_version;
   };
   HardwareInfo hw_inf_;
-
-  std::unordered_map<std::string, DefaultEngineVariant> default_variants_;
 };

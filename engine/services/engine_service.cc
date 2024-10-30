@@ -527,12 +527,19 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
                      " is not installed yet!");
   }
 
-  default_variants_[ne] = DefaultEngineVariant{
+  auto config = file_manager_utils::GetCortexConfig();
+  config.llamacppVersion = version;
+  config.llamacppVariant = variant;
+  auto result = file_manager_utils::UpdateCortexConfig(config);
+  if (result.has_error()) {
+    return cpp::fail(result.error());
+  }
+
+  return DefaultEngineVariant{
       .engine = engine,
       .version = version,
       .variant = variant,
   };
-  return default_variants_[ne];
 }
 
 cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
@@ -554,11 +561,25 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
 cpp::result<DefaultEngineVariant, std::string>
 EngineService::GetDefaultEngineVariant(const std::string& engine) {
   auto ne = NormalizeEngine(engine);
-  if (default_variants_.find(ne) == default_variants_.end()) {
-    return cpp::fail("Engine variant for " + engine + " is not set yet!");
+  // current we don't support other engine
+  if (ne != kLlamaRepo) {
+    return cpp::fail("Engine " + engine + " is not supported yet!");
   }
 
-  return default_variants_[ne];
+  auto config = file_manager_utils::GetCortexConfig();
+  auto variant = config.llamacppVariant;
+  auto version = config.llamacppVersion;
+
+  if (variant.empty() || version.empty()) {
+    return cpp::fail("Default engine variant for " + engine +
+                     " is not set yet!");
+  }
+
+  return DefaultEngineVariant{
+      .engine = engine,
+      .version = version,
+      .variant = variant,
+  };
 }
 
 std::vector<EngineVariantResponse> EngineService::GetInstalledEngineVariants(
