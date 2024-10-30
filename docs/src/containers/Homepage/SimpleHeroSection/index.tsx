@@ -29,7 +29,7 @@ const SimpleHeroSection = () => {
         <div className="mt-8 flex gap-8 justify-center items-center">
           <DropdownDownload lastRelease={latestRelease} />
           <Link href="/contact" target="_blank">
-            <Button theme="secondary">Schedule a Call</Button>
+            <Button theme="secondary">Get in Touch</Button>
           </Link>
         </div>
       </div>
