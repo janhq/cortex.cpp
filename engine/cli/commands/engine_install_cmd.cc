@@ -32,12 +32,12 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     }
   }
 
-  CLI_LOG("Start downloading ...")
   DownloadProgress dp;
   dp.Connect(host_, port_);
   // engine can be small, so need to start ws first
   auto dp_res = std::async(std::launch::deferred,
                            [&dp, &engine] { return dp.Handle(engine); });
+  CLI_LOG("Validating download items, please wait..")
 
   httplib::Client cli(host_ + ":" + std::to_string(port_));
   Json::Value json_data;
@@ -53,6 +53,8 @@ bool EngineInstallCmd::Exec(const std::string& engine,
       CLI_LOG(root["message"].asString());
       dp.ForceStop();
       return false;
+    } else {
+      CLI_LOG("Start downloading..");
     }
   } else {
     auto err = res.error();

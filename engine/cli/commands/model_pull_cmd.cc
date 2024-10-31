@@ -122,7 +122,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
     return std::nullopt;
   }
 
-  CLI_LOG("Start downloading ...")
+  CLI_LOG("Start downloading..")
   DownloadProgress dp;
   bool force_stop = false;
 
