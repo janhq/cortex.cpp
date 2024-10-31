@@ -21,6 +21,7 @@
 #include "utils/hardware/cpu_info.h"
 #include "utils/hardware/ram_info.h"
 #include "utils/hardware/os_info.h"
+#include "utils/hardware/gpu_info.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()

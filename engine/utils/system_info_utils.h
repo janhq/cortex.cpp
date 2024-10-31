@@ -17,10 +17,10 @@ constexpr static auto kUnsupported{"Unsupported"};
 constexpr static auto kCudaVersionRegex{R"(CUDA Version:\s*([\d\.]+))"};
 constexpr static auto kDriverVersionRegex{R"(Driver Version:\s*(\d+\.\d+))"};
 constexpr static auto kGpuQueryCommand{
-    "nvidia-smi --query-gpu=index,memory.total,name,compute_cap "
+    "nvidia-smi --query-gpu=index,memory.total,memory.free,name,compute_cap "
     "--format=csv,noheader,nounits"};
 constexpr static auto kGpuInfoRegex{
-    R"((\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+))"};
+    R"((\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+))"};
 
 struct SystemInfo {
   explicit SystemInfo(std::string os, std::string arch)
@@ -150,7 +150,8 @@ inline std::string GetCudaVersion() {
 
 struct GpuInfo {
   std::string id;
-  std::string vram;
+  std::string vram_total;
+  std::string vram_free;
   std::string name;
   std::string arch;
   // nvidia driver version. Haven't checked for AMD GPU.
@@ -202,7 +203,7 @@ inline std::vector<GpuInfo> GetGpuInfoListVulkan() {
         else if (key == "apiVersion")
           gpuInfo.compute_cap = value;
 
-        gpuInfo.vram = "";  // not available
+        gpuInfo.vram_total = "";  // not available
         gpuInfo.arch = GetGpuArch(gpuInfo.name);
 
         ++field_iter;
@@ -237,12 +238,13 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
         std::regex_search(search_start, output.cend(), match, gpu_info_reg)) {
       GpuInfo gpuInfo = {
           match[1].str(),              // id
-          match[2].str(),              // vram
-          match[3].str(),              // name
-          GetGpuArch(match[3].str()),  // arch
+          match[2].str(),              // vram_total
+          match[3].str(),              // vram_free
+          match[4].str(),              // name
+          GetGpuArch(match[4].str()),  // arch
           driver_version,              // driver_version
           cuda_version,                // cuda_driver_version
-          match[4].str()               // compute_cap
+          match[5].str()               // compute_cap
       };
       gpuInfoList.push_back(gpuInfo);
       search_start = match.suffix().first;
