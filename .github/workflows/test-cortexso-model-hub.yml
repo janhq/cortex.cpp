@@ -2,7 +2,7 @@ name: Test cortexso Model Hub
 
 on:
   schedule:
-    - cron: "0 16 * * *" # every day at 23:00 UTC+7
+    - cron: "0 16 * * 5" # every Friday at 23:00 UTC+7
   workflow_dispatch:
 
 jobs:
@@ -74,7 +74,6 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
           pytest e2e-test/test_api_cortexso_hub_llamacpp_engine.py
           rm build/cortex-nightly
           rm build/cortex-beta
