@@ -1,5 +1,6 @@
 #include "download_progress.h"
 #include <chrono>
+#include <limits>
 #include "common/event.h"
 #include "indicators/dynamic_progress.hpp"
 #include "indicators/progress_bar.hpp"
@@ -65,35 +66,34 @@ bool DownloadProgress::Handle(const std::string& id) {
             indicators::option::ShowRemainingTime{true}));
         bars->push_back(*(items.back()));
       }
-    } else {
-      for (int i = 0; i < ev.download_task_.items.size(); i++) {
-        auto& it = ev.download_task_.items[i];
-        uint64_t downloaded = it.downloadedBytes.value_or(0);
-        uint64_t total = it.bytes.value_or(9999);
-        if (ev.type_ == DownloadStatus::DownloadUpdated) {
-          (*bars)[i].set_option(indicators::option::PrefixText{
-              pad_string(it.id) +
-              std::to_string(
-                  int(static_cast<double>(downloaded) / total * 100)) +
-              '%'});
-          (*bars)[i].set_progress(
-              int(static_cast<double>(downloaded) / total * 100));
-          (*bars)[i].set_option(indicators::option::PostfixText{
-              format_utils::BytesToHumanReadable(downloaded) + "/" +
-              format_utils::BytesToHumanReadable(total)});
-        } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
-          (*bars)[i].set_progress(100);
-          auto total_str = format_utils::BytesToHumanReadable(total);
-          (*bars)[i].set_option(
-              indicators::option::PostfixText{total_str + "/" + total_str});
-          (*bars)[i].set_option(
-              indicators::option::PrefixText{pad_string(it.id) + "100%"});
-          (*bars)[i].set_progress(100);
+    }
+    for (int i = 0; i < ev.download_task_.items.size(); i++) {
+      auto& it = ev.download_task_.items[i];
+      uint64_t downloaded = it.downloadedBytes.value_or(0);
+      uint64_t total = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+      if (ev.type_ == DownloadStatus::DownloadUpdated) {
+        (*bars)[i].set_option(indicators::option::PrefixText{
+            pad_string(it.id) +
+            std::to_string(int(static_cast<double>(downloaded) / total * 100)) +
+            '%'});
+        (*bars)[i].set_progress(
+            int(static_cast<double>(downloaded) / total * 100));
+        (*bars)[i].set_option(indicators::option::PostfixText{
+            format_utils::BytesToHumanReadable(downloaded) + "/" +
+            format_utils::BytesToHumanReadable(total)});
+      } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
+        (*bars)[i].set_progress(100);
+        auto total_str = format_utils::BytesToHumanReadable(total);
+        (*bars)[i].set_option(
+            indicators::option::PostfixText{total_str + "/" + total_str});
+        (*bars)[i].set_option(
+            indicators::option::PrefixText{pad_string(it.id) + "100%"});
+        (*bars)[i].set_progress(100);
 
-          CTL_INF("Download success");
-        }
+        CTL_INF("Download success");
       }
     }
+
     status_ = ev.type_;
   };
 
