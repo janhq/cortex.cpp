@@ -23,12 +23,14 @@ bool DownloadProgress::Connect(const std::string& host, int port) {
 
 bool DownloadProgress::Handle(const std::string& id) {
   assert(!!ws_);
+  uint64_t total = std::numeric_limits<uint64_t>::max();
   status_ = DownloadStatus::DownloadStarted;
   std::unique_ptr<indicators::DynamicProgress<indicators::ProgressBar>> bars;
 
   std::vector<std::unique_ptr<indicators::ProgressBar>> items;
   indicators::show_console_cursor(false);
-  auto handle_message = [this, &bars, &items, id](const std::string& message) {
+  auto handle_message = [this, &bars, &items, &total,
+                         id](const std::string& message) {
     CTL_INF(message);
 
     auto pad_string = [](const std::string& str,
@@ -70,7 +72,10 @@ bool DownloadProgress::Handle(const std::string& id) {
     for (int i = 0; i < ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
       uint64_t downloaded = it.downloadedBytes.value_or(0);
-      uint64_t total = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+      if (total == 0 || total == std::numeric_limits<uint64_t>::max()) {
+        total = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+        CTL_INF("Updated - total: " << total);
+      }
       if (ev.type_ == DownloadStatus::DownloadUpdated) {
         (*bars)[i].set_option(indicators::option::PrefixText{
             pad_string(it.id) +
