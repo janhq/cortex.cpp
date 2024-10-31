@@ -6,7 +6,6 @@
 #include "commands/engine_get_cmd.h"
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
-#include "commands/engine_release_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
