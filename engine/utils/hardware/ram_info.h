@@ -1,5 +1,6 @@
 #pragma once
 
+#include <json/json.h>
 #include <string>
 
 #include "hwinfo/hwinfo.h"
@@ -13,6 +14,14 @@ struct Memory {
   int64_t available;
   std::string type;
 };
+
+inline Json::Value ToJson(const Memory& m) {
+  Json::Value res;
+  res["total"] = m.total;
+  res["available"] = m.available;
+  res["type"] = m.type;
+  return res;
+}
 
 inline Memory GetMemoryInfo() {
   hwinfo::Memory m;

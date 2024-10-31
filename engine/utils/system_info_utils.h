@@ -2,6 +2,7 @@
 
 #include <trantor/utils/Logger.h>
 #include <memory>
+#include <optional>
 #include <regex>
 #include <sstream>
 #include <vector>

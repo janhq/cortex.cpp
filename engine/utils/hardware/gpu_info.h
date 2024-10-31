@@ -1,4 +1,5 @@
 #pragma once
+#include <json/json.h>
 #include <string>
 #include <variant>
 #include <vector>
@@ -21,6 +22,27 @@ struct GPU {
   int64_t free_vram;
   int64_t total_vram;
 };
+
+inline Json::Value ToJson(const std::vector<GPU>& gpus) {
+  Json::Value res(Json::arrayValue);
+  for (auto const& g : gpus) {
+    Json::Value gpu;
+    gpu["name"] = g.name;
+    gpu["version"] = g.version;
+    Json::Value add_info;
+    if (std::holds_alternative<NvidiaAddInfo>(g.add_info)) {
+      auto& v = std::get<NvidiaAddInfo>(g.add_info);
+      add_info["driver_version"] = v.driver_version;
+      add_info["compute_cap"] = v.compute_cap;
+    }
+    gpu["additional_information"] = add_info;
+
+    gpu["free_vram"] = g.free_vram;
+    gpu["total_vram"] = g.total_vram;
+    res.append(gpu);
+  }
+  return res;
+}
 
 inline std::vector<GPU> GetGPUInfo() {
   std::vector<GPU> res;

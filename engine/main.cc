@@ -3,6 +3,7 @@
 #include <memory>
 #include "controllers/engines.h"
 #include "controllers/events.h"
+#include "controllers/hardware.h"
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
@@ -16,12 +17,6 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
-
-// TODO(sang) To check compiling, remove it after done implementation
-#include "utils/hardware/cpu_info.h"
-#include "utils/hardware/ram_info.h"
-#include "utils/hardware/os_info.h"
-#include "utils/hardware/gpu_info.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -108,12 +103,14 @@ void RunServer(std::optional<int> port) {
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
   auto server_ctl = std::make_shared<inferences::server>(inference_svc);
+  auto hw_ctl = std::make_shared<Hardware>();
 
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
   drogon::app().registerController(pm_ctl);
   drogon::app().registerController(server_ctl);
+  drogon::app().registerController(hw_ctl);
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;

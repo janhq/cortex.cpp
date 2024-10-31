@@ -1,8 +1,9 @@
 #pragma once
 
+#include <json/json.h>
 #include <string>
-#include <vector>
 #include <string_view>
+#include <vector>
 #include "hwinfo/hwinfo.h"
 #include "utils/cpuid/cpu_info.h"
 
@@ -29,12 +30,25 @@ struct CPU {
   std::vector<std::string> instructions;
 };
 
+inline Json::Value ToJson(const CPU& cpu) {
+  Json::Value res;
+  res["arch"] = cpu.arch;
+  res["cores"] = cpu.cores;
+  res["model"] = cpu.model;
+  Json::Value insts(Json::arrayValue);
+  for (auto const& i : cpu.instructions) {
+    insts.append(i);
+  }
+  res["instructions"] = insts;
+  return res;
+}
+
 inline CPU GetCPUInfo() {
   auto cpu = hwinfo::getAllCPUs()[0];
   cortex::cpuid::CpuInfo inst;
-  return CPU {
-    .cores = cpu.numPhysicalCores(), .arch = std::string(GetArch()),
-    .model = cpu.modelName(), .instructions = inst.instructions()
-  };
+  return CPU{.cores = cpu.numPhysicalCores(),
+             .arch = std::string(GetArch()),
+             .model = cpu.modelName(),
+             .instructions = inst.instructions()};
 }
 }  // namespace hardware

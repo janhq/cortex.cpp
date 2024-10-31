@@ -1,4 +1,5 @@
 #pragma once
+#include <json/json.h>
 #include <string>
 #include "hwinfo/hwinfo.h"
 
@@ -8,6 +9,13 @@ struct OS {
   std::string version;
   std::string arch;
 };
+
+inline Json::Value ToJson(const OS& os) {
+  Json::Value res;
+  res["version"] = os.version;
+  res["name"] = os.name;
+  return res;
+}
 
 inline OS GetOSInfo() {
   hwinfo::OS os;
