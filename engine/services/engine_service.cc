@@ -170,17 +170,35 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
 }
 
 cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
-    const std::string& engine, const std::string& variant,
-    const std::string& version) {
+    const std::string& engine, const std::optional<std::string> version,
+    const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
-  auto engine_path =
-      file_manager_utils::GetEnginesContainerPath() / ne / variant / version;
-  if (!std::filesystem::exists(engine_path)) {
-    return cpp::fail("Engine " + ne + " is not installed!");
+
+  std::optional<std::filesystem::path> path_to_remove = std::nullopt;
+  if (version == std::nullopt && variant == std::nullopt) {
+    // if no version and variant provided, remove all engines variant of that engine
+    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
+  } else if (version != std::nullopt && variant != std::nullopt) {
+    // if both version and variant are provided, we only remove that variant
+    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
+                     variant.value() / version.value();
+  } else if (version == std::nullopt) {
+    // if only have variant, we remove all of that variant
+    path_to_remove =
+        file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+  } else {
+    return cpp::fail("No variant provided");
+  }
+
+  if (path_to_remove == std::nullopt) {
+    return cpp::fail("Uninstall engine variant failed!");
+  }
+  if (!std::filesystem::exists(path_to_remove.value())) {
+    return cpp::fail("Engine variant does not exist!");
   }
 
   try {
-    std::filesystem::remove_all(engine_path);
+    std::filesystem::remove_all(path_to_remove.value());
     CTL_INF("Engine " << ne << " uninstalled successfully!");
     return true;
   } catch (const std::exception& e) {
@@ -208,7 +226,10 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
   std::optional<EngineVariant> selected_variant = std::nullopt;
 
   if (variant_name.has_value()) {
-    auto merged_variant_name = engine + "-" + normalized_version + "-" +
+    auto latest_version_semantic = normalized_version == "latest"
+                                       ? res.value()[0].version
+                                       : normalized_version;
+    auto merged_variant_name = engine + "-" + latest_version_semantic + "-" +
                                variant_name.value() + ".tar.gz";
 
     for (const auto& asset : res.value()) {
@@ -526,8 +547,10 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
                      " is not installed yet!");
   }
 
+  auto normalized_version = string_utils::RemoveSubstring(version, "v");
+
   auto config = file_manager_utils::GetCortexConfig();
-  config.llamacppVersion = version;
+  config.llamacppVersion = "v" + normalized_version;
   config.llamacppVariant = variant;
   auto result = file_manager_utils::UpdateCortexConfig(config);
   if (result.has_error()) {
@@ -536,7 +559,7 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
 
   return DefaultEngineVariant{
       .engine = engine,
-      .version = version,
+      .version = normalized_version,
       .variant = variant,
   };
 }
@@ -739,15 +762,14 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   auto& en = std::get<EngineI*>(engines_[ne].engine);
   if (ne == kLlamaRepo) {  //fix for llamacpp engine first
     auto config = file_manager_utils::GetCortexConfig();
-    // TODO: crash issue with trantor logging destructor.
-    // if (en->IsSupported("SetFileLogger")) {
-    //   en->SetFileLogger(config.maxLogLines,
-    //                     (std::filesystem::path(config.logFolderPath) /
-    //                      std::filesystem::path(config.logLlamaCppPath))
-    //                         .string());
-    // } else {
-    //   LOG_WARN << "Method SetFileLogger is not supported yet";
-    // }
+    if (en->IsSupported("SetFileLogger")) {
+      en->SetFileLogger(config.maxLogLines,
+                        (std::filesystem::path(config.logFolderPath) /
+                         std::filesystem::path(config.logLlamaCppPath))
+                            .string());
+    } else {
+      LOG_WARN << "Method SetFileLogger is not supported yet";
+    }
   }
   LOG_INFO << "Loaded engine: " << ne;
   return {};
@@ -833,17 +855,19 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   // check if local engines variants if latest version already exist
   auto installed_variants = GetInstalledEngineVariants(ne);
 
-  bool is_installed = false;
+  bool latest_version_installed = false;
   for (const auto& v : installed_variants) {
     CTL_INF("Installed version: " + v.version);
+    CTL_INF(json_helper::DumpJsonString(v.ToJson()));
     if (default_variant->variant == v.name &&
-        v.version == latest_version.value().name) {
-      is_installed = true;
+        string_utils::RemoveSubstring(v.version, "v") ==
+            latest_version.value().name) {
+      latest_version_installed = true;
       break;
     }
   }
 
-  if (is_installed) {
+  if (latest_version_installed) {
     CTL_INF("Engine " + ne + ", " + default_variant->variant +
             " is already up-to-date! Version " +
             latest_version.value().tag_name);
@@ -862,5 +886,5 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   return EngineUpdateResult{.engine = engine,
                             .variant = default_variant->variant,
                             .from = default_variant->version,
-                            .to = latest_version->name};
+                            .to = latest_version->tag_name};
 }

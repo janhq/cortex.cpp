@@ -8,6 +8,7 @@
 #include <string>
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
@@ -34,9 +35,8 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url) {
   }
 
   auto headers = GetHeaders(url);
+  curl_slist* curl_headers = nullptr;
   if (headers.has_value()) {
-    curl_slist* curl_headers = nullptr;
-
     for (const auto& [key, value] : headers.value()) {
       auto header = key + ": " + value;
       curl_headers = curl_slist_append(curl_headers, header.c_str());
@@ -54,12 +54,121 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url) {
   // Perform the request
   auto res = curl_easy_perform(curl);
 
+  curl_slist_free_all(curl_headers);
+  curl_easy_cleanup(curl);
   if (res != CURLE_OK) {
     return cpp::fail("CURL request failed: " +
                      static_cast<std::string>(curl_easy_strerror(res)));
   }
+  auto http_code = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+  if (http_code >= 400) {
+    CTL_ERR("HTTP request failed with status code: " +
+            std::to_string(http_code));
+    return cpp::fail("API request failed: " +
+                     static_cast<std::string>(curl_easy_strerror(res)));
+  }
 
+  return readBuffer;
+}
+
+inline cpp::result<std::string, std::string> SimplePost(
+    const std::string& url, const std::string& body = "") {
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+  auto curl = curl_easy_init();
+
+  if (!curl) {
+    return cpp::fail("Failed to init CURL");
+  }
+
+  auto headers = GetHeaders(url);
+  curl_slist* curl_headers = nullptr;
+  if (headers.has_value()) {
+
+    for (const auto& [key, value] : headers.value()) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+  }
+
+  std::string readBuffer;
+
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_POST, 1L);
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+  // Perform the request
+  auto res = curl_easy_perform(curl);
+
+  curl_slist_free_all(curl_headers);
   curl_easy_cleanup(curl);
+  if (res != CURLE_OK) {
+    CTL_ERR("CURL request failed: " + std::string(curl_easy_strerror(res)));
+    return cpp::fail("CURL request failed: " +
+                     static_cast<std::string>(curl_easy_strerror(res)));
+  }
+  auto http_code = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+  if (http_code >= 400) {
+    CTL_ERR("HTTP request failed with status code: " +
+            std::to_string(http_code));
+    return cpp::fail("API request failed: " +
+                     static_cast<std::string>(curl_easy_strerror(res)));
+  }
+
+  return readBuffer;
+}
+
+inline cpp::result<std::string, std::string> SimpleDelete(
+    const std::string& url) {
+
+  std::string readBuffer;
+  auto curl = curl_easy_init();
+
+  if (!curl) {
+    throw std::runtime_error("Failed to initialize CURL");
+  }
+
+  auto headers = GetHeaders(url);
+  curl_slist* curl_headers = nullptr;
+  if (headers.has_value()) {
+    for (const auto& [key, value] : headers.value()) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+  }
+
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+  // Perform the request
+  auto res = curl_easy_perform(curl);
+
+  long responseCode;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+
+  curl_slist_free_all(curl_headers);
+  curl_easy_cleanup(curl);
+
+  if (res != CURLE_OK) {
+    throw std::runtime_error(std::string("Delete request failed: ") +
+                             curl_easy_strerror(res));
+  }
+
+  if (responseCode >= 400) {
+    throw std::runtime_error("HTTP error: " + std::to_string(responseCode) +
+                             "\nResponse: " + readBuffer);
+  }
+
   return readBuffer;
 }
 
@@ -67,6 +176,7 @@ inline cpp::result<YAML::Node, std::string> ReadRemoteYaml(
     const std::string& url) {
   auto result = SimpleGet(url);
   if (result.has_error()) {
+    CTL_ERR("Failed to get Yaml from " + url + ": " + result.error());
     return cpp::fail(result.error());
   }
 
@@ -82,9 +192,29 @@ inline cpp::result<Json::Value, std::string> SimpleGetJson(
     const std::string& url) {
   auto result = SimpleGet(url);
   if (result.has_error()) {
+    CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
     return cpp::fail(result.error());
   }
 
+  Json::Value root;
+  Json::Reader reader;
+  if (!reader.parse(result.value(), root)) {
+    return cpp::fail("JSON from " + url +
+                     " parsing error: " + reader.getFormattedErrorMessages());
+  }
+
+  return root;
+}
+
+inline cpp::result<Json::Value, std::string> SimplePostJson(
+    const std::string& url, const std::string& body = "") {
+  auto result = SimplePost(url, body);
+  if (result.has_error()) {
+    CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
+    return cpp::fail(result.error());
+  }
+
+  CTL_INF("Response: " + result.value());
   Json::Value root;
   Json::Reader reader;
   if (!reader.parse(result.value(), root)) {
@@ -127,8 +257,21 @@ inline std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
     headers["Accept"] = "application/vnd.github.v3+json";
     // github API requires user-agent https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
     auto user_agent = file_manager_utils::GetCortexConfig().gitHubUserAgent;
+    auto gh_token = file_manager_utils::GetCortexConfig().gitHubToken;
     headers["User-Agent"] =
         user_agent.empty() ? kDefaultGHUserAgent : user_agent;
+    if (!gh_token.empty()) {
+      headers["Authorization"] = "Bearer " + gh_token;
+
+      // for debug purpose
+      auto min_token_size = 6;
+      if (gh_token.size() < min_token_size) {
+        CTL_WRN("Github token is too short");
+      } else {
+        CTL_INF("Using authentication with Github token: " +
+                gh_token.substr(gh_token.size() - min_token_size));
+      }
+    }
     return headers;
   }
 

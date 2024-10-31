@@ -1,11 +1,11 @@
 import platform
 
 import pytest
-from test_runner import run
-from test_runner import start_server, stop_server
+from test_runner import run, start_server, stop_server
+
 
 class TestCliEngineList:
-    
+
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
@@ -17,7 +17,7 @@ class TestCliEngineList:
 
         # Teardown
         stop_server()
-        
+
     @pytest.mark.skipif(platform.system() != "Windows", reason="Windows-specific test")
     def test_engines_list_run_successfully_on_windows(self):
         exit_code, output, error = run("List engines", ["engines", "list"])
@@ -35,3 +35,4 @@ class TestCliEngineList:
         exit_code, output, error = run("List engines", ["engines", "list"])
         assert exit_code == 0, f"List engines failed with error: {error}"
         assert "llama-cpp" in output
+

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Security/cssmconfig.h>
 #include <json/value.h>
 #include "utils/curl_utils.h"
 #include "utils/engine_matcher_utils.h"
@@ -17,8 +16,8 @@ struct GitHubAsset {
 
   std::string content_type;
   std::string state;
-  uint64 size;
-  uint32 download_count;
+  uint64_t size;
+  uint32_t download_count;
   std::string created_at;
 
   std::string updated_at;
@@ -144,7 +143,6 @@ struct GitHubRelease {
 };
 
 // TODO: (namh) support pagination for this api
-// TODO: (namh) might need to add support for github token for better API through put
 inline cpp::result<std::vector<GitHubRelease>, std::string> GetReleases(
     const std::string& author, const std::string& repo,
     const bool allow_prerelease = true) {
@@ -178,6 +176,11 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
   std::vector<std::string> path_params{"repos", author, repo, "releases"};
   if (tag != "latest") {
     path_params.push_back("tags");
+
+    if (!string_utils::StartsWith(tag, "v")) {
+      path_params.push_back("v" + tag);
+    }
+
     path_params.push_back(tag);
   } else {
     path_params.push_back("latest");
@@ -189,6 +192,7 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
       .pathParams = path_params,
   };
 
+  CTL_INF("GetReleaseByVersion: " << url.ToFullPath());
   auto result = curl_utils::SimpleGetJson(url_parser::FromUrl(url));
 
   if (result.has_error()) {

@@ -2,10 +2,11 @@
 #include <json/reader.h>
 #include <json/value.h>
 #include <iostream>
-
-#include "httplib.h"
 #include "server_start_cmd.h"
+#include "services/engine_service.h"
+#include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/url_parser.h"
 
 // clang-format off
 #include <tabulate/table.hpp>
@@ -25,28 +26,34 @@ void EngineGetCmd::Exec(const std::string& host, int port,
   }
 
   tabulate::Table table;
-  table.add_row({"Name", "Supported Formats", "Version", "Variant", "Status"});
-  httplib::Client cli(host + ":" + std::to_string(port));
-  auto res = cli.Get("/v1/engines/" + engine_name);
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      Json::Value v;
-      Json::Reader reader;
-      reader.parse(res->body, v);
+  table.add_row({"#", "Name", "Version", "Variant", "Status"});
 
-      table.add_row({v["name"].asString(), v["format"].asString(),
-                     v["version"].asString(), v["variant"].asString(),
-                     v["status"].asString()});
-
-    } else {
-      CLI_LOG_ERROR(
-          "Failed to get engine list with status code: " << res->status);
-      return;
-    }
-  } else {
-    auto err = res.error();
-    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "engines", engine_name},
+  };
+  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (result.has_error()) {
+    CTL_ERR(result.error());
     return;
+  }
+
+  std::vector<EngineVariantResponse> output;
+  auto installed_variants = result.value();
+  for (const auto& variant : installed_variants) {
+    output.push_back(EngineVariantResponse{
+        .name = variant["name"].asString(),
+        .version = variant["version"].asString(),
+        .engine = engine_name,
+    });
+  }
+
+  int count = 0;
+  for (auto const& v : output) {
+    count += 1;
+    table.add_row(
+        {std::to_string(count), v.engine, v.version, v.name, "Installed"});
   }
 
   std::cout << table << std::endl;

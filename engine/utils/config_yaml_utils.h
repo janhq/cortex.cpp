@@ -26,6 +26,7 @@ struct CortexConfig {
    * Github's API requires a user-agent string.
    */
   std::string gitHubUserAgent;
+  std::string gitHubToken;
   std::string llamacppVariant;
   std::string llamacppVersion;
 };
@@ -58,6 +59,7 @@ inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
     node["latestRelease"] = config.latestRelease;
     node["huggingFaceToken"] = config.huggingFaceToken;
     node["gitHubUserAgent"] = config.gitHubUserAgent;
+    node["gitHubToken"] = config.gitHubToken;
     node["llamacppVariant"] = config.llamacppVariant;
     node["llamacppVersion"] = config.llamacppVersion;
 
@@ -86,7 +88,8 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["latestRelease"] || !node["logLlamaCppPath"] ||
          !node["logOnnxPath"] || !node["logTensorrtLLMPath"] ||
          !node["huggingFaceToken"] || !node["gitHubUserAgent"] ||
-         !node["llamacppVariant"] || !node["llamacppVersion"]);
+         !node["gitHubToken"] || !node["llamacppVariant"] ||
+         !node["llamacppVersion"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -124,6 +127,8 @@ inline CortexConfig FromYaml(const std::string& path,
         .gitHubUserAgent = node["gitHubUserAgent"]
                                ? node["gitHubUserAgent"].as<std::string>()
                                : "",
+        .gitHubToken =
+            node["gitHubToken"] ? node["gitHubToken"].as<std::string>() : "",
         .llamacppVariant = node["llamacppVariant"]
                                ? node["llamacppVariant"].as<std::string>()
                                : "",

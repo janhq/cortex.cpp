@@ -44,11 +44,11 @@ void Engines::ListEngine(
 void Engines::UninstallEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine, const std::string& version,
-    const std::string& variant) {
+    const std::string& engine, const std::optional<std::string> version,
+    const std::optional<std::string> variant) {
 
   auto result =
-      engine_service_->UninstallEngineVariant(engine, variant, version);
+      engine_service_->UninstallEngineVariant(engine, version, variant);
 
   Json::Value ret;
   if (result.has_error()) {
@@ -128,7 +128,7 @@ void Engines::GetEngineVariants(
   callback(resp);
 }
 
-void Engines::InstallEngineVariant(
+void Engines::InstallEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine, const std::optional<std::string> version,
@@ -152,7 +152,7 @@ void Engines::InstallEngineVariant(
   }
 }
 
-void Engines::GetEnginesInstalledVariants(
+void Engines::GetInstalledEngineVariants(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {

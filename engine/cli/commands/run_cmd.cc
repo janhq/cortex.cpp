@@ -102,7 +102,7 @@ void RunCmd::Exec(bool run_detach) {
       if (!is_engine_ready.value()) {
         CTL_INF("Engine " << mc.engine
                           << " is not ready. Proceed to install..");
-        if (!EngineInstallCmd(download_service_, host_, port_)
+        if (!EngineInstallCmd(download_service_, host_, port_, false)
                  .Exec(mc.engine)) {
           return;
         } else {

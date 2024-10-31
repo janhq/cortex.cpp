@@ -12,26 +12,37 @@ class Engines : public drogon::HttpController<Engines, false> {
  public:
   METHOD_LIST_BEGIN
 
-  METHOD_ADD(Engines::InstallEngineVariant, "/{1}?version={2}&variant={3}",
-             Post);
-  METHOD_ADD(Engines::UninstallEngine, "/{1}/{2}/{3}", Delete);
-  METHOD_ADD(Engines::ListEngine, "", Get);
-
-  METHOD_ADD(Engines::GetEngineVersions, "/{1}/versions", Get);
-  METHOD_ADD(Engines::GetEngineVariants, "/{1}/versions/{2}", Get);
-  METHOD_ADD(Engines::InstallEngineVariant, "/{1}/versions/{2}/{3}", Post);
-  METHOD_ADD(Engines::GetEnginesInstalledVariants, "/{1}", Get);
-
-  // METHOD_ADD(Engines::GetLatestEngineVersion, "/{1}/update", Get);
-  METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Post);
-  METHOD_ADD(Engines::SetDefaultEngineVariant, "/{1}/default/{2}/{3}", Post);
+  METHOD_ADD(Engines::GetInstalledEngineVariants, "/{1}", Get);
+  METHOD_ADD(Engines::InstallEngine, "/{1}?version={2}&variant={3}", Post);
+  METHOD_ADD(Engines::UninstallEngine, "/{1}?version={2}&variant={3}", Delete);
+  METHOD_ADD(Engines::SetDefaultEngineVariant,
+             "/{1}/default?version={2}&variant={3}", Post);
   METHOD_ADD(Engines::GetDefaultEngineVariant, "/{1}/default", Get);
 
   METHOD_ADD(Engines::LoadEngine, "/{1}/load", Post);
   METHOD_ADD(Engines::UnloadEngine, "/{1}/load", Delete);
+  METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Post);
+  METHOD_ADD(Engines::ListEngine, "", Get);
+  METHOD_ADD(Engines::GetEngineVersions, "/{1}/versions", Get);
+  METHOD_ADD(Engines::GetEngineVariants, "/{1}/versions/{2}", Get);
 
-  ADD_METHOD_TO(Engines::UninstallEngine, "/v1/engines/{1}/{2}/{3}", Delete);
+  ADD_METHOD_TO(Engines::GetInstalledEngineVariants, "/v1/engines/{1}", Get);
+  ADD_METHOD_TO(Engines::InstallEngine,
+                "/v1/engines/{1}?version={2}&variant={3}", Post);
+  ADD_METHOD_TO(Engines::UninstallEngine,
+                "/v1/engines/{1}?version={2}&variant={3}", Delete);
+  ADD_METHOD_TO(Engines::SetDefaultEngineVariant,
+                "/v1/engines/{1}/default?version={2}&variant={3}", Post);
+  ADD_METHOD_TO(Engines::GetDefaultEngineVariant, "/v1/engines/{1}/default",
+                Get);
 
+  ADD_METHOD_TO(Engines::LoadEngine, "/v1/engines/{1}/load", Post);
+  ADD_METHOD_TO(Engines::UnloadEngine, "/v1/engines/{1}/load", Post);
+  ADD_METHOD_TO(Engines::UpdateEngine, "/v1/engines/{1}/update", Post);
+  ADD_METHOD_TO(Engines::GetEngineVersions, "/v1/engines/{1}/versions", Get);
+  ADD_METHOD_TO(Engines::GetEngineVariants, "/v1/engines/{1}/versions/{2}",
+                Get);
+  ADD_METHOD_TO(Engines::ListEngine, "/v1/engines", Get);
   METHOD_LIST_END
 
   explicit Engines(std::shared_ptr<EngineService> engine_service)
@@ -42,8 +53,9 @@ class Engines : public drogon::HttpController<Engines, false> {
 
   void UninstallEngine(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback,
-                       const std::string& engine, const std::string& version,
-                       const std::string& variant);
+                       const std::string& engine,
+                       const std::optional<std::string> version,
+                       const std::optional<std::string> variant);
 
   void GetEngineVersions(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
@@ -54,13 +66,13 @@ class Engines : public drogon::HttpController<Engines, false> {
                          const std::string& engine,
                          const std::string& version) const;
 
-  void InstallEngineVariant(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback,
-      const std::string& engine, const std::optional<std::string> version,
-      const std::optional<std::string> variant_name);
+  void InstallEngine(const HttpRequestPtr& req,
+                     std::function<void(const HttpResponsePtr&)>&& callback,
+                     const std::string& engine,
+                     const std::optional<std::string> version,
+                     const std::optional<std::string> variant_name);
 
-  void GetEnginesInstalledVariants(
+  void GetInstalledEngineVariants(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback,
       const std::string& engine) const;

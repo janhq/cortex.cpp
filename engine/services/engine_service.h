@@ -112,8 +112,8 @@ class EngineService {
       const std::optional<std::string> variant_name);
 
   cpp::result<bool, std::string> UninstallEngineVariant(
-      const std::string& engine, const std::string& variant,
-      const std::string& version);
+      const std::string& engine, const std::optional<std::string> version,
+      const std::optional<std::string> variant);
 
   cpp::result<std::vector<EngineRelease>, std::string> GetEngineReleases(
       const std::string& engine) const;
