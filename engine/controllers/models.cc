@@ -312,6 +312,7 @@ void Models::ImportModel(
   }
   auto modelHandle = (*(req->getJsonObject())).get("model", "").asString();
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
+  auto modelName = (*(req->getJsonObject())).get("name", "").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   cortex::db::Models modellist_utils_obj;
@@ -333,6 +334,7 @@ void Models::ImportModel(
     config::ModelConfig model_config = gguf_handler.GetModelConfig();
     model_config.files.push_back(modelPath);
     model_config.model = modelHandle;
+    model_config.name = modelName.empty() ? model_config.name : modelName;
     yaml_handler.UpdateModelConfig(model_config);
 
     if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
