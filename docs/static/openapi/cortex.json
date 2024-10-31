@@ -152,6 +152,44 @@
         ]
       }
     },
+    "/healthz": {
+      "get": {
+        "operationId": "HealthController_check",
+        "summary": "Check health",
+        "description": "Checks the health of the application.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {}
+            }
+          }
+        },
+        "tags": [
+          "Server"
+        ]
+      }
+    },
+    "/processManager/destroy": {
+      "delete": {
+        "operationId": "Terminate server process",
+        "summary": "Terminate server",
+        "description": "Terminate server process.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {}
+            }
+          }
+        },
+        "tags": [
+          "Server"
+        ]
+      }
+    },
     "/v1/chat/completions": {
       "post": {
         "operationId": "ChatController_create",
@@ -1291,6 +1329,10 @@
       "description": "These endpoints provide a list and descriptions of all available models within the Cortex framework."
     },
     {
+      "name": "Server",
+      "description": "These endpoints manage the lifecycle of Server, including heath check and shutdown."
+    },
+    {
       "name": "Messages",
       "description": "These endpoints manage the retrieval and storage of conversation content, including responses from LLMs and other metadata related to chat interactions."
     },
@@ -1316,7 +1358,8 @@
         "Events",
         "Models",
         "Processes",
-        "Status"
+        "Status",
+        "Server"
       ]
     }
   ],
