@@ -427,25 +427,6 @@ void CommandLineParser::SetupSystemCommands() {
   });
 }
 
-void CommandLineParser::EngineInstallV2(CLI::App* parent,
-                                        const std::string& engine_name) {
-  auto install_engine_cmd = parent->add_subcommand(engine_name, "");
-  install_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                            " engines install " + engine_name + " [options]");
-  install_engine_cmd->group(kEngineGroup);
-  install_engine_cmd->callback([this, engine_name] {
-    if (std::exchange(executed_, true))
-      return;
-    auto result = commands::EngineReleaseCmd().Exec(
-        cml_data_.config.apiServerHost,
-        std::stoi(cml_data_.config.apiServerPort), engine_name);
-
-    if (result.has_error()) {
-      CLI_LOG(result.error());
-    }
-  });
-}
-
 void CommandLineParser::EngineInstall(CLI::App* parent,
                                       const std::string& engine_name,
                                       std::string& version, std::string& src) {
