@@ -1,6 +1,6 @@
 #include "download_progress.h"
 #include <chrono>
-#incldue <limits>
+#include <limits>
 #include "common/event.h"
 #include "indicators/dynamic_progress.hpp"
 #include "indicators/progress_bar.hpp"
