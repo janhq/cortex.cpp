@@ -71,12 +71,12 @@ std::string GetEnginePath(std::string_view e) {
 
 cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
     const std::string& engine, const std::string& version,
-    const std::string& variant_name) {
+    const std::optional<std::string> variant_name) {
   auto ne = NormalizeEngine(engine);
   CTL_INF("InstallEngineAsyncV2: " << ne << ", " << version << ", "
-                                   << variant_name);
+                                   << variant_name.value_or(""));
 
-  auto result = DownloadEngineV2(ne, version, variant_name, true /*async*/);
+  auto result = DownloadEngineV2(ne, version, variant_name);
   if (result.has_error()) {
     return result;
   }
@@ -191,21 +191,11 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
 
 cpp::result<void, std::string> EngineService::DownloadEngineV2(
     const std::string& engine, const std::string& version,
-    const std::string& variant_name, bool async) {
+    const std::optional<std::string> variant_name) {
+  auto normalized_version = version == "latest"
+                                ? "latest"
+                                : string_utils::RemoveSubstring(version, "v");
 
-  // check if engine variant is installed
-  bool is_installed = false;
-  if (is_installed) {
-    // set default
-    // TODO: namh implement this
-    return {};
-  }
-
-  // TODO: namh add back the github_token
-
-  auto normalized_version = string_utils::RemoveSubstring(version, "v");
-  auto merged_variant_name =
-      engine + "-" + normalized_version + "-" + variant_name + ".tar.gz";
   auto res = GetEngineVariants(engine, version);
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine releases: " + res.error());
@@ -216,32 +206,69 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
   }
 
   std::optional<EngineVariant> selected_variant = std::nullopt;
-  for (const auto& asset : res.value()) {
-    if (asset.name == merged_variant_name) {
-      selected_variant = asset;
-      break;
+
+  if (variant_name.has_value()) {
+    auto merged_variant_name = engine + "-" + normalized_version + "-" +
+                               variant_name.value() + ".tar.gz";
+
+    for (const auto& asset : res.value()) {
+      if (asset.name == merged_variant_name) {
+        selected_variant = asset;
+        break;
+      }
+    }
+  } else {
+    std::vector<std::string> variants;
+    for (const auto& asset : res.value()) {
+      variants.push_back(asset.name);
+    }
+
+    auto matched_variant_name = GetMatchedVariant(engine, variants);
+    for (const auto& v : res.value()) {
+      if (v.name == matched_variant_name) {
+        selected_variant = v;
+        break;
+      }
     }
   }
 
   if (selected_variant == std::nullopt) {
-    return cpp::fail("Not found variant: " + variant_name);
+    return cpp::fail("Failed to find a suitable variant for " + engine);
   }
+  auto normalize_version = "v" + selected_variant->version;
 
-  auto engine_folder_path =
-      file_manager_utils::GetEnginesContainerPath() / engine;
-  auto variant_folder_path = engine_folder_path / variant_name / version;
-  auto variant_path = variant_folder_path / merged_variant_name;
+  auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
+      selected_variant->name, engine, selected_variant->version);
+
+  auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() /
+                             engine / variant_folder_name.value() /
+                             normalize_version;
+
+  auto variant_path = variant_folder_path / selected_variant->name;
   std::filesystem::create_directories(variant_folder_path);
   CLI_LOG("variant_folder_path: " + variant_folder_path.string());
-
-  auto on_finished = [](const DownloadTask& finishedTask) {
+  auto on_finished = [this, engine, selected_variant,
+                      normalize_version](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
     CLI_LOG("Engine zip path: " << finishedTask.items[0].localPath.string());
+    CLI_LOG("Version: " + normalize_version);
 
     auto extract_path = finishedTask.items[0].localPath.parent_path();
 
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   extract_path.string(), true);
+
+    auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
+        selected_variant->name, engine, normalize_version);
+    CLI_LOG("Extracted variant: " + variant.value());
+    // set as default
+    auto res =
+        SetDefaultEngineVariant(engine, normalize_version, variant.value());
+    if (res.has_error()) {
+      CTL_ERR("Failed to set default engine variant: " << res.error());
+    } else {
+      CTL_INF("Set default engine variant: " << res.value().variant);
+    }
 
     // remove the downloaded file
     try {
@@ -270,33 +297,6 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
 
 cpp::result<bool, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version, bool async) {
-
-  // auto get_params = [&engine, &version]() -> std::vector<std::string> {
-  //   if (version == "latest") {
-  //     return {"repos", "janhq", engine, "releases", version};
-  //   } else {
-  //     return {"repos", "janhq", engine, "releases"};
-  //   }
-  // };
-  //
-  // auto url_obj = url_parser::Url{
-  //     .protocol = "https",
-  //     .host = "api.github.com",
-  //     .pathParams = get_params(),
-  // };
-
-  // std::unordered_map<std::string, std::string> headers;
-
-  // Check if GITHUB_TOKEN env exist
-  // const char* github_token = std::getenv("GITHUB_TOKEN");
-  // if (github_token) {
-  //   std::string auth_header = "token " + std::string(github_token);
-  //   headers.insert({"Authorization", auth_header});
-  //   CTL_INF("Using authentication with GitHub token.");
-  // } else {
-  //   CTL_INF("No GitHub token found. Sending request without authentication.");
-  // }
-
   auto res = GetEngineVariants(engine, version);
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine releases: " + res.error());
@@ -335,7 +335,6 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
         CTL_INF("Creating " << engine_folder_path.string());
         std::filesystem::create_directories(engine_folder_path);
       }
-
       CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
       auto local_path = engine_folder_path / asset.name;
       auto downloadTask{
@@ -549,7 +548,11 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
   auto installed_engines = GetInstalledEngineVariants(ne);
 
+  CLI_LOG("IsEngineVariantReady: " << ne << ", " << normalized_version << ", "
+                                   << variant);
   for (const auto& installed_engine : installed_engines) {
+    CLI_LOG("Installed: name: " + installed_engine.name +
+            ", version: " + installed_engine.version);
     if (installed_engine.name == variant &&
         installed_engine.version == normalized_version) {
       return true;

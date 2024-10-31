@@ -82,10 +82,6 @@ class EngineService {
   std::unordered_map<std::string, EngineInfo> engines_{};
 
  public:
-  constexpr static auto kIncompatible = "Incompatible";
-  constexpr static auto kReady = "Ready";
-  constexpr static auto kNotInstalled = "Not Installed";
-
   const std::vector<std::string_view> kSupportEngines = {
       kLlamaEngine, kOnnxEngine, kTrtLlmEngine};
 
@@ -112,8 +108,8 @@ class EngineService {
    * If no variant provided, automatically pick the best variant.
    */
   cpp::result<void, std::string> InstallEngineAsyncV2(
-      const std::string& engine, const std::string& version = "latest",
-      const std::string& variant_name = "");
+      const std::string& engine, const std::string& version,
+      const std::optional<std::string> variant_name);
 
   cpp::result<bool, std::string> UninstallEngineVariant(
       const std::string& engine, const std::string& variant,
@@ -162,8 +158,8 @@ class EngineService {
       bool async = false);
 
   cpp::result<void, std::string> DownloadEngineV2(
-      const std::string& engine, const std::string& variant,
-      const std::string& version = "latest", bool async = false);
+      const std::string& engine, const std::string& version = "latest",
+      const std::optional<std::string> variant_name = std::nullopt);
 
   cpp::result<bool, std::string> DownloadCuda(const std::string& engine,
                                               bool async = false);

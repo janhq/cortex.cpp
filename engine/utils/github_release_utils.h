@@ -23,8 +23,10 @@ struct GitHubAsset {
 
   std::string updated_at;
   std::string browser_download_url;
+  std::string version;
 
-  static GitHubAsset FromJson(const Json::Value& json) {
+  static GitHubAsset FromJson(const Json::Value& json,
+                              const std::string& version) {
     return GitHubAsset{
         .url = json["url"].asString(),
         .id = json["id"].asInt(),
@@ -38,6 +40,7 @@ struct GitHubAsset {
         .created_at = json["created_at"].asString(),
         .updated_at = json["updated_at"].asString(),
         .browser_download_url = json["browser_download_url"].asString(),
+        .version = version,
     };
   }
 
@@ -55,6 +58,7 @@ struct GitHubAsset {
     root["created_at"] = created_at;
     root["updated_at"] = updated_at;
     root["browser_download_url"] = browser_download_url;
+    root["version"] = version;
     return root;
   }
 
@@ -93,7 +97,7 @@ struct GitHubRelease {
     std::vector<GitHubAsset> assets = {};
     if (json["assets"].isArray()) {
       for (const auto& asset : json["assets"]) {
-        assets.push_back(GitHubAsset::FromJson(asset));
+        assets.push_back(GitHubAsset::FromJson(asset, json["name"].asString()));
       }
     }
 

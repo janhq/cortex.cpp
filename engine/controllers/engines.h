@@ -12,8 +12,8 @@ class Engines : public drogon::HttpController<Engines, false> {
  public:
   METHOD_LIST_BEGIN
 
-  // TODO: update this API
-  // METHOD_ADD(Engines::InstallEngine, "/install/{1}", Post);
+  METHOD_ADD(Engines::InstallEngineVariant, "/{1}?version={2}&variant={3}",
+             Post);
   METHOD_ADD(Engines::UninstallEngine, "/{1}/{2}/{3}", Delete);
   METHOD_ADD(Engines::ListEngine, "", Get);
 
@@ -30,17 +30,12 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::LoadEngine, "/{1}/load", Post);
   METHOD_ADD(Engines::UnloadEngine, "/{1}/load", Delete);
 
-  ADD_METHOD_TO(Engines::InstallEngine, "/v1/engines/install/{1}", Post);
   ADD_METHOD_TO(Engines::UninstallEngine, "/v1/engines/{1}/{2}/{3}", Delete);
 
   METHOD_LIST_END
 
   explicit Engines(std::shared_ptr<EngineService> engine_service)
       : engine_service_{engine_service} {}
-
-  void InstallEngine(const HttpRequestPtr& req,
-                     std::function<void(const HttpResponsePtr&)>&& callback,
-                     const std::string& engine);
 
   void ListEngine(const HttpRequestPtr& req,
                   std::function<void(const HttpResponsePtr&)>&& callback) const;
@@ -62,8 +57,8 @@ class Engines : public drogon::HttpController<Engines, false> {
   void InstallEngineVariant(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback,
-      const std::string& engine, const std::string& version,
-      const std::string& variant_name);
+      const std::string& engine, const std::optional<std::string> version,
+      const std::optional<std::string> variant_name);
 
   void GetEnginesInstalledVariants(
       const HttpRequestPtr& req,

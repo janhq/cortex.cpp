@@ -24,11 +24,12 @@ inline cpp::result<std::string, std::string> GetVariantFromNameAndVersion(
   if (engine.empty()) {
     return cpp::fail("Engine name is empty");
   }
+  auto nv = string_utils::RemoveSubstring(version, "v");
   using namespace string_utils;
   auto removed_extension = RemoveSubstring(engine_file_name, ".tar.gz");
   auto version_and_variant = RemoveSubstring(removed_extension, engine + "-");
 
-  auto variant = RemoveSubstring(version_and_variant, version + "-");
+  auto variant = RemoveSubstring(version_and_variant, nv + "-");
   return variant;
 }
 

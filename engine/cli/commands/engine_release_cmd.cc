@@ -72,7 +72,9 @@ cpp::result<void, std::string> EngineReleaseCmd::Exec(
   github_release_utils::GitHubAsset selected_asset;
   for (const auto& asset : selected_release["assets"]) {
     if (asset["name"] == variant_selection) {
-      selected_asset = github_release_utils::GitHubAsset::FromJson(asset);
+      auto version = string_utils::RemoveSubstring(selection.value(), "v");
+      selected_asset =
+          github_release_utils::GitHubAsset::FromJson(asset, version);
       break;
     }
   }

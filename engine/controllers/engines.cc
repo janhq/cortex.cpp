@@ -20,42 +20,6 @@ std::string NormalizeEngine(const std::string& engine) {
 };
 }  // namespace
 
-void Engines::InstallEngine(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine) {
-
-  if (engine.empty()) {
-    Json::Value res;
-    res["message"] = "Engine name is required";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(k409Conflict);
-    callback(resp);
-    LOG_WARN << "No engine field in path param";
-    return;
-  }
-
-  std::string version = "latest";
-  if (auto o = req->getJsonObject(); o) {
-    version = (*o).get("version", "latest").asString();
-  }
-
-  auto result = engine_service_->InstallEngineAsync(engine, version);
-  if (result.has_error()) {
-    Json::Value res;
-    res["message"] = result.error();
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-  } else {
-    Json::Value res;
-    res["message"] = "Engine " + engine + " starts installing!";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(k200OK);
-    callback(resp);
-  }
-}
-
 void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
@@ -167,20 +131,12 @@ void Engines::GetEngineVariants(
 void Engines::InstallEngineVariant(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine, const std::string& version,
-    const std::string& variant_name) {
+    const std::string& engine, const std::optional<std::string> version,
+    const std::optional<std::string> variant_name) {
+  auto normalized_version = version.value_or("latest");
 
-  if (version.empty() || variant_name.empty()) {
-    Json::Value ret;
-    ret["result"] = "Bad Request";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-    return;
-  }
-
-  auto result =
-      engine_service_->InstallEngineAsyncV2(engine, version, variant_name);
+  auto result = engine_service_->InstallEngineAsyncV2(
+      engine, normalized_version, variant_name);
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();
