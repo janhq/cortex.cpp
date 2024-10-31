@@ -18,7 +18,6 @@
     "sqlitecpp",
     "trantor",
     "indicators",
-    "lfreist-hwinfo",
-    "fmt"
+    "lfreist-hwinfo"
   ]
 }
