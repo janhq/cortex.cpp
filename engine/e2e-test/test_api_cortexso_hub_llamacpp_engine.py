@@ -1,6 +1,7 @@
 import pytest
 import requests
 import os
+import yaml
 
 from pathlib import Path
 from test_runner import (
@@ -28,35 +29,36 @@ def get_repos_in_collection(collection_id, token):
         print("Error fetching repos:", response.status_code, response.json())
         return []
 
-def get_repo_branches(repo_id, token):
-    # API endpoint to get list of branches for each repo
-    url = f"https://huggingface.co/api/models/{repo_id}/refs"
+def get_repo_default_branch(repo_id, token):
+    # Direct link to metadata.yaml on the main branch
+    url = f"https://huggingface.co/{repo_id}/resolve/main/metadata.yml"
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(url, headers=headers)
 
-    # Check response and get the gguf branch
+    # Check response and retrieve the 'default' field value
     if response.status_code == 200:
-        branches = response.json()["branches"]
-        return [branch['name'] for branch in branches if branch['name'] == 'gguf']
+        # Read YAML content from response text
+        metadata = yaml.safe_load(response.text)
+        return metadata.get("default")
     else:
-        print(f"Error fetching branches for {repo_id}:", response.status_code, response.json())
-        return []
+        print(f"Error fetching metadata for {repo_id}:", response.status_code, response.json())
+        return None
 
-def get_all_repos_and_default_branches_gguf(collection_id, token):
+def get_all_repos_and_default_branches_from_metadata(collection_id, token):
     # Get list of repos from the collection
     repos = get_repos_in_collection(collection_id, token)
     combined_list = []
 
-    # Iterate over each repo and fetch branches
+    # Iterate over each repo and fetch the default branch from metadata
     for repo_id in repos:
-        branches = get_repo_branches(repo_id, token)
-        for branch in branches:
-            combined_list.append(f"{repo_id.split('/')[1]}:{branch}")
+        default_branch = get_repo_default_branch(repo_id, token)
+        if default_branch and "gguf" in default_branch:
+            combined_list.append(f"{repo_id.split('/')[1]}:{default_branch}")
 
     return combined_list
 
 #Call the function and print the results
-repo_branches = get_all_repos_and_default_branches_gguf(collection_id, token)
+repo_branches = get_all_repos_and_default_branches_from_metadata(collection_id, token)
 
 class TestCortexsoModels:
 
