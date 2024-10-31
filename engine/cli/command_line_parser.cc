@@ -326,21 +326,6 @@ void CommandLineParser::SetupEngineCommands() {
                  std::stoi(cml_data_.config.apiServerPort));
   });
 
-  auto installv2_cmd = engines_cmd->add_subcommand("release", "Install engine");
-  installv2_cmd->group(kSubcommands);
-  installv2_cmd->callback([this, installv2_cmd] {
-    if (std::exchange(executed_, true))
-      return;
-    if (installv2_cmd->get_subcommands().empty()) {
-      CLI_LOG("[engine_name] is required\n");
-      CLI_LOG(installv2_cmd->help());
-    }
-  });
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineInstallV2(installv2_cmd, engine_name);
-  }
-
   auto install_cmd = engines_cmd->add_subcommand("install", "Install engine");
   install_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                      " engines install [engine_name] [options]");
