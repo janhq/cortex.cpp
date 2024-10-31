@@ -5,6 +5,8 @@
 
 #include "hwinfo/hwinfo.h"
 #if defined(__APPLE__) && defined(__MACH__)
+#include <mach/host_info.h>
+#include <mach/mach_host.h>
 #include <sys/sysctl.h>
 #endif
 
