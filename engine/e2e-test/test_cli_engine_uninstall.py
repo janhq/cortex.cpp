@@ -12,7 +12,7 @@ class TestCliEngineUninstall:
             raise Exception("Failed to start server")
 
         # Preinstall llamacpp engine
-        run("Install Engine", ["engines", "install", "llama-cpp"],timeout = None)
+        run("Install Engine", ["engines", "install", "llama-cpp"],timeout = None, capture = False)
 
         yield
 

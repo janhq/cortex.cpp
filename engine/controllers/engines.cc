@@ -20,7 +20,11 @@ void Engines::InstallEngine(
     return;
   }
 
-  auto version{"latest"};
+  std::string version = "latest";
+  if (auto o = req->getJsonObject(); o) {
+    version = (*o).get("version", "latest").asString();
+  }
+
   auto result = engine_service_->InstallEngineAsync(engine, version);
   if (result.has_error()) {
     Json::Value res;

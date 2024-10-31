@@ -275,7 +275,7 @@ const config: Config = {
         route: "/api-reference",
         configuration: {
           spec: {
-            url: "/openapi/jan.json",
+            url: "/openapi/cortex.json",
           },
           hideModels: true,
         },
@@ -410,6 +410,7 @@ const config: Config = {
       items: [
         { to: "/models", label: "Models", position: "left" },
         { to: "/changelog", label: "Changelog", position: "left" },
+        { to: "/contact", label: "Enterprise", position: "left" },
         {
           type: "doc",
           position: "right",

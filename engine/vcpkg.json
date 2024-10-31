@@ -16,6 +16,7 @@
     "tabulate",
     "eventpp",
     "sqlitecpp",
-    "trantor"
+    "trantor",
+    "indicators"
   ]
 }

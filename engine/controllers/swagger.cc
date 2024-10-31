@@ -5,7 +5,7 @@ constexpr auto ScalarUi = R"(
 <!doctype html>
 <html>
   <head>
-    <title>Scalar API Reference</title>
+    <title>Cortex API Reference</title>
     <meta charset="utf-8" />
     <meta
       name="viewport"
