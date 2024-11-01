@@ -75,6 +75,16 @@ cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
   auto ne = NormalizeEngine(engine);
   CTL_INF("InstallEngineAsyncV2: " << ne << ", " << version << ", "
                                    << variant_name.value_or(""));
+  auto os = hw_inf_.sys_inf->os;
+  CTL_INF("os: " << os);
+  CTL_INF("kMacOs: " << kMacOs);
+  if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
+    return cpp::fail("Engine " + ne + " is not supported on macOS");
+  }
+
+  if (os == kLinuxOs && ne == kOnnxRepo) {
+    return cpp::fail("Engine " + ne + " is not supported on Linux");
+  }
 
   auto result = DownloadEngineV2(ne, version, variant_name);
   if (result.has_error()) {
@@ -570,14 +580,18 @@ cpp::result<bool, std::string> EngineService::IsEngineVariantReady(
   auto ne = NormalizeEngine(engine);
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
   auto installed_engines = GetInstalledEngineVariants(ne);
+  if (installed_engines.has_error()) {
+    return cpp::fail(installed_engines.error());
+  }
 
   CLI_LOG("IsEngineVariantReady: " << ne << ", " << normalized_version << ", "
                                    << variant);
-  for (const auto& installed_engine : installed_engines) {
+  for (const auto& installed_engine : installed_engines.value()) {
     CLI_LOG("Installed: name: " + installed_engine.name +
             ", version: " + installed_engine.version);
     if (installed_engine.name == variant &&
-        installed_engine.version == normalized_version) {
+            installed_engine.version == normalized_version ||
+        installed_engine.version == "v" + normalized_version) {
       return true;
     }
   }
@@ -608,9 +622,18 @@ EngineService::GetDefaultEngineVariant(const std::string& engine) {
   };
 }
 
-std::vector<EngineVariantResponse> EngineService::GetInstalledEngineVariants(
-    const std::string& engine) const {
+cpp::result<std::vector<EngineVariantResponse>, std::string>
+EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   auto ne = NormalizeEngine(engine);
+  auto os = hw_inf_.sys_inf->os;
+  if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
+    return cpp::fail("Engine " + engine + " is not supported on macOS");
+  }
+
+  if (os == kLinuxOs && ne == kOnnxRepo) {
+    return cpp::fail("Engine " + engine + " is not supported on Linux");
+  }
+
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
 
@@ -635,7 +658,7 @@ std::vector<EngineVariantResponse> EngineService::GetInstalledEngineVariants(
           auto node = YAML::LoadFile(version_txt_path.string());
           auto ev = EngineVariantResponse{
               .name = node["name"].as<std::string>(),
-              .version = node["version"].as<std::string>(),
+              .version = "v" + node["version"].as<std::string>(),
               .engine = engine,
           };
           variants.push_back(ev);
@@ -816,7 +839,6 @@ EngineService::GetLatestEngineVersion(const std::string& engine) const {
 cpp::result<bool, std::string> EngineService::IsEngineReady(
     const std::string& engine) const {
   auto ne = NormalizeEngine(engine);
-  auto installed_variants = GetInstalledEngineVariants(engine);
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
@@ -826,8 +848,12 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   if (os == kLinuxOs && ne == kOnnxRepo) {
     return cpp::fail("Engine " + engine + " is not supported on Linux");
   }
+  auto installed_variants = GetInstalledEngineVariants(engine);
+  if (installed_variants.has_error()) {
+    return cpp::fail(installed_variants.error());
+  }
 
-  return installed_variants.size() > 0;
+  return installed_variants->size() > 0;
 }
 
 cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
@@ -856,7 +882,7 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   auto installed_variants = GetInstalledEngineVariants(ne);
 
   bool latest_version_installed = false;
-  for (const auto& v : installed_variants) {
+  for (const auto& v : installed_variants.value()) {
     CTL_INF("Installed version: " + v.version);
     CTL_INF(json_helper::DumpJsonString(v.ToJson()));
     if (default_variant->variant == v.name &&

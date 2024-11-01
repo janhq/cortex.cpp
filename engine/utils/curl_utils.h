@@ -65,8 +65,7 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url) {
   if (http_code >= 400) {
     CTL_ERR("HTTP request failed with status code: " +
             std::to_string(http_code));
-    return cpp::fail("API request failed: " +
-                     static_cast<std::string>(curl_easy_strerror(res)));
+    return cpp::fail(readBuffer);
   }
 
   return readBuffer;
@@ -117,8 +116,7 @@ inline cpp::result<std::string, std::string> SimplePost(
   if (http_code >= 400) {
     CTL_ERR("HTTP request failed with status code: " +
             std::to_string(http_code));
-    return cpp::fail("API request failed: " +
-                     static_cast<std::string>(curl_easy_strerror(res)));
+    return cpp::fail(readBuffer);
   }
 
   return readBuffer;

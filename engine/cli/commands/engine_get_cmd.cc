@@ -35,7 +35,14 @@ void EngineGetCmd::Exec(const std::string& host, int port,
   };
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {
-    CTL_ERR(result.error());
+    // TODO: refactor this
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(result.error(), root)) {
+      CLI_LOG(result.error());
+      return;
+    }
+    CLI_LOG(root["message"].asString());
     return;
   }
 

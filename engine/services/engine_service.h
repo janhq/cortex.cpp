@@ -128,8 +128,8 @@ class EngineService {
   cpp::result<DefaultEngineVariant, std::string> GetDefaultEngineVariant(
       const std::string& engine);
 
-  std::vector<EngineVariantResponse> GetInstalledEngineVariants(
-      const std::string& engine) const;
+  cpp::result<std::vector<EngineVariantResponse>, std::string>
+  GetInstalledEngineVariants(const std::string& engine) const;
 
   bool IsEngineLoaded(const std::string& engine) const;
 

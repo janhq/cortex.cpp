@@ -29,8 +29,11 @@ void Engines::ListEngine(
   for (const auto& engine : supported_engines) {
     auto installed_engines =
         engine_service_->GetInstalledEngineVariants(engine);
+    if (installed_engines.has_error()) {
+      continue;
+    }
     Json::Value variants(Json::arrayValue);
-    for (const auto& variant : installed_engines) {
+    for (const auto& variant : installed_engines.value()) {
       variants.append(variant.ToJson());
     }
     ret[engine] = variants;
@@ -157,8 +160,16 @@ void Engines::GetInstalledEngineVariants(
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {
   auto result = engine_service_->GetInstalledEngineVariants(engine);
+  if (result.has_error()) {
+    Json::Value res;
+    res["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
   Json::Value releases(Json::arrayValue);
-  for (const auto& variant : result) {
+  for (const auto& variant : result.value()) {
     releases.append(variant.ToJson());
   }
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);

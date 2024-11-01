@@ -9,6 +9,14 @@ namespace commands {
 bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& version,
                             const std::string& src) {
+  // Start server if server is not started yet
+  if (!commands::IsServerAlive(host_, port_)) {
+    CLI_LOG("Starting server ...");
+    commands::ServerStartCmd ssc;
+    if (!ssc.Exec(host_, port_)) {
+      return false;
+    }
+  }
   // Handle local install, if fails, fallback to remote install
   if (!src.empty()) {
     auto res = engine_service_.UnzipEngine(engine, version, src);
@@ -23,20 +31,12 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   }
 
   if (show_menu_) {
-    // Start server if server is not started yet
-    if (!commands::IsServerAlive(host_, port_)) {
-      CLI_LOG("Starting server ...");
-      commands::ServerStartCmd ssc;
-      if (!ssc.Exec(host_, port_)) {
-        return false;
-      }
-    }
-
     DownloadProgress dp;
     dp.Connect(host_, port_);
     // engine can be small, so need to start ws first
-    auto dp_res = std::async(std::launch::deferred,
-                             [&dp, &engine] { return dp.Handle(engine); });
+    auto dp_res = std::async(std::launch::deferred, [&dp, &engine] {
+      return dp.Handle(DownloadType::Engine);
+    });
     CLI_LOG("Validating download items, please wait..")
 
     auto versions_url = url_parser::Url{
@@ -118,7 +118,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
 
     bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
     if (check_cuda_download) {
-      if (!dp.Handle("cuda"))
+      if (!dp.Handle(DownloadType::CudaToolkit))
         return false;
     }
 
@@ -130,10 +130,8 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   DownloadProgress dp;
   dp.Connect(host_, port_);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred, [&dp] {
-    return dp.Handle(DownloadType::Engine);
-  });
-  CLI_LOG("Validating download items, please wait..")
+  auto dp_res = std::async(std::launch::deferred,
+                           [&dp] { return dp.Handle(DownloadType::Engine); });
 
   auto install_url = url_parser::Url{
       .protocol = "http",
@@ -146,11 +144,24 @@ bool EngineInstallCmd::Exec(const std::string& engine,
           },
   };
 
+  if (!version.empty()) {
+    install_url.queries = {{"version", version}};
+  }
+
   auto response = curl_utils::SimplePostJson(install_url.ToFullPath());
   if (response.has_error()) {
-    CTL_ERR(response.error());
+    // TODO: namh refactor later
+    Json::Value root;
+    Json::Reader reader;
+    if (!reader.parse(response.error(), root)) {
+      CLI_LOG(response.error());
+      return false;
+    }
+    CLI_LOG(root["message"].asString());
     return false;
   }
+
+  CLI_LOG("Validating download items, please wait..")
 
   if (!dp_res.get())
     return false;

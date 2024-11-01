@@ -23,8 +23,9 @@ bool EngineUpdateCmd::Exec(const std::string& host, int port,
   DownloadProgress dp;
   dp.Connect(host, port);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred,
-                           [&dp, &engine] { return dp.Handle(engine); });
+  auto dp_res = std::async(std::launch::deferred, [&dp, &engine] {
+    return dp.Handle(DownloadType::Engine);
+  });
   CLI_LOG("Validating download items, please wait..")
 
   auto update_url = url_parser::Url{
@@ -43,7 +44,7 @@ bool EngineUpdateCmd::Exec(const std::string& host, int port,
 
   bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
   if (check_cuda_download) {
-    if (!dp.Handle("cuda"))
+    if (!dp.Handle(DownloadType::CudaToolkit))
       return false;
   }
 

@@ -1,10 +1,9 @@
-import os
 import platform
 import tempfile
-from pathlib import Path
 
 import pytest
-from test_runner import run
+import requests
+from test_runner import run, start_server, stop_server
 
 
 class TestCliEngineInstall:
@@ -26,10 +25,8 @@ class TestCliEngineInstall:
             timeout=None,
             capture=False,
         )
-        root = Path.home()
-        assert os.path.exists(
-            root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt"
-        )
+        response = requests.get("http://127.0.0.1:3928/v1/engines/llama-cpp")
+        assert len(response.json()) > 0
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
@@ -37,7 +34,7 @@ class TestCliEngineInstall:
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "onnxruntime"]
         )
-        assert "No variant found" in output, "Should display error message"
+        assert "is not supported on" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
@@ -45,20 +42,28 @@ class TestCliEngineInstall:
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "tensorrt-llm"]
         )
-        assert "No variant found" in output, "Should display error message"
+        assert "is not supported on" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     def test_engines_install_pre_release_llamacpp(self):
+        engine_version = "v0.1.29"
         exit_code, output, error = run(
             "Install Engine",
-            ["engines", "install", "llama-cpp", "-v", "v0.1.29"],
+            ["engines", "install", "llama-cpp", "-v", engine_version],
             timeout=None,
             capture=False,
         )
-        root = Path.home()
-        assert os.path.exists(
-            root / "cortexcpp" / "engines" / "cortex.llamacpp" / "version.txt"
-        )
+        response = requests.get("http://127.0.0.1:3928/v1/engines/llama-cpp")
+        assert len(response.json()) > 0
+        is_engine_version_exist = False
+        for item in response.json():
+            # Check if 'version' key exists and matches target
+            if "version" in item and item["version"] == engine_version:
+                is_engine_version_exist = True
+                break
+
+        # loop through all the installed response, expect we find
+        assert is_engine_version_exist, f"Engine version {engine_version} is not found"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
@@ -67,7 +72,9 @@ class TestCliEngineInstall:
             ["engines", "install", "llama-cpp", "-s", tempfile.gettempdir()],
             timeout=None,
         )
-        assert "Start downloading" in output, "Should display downloading message"
+        # response = requests.get("http://127.0.0.1:3928/v1/engines/llama-cpp")
+        # assert len(response.json()) > 0
+        assert "downloaded successfully" in output
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
     def test_engines_should_not_perform_with_dummy_path(self):
