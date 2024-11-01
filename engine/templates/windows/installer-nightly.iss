@@ -36,7 +36,7 @@ Filename: "{app}\cortex-nightly.exe"; Parameters: "stop"; StatusMsg: "Stopping c
 procedure AddToUserPathAndInstallEngines;
 var
   ExpandedAppDir: String;
-  CmdLine, CortexInstallCmd: String;
+  CmdLine, CortexInstallCmd, CortexStopServerCmd: String;
   ResultCode: Integer;
   i: Integer;
   SkipPostInstall: Boolean;

@@ -36,7 +36,7 @@ Filename: "{app}\cortex.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp
 procedure AddToUserPathAndInstallEngines;
 var
   ExpandedAppDir: String;
-  CmdLine, CortexInstallCmd: String;
+  CmdLine, CortexInstallCmd, CortexStopServerCmd: String;
   ResultCode: Integer;
   i: Integer;
   SkipPostInstall: Boolean;

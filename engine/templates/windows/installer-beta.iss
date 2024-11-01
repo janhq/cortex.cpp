@@ -36,7 +36,7 @@ Filename: "{app}\cortex-beta.exe"; Parameters: "stop"; StatusMsg: "Stopping cort
 procedure AddToUserPathAndInstallEngines;
 var
   ExpandedAppDir: String;
-  CmdLine, CortexInstallCmd: String;
+  CmdLine, CortexInstallCmd, CortexStopServerCmd: String;
   ResultCode: Integer;
   i: Integer;
   SkipPostInstall: Boolean;
