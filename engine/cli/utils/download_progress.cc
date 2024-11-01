@@ -4,10 +4,23 @@
 #include "common/event.h"
 #include "indicators/dynamic_progress.hpp"
 #include "indicators/progress_bar.hpp"
+#include "utils/engine_constants.h"
 #include "utils/format_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 
+namespace {
+std::string Repo2Engine(const std::string& r) {
+  if (r == kLlamaRepo) {
+    return kLlamaEngine;
+  } else if (r == kOnnxRepo) {
+    return kOnnxEngine;
+  } else if (r == kTrtLlmRepo) {
+    return kTrtLlmEngine;
+  }
+  return r;
+};
+}  // namespace
 bool DownloadProgress::Connect(const std::string& host, int port) {
   if (ws_) {
     CTL_INF("Already connected!");
@@ -21,14 +34,16 @@ bool DownloadProgress::Connect(const std::string& host, int port) {
   return true;
 }
 
-bool DownloadProgress::Handle(const std::string& id) {
+bool DownloadProgress::Handle(const DownloadType& event_type) {
   assert(!!ws_);
+  std::unordered_map<std::string, uint64_t> totals;
   status_ = DownloadStatus::DownloadStarted;
   std::unique_ptr<indicators::DynamicProgress<indicators::ProgressBar>> bars;
 
   std::vector<std::unique_ptr<indicators::ProgressBar>> items;
   indicators::show_console_cursor(false);
-  auto handle_message = [this, &bars, &items, id](const std::string& message) {
+  auto handle_message = [this, &bars, &items, &totals,
+                         event_type](const std::string& message) {
     CTL_INF(message);
 
     auto pad_string = [](const std::string& str,
@@ -48,8 +63,8 @@ bool DownloadProgress::Handle(const std::string& id) {
 
     auto ev = cortex::event::GetDownloadEventFromJson(
         json_helper::ParseJsonString(message));
-    // Ignore other task ids
-    if (ev.download_task_.id != id) {
+    // Ignore other task type
+    if (ev.download_task_.type != event_type) {
       return;
     }
 
@@ -61,7 +76,7 @@ bool DownloadProgress::Handle(const std::string& id) {
             indicators::option::BarWidth{50}, indicators::option::Start{"["},
             indicators::option::Fill{"="}, indicators::option::Lead{">"},
             indicators::option::End{"]"},
-            indicators::option::PrefixText{pad_string(i.id)},
+            indicators::option::PrefixText{pad_string(Repo2Engine(i.id))},
             indicators::option::ForegroundColor{indicators::Color::white},
             indicators::option::ShowRemainingTime{true}));
         bars->push_back(*(items.back()));
@@ -70,24 +85,30 @@ bool DownloadProgress::Handle(const std::string& id) {
     for (int i = 0; i < ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
       uint64_t downloaded = it.downloadedBytes.value_or(0);
-      uint64_t total = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
-      if (ev.type_ == DownloadStatus::DownloadUpdated) {
+      if (totals.find(it.id) == totals.end()) {
+        totals[it.id] = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+        CTL_INF("Updated " << it.id << " - total: " << totals[it.id]);
+      }
+
+      if (ev.type_ == DownloadStatus::DownloadStarted ||
+          ev.type_ == DownloadStatus::DownloadUpdated) {
         (*bars)[i].set_option(indicators::option::PrefixText{
-            pad_string(it.id) +
-            std::to_string(int(static_cast<double>(downloaded) / total * 100)) +
+            pad_string(Repo2Engine(it.id)) +
+            std::to_string(
+                int(static_cast<double>(downloaded) / totals[it.id] * 100)) +
             '%'});
         (*bars)[i].set_progress(
-            int(static_cast<double>(downloaded) / total * 100));
+            int(static_cast<double>(downloaded) / totals[it.id] * 100));
         (*bars)[i].set_option(indicators::option::PostfixText{
             format_utils::BytesToHumanReadable(downloaded) + "/" +
-            format_utils::BytesToHumanReadable(total)});
+            format_utils::BytesToHumanReadable(totals[it.id])});
       } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
         (*bars)[i].set_progress(100);
-        auto total_str = format_utils::BytesToHumanReadable(total);
+        auto total_str = format_utils::BytesToHumanReadable(totals[it.id]);
         (*bars)[i].set_option(
             indicators::option::PostfixText{total_str + "/" + total_str});
-        (*bars)[i].set_option(
-            indicators::option::PrefixText{pad_string(it.id) + "100%"});
+        (*bars)[i].set_option(indicators::option::PrefixText{
+            pad_string(Repo2Engine(it.id)) + "100%"});
         (*bars)[i].set_progress(100);
 
         CTL_INF("Download success");
