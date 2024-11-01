@@ -90,6 +90,8 @@ jobs:
         pull-requests: write
       runs-on: ubuntu-latest
       steps:
+        - name: Getting the repo
+          uses: actions/checkout@v4
         - name: set release to prerelease
           run: |
             gh release edit v${{ needs.get-update-version.outputs.new_version }} --draft=false --prerelease
