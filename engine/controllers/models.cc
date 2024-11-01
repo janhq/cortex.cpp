@@ -33,12 +33,19 @@ void Models::PullModel(const HttpRequestPtr& req,
     desired_model_id = id;
   }
 
+  std::optional<std::string> desired_model_name = std::nullopt;
+  auto name_value = (*(req->getJsonObject())).get("name", "").asString();
+
+  if (!name_value.empty()) {
+    desired_model_name = name_value;
+  }
+
   auto handle_model_input =
       [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleDownloadUrlAsync(model_handle,
-                                                    desired_model_id);
+      return model_service_->HandleDownloadUrlAsync(
+          model_handle, desired_model_id, desired_model_name);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
       return model_service_->DownloadModelFromCortexsoAsync(
@@ -312,6 +319,7 @@ void Models::ImportModel(
   }
   auto modelHandle = (*(req->getJsonObject())).get("model", "").asString();
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
+  auto modelName = (*(req->getJsonObject())).get("name", "").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   cortex::db::Models modellist_utils_obj;
@@ -333,6 +341,7 @@ void Models::ImportModel(
     config::ModelConfig model_config = gguf_handler.GetModelConfig();
     model_config.files.push_back(modelPath);
     model_config.model = modelHandle;
+    model_config.name = modelName.empty() ? model_config.name : modelName;
     yaml_handler.UpdateModelConfig(model_config);
 
     if (modellist_utils_obj.AddModelEntry(model_entry).value()) {

@@ -1,3 +1,5 @@
+import asyncio
+import json
 import platform
 import queue
 import select
@@ -5,6 +7,8 @@ import subprocess
 import threading
 import time
 from typing import List
+
+import websockets
 
 # You might want to change the path of the executable based on your build directory
 executable_windows_path = "build\\cortex.exe"
@@ -161,3 +165,25 @@ def start_server_windows() -> bool:
 # Stop the API server
 def stop_server():
     run("Stop server", ["stop"])
+
+
+async def wait_for_websocket_download_success_event(timeout: float = 30):
+    if platform.system() == 'Windows':
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    async with websockets.connect("ws://127.0.0.1:3928/events") as websocket:
+        try:
+            # Using wait_for instead of timeout context manager
+            async def receive_until_success():
+                while True:
+                    message = await websocket.recv()
+                    try:
+                        event = json.loads(message)
+                        if event.get("type") == "DownloadSuccess":
+                            return event
+                    except json.JSONDecodeError:
+                        continue
+
+            return await asyncio.wait_for(receive_until_success(), timeout)
+
+        except asyncio.TimeoutError:
+            raise TimeoutError("Timeout waiting for DownloadSuccess event")
