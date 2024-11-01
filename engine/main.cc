@@ -103,11 +103,14 @@ void RunServer(std::optional<int> port) {
   auto pm_ctl = std::make_shared<ProcessManager>();
   auto server_ctl = std::make_shared<inferences::server>(inference_svc);
 
-  drogon::app().registerController(engine_ctl);
+    drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
   drogon::app().registerController(pm_ctl);
   drogon::app().registerController(server_ctl);
+
+  auto upload_path = std::filesystem::temp_directory_path() / "cortex-uploads";
+  drogon::app().setUploadPath(upload_path.string());
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
