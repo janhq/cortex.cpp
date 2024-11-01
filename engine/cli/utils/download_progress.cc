@@ -4,10 +4,10 @@
 #include "common/event.h"
 #include "indicators/dynamic_progress.hpp"
 #include "indicators/progress_bar.hpp"
+#include "utils/engine_constants.h"
 #include "utils/format_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
-#include "utils/engine_constants.h"
 
 namespace {
 std::string Repo2Engine(const std::string& r) {
@@ -107,8 +107,8 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
         auto total_str = format_utils::BytesToHumanReadable(totals[it.id]);
         (*bars)[i].set_option(
             indicators::option::PostfixText{total_str + "/" + total_str});
-        (*bars)[i].set_option(
-            indicators::option::PrefixText{pad_string(Repo2Engine(it.id)) + "100%"});
+        (*bars)[i].set_option(indicators::option::PrefixText{
+            pad_string(Repo2Engine(it.id)) + "100%"});
         (*bars)[i].set_progress(100);
 
         CTL_INF("Download success");

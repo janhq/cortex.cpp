@@ -35,8 +35,9 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   DownloadProgress dp;
   dp.Connect(host_, port_);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred,
-                           [&dp, &engine] { return dp.Handle(DownloadType::Engine); });
+  auto dp_res = std::async(std::launch::deferred, [&dp, &engine] {
+    return dp.Handle(DownloadType::Engine);
+  });
   CLI_LOG("Validating download items, please wait..")
 
   httplib::Client cli(host_ + ":" + std::to_string(port_));
