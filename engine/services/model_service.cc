@@ -17,7 +17,8 @@
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
-               std::optional<std::string> author) {
+               std::optional<std::string> author,
+               std::optional<std::string> name) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
@@ -32,6 +33,8 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
       fmu::ToRelativeCortexDataPath(fs::path(ggufDownloadItem.localPath));
   model_config.files = {file_rel_path.string()};
   model_config.model = ggufDownloadItem.id;
+  model_config.name =
+      name.has_value() ? name.value() : gguf_handler.GetModelConfig().name;
   yaml_handler.UpdateModelConfig(model_config);
 
   auto yaml_path{ggufDownloadItem.localPath};
@@ -223,7 +226,8 @@ std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
 }
 
 cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
-    const std::string& url, std::optional<std::string> temp_model_id) {
+    const std::string& url, std::optional<std::string> temp_model_id,
+    std::optional<std::string> temp_name) {
   auto url_obj = url_parser::FromUrlString(url);
 
   if (url_obj.host == kHuggingFaceHost) {
@@ -279,9 +283,9 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
                                      .localPath = local_path,
                                  }}}};
 
-  auto on_finished = [author](const DownloadTask& finishedTask) {
+  auto on_finished = [author, temp_name](const DownloadTask& finishedTask) {
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(gguf_download_item, author);
+    ParseGguf(gguf_download_item, author, temp_name);
   };
 
   downloadTask.id = unique_model_id;
@@ -346,7 +350,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
 
   auto on_finished = [author](const DownloadTask& finishedTask) {
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(gguf_download_item, author);
+    ParseGguf(gguf_download_item, author, std::nullopt);
   };
 
   auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
@@ -770,7 +774,7 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
     auto author{url_obj.pathParams[0]};
     auto model_id{url_obj.pathParams[1]};
     auto file_name{url_obj.pathParams.back()};
-    if (author == "cortexso") {      
+    if (author == "cortexso") {
       return ModelPullInfo{.id = model_id + ":" + url_obj.pathParams[3],
                            .downloaded_models = {},
                            .available_models = {},
@@ -787,8 +791,10 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
     if (parsed.size() != 2) {
       return cpp::fail("Invalid model handle: " + input);
     }
-    return ModelPullInfo{
-        .id = input, .downloaded_models = {}, .available_models = {}, .download_url = input};
+    return ModelPullInfo{.id = input,
+                         .downloaded_models = {},
+                         .available_models = {},
+                         .download_url = input};
   }
 
   if (input.find("/") != std::string::npos) {

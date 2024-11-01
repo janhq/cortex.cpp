@@ -554,6 +554,46 @@
         "tags": ["Models"]
       }
     },
+    "/v1/models/import": {
+      "post": {
+        "operationId": "ModelsController_importModel",
+        "summary": "Import model",
+        "description": "Imports a model from a specified path.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportModelRequest"
+              },
+              "example": {
+                "model": "model-id",
+                "modelPath": "/path/to/gguf",
+                "name": "model display name"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Model is imported successfully!",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportModelResponse"
+                },
+                "example": {
+                  "message": "Model is imported successfully!",
+                  "modelHandle": "model-id",
+                  "result": "OK"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Models"]
+      }
+    },
     "/v1/threads": {
       "post": {
         "operationId": "ThreadsController_create",
@@ -1660,6 +1700,15 @@
                 "value": "my-custom-model-id"
               }
             ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The name which will be used to overwrite the model name.",
+            "examples": [
+              {
+                "value": "my-custom-model-name"
+              }
+            ]
           }
         }
       },
@@ -1802,6 +1851,43 @@
             "description": "A downloaded model name."
           }
         }
+      },
+      "ImportModelRequest": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "The unique identifier of the model."
+          },
+          "modelPath": {
+            "type": "string",
+            "description": "The file path to the model."
+          },
+          "name": {
+            "type": "string",
+            "description": "The display name of the model."
+          }
+        },
+        "required": ["model", "modelPath"]
+      },
+      "ImportModelResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Success message."
+          },
+          "modelHandle": {
+            "type": "string",
+            "description": "The unique identifier of the imported model."
+          },
+          "result": {
+            "type": "string",
+            "description": "Result status.",
+            "example": "OK"
+          }
+        },
+        "required": ["message", "modelHandle", "result"]
       },
       "CommonResponseDto": {
         "type": "object",
