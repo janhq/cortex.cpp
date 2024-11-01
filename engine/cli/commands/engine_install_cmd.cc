@@ -35,8 +35,9 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   DownloadProgress dp;
   dp.Connect(host_, port_);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred,
-                           [&dp, &engine] { return dp.Handle(engine); });
+  auto dp_res = std::async(std::launch::deferred, [&dp] {
+    return dp.Handle(DownloadType::Engine);
+  });
   CLI_LOG("Validating download items, please wait..")
 
   httplib::Client cli(host_ + ":" + std::to_string(port_));
@@ -68,7 +69,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
 
   bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
   if (check_cuda_download) {
-    if (!dp.Handle("cuda"))
+    if (!dp.Handle(DownloadType::CudaToolkit))
       return false;
   }
 

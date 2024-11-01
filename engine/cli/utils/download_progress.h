@@ -10,7 +10,7 @@ class DownloadProgress {
  public:
   bool Connect(const std::string& host, int port);
 
-  bool Handle(const std::string& id);
+  bool Handle(const DownloadType& event_type);
 
   void ForceStop() { force_stop_ = true; }
 
