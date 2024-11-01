@@ -84,6 +84,10 @@ begin
   CortexInstallCmd := Format('"%s\cortex-beta.exe" engines install llama-cpp', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
+  // Stop server
+  CortexStopServerCmd := Format('"%s\cortex-nightly.exe" stop', [ExpandedAppDir]);
+  Exec('cmd.exe', '/C ' + CortexStopServerCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
   // Set the progress bar to 90% after downloading the engine
   WizardForm.ProgressGauge.Position := 90;
   WizardForm.ProgressGauge.Update;
