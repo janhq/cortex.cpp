@@ -1700,6 +1700,15 @@
                 "value": "my-custom-model-id"
               }
             ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The name which will be used to overwrite the model name.",
+            "examples": [
+              {
+                "value": "my-custom-model-name"
+              }
+            ]
           }
         }
       },
