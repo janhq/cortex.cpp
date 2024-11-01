@@ -21,7 +21,7 @@ class TestApiModelPullDirectUrl:
             [
                 "models",
                 "delete",
-                "TheBloke:TinyLlama-1.1B-Chat-v0.3-GGUF:tinyllama-1.1b-chat-v0.3.Q2_K.gguf",
+                "afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf",
             ],
         )
         yield
@@ -32,7 +32,7 @@ class TestApiModelPullDirectUrl:
             [
                 "models",
                 "delete",
-                "TheBloke:TinyLlama-1.1B-Chat-v0.3-GGUF:tinyllama-1.1b-chat-v0.3.Q2_K.gguf",
+                "afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf",
             ],
         )
         stop_server()
@@ -40,18 +40,18 @@ class TestApiModelPullDirectUrl:
     @pytest.mark.asyncio
     async def test_model_pull_with_direct_url_should_be_success(self):
         myobj = {
-            "model": "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/blob/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
+            "model": "https://huggingface.co/afrideva/zephyr-smol_llama-100m-sft-full-GGUF/blob/main/zephyr-smol_llama-100m-sft-full.q2_k.gguf"
         }
         response = requests.post("http://localhost:3928/models/pull", json=myobj)
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
         get_model_response = requests.get(
-            "http://127.0.0.1:3928/models/TheBloke:TinyLlama-1.1B-Chat-v0.3-GGUF:tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
+            "http://127.0.0.1:3928/models/afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf"
         )
         assert get_model_response.status_code == 200
         assert (
             get_model_response.json()["model"]
-            == "TheBloke:TinyLlama-1.1B-Chat-v0.3-GGUF:tinyllama-1.1b-chat-v0.3.Q2_K.gguf"
+            == "afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf"
         )
 
     @pytest.mark.asyncio
