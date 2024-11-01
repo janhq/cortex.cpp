@@ -2,3 +2,4 @@ websockets
 pytest
 pytest-asyncio
 requests
+pyyaml
