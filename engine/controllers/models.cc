@@ -33,12 +33,19 @@ void Models::PullModel(const HttpRequestPtr& req,
     desired_model_id = id;
   }
 
+  std::optional<std::string> desired_model_name = std::nullopt;
+  auto name_value = (*(req->getJsonObject())).get("name", "").asString();
+
+  if (!name_value.empty()) {
+    desired_model_name = name_value;
+  }
+
   auto handle_model_input =
       [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleDownloadUrlAsync(model_handle,
-                                                    desired_model_id);
+      return model_service_->HandleDownloadUrlAsync(
+          model_handle, desired_model_id, desired_model_name);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
       return model_service_->DownloadModelFromCortexsoAsync(
