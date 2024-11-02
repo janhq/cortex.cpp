@@ -39,7 +39,7 @@ class ModelService {
       std::shared_ptr<DownloadService> download_service,
       std::shared_ptr<services::InferenceService> inference_service)
       : download_service_{download_service},
-        inference_svc_(inference_service) {};
+        inference_svc_(inference_service){};
 
   /**
    * Return model id if download successfully
@@ -81,7 +81,8 @@ class ModelService {
   cpp::result<std::string, std::string> HandleUrl(const std::string& url);
 
   cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
-      const std::string& url, std::optional<std::string> temp_model_id);
+      const std::string& url, std::optional<std::string> temp_model_id,
+      std::optional<std::string> temp_name);
 
  private:
   /**

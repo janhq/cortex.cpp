@@ -28,7 +28,7 @@ Cortex is a Local AI API Platform that is used to run and customize LLMs.
 Key Features:
 - Straightforward CLI (inspired by Ollama)
 - Full C++ implementation, packageable into Desktop and Mobile apps
-- Pull from Huggingface of Cortex Built-in Model Library
+- Pull from Huggingface, or Cortex Built-in Models
 - Models stored in universal file formats (vs blobs)
 - Swappable Engines (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp), future: [`ONNXRuntime`](https://github.com/janhq/cortex.onnx), [`TensorRT-LLM`](https://github.com/janhq/cortex.tensorrt-llm))
 - Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
@@ -88,14 +88,14 @@ Refer to our [Quickstart](https://cortex.so/docs/quickstart/) and
 ### API:
 Cortex.cpp includes a REST API accessible at `localhost:39281`.
 
-Refer to our [API documentation](https://cortex.so/api-reference) for more details
+Refer to our [API documentation](https://cortex.so/api-reference) for more details.
 
-## Models & Quantizations
+## Models
 
 Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access. 
 
 Currently Cortex supports pulling from:
-- Hugging Face: GGUF models eg `author/Model-GGUF`
+- [Hugging Face](https://huggingface.co): GGUF models eg `author/Model-GGUF`
 - Cortex Built-in Models 
 
 Once downloaded, the model `.gguf` and `model.yml` files are stored in `~\cortexcpp\models`.
@@ -103,7 +103,7 @@ Once downloaded, the model `.gguf` and `model.yml` files are stored in `~\cortex
 > **Note**:
 > You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
-### Cortex Model Hub & Quantizations
+### Cortex Built-in Models & Quantizations
 
 | Model /Engine  | llama.cpp             | Command                       |
 | -------------- | --------------------- | ----------------------------- |
