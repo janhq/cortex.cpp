@@ -135,7 +135,7 @@ const ModelsPage = () => {
             Cortex has a built-in model collection of popular models.
           </p>
 
-          <Select onValueChange={(value) => handleChange(value)}>
+          {/* <Select onValueChange={(value) => handleChange(value)}>
             <SelectTrigger className="w-[180px] placeholder:text-red-200 font-semibold">
               <SelectValue placeholder="Select a Engine" />
             </SelectTrigger>
@@ -150,7 +150,7 @@ const ModelsPage = () => {
                 ONNX
               </SelectItem>
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
 
         <div className="w-full p-4 lg:p-8">

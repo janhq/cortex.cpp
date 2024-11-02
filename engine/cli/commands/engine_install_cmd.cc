@@ -1,4 +1,5 @@
 #include "engine_install_cmd.h"
+#include <future>
 #include "server_start_cmd.h"
 #include "utils/download_progress.h"
 #include "utils/engine_constants.h"
@@ -31,9 +32,17 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     }
   }
 
+  DownloadProgress dp;
+  dp.Connect(host_, port_);
+  // engine can be small, so need to start ws first
+  auto dp_res = std::async(std::launch::deferred, [&dp] {
+    return dp.Handle(DownloadType::Engine);
+  });
+  CLI_LOG("Validating download items, please wait..")
+
   httplib::Client cli(host_ + ":" + std::to_string(port_));
   Json::Value json_data;
-  json_data["version"] =  version.empty() ? "latest" : version;
+  json_data["version"] = version.empty() ? "latest" : version;
   auto data_str = json_data.toStyledString();
   cli.set_read_timeout(std::chrono::seconds(60));
   auto res = cli.Post("/v1/engines/install/" + engine, httplib::Headers(),
@@ -43,23 +52,24 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     if (res->status != httplib::StatusCode::OK_200) {
       auto root = json_helper::ParseJsonString(res->body);
       CLI_LOG(root["message"].asString());
+      dp.ForceStop();
       return false;
+    } else {
+      CLI_LOG("Start downloading..");
     }
   } else {
     auto err = res.error();
     CTL_ERR("HTTP error: " << httplib::to_string(err));
+    dp.ForceStop();
     return false;
   }
 
-  CLI_LOG("Start downloading ...")
-  DownloadProgress dp;
-  dp.Connect(host_, port_);
-  if (!dp.Handle(engine))
+  if (!dp_res.get())
     return false;
 
   bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
   if (check_cuda_download) {
-    if (!dp.Handle("cuda"))
+    if (!dp.Handle(DownloadType::CudaToolkit))
       return false;
   }
 

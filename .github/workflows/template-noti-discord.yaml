@@ -33,10 +33,13 @@ jobs:
             - Windows:
               - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/windows-amd64/cortex-${{ env.VERSION }}-windows-amd64-network-installer.exe
               - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/windows-amd64/cortex-${{ env.VERSION }}-windows-amd64-local-installer.exe
+              - Binary: https://delta.jan.ai/cortex/v${{ env.VERSION }}/windows-amd64/cortex-nightly.tar.gz
             - macOS Universal:
               - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-universal/cortex-${{ env.VERSION }}-mac-universal-network-installer.pkg
               - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-universal/cortex-${{ env.VERSION }}-mac-universal-local-installer.pkg
+              - Binary: https://delta.jan.ai/cortex/v${{ env.VERSION }}/mac-universal/cortex-nightly.tar.gz
             - Linux Deb:
               - Network Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
               - Local Installer: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
+              - Binary: https://delta.jan.ai/cortex/v${{ env.VERSION }}/linux-amd64/cortex-nightly.tar.gz
             - Github action run: https://github.com/janhq/cortex.cpp/actions/runs/${{ env.RUNNER_ID }}

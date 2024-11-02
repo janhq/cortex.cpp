@@ -103,6 +103,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
   CTL_INF("model: " << model << ", model_id: " << model_id);
 
   // Send request download model to server
+  CLI_LOG("Validating download items, please wait..")
   Json::Value json_data;
   json_data["model"] = model;
   auto data_str = json_data.toStyledString();
@@ -122,7 +123,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
     return std::nullopt;
   }
 
-  CLI_LOG("Start downloading ...")
+  CLI_LOG("Start downloading..")
   DownloadProgress dp;
   bool force_stop = false;
 
@@ -148,7 +149,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   dp.Connect(host, port);
-  if (!dp.Handle(model_id))
+  if (!dp.Handle(DownloadType::Model))
     return std::nullopt;
   if (force_stop)
     return std::nullopt;
