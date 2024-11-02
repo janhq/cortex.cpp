@@ -227,9 +227,7 @@
             }
           }
         },
-        "tags": [
-          "Inference"
-        ]
+        "tags": ["Chat"]
       }
     },
     "/v1/models/pull": {
@@ -1357,7 +1355,7 @@
   },
   "tags": [
     {
-      "name": "Inference",
+      "name": "Chat",
       "description": "This endpoint initiates interaction with a Large Language Models (LLM)."
     },
     {
@@ -1393,7 +1391,7 @@
     {
       "name": "CORTEX",
       "tags": [
-        "Inference",
+        "Chat",
         "Engines",
         "Events",
         "Models",
