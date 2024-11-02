@@ -5,7 +5,7 @@ draft: True
 
 # Hardware Awareness
 
-Cortex is designed to be Hardware Aware, meaning it can detect your hardware configuration and automatically set parameters to optimize performance and avoid hardware-related errors.
+Cortex is designed to be hardware aware, meaning it can detect your hardware configuration and automatically set parameters to optimize compatibility and performance, and avoid hardware-related errors.
 
 ## Hardware Optimization
 

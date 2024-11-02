@@ -12,17 +12,8 @@ import TabItem from "@theme/TabItem";
 
 Cortex.cpp uses a `model.yaml` file to specify the configuration for running a model. Models can be downloaded from the Cortex Model Hub or Hugging Face repositories. Once downloaded, the model data is parsed and stored in the `models` folder.
 
-## `model.list`
-The `model.list` file acts as a registry for all model files used by Cortex.cpp. It keeps track of every downloaded and imported model by listing their details in a structured format. Each time a model is downloaded or imported, Cortex.cpp will automatically append an entry to `model.list` with the following format:
-```
-# Downloaded model
-<model-id> <author_repo-id> <branch-name> <path-to-model.yaml> <model-alias>
+## Structure of `model.yaml`
 
-# Imported model
-<model-id> local imported <path-to-model-id.yaml> <model-alias>
-
-```
-## `model.yaml` High Level Structure
 Here is an example of `model.yaml` format:
 ```yaml
 # BEGIN GENERAL METADATA
