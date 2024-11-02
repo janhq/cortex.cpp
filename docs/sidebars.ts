@@ -122,7 +122,7 @@ const sidebars: SidebarsConfig = {
     },
     {
       type: "category",
-      label: "Hardware Management",
+      label: "Hardware Awareness",
       link: { type: "doc", id: "capabilities/hardware/index" },
       collapsed: true,
       items: [
