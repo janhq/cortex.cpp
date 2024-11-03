@@ -14,10 +14,10 @@ When Cortex.cpp is started, it automatically starts an API server, this is inspi
 The model in the API server is automatically loaded/unloaded by using the [`/chat/completions`](/api-reference#tag/inference/post/v1/chat/completions) endpoint.
 :::
 ## Model Formats
-Cortex.cpp supports three model formats:
-- GGUF
-- ONNX
-- TensorRT-LLM
+Cortex.cpp supports three model formats and each model format require specific engine to run:
+- GGUF - run with `llama-cpp` engine
+- ONNX - run with `onnxruntime` engine
+- TensorRT-LLM - run with `tensorrt-llm` engine
 
 :::info
 For details on each format, see the [Model Formats](/docs/capabilities/models/model-yaml#model-formats) page.
