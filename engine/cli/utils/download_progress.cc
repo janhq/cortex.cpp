@@ -36,6 +36,20 @@ bool DownloadProgress::Connect(const std::string& host, int port) {
 
 bool DownloadProgress::Handle(const DownloadType& event_type) {
   assert(!!ws_);
+#if defined(_WIN32)
+  HANDLE h_out = GetStdHandle(STD_OUTPUT_HANDLE);
+  DWORD dw_original_out_mode = 0;
+  if (h_out != INVALID_HANDLE_VALUE) {
+    GetConsoleMode(h_out, &dw_original_out_mode);
+
+    // Enable ANSI escape code processing
+    DWORD dw_requested_out_mode =
+        dw_original_out_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    if (!SetConsoleMode(h_out, dw_requested_out_mode)) {
+      SetConsoleMode(h_out, dw_original_out_mode);
+    }
+  }
+#endif
   std::unordered_map<std::string, uint64_t> totals;
   status_ = DownloadStatus::DownloadStarted;
   std::unique_ptr<indicators::DynamicProgress<indicators::ProgressBar>> bars;
@@ -124,6 +138,11 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     ws_->dispatch(handle_message);
   }
   indicators::show_console_cursor(true);
+#if defined(_WIN32)
+  if (dw_original_out_mode != 0 && h_out != INVALID_HANDLE_VALUE) {
+    SetConsoleMode(h_out, dw_original_out_mode);
+  }
+#endif
   if (status_ == DownloadStatus::DownloadError)
     return false;
   return true;

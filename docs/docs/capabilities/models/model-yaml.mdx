@@ -6,24 +6,14 @@ description: The model.yaml
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-
 :::warning
 🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
 
 Cortex.cpp uses a `model.yaml` file to specify the configuration for running a model. Models can be downloaded from the Cortex Model Hub or Hugging Face repositories. Once downloaded, the model data is parsed and stored in the `models` folder.
 
-## `model.list`
-The `model.list` file acts as a registry for all model files used by Cortex.cpp. It keeps track of every downloaded and imported model by listing their details in a structured format. Each time a model is downloaded or imported, Cortex.cpp will automatically append an entry to `model.list` with the following format:
-```
-# Downloaded model
-<model-id> <author_repo-id> <branch-name> <path-to-model.yaml> <model-alias>
+## Structure of `model.yaml`
 
-# Imported model
-<model-id> local imported <path-to-model-id.yaml> <model-alias>
-
-```
-## `model.yaml` High Level Structure
 Here is an example of `model.yaml` format:
 ```yaml
 # BEGIN GENERAL METADATA
@@ -71,7 +61,7 @@ ngl: 33             # Undefined = loaded from model
 
 The `model.yaml` is composed of three high-level sections:
 
-### Cortex Meta
+### Model Metadata
 ```yaml
 model: gemma-2-9b-it-Q8_0 
 name: Llama 3.1      

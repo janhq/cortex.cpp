@@ -22,7 +22,9 @@
             "description": "The assistant has been successfully created."
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       },
       "get": {
         "operationId": "AssistantsController_findAll",
@@ -81,7 +83,9 @@
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       }
     },
     "/v1/assistants/{id}": {
@@ -112,7 +116,9 @@
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
       },
       "delete": {
         "operationId": "AssistantsController_remove",
@@ -141,7 +147,47 @@
             }
           }
         },
-        "tags": ["Assistants"]
+        "tags": [
+          "Assistants"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "HealthController_check",
+        "summary": "Check health",
+        "description": "Checks the health of the application.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {}
+            }
+          }
+        },
+        "tags": [
+          "Server"
+        ]
+      }
+    },
+    "/processManager/destroy": {
+      "delete": {
+        "operationId": "Terminate server process",
+        "summary": "Terminate server",
+        "description": "Terminate server process.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {}
+            }
+          }
+        },
+        "tags": [
+          "Server"
+        ]
       }
     },
     "/v1/chat/completions": {
@@ -166,13 +212,22 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ChatCompletionResponseDto"
+                  "oneOf": [
+                    {
+                      "title": "Chat Completion Response",
+                      "$ref": "#/components/schemas/ChatCompletionResponseDto"
+                    },
+                    {
+                      "title": "Chat Completion Chunk Response",
+                      "$ref": "#/components/schemas/ChatCompletionChunkResponseDto"
+                    }
+                  ]
                 }
               }
             }
           }
         },
-        "tags": ["Inference"]
+        "tags": ["Chat"]
       }
     },
     "/v1/models/pull": {
@@ -271,10 +326,14 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       },
       "delete": {
-        "tags": ["Models"],
+        "tags": [
+          "Models"
+        ],
         "summary": "Stop model download",
         "description": "Stops the download of a model with the corresponding taskId provided in the request body",
         "operationId": "ModelsController_stopModelDownload",
@@ -290,7 +349,9 @@
                     "description": "The unique identifier of the download task to be stopped"
                   }
                 },
-                "required": ["taskId"]
+                "required": [
+                  "taskId"
+                ]
               }
             }
           }
@@ -385,7 +446,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       }
     },
     "/v1/models/start": {
@@ -418,7 +481,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       }
     },
     "/v1/models/stop": {
@@ -451,7 +516,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       }
     },
     "/v1/models/{id}": {
@@ -482,7 +549,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       },
       "delete": {
         "operationId": "ModelsController_remove",
@@ -511,7 +580,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       }
     },
     "/v1/models/{model}": {
@@ -551,7 +622,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       }
     },
     "/v1/models/import": {
@@ -598,7 +671,9 @@
       "post": {
         "operationId": "ThreadsController_create",
         "summary": "Create thread",
-        "tags": ["Threads"],
+        "tags": [
+          "Threads"
+        ],
         "description": "Creates a new thread.",
         "parameters": [],
         "requestBody": {
@@ -627,7 +702,9 @@
       "get": {
         "operationId": "ThreadsController_findAll",
         "summary": "List threads",
-        "tags": ["Threads"],
+        "tags": [
+          "Threads"
+        ],
         "description": "Lists all the available threads along with its configurations.",
         "parameters": [],
         "responses": {
@@ -651,7 +728,9 @@
       "get": {
         "operationId": "ThreadsController_retrieveMessage",
         "summary": "Retrieve message",
-        "tags": ["Messages"],
+        "tags": [
+          "Messages"
+        ],
         "description": "Retrieves a message.",
         "parameters": [
           {
@@ -687,7 +766,9 @@
       "post": {
         "operationId": "ThreadsController_updateMessage",
         "summary": "Modify message",
-        "tags": ["Messages"],
+        "tags": [
+          "Messages"
+        ],
         "description": "Modifies a message.",
         "responses": {
           "201": {
@@ -734,7 +815,9 @@
         "operationId": "ThreadsController_deleteMessage",
         "summary": "Delete message",
         "description": "Deletes a message.",
-        "tags": ["Messages"],
+        "tags": [
+          "Messages"
+        ],
         "parameters": [
           {
             "name": "thread_id",
@@ -771,7 +854,9 @@
       "get": {
         "operationId": "ThreadsController_getMessagesOfThread",
         "summary": "List messages",
-        "tags": ["Messages"],
+        "tags": [
+          "Messages"
+        ],
         "description": "Returns a list of messages for a given thread.",
         "parameters": [
           {
@@ -839,7 +924,9 @@
       "post": {
         "operationId": "ThreadsController_createMessageInThread",
         "summary": "Create message",
-        "tags": ["Messages"],
+        "tags": [
+          "Messages"
+        ],
         "description": "Create a message.",
         "responses": {
           "201": {
@@ -880,7 +967,9 @@
         "operationId": "ThreadsController_cleanThread",
         "summary": "Clean thread",
         "description": "Deletes all messages in a thread.",
-        "tags": ["Threads"],
+        "tags": [
+          "Threads"
+        ],
         "parameters": [
           {
             "name": "thread_id",
@@ -902,7 +991,9 @@
       "get": {
         "operationId": "ThreadsController_retrieveThread",
         "summary": "Retrieve thread",
-        "tags": ["Threads"],
+        "tags": [
+          "Threads"
+        ],
         "description": "Retrieves a thread.",
         "parameters": [
           {
@@ -930,7 +1021,9 @@
       "post": {
         "operationId": "ThreadsController_modifyThread",
         "summary": "Modify thread",
-        "tags": ["Threads"],
+        "tags": [
+          "Threads"
+        ],
         "description": "Modifies a thread.",
         "parameters": [
           {
@@ -971,7 +1064,9 @@
       "delete": {
         "operationId": "ThreadsController_remove",
         "summary": "Delete thread",
-        "tags": ["Threads"],
+        "tags": [
+          "Threads"
+        ],
         "description": "Deletes a specific thread defined by a thread `id` .",
         "parameters": [
           {
@@ -1008,7 +1103,9 @@
             "description": ""
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       },
       "get": {
         "operationId": "SystemController_get",
@@ -1020,7 +1117,9 @@
             "description": "Ok"
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/system/events/download": {
@@ -1041,7 +1140,9 @@
             }
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/system/events/model": {
@@ -1062,7 +1163,9 @@
             }
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/system/events/resources": {
@@ -1083,7 +1186,9 @@
             }
           }
         },
-        "tags": ["System"]
+        "tags": [
+          "System"
+        ]
       }
     },
     "/v1/engines": {
@@ -1104,7 +1209,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/{name}": {
@@ -1120,7 +1227,11 @@
             "description": "The unique identifier of the engine.",
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": [
+                "onnxruntime",
+                "llama-cpp",
+                "tensorrt-llm"
+              ]
             }
           }
         ],
@@ -1136,7 +1247,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     },
     "/v1/engines/install/{name}": {
@@ -1152,7 +1265,11 @@
             "description": "The unique identifier of the engine.",
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": [
+                "onnxruntime",
+                "llama-cpp",
+                "tensorrt-llm"
+              ]
             }
           }
         ],
@@ -1178,7 +1295,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       },
       "delete": {
         "operationId": "EnginesController_deleteEngine",
@@ -1192,7 +1311,11 @@
             "description": "The unique identifier of the engine.",
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": [
+                "onnxruntime",
+                "llama-cpp",
+                "tensorrt-llm"
+              ]
             }
           }
         ],
@@ -1218,7 +1341,9 @@
             }
           }
         },
-        "tags": ["Engines"]
+        "tags": [
+          "Engines"
+        ]
       }
     }
   },
@@ -1230,7 +1355,7 @@
   },
   "tags": [
     {
-      "name": "Inference",
+      "name": "Chat",
       "description": "This endpoint initiates interaction with a Large Language Models (LLM)."
     },
     {
@@ -1240,6 +1365,10 @@
     {
       "name": "Models",
       "description": "These endpoints provide a list and descriptions of all available models within the Cortex framework."
+    },
+    {
+      "name": "Server",
+      "description": "These endpoints manage the lifecycle of Server, including heath check and shutdown."
     },
     {
       "name": "Messages",
@@ -1262,12 +1391,13 @@
     {
       "name": "CORTEX",
       "tags": [
-        "Inference",
+        "Chat",
         "Engines",
         "Events",
         "Models",
         "Processes",
-        "Status"
+        "Status",
+        "Server"
       ]
     }
   ],
@@ -1442,31 +1572,435 @@
             "description": "Indicates whether the assistant was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
-      "ChatCompletionMessage": {
+      "Message": {
         "type": "object",
-        "properties": {
-          "content": {
-            "type": "string",
-            "description": "The Content of the chat message."
-          },
-          "role": {
-            "type": "object",
-            "description": "The role of the entity in the chat completion.",
-            "example": "user"
+        "discriminator": {
+          "propertyName": "role",
+          "mapping": {
+            "system": "SystemMessage",
+            "user": "UserMessage",
+            "assistant": "AssistantMessage",
+            "tool": "ToolMessage",
+            "function": "FunctionMessage"
           }
         },
-        "required": ["content", "role"]
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "system",
+              "user",
+              "assistant",
+              "tool"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "SystemMessage": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "description": "The role of the messages author, in this case `system`."
+              },
+              "content": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TextContentPart"
+                    }
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
+              }
+            },
+            "required": [
+              "content",
+              "role"
+            ]
+          }
+        ]
+      },
+      "UserMessage": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "description": "The role of the messages author, in this case `user`."
+              },
+              "content": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "anyOf": [
+                        {
+                          "type": "object",
+                          "title": "Text Content Part",
+                          "description": "Text Content",
+                          "$ref": "#/components/schemas/TextContentPart"
+                        },
+                        {
+                          "type": "object",
+                          "title": "Image Content Part",
+                          "description": "Image Content",
+                          "$ref": "#/components/schemas/ImageContentPart"
+                        },
+                        {
+                          "type": "object",
+                          "title": "Audio Content Part",
+                          "description": "Audio Content",
+                          "$ref": "#/components/schemas/AudioContentPart"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
+              }
+            },
+            "required": [
+              "content",
+              "role"
+            ]
+          }
+        ]
+      },
+      "AssistantMessage": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "description": "The role of the messages author, in this case `assistant`."
+              },
+              "content": {
+                "description": "The contents of the assistant message. Required unless `tool_calls` or `function_call` is specified.",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/TextContentPart"
+                        },
+                        {
+                          "$ref": "#/components/schemas/RefusalContentPart"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "name": {
+                "type": "string",
+                "description": "An optional name for the participant. Provides the model information to differentiate between participants of the same role."
+              },
+              "refusal": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "audio": {
+                "type": "object",
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/Audio"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "tool_calls": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ToolCall"
+                }
+              },
+              "function_call": {
+                "deprecated": true,
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/FunctionCall"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "ToolMessage": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "role": {
+                "type": "string",
+                "description": "The role of the messages author, in this case `tool`."
+              },
+              "content": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "anyOf": [
+                        {
+                          "$ref": "#/components/schemas/TextContentPart"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              },
+              "tool_call_id": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "content",
+              "tool_call_id"
+            ]
+          }
+        ]
+      },
+      "FunctionMessage": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Message"
+          }
+        ],
+        "deprecated": true
+      },
+      "TextContentPart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "text"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "text"
+        ]
+      },
+      "ImageContentPart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "image_url"
+            ]
+          },
+          "image_url": {
+            "$ref": "#/components/schemas/ImageUrl"
+          }
+        },
+        "required": [
+          "type",
+          "image_url"
+        ]
+      },
+      "AudioContentPart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "The type of the content part. Always `input_audio`."
+          },
+          "input_audio": {
+            "$ref": "#/components/schemas/InputAudio"
+          }
+        },
+        "required": [
+          "type",
+          "input_audio"
+        ]
+      },
+      "RefusalContentPart": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "refusal": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "refusal"
+        ]
+      },
+      "ImageUrl": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Either a URL of the image or the base64 encoded image data."
+          },
+          "detail": {
+            "type": "string",
+            "default": "auto",
+            "description": "Specifies the detail level of the image. Defaults to `auto`."
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "InputAudio": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "string",
+            "description": "Base64 encoded audio data."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "wav",
+              "mp3"
+            ],
+            "description": "The format of the encoded audio data. Currently supports `wav` and `mp3`."
+          }
+        },
+        "required": [
+          "data",
+          "format"
+        ]
+      },
+      "Audio": {
+        "type": "object",
+        "description": "Data about a previous audio response from the model.",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for a previous audio response from the model."
+          }
+        },
+        "required": [
+          "id"
+        ]
+      },
+      "ToolCall": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "function": {
+            "$ref": "#/components/schemas/FunctionCall"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "function"
+        ]
+      },
+      "FunctionCall": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "arguments": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "arguments"
+        ]
       },
       "CreateChatCompletionDto": {
         "type": "object",
         "properties": {
           "messages": {
-            "description": "Array of chat messages to be used for generating the chat completion.",
+            "description": "Array of chat messages to be used for generating the chat completion. Depending on the model you use, different message types (modalities) are supported, like text, images, and audio. Currently, cortex only support text modalities.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ChatCompletionMessage"
+              "anyOf": [
+                {
+                  "title": "System Message",
+                  "description": "System Message",
+                  "$ref": "#/components/schemas/SystemMessage"
+                },
+                {
+                  "title": "User Message",
+                  "description": "User Message",
+                  "$ref": "#/components/schemas/UserMessage"
+                },
+                {
+                  "title": "Assistant Message",
+                  "description": "Assistant Message",
+                  "$ref": "#/components/schemas/AssistantMessage"
+                },
+                {
+                  "title": "Tool Message",
+                  "description": "Tool Message",
+                  "$ref": "#/components/schemas/ToolMessage"
+                }
+              ]
             }
           },
           "model": {
@@ -1481,12 +2015,18 @@
           },
           "max_tokens": {
             "type": "number",
-            "description": "Sets the upper limit on the number of tokens the model can generate in a single output.",
+            "description": "Sets the upper limit on the number of tokens the model can generate in a single output. This value is now deprecated in favor of `max_completion_tokens`.",
             "example": 4096
+          },
+          "max_completion_tokens": {
+            "type": "number",
+            "description": "Sets the upper limit on the number of tokens the model can generate in a single output."
           },
           "stop": {
             "description": "Defines specific tokens or phrases that signal the model to stop producing further output.",
-            "example": ["End"],
+            "example": [
+              "End"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -1511,9 +2051,218 @@
             "type": "number",
             "description": "Sets probability threshold for more relevant outputs.",
             "example": 0.95
+          },
+          "modalities": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "text",
+                "audio"
+              ]
+            },
+            "description": "Specifies the modalities (types of input) supported by the model. Currently, cortex only support text modalities. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
+            "example": [
+              "text"
+            ]
+          },
+          "audio": {
+            "description": "Parameters for audio output. Required when audio output is requested with `modalities: ['audio']`. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
+            "type": "object",
+            "properties": {
+              "voice": {
+                "type": "string",
+                "description": "The voice of the generated audio."
+              },
+              "format": {
+                "type": "string",
+                "description": "Specifies the output audio format. Must be one of `wav`, `mp3`, `flac`, `opus`, or `pcm16`.",
+                "enum": [
+                  "mp3",
+                  "wav",
+                  "flac",
+                  "opus",
+                  "pcm16"
+                ]
+              }
+            },
+            "required": [
+              "voice",
+              "format"
+            ]
+          },
+          "store": {
+            "type": "boolean",
+            "description": "Whether or not to store the output of this chat completion request for use in our model distillation or evals products. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
+            "default": false,
+            "example": false
+          },
+          "metadata": {
+            "type": "object",
+            "description": "Developer-defined tags and values used for filtering completions in the dashboard. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
+            "example": {
+              "type": "conversation"
+            }
+          },
+          "logit_bias": {
+            "type": "object",
+            "description": "Modify the likelihood of specified tokens appearing in the completion. \n\nAccepts a JSON object that maps tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100. Mathematically, the bias is added to the logits generated by the model prior to sampling. The exact effect will vary per model, but values between -1 and 1 should decrease or increase likelihood of selection; values like -100 or 100 should result in a ban or exclusive selection of the relevant token.",
+            "example": {
+              "15496": -100,
+              "51561": -100
+            },
+            "default": null
+          },
+          "logprobs": {
+            "type": "boolean",
+            "description": "Whether to return log probabilities of the output tokens or not. If true, returns the log probabilities of each output token returned in the content of message.",
+            "example": false,
+            "default": false
+          },
+          "top_logprobs": {
+            "type": "number",
+            "description": "An integer between 0 and 20 specifying the number of most likely tokens to return at each token position, each with an associated log probability. `logprobs` must be set to `true` if this parameter is used."
+          },
+          "n": {
+            "type": "number",
+            "description": "How many chat completion choices to generate for each input message. Note that you will be charged based on the number of generated tokens across all of the choices. Keep n as 1 to minimize costs.",
+            "example": 1,
+            "default": 1
+          },
+          "response_format": {
+            "type": "object",
+            "description": "An object specifying the format that the model must output. Setting to { \"type\": \"json_object\" } enables JSON mode, which guarantees the message the model generates is valid JSON. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582).",
+            "properties": {
+              "type": {
+                "type": "string",
+                "description": "The format of the generated output. Must be one of `text`, `json_schema` or `json_object`.",
+                "enum": [
+                  "text",
+                  "json_object",
+                  "json_schema"
+                ]
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "seed": {
+            "type": "number",
+            "description": "This feature is in Beta. If specified, our system will make a best effort to sample deterministically, such that repeated requests with the same seed and parameters should return the same result. Determinism is not guaranteed, and you should refer to the system_fingerprint response parameter to monitor changes in the backend.",
+            "example": 123,
+            "default": null
+          },
+          "service_tier": {
+            "type": "string",
+            "description": "Specifies the latency tier to use for processing the request. This parameter is relevant for customers subscribed to the scale tier service:\n\n - If set to 'auto', and the Project is Scale tier enabled, the system will utilize scale tier credits until they are exhausted.\n- If set to 'auto', and the Project is not Scale tier enabled, the request will be processed using the default service tier with a lower uptime SLA and no latency guarentee.\n- If set to 'default', the request will be processed using the default service tier with a lower uptime SLA and no latency guarentee.\nWhen not set, the default behavior is 'auto'.\nWhen this parameter is set, the response body will include the service_tier utilized.\n\n We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582)."
+          },
+          "stream_options": {
+            "type": "object",
+            "default": null,
+            "description": "Options for streaming response. Only set this when you set `stream: true`.",
+            "properties": {
+              "include_usage": {
+                "type": "boolean",
+                "description": "If set, an additional chunk will be streamed before the data: `[DONE]` message. The `usage` field on this chunk shows the token usage statistics for the entire request, and the `choices` field will always be an empty array. All other chunks will also include a `usage` field, but with a null value.",
+                "example": false,
+                "default": false
+              }
+            }
+          },
+          "tools": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": [
+                  "function"
+                ]
+              },
+              "function": {
+                "$ref": "#/components/schemas/Function"
+              }
+            },
+            "required": [
+              "type",
+              "function"
+            ]
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "none",
+                  "auto",
+                  "required"
+                ]
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "function"
+                    ]
+                  },
+                  "function": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "type",
+                  "function"
+                ]
+              }
+            ]
+          },
+          "parallel_tool_calls": {
+            "type": "boolean",
+            "description": "Whether to enable parallel function calling during tool use. Cortex support parallel tool calls by default",
+            "example": true,
+            "default": true
+          },
+          "user": {
+            "type": "string",
+            "description": "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582)."
           }
         },
-        "required": ["messages", "model"]
+        "required": [
+          "messages",
+          "model"
+        ]
+      },
+      "Function": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9_-]{1,64}$"
+          },
+          "parameters": {
+            "type": "object"
+          },
+          "strict": {
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "name"
+        ]
       },
       "MessageDto": {
         "type": "object",
@@ -1527,7 +2276,10 @@
             "description": "The role of the participant in the chat, such as 'user' or 'system', indicating who is the sender of the message."
           }
         },
-        "required": ["content", "role"]
+        "required": [
+          "content",
+          "role"
+        ]
       },
       "ChoiceDto": {
         "type": "object",
@@ -1549,7 +2301,11 @@
             ]
           }
         },
-        "required": ["finish_reason", "index", "message"]
+        "required": [
+          "finish_reason",
+          "index",
+          "message"
+        ]
       },
       "UsageDto": {
         "type": "object",
@@ -1567,55 +2323,598 @@
             "description": "The total number of tokens used in both the prompt and the completion, summarizing the entire token count of the chat operation."
           }
         },
-        "required": ["completion_tokens", "prompt_tokens", "total_tokens"]
+        "required": [
+          "completion_tokens",
+          "prompt_tokens",
+          "total_tokens"
+        ]
       },
       "ChatCompletionResponseDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier for the chat completion."
+          },
           "choices": {
-            "description": "A list of choices generated by the chat model.",
             "type": "array",
+            "description": "A list of chat completion choices. Can be more than one if n is greater than 1.",
             "items": {
-              "$ref": "#/components/schemas/ChoiceDto"
+              "type": "object",
+              "properties": {
+                "finish_reason": {
+                  "type": "string",
+                  "description": "The reason the model stopped generating tokens. This will be stop if the model hit a natural stop point or a provided stop sequence, length if the maximum number of tokens specified in the request was reached, content_filter if content was omitted due to a flag from our content filters, tool_calls if the model called a tool, or function_call (deprecated) if the model called a function."
+                },
+                "index": {
+                  "type": "integer",
+                  "description": "The index of the choice in the list of choices."
+                },
+                "message": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The contents of the message."
+                    },
+                    "refusal": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The refusal message generated by the model."
+                    },
+                    "tool_calls": {
+                      "type": "array",
+                      "description": "The tool calls generated by the model, such as function calls.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "The ID of the tool call."
+                          },
+                          "type": {
+                            "type": "string",
+                            "description": "The type of the tool. Currently, only function is supported."
+                          },
+                          "function": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "The name of the function to call."
+                              },
+                              "arguments": {
+                                "type": "string",
+                                "description": "The arguments to call the function with, as generated by the model in JSON format. Note that the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema. Validate the arguments in your code before calling your function."
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "arguments"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "function"
+                        ]
+                      }
+                    },
+                    "role": {
+                      "type": "string",
+                      "description": "The role of the author of this message."
+                    },
+                    "function_call": {
+                      "type": "object",
+                      "deprecated": true,
+                      "description": "Deprecated and replaced by tool_calls. The name and arguments of a function that should be called, as generated by the model.",
+                      "properties": {
+                        "arguments": {
+                          "type": "string",
+                          "description": "The arguments to call the function with, as generated by the model in JSON format. Note that the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema. Validate the arguments in your code before calling your function."
+                        },
+                        "name": {
+                          "type": "string",
+                          "description": "The name of the function to call."
+                        }
+                      },
+                      "required": [
+                        "arguments",
+                        "name"
+                      ]
+                    },
+                    "audio": {
+                      "type": "object",
+                      "description": "If the audio output modality is requested, this object contains data about the audio response from the model.",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "description": "Unique identifier for this audio response."
+                        },
+                        "expires_at": {
+                          "type": "integer",
+                          "description": "The Unix timestamp (in seconds) for when this audio response will no longer be accessible on the server for use in multi-turn conversations."
+                        },
+                        "data": {
+                          "type": "string",
+                          "description": "Base64 encoded audio bytes generated by the model, in the format specified in the request."
+                        },
+                        "transcript": {
+                          "type": "string",
+                          "description": "Transcript of the audio generated by the model."
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "expires_at",
+                        "data",
+                        "transcript"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "role"
+                  ]
+                },
+                "logprobs": {
+                  "type": "object",
+                  "description": "Log probability information for the choice.",
+                  "properties": {
+                    "content": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "description": "A list of message content tokens with log probability information.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "description": "The token."
+                          },
+                          "logprob": {
+                            "type": "number",
+                            "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
+                          },
+                          "bytes": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
+                      }
+                    },
+                    "top_logprobs": {
+                      "type": "array",
+                      "description": "List of the most likely tokens and their log probability, at this token position. In rare cases, there may be fewer than the number of requested top_logprobs returned.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "description": "The token."
+                          },
+                          "logprob": {
+                            "type": "number",
+                            "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
+                          },
+                          "bytes": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
+                      }
+                    },
+                    "refusal": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "description": "A list of message refusal tokens with log probability information.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "description": "The token."
+                          },
+                          "logprob": {
+                            "type": "number",
+                            "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
+                          },
+                          "bytes": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "required": [
+                "finish_reason",
+                "index",
+                "message"
+              ]
             }
           },
           "created": {
-            "type": "number",
-            "description": "The timestamp of when the chat completion was created, expressed as a Unix timestamp."
-          },
-          "id": {
-            "type": "string",
-            "description": "The unique identifier for the chat completion."
+            "type": "integer",
+            "description": "The Unix timestamp (in seconds) of when the chat completion was created."
           },
           "model": {
             "type": "string",
-            "description": "The identifier of the model used to generate the chat completion."
+            "description": "The model used for the chat completion."
           },
-          "object": {
-            "type": "string",
-            "description": "The type of object, typically set to 'chat_completion' to denote the nature of the API response."
+          "service_tier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The service tier used for processing the request. This field is only included if the service_tier parameter is specified in the request."
           },
           "system_fingerprint": {
             "type": "string",
-            "description": "A unique fingerprint that identifies the system configuration used during the chat completion."
+            "description": "This fingerprint represents the backend configuration that the model runs with. Can be used in conjunction with the seed request parameter to understand when backend changes have been made that might impact determinism."
+          },
+          "object": {
+            "type": "string",
+            "description": "The object type, which is always chat.completion."
           },
           "usage": {
-            "description": "An object representing the usage statistics of the model for the current completion.",
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/UsageDto"
+            "type": "object",
+            "description": "Usage statistics for the completion request.",
+            "properties": {
+              "completion_tokens": {
+                "type": "integer",
+                "description": "Number of tokens in the generated completion."
+              },
+              "prompt_tokens": {
+                "type": "integer",
+                "description": "Number of tokens in the prompt."
+              },
+              "total_tokens": {
+                "type": "integer",
+                "description": "Total number of tokens used in the request (prompt + completion)."
+              },
+              "completion_tokens_details": {
+                "type": "object",
+                "description": "Breakdown of tokens used in a completion.",
+                "properties": {
+                  "audio_tokens": {
+                    "type": "integer",
+                    "description": "Audio input tokens generated by the model."
+                  },
+                  "reasoning_tokens": {
+                    "type": "integer",
+                    "description": "Tokens generated by the model for reasoning."
+                  }
+                },
+                "required": [
+                  "audio_tokens",
+                  "reasoning_tokens"
+                ]
+              },
+              "prompt_tokens_details": {
+                "type": "object",
+                "description": "Breakdown of tokens used in the prompt.",
+                "properties": {
+                  "audio_tokens": {
+                    "type": "integer",
+                    "description": "Audio input tokens present in the prompt."
+                  },
+                  "cached_tokens": {
+                    "type": "integer",
+                    "description": "Cached tokens present in the prompt."
+                  }
+                },
+                "required": [
+                  "audio_tokens",
+                  "cached_tokens"
+                ]
               }
+            },
+            "required": [
+              "completion_tokens",
+              "prompt_tokens",
+              "total_tokens",
+              "completion_tokens_details",
+              "prompt_tokens_details"
             ]
           }
         },
         "required": [
+          "id",
           "choices",
           "created",
-          "id",
           "model",
-          "object",
           "system_fingerprint",
+          "object",
           "usage"
+        ]
+      },
+      "ChatCompletionChunkResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier for the chat completion. Each chunk has the same ID."
+          },
+          "choices": {
+            "type": "array",
+            "description": "A list of chat completion choices. Can contain more than one element if n is greater than 1. Can also be empty for the last chunk if you set stream_options: {\"include_usage\": true}.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "delta": {
+                  "type": "object",
+                  "description": "A chat completion delta generated by streamed model responses.",
+                  "properties": {
+                    "content": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The contents of the chunk message."
+                    },
+                    "function_call": {
+                      "type": "object",
+                      "description": "Deprecated and replaced by tool_calls. The name and arguments of a function that should be called, as generated by the model.",
+                      "deprecated": true
+                    },
+                    "tool_calls": {
+                      "type": "array",
+                      "description": "The tool calls generated by the model.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "index": {
+                            "type": "integer",
+                            "description": "The index of the tool call in the list of tool calls."
+                          },
+                          "id": {
+                            "type": "string",
+                            "description": "The ID of the tool call."
+                          },
+                          "type": {
+                            "type": "string",
+                            "description": "The type of the tool. Currently, only function is supported."
+                          },
+                          "function": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "description": "The name of the function to call."
+                              },
+                              "arguments": {
+                                "type": "string",
+                                "description": "The arguments to call the function with, as generated by the model in JSON format. Note that the model does not always generate valid JSON, and may hallucinate parameters not defined by your function schema. Validate the arguments in your code before calling your function."
+                              }
+                            },
+                            "required": [
+                              "name",
+                              "arguments"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "index",
+                          "id",
+                          "type",
+                          "function"
+                        ]
+                      }
+                    },
+                    "role": {
+                      "type": "string",
+                      "description": "The role of the author of this message."
+                    },
+                    "refusal": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "description": "The refusal message generated by the model."
+                    }
+                  }
+                },
+                "logprobs": {
+                  "type": "object",
+                  "description": "Log probability information for the choice.",
+                  "properties": {
+                    "content": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "description": "A list of message content tokens with log probability information.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "description": "The token."
+                          },
+                          "logprob": {
+                            "type": "number",
+                            "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
+                          },
+                          "bytes": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
+                      }
+                    },
+                    "top_logprobs": {
+                      "type": "array",
+                      "description": "List of the most likely tokens and their log probability, at this token position. In rare cases, there may be fewer than the number of requested top_logprobs returned.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "description": "The token."
+                          },
+                          "logprob": {
+                            "type": "number",
+                            "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
+                          },
+                          "bytes": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
+                      }
+                    },
+                    "refusal": {
+                      "type": [
+                        "array",
+                        "null"
+                      ],
+                      "description": "A list of message refusal tokens with log probability information.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "token": {
+                            "type": "string",
+                            "description": "The token."
+                          },
+                          "logprob": {
+                            "type": "number",
+                            "description": "The log probability of this token, if it is within the top 20 most likely tokens. Otherwise, the value -9999.0 is used to signify that the token is very unlikely."
+                          },
+                          "bytes": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "description": "A list of integers representing the UTF-8 bytes representation of the token. Useful in instances where characters are represented by multiple tokens and their byte representations must be combined to generate the correct text representation. Can be null if there is no bytes representation for the token."
+                          }
+                        },
+                        "required": [
+                          "token",
+                          "logprob"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "finish_reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "The reason the model stopped generating tokens. This will be stop if the model hit a natural stop point or a provided stop sequence, length if the maximum number of tokens specified in the request was reached, content_filter if content was omitted due to a flag from our content filters, tool_calls if the model called a tool, or function_call (deprecated) if the model called a function."
+                },
+                "index": {
+                  "type": "integer",
+                  "description": "The index of the choice in the list of choices."
+                }
+              },
+              "required": [
+                "delta",
+                "index"
+              ]
+            }
+          },
+          "created": {
+            "type": "integer",
+            "description": "The Unix timestamp (in seconds) of when the chat completion was created. Each chunk has the same timestamp."
+          },
+          "model": {
+            "type": "string",
+            "description": "The model used to generate the completion."
+          },
+          "service_tier": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The service tier used for processing the request. This field is only included if the service_tier parameter is specified in the request."
+          },
+          "system_fingerprint": {
+            "type": "string",
+            "description": "This fingerprint represents the backend configuration that the model runs with. Can be used in conjunction with the seed request parameter to understand when backend changes have been made that might impact determinism."
+          },
+          "object": {
+            "type": "string",
+            "description": "The object type, which is always chat.completion.chunk."
+          },
+          "usage": {
+            "type": "object",
+            "description": "An optional field that will only be present when you set stream_options: {\"include_usage\": true} in your request. When present, it contains a null value except for the last chunk which contains the token usage statistics for the entire request.",
+            "properties": {
+              "completion_tokens": {
+                "type": "integer",
+                "description": "Number of tokens in the generated completion."
+              },
+              "prompt_tokens": {
+                "type": "integer",
+                "description": "Number of tokens in the prompt."
+              },
+              "total_tokens": {
+                "type": "integer",
+                "description": "Total number of tokens used in the request (prompt + completion)."
+              }
+            },
+            "required": [
+              "completion_tokens",
+              "prompt_tokens",
+              "total_tokens"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "choices",
+          "created",
+          "model",
+          "system_fingerprint",
+          "object"
         ]
       },
       "CreateEmbeddingsDto": {
@@ -1627,7 +2926,9 @@
             "description": "The name of the embedding model to be used."
           },
           "input": {
-            "example": ["Hello World"],
+            "example": [
+              "Hello World"
+            ],
             "description": "The text or token array(s) to be embedded. This can be a single string, an array of strings, or an array of token arrays to embed multiple inputs in one request.",
             "type": "array",
             "items": {
@@ -1645,7 +2946,10 @@
             "description": "Defines the number of dimensions for the output embeddings. This feature is supported by certain models only. This field is optional."
           }
         },
-        "required": ["model", "input"]
+        "required": [
+          "model",
+          "input"
+        ]
       },
       "EmbeddingsResponseDto": {
         "type": "object",
@@ -1674,11 +2978,18 @@
             ]
           }
         },
-        "required": ["object", "model", "embedding", "usage"]
+        "required": [
+          "object",
+          "model",
+          "embedding",
+          "usage"
+        ]
       },
       "PullModelRequest": {
         "type": "object",
-        "required": ["model"],
+        "required": [
+          "model"
+        ],
         "properties": {
           "model": {
             "type": "string",
@@ -1736,7 +3047,9 @@
           },
           "files": {
             "description": "The URL sources from which the model downloaded or accessed.",
-            "example": ["https://huggingface.co/cortexso/mistral/tree/gguf"],
+            "example": [
+              "https://huggingface.co/cortexso/mistral/tree/gguf"
+            ],
             "oneOf": [
               {
                 "type": "array",
@@ -1756,7 +3069,9 @@
           },
           "stop": {
             "description": "Defines specific tokens or phrases that signal the model to stop producing further output.",
-            "example": ["End"],
+            "example": [
+              "End"
+            ],
             "type": "array",
             "items": {
               "type": "string"
@@ -1826,7 +3141,10 @@
             "default": ""
           }
         },
-        "required": ["model", "files"]
+        "required": [
+          "model",
+          "files"
+        ]
       },
       "StartModelSuccessDto": {
         "type": "object",
@@ -1840,7 +3158,10 @@
             "description": "The unique identifier of the model."
           }
         },
-        "required": ["message", "modelId"]
+        "required": [
+          "message",
+          "modelId"
+        ]
       },
       "ModelStartDto": {
         "type": "object",
@@ -1897,7 +3218,9 @@
             "description": "The response success or error message."
           }
         },
-        "required": ["message"]
+        "required": [
+          "message"
+        ]
       },
       "EngineUninstallationResponseDto": {
         "type": "object",
@@ -1953,7 +3276,11 @@
             "example": "OK"
           }
         },
-        "required": ["data", "object", "result"]
+        "required": [
+          "data",
+          "object",
+          "result"
+        ]
       },
       "Engine": {
         "type": "object",
@@ -1983,7 +3310,12 @@
             "example": "0.1.34"
           }
         },
-        "required": ["description", "name", "productName", "status"]
+        "required": [
+          "description",
+          "name",
+          "productName",
+          "status"
+        ]
       },
       "ModelDto": {
         "type": "object",
@@ -1999,7 +3331,9 @@
             "description": "A predefined text or framework that guides the AI model's response generation."
           },
           "stop": {
-            "example": ["End"],
+            "example": [
+              "End"
+            ],
             "description": "Defines specific tokens or phrases that signal the model to stop producing further output.",
             "type": "array",
             "items": {
@@ -2106,7 +3440,9 @@
             "example": "llamacpp"
           }
         },
-        "required": ["id"]
+        "required": [
+          "id"
+        ]
       },
       "ListModelsResponseDto": {
         "type": "object",
@@ -2114,7 +3450,9 @@
           "object": {
             "type": "string",
             "example": "list",
-            "enum": ["list"]
+            "enum": [
+              "list"
+            ]
           },
           "data": {
             "description": "List of models",
@@ -2124,7 +3462,10 @@
             }
           }
         },
-        "required": ["object", "data"]
+        "required": [
+          "object",
+          "data"
+        ]
       },
       "UpdateModelDto": {
         "type": "object",
@@ -2150,7 +3491,11 @@
             "description": "Indicates whether the model was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
       "CreateThreadAssistantDto": {
         "type": "object",
@@ -2240,7 +3585,10 @@
           "tool_resources": {
             "type": "object",
             "example": {
-              "resources": ["database1", "database2"]
+              "resources": [
+                "database1",
+                "database2"
+              ]
             },
             "description": "Tool resources for the assistant."
           }
@@ -2268,7 +3616,9 @@
             }
           }
         },
-        "required": ["assistants"]
+        "required": [
+          "assistants"
+        ]
       },
       "ContentDto": {
         "type": "object",
@@ -2287,7 +3637,10 @@
             "description": "Text content of the message along with any annotations."
           }
         },
-        "required": ["type", "text"]
+        "required": [
+          "type",
+          "text"
+        ]
       },
       "GetMessageResponseDto": {
         "type": "object",
@@ -2461,7 +3814,13 @@
             "description": "Indicates whether there are more messages to retrieve."
           }
         },
-        "required": ["object", "data", "first_id", "last_id", "has_more"]
+        "required": [
+          "object",
+          "data",
+          "first_id",
+          "last_id",
+          "has_more"
+        ]
       },
       "CreateMessageDto": {
         "type": "object",
@@ -2477,7 +3836,10 @@
             "description": "The text contents of the message."
           }
         },
-        "required": ["role", "content"]
+        "required": [
+          "role",
+          "content"
+        ]
       },
       "UpdateMessageDto": {
         "type": "object",
@@ -2503,7 +3865,11 @@
             "description": "Indicates whether the message was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       },
       "GetThreadResponseDto": {
         "type": "object",
@@ -2524,7 +3890,9 @@
             "description": "Unix timestamp representing the creation time of the thread."
           },
           "assistants": {
-            "example": ["assistant-001"],
+            "example": [
+              "assistant-001"
+            ],
             "description": "List of assistants involved in the thread.",
             "type": "array",
             "items": {
@@ -2578,7 +3946,11 @@
             "description": "Indicates whether the thread was successfully deleted."
           }
         },
-        "required": ["id", "object", "deleted"]
+        "required": [
+          "id",
+          "object",
+          "deleted"
+        ]
       }
     }
   }
