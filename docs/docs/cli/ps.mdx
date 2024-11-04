@@ -7,59 +7,42 @@ slug: "ps"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex ps`
 
-This command shows the running model and its status.
-
-
+This command shows the running model and its status (Engine, RAM, VRAM, and Uptime).
 
 ## Usage
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex ps [options]
-
-  # Beta
-  cortex-beta ps [options]
-
-  # Nightly
-  cortex-nightly ps [options]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe ps [options]
-  
-  # Beta
-  cortex-beta.exe ps [options]
-
-  # Nightly
-  cortex-nightly.exe ps [options]
   ```
   </TabItem>
 </Tabs>
 
-
 For example, it returns the following table:
 
 ```bash
-+----------------+-----------+----------+-----------+-----------+
-| Model          | Engine    | RAM      | VRAM      | Up time   |
-+----------------+-----------+----------+-----------+-----------+
-| tinyllama:gguf | llama-cpp | 35.16 MB | 601.02 MB | 5 seconds |
-+----------------+-----------+----------+-----------+-----------+
+> cortex ps
++------------------------+-----------+-----------+-----------+-------------------------------+
+| Model                  | Engine    | RAM       | VRAM      | Uptime                        |
++------------------------+-----------+-----------+-----------+-------------------------------+
+| llama3.2:3b-gguf-q4-km | llama-cpp | 308.23 MB | 1.87 GB   | 7 seconds                     |
++------------------------+-----------+-----------+-----------+-------------------------------+
+| tinyllama:1b-gguf      | llama-cpp | 35.16 MB  | 636.18 MB | 1 hour, 5 minutes, 45 seconds |
++------------------------+-----------+-----------+-----------+-------------------------------+
 ```
 ## Options
 
 | Option            | Description                                           | Required | Default value | Example     |
 |-------------------|-------------------------------------------------------|----------|---------------|-------------|
 | `-h`, `--help`      | Display help information for the command.             | No       | -             | `-h`    |
+
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::

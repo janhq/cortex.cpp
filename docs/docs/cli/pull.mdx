@@ -7,18 +7,23 @@ slug: "pull"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex pull`
 :::info
 This CLI command calls the following API endpoint:
 - [Download Model](/api-reference#tag/models/post/v1/models/{modelId}/pull)
 :::
-This command downloads models from supported [model repositories](/docs/model-sources).
+This command displays downloaded models, or displays models available for downloading. 
 
-The downloaded model will be stored in the Cortex folder in your home data directory.
+There are 3 ways to download models:
+- From Cortex's [Built-in models](/docs/hub/cortex-hub): `cortex pull <model_name>`
+- HuggingFace repository handle: `cortex pull <author/RepoID>`
+- HuggingFace direct URL: `cortex pull <huggingface URL ending with .gguf>`
+
+Each of these will display the model quantizations available, to be selected for download.
+
+For more information, please refer to [Pulling Models](docs/hub/index).
+
+The downloaded model file will be stored in the [Cortex Data Folder](/docs/architecture/data-folder).
 
 
 ## Usage
@@ -28,34 +33,39 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex pull [options] <model_id> 
-
-  # Beta
-  cortex-beta pull [options] <model_id> 
-
-  # Nightly
-  cortex-nightly pull [options] <model_id> 
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe pull [options] <model_id> 
-  
-  # Beta
-  cortex-beta.exe pull [options] <model_id> 
-
-  # Nightly
-  cortex-nightly.exe pull [options] <model_id> 
   ```
   </TabItem>
 </Tabs>
 
+For example, this returns the following:
+```bash
+> cortex-nightly pull llama3.2
+Downloaded models:
+    llama3.2:3b-gguf-q4-km
+
+Available to download:
+    1. llama3.2:3b-gguf-q2-k
+    2. llama3.2:3b-gguf-q3-kl
+    3. llama3.2:3b-gguf-q3-km
+    4. llama3.2:3b-gguf-q3-ks
+    5. llama3.2:3b-gguf-q4-ks
+    6. llama3.2:3b-gguf-q5-km
+    7. llama3.2:3b-gguf-q5-ks
+    8. llama3.2:3b-gguf-q6-k
+    9. llama3.2:3b-gguf-q8-0
+
+Select a model (1-9):
+```
 
 ## Options
 
 | Option         | Description                                       | Required | Default value | Example     |
 | -------------- | ------------------------------------------------- | -------- | ------------- | ----------- |
-| `model_id`     | The identifier of the model you want to download. | Yes      | -             | `mistral` |
+| `model_id`     | The identifier of the model you want to download. You can use the [Built-in models](/docs/hub/cortex-hub) or Supported [HuggingFace models](/docs/hub/hugging-face). | Yes      | -             | `mistral` |
 | `-h`, `--help` | Display help information for the command.         | No       | -             | `-h`        |
