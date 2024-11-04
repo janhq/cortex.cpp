@@ -58,6 +58,7 @@ struct ModelConfig {
   bool ignore_eos = false;
   int n_probs = 0;
   int min_keep = 0;
+  uint64_t size = 0;
   std::string grammar;
 
   void FromJson(const Json::Value& json) {
@@ -70,6 +71,8 @@ struct ModelConfig {
     //   model = json["model"].asString();
     if (json.isMember("version"))
       version = json["version"].asString();
+    if (json.isMember("size"))
+      size = json["size"].asUInt64();
 
     if (json.isMember("stop") && json["stop"].isArray()) {
       stop.clear();
@@ -176,6 +179,7 @@ struct ModelConfig {
     obj["name"] = name;
     obj["model"] = model;
     obj["version"] = version;
+    obj["size"] = size;
 
     Json::Value stop_array(Json::arrayValue);
     for (const auto& s : stop) {
@@ -269,6 +273,7 @@ struct ModelConfig {
     oss << format_utils::print_comment("END REQUIRED");
     oss << format_utils::print_comment("BEGIN OPTIONAL");
 
+    oss << format_utils::print_float("size", size);
     oss << format_utils::print_bool("stream", stream);
     oss << format_utils::print_float("top_p", top_p);
     oss << format_utils::print_float("temperature", temperature);
