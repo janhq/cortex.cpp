@@ -4,19 +4,12 @@
 #include "utils/cli_selection_utils.h"
 #include "utils/download_progress.h"
 #include "utils/logging_utils.h"
+#include "utils/string_utils.h"
 
 namespace commands {
 bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& version,
                             const std::string& src) {
-  // Start server if server is not started yet
-  if (!commands::IsServerAlive(host_, port_)) {
-    CLI_LOG("Starting server ...");
-    commands::ServerStartCmd ssc;
-    if (!ssc.Exec(host_, port_)) {
-      return false;
-    }
-  }
   // Handle local install, if fails, fallback to remote install
   if (!src.empty()) {
     auto res = engine_service_.UnzipEngine(engine, version, src);
@@ -27,6 +20,15 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     if (res.value()) {
       CLI_LOG("Engine " << engine << " installed successfully!");
       return true;
+    }
+  }
+
+  // Start server if server is not started yet
+  if (!commands::IsServerAlive(host_, port_)) {
+    CLI_LOG("Starting server ...");
+    commands::ServerStartCmd ssc;
+    if (!ssc.Exec(host_, port_)) {
+      return false;
     }
   }
 
@@ -81,7 +83,10 @@ bool EngineInstallCmd::Exec(const std::string& engine,
 
     std::vector<std::string> variant_selections;
     for (const auto& variant : variant_result.value()) {
-      variant_selections.push_back(variant["name"].asString());
+      auto v_name = variant["name"].asString();
+      if (string_utils::StringContainsIgnoreCase(v_name, hw_inf_.sys_inf->os)) {
+        variant_selections.push_back(variant["name"].asString());
+      }
     }
     auto selected_variant =
         cli_selection_utils::PrintSelection(variant_selections);
