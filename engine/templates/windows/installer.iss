@@ -36,7 +36,7 @@ Filename: "{app}\cortex.exe"; Parameters: "stop"; StatusMsg: "Stopping cortexcpp
 procedure AddToUserPathAndInstallEngines;
 var
   ExpandedAppDir: String;
-  CmdLine, CortexInstallCmd: String;
+  CmdLine, CortexInstallCmd, CortexStopServerCmd: String;
   ResultCode: Integer;
   i: Integer;
   SkipPostInstall: Boolean;
@@ -83,6 +83,10 @@ begin
   // Download llamacpp engine by default
   CortexInstallCmd := Format('"%s\cortex.exe" engines install llama-cpp', [ExpandedAppDir]);
   Exec('cmd.exe', '/C ' + CortexInstallCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+
+  // Stop server
+  CortexStopServerCmd := Format('"%s\cortex-nightly.exe" stop', [ExpandedAppDir]);
+  Exec('cmd.exe', '/C ' + CortexStopServerCmd, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 
   // Set the progress bar to 90% after downloading the engine
   WizardForm.ProgressGauge.Position := 90;
