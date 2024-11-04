@@ -350,7 +350,7 @@ void Models::ImportModel(
       std::filesystem::copy_file(
           modelPath, file_path,
           std::filesystem::copy_options::update_existing);
-      model_config.files.push_back(file_path);
+      model_config.files.push_back(file_path.string());
     } else {
       model_config.files.push_back(modelPath);
     }
