@@ -16,18 +16,9 @@ Cortex.cpp supports reading its configuration from a file called `.cortexrc`. Us
 ## File Location
 The configuration file is stored in the following locations:
 
-- **Windows**:
-  - Stable: `C:\Users\<username>\.cortexrc`
-  - Beta: `C:\Users\<username>\.cortexrc-beta`
-  - Nighty: `C:\Users\<username>\.cortexrc-nightly`
-- **Linux**:
-  - Stable: `/home/<username>/.cortexrc`
-  - Beta: `/home/<username>/.cortexrc-beta`
-  - Nighty: `/home/<username>/.cortexrc-nightly`
-- **macOS**:
-  - Stable: `/Users/<username>/.cortexrc`
-  - Beta: `/Users/<username>/.cortexrc-beta`
-  - Nighty: `/Users/<username>/.cortexrc-nightly`
+- **Windows**: `C:\Users\<username>\.cortexrc`
+- **Linux**: `/home/<username>/.cortexrc`
+- **macOS**: `/Users/<username>/.cortexrc`
 
 ## Configuration Parameters
 You can configure the following parameters in the `.cortexrc` file:
@@ -35,7 +26,8 @@ You can configure the following parameters in the `.cortexrc` file:
 |------------------|--------------------------------------------------|--------------------------------|
 | `dataFolderPath` | Path to the folder where `.cortexrc` located.  | User's home folder.  |
 | `apiServerHost`  | Host address for the Cortex.cpp API server.      | `127.0.0.1`                    |
-| `logFolderPath`  | Port number for the Cortex.cpp API server.       | `39281`                        |
+| `apiServerPort`  | Port number for the Cortex.cpp API server.       | `39281`                        |
+| `logFolderPath`  | Path the folder where logs are located           | User's home folder.            |
 | `logLlamaCppPath`  | The llama-cpp engine .                         | `./logs/cortex.log`            |
 | `logTensorrtLLMPath`  | The tensorrt-llm engine log file path.      | `./logs/cortex.log`            |
 | `logOnnxPath`    | The onnxruntime engine log file path.            | `./logs/cortex.log`            |
