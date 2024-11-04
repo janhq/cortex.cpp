@@ -57,6 +57,23 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
     }
   }
 
+  // TODO: namh support onnx and tensorrt
+  auto default_engine_url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "engines", kLlamaEngine, "default"},
+  };
+  auto selected_variant_result =
+      curl_utils::SimpleGetJson(default_engine_url.ToFullPath());
+
+  std::optional<std::pair<std::string, std::string>> variant_pair =
+      std::nullopt;
+  if (selected_variant_result.has_value()) {
+    variant_pair = std::make_pair<std::string, std::string>(
+        selected_variant_result.value()["variant"].asString(),
+        selected_variant_result.value()["version"].asString());
+  }
+
   std::vector<EngineVariantResponse> output;
   for (const auto& [key, value] : engine_map) {
     output.insert(output.end(), value.begin(), value.end());
@@ -65,6 +82,12 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
   int count = 0;
   for (auto const& v : output) {
     count += 1;
+    if (variant_pair.has_value() && v.name == variant_pair->first &&
+        v.version == variant_pair->second) {
+      table.add_row(
+          {std::to_string(count), v.engine, v.version, v.name, "Default"});
+      continue;
+    }
     table.add_row(
         {std::to_string(count), v.engine, v.version, v.name, "Installed"});
   }

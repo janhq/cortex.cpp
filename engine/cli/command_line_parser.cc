@@ -342,7 +342,7 @@ void CommandLineParser::SetupEngineCommands() {
   for (auto& engine : engine_service_.kSupportEngines) {
     std::string engine_name{engine};
     EngineInstall(install_cmd, engine_name, cml_data_.engine_version,
-                  cml_data_.engine_src, cml_data_.show_menu);
+                  cml_data_.engine_src);
   }
 
   auto uninstall_cmd =
@@ -465,8 +465,7 @@ void CommandLineParser::SetupSystemCommands() {
 
 void CommandLineParser::EngineInstall(CLI::App* parent,
                                       const std::string& engine_name,
-                                      std::string& version, std::string& src,
-                                      bool show_menu) {
+                                      std::string& version, std::string& src) {
   auto install_engine_cmd = parent->add_subcommand(engine_name, "");
   install_engine_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                             " engines install " + engine_name + " [options]");
@@ -478,16 +477,16 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
   install_engine_cmd->add_option("-s, --source", src,
                                  "Install engine by local path");
 
-  install_engine_cmd->add_option("-m, --menu", show_menu,
-                                 "Display menu for engine variant selection");
+  install_engine_cmd->add_flag("-m, --menu", cml_data_.show_menu,
+                               "Display menu for engine variant selection");
 
-  install_engine_cmd->callback([this, engine_name, &version, &src, show_menu] {
+  install_engine_cmd->callback([this, engine_name, &version, &src] {
     if (std::exchange(executed_, true))
       return;
     try {
       commands::EngineInstallCmd(
           download_service_, cml_data_.config.apiServerHost,
-          std::stoi(cml_data_.config.apiServerPort), show_menu)
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
           .Exec(engine_name, version, src);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());

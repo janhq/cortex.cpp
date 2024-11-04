@@ -37,7 +37,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     auto dp_res = std::async(std::launch::deferred, [&dp, &engine] {
       return dp.Handle(DownloadType::Engine);
     });
-    CLI_LOG("Validating download items, please wait..")
 
     auto versions_url = url_parser::Url{
         .protocol = "http",
