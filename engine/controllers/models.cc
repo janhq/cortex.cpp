@@ -352,11 +352,11 @@ void Models::ImportModel(
           modelPath, file_path,
           std::filesystem::copy_options::update_existing);
       model_config.files.push_back(file_path.string());
-      auto size = std::filesystem::file_size(file_path);
+      uintmax_t size = std::filesystem::file_size(file_path);
       model_config.size = size;
     } else {
       model_config.files.push_back(modelPath);
-      auto size = std::filesystem::file_size(modelPath);
+      uintmax_t size = std::filesystem::file_size(modelPath);
       model_config.size = size;
     }
     model_config.model = modelHandle;

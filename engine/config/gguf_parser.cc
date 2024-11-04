@@ -71,7 +71,7 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
   CloseHandle(file_handle_);
 
 #else
-  auto file_size = std::filesystem::file_size(file_path);
+  uintmax_t file_size_ = std::filesystem::file_size(file_path);
   if (file_size_ == -1) {
     perror("Error getting file size");
     // close(fd);
