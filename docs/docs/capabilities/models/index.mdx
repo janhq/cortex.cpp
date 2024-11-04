@@ -7,6 +7,10 @@ description: The Model section overview
 🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
 
+Models in cortex.cpp are used for inference purposes (e.g., chat completion, embedding, etc.). We support two types of models: local and remote.
+Local models use a local inference engine to run completely offline on your hardware. Currently, we support llama.cpp with the GGUF model format, and we have plans to support TensorRT-LLM and ONNX engines in the future.
+Remote models (like OpenAI GPT-4 and Claude 3.5 Sonnet) use remote engines. Support for OpenAI and Anthropic engines is under development and will be available in cortex.cpp soon.
+
 When Cortex.cpp is started, it automatically starts an API server, this is inspired by Docker CLI. This server manages various model endpoints. These endpoints facilitate the following:
 - **Model Operations**: Run and stop models.
 - **Model Management**: Manage your local models.

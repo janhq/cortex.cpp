@@ -1,10 +1,9 @@
 ---
 title: Function Calling
 ---
-
 # Function calling with OpenAI compatible
 
-This tutorial, I use the `mistral-nemo:12b-gguf-q4-km` for testing with cortex.cpp. All steps are reproduced from original openai instruction https://platform.openai.com/docs/guides/function-calling
+This tutorial, I use the `mistral-nemo:12b-gguf-q4-km` for testing function calling with cortex.cpp. All steps are reproduced from original openai instruction https://platform.openai.com/docs/guides/function-calling
 
 ## Step by step with function calling
 
@@ -113,7 +112,7 @@ completion_payload = {
     "messages": [
         {"role": "system", "content": "You are a helpful customer support assistant. Use the supplied tools to assist the user."},
         {"role": "user", "content": "Hi, can you tell me the delivery date for my order?"},
-        {"role": "assistant", "content": "Sure! Could you please provide your order ID so I can look up the delivery date for you?"},
+        {"role": "assistant", "content": "Of course! Please provide your order ID so I can look it up."},
         {"role": "user", "content": "i think it is order_12345"},
     ]
 }
