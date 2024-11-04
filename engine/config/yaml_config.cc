@@ -75,6 +75,8 @@ void YamlHandler::ModelConfigFromYaml() {
       tmp.model = yaml_node_["model"].as<std::string>();
     if (yaml_node_["version"])
       tmp.version = yaml_node_["version"].as<std::string>();
+    if (yaml_node_["size"])
+      tmp.size = yaml_node_["size"].as<uint64_t>();
     if (yaml_node_["engine"])
       tmp.engine = yaml_node_["engine"].as<std::string>();
     if (yaml_node_["prompt_template"]) {
@@ -266,6 +268,8 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
     if (!model_config_.grammar.empty())
       yaml_node_["grammar"] = model_config_.grammar;
 
+    yaml_node_["size"] = model_config_.size;
+
     yaml_node_["created"] = std::time(nullptr);
   } catch (const std::exception& e) {
     std::cerr << "Error when update model config : " << e.what() << std::endl;
@@ -318,6 +322,7 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     outFile << "# END REQUIRED\n";
     outFile << "\n";
     outFile << "# BEGIN OPTIONAL\n";
+    outFile << format_utils::writeKeyValue("size", yaml_node_["size"]);
     outFile << format_utils::writeKeyValue("stream", yaml_node_["stream"],
                                            "Default true?");
     outFile << format_utils::writeKeyValue("top_p", yaml_node_["top_p"],
