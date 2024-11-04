@@ -43,7 +43,8 @@ class InferenceService {
 
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
-  InferResult UnloadModel(std::shared_ptr<Json::Value> json_body);
+  InferResult UnloadModel(const std::string& engine,
+                          const std::string& model_id);
 
   InferResult GetModelStatus(std::shared_ptr<Json::Value> json_body);
 

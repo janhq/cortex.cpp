@@ -67,7 +67,10 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_->UnloadModel(req->getJsonObject());
+  auto engine = (*req->getJsonObject())["engine"].asString();
+  auto model = (*req->getJsonObject())["model_id"].asString();
+  CTL_INF("Unloading model: " + model + ", engine: " + engine);
+  auto ir = inference_svc_->UnloadModel(engine, model);
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
   resp->setStatusCode(
       static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));

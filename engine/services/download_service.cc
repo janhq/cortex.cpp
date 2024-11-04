@@ -1,6 +1,5 @@
 #include "download_service.h"
 #include <curl/curl.h>
-#include <httplib.h>
 #include <stdio.h>
 #include <filesystem>
 #include <mutex>
@@ -11,14 +10,6 @@
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
-
-#ifdef _WIN32
-#define ftell64(f) _ftelli64(f)
-#define fseek64(f, o, w) _fseeki64(f, o, w)
-#else
-#define ftell64(f) ftello(f)
-#define fseek64(f, o, w) fseeko(f, o, w)
-#endif
 
 namespace {
 size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {

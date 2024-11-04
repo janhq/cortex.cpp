@@ -2,7 +2,6 @@
 
 #include <curl/curl.h>
 #include <eventpp/eventqueue.h>
-#include <filesystem>
 #include <functional>
 #include <optional>
 #include <queue>

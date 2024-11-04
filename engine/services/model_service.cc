@@ -78,7 +78,6 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
       .host = kHuggingFaceHost,
       .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
 
-  httplib::Client cli(url.GetProtocolAndHost());
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {
     return cpp::fail("Model " + modelId + " not found");
@@ -546,6 +545,14 @@ cpp::result<void, std::string> ModelService::DeleteModel(
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
+  auto result = StopModel(model_handle);
+  if (result.has_error()) {
+    CTL_INF("Failed to stop model " << model_handle
+                                    << ", error: " << result.error());
+  } else {
+    CTL_INF("Model " << model_handle << " stopped successfully");
+  }
+
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
     if (model_entry.has_error()) {
@@ -590,7 +597,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 }
 
 cpp::result<bool, std::string> ModelService::StartModel(
-    const std::string& host, int port, const std::string& model_handle,
+    const std::string& model_handle,
     const StartParameterOverride& params_override) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
@@ -627,7 +634,6 @@ cpp::result<bool, std::string> ModelService::StartModel(
     } else {
       bypass_stop_check_set_.insert(model_handle);
     }
-    httplib::Client cli(host + ":" + std::to_string(port));
 
     json_data["model"] = model_handle;
     if (auto& cpt = params_override.custom_prompt_template;
@@ -674,7 +680,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
 }
 
 cpp::result<bool, std::string> ModelService::StopModel(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& model_handle) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -683,7 +689,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
   try {
     auto bypass_check = (bypass_stop_check_set_.find(model_handle) !=
                          bypass_stop_check_set_.end());
-    Json::Value json_data;
+    std::string engine_name = "";
     if (!bypass_check) {
       auto model_entry = modellist_handler.GetModelInfo(model_handle);
       if (model_entry.has_error()) {
@@ -695,18 +701,13 @@ cpp::result<bool, std::string> ModelService::StopModel(
               fs::path(model_entry.value().path_to_model_yaml))
               .string());
       auto mc = yaml_handler.GetModelConfig();
-      json_data["engine"] = mc.engine;
+      engine_name = mc.engine;
     }
-
-    httplib::Client cli(host + ":" + std::to_string(port));
-    json_data["model"] = model_handle;
     if (bypass_check) {
-      json_data["engine"] = kLlamaEngine;
+      engine_name = kLlamaEngine;
     }
-    CTL_INF(json_data.toStyledString());
     assert(inference_svc_);
-    auto ir =
-        inference_svc_->UnloadModel(std::make_shared<Json::Value>(json_data));
+    auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
     if (status == httplib::StatusCode::OK_200) {
@@ -725,7 +726,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
 }
 
 cpp::result<bool, std::string> ModelService::GetModelStatus(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& model_handle) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -743,29 +744,20 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
             .string());
     auto mc = yaml_handler.GetModelConfig();
 
-    httplib::Client cli(host + ":" + std::to_string(port));
-
     Json::Value root;
     root["model"] = model_handle;
     root["engine"] = mc.engine;
 
-    auto data_str = json_helper::DumpJsonString(root);
-
-    auto res = cli.Post("/inferences/server/modelstatus", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else {
-        CTL_INF("Model failed to get model status with status code: "
-                << res->status);
-        return cpp::fail("Model failed to get model status with status code: " +
-                         std::to_string(res->status));
-      }
+    auto ir =
+        inference_svc_->GetModelStatus(std::make_shared<Json::Value>(root));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      return true;
     } else {
-      auto err = res.error();
-      CTL_WRN("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      CTL_ERR("Model failed to get model status with status code: " << status);
+      return cpp::fail("Model failed to get model status: " +
+                       data["message"].asString());
     }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +

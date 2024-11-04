@@ -91,18 +91,11 @@ InferResult InferenceService::LoadModel(
   return std::make_pair(stt, r);
 }
 
-InferResult InferenceService::UnloadModel(
-    std::shared_ptr<Json::Value> json_body) {
-  std::string engine_type;
-  if (!HasFieldInReq(json_body, "engine")) {
-    engine_type = kLlamaRepo;
-  } else {
-    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
-  }
-
+InferResult InferenceService::UnloadModel(const std::string& engine_name,
+                                          const std::string& model_id) {
   Json::Value r;
   Json::Value stt;
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  auto engine_result = engine_service_->GetLoadedEngine(engine_name);
   if (engine_result.has_error()) {
     Json::Value res;
     res["message"] = "Engine is not loaded yet";
@@ -112,9 +105,13 @@ InferResult InferenceService::UnloadModel(
     return std::make_pair(stt, res);
   }
 
+  Json::Value json_body;
+  json_body["engine"] = engine_name;
+  json_body["model"] = model_id;
+
   LOG_TRACE << "Start unload model";
   auto engine = std::get<EngineI*>(engine_result.value());
-  engine->UnloadModel(json_body,
+  engine->UnloadModel(std::make_shared<Json::Value>(json_body),
                       [&r, &stt](Json::Value status, Json::Value res) {
                         stt = status;
                         r = res;

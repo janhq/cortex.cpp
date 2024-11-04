@@ -37,7 +37,7 @@ class ModelService {
       std::shared_ptr<DownloadService> download_service,
       std::shared_ptr<services::InferenceService> inference_service)
       : download_service_{download_service},
-        inference_svc_(inference_service){};
+        inference_svc_(inference_service) {};
 
   /**
    * Return model id if download successfully
@@ -64,14 +64,13 @@ class ModelService {
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
   cpp::result<bool, std::string> StartModel(
-      const std::string& host, int port, const std::string& model_handle,
+      const std::string& model_handle,
       const StartParameterOverride& params_override);
 
-  cpp::result<bool, std::string> StopModel(const std::string& host, int port,
-                                           const std::string& model_handle);
+  cpp::result<bool, std::string> StopModel(const std::string& model_handle);
 
   cpp::result<bool, std::string> GetModelStatus(
-      const std::string& host, int port, const std::string& model_handle);
+      const std::string& model_handle);
 
   cpp::result<ModelPullInfo, std::string> GetModelPullInfo(
       const std::string& model_handle);

@@ -557,6 +557,17 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
                      " is not installed yet!");
   }
 
+  if (IsEngineLoaded(ne)) {
+    CTL_INF("Engine " << ne << " is already loaded, unloading it");
+    auto unload_res = UnloadEngine(ne);
+    if (unload_res.has_error()) {
+      CTL_INF("Failed to unload engine: " << unload_res.error());
+      return cpp::fail(unload_res.error());
+    } else {
+      CTL_INF("Engine " << ne << " unloaded successfully");
+    }
+  }
+
   auto normalized_version = string_utils::RemoveSubstring(version, "v");
 
   auto config = file_manager_utils::GetCortexConfig();
