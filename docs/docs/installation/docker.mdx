@@ -30,28 +30,39 @@ This guide walks you through the setup and running of Cortex using Docker.
    ```
 
 2. **Build the Docker Image**
-   - To use the latest versions of `cortex.cpp` and `cortex.llamacpp`:
-     ```bash
-     docker build -t cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
-     ```
-   - To specify versions:
-     ```bash
-     docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
-     ```
+
+<Tabs>
+  <TabItem value="Latest cortex.llamacpp" label="Latest cortex.llamacpp">
+  ```sh
+  docker build -t cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
+  ```
+  </TabItem>
+  <TabItem value="Specify cortex.llamacpp version" label="Specify cortex.llamacpp version">
+  ```sh
+  docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
+  ```
+  </TabItem>
+</Tabs>
 
 3. **Run the Docker Container**
-   - Create a Docker volume to store models and data:
+  - Create a Docker volume to store models and data:
      ```bash
      docker volume create cortex_data
      ```
-   - Run in **GPU mode** (requires `nvidia-docker`):
-     ```bash
-     docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
-     ```
-   - Run in **CPU mode**:
-     ```bash
-     docker run -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
-     ```
+
+  <Tabs>
+    <TabItem value="GPU mode" label="GPU mode">
+    ```sh
+    # requires nvidia-container-toolkit
+    docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
+    ```
+    </TabItem>
+    <TabItem value="CPU mode" label="CPU mode">
+    ```sh
+    docker run -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
+    ```
+    </TabItem>
+  </Tabs>
 
 4. **Check Logs (Optional)**
    ```bash
@@ -106,15 +117,19 @@ curl --request GET --url http://localhost:39281/v1/engines --header "Content-Typ
 - Open a terminal and run `websocat ws://localhost:39281/events` to capture download events, follow [this instruction](https://github.com/vi/websocat?tab=readme-ov-file#installation) to install `websocat`.
 - In another terminal, pull models using the commands below.
 
-   ```bash
-   # Pull model from Cortex's Hugging Face hub
-   curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
-   ```
-
-   ```bash
-   # Pull model directly from a URL
-   curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "https://huggingface.co/afrideva/zephyr-smol_llama-100m-sft-full-GGUF/blob/main/zephyr-smol_llama-100m-sft-full.q2_k.gguf"}'
-   ```
+  <Tabs>
+    <TabItem value="Pull model from cortexso's Hugging Face hub" label="Pull model from Cortex's Hugging Face hub">
+    ```sh
+    # requires nvidia-container-toolkit
+    curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
+    ```
+    </TabItem>
+    <TabItem value="Pull model directly from a URL" label="Pull model directly from a URL">
+    ```sh
+    curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "https://huggingface.co/afrideva/zephyr-smol_llama-100m-sft-full-GGUF/blob/main/zephyr-smol_llama-100m-sft-full.q2_k.gguf"}'
+    ```
+    </TabItem>
+  </Tabs>
 
 - After pull models successfully, run command below to list models.
    ```bash

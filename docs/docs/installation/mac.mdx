@@ -83,16 +83,22 @@ The script requires sudo permission.
    ```
 2. Build the Cortex.cpp :
 
-    ```bash
+  <Tabs>
+    <TabItem value="Mac Silicon" label="Mac Silicon">
+    ```sh
     cd engine
     make configure-vcpkg
-
-    # Mac silicon
-    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
-
-    # Mac Intel
     make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
     ```
+    </TabItem>
+    <TabItem value="Mac Intel" label="Mac Intel">
+    ```sh
+    cd engine
+    make configure-vcpkg
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+    ```
+    </TabItem>
+  </Tabs>
 
 3. Verify that Cortex.cpp is builded correctly by getting help information.
 
