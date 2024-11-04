@@ -268,8 +268,7 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
     if (!model_config_.grammar.empty())
       yaml_node_["grammar"] = model_config_.grammar;
 
-    if (!std::isnan(static_cast<double>(model_config_.size)))
-      yaml_node_["size"] = model_config_.size;
+    yaml_node_["size"] = model_config_.size;
 
     yaml_node_["created"] = std::time(nullptr);
   } catch (const std::exception& e) {
