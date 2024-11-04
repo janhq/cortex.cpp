@@ -3191,7 +3191,8 @@
           },
           "option": {
             "type": "string",
-            "description": "Import options such as symlink or copy."
+            "description": "Import options such as symlink or copy.",
+            "enum": ["symlink", "copy"]
           }
         },
         "required": ["model", "modelPath"]

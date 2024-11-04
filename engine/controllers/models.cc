@@ -343,7 +343,7 @@ void Models::ImportModel(
     config::ModelConfig model_config = gguf_handler.GetModelConfig();
     // There are 2 options: symlink and copy
     if (option == "copy") {
-      // Move GGUF file to the destination path
+      // Copy GGUF file to the destination path
       std::filesystem::path file_path =
           std::filesystem::path(model_yaml_path).parent_path() /
           std::filesystem::path(modelPath).filename();
