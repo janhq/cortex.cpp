@@ -3538,11 +3538,6 @@
       "UpdateModelDto": {
         "type": "object",
         "properties": {
-          "model": {
-            "type": "string",
-            "description": "Unique model identifier used for request construction.",
-            "example": "tinyllama:1b-gguf"
-          },
           "files": {
             "type": "array",
             "description": "List of file paths associated with the model. Can be relative or absolute.",
