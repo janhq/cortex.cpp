@@ -1,3 +1,4 @@
+#include "download_service.h"
 #include <curl/curl.h>
 #include <httplib.h>
 #include <stdio.h>
@@ -6,7 +7,6 @@
 #include <optional>
 #include <ostream>
 #include <utility>
-#include "download_service.h"
 #include "utils/format_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
@@ -147,7 +147,8 @@ cpp::result<bool, std::string> DownloadService::Download(
   std::string mode = "wb";
   if (std::filesystem::exists(download_item.localPath) &&
       download_item.bytes.has_value()) {
-    curl_off_t existing_file_size = GetLocalFileSize(download_item.localPath);
+    curl_off_t existing_file_size =
+        std::filesystem::file_size(download_item.localPath);
     if (existing_file_size == -1) {
       CLI_LOG("Cannot get file size: " << download_item.localPath.string()
                                        << " . Start download over!");
@@ -204,10 +205,9 @@ cpp::result<bool, std::string> DownloadService::Download(
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   if (mode == "ab") {
-    auto local_file_size = GetLocalFileSize(download_item.localPath);
+    auto local_file_size = std::filesystem::file_size(download_item.localPath);
     if (local_file_size != -1) {
-      curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE,
-                       GetLocalFileSize(download_item.localPath));
+      curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE, local_file_size);
     } else {
       CTL_ERR("Cannot get file size: " << download_item.localPath.string());
     }
@@ -224,23 +224,6 @@ cpp::result<bool, std::string> DownloadService::Download(
   curl_easy_cleanup(curl);
   return true;
 }
-
-curl_off_t DownloadService::GetLocalFileSize(
-    const std::filesystem::path& path) const {
-  auto file = fopen(path.string().c_str(), "r");
-  if (!file) {
-    return -1;
-  }
-
-  if (fseek64(file, 0, SEEK_END) != 0) {
-    return -1;
-  }
-
-  auto file_size = ftell64(file);
-  fclose(file);
-  return file_size;
-}
-
 void DownloadService::WorkerThread() {
   while (!stop_flag_) {
     DownloadTask task;

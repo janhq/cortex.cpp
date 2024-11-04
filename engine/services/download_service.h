@@ -90,8 +90,6 @@ class DownloadService {
       const std::string& download_id,
       const DownloadItem& download_item) noexcept;
 
-  curl_off_t GetLocalFileSize(const std::filesystem::path& path) const;
-
   std::shared_ptr<EventQueue> event_queue_;
 
   CURLM* multi_handle_;
