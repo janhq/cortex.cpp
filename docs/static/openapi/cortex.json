@@ -334,7 +334,7 @@
       },
       "delete": {
         "tags": [
-          "Models"
+          "Running Models"
         ],
         "summary": "Stop model download",
         "description": "Stops the download of a model with the corresponding taskId provided in the request body",
@@ -449,7 +449,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -484,7 +484,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -552,7 +552,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       },
       "delete": {
@@ -583,7 +583,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -625,7 +625,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -1403,6 +1403,7 @@
         "Engines",
         "Events",
         "Models",
+        "Running Models",
         "Processes",
         "Status",
         "Server"
