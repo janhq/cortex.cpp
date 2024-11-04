@@ -1,0 +1,25 @@
+---
+title: cortex.db
+description: cortex.db Overview.
+slug: "cortex-db"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+This document outlines the architecture of the database designed to store and manage various types of entities and their associated metadata.
+
+## Table Structure
+### models Table
+The `models` table is designed to hold metadata about various AI models. Below is the structure of the table:
+
+| Column Name        | Data Type | Description                                             |
+|--------------------|-----------|---------------------------------------------------------|
+| model_id           | TEXT      | A unique identifier for each model (Primary Key).      |
+| author_repo_id     | TEXT      | The identifier for the repository where the model is stored. |
+| branch_name        | TEXT      | The branch name in the repository that contains the model. |
+| path_to_model_yaml | TEXT      | The file path to the YAML configuration file for the model. |
