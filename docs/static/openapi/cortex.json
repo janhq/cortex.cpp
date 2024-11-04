@@ -1371,6 +1371,10 @@
       "description": "These endpoints provide a list and descriptions of all available models within the Cortex framework."
     },
     {
+      "name": "Running Models",
+      "description": "These endpoints support a range of operations that allow users to effectively control and interact with their models"
+    },
+    {
       "name": "Server",
       "description": "These endpoints manage the lifecycle of Server, including heath check and shutdown."
     },
