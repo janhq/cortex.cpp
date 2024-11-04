@@ -206,7 +206,8 @@ model_path: string
 |------------------------|--------------------------------------------------------------------------------------|--------------|
 | `cache_type`           | Data type of the KV cache in llama.cpp models. Supported types are `f16`, `q8_0`, and `q4_0`, default is `f16`.  | No          |
 | `cache_enabled`           |Enables caching of conversation history for reuse in subsequent requests. Default is `false`  | No          |
-
+| `mmproj`           |  path to mmproj GGUF model, support for llava model   | No          |
+| `llama_model_path` | path to llm GGUF model  | No          |
 
 These parameters will override the `model.yml` parameters when starting model through the API.
 

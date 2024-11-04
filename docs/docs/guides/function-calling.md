@@ -438,14 +438,10 @@ User can also specify the function with enum field to the tool definition to mak
 
 (*) Note that the accuracy of function calling heavily depends on the quality of the model. For small models like 8B or 12B, we should only use function calling with simple cases.
 
+ The function calling feature from cortex.cpp is primarily an application of prompt engineering. When tools are specified, we inject a system prompt into the conversation to facilitate this functionality.
 
-
-<!--
- Note: The function calling feature from cortex.cpp is primarily an application of prompt engineering. When tools are specified, we inject a system prompt into the conversation to facilitate this functionality.
- 
  Compatibility: This feature works best with models like llama3.1 and its derivatives, such as mistral-nemo or qwen.
 
  Customization: Users have the option to manually update the system prompt to fine-tune it for specific problems or use cases. The detail implementation is in this [PR](https://github.com/janhq/cortex.cpp/pull/1472/files).
 
- The full steps to mimic the function calling feature in Python using openai lib can be found [here](https://github.com/janhq/models/issues/16#issuecomment-2381129322)
--->
+ The full steps to mimic the function calling feature in Python using openai lib can be found [here](https://github.com/janhq/models/issues/16#issuecomment-2381129322).
