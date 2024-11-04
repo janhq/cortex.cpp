@@ -457,7 +457,7 @@
       "post": {
         "operationId": "ModelsController_startModel",
         "summary": "Start model",
-        "description": "Load a model into memory.",
+        "description": "Load a model into memory. Note: Request body parameters will override those loaded from model.yml",
         "requestBody": {
           "required": true,
           "content": {
@@ -498,7 +498,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelStartDto"
+                "$ref": "#/components/schemas/ModelStopDto"
               },
               "example": {
                 "model": "llama3:8b-gguf-q6-k"
@@ -3179,8 +3179,60 @@
             "type": "string",
             "example": "llama3:8b-gguf-q6-k",
             "description": "A downloaded model name."
+          },
+          "ctx_len": {
+            "type": "number",
+            "description": "The context length for model operations varies; the maximum depends on the specific model used.",
+            "example": 4096
+          },
+          "ngl": {
+            "type": "number",
+            "description": "Determines GPU layer usage.",
+            "example": 32
+          },
+          "n_parallel": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Number of parallel processing units to use.",
+            "example": 1
+          },
+          "cache_type": {
+            "type": "string",
+            "description": "KV cache type: f16, q8_0, q4_0, default is f16",
+            "example": "f16"
+          },
+          "caching_enabled": {
+            "type": "boolean",
+            "description": "To enable prompt caching or not",
+            "example": true
+          },
+          "model_path": {
+            "type": "string",
+            "description": "Local path to LLM model file",
+            "example": "/tmp/model.gguf"
+          },
+          "mmproj": {
+            "type": "string",
+            "description": "Local path to mmproj model file",
+            "example": "/tmp/model.gguf"
           }
-        }
+        },
+        "required": [
+          "model"
+        ]
+      },
+      "ModelStopDto": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "example": "llama3:8b-gguf-q6-k",
+            "description": "A downloaded model name."
+          }
+        },
+        "required": [
+          "model"
+        ]
       },
       "ImportModelRequest": {
         "type": "object",
