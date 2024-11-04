@@ -89,6 +89,7 @@ sudo apt remove cortexcpp
 - CMake >= 3.10
 - gcc/g++ >= 9
 - ninja-build
+- make-gnu
 
 ### Build Cortex.cpp
 
@@ -103,7 +104,7 @@ sudo apt remove cortexcpp
     ```bash
     cd engine
     make configure-vcpkg
-    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=$(git rev-parse HEAD) -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=$(git rev-parse HEAD) -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
     ```
 
 3. Verify that Cortex.cpp is builded correctly by getting help information.
@@ -112,3 +113,11 @@ sudo apt remove cortexcpp
     # Get the help information
     ./build/cortex -h
     ```
+
+## Update cortex to latest version
+:::info
+The script requires sudo permission. Supported for debians based systems only (Ubuntu, Debian, etc).
+:::
+```bash
+sudo cortex update
+```
