@@ -1,8 +1,148 @@
+
 ---
 title: Docker
-description: Install Cortex through Docker.
+description: Install Cortex using Docker.
 ---
 
 :::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+🚧 **Cortex.cpp is currently in development.** The documentation describes the intended functionality, which may not yet be fully implemented.
 :::
+
+# Setting Up Cortex with Docker
+
+This guide walks you through the setup and running of Cortex using Docker.
+
+## Prerequisites
+
+- Docker or Docker Desktop
+- `nvidia-container-toolkit` (for GPU support)
+
+## Setup Instructions
+
+1. **Clone the Cortex Repository**
+   ```bash
+   git clone https://github.com/janhq/cortex.cpp.git
+   cd cortex.cpp
+   git submodule update --init
+   ```
+
+2. **Build the Docker Image**
+   - To use the latest versions of `cortex.cpp` and `cortex.llamacpp`:
+     ```bash
+     docker build -t cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
+     ```
+   - To specify versions:
+     ```bash
+     docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
+     ```
+
+3. **Run the Docker Container**
+   - Create a Docker volume to store models and data:
+     ```bash
+     docker volume create cortex_data
+     ```
+   - Run in **GPU mode** (requires `nvidia-docker`):
+     ```bash
+     docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
+     ```
+   - Run in **CPU mode**:
+     ```bash
+     docker run -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
+     ```
+
+4. **Check Logs (Optional)**
+   ```bash
+   docker logs cortex
+   ```
+
+5. **Access the Cortex Documentation API**
+   - Open [http://localhost:39281](http://localhost:39281) in your browser.
+
+6. **Access the Container and Try Cortex CLI**
+   ```bash
+   docker exec -it cortex bash
+   cortex --help
+   ```
+
+## Usage
+
+With Docker running, you can use the following commands to interact with Cortex. Ensure the container is running and `curl` is installed on your machine.
+
+### 1. List Available Engines
+
+```bash
+curl --request GET --url http://localhost:39281/v1/engines --header "Content-Type: application/json"
+```
+
+- **Example Response**
+  ```json
+  {
+    "data": [
+      {
+        "description": "This extension enables chat completion API calls using the Onnx engine",
+        "format": "ONNX",
+        "name": "onnxruntime",
+        "status": "Incompatible"
+      },
+      {
+        "description": "This extension enables chat completion API calls using the LlamaCPP engine",
+        "format": "GGUF",
+        "name": "llama-cpp",
+        "status": "Ready",
+        "variant": "linux-amd64-avx2",
+        "version": "0.1.37"
+      }
+    ],
+    "object": "list",
+    "result": "OK"
+  }
+  ```
+
+### 2. Pull Models from Hugging Face
+
+- Open a terminal and run `websocat ws://localhost:39281/events` to capture download events, follow [this instruction](https://github.com/vi/websocat?tab=readme-ov-file#installation) to install `websocat`.
+- In another terminal, pull models using the commands below.
+
+   ```bash
+   # Pull model from Cortex's Hugging Face hub
+   curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
+   ```
+
+   ```bash
+   # Pull model directly from a URL
+   curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "https://huggingface.co/afrideva/zephyr-smol_llama-100m-sft-full-GGUF/blob/main/zephyr-smol_llama-100m-sft-full.q2_k.gguf"}'
+   ```
+
+- After pull models successfully, run command below to list models.
+   ```bash
+   curl --request GET --url http://localhost:39281/v1/models
+   ```
+
+### 3. Start a Model and Send an Inference Request
+
+- **Start the model:**
+  ```bash
+  curl --request POST --url http://localhost:39281/v1/models/start --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
+  ```
+
+- **Send an inference request:**
+  ```bash
+  curl --request POST --url http://localhost:39281/v1/chat/completions --header 'Content-Type: application/json' --data '{
+      "frequency_penalty": 0.2,
+      "max_tokens": 4096,
+      "messages": [{"content": "Tell me a joke", "role": "user"}],
+      "model": "tinyllama:gguf",
+      "presence_penalty": 0.6,
+      "stop": ["End"],
+      "stream": true,
+      "temperature": 0.8,
+      "top_p": 0.95
+    }'
+  ```
+
+### 4. Stop a Model
+
+- To stop a running model, use:
+  ```bash
+  curl --request POST --url http://localhost:39281/v1/models/stop --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
+  ```
