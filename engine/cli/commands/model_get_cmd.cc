@@ -8,6 +8,7 @@
 #include "httplib.h"
 #include "server_start_cmd.h"
 #include "utils/file_manager_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 
 namespace commands {
@@ -30,7 +31,8 @@ void ModelGetCmd::Exec(const std::string& host, int port,
     if (res->status == httplib::StatusCode::OK_200) {
       CLI_LOG(res->body);
     } else {
-      CTL_ERR("Model failed to get with status code: " << res->status);
+      auto root = json_helper::ParseJsonString(res->body);
+      CLI_LOG(root["message"].asString());
     }
   } else {
     auto err = res.error();
