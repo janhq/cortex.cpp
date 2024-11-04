@@ -18,7 +18,8 @@
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
                std::optional<std::string> author,
-               std::optional<std::string> name) {
+               std::optional<std::string> name,
+               std::optional<std::uint64_t> size) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
@@ -35,6 +36,7 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   model_config.model = ggufDownloadItem.id;
   model_config.name =
       name.has_value() ? name.value() : gguf_handler.GetModelConfig().name;
+  model_config.size = size.value_or(0);
   yaml_handler.UpdateModelConfig(model_config);
 
   auto yaml_path{ggufDownloadItem.localPath};
@@ -284,8 +286,13 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
                                  }}}};
 
   auto on_finished = [author, temp_name](const DownloadTask& finishedTask) {
+    // Sum downloadedBytes from all items
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(gguf_download_item, author, temp_name);
+    ParseGguf(gguf_download_item, author, temp_name, model_size);
   };
 
   downloadTask.id = unique_model_id;
@@ -349,8 +356,13 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
                                  }}}};
 
   auto on_finished = [author](const DownloadTask& finishedTask) {
+    // Sum downloadedBytes from all items
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(gguf_download_item, author, std::nullopt);
+    ParseGguf(gguf_download_item, author, std::nullopt, model_size);
   };
 
   auto result = download_service_->AddDownloadTask(downloadTask, on_finished);

@@ -26,30 +26,30 @@ The configuration file is stored in the following locations:
 You can configure the following parameters in the `.cortexrc` file:
 | Parameter | Description | Default Value |
 |------------------|--------------------------------------------------|--------------------------------|
-| `dataFolderPath` | Path to the folder where `.cortexrc` located. | User's home folder. |
-| `apiServerHost` | Host address for the Cortex.cpp API server. | `127.0.0.1` |
-| `apiServerPort` | Port number for the Cortex.cpp API server. | `39281` |
-| `logFolderPath` | Path to the folder where Cortex.cpp logs are stored. | `C:\Users\<username>\cortexcpp-nightly` |
-| `logLlamaCppPath` | Path to the folder where LlamaCpp logs are stored. | `./logs/cortex.log` |
-| `logTensorrtLLMPath` | Path to the folder where TensorRT logs are stored. | `./logs/cortex.log` |
-| `logOnnxPath` | Path to the folder where ONNX logs are stored. | `./logs/cortex.log` |
-| `maxLogLines` | Maximum number of lines in the log file. | `100000` |
-| `checkedForUpdateAt` | Timestamp of the last update check. | `0` |
-| `latestRelease` | Latest release version. | `""` |
-| `huggingFaceToken` | Hugging Face API token. Use to download private models from Hugging Face. | `""` |
+| `dataFolderPath` | Path to the folder where `.cortexrc` located.  | User's home folder.  |
+| `apiServerHost`  | Host address for the Cortex.cpp API server.      | `127.0.0.1`                    |
+| `apiServerPort`  | Port number for the Cortex.cpp API server.       | `39281`                        |
+| `logFolderPath`  | Path the folder where logs are located           | User's home folder.            |
+| `logLlamaCppPath`  | The llama-cpp engine .                         | `./logs/cortex.log`            |
+| `logTensorrtLLMPath`  | The tensorrt-llm engine log file path.      | `./logs/cortex.log`            |
+| `logOnnxPath`    | The onnxruntime engine log file path.            | `./logs/cortex.log`            |
+| `maxLogLines`    | The maximum log lines that write to file.        | `100000`                       |
+| `checkedForUpdateAt`  | The last time for checking updates.         | `0`                            |
+| `latestRelease`  | The lastest release vesion.                      | Empty string                   |
+| `huggingFaceToken`  | HuggingFace token.                            | Empty string                   |
 
 Example of the `.cortexrc` file:
 
 ```
-logFolderPath: C:\Users\<username>\cortexcpp
+logFolderPath: /Users/<username>/cortexcpp
 logLlamaCppPath: ./logs/cortex.log
 logTensorrtLLMPath: ./logs/cortex.log
 logOnnxPath: ./logs/cortex.log
-dataFolderPath: C:\Users\username\cortexcpp
+dataFolderPath: /Users/<username>/cortexcpp
 maxLogLines: 100000
 apiServerHost: 127.0.0.1
 apiServerPort: 39281
-checkedForUpdateAt: 1730363971
+checkedForUpdateAt: 1730501224
 latestRelease: v1.0.1
 huggingFaceToken: ""
 ```
