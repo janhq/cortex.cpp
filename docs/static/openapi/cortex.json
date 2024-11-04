@@ -227,7 +227,9 @@
             }
           }
         },
-        "tags": ["Chat"]
+        "tags": [
+          "Chat"
+        ]
       }
     },
     "/v1/models/pull": {
@@ -517,7 +519,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -664,7 +666,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Models"
+        ]
       }
     },
     "/v1/threads": {
@@ -3189,7 +3193,10 @@
             "description": "The display name of the model."
           }
         },
-        "required": ["model", "modelPath"]
+        "required": [
+          "model",
+          "modelPath"
+        ]
       },
       "ImportModelResponse": {
         "type": "object",
@@ -3208,7 +3215,11 @@
             "example": "OK"
           }
         },
-        "required": ["message", "modelHandle", "result"]
+        "required": [
+          "message",
+          "modelHandle",
+          "result"
+        ]
       },
       "CommonResponseDto": {
         "type": "object",
