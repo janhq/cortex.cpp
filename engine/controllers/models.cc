@@ -1,6 +1,5 @@
 #include "database/models.h"
 #include <drogon/HttpTypes.h>
-#include <cstdint>
 #include <filesystem>
 #include <optional>
 #include "config/gguf_parser.h"
@@ -352,11 +351,11 @@ void Models::ImportModel(
           modelPath, file_path,
           std::filesystem::copy_options::update_existing);
       model_config.files.push_back(file_path.string());
-      uintmax_t size = std::filesystem::file_size(file_path);
+      auto size = std::filesystem::file_size(file_path);
       model_config.size = size;
     } else {
       model_config.files.push_back(modelPath);
-      uintmax_t size = std::filesystem::file_size(modelPath);
+      auto size = std::filesystem::file_size(modelPath);
       model_config.size = size;
     }
     model_config.model = modelHandle;
