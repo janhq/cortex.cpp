@@ -20,9 +20,12 @@ import Admonition from '@theme/Admonition';
 - Binary files without package management.
 
 ### Cortex.cpp supports three channels
+
 - Stable: The latest stable release on github.
 - Beta: The release candidate for the next stable release, available on github release with the tag `vx.y.z-rc1`
 - Nightly: The nightly build of the latest code on dev branch, available on [discord](https://discord.com/channels/1107178041848909847/1283654073488379904).
+
+For more information, please check out [different channels](#different-channels).
 
 ### Download URLs
 
@@ -79,3 +82,28 @@ Having at least 6GB VRAM when using NVIDIA, AMD, or Intel Arc GPUs is recommende
 :::
 #### Disk
 - At least 10GB for app storage and model download.
+
+## Different channels
+
+Different channels have different features, stability levels, binary file name, app folder and data folder.
+
+### Stable
+- App name: `cortexcpp`
+- Binary file name: `cortex`, `cortex-server` for linux and mac; `cortex.exe`, `cortex-server.exe` for windows.;
+- App folder (Windows Only): `C:\Users\<username>\AppData\Local\cortexcpp`
+- Data folder: `~/cortexcpp` for linux and mac; `C:\Users\<username>\cortexcpp` for windows.
+- Uninstaller script (Mac Only): `cortex-uninstall.sh`
+
+### Beta
+- App name: `cortexcpp-beta`
+- Binary file name: `cortex-beta`, `cortex-server-beta` for linux and mac; `cortex-beta.exe`, `cortex-server-beta.exe` for windows.;
+- App folder (Windows Only): `C:\Users\<username>\AppData\Local\cortexcpp-beta`
+- Data folder: `~/cortexcpp-beta` for linux and mac; `C:\Users\<username>\cortexcpp-beta` for windows.
+- Uninstaller script (Mac Only): `cortex-beta-uninstall.sh`
+
+### Nightly
+- App name: `cortexcpp-nightly`
+- Binary file name: `cortex-nightly`, `cortex-server-nightly` for linux and mac; `cortex-nightly.exe`, `cortex-server-nightly.exe` for windows.;
+- App folder (Windows Only): `C:\Users\<username>\AppData\Local\cortexcpp-nightly`
+- Data folder: `~/cortexcpp-nightly` for linux and mac; `C:\Users\<username>\cortexcpp-nightly` for windows.
+- Uninstaller script (Mac Only): `cortex-nightly-uninstall.sh`
