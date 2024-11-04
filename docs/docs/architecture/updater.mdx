@@ -1,0 +1,76 @@
+---
+title: Updater
+description: Updater Overview.
+slug: "updater"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+This document outlines the architectural design for a C++ updater responsible for downloading and executing installers for two binaries: CLI and Server. 
+
+## Overview
+
+The updater is designed to check for available updates, download the necessary installer files, and execute them to update the CLI and Server binaries. The architecture consists of several key components that work together to achieve this functionality.
+
+## Components
+
+### 1. **Version Management Module**
+
+- **Purpose**: Responsible for checking the current version of the installed binaries and determining if updates are available.
+- **Responsibilities**:
+  - Retrieve the current version from local installations.
+  - Fetch the latest version information from a remote source, latest version information is saved to `.cortexrc`.
+  - Determine if an update is necessary based on version comparison.
+
+### 2. **Installer Download Manager**
+
+- **Purpose**: Handles downloading the installer files from specified URLs.
+- **Responsibilities**:
+  - Manage HTTP requests to fetch installer files.
+  - Handle errors during download.
+  - Save downloaded installers in a temporary directory.
+
+### 3. **Installer Execution Module**
+
+- **Purpose**: Executes the downloaded installer files to perform updates.
+- **Responsibilities**:
+  - Launch the installer with appropriate command-line arguments.
+  - Monitor the installation process and capture any output or errors.
+  - Ensure that installation completes successfully before proceeding.
+
+### 4. **User Interface (CLI)**
+
+- **Purpose**: Provides a command-line interface for users to initiate updates and view status messages.
+- **Responsibilities**:
+  - Display current version information for CLI and Server: `cortex -v`
+  - Inform users about available updates and progress during downloading and installation.
+  - Handle user input for initiating updates: `(sudo) cortex update`
+
+## Workflow
+
+1. **Initialization**:
+   - The updater starts and initializes all necessary modules.
+
+2. **Version Check**:
+   - The Version Management Module retrieves the current versions of both CLI and Server from local installations.
+   - It fetches the latest version information from a remote source.
+
+3. **Update Decision**:
+   - If newer versions are available, the updater proceeds to download the installers; otherwise, it informs the user that no updates are necessary.
+
+4. **Download Process**:
+   - The Installer Download Manager downloads the latest installer files using HTTP requests.
+   - Progress is reported back to the User Interface.
+
+5. **Installer Execution**:
+   - Once downloaded, the Installer Execution Module runs the installer with silent mode.
+   - It monitors the installation process, capturing any output or errors.
+
+6. **Completion Notification**:
+   - After successful installation, the User Interface notifies users of completion or any issues encountered during installation.
+   - Logs are updated with relevant information about the update process.

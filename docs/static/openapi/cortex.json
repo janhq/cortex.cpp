@@ -3434,6 +3434,11 @@
             "description": "To enable mmap, default is true",
             "example": true
           },
+          "size": {
+            "type": "number",
+            "description": "The model file size in bytes",
+            "example": 1073741824
+          },
           "engine": {
             "type": "string",
             "description": "The engine to use.",
