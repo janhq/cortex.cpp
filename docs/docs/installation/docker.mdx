@@ -1,23 +1,26 @@
-
 ---
 title: Docker
 description: Install Cortex using Docker.
 ---
 
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Admonition from '@theme/Admonition';
+
 :::warning
 🚧 **Cortex.cpp is currently in development.** The documentation describes the intended functionality, which may not yet be fully implemented.
 :::
 
-# Setting Up Cortex with Docker
+## Setting Up Cortex with Docker
 
 This guide walks you through the setup and running of Cortex using Docker.
 
-## Prerequisites
+### Prerequisites
 
 - Docker or Docker Desktop
 - `nvidia-container-toolkit` (for GPU support)
 
-## Setup Instructions
+### Setup Instructions
 
 1. **Clone the Cortex Repository**
    ```bash
@@ -64,11 +67,11 @@ This guide walks you through the setup and running of Cortex using Docker.
    cortex --help
    ```
 
-## Usage
+### Usage
 
 With Docker running, you can use the following commands to interact with Cortex. Ensure the container is running and `curl` is installed on your machine.
 
-### 1. List Available Engines
+#### 1. List Available Engines
 
 ```bash
 curl --request GET --url http://localhost:39281/v1/engines --header "Content-Type: application/json"
@@ -98,7 +101,7 @@ curl --request GET --url http://localhost:39281/v1/engines --header "Content-Typ
   }
   ```
 
-### 2. Pull Models from Hugging Face
+#### 2. Pull Models from Hugging Face
 
 - Open a terminal and run `websocat ws://localhost:39281/events` to capture download events, follow [this instruction](https://github.com/vi/websocat?tab=readme-ov-file#installation) to install `websocat`.
 - In another terminal, pull models using the commands below.
@@ -118,7 +121,7 @@ curl --request GET --url http://localhost:39281/v1/engines --header "Content-Typ
    curl --request GET --url http://localhost:39281/v1/models
    ```
 
-### 3. Start a Model and Send an Inference Request
+#### 3. Start a Model and Send an Inference Request
 
 - **Start the model:**
   ```bash
@@ -140,7 +143,7 @@ curl --request GET --url http://localhost:39281/v1/engines --header "Content-Typ
     }'
   ```
 
-### 4. Stop a Model
+#### 4. Stop a Model
 
 - To stop a running model, use:
   ```bash

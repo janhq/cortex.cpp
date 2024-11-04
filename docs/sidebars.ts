@@ -35,7 +35,8 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Installation",
       link: {
-        type: "generated-index",
+        type: "doc",
+        id: "installation"
       },
       collapsed: true,
       items: [
@@ -68,7 +69,8 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Architecture",
       link: {
-        type: "generated-index",
+        type: "doc",
+        id: "architecture"
       },
       collapsed: true,
       items: [
