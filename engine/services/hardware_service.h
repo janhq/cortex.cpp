@@ -24,5 +24,6 @@ struct HardwareInfo {
 class HardwareService {
  public:
   HardwareInfo GetHardwareInfo();
+  bool Restart(const std::string& host, int port);
 };
 }  // namespace services

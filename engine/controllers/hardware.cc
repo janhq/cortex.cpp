@@ -1,5 +1,7 @@
 #include "hardware.h"
 #include "utils/cortex_utils.h"
+#include "utils/file_manager_utils.h"
+#include "utils/scope_exit.h"
 
 void Hardware::GetHardwareInfo(
     const HttpRequestPtr& req,
@@ -15,4 +17,22 @@ void Hardware::GetHardwareInfo(
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);
+}
+
+void Hardware::Activate(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  app().quit();
+  Json::Value ret;
+  ret["message"] = "Done";
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  resp->setStatusCode(k200OK);
+  callback(resp);
+
+  LOG_INFO << "Restarting...";
+
+  cortex::utils::ScopeExit se([this]() {
+    auto config = file_manager_utils::GetCortexConfig();
+    hw_svc_.Restart(config.apiServerHost, std::stoi(config.apiServerPort));
+  });
 }

@@ -349,7 +349,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
 
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
   auto dst = executable_path / GetCortexBinary();
-  utils::ScopeExit se([]() {
+  cortex::utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
     try {
       auto n = std::filesystem::remove_all(cortex_tmp);
@@ -417,7 +417,7 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
 
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
   auto dst = executable_path / GetCortexBinary();
-  utils::ScopeExit se([]() {
+  cortex::utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
     try {
       auto n = std::filesystem::remove_all(cortex_tmp);
@@ -551,7 +551,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
   auto dst = executable_path / GetCortexBinary();
-  utils::ScopeExit se([]() {
+  cortex::utils::ScopeExit se([]() {
     auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
     try {
       auto n = std::filesystem::remove_all(cortex_tmp);
