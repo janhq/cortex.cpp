@@ -1,9 +1,18 @@
 ---
 title: cortex.js
-description: How to integrate cortex.js with a Typescript application.
-slug: "ts-library"
+description: How to use the Cortex.js Library
 ---
 
+[Cortex.js](https://github.com/janhq/cortex.js) is a Typescript client library that can be used to interact with the Cortex API. 
+
+This is still a work in progress, and we will let the community know once a stable version is available. 
+
+:::warning
+🚧 Cortex.js is currently under development, and this page is a stub for future development. 
+:::
+
+
+<!-- 
 :::warning
 🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
@@ -61,4 +70,4 @@ async function inference() {
 }
 
 inference();
-```
+``` -->
