@@ -32,8 +32,8 @@ Cortex provides a streamlined way to pull (download) machine learning models fro
 
 For pulling models from [Cortex model registry](https://huggingface.co/cortexso), simply type `cortex pull <model_name>` to your terminal.
 
-```
-$ cortex pull tinyllama
+```sh
+cortex pull tinyllama
 Downloaded models:
     tinyllama:1b-gguf
 
@@ -53,11 +53,49 @@ Available to download:
 Select a model (1-11):
 ```
 
+#### Pulling models with repository handle
+
+When user want to pull a model which is not ready in [Cortex model registry](https://huggingface.co/cortexso), user can provide the repository handle to Cortex.
+
+For example, we can pull model from [QuantFactory-FinanceLlama3](https://huggingface.co/QuantFactory/finance-Llama3-8B-GGUF) by enter to terminal `cortex pull QuantFactory/finance-Llama3-8B-GGUF`.
+
+```sh
+cortex pull QuantFactory/finance-Llama3-8B-GGUF
+Select an option
+    1. finance-Llama3-8B.Q2_K.gguf
+    2. finance-Llama3-8B.Q3_K_L.gguf
+    3. finance-Llama3-8B.Q3_K_M.gguf
+    4. finance-Llama3-8B.Q3_K_S.gguf
+    5. finance-Llama3-8B.Q4_0.gguf
+    6. finance-Llama3-8B.Q4_1.gguf
+    7. finance-Llama3-8B.Q4_K_M.gguf
+    8. finance-Llama3-8B.Q4_K_S.gguf
+    9. finance-Llama3-8B.Q5_0.gguf
+    10. finance-Llama3-8B.Q5_1.gguf
+    11. finance-Llama3-8B.Q5_K_M.gguf
+    12. finance-Llama3-8B.Q5_K_S.gguf
+    13. finance-Llama3-8B.Q6_K.gguf
+    14. finance-Llama3-8B.Q8_0.gguf
+
+Select an option (1-14):
+```
+
+#### Pulling models with direct url
+
+Clients can pull models directly using a URL. This allows for the direct download of models from a specified location without additional configuration.
+
+```sh
+cortex pull https://huggingface.co/QuantFactory/OpenMath2-Llama3.1-8B-GGUF/blob/main/OpenMath2-Llama3.1-8B.Q4_0.gguf
+Validating download items, please wait..
+Start downloading..
+QuantFactory:OpenMat 0%[==================================================] [00m:00s] 3.98 MB/0.00 B
+```
+
 ### Pulling Models via HTTP API
 
 To pull a model using the HTTP API, make a `POST` request to the following endpoint:
 
-```curl
+```sh
 curl --request POST \
   --url http://localhost:39281/v1/models/pull \
   --header 'Content-Type: application/json' \
@@ -206,8 +244,8 @@ The DownloadSuccess event indicates that all items in the download task have bee
 
 You can list your ready-to-use models via CLI using `cortex models list` command.
 
-```
-$ cortex models list
+```sh
+cortex models list
 +---------+-------------------+
 | (Index) | ID                |
 +---------+-------------------+
@@ -217,8 +255,8 @@ $ cortex models list
 
 For more options, use `cortex models list --help` command.
 
-```
-$ cortex models list -h
+```sh
+cortex models list -h
 List all local models
 Usage:
 cortex models [options] [subcommand]
@@ -232,13 +270,28 @@ Options:
   -v,--version                Display version
 ```
 
-### List local-available models via HTTP API
+### Aborting Download Task
+
+Clients can abort a downloading task using the task ID. Below is a sample `curl` command to abort a download task:
+
+```sh
+curl --location --request DELETE 'http://127.0.0.1:3928/models/pull' \
+--header 'Content-Type: application/json' \
+--data '{
+    "taskId": "tinyllama:1b-gguf-q2-k"
+}'
+```
+
+An event with type `DownloadStopped` will be emitted when the task is successfully aborted.
+
+### Listing local-available models via HTTP API
 
 This section describes how to list all models that are available locally on your system using the HTTP API. By making a GET request to the specified endpoint, you can retrieve a list of models along with their details, such as model ID, name, file paths, engine type, and version. This is useful for managing and verifying the models you have downloaded and are ready to use in your local environment.
 
-```
-$ curl --request GET \
-  --url http://127.0.0.1:39281/v1/models
+```sh
+curl --request GET \
+ --url http://127.0.0.1:39281/v1/models
+
 ```
 
 Response:
