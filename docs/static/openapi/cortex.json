@@ -329,12 +329,12 @@
           }
         },
         "tags": [
-          "Models"
+          "Pulling Models"
         ]
       },
       "delete": {
         "tags": [
-          "Running Models"
+          "Pulling Models"
         ],
         "summary": "Stop model download",
         "description": "Stops the download of a model with the corresponding taskId provided in the request body",
@@ -667,7 +667,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Pulling Models"
         ]
       }
     },
@@ -1367,8 +1367,8 @@
       "description": "These endpoints manage the lifecycle of an Assistant within a conversation thread."
     },
     {
-      "name": "Models",
-      "description": "These endpoints provide a list and descriptions of all available models within the Cortex framework."
+      "name": "Pulling Models",
+      "description": "These endpoints handle downloading and importing models."
     },
     {
       "name": "Running Models",
@@ -1402,7 +1402,7 @@
         "Chat",
         "Engines",
         "Events",
-        "Models",
+        "Pulling Models",
         "Running Models",
         "Processes",
         "Status",
