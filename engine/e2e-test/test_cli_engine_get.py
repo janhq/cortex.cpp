@@ -62,4 +62,6 @@ class TestCliEngineGet:
         exit_code, output, error = run("Get engine", ["engines", "get", "onnxruntime"])
         print(output)
         assert exit_code == 0, f"Get engine failed with error: {error}"
-        assert "Incompatible" in output, "onnxruntime should be Incompatible on Linux"
+        assert (
+            "is not supported o" in output
+        ), "onnxruntime should be Incompatible on Linux"
