@@ -75,7 +75,7 @@ const sidebars: SidebarsConfig = {
         { type: "doc", id: "architecture/data-folder", label: "Cortex Data Folder" },
         { type: "doc", id: "architecture/cortex-db", label: "cortex.db" },
         { type: "doc", id: "architecture/cortexrc", label: ".cortexrc" },
-        { type: "doc", id: "architecture/updater", label: "updater" },
+        { type: "doc", id: "architecture/updater", label: "Updater" },
       ]
     },
     {
