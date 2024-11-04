@@ -240,7 +240,55 @@ The DownloadSuccess event indicates that all items in the download task have bee
 }
 ```
 
-### List local-available models via CLI
+### Importing local-models
+
+When clients have models that are not inside the Cortex data folder and wish to run them inside Cortex, they can import local models using either the CLI or the HTTP API.
+
+#### via CLI
+
+Use the following command to import a local model using the CLI:
+
+```sh
+cortex models import --model_id my-tinyllama --model_path /Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama
+/1b-gguf/model.gguf
+```
+
+Response:
+
+```sh
+Successfully import model from  '/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf/model.gguf' for modeID 'my-tinyllama'.
+```
+
+#### via HTTP API
+
+Use the following curl command to import a local model using the HTTP API:
+
+```sh
+curl --request POST \
+  --url http://127.0.0.1:39281/v1/models/import \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "model": "model-id",
+  "modelPath": "absolute/path/to/gguf",
+  "name": "model display name"
+}'
+```
+
+### Aborting Download Task
+
+Clients can abort a downloading task using the task ID. Below is a sample `curl` command to abort a download task:
+
+```sh
+curl --location --request DELETE 'http://127.0.0.1:3928/models/pull' \
+--header 'Content-Type: application/json' \
+--data '{
+    "taskId": "tinyllama:1b-gguf-q2-k"
+}'
+```
+
+An event with type `DownloadStopped` will be emitted when the task is successfully aborted.
+
+### Listing local-available models via CLI
 
 You can list your ready-to-use models via CLI using `cortex models list` command.
 
@@ -269,20 +317,6 @@ Options:
   -e,--engine                 Display engine
   -v,--version                Display version
 ```
-
-### Aborting Download Task
-
-Clients can abort a downloading task using the task ID. Below is a sample `curl` command to abort a download task:
-
-```sh
-curl --location --request DELETE 'http://127.0.0.1:3928/models/pull' \
---header 'Content-Type: application/json' \
---data '{
-    "taskId": "tinyllama:1b-gguf-q2-k"
-}'
-```
-
-An event with type `DownloadStopped` will be emitted when the task is successfully aborted.
 
 ### Listing local-available models via HTTP API
 
