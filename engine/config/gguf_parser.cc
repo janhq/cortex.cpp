@@ -71,12 +71,8 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
   CloseHandle(file_handle_);
 
 #else
-  uintmax_t file_size_ = std::filesystem::file_size(file_path);
-  if (file_size_ == -1) {
-    perror("Error getting file size");
-    // close(fd);
-    throw std::runtime_error("Failed to get file size");
-  }
+  file_size_ = std::filesystem::file_size(file_path);
+ 
   int file_descriptor = open(file_path.c_str(), O_RDONLY);
   // Memory-map the file
   data_ = static_cast<uint8_t*>(

@@ -147,12 +147,10 @@ cpp::result<bool, std::string> DownloadService::Download(
   std::string mode = "wb";
   if (std::filesystem::exists(download_item.localPath) &&
       download_item.bytes.has_value()) {
-    uintmax_t existing_file_size =
-        std::filesystem::file_size(download_item.localPath);
-    if (existing_file_size == -1) {
-      CLI_LOG("Cannot get file size: " << download_item.localPath.string()
-                                       << " . Start download over!");
-    } else {
+    try {
+      curl_off_t existing_file_size =
+          std::filesystem::file_size(download_item.localPath);
+
       CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
                                      << download_item.localPath.string()
                                      << " - " << existing_file_size);
@@ -186,6 +184,9 @@ cpp::result<bool, std::string> DownloadService::Download(
           return false;
         }
       }
+    } catch (const std::filesystem::filesystem_error& e) {
+      CLI_LOG("Cannot get file size: "
+              << e.what() << download_item.localPath.string() << "\n");
     }
   }
 
@@ -205,11 +206,12 @@ cpp::result<bool, std::string> DownloadService::Download(
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   if (mode == "ab") {
-    uintmax_t local_file_size = std::filesystem::file_size(download_item.localPath);
-    if (local_file_size != -1) {
+    try {
+      curl_off_t local_file_size =
+          std::filesystem::file_size(download_item.localPath);
       curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE, local_file_size);
-    } else {
-      CTL_ERR("Cannot get file size: " << download_item.localPath.string());
+    } catch (const std::filesystem::filesystem_error& e) {
+      CTL_ERR("Cannot get file size: " << e.what() << '\n');
     }
   }
 
