@@ -156,7 +156,7 @@
       "get": {
         "operationId": "HealthController_check",
         "summary": "Check health",
-        "description": "Checks the health of the application.",
+        "description": "Performs a comprehensive check of the application's health status.",
         "parameters": [],
         "responses": {
           "200": {
@@ -175,7 +175,7 @@
       "delete": {
         "operationId": "Terminate server process",
         "summary": "Terminate server",
-        "description": "Terminate server process.",
+        "description": "Initiates the shutdown process for the server, ensuring that all active connections are gracefully closed and any ongoing processes are properly terminated.",
         "parameters": [],
         "responses": {
           "200": {
