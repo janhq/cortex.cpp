@@ -3,6 +3,14 @@ title: Structured Outputs
 ---
 # Structured Outputs
 
+Structured outputs, or response formats, are a feature designed to generate responses in a defined JSON schema, enabling more predictable and machine-readable outputs. This is essential for applications where data consistency and format adherence are crucial, such as automated data processing, structured data generation, and integrations with other systems.
+
+In recent developments, systems like OpenAI's models have excelled at producing these structured outputs. However, while open-source models like Llama 3.1 and Mistral Nemo offer powerful capabilities, they currently struggle to produce reliably structured JSON outputs required for advanced use cases. This often stems from the models not being specifically trained on tasks demanding strict schema adherence.
+
+This guide explores the concept of structured outputs using these models, highlights the challenges faced in achieving consistent output formatting, and provides strategies for improving output accuracy, particularly when using models that don't inherently support this feature as robustly as GPT models.
+
+By understanding these nuances, users can make informed decisions when choosing models for tasks requiring structured outputs, ensuring that the tools they select align with their project's formatting requirements and expected accuracy.
+
 The Structured Outputs/Response Format feature in [OpenAI](https://platform.openai.com/docs/guides/structured-outputs) is fundamentally a prompt engineering challenge. While its goal is to use system prompts to generate JSON output matching a specific schema, popular open-source models like Llama 3.1 and Mistral Nemo struggle to consistently generate exact JSON output that matches the requirements. An easy way to directly guild the model to reponse in json format in system message:
 
 ```
@@ -225,4 +233,16 @@ Response: {
         ],
 ```
 
-This feature currently works reliably only with GPT models, not with open-source models. Given these limitations, we suggest that you should only use Response Format feature as the first example (guild the json format for the reponse for model). Besides, the response format maybe just in beta because we have to use `client.beta.chat.completions.parse` to create chat completion instead of `client.chat.completion.create`
+
+
+
+## Limitations of Open-Source Models for Structured Outputs
+
+While the concept of structured outputs is compelling, particularly for applications requiring machine-readable data, it's important to understand that not all models support this capability equally. Open-source models such as Llama 3.1 and Mistral Nemo face notable challenges in generating outputs that adhere strictly to defined JSON schemas. Here are the key limitations:
+
+- Lack of Training Data: These models have not been specifically trained on tasks demanding precise JSON formatting, unlike some proprietary models which have been fine-tuned for such tasks.
+- Inconsistency in Output: Due to their training scope, `Llama 3.1` and `Mistral Nemo` often produce outputs that may deviate from the intended schema. This can include additional natural language explanations or incorrectly nested JSON structures.
+- Complexity in Parsing: Without consistent JSON formatting, downstream processes that rely on predictable data schemas may encounter errors, leading to challenges in automation and data integration tasks.
+- Beta Features: Some features related to structured outputs may still be in beta, requiring usage of specific methods like `client.beta.chat.completions.parse`, which suggests they are not yet fully reliable in all scenarios.
+
+Given these constraints, users should consider these limitations when choosing a model for tasks involving structured outputs. Where strict compliance with a JSON schema is critical, alternative models designed for such precision might be a more suitable choice.
