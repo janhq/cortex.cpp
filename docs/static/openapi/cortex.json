@@ -642,7 +642,8 @@
               "example": {
                 "model": "model-id",
                 "modelPath": "/path/to/gguf",
-                "name": "model display name"
+                "name": "model display name",
+                "option": "symlink"
               }
             }
           }
@@ -3187,6 +3188,10 @@
           "name": {
             "type": "string",
             "description": "The display name of the model."
+          },
+          "option": {
+            "type": "string",
+            "description": "Import options such as symlink or copy."
           }
         },
         "required": ["model", "modelPath"]

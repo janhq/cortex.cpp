@@ -1,5 +1,6 @@
 #include "database/models.h"
 #include <drogon/HttpTypes.h>
+#include <filesystem>
 #include <optional>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
@@ -320,6 +321,7 @@ void Models::ImportModel(
   auto modelHandle = (*(req->getJsonObject())).get("model", "").asString();
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
   auto modelName = (*(req->getJsonObject())).get("name", "").asString();
+  auto option = (*(req->getJsonObject())).get("option", "symlink").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   cortex::db::Models modellist_utils_obj;
@@ -339,7 +341,19 @@ void Models::ImportModel(
         std::filesystem::path(model_yaml_path).parent_path());
     gguf_handler.Parse(modelPath);
     config::ModelConfig model_config = gguf_handler.GetModelConfig();
-    model_config.files.push_back(modelPath);
+    // There are 2 options: symlink and copy
+    if (option == "copy") {
+      // Move GGUF file to the destination path
+      std::filesystem::path file_path =
+          std::filesystem::path(model_yaml_path).parent_path() /
+          std::filesystem::path(modelPath).filename();
+      std::filesystem::copy_file(
+          modelPath, file_path,
+          std::filesystem::copy_options::update_existing);
+      model_config.files.push_back(file_path);
+    } else {
+      model_config.files.push_back(modelPath);
+    }
     model_config.model = modelHandle;
     model_config.name = modelName.empty() ? model_config.name : modelName;
     yaml_handler.UpdateModelConfig(model_config);
