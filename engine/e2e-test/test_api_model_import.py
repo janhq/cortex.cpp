@@ -29,7 +29,7 @@ class TestApiModelImport:
         response = requests.post("http://localhost:3928/models/import", json=body_json)
         assert response.status_code == 200
 
-    @pytest.mark.skipif(False, reason="Expensive test. Only test when you have local gguf file.")
+    @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
     def test_model_import_with_name_should_be_success(self):
         body_json = {'model': 'testing-model',
                      'modelPath': '/path/to/local/gguf',
