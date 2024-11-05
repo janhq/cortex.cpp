@@ -45,3 +45,11 @@ html[data-theme="dark"] {
     padding: 80px 0;
   }
 }
+
+.sidebar-heading-type {
+  color: var(--method-color) !important;
+}
+
+.scalar-component.scalar-codeblock-pre {
+  border-radius: 0;
+}
