@@ -1,10 +1,14 @@
 #include "engine_list_cmd.h"
-#include "httplib.h"
-#include "json/json.h"
+#include <json/reader.h>
+#include <json/value.h>
 #include "server_start_cmd.h"
+#include "services/engine_service.h"
+#include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/url_parser.h"
 // clang-format off
 #include <tabulate/table.hpp>
+#include <unordered_map>
 // clang-format on
 
 namespace commands {
@@ -20,34 +24,72 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
   }
 
   tabulate::Table table;
-  table.add_row(
-      {"#", "Name", "Supported Formats", "Version", "Variant", "Status"});
+  table.add_row({"#", "Name", "Version", "Variant", "Status"});
 
-  httplib::Client cli(host + ":" + std::to_string(port));
-  auto res = cli.Get("/v1/engines");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      int count = 0;
-      // CLI_LOG(res->body);
-      Json::Value body;
-      Json::Reader reader;
-      reader.parse(res->body, body);
-      if (!body["data"].isNull()) {
-        for (auto const& v : body["data"]) {
-          count += 1;
-          table.add_row({std::to_string(count), v["name"].asString(),
-                         v["format"].asString(), v["version"].asString(),
-                         v["variant"].asString(), v["status"].asString()});
-        }
-      }
-    } else {
-      CLI_LOG_ERROR("Failed to get engine list with status code: " << res->status);
-      return false;
-    }
-  } else {
-    auto err = res.error();
-    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "engines"},
+  };
+  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (result.has_error()) {
+    CTL_ERR(result.error());
     return false;
+  }
+
+  std::vector<std::string> engines = {
+      kLlamaEngine,
+      kOnnxEngine,
+      kTrtLlmEngine,
+  };
+
+  std::unordered_map<std::string, std::vector<EngineVariantResponse>>
+      engine_map;
+
+  for (const auto& engine : engines) {
+    auto installed_variants = result.value()[engine];
+    for (const auto& variant : installed_variants) {
+      engine_map[engine].push_back(EngineVariantResponse{
+          .name = variant["name"].asString(),
+          .version = variant["version"].asString(),
+          .engine = engine,
+      });
+    }
+  }
+
+  // TODO: namh support onnx and tensorrt
+  auto default_engine_url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "engines", kLlamaEngine, "default"},
+  };
+  auto selected_variant_result =
+      curl_utils::SimpleGetJson(default_engine_url.ToFullPath());
+
+  std::optional<std::pair<std::string, std::string>> variant_pair =
+      std::nullopt;
+  if (selected_variant_result.has_value()) {
+    variant_pair = std::make_pair<std::string, std::string>(
+        selected_variant_result.value()["variant"].asString(),
+        selected_variant_result.value()["version"].asString());
+  }
+
+  std::vector<EngineVariantResponse> output;
+  for (const auto& [key, value] : engine_map) {
+    output.insert(output.end(), value.begin(), value.end());
+  }
+
+  int count = 0;
+  for (auto const& v : output) {
+    count += 1;
+    if (variant_pair.has_value() && v.name == variant_pair->first &&
+        v.version == variant_pair->second) {
+      table.add_row(
+          {std::to_string(count), v.engine, v.version, v.name, "Default"});
+      continue;
+    }
+    table.add_row(
+        {std::to_string(count), v.engine, v.version, v.name, "Installed"});
   }
 
   std::cout << table << std::endl;

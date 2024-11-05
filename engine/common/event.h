@@ -1,13 +1,12 @@
 #pragma once
 
 #include <eventpp/eventqueue.h>
-#include <nlohmann/json.hpp>
 #include <string>
 #include "common/download_task.h"
 #include "eventpp/utilities/anydata.h"
+#include "utils/json_helper.h"
 
 namespace cortex::event {
-using namespace nlohmann;
 
 enum class EventType {
   DownloadEvent,
@@ -64,14 +63,15 @@ inline DownloadEventType DownloadEventTypeFromString(const std::string& str) {
 }  // namespace
 
 struct DownloadEvent : public cortex::event::Event {
-  std::string ToJsonString() const {
-    json json{{"type", DownloadEventTypeToString(type_)},
-              {"task", download_task_.ToJson()}};
-    return json.dump();
-  }
-
   DownloadEventType type_;
   DownloadTask download_task_;
+
+  std::string ToJsonString() const {
+    Json::Value root;
+    root["type"] = DownloadEventTypeToString(type_);
+    root["task"] = download_task_.ToJsonCpp();
+    return json_helper::DumpJsonString(root);
+  }
 };
 
 inline DownloadEvent GetDownloadEventFromJson(const Json::Value& item_json) {

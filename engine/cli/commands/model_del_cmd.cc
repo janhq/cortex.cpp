@@ -15,7 +15,7 @@ void ModelDelCmd::Exec(const std::string& host, int port,
       return;
     }
   }
-  
+
   // Call API to delete model
   httplib::Client cli(host + ":" + std::to_string(port));
   auto res = cli.Delete("/v1/models/" + model_handle);

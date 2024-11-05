@@ -47,7 +47,12 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   }
 
   auto url_obj = url_parser::FromUrlString(ggufDownloadItem.downloadUrl);
-  auto branch = url_obj.pathParams[3];
+  if (url_obj.has_error()) {
+    CTL_WRN("Error parsing url: " << ggufDownloadItem.downloadUrl);
+    return;
+  }
+
+  auto branch = url_obj->pathParams[3];
   CTL_INF("Adding model to modellist with branch: " << branch);
 
   auto rel = file_manager_utils::ToRelativeCortexDataPath(yaml_name);
@@ -68,34 +73,30 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
 cpp::result<DownloadTask, std::string> GetDownloadTask(
     const std::string& modelId, const std::string& branch = "main") {
-  using namespace nlohmann;
   url_parser::Url url = {
       .protocol = "https",
-      .host = ModelService::kHuggingFaceHost,
+      .host = kHuggingFaceHost,
       .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
 
-  httplib::Client cli(url.GetProtocolAndHost());
-  auto res =
-      cli.Get(url.GetPathAndQuery(), huggingface_utils::CreateHttpHfHeaders());
-  if (res->status != httplib::StatusCode::OK_200) {
+  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (result.has_error()) {
     return cpp::fail("Model " + modelId + " not found");
   }
-  auto jsonResponse = json::parse(res->body);
 
   std::vector<DownloadItem> download_items{};
   auto model_container_path = file_manager_utils::GetModelsContainerPath() /
                               "cortex.so" / modelId / branch;
   file_manager_utils::CreateDirectoryRecursively(model_container_path.string());
 
-  for (const auto& [key, value] : jsonResponse.items()) {
-    auto path = value["path"].get<std::string>();
+  for (const auto& value : result.value()) {
+    auto path = value["path"].asString();
     if (path == ".gitattributes" || path == ".gitignore" ||
         path == "README.md") {
       continue;
     }
     url_parser::Url download_url = {
         .protocol = "https",
-        .host = ModelService::kHuggingFaceHost,
+        .host = kHuggingFaceHost,
         .pathParams = {"cortexso", modelId, "resolve", branch, path}};
 
     auto local_path = model_container_path / path;
@@ -105,12 +106,9 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
                      .localPath = local_path});
   }
 
-  DownloadTask download_tasks{
-      .id = branch == "main" ? modelId : modelId + "-" + branch,
-      .type = DownloadType::Model,
-      .items = download_items};
-
-  return download_tasks;
+  return DownloadTask{.id = branch == "main" ? modelId : modelId + "-" + branch,
+                      .type = DownloadType::Model,
+                      .items = download_items};
 }
 }  // namespace
 
@@ -231,21 +229,24 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     const std::string& url, std::optional<std::string> temp_model_id,
     std::optional<std::string> temp_name) {
   auto url_obj = url_parser::FromUrlString(url);
+  if (url_obj.has_error()) {
+    return cpp::fail("Invalid url: " + url);
+  }
 
-  if (url_obj.host == kHuggingFaceHost) {
-    if (url_obj.pathParams[2] == "blob") {
-      url_obj.pathParams[2] = "resolve";
+  if (url_obj->host == kHuggingFaceHost) {
+    if (url_obj->pathParams[2] == "blob") {
+      url_obj->pathParams[2] = "resolve";
     }
   }
-  auto author{url_obj.pathParams[0]};
-  auto model_id{url_obj.pathParams[1]};
-  auto file_name{url_obj.pathParams.back()};
+  auto author{url_obj->pathParams[0]};
+  auto model_id{url_obj->pathParams[1]};
+  auto file_name{url_obj->pathParams.back()};
 
   if (author == "cortexso") {
-    return DownloadModelFromCortexsoAsync(model_id, url_obj.pathParams[3]);
+    return DownloadModelFromCortexsoAsync(model_id, url_obj->pathParams[3]);
   }
 
-  if (url_obj.pathParams.size() < 5) {
+  if (url_obj->pathParams.size() < 5) {
     return cpp::fail("Invalid url: " + url);
   }
 
@@ -265,7 +266,7 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   }
 
   auto local_path{file_manager_utils::GetModelsContainerPath() /
-                  "huggingface.co" / author / model_id / file_name};
+                  kHuggingFaceHost / author / model_id / file_name};
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
@@ -275,7 +276,7 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     std::filesystem::create_directories(local_path.parent_path());
   }
 
-  auto download_url = url_parser::FromUrl(url_obj);
+  auto download_url = url_parser::FromUrl(url_obj.value());
   // this assume that the model being downloaded is a single gguf file
   auto downloadTask{DownloadTask{.id = model_id,
                                  .type = DownloadType::Model,
@@ -302,22 +303,25 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 cpp::result<std::string, std::string> ModelService::HandleUrl(
     const std::string& url) {
   auto url_obj = url_parser::FromUrlString(url);
+  if (url_obj.has_error()) {
+    return cpp::fail("Invalid url: " + url);
+  }
 
-  if (url_obj.host == kHuggingFaceHost) {
-    if (url_obj.pathParams[2] == "blob") {
-      url_obj.pathParams[2] = "resolve";
+  if (url_obj->host == kHuggingFaceHost) {
+    if (url_obj->pathParams[2] == "blob") {
+      url_obj->pathParams[2] = "resolve";
     }
   }
-  auto author{url_obj.pathParams[0]};
-  auto model_id{url_obj.pathParams[1]};
-  auto file_name{url_obj.pathParams.back()};
+  auto author{url_obj->pathParams[0]};
+  auto model_id{url_obj->pathParams[1]};
+  auto file_name{url_obj->pathParams.back()};
 
   if (author == "cortexso") {
     return DownloadModelFromCortexso(model_id);
   }
 
-  if (url_obj.pathParams.size() < 5) {
-    if (url_obj.pathParams.size() < 2) {
+  if (url_obj->pathParams.size() < 5) {
+    if (url_obj->pathParams.size() < 2) {
       return cpp::fail("Invalid url: " + url);
     }
     return DownloadHuggingFaceGgufModel(author, model_id, std::nullopt);
@@ -335,7 +339,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   }
 
   auto local_path{file_manager_utils::GetModelsContainerPath() /
-                  "huggingface.co" / author / model_id / file_name};
+                  kHuggingFaceHost / author / model_id / file_name};
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
@@ -345,7 +349,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
     std::filesystem::create_directories(local_path.parent_path());
   }
 
-  auto download_url = url_parser::FromUrl(url_obj);
+  auto download_url = url_parser::FromUrl(url_obj.value());
   // this assume that the model being downloaded is a single gguf file
   auto downloadTask{DownloadTask{.id = model_id,
                                  .type = DownloadType::Model,
@@ -541,6 +545,14 @@ cpp::result<void, std::string> ModelService::DeleteModel(
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
+  auto result = StopModel(model_handle);
+  if (result.has_error()) {
+    CTL_INF("Failed to stop model " << model_handle
+                                    << ", error: " << result.error());
+  } else {
+    CTL_INF("Model " << model_handle << " stopped successfully");
+  }
+
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
     if (model_entry.has_error()) {
@@ -585,7 +597,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 }
 
 cpp::result<bool, std::string> ModelService::StartModel(
-    const std::string& host, int port, const std::string& model_handle,
+    const std::string& model_handle,
     const StartParameterOverride& params_override) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
@@ -622,7 +634,6 @@ cpp::result<bool, std::string> ModelService::StartModel(
     } else {
       bypass_stop_check_set_.insert(model_handle);
     }
-    httplib::Client cli(host + ":" + std::to_string(port));
 
     json_data["model"] = model_handle;
     if (auto& cpt = params_override.custom_prompt_template;
@@ -669,7 +680,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
 }
 
 cpp::result<bool, std::string> ModelService::StopModel(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& model_handle) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -678,7 +689,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
   try {
     auto bypass_check = (bypass_stop_check_set_.find(model_handle) !=
                          bypass_stop_check_set_.end());
-    Json::Value json_data;
+    std::string engine_name = "";
     if (!bypass_check) {
       auto model_entry = modellist_handler.GetModelInfo(model_handle);
       if (model_entry.has_error()) {
@@ -690,18 +701,13 @@ cpp::result<bool, std::string> ModelService::StopModel(
               fs::path(model_entry.value().path_to_model_yaml))
               .string());
       auto mc = yaml_handler.GetModelConfig();
-      json_data["engine"] = mc.engine;
+      engine_name = mc.engine;
     }
-
-    httplib::Client cli(host + ":" + std::to_string(port));
-    json_data["model"] = model_handle;
     if (bypass_check) {
-      json_data["engine"] = kLlamaEngine;
+      engine_name = kLlamaEngine;
     }
-    CTL_INF(json_data.toStyledString());
     assert(inference_svc_);
-    auto ir =
-        inference_svc_->UnloadModel(std::make_shared<Json::Value>(json_data));
+    auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
     if (status == httplib::StatusCode::OK_200) {
@@ -720,7 +726,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
 }
 
 cpp::result<bool, std::string> ModelService::GetModelStatus(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& model_handle) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -738,28 +744,20 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
             .string());
     auto mc = yaml_handler.GetModelConfig();
 
-    httplib::Client cli(host + ":" + std::to_string(port));
-    nlohmann::json json_data;
-    json_data["model"] = model_handle;
-    json_data["engine"] = mc.engine;
+    Json::Value root;
+    root["model"] = model_handle;
+    root["engine"] = mc.engine;
 
-    auto data_str = json_data.dump();
-
-    auto res = cli.Post("/inferences/server/modelstatus", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else {
-        CTL_INF("Model failed to get model status with status code: "
-                << res->status);
-        return cpp::fail("Model failed to get model status with status code: " +
-                         std::to_string(res->status));
-      }
+    auto ir =
+        inference_svc_->GetModelStatus(std::make_shared<Json::Value>(root));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      return true;
     } else {
-      auto err = res.error();
-      CTL_WRN("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      CTL_ERR("Model failed to get model status with status code: " << status);
+      return cpp::fail("Model failed to get model status: " +
+                       data["message"].asString());
     }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
@@ -777,25 +775,29 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 
   if (string_utils::StartsWith(input, "https://")) {
     auto url_obj = url_parser::FromUrlString(input);
-
-    if (url_obj.host == kHuggingFaceHost) {
-      if (url_obj.pathParams[2] == "blob") {
-        url_obj.pathParams[2] = "resolve";
+    if (url_obj.has_error()) {
+      return cpp::fail("Invalid url: " + input);
+    }
+    if (url_obj->host == kHuggingFaceHost) {
+      if (url_obj->pathParams[2] == "blob") {
+        url_obj->pathParams[2] = "resolve";
       }
     }
-    auto author{url_obj.pathParams[0]};
-    auto model_id{url_obj.pathParams[1]};
-    auto file_name{url_obj.pathParams.back()};
+
+    auto author{url_obj->pathParams[0]};
+    auto model_id{url_obj->pathParams[1]};
+    auto file_name{url_obj->pathParams.back()};
     if (author == "cortexso") {
-      return ModelPullInfo{.id = model_id + ":" + url_obj.pathParams[3],
-                           .downloaded_models = {},
-                           .available_models = {},
-                           .download_url = url_parser::FromUrl(url_obj)};
+      return ModelPullInfo{
+          .id = model_id + ":" + url_obj->pathParams[3],
+          .downloaded_models = {},
+          .available_models = {},
+          .download_url = url_parser::FromUrl(url_obj.value())};
     }
     return ModelPullInfo{.id = author + ":" + model_id + ":" + file_name,
                          .downloaded_models = {},
                          .available_models = {},
-                         .download_url = url_parser::FromUrl(url_obj)};
+                         .download_url = url_parser::FromUrl(url_obj.value())};
   }
 
   if (input.find(":") != std::string::npos) {

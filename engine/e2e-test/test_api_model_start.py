@@ -11,7 +11,7 @@ class TestApiModelStart:
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
-        run("Install Engine", ["engines", "install", "llama-cpp"], timeout=None)
+        requests.post("http://localhost:3928/v1/engines/llama-cpp")
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
         run(
             "Pull model",
