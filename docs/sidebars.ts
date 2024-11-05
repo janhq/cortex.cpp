@@ -88,16 +88,12 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Pulling Models",
-      link: { type: "doc", id: "hub/index" },
+      link: { type: "doc", id: "capabilities/models/sources/index" },
       collapsed: true,
       items: [
-        { type: "doc", id: "hub/hugging-face", label: "Adding a HF Organization" },
-        // { type: "doc", id: "hub/cortex-hub", label: "Cortex Model Repos" },
-        // {
-        //   type: "doc",
-        //   id: "hub/nvidia-ngc",
-        //   label: "Nvidia Catalog (Coming Soon)",
-        // },
+        // { type: "doc", id: "capabilities/models/sources/hugging-face", label: "Hugging Face" },
+        // { type: "doc", id: "capabilities/models/sources/cortex-hub", label: "Cortex Model Repos" },
+        // { type: "doc", id: "capabilities/models/sources/nvidia-ngc", label: "Nvidia Catalog (Coming Soon)"},
       ],
     },
     {
