@@ -30,9 +30,16 @@ void Hardware::Activate(
   callback(resp);
 
   LOG_INFO << "Restarting...";
+  // {
+  //   "gpus" : [0, 1]
+  // }
+  services::ActivateHardwareConfig ahc;
+  if (auto o = req->getJsonObject(); o) {
+    for (auto& g : (*o)["gpus"]) {
+      ahc.gpus.push_back(g.asInt());
+    }
+  }
 
-  cortex::utils::ScopeExit se([this]() {
-    auto config = file_manager_utils::GetCortexConfig();
-    hw_svc_.Restart(config.apiServerHost, std::stoi(config.apiServerPort));
-  });
+  auto config = file_manager_utils::GetCortexConfig();
+  hw_svc_.Restart(config.apiServerHost, std::stoi(config.apiServerPort), ahc);
 }

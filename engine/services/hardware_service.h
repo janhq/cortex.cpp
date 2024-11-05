@@ -21,9 +21,14 @@ struct HardwareInfo {
   hardware::PowerInfo power;
 };
 
+struct ActivateHardwareConfig {
+  std::vector<int> gpus;
+};
+
 class HardwareService {
  public:
   HardwareInfo GetHardwareInfo();
-  bool Restart(const std::string& host, int port);
+  bool Restart(const std::string& host, int port,
+               const ActivateHardwareConfig& ahc);
 };
 }  // namespace services
