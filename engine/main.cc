@@ -51,7 +51,6 @@ void RunServer(std::optional<int> port) {
   }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
-
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
@@ -145,6 +144,28 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "--loglevel") == 0) {
+      std::string log_level = argv[i + 1];
+      if (log_level == "TRACE") {
+        trantor::Logger::setLogLevel(trantor::Logger::kTrace);
+        std::cout << "Set log level to TRACE" << std::endl;
+      } else if (log_level == "DEBUG") {
+        trantor::Logger::setLogLevel(trantor::Logger::kDebug);
+        std::cout << "Set log level to DEBUG" << std::endl;
+      } else if (log_level == "INFO") {
+        trantor::Logger::setLogLevel(trantor::Logger::kInfo);
+        std::cout << "Set log level to INFO" << std::endl;
+      } else if (log_level == "WARNING") {
+        trantor::Logger::setLogLevel(trantor::Logger::kWarn);
+        std::cout << "Set log level to WARNING" << std::endl;
+      } else if (log_level == "ERROR") {
+        trantor::Logger::setLogLevel(trantor::Logger::kError);
+        std::cout << "Set log level to ERROR" << std::endl;
+      } else {
+        std::cerr << "Invalid log level: " << log_level
+                  << ", loglevel must be (TRACE, DEBUG, INFO, WARNING or ERROR)"
+                  << std::endl;
+      }
     }
   }
 

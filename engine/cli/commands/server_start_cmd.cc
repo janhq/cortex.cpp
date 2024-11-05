@@ -26,7 +26,14 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 ServerStartCmd::ServerStartCmd() {}
 
-bool ServerStartCmd::Exec(const std::string& host, int port) {
+bool ServerStartCmd::Exec(const std::string& host, int port,
+                          const std::optional<std::string>& loglevel) {
+  std::string log_level_;
+  if (!loglevel.has_value()) {
+    log_level_ = "INFO";
+  } else {
+    log_level_ = loglevel.value();
+  }
   auto exe = commands::GetCortexServerBinary();
   auto get_config_file_path = []() -> std::string {
     if (file_manager_utils::cortex_config_file_path.empty()) {
@@ -53,6 +60,7 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
   std::string params = "--start-server";
   params += " --config_file_path " + get_config_file_path();
   params += " --data_folder_path " + get_data_folder_path();
+  params += " --loglevel " + log_level_;
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
   // Create child process
   if (!CreateProcess(
@@ -111,7 +119,7 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
           get_config_file_path().c_str(), "--data_folder_path",
-          get_data_folder_path().c_str(), (char*)0);
+          get_data_folder_path().c_str(), "--loglevel", log_level_.c_str(), (char*)0);
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {

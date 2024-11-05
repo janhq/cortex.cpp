@@ -94,8 +94,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
           CLI_LOG("\nNew Cortex release available: "
                   << CORTEX_CPP_VERSION << " -> " << *latest_version);
           CLI_LOG("To update, run: " << commands::GetRole()
-                                      << commands::GetCortexBinary()
-                                      << " update");
+                                     << commands::GetCortexBinary()
+                                     << " update");
         }
         done = true;
       });
@@ -138,7 +138,8 @@ void CommandLineParser::SetupCommonCommands() {
     }
   });
 
-  auto run_cmd = app_.add_subcommand("run", "Shortcut: pull, start & chat with a model");
+  auto run_cmd =
+      app_.add_subcommand("run", "Shortcut: pull, start & chat with a model");
   run_cmd->group(kCommonCommandsGroup);
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
@@ -276,9 +277,8 @@ void CommandLineParser::SetupModelCommands() {
   model_alias_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " models alias --model_id [model_id] --alias [alias]");
   model_alias_cmd->group(kSubcommands);
-  model_alias_cmd->add_option(
-      "--model_id", cml_data_.model_id,
-      "Can be a model ID or model alias");
+  model_alias_cmd->add_option("--model_id", cml_data_.model_id,
+                              "Can be a model ID or model alias");
   model_alias_cmd->add_option("--alias", cml_data_.model_alias,
                               "new alias to be set");
   model_alias_cmd->callback([this, model_alias_cmd]() {
@@ -392,6 +392,16 @@ void CommandLineParser::SetupSystemCommands() {
   start_cmd->group(kSystemGroup);
   cml_data_.port = std::stoi(cml_data_.config.apiServerPort);
   start_cmd->add_option("-p, --port", cml_data_.port, "Server port to listen");
+  start_cmd->add_option("--loglevel", cml_data_.loglevel,
+                        "Set up log level for server, accepted TRACE, DEBUG, "
+                        "INFO, WARNING, ERROR");
+  if (cml_data_.loglevel != "INFO" && cml_data_.loglevel != "TRACE" &&
+      cml_data_.loglevel != "DEBUG" && cml_data_.loglevel != "WARNING" &&
+      cml_data_.loglevel != "ERROR") {
+    CLI_LOG("Invalid log level: " << cml_data_.loglevel
+                                  << ", Set Loglevel to INFO");
+    cml_data_.loglevel = "INFO";
+  }
   start_cmd->callback([this] {
     if (std::exchange(executed_, true))
       return;
@@ -404,7 +414,7 @@ void CommandLineParser::SetupSystemCommands() {
     }
     commands::ServerStartCmd ssc;
     ssc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort));
+             std::stoi(cml_data_.config.apiServerPort), cml_data_.loglevel);
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
@@ -417,8 +427,7 @@ void CommandLineParser::SetupSystemCommands() {
     ssc.Exec();
   });
 
-  auto ps_cmd =
-      app_.add_subcommand("ps", "Show active model statuses");
+  auto ps_cmd = app_.add_subcommand("ps", "Show active model statuses");
   ps_cmd->group(kSystemGroup);
   ps_cmd->usage("Usage:\n" + commands::GetCortexBinary() + "ps");
   ps_cmd->callback([&]() {

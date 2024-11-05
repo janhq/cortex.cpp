@@ -28,6 +28,7 @@ void server::ChatCompletion(
   LOG_DEBUG << "Start chat completion";
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
+  LOG_DEBUG << "request body: " << json_body->toStyledString();
   auto q = std::make_shared<services::SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
   if (ir.has_error()) {
@@ -157,7 +158,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
     }
 
     auto str = res["data"].asString();
-    LOG_TRACE << "data: " << str;
+    LOG_DEBUG << "data: " << str;
     std::size_t n = std::min(str.size(), buf_size);
     memcpy(buf, str.data(), n);
 
@@ -173,6 +174,7 @@ void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                  services::SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
   function_calling_utils::PostProcessResponse(res);
+  LOG_DEBUG << "response: " << res.toStyledString();
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
   resp->setStatusCode(
       static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
