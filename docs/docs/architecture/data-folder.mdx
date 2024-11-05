@@ -1,6 +1,6 @@
 ---
-title: Data Folder
-description: Cortex.cpp's data folder.
+title: Data Folder and App Folder
+description: Cortex.cpp's data folder and app folder.
 slug: "data-folder"
 ---
 
@@ -17,37 +17,25 @@ When you install Cortex.cpp, three types of files will be generated on your devi
 - **Configuration Files**
 - **Data Folder**
 
-## Binary Files
+## Binary Files - under the App Folder
 These are the executable files of the Cortex.cpp application. The file format varies depending on the operating system:
 
-- **Windows**: `.exe`
-  - Stable: `C:\Users\<username>\AppData\Local\cortexcpp\cortex.exe`
-  - Beta: `C:\Users\<username>\AppData\Local\cortexcpp-beta\cortex-beta.exe`
-  - Nighty: `C:\Users\<username>\AppData\Local\cortexcpp-nightly\cortex-nightly.exe`
-- **Linux**: `.deb` or `.fedora`
-  - Stable: `/usr/bin/cortexcpp`
-  - Beta: `/usr/bin/cortexcpp-beta`
-  - Nighty: `/usr/bin/cortexcpp-nightly`
-- **macOS**: `.pkg`
-  - Stable: `/usr/local/bin/cortexcpp`
-  - Beta: `/home/<username>/.cortexrc-beta`
-  - Nighty: `/home/<username>/.cortexrc-nightly`
+- **Windows**:
+  - cli: `C:\Users\<username>\AppData\Local\cortexcpp\cortex.exe`
+  - server: `C:\Users\<username>\AppData\Local\cortexcpp\cortex-server.exe`
+- **Linux**:
+  - cli: `/usr/bin/cortex`
+  - server: `/usr/bin/cortex-server`
+- **macOS**:
+  - cli: `/usr/local/bin/cortex`
+  - server: `/usr/local/bin/cortex-server`
 
 ## Cortex.cpp Data Folder
 The data folder stores the engines, models, and logs required by Cortex.cpp. This folder is located at:
 
-- **Windows**:
-  - Stable: `C:\Users\<username>\.cortexcpp`
-  - Beta: `C:\Users\<username>\.cortexcpp-beta`
-  - Nighty: `C:\Users\<username>\.cortexcpp-nightly`
-- **Linux**:
-  - Stable: `/home/<username>/.cortexcpp<env>`
-  - Beta: `/home/<username>/.cortexcpp-beta`
-  - Nighty: `/home/<username>/.cortexcpp-nightly`
-- **macOS**:
-  - Stable: `/Users/<username>\.cortexcpp<env>`
-  - Beta: `/Users/<username>/.cortexcpp-beta`
-  - Nighty: `/Users/<username>/.cortexcpp-nightly`
+- **Windows**: `C:\Users\<username>\cortexcpp`
+- **Linux**: `/home/<username>/cortexcpp`
+- **macOS**: `/Users/<username>\cortexcpp`
 
 ### Folder Structure
 The Cortex.cpp data folder typically follows this structure:
@@ -77,57 +65,9 @@ The Cortex.cpp data folder typically follows this structure:
         └── llamacpp
   ```
   </TabItem>
-  <TabItem value="Beta" label="Beta">
-  ```yaml
-  ~/.cortex-beta
-    ├── models/
-    │   └── model.list
-    │   └── huggingface.co/
-    │       └── <repo_name>/
-              └── <branch_name>/
-                └── model.yaml
-                └── model.gguf
-    │   └── cortex.so/
-    │       └── <repo_name>/
-    │         └── <branch_name>/
-                └── ...engine_files
-                └── model.yaml
-    │   └── imported/
-            └── imported_model.yaml
-    ├── logs/
-    │   └── cortex.txt
-        └── cortex-cli.txt
-    └── engines/
-        └── llamacpp
-  ```
-  </TabItem>
-  <TabItem value="Nightly" label="Nightly">
-  ```yaml
-  ~/.cortex-nightly
-    ├── models/
-    │   └── model.list
-    │   └── huggingface.co/
-    │       └── <repo_name>/
-              └── <branch_name>/
-                └── model.yaml
-                └── model.gguf
-    │   └── cortex.so/
-    │       └── <repo_name>/
-    │         └── <branch_name>/
-                └── ...engine_files
-                └── model.yaml
-    │   └── imported/
-            └── imported_model.yaml
-    ├── logs/
-    │   └── cortex.txt
-        └── cortex-cli.txt
-    └── engines/
-        └── llamacpp
-  ```
-  </TabItem>
 </Tabs>
 
-#### `.cortexcpp<env>`
+#### `cortexcpp`
 The main directory that stores all Cortex-related files, located in the user's home directory.
 #### `models/`
 Contains the AI models used by Cortex for processing and generating responses.
