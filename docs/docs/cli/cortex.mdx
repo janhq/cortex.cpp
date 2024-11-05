@@ -7,12 +7,8 @@ slug: /cli
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
-# Cortex
-This command list all the available commands within the Cortex.cpp commands.
+# `cortex`
+This command list all the available commands within the Cortex commands.
 
 ## Usage
 :::info
@@ -21,48 +17,23 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex
-
-  # Beta
-  cortex-beta
-
-  # Nightly
-  cortex-nightly
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe
-
-  # Beta
-  cortex-beta.exe
-
-  # Nightly
-  cortex-nightly.exe
   ```
   </TabItem>
 </Tabs>
 
-
-## Command Chaining
-Cortex CLI's command chaining support allows multiple commands to be executed in sequence with a simplified syntax.
-
-For example:
-
-- [cortex run](/docs/cli/run)
-- [cortex chat](/docs/cli/chat)
-
 ## Sub Commands
 
+- [cortex start](/docs/cli/start): Start the Cortex API server (starts automatically with other commands)
+- [cortex run](/docs/cli/run): Shortcut for `cortex models start`. Pull a remote model or start a local model, and start chatting.
+- [cortex pull](/docs/cli/pull): Download a model.
 - [cortex models](/docs/cli/models): Manage and configure models.
-- [cortex chat](/docs/cli/chat): Send a chat request to a model.
 - [cortex ps](/docs/cli/ps): Display active models and their operational status.
-- [cortex embeddings](/docs/cli/embeddings): Create an embedding vector representing the input text.
-- [cortex engines](/docs/cli/engines): Manage Cortex.cpp engines.
-- [cortex pull|download](/docs/cli/pull): Download a model.
-- [cortex run](/docs/cli/run): Shortcut to pull, start and chat with a model.
-- [cortex update](/docs/cli/update): Update the Cortex.cpp version.
-- [cortex start](/docs/cli/start): Start the Cortex.cpp API server.
-- [cortex stop](/docs/cli/stop): Stop the Cortex.cpp API server.
+- [cortex engines](/docs/cli/engines): Manage Cortex engines.
+- [cortex update](/docs/cli/update): Update the Cortex version.
+- [cortex stop](/docs/cli/stop): Stop the Cortex API server.

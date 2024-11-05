@@ -88,16 +88,12 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Pulling Models",
-      link: { type: "doc", id: "hub/index" },
+      link: { type: "doc", id: "capabilities/models/sources/index" },
       collapsed: true,
       items: [
-        { type: "doc", id: "hub/hugging-face", label: "Adding a HF Organization" },
-        // { type: "doc", id: "hub/cortex-hub", label: "Cortex Model Repos" },
-        // {
-        //   type: "doc",
-        //   id: "hub/nvidia-ngc",
-        //   label: "Nvidia Catalog (Coming Soon)",
-        // },
+        // { type: "doc", id: "capabilities/models/sources/hugging-face", label: "Hugging Face" },
+        // { type: "doc", id: "capabilities/models/sources/cortex-hub", label: "Cortex Model Repos" },
+        // { type: "doc", id: "capabilities/models/sources/nvidia-ngc", label: "Nvidia Catalog (Coming Soon)"},
       ],
     },
     {
@@ -169,16 +165,15 @@ const sidebars: SidebarsConfig = {
     },
     { type: "doc", id: "cli/cortex", label: "cortex" },
     { type: "doc", id: "cli/start", label: "cortex start" },
-    { type: "doc", id: "cli/chat", label: "cortex chat" },
+    { type: "doc", id: "cli/run", label: "cortex run" },
     // { type: "doc", id: "cli/embeddings", label: "cortex embeddings" },
     // { type: "doc", id: "cli/presets", label: "cortex presets" },
     { type: "doc", id: "cli/pull", label: "cortex pull" },
-    { type: "doc", id: "cli/run", label: "cortex run" },
     { type: "doc", id: "cli/models/index", label: "cortex models" },
     { type: "doc", id: "cli/engines/index", label: "cortex engines" },
-    { type: "doc", id: "cli/stop", label: "cortex stop" },
     { type: "doc", id: "cli/ps", label: "cortex ps" },
     { type: "doc", id: "cli/update", label: "cortex update" }, 
+    { type: "doc", id: "cli/stop", label: "cortex stop" },
   ]
 };
 

@@ -179,7 +179,7 @@ Model load parameters include the options that control how Cortex.cpp runs the m
 | `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
 | `engine`      | The engine that run model, default to `llama-cpp` for local model with gguf format.      | Yes          |
 
-All parameters from the `model.yml` file are used for running the model via the [CLI chat command](/docs/cli/chat) or [CLI run command](/docs/cli/run). These parameters also act as defaults when using the [model start API](/api-reference#tag/models/post/v1/models/start) through cortex.cpp.
+All parameters from the `model.yml` file are used for running the model via the [CLI run command](/docs/cli/run). These parameters also act as defaults when using the [model start API](/api-reference#tag/models/post/v1/models/start) through cortex.cpp.
 
 ## Runtime parameters
 
@@ -217,8 +217,8 @@ The API is accessible at the `/v1/chat/completions` URL and accepts all paramete
 
 With the `llama-cpp` engine, cortex.cpp accept all parameters from [`model.yml` inference section](#Inference Parameters) and accept all parameters from the chat completion API.
 
-:::info
+<!-- :::info
 You can download all the supported model formats from the following:
 - [Cortex Model Repos](/docs/hub/cortex-hub)
 - [HuggingFace Model Repos](/docs/hub/hugging-face)
-:::
+::: -->
