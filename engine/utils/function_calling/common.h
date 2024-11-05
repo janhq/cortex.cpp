@@ -157,6 +157,10 @@ inline void UpdateMessages(std::string& system_prompt,
         tool_choice["function"]["name"].asString() +
         "' to answer the user's question.";
   }
+  bool parallel_tool_calls = request->get("parallel_tool_calls", true).asBool();
+  if (!parallel_tool_calls) {
+    system_prompt += "\n\nNow this is your first priority: You must call the only one function at a time.";
+  }
 
   bool tools_call_in_user_message =
       request->get("tools_call_in_user_message", false).asBool();
