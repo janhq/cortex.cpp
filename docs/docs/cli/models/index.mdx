@@ -5,10 +5,6 @@ title: Cortex Models
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex models`
 
 This command allows you to start, stop, and manage various local or remote model operations within Cortex.
@@ -21,26 +17,13 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models [options] [subcommand]
-
-  # Beta
-  cortex-beta models [options] [subcommand]
-
-  # Nightly
-  cortex-nightly models [options] [subcommand]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models [options]
-  
-  # Beta
-  cortex-beta.exe models [options]
 
-  # Nightly
-  cortex-nightly.exe models [options]
   ```
   </TabItem>
 </Tabs>
@@ -51,7 +34,8 @@ You can use the `--verbose` flag to display more detailed output of the internal
 |-------------------|-------------------------------------------------------|----------|---------------|-----------------|
 | `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
 
-
+---
+# Subcommands:
 
 ## `cortex models get`
 :::info
@@ -63,91 +47,26 @@ This command returns a model detail defined by a `model_id`.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models get <model_id>
-
-  # Beta
-  cortex-beta models get <model_id>
-
-  # Nightly
-  cortex-nightly models get <model_id>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models get <model_id>
-  
-  # Beta
-  cortex-beta.exe models get <model_id>
 
-  # Nightly
-  cortex-nightly.exe models get <model_id>
   ```
   </TabItem>
 </Tabs>
 
 For example, it returns the following:
 
-```bash
-ModelConfig Details:
--------------------
-id: tinyllama
-name: tinyllama 1B
-model: tinyllama:1B
-version: 1
-stop: [</s>]
-top_p: 0.95
-temperature: 0.7
-frequency_penalty: 0
-presence_penalty: 0
-max_tokens: 4096
-stream: true
-ngl: 33
-ctx_len: 4096
-engine: llamacpp
-prompt_template:
-
-<|system|>
-{system_message}</s>
-
-
-
-
-<|user|>
-{prompt}</s>
-
-
-<|assistant|>
-
-
-system_template:
-
-<|system|>
-
-user_template: </s>
-
-
-
-
-<|user|>
-
-ai_template: </s>
-
-
-<|assistant|>
-
-
-tp: 0
-text_model: false
-files: [model_path]
-created: 1725342964
+```yaml
+{
+  "ai_template":"<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n","created":9223372036854775888,"ctx_len":4096,"dynatemp_exponent":1.0,"dynatemp_range":0.0,"engine":"llama-cpp","files":["models/cortex.so/llama3.2/3b-gguf-q4-km/model.gguf"],"frequency_penalty":0.0,"gpu_arch":"","id":"Llama-3.2-3B-Instruct","ignore_eos":false,"max_tokens":4096,"min_keep":0,"min_p":0.05000000074505806,"mirostat":false,"mirostat_eta":0.10000000149011612,"mirostat_tau":5.0,"model":"Llama-3.2-3B-Instruct","n_parallel":1,"n_probs":0,"name":"llama3.2:3b-gguf-q4-km","ngl":29,"object":"model","os":"","owned_by":"","penalize_nl":false,"precision":"","presence_penalty":0.0,"prompt_template":"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n{system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n{prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n","quantization_method":"","repeat_last_n":64,"repeat_penalty":1.0,"result":"OK","seed":-1,"stop":["<|eot_id|>"],"stream":true,"system_template":"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n","temperature":0.69999998807907104,"text_model":false,"tfs_z":1.0,"top_k":40,"top_p":0.89999997615814209,"typ_p":1.0,"user_template":"<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n","version":"2"
+}
 ```
 :::info
 This command uses a `model_id` from the model that you have downloaded or available in your file system.
@@ -170,45 +89,30 @@ This command lists all the downloaded local and remote models.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models list [options]
-
-  # Beta
-  cortex-beta models list [options]
-
-  # Nightly
-  cortex-nightly models list [options]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models list [options]
-  
-  # Beta
-  cortex-beta.exe models list [options]
-
-  # Nightly
-  cortex-nightly.exe models list [options]
   ```
   </TabItem>
 </Tabs>
 
-For example, it returns the following:
+For example, it returns the following:w
 ```bash
-+---------+----------------+-----------------+---------+
-| (Index) |       ID       |      engine     | version |
-+---------+----------------+-----------------+---------+
-|    1    | tinyllama-gguf | llamacpp |    1    |
-+---------+----------------+-----------------+---------+
-|    2    | tinyllama      | llamacpp |    1    |
-+---------+----------------+-----------------+---------+
++---------+---------------------------------------------------------------------------+
+| (Index) | ID                                                                        |
++---------+---------------------------------------------------------------------------+
+| 1       | llama3.2:3b-gguf-q4-km                                                    |
++---------+---------------------------------------------------------------------------+
+| 2       | tinyllama:1b-gguf                                                         |
++---------+---------------------------------------------------------------------------+
+| 3       | TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q2_K.gguf |
++---------+---------------------------------------------------------------------------+
 
 ```
 
@@ -229,32 +133,16 @@ This command starts a model defined by a `model_id`.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models start [options] <model_id>
-
-  # Beta
-  cortex-beta models start [options] <model_id>
-
-  # Nightly
-  cortex-nightly models start [options] <model_id>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models start [options] <model_id>
-  
-  # Beta
-  cortex-beta.exe models start [options] <model_id>
 
-  # Nightly
-  cortex-nightly.exe models start [options] <model_id>
   ```
   </TabItem>
 </Tabs>
@@ -270,8 +158,6 @@ This command uses a `model_id` from the model that you have downloaded or availa
 |---------------------------|---------------------------------------------------------------------------|----------|----------------------------------------------|------------------------|
 | `model_id`                | The identifier of the model you want to start.                            | Yes       | `Prompt to select from the available models` | `mistral`       |
 | `-h`, `--help`            | Display help information for the command.                                 | No       | -                                            | `-h`               |
-<!-- | `-a`, `--attach`          | Attach to an interactive chat session.                                    | No       | `false`                                      | `-a`             |
-| `-p`, `--preset <preset>` | Apply a chat preset to the chat session.                                  | No       | `false`                                      | `-p friendly`    | -->
 
 ## `cortex models stop`
 :::info
@@ -283,32 +169,16 @@ This command stops a model defined by a `model_id`.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models stop <model_id>
-
-  # Beta
-  cortex-beta models stop <model_id>
-
-  # Nightly
-  cortex-nightly models stop <model_id>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models stop <model_id>
-  
-  # Beta
-  cortex-beta.exe models stop <model_id>
 
-  # Nightly
-  cortex-nightly.exe models stop <model_id>
   ```
   </TabItem>
 </Tabs>
@@ -333,32 +203,16 @@ This command deletes a local model defined by a `model_id`.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models delete <model_id>
-
-  # Beta
-  cortex-beta models delete <model_id>
-
-  # Nightly
-  cortex-nightly models delete <model_id>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models delete <model_id>
-  
-  # Beta
-  cortex-beta.exe models delete <model_id>
 
-  # Nightly
-  cortex-nightly.exe models delete <model_id>
   ```
   </TabItem>
 </Tabs>
@@ -373,79 +227,25 @@ This command uses a `model_id` from the model that you have downloaded or availa
 | `model_id`                | The identifier of the model you want to delete.                             | Yes      | -                    | `mistral`       |
 | `-h`, `--help`            | Display help for command.                                                   | No       | -                    | `-h`               |
 
-## `cortex models alias`
-This command adds an alias to a local model that function the same as `model_id`.
-
-
-**Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
-<Tabs>
-  <TabItem value="MacOs/Linux" label="MacOs/Linux">
-  ```sh
-  # Stable
-  cortex models alias --model_id <model_id> --alias <new_model_id_or_model_alias>
-
-  # Beta
-  cortex-beta models alias --model_id <model_id> --alias <new_model_id_or_model_alias>
-
-  # Nightly
-  cortex-nightly models alias --model_id <model_id> --alias <new_model_id_or_model_alias>
-  ```
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-  ```sh
-  # Stable
-  cortex.exe models alias --model_id <model_id> --alias <new_model_id_or_model_alias>
-  
-  # Beta
-  cortex-beta.exe models alias --model_id <model_id> --alias <new_model_id_or_model_alias>
-
-  # Nightly
-  cortex-nightly.exe models alias --model_id <model_id> --alias <new_model_id_or_model_alias>
-  ```
-  </TabItem>
-</Tabs>
-
-
-**Options**:
-| Option                    | Description                                                                 | Required | Default value        | Example                |
-|---------------------------|-----------------------------------------------------------------------------|----------|----------------------|------------------------|
-| `--model_id`                | The identifier of the model.                             | Yes      | -                    | `mistral`       |
-| `-alias`            | The new identifier for the model.                                                   | Yes       | -                    | `mistral_2`               |
-
 ## `cortex models update`
+:::info
+This CLI command calls the following API endpoint:
+- [Update Model](/api-reference#tag/models/patch/v1/models/{modelId)
+:::
 This command updates the `model.yaml` file of a local model.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models update [options]
-
-  # Beta
-  cortex-beta models update [options]
-
-  # Nightly
-  cortex-nightly models update [options]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models update [options]
-  
-  # Beta
-  cortex-beta.exe models update [options]
 
-  # Nightly
-  cortex-nightly.exe models update [options]
   ```
   </TabItem>
 </Tabs>
@@ -506,31 +306,19 @@ This command imports the local model using the model's `gguf` file.
 
 **Usage**:
 :::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+This CLI command calls the following API endpoint:
+- [Import Model](/api-reference#tag/models/post/v1/models/import)
 :::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex models import --model_id <model_id> --model_path </path/to/your/model.gguf>
-
-  # Beta
-  cortex-beta models import --model_id <model_id> --model_path </path/to/your/model.gguf>
-
-  # Nightly
-  cortex-nightly models import --model_id <model_id> --model_path </path/to/your/model.gguf>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe models import --model_id <model_id> --model_path </path/to/your/model.gguf>
-  
-  # Beta
-  cortex-beta.exe models import --model_id <model_id> --model_path </path/to/your/model.gguf>
 
-  # Nightly
-  cortex-nightly.exe models import --model_id <model_id> --model_path </path/to/your/model.gguf>
   ```
   </TabItem>
 </Tabs>
