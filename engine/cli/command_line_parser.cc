@@ -1,12 +1,14 @@
 #include "command_line_parser.h"
 #include <memory>
 #include <optional>
+#include <string>
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
-#include "commands/model_alias_cmd.h"
+#include "commands/engine_update_cmd.h"
+#include "commands/engine_use_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_import_cmd.h"
@@ -271,29 +273,6 @@ void CommandLineParser::SetupModelCommands() {
                                  cml_data_.model_id);
   });
 
-  std::string model_alias;
-  auto model_alias_cmd =
-      models_cmd->add_subcommand("alias", "Add a model alias instead of ID");
-  model_alias_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                         " models alias --model_id [model_id] --alias [alias]");
-  model_alias_cmd->group(kSubcommands);
-  model_alias_cmd->add_option("--model_id", cml_data_.model_id,
-                              "Can be a model ID or model alias");
-  model_alias_cmd->add_option("--alias", cml_data_.model_alias,
-                              "new alias to be set");
-  model_alias_cmd->callback([this, model_alias_cmd]() {
-    if (std::exchange(executed_, true))
-      return;
-    if (cml_data_.model_id.empty() || cml_data_.model_alias.empty()) {
-      CLI_LOG("[model_id] and [alias] are required\n");
-      CLI_LOG(model_alias_cmd->help());
-      return;
-    }
-    commands::ModelAliasCmd mdc;
-    mdc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-             cml_data_.model_alias);
-  });
   // Model update parameters comment
   ModelUpdate(models_cmd);
 
@@ -384,6 +363,41 @@ void CommandLineParser::SetupEngineCommands() {
     EngineUninstall(uninstall_cmd, engine_name);
   }
 
+  auto engine_upd_cmd = engines_cmd->add_subcommand("update", "Update engine");
+  engine_upd_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                        " engines update [engine_name]");
+  engine_upd_cmd->callback([this, engine_upd_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (engine_upd_cmd->get_subcommands().empty()) {
+      CLI_LOG("[engine_name] is required\n");
+      CLI_LOG(engine_upd_cmd->help());
+    }
+  });
+  engine_upd_cmd->group(kSubcommands);
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineUpdate(engine_upd_cmd, engine_name);
+  }
+
+  auto engine_use_cmd =
+      engines_cmd->add_subcommand("use", "Set engine as default");
+  engine_use_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                        " engines use [engine_name]");
+  engine_use_cmd->callback([this, engine_use_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (engine_use_cmd->get_subcommands().empty()) {
+      CLI_LOG("[engine_name] is required\n");
+      CLI_LOG(engine_use_cmd->help());
+    }
+  });
+  engine_use_cmd->group(kSubcommands);
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineUse(engine_use_cmd, engine_name);
+  }
+
   EngineGet(engines_cmd);
 }
 
@@ -410,7 +424,11 @@ void CommandLineParser::SetupSystemCommands() {
                                             << " to " << cml_data_.port);
       auto config_path = file_manager_utils::GetConfigurationPath();
       cml_data_.config.apiServerPort = std::to_string(cml_data_.port);
-      config_yaml_utils::DumpYamlConfig(cml_data_.config, config_path.string());
+      auto result = config_yaml_utils::DumpYamlConfig(cml_data_.config,
+                                                      config_path.string());
+      if (result.has_error()) {
+        CLI_LOG("Error update " << config_path.string() << result.error());
+      }
     }
     commands::ServerStartCmd ssc;
     ssc.Exec(cml_data_.config.apiServerHost,
@@ -469,13 +487,16 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
   install_engine_cmd->add_option("-s, --source", src,
                                  "Install engine by local path");
 
+  install_engine_cmd->add_flag("-m, --menu", cml_data_.show_menu,
+                               "Display menu for engine variant selection");
+
   install_engine_cmd->callback([this, engine_name, &version, &src] {
     if (std::exchange(executed_, true))
       return;
     try {
-      commands::EngineInstallCmd(download_service_,
-                                 cml_data_.config.apiServerHost,
-                                 std::stoi(cml_data_.config.apiServerPort))
+      commands::EngineInstallCmd(
+          download_service_, cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
           .Exec(engine_name, version, src);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
@@ -499,6 +520,47 @@ void CommandLineParser::EngineUninstall(CLI::App* parent,
           std::stoi(cml_data_.config.apiServerPort), engine_name);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
+    }
+  });
+}
+
+void CommandLineParser::EngineUpdate(CLI::App* parent,
+                                     const std::string& engine_name) {
+  auto engine_update_cmd = parent->add_subcommand(engine_name, "");
+  engine_update_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " engines update " + engine_name);
+  engine_update_cmd->group(kEngineGroup);
+
+  engine_update_cmd->callback([this, engine_name] {
+    if (std::exchange(executed_, true))
+      return;
+    try {
+      commands::EngineUpdateCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), engine_name);
+    } catch (const std::exception& e) {
+      CTL_ERR(e.what());
+    }
+  });
+}
+
+void CommandLineParser::EngineUse(CLI::App* parent,
+                                  const std::string& engine_name) {
+  auto engine_use_cmd = parent->add_subcommand(engine_name, "");
+  engine_use_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                        " engines use " + engine_name);
+  engine_use_cmd->group(kEngineGroup);
+
+  engine_use_cmd->callback([this, engine_name] {
+    if (std::exchange(executed_, true))
+      return;
+    auto result = commands::EngineUseCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), engine_name);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
+    } else {
+      CTL_INF("Engine " << engine_name << " is set as default");
     }
   });
 }

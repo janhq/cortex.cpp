@@ -1,6 +1,6 @@
 import pytest
 import requests
-from test_runner import run, start_server, stop_server
+from test_runner import start_server, stop_server
 
 
 class TestApiModelStop:
@@ -12,9 +12,10 @@ class TestApiModelStop:
         if not success:
             raise Exception("Failed to start server")
 
-        run("Install Engine", ["engines", "install", "llama-cpp"], timeout=None)
+        requests.post("http://localhost:3928/engines/llama-cpp")
         yield
 
+        requests.delete("http://localhost:3928/engines/llama-cpp")
         # Teardown
         stop_server()
 

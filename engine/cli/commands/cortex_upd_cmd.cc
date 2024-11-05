@@ -1,9 +1,9 @@
 #include "cortex_upd_cmd.h"
 #include "httplib.h"
-#include "nlohmann/json.hpp"
 #include "server_stop_cmd.h"
 #include "utils/archive_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
 #include "utils/system_info_utils.h"
@@ -144,26 +144,26 @@ std::optional<std::string> CheckNewUpdate(
   if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
-        auto get_latest = [](const nlohmann::json& data) -> std::string {
+        auto get_latest = [](const Json::Value& data) -> std::string {
           if (data.empty()) {
             return "";
           }
 
           if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
-            for (auto& d : data) {
-              if (auto tag = d["tag_name"].get<std::string>();
+            for (const auto& d : data) {
+              if (auto tag = d["tag_name"].asString();
                   tag.find(kBetaComp) != std::string::npos) {
                 return tag;
               }
             }
-            return data[0]["tag_name"].get<std::string>();
+            return data[0]["tag_name"].asString();
           } else {
-            return data["tag_name"].get<std::string>();
+            return data["tag_name"].asString();
           }
           return "";
         };
 
-        auto json_res = nlohmann::json::parse(res->body);
+        auto json_res = json_helper::ParseJsonString(res->body);
         std::string latest_version = get_latest(json_res);
         if (latest_version.empty()) {
           CTL_WRN("Release not found!");
@@ -178,7 +178,7 @@ std::optional<std::string> CheckNewUpdate(
         if (current_version != latest_version) {
           return latest_version;
         }
-      } catch (const nlohmann::json::parse_error& e) {
+      } catch (const std::exception& e) {
         CTL_INF("JSON parse error: " << e.what());
         return std::nullopt;
       }
@@ -321,7 +321,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
   if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
-        auto json_data = nlohmann::json::parse(res->body);
+        auto json_data = json_helper::ParseJsonString(res->body);
         if (json_data.empty()) {
           CLI_LOG("Version not found: " << v);
           return false;
@@ -333,7 +333,7 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
             !downloaded_exe_path) {
           return false;
         }
-      } catch (const nlohmann::json::parse_error& e) {
+      } catch (const std::exception& e) {
         CLI_LOG_ERROR("JSON parse error: " << e.what());
         return false;
       }
@@ -377,12 +377,12 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   if (auto res = cli.Get(release_path)) {
     if (res->status == httplib::StatusCode::OK_200) {
       try {
-        auto json_res = nlohmann::json::parse(res->body);
+        auto json_res = json_helper::ParseJsonString(res->body);
 
-        nlohmann::json json_data;
-        for (auto& jr : json_res) {
+        Json::Value json_data;
+        for (const auto& jr : json_res) {
           // Get the latest beta or match version
-          if (auto tag = jr["tag_name"].get<std::string>();
+          if (auto tag = jr["tag_name"].asString();
               (v.empty() && tag.find(kBetaComp) != std::string::npos) ||
               (tag == v)) {
             json_data = jr;
@@ -401,7 +401,7 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
             !downloaded_exe_path) {
           return false;
         }
-      } catch (const nlohmann::json::parse_error& e) {
+      } catch (const std::exception& e) {
         CLI_LOG_ERROR("JSON parse error: " << e.what());
         return false;
       }
@@ -429,14 +429,13 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
 
   assert(!!downloaded_exe_path);
   return InstallNewVersion(dst, downloaded_exe_path.value());
-  ;
 }
 
 std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
-    const nlohmann::json& assets, const std::string& os_arch) {
+    const Json::Value& assets, const std::string& os_arch) {
   std::string matched_variant = "";
-  for (auto& asset : assets) {
-    auto asset_name = asset["name"].get<std::string>();
+  for (const auto& asset : assets) {
+    auto asset_name = asset["name"].asString();
     if (asset_name.find(kCortexBinary) != std::string::npos &&
         asset_name.find(os_arch) != std::string::npos &&
         asset_name.find(kReleaseFormat) != std::string::npos) {
@@ -451,11 +450,11 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
   }
   CTL_INF("Matched variant: " << matched_variant);
 
-  for (auto& asset : assets) {
-    auto asset_name = asset["name"].get<std::string>();
+  for (const auto& asset : assets) {
+    auto asset_name = asset["name"].asString();
     if (asset_name == matched_variant) {
-      auto download_url = asset["browser_download_url"].get<std::string>();
-      auto file_name = asset["name"].get<std::string>();
+      auto download_url = asset["browser_download_url"].asString();
+      auto file_name = asset["name"].asString();
       CTL_INF("Download url: " << download_url);
 
       auto local_path =

@@ -2,9 +2,7 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
-#include <fstream>
 #include <iostream>
-#include <map>
 #include <regex>
 #include <stdexcept>
 #include <string>
@@ -42,7 +40,6 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
   if (file_handle_ == INVALID_HANDLE_VALUE) {
     throw std::runtime_error("Failed to open file");
   }
-
   // Get the file size
   LARGE_INTEGER file_size_struct;
   if (!GetFileSizeEx(file_handle_, &file_size_struct)) {

@@ -48,7 +48,7 @@ void SetupLogger(trantor::FileLogger& async_logger, bool verbose) {
         std::filesystem::path(config.logFolderPath) /
         std::filesystem::path(cortex_utils::logs_folder));
     async_logger.setFileName(config.logFolderPath + "/" +
-                                cortex_utils::logs_cli_base_name);
+                             cortex_utils::logs_cli_base_name);
     async_logger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
     async_logger.startLogging();
     trantor::Logger::setOutputFunction(
@@ -96,7 +96,12 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  { file_manager_utils::CreateConfigFileIfNotExist(); }
+  {
+    auto result = file_manager_utils::CreateConfigFileIfNotExist();
+    if (result.has_error()) {
+      CTL_ERR("Error creating config file: " << result.error());
+    }
+  }
 
   RemoveBinaryTempFileIfExists();
 
@@ -104,7 +109,7 @@ int main(int argc, char* argv[]) {
   SetupLogger(async_file_logger, verbose);
 
   if (should_install_server) {
-    InstallServer(); 
+    InstallServer();
     return 0;
   }
 

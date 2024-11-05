@@ -2,14 +2,11 @@
 
 #include <json/json.h>
 #include <filesystem>
-#include <nlohmann/json.hpp>
 #include <sstream>
 #include <string>
 #include <optional>
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
-
-using namespace nlohmann;
 
 struct DownloadItem {
 
@@ -114,23 +111,6 @@ struct DownloadTask {
     root["items"] = itemsArray;
 
     return root;
-  }
-
-  json ToJson() const {
-    json dl_items = json::array();
-
-    for (const auto& item : items) {
-      json dl_item{{"id", item.id},
-                   {"downloadUrl", item.downloadUrl},
-                   {"localPath", item.localPath},
-                   {"checksum", item.checksum.value_or("N/A")},
-                   {"bytes", item.bytes.value_or(0)},
-                   {"downloadedBytes", item.downloadedBytes.value_or(0)}};
-      dl_items.push_back(dl_item);
-    }
-
-    return json{
-        {"id", id}, {"type", DownloadTypeToString(type)}, {"items", dl_items}};
   }
 };
 

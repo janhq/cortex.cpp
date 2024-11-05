@@ -11,15 +11,17 @@ namespace archive_utils {
 inline bool UnzipFile(const std::string& input_zip_path,
                       const std::string& destination_path);
 inline bool UntarFile(const std::string& input_tar_path,
-                      const std::string& destination_path);
+                      const std::string& destination_path,
+                      bool ignore_parent_dir = false);
 
 inline bool ExtractArchive(const std::string& input_path,
-                           const std::string& destination_path) {
+                           const std::string& destination_path,
+                           bool ignore_parent_dir = false) {
   if (input_path.find(".zip") != std::string::npos) {
     return UnzipFile(input_path, destination_path);
   } else if (input_path.find(".tar") != std::string::npos ||
              input_path.find(".tar.gz") != std::string::npos) {
-    return UntarFile(input_path, destination_path);
+    return UntarFile(input_path, destination_path, ignore_parent_dir);
   } else {
     LOG_ERROR << "Unsupported file type: " << input_path << "\n";
     return false;
@@ -94,10 +96,11 @@ inline bool UnzipFile(const std::string& input_zip_path,
 }
 
 inline bool UntarFile(const std::string& input_tar_path,
-                      const std::string& destination_path) {
+                      const std::string& destination_path,
+                      bool ignore_parent_dir) {
   struct archive* tar_archive = archive_read_new();
   archive_read_support_format_tar(tar_archive);
-  archive_read_support_compression_gzip(tar_archive);
+  archive_read_support_filter_gzip(tar_archive);
 
   if (archive_read_open_filename(tar_archive, input_tar_path.c_str(), 10240) !=
       ARCHIVE_OK) {
@@ -110,15 +113,21 @@ inline bool UntarFile(const std::string& input_tar_path,
   struct archive_entry* entry;
   while (archive_read_next_header(tar_archive, &entry) == ARCHIVE_OK) {
     const char* current_file = archive_entry_pathname(entry);
+    auto file_in_tar_path =
+        std::filesystem::path(destination_path) / current_file;
+    auto file_name = std::filesystem::path(file_in_tar_path).filename();
+    auto output_path = std::filesystem::path(destination_path) / file_name;
     std::string full_path = destination_path + "/" + current_file;
 
     if (archive_entry_filetype(entry) == AE_IFDIR) {
-      std::filesystem::create_directories(full_path);
+      if (!ignore_parent_dir) {
+        std::filesystem::create_directories(full_path);
+      }
     } else {
-      std::filesystem::create_directories(
-          std::filesystem::path(full_path).parent_path());
+      auto final_output_path =
+          ignore_parent_dir ? output_path.string() : full_path;
 
-      std::ofstream out_file(full_path, std::ios::binary);
+      std::ofstream out_file(final_output_path, std::ios::binary);
       if (!out_file.is_open()) {
         LOG_ERROR << "Failed to create file: " << full_path << "\n";
         archive_read_free(tar_archive);
@@ -141,7 +150,7 @@ inline bool UntarFile(const std::string& input_tar_path,
 
   archive_read_free(tar_archive);
   CTL_INF("Extracted successfully " << input_tar_path << " to "
-           << destination_path << "\n");
+                                    << destination_path << "\n");
   return true;
 }
 }  // namespace archive_utils
