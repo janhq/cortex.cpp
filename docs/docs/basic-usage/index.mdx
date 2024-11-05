@@ -1,136 +1,128 @@
 ---
-title: Overview
-description: Cortex Overview
-slug: "basic-usage"
+title: Cortex Basic Usage
+description: Cortex Usage Overview
 ---
+
 
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 Cortex has an [API server](https://cortex.so/api-reference) that runs at `localhost:39281`.
 
+The port parameter can be set in [`.cortexrc`](/docs/architecture/cortexrc) with the `apiServerPort` parameter
 
-## Usage
-### Start Cortex.cpp Server
-<Tabs>
-  <TabItem value="MacOs/Linux" label="MacOs/Linux">
-  ```sh
-  # Stable
-  cortex start
-
-  # Beta
-  cortex-beta start
-
-  # Nightly
-  cortex-nightly start
-  ```
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-  ```sh
-  # Stable
-  cortex.exe start
-
-  # Beta
-  cortex-beta.exe start
-
-  # Nightly
-  cortex-nightly.exe start
-  ```
-  </TabItem>
-</Tabs>
-### Run Model
+## Server
+### Start Cortex Server
 ```bash
-# Pull a model
+# By default the server will be started on port `39281`
+cortex
+# Start a server with different port number
+cortex -a <address> -p <port_number>
+# Set the data folder directory
+cortex --dataFolder <dataFolderPath>
+```
+
+### Terminate Cortex Server
+```bash
+curl --request DELETE \
+  --url http://127.0.0.1:39281/processManager/destroy
+```
+
+## Engines
+Cortex currently supports 3 industry-standard engines: llama.cpp, ONNXRuntime and TensorRT-LLM.
+
+By default, Cortex installs llama.cpp engine which supports most laptops, desktops and OSes.
+
+For more information, see [Engine Management](/docs/engines)
+
+### List available engines
+```bash
+curl --request GET \
+  --url http://127.0.0.1:39281/v1/engines
+```
+
+### Install an Engine (eg llama-cpp)
+```bash
 curl --request POST \
-  --url http://localhost:39281/v1/models/pull \
+  --url http://127.0.0.1:39281/v1/engines/install/llama-cpp
+```
+
+## Manage Models
+### Pull Model
+```bash
+curl --request POST \
+  --url http://127.0.0.1:39281/v1/models/pull \
+  -H "Content-Type: application/json" \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "mistral:gguf"
-}' 
+  "model": "tinyllama:gguf",
+  "id": "my-custom-model-id",
+}'
+```
+If the model download was interrupted, this request will download the remainder of the model files.
+
+The downloaded models are saved to the [Cortex Data Folder](/docs/architecture/data-folder).
+
+### Stop Model Download
+```bash
+❯ curl --request DELETE \
+  --url http://127.0.0.1:39281/v1/models/pull \
+  --header 'Content-Type: application/json' \
+  --data '{
+  "taskId": "tinyllama:1b-gguf"
+}'
+```
+
+### List Models
+```bash
+curl --request GET \
+  --url http://127.0.0.1:39281/v1/models
+```
+
+### Delete Model
+```bash
+curl --request DELETE \
+  --url http://127.0.0.1:39281/v1/models/tinyllama:1b-gguf
+```
+
+## Run Models
+### Start Model
+```bash
 # Start the model
 curl --request POST \
-  --url http://localhost:39281/v1/models/start \
+  --url http://127.0.0.1:39281/v1/models/start \
   --header 'Content-Type: application/json' \
   --data '{
-  "model": "mistral:gguf"
-  "prompt_template": "system\n{system_message}\nuser\n{prompt}\nassistant",
-  "stop": [],
-  "ngl": 4096,
-  "ctx_len": 4096,
-  "cpu_threads": 10,
-  "n_batch": 2048,
-  "caching_enabled": true,
-  "grp_attn_n": 1,
-  "grp_attn_w": 512,
-  "mlock": false,
-  "flash_attn": true,
-  "cache_type": "f16",
-  "use_mmap": true,
-  "engine": "llama-cpp"
+  "model": "tinyllama:1b-gguf"
 }'
 ```
-### Chat with Model
+
+### Create Chat Completion
 ```bash
 # Invoke the chat completions endpoint
-curl http://localhost:39281/v1/chat/completions \
--H "Content-Type: application/json" \
--d '{
-  "messages": [
-    {
-      "role": "user",
-      "content": "Hello"
-    },
-  ],
-  "model": "mistral:gguf",
-  "stream": true,
-  "max_tokens": 1,
-  "stop": [
-      null
-  ],
-  "frequency_penalty": 1,
-  "presence_penalty": 1,
-  "temperature": 1,
-  "top_p": 1
+curl --request POST \
+  --url http://localhost:39281/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  --data '{
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a Haiku about cats and AI"
+      },
+    ],
+    "model": "tinyllama:1b-gguf",
+    "stream": false,
 }'
 ```
+
 ### Stop Model
 ```bash
-# Stop a model
 curl --request POST \
-  --url http://localhost:39281/v1/models/stop \
+  --url http://127.0.0.1:39281/v1/models/stop \
   --header 'Content-Type: application/json' \
   --data '{
-    "model": "mistral:gguf"
-}' 
+  "model": "tinyllama:1b-gguf"
+}'
 ```
-### Stop Cortex.cpp Server
-<Tabs>
-  <TabItem value="MacOs/Linux" label="MacOs/Linux">
-  ```sh
-  # Stable
-  cortex stop
 
-  # Beta
-  cortex-beta stop
 
-  # Nightly
-  cortex-nightly stop
-  ```
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-  ```sh
-  # Stable
-  cortex.exe stop
-
-  # Beta
-  cortex-beta.exe stop
-
-  # Nightly
-  cortex-nightly.exe stop
-  ```
-  </TabItem>
-</Tabs>
