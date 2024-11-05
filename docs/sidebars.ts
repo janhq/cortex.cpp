@@ -52,7 +52,6 @@ const sidebars: SidebarsConfig = {
       link: { type: "doc", id: "basic-usage/index" },
       collapsed: true,
       items: [
-        { type: "doc", id: "basic-usage/api-server", label: "API Server" },
         {
           type: "doc",
           id: "basic-usage/cortex-js",
@@ -69,8 +68,9 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Architecture",
       link: {
-        type: "doc",
-        id: "architecture"
+        type: "generated-index",
+        // type: "doc",
+        // id: "architecture" // is outdated
       },
       collapsed: true,
       items: [
