@@ -76,8 +76,6 @@ cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
   CTL_INF("InstallEngineAsyncV2: " << ne << ", " << version << ", "
                                    << variant_name.value_or(""));
   auto os = hw_inf_.sys_inf->os;
-  CTL_INF("os: " << os);
-  CTL_INF("kMacOs: " << kMacOs);
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
     return cpp::fail("Engine " + ne + " is not supported on macOS");
   }
@@ -88,9 +86,9 @@ cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
 
   auto result = DownloadEngineV2(ne, version, variant_name);
   if (result.has_error()) {
-    return result;
+    return cpp::fail(result.error());
   }
-  auto cuda_res = DownloadCuda(ne, true /*async*/);
+  auto cuda_res = DownloadCuda(ne, true);
   if (cuda_res.has_error()) {
     return cpp::fail(cuda_res.error());
   }
@@ -451,12 +449,12 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
 
   auto cuda_toolkit_url = url_parser::FromUrl(url_obj);
 
-  LOG_DEBUG << "Cuda toolkit download url: " << cuda_toolkit_url;
+  CTL_DBG("Cuda toolkit download url: " << cuda_toolkit_url);
   auto cuda_toolkit_local_path =
       file_manager_utils::GetContainerFolderPath(
           file_manager_utils::DownloadTypeToString(DownloadType::CudaToolkit)) /
       cuda_toolkit_file_name;
-  LOG_DEBUG << "Download to: " << cuda_toolkit_local_path.string();
+  CTL_DBG("Download to: " << cuda_toolkit_local_path.string());
   auto downloadCudaToolkitTask{DownloadTask{
       .id = download_id,
       .type = DownloadType::CudaToolkit,
@@ -466,7 +464,7 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
-    auto engine_path = file_manager_utils::GetEnginesContainerPath() / engine;
+    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine);
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   engine_path.string());
 

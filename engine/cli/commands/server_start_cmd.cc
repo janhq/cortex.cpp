@@ -97,12 +97,8 @@ bool ServerStartCmd::Exec(const std::string& host, int port) {
       v += g;
     }
     CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto data_path = file_manager_utils::GetEnginesContainerPath();
-    auto llamacpp_path = data_path / "cortex.llamacpp/";
-    auto trt_path = data_path / "cortex.tensorrt-llm/";
-    if (!std::filesystem::exists(llamacpp_path)) {
-      std::filesystem::create_directory(llamacpp_path);
-    }
+    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
+    auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
 
     auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
     setenv(name, new_v.c_str(), true);

@@ -272,6 +272,19 @@ inline std::filesystem::path GetModelsContainerPath() {
   return models_container_path;
 }
 
+inline std::filesystem::path GetCudaToolkitPath(const std::string& engine) {
+  auto engine_path = getenv("ENGINE_PATH")
+                         ? std::filesystem::path(getenv("ENGINE_PATH"))
+                         : GetCortexDataPath();
+
+  auto cuda_path = engine_path / "engines" / engine / "deps";
+  if (!std::filesystem::exists(cuda_path)) {
+    std::filesystem::create_directories(cuda_path);
+  }
+
+  return cuda_path;
+}
+
 inline std::filesystem::path GetEnginesContainerPath() {
   auto cortex_path = getenv("ENGINE_PATH")
                          ? std::filesystem::path(getenv("ENGINE_PATH"))
