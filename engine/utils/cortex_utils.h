@@ -10,6 +10,10 @@
 #include <regex>
 #include <string>
 #include <vector>
+#if defined(__linux__)
+#include <limits.h>
+#include <unistd.h>
+#endif
 
 #if __APPLE__
 #include <mach-o/dyld.h>
@@ -20,7 +24,6 @@ inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
-
 
 inline std::string rtrim(const std::string& str) {
   size_t end = str.find_last_not_of("\n\t ");
