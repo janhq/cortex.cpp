@@ -52,7 +52,6 @@ const sidebars: SidebarsConfig = {
       link: { type: "doc", id: "basic-usage/index" },
       collapsed: true,
       items: [
-        { type: "doc", id: "basic-usage/api-server", label: "API Server" },
         {
           type: "doc",
           id: "basic-usage/cortex-js",
