@@ -6,16 +6,10 @@ description: Cortex CLI.
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
+# `cortex start`
 
-# Start
-:::info
-This is the initial command you need to run to start using Cortex.cpp.
-:::
-
-This command start the Cortex.cpp's API server processes.
+This command starts the Cortex API server processes.
+If the server is not yet running, the server will automatically be started when running other Cortex commands. 
 
 ## Usage
 :::info
@@ -24,26 +18,12 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex start [options]
-
-  # Beta
-  cortex-beta start [options]
-
-  # Nightly
-  cortex-nightly start [options]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe start [options]
-
-  # Beta
-  cortex-beta.exe start [options]
-
-  # Nightly
-  cortex-nightly.exe start [options]
   ```
   </TabItem>
 </Tabs>
@@ -55,7 +35,7 @@ You can use the `--verbose` flag to display more detailed output of the internal
 | ---------------------------- | ----------------------------------------- | -------- | ------------- | ----------------------------- |
 | `-h`, `--help`               | Display help information for the command.  | No       | -             | `-h`                          |
 | `-p`, `--port <port>`        | Port to serve the application.             | No       | -             | `-p 39281`                     |
-| `--loglevel <loglevel>`        | Setup loglevel for cortex server, supported levels are TRACE, DEBUG, INFO, WARNING, ERROR             | No       | -             | `--loglevel DEBUG`                     |
+| `--loglevel <loglevel>`        | Setup loglevel for cortex server, supported levels are TRACE, DEBUG, INFO, WARNING, ERROR             | No       | -             | `--loglevel DEBUG`    |
+
 <!-- | `-a`, `--address <address>`  | Address to use.                            | No       | -             | `-a 192.168.1.1`              | -->
 <!--| `--dataFolder <dataFolder>`  | Set the data folder directory             | No       | -             | `--dataFolder /path/to/data`  | -->
-

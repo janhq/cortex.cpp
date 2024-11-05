@@ -7,18 +7,12 @@ slug: "stop"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex stop`
 :::info
 This CLI command calls the following API endpoint:
 - [Stop Cortex](/api-reference#tag/system/delete/v1/system)
 :::
 This command stops the API server.
-
-
 
 ## Usage
 :::info
@@ -27,26 +21,12 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex stop [options]
-
-  # Beta
-  cortex-beta stop [options]
-
-  # Nightly
-  cortex-nightly stop [options]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe stop [options]
-  
-  # Beta
-  cortex-beta.exe stop [options]
-
-  # Nightly
-  cortex-nightly.exe stop [options]
   ```
   </TabItem>
 </Tabs>
