@@ -69,8 +69,9 @@ const sidebars: SidebarsConfig = {
       type: "category",
       label: "Architecture",
       link: {
-        type: "doc",
-        id: "architecture"
+        type: "generated-index",
+        // type: "doc",
+        // id: "architecture" // is outdated
       },
       collapsed: true,
       items: [
