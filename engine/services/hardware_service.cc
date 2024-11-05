@@ -1,8 +1,9 @@
+// clang-format off
+#include "cli/commands/server_start_cmd.h"
+// clang-format on
 #include "hardware_service.h"
 #include "cli/commands/cortex_upd_cmd.h"
-#include "cli/commands/server_start_cmd.h"
 #include "utils/cortex_utils.h"
-#include "utils/file_manager_utils.h"
 
 namespace services {
 
