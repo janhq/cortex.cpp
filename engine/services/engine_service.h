@@ -76,6 +76,7 @@ class EngineService {
     EngineV engine;
 #if defined(_WIN32)
     DLL_DIRECTORY_COOKIE cookie;
+    DLL_DIRECTORY_COOKIE cuda_cookie;
 #endif
   };
 

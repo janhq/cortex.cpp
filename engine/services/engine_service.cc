@@ -467,7 +467,6 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
     auto engine_path = file_manager_utils::GetCudaToolkitPath(engine);
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   engine_path.string());
-
     try {
       std::filesystem::remove(finishedTask.items[0].localPath);
     } catch (std::exception& e) {
@@ -753,10 +752,19 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     auto add_dll = [this](const std::string& e_type, const std::string& p) {
       auto ws = std::wstring(p.begin(), p.end());
       if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
-        LOG_INFO << "Added dll directory: " << p;
+        CTL_DBG("Added dll directory: " << p);
         engines_[e_type].cookie = cookie;
       } else {
-        LOG_WARN << "Could not add dll directory: " << p;
+        CTL_WRN("Could not add dll directory: " << p);
+      }
+
+      auto cuda_path = file_manager_utils::GetCudaToolkitPath(e_type);
+      if (auto cuda_cookie = AddDllDirectory(cuda_path.c_str());
+          cuda_cookie != 0) {
+        CTL_DBG("Added cuda dll directory: " << p);
+        engines_[e_type].cuda_cookie = cuda_cookie;
+      } else {
+        CTL_WRN("Could not add cuda dll directory: " << p);
       }
     };
 
@@ -766,9 +774,14 @@ cpp::result<void, std::string> EngineService::LoadEngine(
           should_use_dll_search_path) {
         // Remove llamacpp dll directory
         if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
-          LOG_WARN << "Could not remove dll directory: " << kLlamaRepo;
+          CTL_WRN("Could not remove dll directory: " << kLlamaRepo);
         } else {
-          LOG_INFO << "Removed dll directory: " << kLlamaRepo;
+          CTL_DBG("Removed dll directory: " << kLlamaRepo);
+        }
+        if (!RemoveDllDirectory(engines_[kLlamaRepo].cuda_cookie)) {
+          CTL_WRN("Could not remove cuda dll directory: " << kLlamaRepo);
+        } else {
+          CTL_DBG("Removed cuda dll directory: " << kLlamaRepo);
         }
 
         add_dll(ne, engine_dir_path.string());
@@ -783,7 +796,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
         std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
 
   } catch (const cortex_cpp::dylib::load_error& e) {
-    LOG_ERROR << "Could not load engine: " << e.what();
+    CTL_ERR("Could not load engine: " << e.what());
     engines_.erase(ne);
     return cpp::fail("Could not load engine " + ne + ": " + e.what());
   }
@@ -800,10 +813,10 @@ cpp::result<void, std::string> EngineService::LoadEngine(
                          std::filesystem::path(config.logLlamaCppPath))
                             .string());
     } else {
-      LOG_WARN << "Method SetFileLogger is not supported yet";
+      CTL_WRN("Method SetFileLogger is not supported yet");
     }
   }
-  LOG_INFO << "Loaded engine: " << ne;
+  CTL_DBG("Loaded engine: " << ne);
   return {};
 }
 
@@ -817,13 +830,18 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
   delete e;
 #if defined(_WIN32)
   if (!RemoveDllDirectory(engines_[ne].cookie)) {
-    LOG_WARN << "Could not remove dll directory: " << ne;
+    CTL_WRN("Could not remove dll directory: " << ne);
   } else {
-    LOG_INFO << "Removed dll directory: " << ne;
+    CTL_DBG("Removed dll directory: " << ne);
+  }
+  if (!RemoveDllDirectory(engines_[ne].cuda_cookie)) {
+    CTL_WRN("Could not remove cuda dll directory: " << ne);
+  } else {
+    CTL_DBG("Removed cuda dll directory: " << ne);
   }
 #endif
   engines_.erase(ne);
-  LOG_INFO << "Unloaded engine " + ne;
+  CTL_DBG("Unloaded engine " + ne);
   return {};
 }
 
