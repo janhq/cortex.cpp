@@ -794,6 +794,23 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 #endif
     engines_[ne].dl =
         std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
+#if defined(__linux__)
+    const char* name = "LD_LIBRARY_PATH";
+    auto data = getenv(name);
+    std::string v;
+    if (auto g = getenv(name); g) {
+      v += g;
+    }
+    CTL_INF("LD_LIBRARY_PATH: " << v);
+    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
+    CTL_INF("llamacpp_path: " << llamacpp_path);
+    // tensorrt is not supported for now
+    // auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
+
+    auto new_v = llamacpp_path.string() + ":" + v;
+    setenv(name, new_v.c_str(), true);
+    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
+#endif
 
   } catch (const cortex_cpp::dylib::load_error& e) {
     CTL_ERR("Could not load engine: " << e.what());
