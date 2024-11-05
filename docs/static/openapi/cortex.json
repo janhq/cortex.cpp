@@ -308,7 +308,7 @@
                         "downloadUrl": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q3_K_L.gguf",
                         "downloadedBytes": 0,
                         "id": "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q3_K_L.gguf",
-                        "localPath": "/Users/jamesnguyen/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
+                        "localPath": "/Users/user_name/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
                       }
                     ],
                     "type": "Model"
@@ -644,7 +644,8 @@
               "example": {
                 "model": "model-id",
                 "modelPath": "/path/to/gguf",
-                "name": "model display name"
+                "name": "model display name",
+                "option": "symlink"
               }
             }
           }
@@ -2244,6 +2245,66 @@
           "user": {
             "type": "string",
             "description": "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582)."
+          },
+          "dynatemp_range": {
+            "type": "number",
+            "description": "Dynamic temperature range. This parameter only supported by `llama-cpp` engine."
+          },
+          "dynatemp_exponent": {
+            "type": "number",
+            "description": "Dynamic temperature exponent. This parameter only supported by `llama-cpp` engine."
+          },
+          "top_k": {
+            "type": "integer",
+            "description": "The number of most likely tokens to consider at each step. This parameter only supported by `llama-cpp` engine."
+          },
+          "min_p": {
+            "type": "number",
+            "description": "Minimum probability threshold for token sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "tfs_z": {
+            "type": "number",
+            "description": "The z-score used for Typical token sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "typ_p": {
+            "type": "number",
+            "description": "The cumulative probability threshold used for Typical token sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "repeat_last_n": {
+            "type": "integer",
+            "description": "Number of previous tokens to penalize for repeating. This parameter only supported by `llama-cpp` engine."
+          },
+          "repeat_penalty": {
+            "type": "number",
+            "description": "Penalty for repeating tokens. This parameter only supported by `llama-cpp` engine."
+          },
+          "mirostat": {
+            "type": "boolean",
+            "description": "Enables or disables Mirostat sampling (true or false). This parameter only supported by `llama-cpp` engine."
+          },
+          "mirostat_tau": {
+            "type": "number",
+            "description": "Target entropy value for Mirostat sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "mirostat_eta": {
+            "type": "number",
+            "description": "Learning rate for Mirostat sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "penalize_nl": {
+            "type": "boolean",
+            "description": "Penalizes newline tokens (true or false). This parameter only supported by `llama-cpp` engine."
+          },
+          "ignore_eos": {
+            "type": "boolean",
+            "description": "Ignores the end-of-sequence token (true or false). This parameter only supported by `llama-cpp` engine."
+          },
+          "n_probs": {
+            "type": "integer",
+            "description": "Number of probabilities to return. This parameter only supported by `llama-cpp` engine."
+          },
+          "min_keep": {
+            "type": "integer",
+            "description": "Minimum number of tokens to keep. This parameter only supported by `llama-cpp` engine."
           }
         },
         "required": [
@@ -3248,6 +3309,14 @@
           "name": {
             "type": "string",
             "description": "The display name of the model."
+          },
+          "option": {
+            "type": "string",
+            "description": "Import options such as symlink or copy.",
+            "enum": [
+              "symlink",
+              "copy"
+            ]
           }
         },
         "required": [
