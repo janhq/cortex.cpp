@@ -10,18 +10,18 @@ import TabItem from "@theme/TabItem";
 # `cortex pull`
 :::info
 This CLI command calls the following API endpoint:
-- [Download Model](/api-reference#tag/models/post/v1/models/{modelId}/pull)
+- [Download Model](/api-reference#tag/pulling-models/post/v1/models/pull)
 :::
 This command displays downloaded models, or displays models available for downloading. 
 
 There are 3 ways to download models:
-- From Cortex's [Built-in models](/docs/hub/cortex-hub): `cortex pull <model_name>`
+- From Cortex's [Built-in models](/models): `cortex pull <model_name>`
 - HuggingFace repository handle: `cortex pull <author/RepoID>`
 - HuggingFace direct URL: `cortex pull <huggingface URL ending with .gguf>`
 
 Each of these will display the model quantizations available, to be selected for download.
 
-For more information, please refer to [Pulling Models](docs/hub/index).
+For more information, please refer to [Pulling Models](/docs/capabilities/models/sources).
 
 The downloaded model file will be stored in the [Cortex Data Folder](/docs/architecture/data-folder).
 
@@ -67,5 +67,5 @@ Select a model (1-9):
 
 | Option         | Description                                       | Required | Default value | Example     |
 | -------------- | ------------------------------------------------- | -------- | ------------- | ----------- |
-| `model_id`     | The identifier of the model you want to download. You can use the [Built-in models](/docs/hub/cortex-hub) or Supported [HuggingFace models](/docs/hub/hugging-face). | Yes      | -             | `mistral` |
+| `model_id`     | The identifier of the model you want to download. | Yes      | -             | `mistral` |
 | `-h`, `--help` | Display help information for the command.         | No       | -             | `-h`        |
