@@ -156,7 +156,7 @@
       "get": {
         "operationId": "HealthController_check",
         "summary": "Check health",
-        "description": "Checks the health of the application.",
+        "description": "Performs a comprehensive check of the application's health status.",
         "parameters": [],
         "responses": {
           "200": {
@@ -175,7 +175,7 @@
       "delete": {
         "operationId": "Terminate server process",
         "summary": "Terminate server",
-        "description": "Terminate server process.",
+        "description": "Initiates the shutdown process for the server, ensuring that all active connections are gracefully closed and any ongoing processes are properly terminated.",
         "parameters": [],
         "responses": {
           "200": {
@@ -227,7 +227,9 @@
             }
           }
         },
-        "tags": ["Chat"]
+        "tags": [
+          "Chat"
+        ]
       }
     },
     "/v1/models/pull": {
@@ -306,7 +308,7 @@
                         "downloadUrl": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q3_K_L.gguf",
                         "downloadedBytes": 0,
                         "id": "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q3_K_L.gguf",
-                        "localPath": "/Users/jamesnguyen/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
+                        "localPath": "/Users/user_name/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
                       }
                     ],
                     "type": "Model"
@@ -327,12 +329,12 @@
           }
         },
         "tags": [
-          "Models"
+          "Pulling Models"
         ]
       },
       "delete": {
         "tags": [
-          "Models"
+          "Pulling Models"
         ],
         "summary": "Stop model download",
         "description": "Stops the download of a model with the corresponding taskId provided in the request body",
@@ -447,7 +449,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -455,7 +457,7 @@
       "post": {
         "operationId": "ModelsController_startModel",
         "summary": "Start model",
-        "description": "Load a model into memory.",
+        "description": "Load a model into memory. Note: Request body parameters will override those loaded from model.yml",
         "requestBody": {
           "required": true,
           "content": {
@@ -482,7 +484,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -496,7 +498,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ModelStartDto"
+                "$ref": "#/components/schemas/ModelStopDto"
               },
               "example": {
                 "model": "llama3:8b-gguf-q6-k"
@@ -517,7 +519,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -550,7 +552,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       },
       "delete": {
@@ -581,7 +583,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -623,7 +625,7 @@
           }
         },
         "tags": [
-          "Models"
+          "Running Models"
         ]
       }
     },
@@ -642,7 +644,8 @@
               "example": {
                 "model": "model-id",
                 "modelPath": "/path/to/gguf",
-                "name": "model display name"
+                "name": "model display name",
+                "option": "symlink"
               }
             }
           }
@@ -664,7 +667,9 @@
             }
           }
         },
-        "tags": ["Models"]
+        "tags": [
+          "Pulling Models"
+        ]
       }
     },
     "/v1/threads": {
@@ -1363,8 +1368,12 @@
       "description": "These endpoints manage the lifecycle of an Assistant within a conversation thread."
     },
     {
-      "name": "Models",
-      "description": "These endpoints provide a list and descriptions of all available models within the Cortex framework."
+      "name": "Pulling Models",
+      "description": "These endpoints handle downloading and importing models."
+    },
+    {
+      "name": "Running Models",
+      "description": "These endpoints support a range of operations that allow users to effectively control and interact with their models"
     },
     {
       "name": "Server",
@@ -1394,7 +1403,8 @@
         "Chat",
         "Engines",
         "Events",
-        "Models",
+        "Pulling Models",
+        "Running Models",
         "Processes",
         "Status",
         "Server"
@@ -2235,6 +2245,66 @@
           "user": {
             "type": "string",
             "description": "A unique identifier representing your end-user, which can help OpenAI to monitor and detect abuse. We are actively working on this feature to bring cortex as fully OpenAI compatible platform. Planning and roadmap for this feature can be found [**here**](https://github.com/janhq/cortex.cpp/issues/1582)."
+          },
+          "dynatemp_range": {
+            "type": "number",
+            "description": "Dynamic temperature range. This parameter only supported by `llama-cpp` engine."
+          },
+          "dynatemp_exponent": {
+            "type": "number",
+            "description": "Dynamic temperature exponent. This parameter only supported by `llama-cpp` engine."
+          },
+          "top_k": {
+            "type": "integer",
+            "description": "The number of most likely tokens to consider at each step. This parameter only supported by `llama-cpp` engine."
+          },
+          "min_p": {
+            "type": "number",
+            "description": "Minimum probability threshold for token sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "tfs_z": {
+            "type": "number",
+            "description": "The z-score used for Typical token sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "typ_p": {
+            "type": "number",
+            "description": "The cumulative probability threshold used for Typical token sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "repeat_last_n": {
+            "type": "integer",
+            "description": "Number of previous tokens to penalize for repeating. This parameter only supported by `llama-cpp` engine."
+          },
+          "repeat_penalty": {
+            "type": "number",
+            "description": "Penalty for repeating tokens. This parameter only supported by `llama-cpp` engine."
+          },
+          "mirostat": {
+            "type": "boolean",
+            "description": "Enables or disables Mirostat sampling (true or false). This parameter only supported by `llama-cpp` engine."
+          },
+          "mirostat_tau": {
+            "type": "number",
+            "description": "Target entropy value for Mirostat sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "mirostat_eta": {
+            "type": "number",
+            "description": "Learning rate for Mirostat sampling. This parameter only supported by `llama-cpp` engine."
+          },
+          "penalize_nl": {
+            "type": "boolean",
+            "description": "Penalizes newline tokens (true or false). This parameter only supported by `llama-cpp` engine."
+          },
+          "ignore_eos": {
+            "type": "boolean",
+            "description": "Ignores the end-of-sequence token (true or false). This parameter only supported by `llama-cpp` engine."
+          },
+          "n_probs": {
+            "type": "integer",
+            "description": "Number of probabilities to return. This parameter only supported by `llama-cpp` engine."
+          },
+          "min_keep": {
+            "type": "integer",
+            "description": "Minimum number of tokens to keep. This parameter only supported by `llama-cpp` engine."
           }
         },
         "required": [
@@ -3170,8 +3240,60 @@
             "type": "string",
             "example": "llama3:8b-gguf-q6-k",
             "description": "A downloaded model name."
+          },
+          "ctx_len": {
+            "type": "number",
+            "description": "The context length for model operations varies; the maximum depends on the specific model used.",
+            "example": 4096
+          },
+          "ngl": {
+            "type": "number",
+            "description": "Determines GPU layer usage.",
+            "example": 32
+          },
+          "n_parallel": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Number of parallel processing units to use.",
+            "example": 1
+          },
+          "cache_type": {
+            "type": "string",
+            "description": "KV cache type: f16, q8_0, q4_0, default is f16",
+            "example": "f16"
+          },
+          "caching_enabled": {
+            "type": "boolean",
+            "description": "To enable prompt caching or not",
+            "example": true
+          },
+          "model_path": {
+            "type": "string",
+            "description": "Local path to LLM model file",
+            "example": "/tmp/model.gguf"
+          },
+          "mmproj": {
+            "type": "string",
+            "description": "Local path to mmproj model file",
+            "example": "/tmp/model.gguf"
           }
-        }
+        },
+        "required": [
+          "model"
+        ]
+      },
+      "ModelStopDto": {
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string",
+            "example": "llama3:8b-gguf-q6-k",
+            "description": "A downloaded model name."
+          }
+        },
+        "required": [
+          "model"
+        ]
       },
       "ImportModelRequest": {
         "type": "object",
@@ -3187,9 +3309,20 @@
           "name": {
             "type": "string",
             "description": "The display name of the model."
+          },
+          "option": {
+            "type": "string",
+            "description": "Import options such as symlink or copy.",
+            "enum": [
+              "symlink",
+              "copy"
+            ]
           }
         },
-        "required": ["model", "modelPath"]
+        "required": [
+          "model",
+          "modelPath"
+        ]
       },
       "ImportModelResponse": {
         "type": "object",
@@ -3208,7 +3341,11 @@
             "example": "OK"
           }
         },
-        "required": ["message", "modelHandle", "result"]
+        "required": [
+          "message",
+          "modelHandle",
+          "result"
+        ]
       },
       "CommonResponseDto": {
         "type": "object",
@@ -3434,6 +3571,11 @@
             "description": "To enable mmap, default is true",
             "example": true
           },
+          "size": {
+            "type": "number",
+            "description": "The model file size in bytes",
+            "example": 1073741824
+          },
           "engine": {
             "type": "string",
             "description": "The engine to use.",
@@ -3469,7 +3611,161 @@
       },
       "UpdateModelDto": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "files": {
+            "type": "array",
+            "description": "List of file paths associated with the model. Can be relative or absolute.",
+            "items": {
+              "type": "string",
+              "example": "models\\cortex.so\\tinyllama\\1b-gguf\\model.gguf"
+            }
+          },
+          "stop": {
+            "type": "array",
+            "description": "Tokens that signal the end of generation.",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "</s>"
+            ]
+          },
+          "stream": {
+            "type": "boolean",
+            "description": "Whether to stream the output as it is generated.",
+            "example": true
+          },
+          "top_p": {
+            "type": "number",
+            "description": "Controls nucleus sampling; the model considers the results of the tokens with top_p probability mass.",
+            "example": 0.95
+          },
+          "temperature": {
+            "type": "number",
+            "description": "Controls randomness in token selection; lower values make the output more deterministic.",
+            "example": 0.7
+          },
+          "frequency_penalty": {
+            "type": "number",
+            "description": "Penalizes repeated tokens based on their frequency.",
+            "example": 0
+          },
+          "presence_penalty": {
+            "type": "number",
+            "description": "Penalizes tokens that have already appeared in the output.",
+            "example": 0
+          },
+          "max_tokens": {
+            "type": "integer",
+            "description": "Maximum number of tokens to generate.",
+            "example": 4096
+          },
+          "seed": {
+            "type": "integer",
+            "description": "Seed for random number generation to ensure reproducibility; -1 for random seed.",
+            "example": -1
+          },
+          "dynatemp_range": {
+            "type": "number",
+            "description": "Range for dynamic temperature adjustment.",
+            "example": 0
+          },
+          "dynatemp_exponent": {
+            "type": "number",
+            "description": "Exponent for dynamic temperature adjustment.",
+            "example": 1
+          },
+          "top_k": {
+            "type": "integer",
+            "description": "Limits the sampling pool to the top_k most probable tokens.",
+            "example": 40
+          },
+          "min_p": {
+            "type": "number",
+            "description": "Minimum probability threshold for token selection.",
+            "example": 0.05
+          },
+          "tfs_z": {
+            "type": "number",
+            "description": "Threshold for token frequency sampling.",
+            "example": 1
+          },
+          "typ_p": {
+            "type": "number",
+            "description": "Controls typical sampling; similar to top_p but focuses on local token distribution.",
+            "example": 1
+          },
+          "repeat_last_n": {
+            "type": "integer",
+            "description": "Number of recent tokens to consider for repetition penalty.",
+            "example": 64
+          },
+          "repeat_penalty": {
+            "type": "number",
+            "description": "Penalty applied to repeated tokens.",
+            "example": 1
+          },
+          "mirostat": {
+            "type": "boolean",
+            "description": "Enables or disables Mirostat sampling.",
+            "example": false
+          },
+          "mirostat_tau": {
+            "type": "number",
+            "description": "Target entropy for Mirostat sampling.",
+            "example": 5
+          },
+          "mirostat_eta": {
+            "type": "number",
+            "description": "Learning rate for Mirostat sampling.",
+            "example": 0.1
+          },
+          "penalize_nl": {
+            "type": "boolean",
+            "description": "Whether to penalize newline tokens.",
+            "example": false
+          },
+          "ignore_eos": {
+            "type": "boolean",
+            "description": "Whether to ignore end-of-sequence tokens during generation.",
+            "example": false
+          },
+          "n_probs": {
+            "type": "integer",
+            "description": "Number of probabilities to consider for each token.",
+            "example": 0
+          },
+          "min_keep": {
+            "type": "integer",
+            "description": "Minimum number of tokens to keep in the buffer.",
+            "example": 0
+          },
+          "engine": {
+            "type": "string",
+            "description": "The engine used to run the model.",
+            "example": "llama-cpp"
+          },
+          "prompt_template": {
+            "type": "string",
+            "description": "Template used for formatting prompts.",
+            "example": "\n\n<|system|>\n{system_message}</s>\n\n\n\n\n<|user|>\n{prompt}</s>\n\n\n<|assistant|>\n\n"
+          },
+          "ctx_len": {
+            "type": "integer",
+            "description": "Context length for the model.",
+            "example": 4096
+          },
+          "n_parallel": {
+            "type": "integer",
+            "description": "Number of parallel threads for execution.",
+            "example": 1
+          },
+          "ngl": {
+            "type": "integer",
+            "description": "Number of GPU layers.",
+            "example": 33
+          }
+        }
       },
       "DeleteModelResponseDto": {
         "type": "object",
