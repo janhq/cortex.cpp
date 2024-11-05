@@ -1,9 +1,15 @@
 ---
 title: cortex.py
 description: How to integrate cortex.py with a Python application.
-slug: "py-library"
 ---
 
+
+:::warning
+🚧 Cortex.py is currently under development, and this page is a stub for future development. 
+:::
+
+
+<!-- 
 :::warning
 🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
@@ -51,4 +57,4 @@ completion = client.chat.completions.create(
     ],
 )
 print(completion.choices[0].message.content)
-```
+``` -->
