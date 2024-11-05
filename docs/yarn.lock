@@ -2123,7 +2123,7 @@
 
 "@huggingface/hub@^0.15.1":
   version "0.15.1"
-  resolved "https://registry.yarnpkg.com/@huggingface/capabilities/models/sources/-/hub-0.15.1.tgz#1fceb272c7123f152aadc370281c366f97079091"
+  resolved "https://registry.yarnpkg.com/@huggingface/hub/-/hub-0.15.1.tgz#1fceb272c7123f152aadc370281c366f97079091"
   integrity sha512-uHb4aFkJDoGfLeRHfFTjkI36Z8IV6Z1c+KzhMDqUSC56opyr7Mn1Nsx7Rri/C7KDwROhQfBp/fOOqqjTzn6Cgg==
   dependencies:
     "@huggingface/tasks" "^0.10.6"
