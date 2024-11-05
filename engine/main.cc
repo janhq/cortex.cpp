@@ -118,7 +118,9 @@ void RunServer(std::optional<int> port) {
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
   LOG_INFO << "Please load your model";
+#ifndef _WIN32
   drogon::app().enableReusePort();
+#endif
   drogon::app().addListener(config.apiServerHost,
                             std::stoi(config.apiServerPort));
   drogon::app().setThreadNum(drogon_thread_num);

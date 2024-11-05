@@ -2,6 +2,10 @@
 #include "cli/commands/server_start_cmd.h"
 // clang-format on
 #include "hardware_service.h"
+#if defined(_WIN32) || defined(_WIN64)
+#include <minwindef.h>
+#include <processenv.h>
+#endif
 #include "cli/commands/cortex_upd_cmd.h"
 #include "utils/cortex_utils.h"
 
@@ -51,6 +55,15 @@ bool HardwareService::Restart(const std::string& host, int port) {
     return file_manager_utils::cortex_data_folder_path;
   };
 
+  auto set_env = [](const std::string& name, const std::string& value,
+                    bool is_override = false) -> bool {
+#if defined(_WIN32) || defined(_WIN64)
+    return _putenv_s(name.c_str(), value.c_str()) == 0;
+#else
+    return setenv(name.c_str(), value.c_str(), is_override) == 0;
+#endif
+  };
+
 #if defined(_WIN32) || defined(_WIN64)
   // Windows-specific code to create a new process
   STARTUPINFO si;
@@ -63,6 +76,20 @@ bool HardwareService::Restart(const std::string& host, int port) {
   params += " --config_file_path " + get_config_file_path();
   params += " --data_folder_path " + get_data_folder_path();
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
+  std::string kCudaVisibleDevices = " ";
+  // Set the CUDA_VISIBLE_DEVICES environment variable
+  if (!set_env("CUDA_VISIBLE_DEVICES", kCudaVisibleDevices)) {
+    LOG_WARN << "Error setting CUDA_VISIBLE_DEVICES";
+    return false;
+  }
+
+  const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+  if (value) {
+    LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
+  } else {
+    LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
+  }
+
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
@@ -70,7 +97,7 @@ bool HardwareService::Restart(const std::string& host, int port) {
               cmds.c_str()),  // Command line (replace with your actual executable)
           NULL,               // Process handle not inheritable
           NULL,               // Thread handle not inheritable
-          FALSE,              // Set handle inheritance to FALSE
+          TRUE,               // Handle inheritance
           0,                  // No creation flags
           NULL,               // Use parent's environment block
           NULL,               // Use parent's starting directory
@@ -101,7 +128,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
 #if !defined(__APPLE__) || !defined(__MACH__)
     std::string kCudaVisibleDevices = "1";
     // Set the CUDA_VISIBLE_DEVICES environment variable
-    if (setenv("CUDA_VISIBLE_DEVICES", kCudaVisibleDevices.c_str(), 1) != 0) {
+    if (!set_env("CUDA_VISIBLE_DEVICES", kCudaVisibleDevices.c_str(),
+                 true /*override*/)) {
       LOG_WARN << "Error setting CUDA_VISIBLE_DEVICES";
       return false;
     }
