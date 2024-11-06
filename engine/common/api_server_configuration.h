@@ -1,6 +1,7 @@
 #pragma once
 
 #include <json/value.h>
+#include <functional>
 #include <unordered_map>
 #include <vector>
 
