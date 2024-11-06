@@ -79,3 +79,14 @@ jobs:
       channel: stable
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+
+  build-docker-x64:
+    uses: ./.github/workflows/template-build-docker-x64.yml
+    secrets: inherit
+    needs: [get-update-version, get-cortex-llamacpp-latest-version]
+    with:
+      ref: ${{ github.ref }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-latest
+      cmake-extra-flags: "-DCORTEX_VARIANT=prod"
+      tags: "menloltd/cortex:latest,menloltd/cortex:${{ needs.get-update-version.outputs.new_version }}"
