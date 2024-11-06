@@ -7,7 +7,6 @@ ConfigService::UpdateApiServerConfiguration(const Json::Value& json) {
   auto config = file_manager_utils::GetCortexConfig();
   ApiServerConfiguration api_server_config{config.enableCors,
                                            config.allowedOrigins};
-  std::cout << json.toStyledString() << std::endl;
   std::vector<std::string> updated_fields;
   std::vector<std::string> invalid_fields;
   std::vector<std::string> unknown_fields;
