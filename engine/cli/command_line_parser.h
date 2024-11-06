@@ -27,7 +27,12 @@ class CommandLineParser {
 
   void EngineUninstall(CLI::App* parent, const std::string& engine_name);
 
+  void EngineUpdate(CLI::App* parent, const std::string& engine_name);
+
   void EngineGet(CLI::App* parent);
+
+  void EngineUse(CLI::App* parent, const std::string& engine_name);
+
   void ModelUpdate(CLI::App* parent);
 
   CLI::App app_;
@@ -51,6 +56,9 @@ class CommandLineParser {
     bool display_version = false;
     std::string filter = "";
     std::string log_level = "INFO";
+
+    bool show_menu = false;
+
 
     int port;
     config_yaml_utils::CortexConfig config;

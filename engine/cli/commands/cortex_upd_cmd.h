@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "services/download_service.h"
 #if !defined(_WIN32)
 #include <sys/stat.h>
 #include <unistd.h>
@@ -57,7 +58,8 @@ inline std::string GetCortexServerBinary() {
     return has_exe ? kCortexServerBinary + "-nightly.exe"
                    : kCortexServerBinary + "-nightly";
   } else if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
-    return has_exe ? kCortexServerBinary + "-beta.exe" : kCortexServerBinary + "-beta";
+    return has_exe ? kCortexServerBinary + "-beta.exe"
+                   : kCortexServerBinary + "-beta";
   } else {
     return has_exe ? kCortexServerBinary + ".exe" : kCortexServerBinary;
   }
@@ -104,8 +106,8 @@ class CortexUpdCmd {
 
   bool GetStable(const std::string& v);
   bool GetBeta(const std::string& v);
-  std::optional<std::string> HandleGithubRelease(const nlohmann::json& assets,
-                           const std::string& os_arch);
+  std::optional<std::string> HandleGithubRelease(const Json::Value& assets,
+                                                 const std::string& os_arch);
   bool GetNightly(const std::string& v);
 };
 }  // namespace commands

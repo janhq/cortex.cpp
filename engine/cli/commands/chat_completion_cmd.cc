@@ -29,8 +29,10 @@ struct ChunkParser {
         is_done = true;
       } else {
         try {
-          content = nlohmann::json::parse(s)["choices"][0]["delta"]["content"];
-        } catch (const nlohmann::json::parse_error& e) {
+          content =
+              json_helper::ParseJsonString(s)["choices"][0]["delta"]["content"]
+                  .asString();
+        } catch (const std::exception& e) {
           CTL_WRN("JSON parse error: " << e.what());
         }
       }

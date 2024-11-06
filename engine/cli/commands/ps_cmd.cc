@@ -2,9 +2,9 @@
 #include <httplib.h>
 #include <string>
 #include <tabulate/table.hpp>
-#include "nlohmann/json.hpp"
 #include "utils/engine_constants.h"
 #include "utils/format_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 
@@ -20,18 +20,17 @@ void PsCmd::Exec(const std::string& host, int port) {
     return;
   }
 
-  auto body = nlohmann::json::parse(res->body);
-  auto data = body["data"];
+  auto data = json_helper::ParseJsonString(res->body)["data"];
   std::vector<ModelLoadedStatus> model_status_list;
   try {
     for (const auto& item : data) {
       ModelLoadedStatus model_status;
       // TODO(sang) hardcode for now
       model_status.engine = kLlamaEngine;
-      model_status.model = item["id"];
-      model_status.ram = item["ram"];
-      model_status.start_time = item["start_time"];
-      model_status.vram = item["vram"];
+      model_status.model = item["id"].asString();
+      model_status.ram = item["ram"].asUInt64();
+      model_status.start_time = item["start_time"].asUInt64();
+      model_status.vram = item["vram"].asUInt64();
       model_status_list.push_back(model_status);
     }
   } catch (const std::exception& e) {

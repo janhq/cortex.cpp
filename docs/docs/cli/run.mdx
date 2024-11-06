@@ -7,75 +7,35 @@ slug: "run"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex run`
-:::info
-This CLI command calls the following API endpoint:
-- [Download Model](/api-reference#tag/models/post/v1/models/pull) (The command only calls this endpoint if the specified model is not downloaded yet.)
-- Install Engine (The command only calls this endpoint if the specified engine is not downloaded yet.)
-- [Start Model](/api-reference#tag/models/post/v1/models/start)
-:::
 
-This command facilitates the initiation of starting a specified machine-learning model.
+This CLI command is a shortcut to run models easily. It executes this sequence of commands:
+1. [`cortex pull`](/docs/cli/models/): This command pulls the specified model if the model is not yet downloaded, or finds a local model.
+2. [`cortex engines install`](/docs/cli/engines/): This command installs the specified engines if not yet downloaded.
+3. [`cortex models start`](/docs/cli/models/): This command starts the specified model, making it active and ready for interactions.
 
 ## Usage
 :::info
 You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
 :::
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
-  cortex [options] <model_id>:[engine]
-
-  # Beta
-  cortex-beta [options] <model_id>:[engine]
-
-  # Nightly
-  cortex-nightly [options] <model_id>:[engine]
+  cortex [options] <model_id>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
-  cortex.exe [options] <model_id>:[engine]
-  
-  # Beta
-  cortex-beta.exe [options] <model_id>:[engine]
-
-  # Nightly
-  cortex-nightly.exe [options] <model_id>:[engine]
+  cortex.exe [options] <model_id>
   ```
   </TabItem>
 </Tabs>
-
-### `model_id`
-You can use the [Built-in models](/docs/hub/cortex-hub) or Supported [HuggingFace models](/docs/hub/hugging-face).
-
-:::info
-This command downloads and installs the model if not already available in your file system, then starts it for interaction.
-:::
-
 
 ## Options
 
 | Option                      | Description                                                                 | Required | Default value                                | Example                |
 |-----------------------------|-----------------------------------------------------------------------------|----------|----------------------------------------------|------------------------|
-| `model_id`                  | The identifier of the model you want to chat with.                          | Yes       | `Prompt to select from the available models` | `mistral`       |
-| `-h`, `--help`                | Display help information for the command.                                   | No       | -                                            | `-h`               |
-<!-- | `-t`, `--thread <thread_id>`  | Specify the Thread ID. Defaults to creating a new thread if none specified. | No       | -                                            | `-t jan_1717650808`       |
-| `-p`, `--preset`              | Apply a chat preset to the chat session.                                    | No       | -                                            | `-p friendly`    |
-| `-c`, `--chat`                | Start a chat session after running the model.                                   | No       | -                                            | `-c`               | -->
-
-
-
-## Command Chain
-
-`cortex run` command is a convenience wrapper that automatically executes a sequence of commands to simplify user interactions:
-
-1. [`cortex pull`](/docs/cli/models/): This command pulls the specified model if the model is not yet downloaded.
-2. [`cortex engines install`](/docs/cli/engines/): This command installs the specified engines if not yet downloaded.
-3. [`cortex models start`](/docs/cli/models/): This command starts the specified model, making it active and ready for interactions.
+| `model_id`                  | The identifier of the model you want to chat with.                          | Yes       | - | `mistral`       |
+| `-h`, `--help`              | Display help information for the command.                                   | No       | -                                            | `-h`               |
+<!-- | `-t`, `--thread <thread_id>`  | Specify the Thread ID. Defaults to creating a new thread if none specified. | No       | -                                            | `-t jan_1717650808`       |                                      | `-c`               | -->

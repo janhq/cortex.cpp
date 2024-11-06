@@ -7,14 +7,9 @@ slug: "update"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex update`
 
 This command updates Cortex.cpp to the provided version or the latest version.
-
 
 
 ## Usage
@@ -24,26 +19,12 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex update [options]
-
-  # Beta
-  cortex-beta update [options]
-
-  # Nightly
-  cortex-nightly update [options]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe update [options]
-  
-  # Beta
-  cortex-beta.exe update [options]
-
-  # Nightly
-  cortex-nightly.exe update [options]
   ```
   </TabItem>
 </Tabs>
@@ -57,7 +38,7 @@ By default, if no version is specified, Cortex.cpp will be updated to the latest
 | Option                     | Description                               | Required | Default Value | Example                |
 |----------------------------|-------------------------------------------|----------|---------------|------------------------|
 | `-h`, `--help`         | Display help information for the command.            | No       | -             | `-h`             |
-| `-v`  | Specify the version of the Cortex.               | No       | -   | `-v 0.5.0`|
+| `-v`  | Specify the version of the Cortex.               | No       | -   | `-v1.0.1`|
 
 
 

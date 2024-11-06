@@ -348,8 +348,7 @@ void Models::ImportModel(
           std::filesystem::path(model_yaml_path).parent_path() /
           std::filesystem::path(modelPath).filename();
       std::filesystem::copy_file(
-          modelPath, file_path,
-          std::filesystem::copy_options::update_existing);
+          modelPath, file_path, std::filesystem::copy_options::update_existing);
       model_config.files.push_back(file_path.string());
       auto size = std::filesystem::file_size(file_path);
       model_config.size = size;
@@ -409,7 +408,6 @@ void Models::StartModel(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!http_util::HasFieldInReq(req, callback, "model"))
     return;
-  auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   StartParameterOverride params_override;
   if (auto& o = (*(req->getJsonObject()))["prompt_template"]; !o.isNull()) {
@@ -462,16 +460,16 @@ void Models::StartModel(
   std::string engine_name = params_override.bypass_model_check()
                                 ? kLlamaEngine
                                 : model_entry.value().engine;
-  auto engine_entry = engine_service_->GetEngineInfo(engine_name);
-  if (engine_entry.has_error()) {
+  auto engine_validate = engine_service_->IsEngineReady(engine_name);
+  if (engine_validate.has_error()) {
     Json::Value ret;
-    ret["message"] = "Cannot find engine: " + engine_name;
+    ret["message"] = engine_validate.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(drogon::k400BadRequest);
     callback(resp);
     return;
   }
-  if (engine_entry->status != "Ready") {
+  if (!engine_validate.value()) {
     Json::Value ret;
     ret["message"] = "Engine is not ready! Please install first!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -480,9 +478,7 @@ void Models::StartModel(
     return;
   }
 
-  auto result = model_service_->StartModel(config.apiServerHost,
-                                           std::stoi(config.apiServerPort),
-                                           model_handle, params_override);
+  auto result = model_service_->StartModel(model_handle, params_override);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -500,12 +496,12 @@ void Models::StartModel(
 
 void Models::StopModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!http_util::HasFieldInReq(req, callback, "model"))
+  if (!http_util::HasFieldInReq(req, callback, "model")) {
     return;
-  auto config = file_manager_utils::GetCortexConfig();
+  }
+
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto result = model_service_->StopModel(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
+  auto result = model_service_->StopModel(model_handle);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -525,10 +521,7 @@ void Models::GetModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& model_id) {
-  auto config = file_manager_utils::GetCortexConfig();
-
-  auto result = model_service_->GetModelStatus(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_id);
+  auto result = model_service_->GetModelStatus(model_id);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();

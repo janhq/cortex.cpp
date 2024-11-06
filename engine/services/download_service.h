@@ -2,7 +2,6 @@
 
 #include <curl/curl.h>
 #include <eventpp/eventqueue.h>
-#include <filesystem>
 #include <functional>
 #include <optional>
 #include <queue>
@@ -82,9 +81,6 @@ class DownloadService {
     std::string item_id;
     DownloadService* download_service;
   };
-
-  cpp::result<void, std::string> VerifyDownloadTask(
-      DownloadTask& task) const noexcept;
 
   cpp::result<bool, std::string> Download(
       const std::string& download_id,

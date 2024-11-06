@@ -1,12 +1,11 @@
 #pragma once
+
 #include <json/json.h>
-#include <algorithm>
 #include <regex>
 #include <sstream>
 #include <string>
-#include <vector>
 #include "llama3.1.h"
-#include "utils/logging_utils.h"
+
 namespace function_calling_utils {
 constexpr auto custom_template_function = "<CUSTOM_FUNCTIONS>";
 
@@ -157,6 +156,10 @@ inline void UpdateMessages(std::string& system_prompt,
         "\n\nNow this is your first priority: You must call the function '" +
         tool_choice["function"]["name"].asString() +
         "' to answer the user's question.";
+  }
+  bool parallel_tool_calls = request->get("parallel_tool_calls", true).asBool();
+  if (!parallel_tool_calls) {
+    system_prompt += "\n\nNow this is your first priority: You must call the only one function at a time.";
   }
 
   bool tools_call_in_user_message =

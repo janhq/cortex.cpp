@@ -30,14 +30,15 @@ Here is an example,
 Reminder:
 - Function calls MUST follow the specified format
 - Required parameters MUST be specified
-- Only call one function at a time
+- You can call one or more functions at a time
 - Put the entire function call reply on one line
 - Always add your sources when using search results to answer the user query
-- If can not find correct parameters corresponding to function, ask user again to provide.
+- If you can not find correct parameters or arguments corresponding to function in the user's message, ask user again to provide, do not make assumptions.
 - No explanation are needed when calling a function.
 
 You are a helpful assistant.
 )";
 
-constexpr auto tool_role = "<|eot_id|>\n<|start_header_id|>ipython<|end_header_id|>\n";
+constexpr auto tool_role =
+    "<|eot_id|>\n<|start_header_id|>ipython<|end_header_id|>\n";
 }  // namespace function_calling_llama3_1_utils
