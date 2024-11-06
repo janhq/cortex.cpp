@@ -7,6 +7,17 @@ This guide will help you set up and run Cortex using Docker.
 - nvidia-container-toolkit (for GPU support)
 
 ### Instructions
+
+#### Pull Cortex Docker Image from Docker Hub
+1. Pull the Cortex Docker image from Docker Hub
+    ```bash
+    # Pull the latest image
+    docker pull menloltd/cortex:latest
+
+    docker pull menloltd/cortex:1.0.1-224
+    ```
+
+#### Build and Run Cortex Docker Container from Dockerfile
 1. Clone the Cortex repository
     ```bash
     git clone https://github.com/janhq/cortex.cpp.git

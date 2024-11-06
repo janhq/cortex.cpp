@@ -60,3 +60,16 @@ jobs:
           build-args: |
             CORTEX_CPP_VERSION=${{ inputs.new_version }}
             CMAKE_EXTRA_FLAGS=${{ inputs.cmake-extra-flags }}
+
+      - name: Update Docker Hub overview
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          README_CONTENT=$(cat docker/README.md | tr -d '\r' | sed ':a;N;$!ba;s/\n/\\n/g' | sed 's/"/\\"/g')
+
+          curl -X PATCH \
+            -H "Content-Type: application/json" \
+            -H "Authorization: JWT $(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "'"$DOCKERHUB_USERNAME"'", "password": "'"$DOCKERHUB_TOKEN"'"}' https://hub.docker.com/v2/users/login/ | jq -r .token)" \
+            -d "{\"full_description\": \"$README_CONTENT\"}" \
+            https://hub.docker.com/v2/repositories/menloltd/cortex/

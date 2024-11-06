@@ -124,7 +124,7 @@ jobs:
       tags: menloltd/cortex:nightly-${{ needs.get-update-version.outputs.new_version }}
 
   noti-discord-nightly-and-update-url-readme:
-    needs: [build-macos, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version, update-latest-version]
+    needs: [build-macos, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version, update-latest-version, build-docker-x64]
     secrets: inherit
     if: github.event_name == 'schedule'
     uses: ./.github/workflows/template-noti-discord.yaml
@@ -133,7 +133,7 @@ jobs:
       new_version: ${{ needs.get-update-version.outputs.new_version }}
 
   noti-discord-manual:
-    needs: [build-macos, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
+    needs: [build-macos, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version, build-docker-x64]
     secrets: inherit
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.public_provider == 'aws-s3'
     uses: ./.github/workflows/template-noti-discord.yaml
