@@ -178,7 +178,6 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
     auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());
-      std::cout << "Test: " << model_list.error();
       return cpp::fail(model_list.error());
     }
     if (IsUnique(model_list.value(), new_entry.model, new_entry.model_alias)) {

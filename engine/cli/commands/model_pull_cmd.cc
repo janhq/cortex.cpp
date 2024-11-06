@@ -1,16 +1,10 @@
 #include "model_pull_cmd.h"
-#include <memory>
-#include "common/event.h"
-#include "database/models.h"
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/download_progress.h"
-#include "utils/format_utils.h"
-#include "utils/huggingface_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
-#include "utils/string_utils.h"
 #if defined(_WIN32)
 #include <signal.h>
 #endif

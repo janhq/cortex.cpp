@@ -36,14 +36,13 @@ TEST_F(EventTest, EventFromString) {
   })";
   // clang-format on
   auto root = json_helper::ParseJsonString(ev_str);
-  std::cout << root.toStyledString() << std::endl;
 
-  auto download_item = common::GetDownloadItemFromJson(root["task"]["items"][0]);
-  EXPECT_EQ(download_item.downloadUrl, root["task"]["items"][0]["downloadUrl"].asString());
-  std::cout << download_item.ToString() << std::endl;
+  auto download_item =
+      common::GetDownloadItemFromJson(root["task"]["items"][0]);
+  EXPECT_EQ(download_item.downloadUrl,
+            root["task"]["items"][0]["downloadUrl"].asString());
 
   auto download_task = common::GetDownloadTaskFromJson(root["task"]);
-  std::cout << download_task.ToString() << std::endl;
 
   auto ev = cortex::event::GetDownloadEventFromJson(root);
   EXPECT_EQ(ev.type_, cortex::event::DownloadEventType::DownloadStarted);

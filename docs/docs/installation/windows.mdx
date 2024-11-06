@@ -19,151 +19,87 @@ For Windows, Cortex.cpp can be installed in two ways:
 
 ## Windows
 ### Install Cortex.cpp
-Cortex.cpp offers two installer types:
-- Network Installers download a minimal system and require an internet connection to fetch packages during installation.
-- Local Installers include all necessary packages, enabling offline installation without internet access.
 :::info
-Before installation, make sure that you have met the required [dependencies](#dependencies) and [hardware](#hardware) to run Cortex.
+Before installation, make sure that you have met the [minimum requirements](/docs/installation#minimum-requirements) to run Cortex.
+This instruction is for stable releases. For beta and nightly releases, please replace `cortex` with `cortex-beta` and `cortex-nightly`, respectively.
 :::
-- Stable: https://github.com/janhq/cortex.cpp/releases
-- Beta: https://github.com/janhq/cortex.cpp/releases
-- Nightly: https://github.com/janhq/cortex.cpp/releases
+
+Download the windows installer:
+    - From release: https://github.com/janhq/cortex.cpp/releases
+    - From quick download links:
+        - Local installer `.deb`:
+            - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-local
+            - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-local
+            - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-local
+        - Network installer `.deb`:
+            - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-network
+            - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-network
+            - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-network
+        - Binary:
+            - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-binary
+            - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-binary
+            - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-binary
+
+
 #### Data Folder
 By default, Cortex.cpp is installed in the following directory:
 ```
 # Binary Location
-C:\Users\<username>\AppData\Local\cortexcpp
+C:\Users\<username>\AppData\Local\cortexcpp\
 
 # Application Data (Engines, Models and Logs folders)
-C:\Users\<username>\.cortexcpp
+C:\Users\<username>\cortexcpp
+
+# Configuration File
+C:\Users\<username>\.cortexrc
 ```
+
 ### Uninstall Cortex.cpp
 To uninstall Cortex.cpp:
+1. Open the **Control Panel**.
 1. Navigate to **Add or Remove program**.
-2. Search for Cortex.cpp and click **Uninstall**.
+2. Search for cortexcpp and click **Uninstall**.
+
 ## Windows Subsystem Linux
 :::info
 Windows Subsystem Linux allows running Linux tools and workflows seamlessly alongside Windows applications. For more information, please see this [article](https://learn.microsoft.com/en-us/windows/wsl/faq).
 :::
-### Install Cortex.cpp
-Cortex.cpp offers two installer types:
-- Network Installers download a minimal system and require an internet connection to fetch packages during installation.
-- Local Installers include all necessary packages, enabling offline installation without internet access.
-:::info
-Before installation, make sure that you have met the required [dependencies](#dependencies) and [hardware](#hardware) to run Cortex.
-:::
-1. Download the Windows installer:
-    - Stable: https://github.com/janhq/cortex.cpp/releases
-    - Beta: https://github.com/janhq/cortex.cpp/releases
-    - Nightly: https://github.com/janhq/cortex.cpp/releases
-2. Ensure that Cortex.cpp is sucessfulyy installed:
-```bash
-# Stable
-cortex.exe
 
-# Beta
-cortex-beta.exe
+Follow [linux installation steps](linux) to install Cortex.cpp on Windows Subsystem Linux.
 
-# Nightly
-cortex-nightly.exe
-```
 
-#### Data Folder
-By default, Cortex.cpp is installed in the following directory:
-```
-# Binary Location
-C:\Users\<username>\AppData\Local\cortexcpp\cortex<env>.exe
-
-# Application Data (Engines, Models and Logs folders)
-C:\Users\<username>\.cortexcpp<env>
-```
-### Uninstall Cortex.cpp
-Run the uninstaller script:
-```bash
-# Stable version
-sudo apt remove cortexcpp
-
-# Beta version
-sudo apt remove cortexcpp-beta
-
-# Nightly version
-sudo apt remove cortexcpp-nightly
-```
 ## Build from Source
 
-1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
-2. Navigate to the `engine > vcpkg` folder.
-3. Configure the vpkg:
+### Prerequisites
+- CMake >= 3.10
+- msvc (Visual Studio 2019/2022)
+- ninja-build
+- make-gnu
 
+### Build Cortex.cpp
+
+1. **Clone the Cortex Repository**
+   ```cmd
+   git clone https://github.com/janhq/cortex.cpp.git
+   cd cortex.cpp
+   git submodule update --init
+   ```
+2. Build the Cortex.cpp :
+
+    ```cmd
+    cd engine
+    make configure-vcpkg
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg\\scripts\\buildsystems\\vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -GNinja"
+    ```
+
+3. Verify that Cortex.cpp is builded correctly by getting help information.
+
+    ```cmd
+    # Get the help information
+    .\build\cortex.exe -h
+    ```
+
+## Update cortex to latest version
 ```bash
-cd vcpkg
-## Windows
-./bootstrap-vcpkg.bat
-## WSL
-./bootstrap-vcpkg.sh
-vcpkg install
+cortex.exe update
 ```
-4. Build the Cortex.cpp inside the `build` folder:
-
-```bash
-mkdir build
-cd build
-## Windows
-cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
-## WSL
-cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder/vcpkg/scripts/buildsystems/vcpkg.cmake
-make -j4
-```
-5. Use Visual Studio with the C++ development kit to build the project using the files generated in the `build` folder.
-6. Verify that Cortex.cpp is installed correctly by getting help information.
-
-```sh
-# Get the help information
-cortex -h
-```
-
-## Prerequisites
-### Dependencies
-#### Windows
-- Node.js version 18 and higher
-- NPM
-#### Windows Subsystem for Linux
-- Node.js version 18 and higher
-- NPM
-- Homebrew
-- Windows Subsystem for Linux (Ubuntu)
-- OpenMPI
-
-### Hardware
-#### Operating System
-- Windows 10 or higher.
-#### CPU
-:::info
-- Cortex.cpp supports a processor that can handle AVX2. For the full list, please see [here](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#CPUs_with_AVX2).
-- We support older processors with AVX and AVX-512, though this is not recommended.
-:::
-##### Intel CPU
-- Haswell processors (Q2 2013) and newer.
-- Tiger Lake (Q3 2020) and newer for Celeron and Pentium processors.
-##### AMD CPU
-- Excavator processors (Q2 2015) and newer.
-#### RAM
-:::info
-We support DDR2 RAM as the minimum requirement but recommend using newer generations of RAM for improved performance.
-:::
-- 8GB for running up to 3B models (int4).
-- 16GB for running up to 7B models (int4).
-- 32GB for running up to 13B models (int4).
-#### GPU
-:::info
-Having at least 6GB VRAM when using NVIDIA, AMD, or Intel Arc GPUs is recommended.
-:::
-- 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
-- 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
-- 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
-:::info
-- [NVIDIA driver](https://www.nvidia.com/Download/index.aspx) version 470.63.01 or higher.
-- [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) version 12.3 or higher.
-:::
-#### Disk
-- At least 10GB for app storage and model download.

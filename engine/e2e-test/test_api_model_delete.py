@@ -1,6 +1,5 @@
 import pytest
 import requests
-from test_runner import popen, run
 from test_runner import start_server, stop_server
 
 

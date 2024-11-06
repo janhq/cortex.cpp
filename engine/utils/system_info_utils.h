@@ -7,6 +7,7 @@
 #include <sstream>
 #include <vector>
 #include "utils/command_executor.h"
+#include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 #ifdef _WIN32
 #include <windows.h>
@@ -72,13 +73,13 @@ inline std::unique_ptr<SystemInfo> GetSystemInfo() {
 #endif
 
 #if defined(__APPLE__) && defined(__MACH__)
-  os << "mac";
+  os << kMacOs;
 #elif defined(__linux__)
-  os << "linux";
+  os << kLinuxOs;
 #elif defined(_WIN32)
-  os << "windows";
+  os << kWindowsOs;
 #else
-  os << kUnsupported;
+  os << kUnsupportedOs;
 #endif
   return std::make_unique<SystemInfo>(os.str(), arch.str());
 }

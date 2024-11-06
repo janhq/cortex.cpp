@@ -1,6 +1,6 @@
 #include "model_stop_cmd.h"
-#include "utils/logging_utils.h"
 #include "httplib.h"
+#include "utils/logging_utils.h"
 
 namespace commands {
 

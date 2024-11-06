@@ -1,84 +1,26 @@
 #include "download_service.h"
 #include <curl/curl.h>
-#include <httplib.h>
 #include <stdio.h>
 #include <filesystem>
 #include <mutex>
 #include <optional>
 #include <ostream>
 #include <utility>
+#include "utils/curl_utils.h"
 #include "utils/format_utils.h"
-#include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
-#include "utils/url_parser.h"
-
-#ifdef _WIN32
-#define ftell64(f) _ftelli64(f)
-#define fseek64(f, o, w) _fseeki64(f, o, w)
-#else
-#define ftell64(f) ftello(f)
-#define fseek64(f, o, w) fseeko(f, o, w)
-#endif
 
 namespace {
 size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
   size_t written = fwrite(ptr, size, nmemb, (FILE*)userdata);
   return written;
 }
-
-inline curl_slist* CreateHeaders(const std::string& url) {
-  try {
-    auto url_obj = url_parser::FromUrlString(url);
-    if (url_obj.host == huggingface_utils::kHuggingfaceHost) {
-      return huggingface_utils::CreateCurlHfHeaders();
-    } else {
-      return nullptr;
-    }
-  } catch (const std::exception& e) {
-    CTL_WRN(e.what());
-    return nullptr;
-  }
-}
 }  // namespace
-
-cpp::result<void, std::string> DownloadService::VerifyDownloadTask(
-    DownloadTask& task) const noexcept {
-  CLI_LOG("Validating download items, please wait..");
-
-  auto total_download_size{0};
-  std::optional<std::string> err_msg = std::nullopt;
-
-  for (auto& item : task.items) {
-    auto file_size = GetFileSize(item.downloadUrl);
-    if (file_size.has_error()) {
-      err_msg = file_size.error();
-      break;
-    }
-
-    item.bytes = file_size.value();
-    total_download_size += file_size.value();
-  }
-
-  if (err_msg.has_value()) {
-    CTL_ERR(err_msg.value());
-    return cpp::fail(err_msg.value());
-  }
-
-  return {};
-}
 
 cpp::result<bool, std::string> DownloadService::AddDownloadTask(
     DownloadTask& task,
     std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
-  auto validating_result = VerifyDownloadTask(task);
-  if (validating_result.has_error()) {
-    return cpp::fail(validating_result.error());
-  }
-
-  // all items are valid, start downloading
-  // if any item from the task failed to download, the whole task will be
-  // considered failed
   std::optional<std::string> dl_err_msg = std::nullopt;
   bool has_task_done = false;
   for (const auto& item : task.items) {
@@ -92,7 +34,6 @@ cpp::result<bool, std::string> DownloadService::AddDownloadTask(
     }
   }
   if (dl_err_msg.has_value()) {
-    // CTL_ERR(dl_err_msg.value());
     return cpp::fail(dl_err_msg.value());
   }
 
@@ -104,9 +45,8 @@ cpp::result<bool, std::string> DownloadService::AddDownloadTask(
 
 cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
     const std::string& url) const noexcept {
-  CURL* curl;
-  curl = curl_easy_init();
 
+  auto curl = curl_easy_init();
   if (!curl) {
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
@@ -114,10 +54,19 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  if (auto headers = CreateHeaders(url); headers) {
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+  auto headers = curl_utils::GetHeaders(url);
+  if (headers.has_value()) {
+    curl_slist* curl_headers = nullptr;
+
+    for (const auto& [key, value] : headers.value()) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
-  CURLcode res = curl_easy_perform(curl);
+  auto res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
     return cpp::fail(static_cast<std::string>(
@@ -135,11 +84,7 @@ cpp::result<bool, std::string> DownloadService::Download(
     const DownloadItem& download_item) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
 
-  CURL* curl;
-  FILE* file;
-  CURLcode res;
-
-  curl = curl_easy_init();
+  auto curl = curl_easy_init();
   if (!curl) {
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
@@ -190,15 +135,23 @@ cpp::result<bool, std::string> DownloadService::Download(
     }
   }
 
-  file = fopen(download_item.localPath.string().c_str(), mode.c_str());
+  auto file = fopen(download_item.localPath.string().c_str(), mode.c_str());
   if (!file) {
     return cpp::fail("Failed to open output file " +
                      download_item.localPath.string());
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
-  if (auto headers = CreateHeaders(download_item.downloadUrl); headers) {
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  auto headers = curl_utils::GetHeaders(download_item.downloadUrl);
+  if (headers.has_value()) {
+    curl_slist* curl_headers = nullptr;
+
+    for (const auto& [key, value] : headers.value()) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
@@ -215,7 +168,7 @@ cpp::result<bool, std::string> DownloadService::Download(
     }
   }
 
-  res = curl_easy_perform(curl);
+  auto res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
     return cpp::fail("Download failed! Error: " +
@@ -250,16 +203,15 @@ void DownloadService::ProcessTask(DownloadTask& task) {
 
   active_task_ = std::make_shared<DownloadTask>(task);
 
-  for (auto& item : task.items) {
-    CURL* handle = curl_easy_init();
+  for (const auto& item : task.items) {
+    auto handle = curl_easy_init();
     if (handle == nullptr) {
       // skip the task
       CTL_ERR("Failed to init curl!");
       return;
     }
 
-    FILE* file;
-    file = fopen(item.localPath.string().c_str(), "wb");
+    auto file = fopen(item.localPath.string().c_str(), "wb");
     if (!file) {
       CTL_ERR("Failed to open output file " + item.localPath.string());
       return;
@@ -271,9 +223,18 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     });
     downloading_data_map_.insert(std::make_pair(item.id, dl_data_ptr));
 
-    if (auto headers = CreateHeaders(item.downloadUrl); headers) {
-      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+    auto headers = curl_utils::GetHeaders(item.downloadUrl);
+    if (headers.has_value()) {
+      curl_slist* curl_headers = nullptr;
+
+      for (const auto& [key, value] : headers.value()) {
+        auto header = key + ": " + value;
+        curl_headers = curl_slist_append(curl_headers, header.c_str());
+      }
+
+      curl_easy_setopt(handle, CURLOPT_HTTPHEADER, curl_headers);
     }
+
     curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
     curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
@@ -292,8 +253,8 @@ void DownloadService::ProcessTask(DownloadTask& task) {
       DownloadEvent{.type_ = DownloadEventType::DownloadStarted,
                     .download_task_ = task});
 
-  int still_running = 0;
-  bool is_terminated = false;
+  auto still_running = 0;
+  auto is_terminated = false;
   do {
     curl_multi_perform(multi_handle_, &still_running);
     curl_multi_wait(multi_handle_, NULL, 0, MAX_WAIT_MSECS, NULL);
@@ -321,7 +282,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
   }
 
   ProcessCompletedTransfers();
-  for (auto pair : task_handles) {
+  for (const auto& pair : task_handles) {
     curl_multi_remove_handle(multi_handle_, pair.first);
     curl_easy_cleanup(pair.first);
     fclose(pair.second);
@@ -389,11 +350,6 @@ void DownloadService::ProcessCompletedTransfers() {
 
 cpp::result<DownloadTask, std::string> DownloadService::AddTask(
     DownloadTask& task, std::function<void(const DownloadTask&)> callback) {
-  auto validate_result = VerifyDownloadTask(task);
-  if (validate_result.has_error()) {
-    return cpp::fail(validate_result.error());
-  }
-
   {
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
     callbacks_[task.id] = std::move(callback);

@@ -48,7 +48,11 @@ void RunServer(std::optional<int> port) {
   if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
     auto config_path = file_manager_utils::GetConfigurationPath();
     config.apiServerPort = std::to_string(*port);
-    config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    auto result =
+        config_yaml_utils::DumpYamlConfig(config, config_path.string());
+    if (result.has_error()) {
+      CTL_ERR("Error update " << config_path.string() << result.error());
+    }
   }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
@@ -90,10 +94,11 @@ void RunServer(std::optional<int> port) {
 
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
-  auto inference_svc = std::make_shared<services::InferenceService>();
 
   auto download_service = std::make_shared<DownloadService>(event_queue_ptr);
   auto engine_service = std::make_shared<EngineService>(download_service);
+  auto inference_svc =
+      std::make_shared<services::InferenceService>(engine_service);
   auto model_service =
       std::make_shared<ModelService>(download_service, inference_svc);
 
@@ -102,9 +107,10 @@ void RunServer(std::optional<int> port) {
   auto model_ctl = std::make_shared<Models>(model_service, engine_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
-  auto server_ctl = std::make_shared<inferences::server>(inference_svc);
   auto hw_ctl = std::make_shared<Hardware>();
-
+  auto server_ctl =
+      std::make_shared<inferences::server>(inference_svc, engine_service);
+      
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
@@ -154,7 +160,12 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  { file_manager_utils::CreateConfigFileIfNotExist(); }
+  {
+    auto result = file_manager_utils::CreateConfigFileIfNotExist();
+    if (result.has_error()) {
+      LOG_ERROR << "Error creating config file: " << result.error();
+    }
+  }
 
   // Delete temporary file if it exists
   auto temp =

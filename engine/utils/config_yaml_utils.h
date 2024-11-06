@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include "utils/logging_utils.h"
+#include "utils/result.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace config_yaml_utils {
@@ -13,23 +14,31 @@ struct CortexConfig {
   std::string logTensorrtLLMPath;
   std::string logOnnxPath;
   std::string dataFolderPath;
+
   int maxLogLines;
   std::string apiServerHost;
   std::string apiServerPort;
   uint64_t checkedForUpdateAt;
   std::string latestRelease;
+
   std::string huggingFaceToken;
+  /**
+   * Github's API requires a user-agent string.
+   */
+  std::string gitHubUserAgent;
+  std::string gitHubToken;
+  std::string llamacppVariant;
+  std::string llamacppVersion;
 };
 
-const std::string kCortexFolderName = "cortexcpp";
 const std::string kDefaultHost{"127.0.0.1"};
 const std::string kDefaultPort{"39281"};
 const int kDefaultMaxLines{100000};
 constexpr const uint64_t kDefaultCheckedForUpdateAt = 0u;
 constexpr const auto kDefaultLatestRelease = "default_version";
 
-inline void DumpYamlConfig(const CortexConfig& config,
-                           const std::string& path) {
+inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
+                                                     const std::string& path) {
   std::filesystem::path config_file_path{path};
 
   try {
@@ -49,12 +58,17 @@ inline void DumpYamlConfig(const CortexConfig& config,
     node["checkedForUpdateAt"] = config.checkedForUpdateAt;
     node["latestRelease"] = config.latestRelease;
     node["huggingFaceToken"] = config.huggingFaceToken;
+    node["gitHubUserAgent"] = config.gitHubUserAgent;
+    node["gitHubToken"] = config.gitHubToken;
+    node["llamacppVariant"] = config.llamacppVariant;
+    node["llamacppVersion"] = config.llamacppVersion;
 
     out_file << node;
     out_file.close();
+    return {};
   } catch (const std::exception& e) {
     CTL_ERR("Error writing to file: " << e.what());
-    throw;
+    return cpp::fail("Error writing to file: " + std::string(e.what()));
   }
 }
 
@@ -73,7 +87,9 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["apiServerPort"] || !node["checkedForUpdateAt"] ||
          !node["latestRelease"] || !node["logLlamaCppPath"] ||
          !node["logOnnxPath"] || !node["logTensorrtLLMPath"] ||
-         !node["huggingFaceToken"]);
+         !node["huggingFaceToken"] || !node["gitHubUserAgent"] ||
+         !node["gitHubToken"] || !node["llamacppVariant"] ||
+         !node["llamacppVersion"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -105,10 +121,26 @@ inline CortexConfig FromYaml(const std::string& path,
         .latestRelease = node["latestRelease"]
                              ? node["latestRelease"].as<std::string>()
                              : default_cfg.latestRelease,
-        .huggingFaceToken = node["huggingFaceToken"] ? node["huggingFaceToken"].as<std::string>() : "",
+        .huggingFaceToken = node["huggingFaceToken"]
+                                ? node["huggingFaceToken"].as<std::string>()
+                                : "",
+        .gitHubUserAgent = node["gitHubUserAgent"]
+                               ? node["gitHubUserAgent"].as<std::string>()
+                               : "",
+        .gitHubToken =
+            node["gitHubToken"] ? node["gitHubToken"].as<std::string>() : "",
+        .llamacppVariant = node["llamacppVariant"]
+                               ? node["llamacppVariant"].as<std::string>()
+                               : "",
+        .llamacppVersion = node["llamacppVersion"]
+                               ? node["llamacppVersion"].as<std::string>()
+                               : "",
     };
     if (should_update_config) {
-      DumpYamlConfig(config, path);
+      auto result = DumpYamlConfig(config, path);
+      if (result.has_error()) {
+        CTL_ERR("Failed to update config file: " << result.error());
+      }
     }
     return config;
   } catch (const YAML::BadFile& e) {

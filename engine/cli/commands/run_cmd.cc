@@ -67,19 +67,6 @@ std::optional<std::string> SelectLocalModel(std::string host, int port,
   return model_id;
 }
 
-namespace {
-std::string Repo2Engine(const std::string& r) {
-  if (r == kLlamaRepo) {
-    return kLlamaEngine;
-  } else if (r == kOnnxRepo) {
-    return kOnnxEngine;
-  } else if (r == kTrtLlmRepo) {
-    return kTrtLlmEngine;
-  }
-  return r;
-};
-}  // namespace
-
 void RunCmd::Exec(bool run_detach) {
   std::optional<std::string> model_id =
       SelectLocalModel(host_, port_, model_service_, model_handle_);
@@ -107,59 +94,59 @@ void RunCmd::Exec(bool run_detach) {
 
     // Check if engine existed. If not, download it
     {
-      auto required_engine =
-          engine_service_.GetEngineInfo(Repo2Engine(mc.engine));
+      auto is_engine_ready = engine_service_.IsEngineReady(mc.engine);
+      if (is_engine_ready.has_error()) {
+        throw std::runtime_error(is_engine_ready.error());
+      }
 
-      if (!required_engine.has_value()) {
-        throw std::runtime_error("Engine not found: " + mc.engine);
-      }
-      if (required_engine.value().status == EngineService::kIncompatible) {
-        throw std::runtime_error("Engine " + mc.engine + " is incompatible");
-      }
-      if (required_engine.value().status == EngineService::kNotInstalled) {
-        if (!EngineInstallCmd(download_service_, host_, port_)
+      if (!is_engine_ready.value()) {
+        CTL_INF("Engine " << mc.engine
+                          << " is not ready. Proceed to install..");
+        if (!EngineInstallCmd(download_service_, host_, port_, false)
                  .Exec(mc.engine)) {
           return;
+        } else {
+          CTL_INF("Engine " << mc.engine << " is ready");
         }
       }
-    }
 
-    // Start server if it is not running
-    {
-      if (!commands::IsServerAlive(host_, port_)) {
-        CLI_LOG("Starting server ...");
-        commands::ServerStartCmd ssc;
-        if (!ssc.Exec(host_, port_)) {
-          return;
+      // Start server if it is not running
+      {
+        if (!commands::IsServerAlive(host_, port_)) {
+          CLI_LOG("Starting server ...");
+          commands::ServerStartCmd ssc;
+          if (!ssc.Exec(host_, port_)) {
+            return;
+          }
         }
       }
-    }
 
-    // Always start model if not llamacpp
-    // If it is llamacpp, then check model status first
-    {
-      if ((mc.engine.find(kLlamaRepo) == std::string::npos &&
-           mc.engine.find(kLlamaEngine) == std::string::npos) ||
-          !commands::ModelStatusCmd(model_service_)
-               .IsLoaded(host_, port_, *model_id)) {
+      // Always start model if not llamacpp
+      // If it is llamacpp, then check model status first
+      {
+        if ((mc.engine.find(kLlamaRepo) == std::string::npos &&
+             mc.engine.find(kLlamaEngine) == std::string::npos) ||
+            !commands::ModelStatusCmd(model_service_)
+                 .IsLoaded(host_, port_, *model_id)) {
 
-        auto res =
-            commands::ModelStartCmd(model_service_)
-                .Exec(host_, port_, *model_id, false /*print_success_log*/);
-        if (!res) {
-          CLI_LOG("Error: Failed to start model");
-          return;
+          auto res =
+              commands::ModelStartCmd(model_service_)
+                  .Exec(host_, port_, *model_id, false /*print_success_log*/);
+          if (!res) {
+            CLI_LOG("Error: Failed to start model");
+            return;
+          }
         }
       }
-    }
 
-    // Chat
-    if (run_detach) {
-      CLI_LOG(*model_id << " model started successfully. Use `"
-                        << commands::GetCortexBinary() << " run " << *model_id
-                        << "` for interactive chat shell");
-    } else {
-      ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
+      // Chat
+      if (run_detach) {
+        CLI_LOG(*model_id << " model started successfully. Use `"
+                          << commands::GetCortexBinary() << " run " << *model_id
+                          << "` for interactive chat shell");
+      } else {
+        ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
+      }
     }
   } catch (const std::exception& e) {
     CLI_LOG("Fail to run model with ID '" + model_handle_ + "': " + e.what());

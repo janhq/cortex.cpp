@@ -1,13 +1,7 @@
 ---
-slug: /model-sources
 title: Model Sources
+description: Model
 ---
-
-import DocCardList from "@theme/DocCardList";
-
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
 # Pulling Models in Cortex
 
@@ -129,7 +123,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
         "downloadedBytes": 0,
         "id": "metadata.yml",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
       },
       {
         "bytes": 0,
@@ -137,7 +131,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
         "downloadedBytes": 0,
         "id": "model.gguf",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
       },
       {
         "bytes": 0,
@@ -145,7 +139,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
         "downloadedBytes": 0,
         "id": "model.yml",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
       }
     ],
     "type": "Model"
@@ -175,7 +169,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
         "downloadedBytes": 58,
         "id": "metadata.yml",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
       },
       {
         "bytes": 432131456,
@@ -183,7 +177,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
         "downloadedBytes": 235619714,
         "id": "model.gguf",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
       },
       {
         "bytes": 562,
@@ -191,7 +185,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
         "downloadedBytes": 562,
         "id": "model.yml",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
       }
     ],
     "type": "Model"
@@ -215,7 +209,7 @@ The DownloadSuccess event indicates that all items in the download task have bee
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
         "downloadedBytes": 0,
         "id": "metadata.yml",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
       },
       {
         "bytes": 0,
@@ -223,7 +217,7 @@ The DownloadSuccess event indicates that all items in the download task have bee
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
         "downloadedBytes": 0,
         "id": "model.gguf",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
       },
       {
         "bytes": 0,
@@ -231,7 +225,7 @@ The DownloadSuccess event indicates that all items in the download task have bee
         "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
         "downloadedBytes": 0,
         "id": "model.yml",
-        "localPath": "/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
+        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
       }
     ],
     "type": "Model"
@@ -249,14 +243,13 @@ When clients have models that are not inside the Cortex data folder and wish to 
 Use the following command to import a local model using the CLI:
 
 ```sh
-cortex models import --model_id my-tinyllama --model_path /Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama
-/1b-gguf/model.gguf
+cortex models import --model_id my-tinyllama --model_path /Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf/model.gguf
 ```
 
 Response:
 
 ```sh
-Successfully import model from  '/Users/jamesnguyen/cortexcpp/models/cortex.so/tinyllama/1b-gguf/model.gguf' for modeID 'my-tinyllama'.
+Successfully import model from  '/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf/model.gguf' for modeID 'my-tinyllama'.
 ```
 
 #### via HTTP API
@@ -350,5 +343,3 @@ Response:
 ```
 
 With Cortex, pulling and managing models is simplified, allowing you to focus more on building your applications!
-
-<DocCardList />
