@@ -8,7 +8,7 @@ using namespace drogon;
 class ProcessManager : public drogon::HttpController<ProcessManager, false> {
  public:
   METHOD_LIST_BEGIN
-  METHOD_ADD(ProcessManager::destroy, "/destroy", Delete);
+  METHOD_ADD(ProcessManager::destroy, "/destroy", Options, Delete);
   METHOD_LIST_END
 
   void destroy(const HttpRequestPtr& req,

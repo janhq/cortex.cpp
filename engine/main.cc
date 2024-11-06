@@ -126,6 +126,12 @@ void RunServer(std::optional<int> port) {
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
   drogon::app().disableSigtermHandling();
+  drogon::app().registerPostHandlingAdvice(
+      [](const drogon::HttpRequestPtr& req,
+         const drogon::HttpResponsePtr& resp) {
+        resp->addHeader("Access-Control-Allow-Origin", "*");
+        resp->addHeader("Access-Control-Allow-Methods", "*");
+      });
 
   drogon::app().run();
 }
