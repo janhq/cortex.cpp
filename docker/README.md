@@ -2,22 +2,28 @@
 
 This guide will help you set up and run Cortex using Docker.
 
+For more information on how to use Cortex, please refer to the [Cortex Documentation](https://cortex.so/docs/) and [Cortex Docker](https://cortex.so/docs/installation/docker).
+
 ### Prerequisites
 - Docker / Docker Desktop
 - nvidia-container-toolkit (for GPU support)
 
 ### Instructions
 
-#### Pull Cortex Docker Image from Docker Hub
-1. Pull the Cortex Docker image from Docker Hub
+#### Build Cortex Docker Image from source or Pull from Docker Hub
+
+##### Pull Cortex Docker Image from Docker Hub
+
     ```bash
     # Pull the latest image
     docker pull menloltd/cortex:latest
 
-    docker pull menloltd/cortex:1.0.1-224
+    # Pull a specific version
+    docker pull menloltd/cortex:nightly-1.0.1-224
     ```
 
-#### Build and Run Cortex Docker Container from Dockerfile
+##### Build and Run Cortex Docker Container from Dockerfile
+
 1. Clone the Cortex repository
     ```bash
     git clone https://github.com/janhq/cortex.cpp.git
@@ -33,7 +39,9 @@ This guide will help you set up and run Cortex using Docker.
     docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
     ```
 
-3. Run the Docker container
+#### Run Cortex Docker Container
+
+1. Run the Docker container
     ```bash
     # Create Volume to store models and data
     docker volume create cortex_data
@@ -45,14 +53,14 @@ This guide will help you set up and run Cortex using Docker.
     docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
     ```
 
-4. Check logs (Optional)
+2. Check logs (Optional)
     ```bash
     docker logs cortex
     ```
 
-5. Access to http://localhost:39281 to check the cortex docs API.
+3. Access to http://localhost:39281 to check the cortex docs API.
 
-6. Execute to container and try out cortex cli
+4. Execute to container and try out cortex cli
     ```bash
     docker exec -it cortex bash
     cortex --help
