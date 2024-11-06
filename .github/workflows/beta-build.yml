@@ -88,7 +88,7 @@ jobs:
       ref: ${{ github.ref }}
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: ubuntu-latest
-      cmake-extra-flags: "-DCORTEX_VARIANT=beta"
+      cmake-extra-flags: "-DCORTEX_VARIANT=prod"
       tags: "menloltd/cortex:${{ needs.get-update-version.outputs.new_version }}"
 
   update_release:

@@ -120,7 +120,7 @@ jobs:
       ref: ${{ needs.set-public-provider.outputs.ref }}
       new_version: nightly-${{ needs.get-update-version.outputs.new_version }}
       runs-on: ubuntu-latest
-      cmake-extra-flags: "-DCORTEX_VARIANT=nightly"
+      cmake-extra-flags: "-DCORTEX_VARIANT=prod"
       tags: menloltd/cortex:nightly-${{ needs.get-update-version.outputs.new_version }}
 
   noti-discord-nightly-and-update-url-readme:

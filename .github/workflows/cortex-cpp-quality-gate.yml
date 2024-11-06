@@ -101,6 +101,8 @@ jobs:
         run: |
           cd engine
           make run-unit-tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run setup config for macos
         if: runner.os == 'macOS'

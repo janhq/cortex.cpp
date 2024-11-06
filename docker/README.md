@@ -10,58 +10,56 @@ For more information on how to use Cortex, please refer to the [Cortex Documenta
 
 ### Instructions
 
-#### Build Cortex Docker Image from source or Pull from Docker Hub
+**Build Cortex Docker Image from source or Pull from Docker Hub**
 
-##### Pull Cortex Docker Image from Docker Hub
+- Pull Cortex Docker Image from Docker Hub
 
-    ```bash
-    # Pull the latest image
-    docker pull menloltd/cortex:latest
+```bash
+# Pull the latest image
+docker pull menloltd/cortex:latest
 
-    # Pull a specific version
-    docker pull menloltd/cortex:nightly-1.0.1-224
-    ```
+# Pull a specific version
+docker pull menloltd/cortex:nightly-1.0.1-224
+```
 
-##### Build and Run Cortex Docker Container from Dockerfile
+- Build and Run Cortex Docker Container from Dockerfile
 
-1. Clone the Cortex repository
-    ```bash
-    git clone https://github.com/janhq/cortex.cpp.git
-    cd cortex.cpp
-    git submodule update --init
-    ```
-2. Build the Docker image
-    ```bash
-    # Default always uses the latest cortex.cpp and cortex.llamacpp
-    docker build -t cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
+```bash
+git clone https://github.com/janhq/cortex.cpp.git
+cd cortex.cpp
+git submodule update --init
 
-    # Use specific version of cortex.cpp and cortex.llamacpp
-    docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
-    ```
+# Default always uses the latest cortex.cpp and cortex.llamacpp
+docker build -t menloltd/cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
 
-#### Run Cortex Docker Container
+# Use specific version of cortex.cpp and cortex.llamacpp
+docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t menloltd/cortex -f docker/Dockerfile .
+```
 
-1. Run the Docker container
-    ```bash
-    # Create Volume to store models and data
-    docker volume create cortex_data
+**Run Cortex Docker Container**
 
-    # CPU mode
-    docker run -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
+```bash
+# Create Volume to store models and data
+docker volume create cortex_data
 
-    # GPU mode - nvidia-docker required, it will automatically use all available GPUs
-    docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
-    ```
+# GPU mode - nvidia-docker required, it will automatically use all available GPUs
+docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 menloltd/cortex
 
-2. Check logs (Optional)
-    ```bash
-    docker logs cortex
-    ```
+# CPU mode
+docker run -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 menloltd/cortex
+```
 
-3. Access to http://localhost:39281 to check the cortex docs API.
+**Check logs (Optional)**
 
-4. Execute to container and try out cortex cli
-    ```bash
-    docker exec -it cortex bash
-    cortex --help
-    ```
+```bash
+docker logs cortex
+```
+
+**Access to http://localhost:39281 to check the cortex docs API.**
+
+**Execute to container and try out cortex cli**
+
+```bash
+docker exec -it cortex bash
+cortex --help
+```
