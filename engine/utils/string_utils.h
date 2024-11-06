@@ -99,7 +99,7 @@ inline bool EndsWith(const std::string& str, const std::string& suffix) {
 }
 
 inline std::vector<std::string> SplitBy(const std::string& str,
-                                        const std::string& delimiter) {
+                                        const std::string&& delimiter) {
   std::vector<std::string> tokens;
   size_t prev = 0, pos = 0;
   do {
