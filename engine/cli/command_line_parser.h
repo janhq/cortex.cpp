@@ -50,7 +50,7 @@ class CommandLineParser {
     bool display_engine = false;
     bool display_version = false;
     std::string filter = "";
-    std::string loglevel = "INFO";
+    std::string log_level = "INFO";
 
     int port;
     config_yaml_utils::CortexConfig config;

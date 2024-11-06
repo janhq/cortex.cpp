@@ -181,6 +181,11 @@ InferResult InferenceService::LoadModel(
       } else {
         LOG_WARN << "Method SetFileLogger is not supported yet";
       }
+      if (en->IsSupported("SetLogLevel")) {
+        en->SetLogLevel(trantor::Logger::logLevel());
+      } else {
+        LOG_WARN << "Method SetLogLevel is not supported yet";
+      }
     }
     LOG_INFO << "Loaded engine: " << ne;
   }

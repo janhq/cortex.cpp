@@ -27,12 +27,12 @@ bool TryConnectToServer(const std::string& host, int port) {
 ServerStartCmd::ServerStartCmd() {}
 
 bool ServerStartCmd::Exec(const std::string& host, int port,
-                          const std::optional<std::string>& loglevel) {
+                          const std::optional<std::string>& log_level) {
   std::string log_level_;
-  if (!loglevel.has_value()) {
+  if (!log_level.has_value()) {
     log_level_ = "INFO";
   } else {
-    log_level_ = loglevel.value();
+    log_level_ = log_level.value();
   }
   auto exe = commands::GetCortexServerBinary();
   auto get_config_file_path = []() -> std::string {

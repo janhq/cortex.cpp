@@ -392,15 +392,15 @@ void CommandLineParser::SetupSystemCommands() {
   start_cmd->group(kSystemGroup);
   cml_data_.port = std::stoi(cml_data_.config.apiServerPort);
   start_cmd->add_option("-p, --port", cml_data_.port, "Server port to listen");
-  start_cmd->add_option("--loglevel", cml_data_.loglevel,
+  start_cmd->add_option("--loglevel", cml_data_.log_level,
                         "Set up log level for server, accepted TRACE, DEBUG, "
-                        "INFO, WARNING, ERROR");
-  if (cml_data_.loglevel != "INFO" && cml_data_.loglevel != "TRACE" &&
-      cml_data_.loglevel != "DEBUG" && cml_data_.loglevel != "WARNING" &&
-      cml_data_.loglevel != "ERROR") {
-    CLI_LOG("Invalid log level: " << cml_data_.loglevel
+                        "INFO, WARN, ERROR");
+  if (cml_data_.log_level != "INFO" && cml_data_.log_level != "TRACE" &&
+      cml_data_.log_level != "DEBUG" && cml_data_.log_level != "WARN" &&
+      cml_data_.log_level != "ERROR") {
+    CLI_LOG("Invalid log level: " << cml_data_.log_level
                                   << ", Set Loglevel to INFO");
-    cml_data_.loglevel = "INFO";
+    cml_data_.log_level = "INFO";
   }
   start_cmd->callback([this] {
     if (std::exchange(executed_, true))
@@ -414,7 +414,7 @@ void CommandLineParser::SetupSystemCommands() {
     }
     commands::ServerStartCmd ssc;
     ssc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort), cml_data_.loglevel);
+             std::stoi(cml_data_.config.apiServerPort), cml_data_.log_level);
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
