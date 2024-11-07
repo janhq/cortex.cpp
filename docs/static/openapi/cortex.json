@@ -1142,7 +1142,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The type of engine"
           }
@@ -1200,7 +1201,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The type of engine"
           },
@@ -1245,7 +1247,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The type of engine"
           },
@@ -1335,7 +1338,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The type of engine"
           }
@@ -1378,7 +1382,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The type of engine"
           },
@@ -1433,7 +1438,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
           }
@@ -1468,7 +1474,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
           }
@@ -1505,7 +1512,8 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["onnxruntime", "llama-cpp", "tensorrt-llm"]
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
           }
@@ -1529,6 +1537,111 @@
           }
         },
         "tags": ["Engines"]
+      }
+    },
+    "/v1/configs": {
+      "get": {
+        "summary": "Get Configurations",
+        "description": "Retrieves the current configuration settings of the Cortex server.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "allowed_origins": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["http://localhost:39281", "https://cortex.so"]
+                    },
+                    "cors": {
+                      "type": "boolean",
+                      "example": false
+                    }
+                  }
+                },
+                "example": {
+                  "allowed_origins": [
+                    "http://localhost:39281",
+                    "https://cortex.so"
+                  ],
+                  "cors": false
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Configurations"]
+      },
+      "patch": {
+        "tags": ["Configurations"],
+        "summary": "Update configuration settings",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "cors": {
+                    "type": "boolean",
+                    "description": "Indicates whether CORS is enabled.",
+                    "example": false
+                  },
+                  "allowed_origins": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "List of allowed origins.",
+                    "example": ["http://localhost:39281", "https://cortex.so"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "config": {
+                      "type": "object",
+                      "properties": {
+                        "allowed_origins": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          },
+                          "example": [
+                            "http://localhost:39281",
+                            "https://cortex.so"
+                          ]
+                        },
+                        "cors": {
+                          "type": "boolean",
+                          "example": false
+                        }
+                      }
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Configuration updated successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -1560,6 +1673,10 @@
       "description": "These endpoints manage the lifecycle of Server, including heath check and shutdown."
     },
     {
+      "name": "Configuration",
+      "description": "These endpoints manage the configuration of the Cortex server."
+    },
+    {
       "name": "Messages",
       "description": "These endpoints manage the retrieval and storage of conversation content, including responses from LLMs and other metadata related to chat interactions."
     },
@@ -1587,7 +1704,8 @@
         "Running Models",
         "Processes",
         "Status",
-        "Server"
+        "Server",
+        "Configurations"
       ]
     }
   ],

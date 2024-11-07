@@ -196,7 +196,8 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       .apiServerPort = config_yaml_utils::kDefaultPort,
       .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
       .latestRelease = config_yaml_utils::kDefaultLatestRelease,
-  };
+      .enableCors = config_yaml_utils::kDefaultCorsEnabled,
+      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins};
 
   return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
 }

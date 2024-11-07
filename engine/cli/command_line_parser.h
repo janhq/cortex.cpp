@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include "CLI/CLI.hpp"
 #include "services/engine_service.h"
 #include "services/model_service.h"
@@ -21,6 +22,8 @@ class CommandLineParser {
   void SetupEngineCommands();
 
   void SetupSystemCommands();
+
+  void SetupConfigsCommands();
 
   void EngineInstall(CLI::App* parent, const std::string& engine_name,
                      std::string& version, std::string& src);
@@ -62,5 +65,6 @@ class CommandLineParser {
     std::unordered_map<std::string, std::string> model_update_options;
   };
   CmlData cml_data_;
+  std::unordered_map<std::string, std::string> config_update_opts_;
   bool executed_ = false;
 };

@@ -23,8 +23,7 @@ TEST_F(StringUtilsTestSuite, ParsePrompt) {
 
 TEST_F(StringUtilsTestSuite, TestSplitBy) {
   auto input = "this is a test";
-  std::string delimiter{' '};
-  auto result = SplitBy(input, delimiter);
+  auto result = SplitBy(input, " ");
 
   EXPECT_EQ(result.size(), 4);
   EXPECT_EQ(result[0], "this");
@@ -35,16 +34,14 @@ TEST_F(StringUtilsTestSuite, TestSplitBy) {
 
 TEST_F(StringUtilsTestSuite, TestSplitByWithEmptyString) {
   auto input = "";
-  std::string delimiter{' '};
-  auto result = SplitBy(input, delimiter);
+  auto result = SplitBy(input, " ");
 
   EXPECT_EQ(result.size(), 0);
 }
 
 TEST_F(StringUtilsTestSuite, TestSplitModelHandle) {
   auto input = "cortexso/tinyllama";
-  std::string delimiter{'/'};
-  auto result = SplitBy(input, delimiter);
+  auto result = SplitBy(input, "/");
 
   EXPECT_EQ(result.size(), 2);
   EXPECT_EQ(result[0], "cortexso");
@@ -53,11 +50,18 @@ TEST_F(StringUtilsTestSuite, TestSplitModelHandle) {
 
 TEST_F(StringUtilsTestSuite, TestSplitModelHandleWithEmptyModelName) {
   auto input = "cortexso/";
-  std::string delimiter{'/'};
-  auto result = SplitBy(input, delimiter);
+  auto result = SplitBy(input, "/");
 
   EXPECT_EQ(result.size(), 1);
   EXPECT_EQ(result[0], "cortexso");
+}
+
+TEST_F(StringUtilsTestSuite, TestSplitIfNotContainDelimiter) {
+  auto input = "https://cortex.so";
+  auto result = SplitBy(input, ",");
+
+  EXPECT_EQ(result.size(), 1);
+  EXPECT_EQ(result[0], "https://cortex.so");
 }
 
 TEST_F(StringUtilsTestSuite, TestStartsWith) {
