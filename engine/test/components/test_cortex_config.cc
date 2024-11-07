@@ -41,7 +41,8 @@ TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
                          123456789,
                          "v1.0.0"};
 
-  DumpYamlConfig(config, test_file_path);
+  auto result = DumpYamlConfig(config, test_file_path);
+  EXPECT_FALSE(result.has_error());
 
   // Verify that the file was created and contains the expected data
   YAML::Node node = YAML::LoadFile(test_file_path);
@@ -68,7 +69,8 @@ TEST_F(CortexConfigTest, FromYaml_ReadsCorrectly) {
                          123456789,
                          "v1.0.0"};
 
-  DumpYamlConfig(config, test_file_path);
+  auto result = DumpYamlConfig(config, test_file_path);
+  EXPECT_FALSE(result.has_error());
 
   // Now read from the YAML file
   CortexConfig loaded_config = FromYaml(test_file_path, default_config);
