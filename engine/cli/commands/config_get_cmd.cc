@@ -1,9 +1,11 @@
 #include "config_get_cmd.h"
-#include <tabulate/table.hpp>
 #include "commands/server_start_cmd.h"
 #include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/url_parser.h"
+// clang-format off
+#include <tabulate/table.hpp>
+// clang-format on
 
 void commands::ConfigGetCmd::Exec(const std::string& host, int port) {
   // Start server if server is not started yet
