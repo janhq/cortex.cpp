@@ -4,6 +4,7 @@
 #include "utils/cli_selection_utils.h"
 #include "utils/curl_utils.h"
 #include "utils/download_progress.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
@@ -26,7 +27,6 @@ bool EngineUpdateCmd::Exec(const std::string& host, int port,
   auto dp_res = std::async(std::launch::deferred, [&dp, &engine] {
     return dp.Handle(DownloadType::Engine);
   });
-  CLI_LOG("Validating download items, please wait..")
 
   auto update_url = url_parser::Url{
       .protocol = "http",
@@ -35,7 +35,13 @@ bool EngineUpdateCmd::Exec(const std::string& host, int port,
   };
   auto update_result = curl_utils::SimplePostJson(update_url.ToFullPath());
   if (update_result.has_error()) {
-    CTL_ERR(update_result.error());
+    try {
+      Json::Value json = json_helper::ParseJsonString(update_result.error());
+      std::cout << json["message"].asString() << std::endl;
+    } catch (const std::exception& e) {
+      CTL_ERR(update_result.error());
+    }
+
     return false;
   }
 
