@@ -27,7 +27,6 @@
 #endif
 
 namespace cortex_utils {
-inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
@@ -99,25 +98,6 @@ inline std::string imageToBase64(const std::string& imagePath) {
   return base64Encode(buffer);
 }
 
-// Helper function to generate a unique filename
-inline std::string generateUniqueFilename(const std::string& prefix,
-                                          const std::string& extension) {
-  // Get current time as a timestamp
-  auto now = std::chrono::system_clock::now();
-  auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
-  auto epoch = now_ms.time_since_epoch();
-  auto value = std::chrono::duration_cast<std::chrono::milliseconds>(epoch);
-
-  // Generate a random number
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<> dis(1000, 9999);
-
-  std::stringstream ss;
-  ss << prefix << value.count() << "_" << dis(gen) << extension;
-  return ss.str();
-}
-
 inline void processLocalImage(
     const std::string& localPath,
     std::function<void(const std::string&)> callback) {
@@ -161,11 +141,6 @@ inline std::vector<std::string> listFilesInDir(const std::string& path) {
 #endif
 
   return files;
-}
-
-inline std::string rtrim(const std::string& str) {
-  size_t end = str.find_last_not_of("\n\t ");
-  return (end == std::string::npos) ? "" : str.substr(0, end + 1);
 }
 
 inline std::string generate_random_string(std::size_t length) {
@@ -259,42 +234,20 @@ inline void nitro_logo() {
 }
 
 inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
-  auto resp = drogon::HttpResponse::newHttpResponse();
-#ifdef ALLOW_ALL_CORS
-  LOG_INFO << "Respond for all cors!";
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-#endif
-  return resp;
+  return drogon::HttpResponse::newHttpResponse();
 }
 
 inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
     const Json::Value& data) {
-  auto resp = drogon::HttpResponse::newHttpJsonResponse(data);
-#ifdef ALLOW_ALL_CORS
-  LOG_INFO << "Respond for all cors!";
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-#endif
-  // Drogon already set the content-type header to "application/json"
-  return resp;
+  return drogon::HttpResponse::newHttpJsonResponse(data);
 };
 
 inline drogon::HttpResponsePtr CreateCortexStreamResponse(
     const std::function<std::size_t(char*, std::size_t)>& callback,
     const std::string& attachmentFileName = "") {
-  auto resp = drogon::HttpResponse::newStreamResponse(
+  return drogon::HttpResponse::newStreamResponse(
       callback, attachmentFileName, drogon::CT_NONE, "text/event-stream");
-#ifdef ALLOW_ALL_CORS
-  LOG_INFO << "Respond for all cors!";
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-#endif
-  return resp;
 }
-
-inline void ltrim(std::string& s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-            return !std::isspace(ch);
-          }));
-};
 
 #if defined(_WIN32)
 inline std::string GetCurrentPath() {

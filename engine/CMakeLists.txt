@@ -30,11 +30,6 @@ if(MSVC)
   )
 endif()
 
-if(DEBUG)
-  message(STATUS "CORTEX-CPP DEBUG IS ON")
-  add_compile_definitions(ALLOW_ALL_CORS)
-endif()
-
 if(NOT DEFINED CORTEX_VARIANT)
   set(CORTEX_VARIANT "prod")
 endif()
