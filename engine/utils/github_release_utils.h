@@ -4,6 +4,7 @@
 #include "utils/curl_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
@@ -193,7 +194,7 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
       .pathParams = path_params,
   };
 
-  CTL_INF("GetReleaseByVersion: " << url.ToFullPath());
+  CTL_DBG("GetReleaseByVersion: " << url.ToFullPath());
   auto result =
       curl_utils::SimpleGetJson(url_parser::FromUrl(url), kCurlGetTimeout);
 

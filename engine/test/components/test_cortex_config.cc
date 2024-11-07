@@ -18,6 +18,7 @@ class CortexConfigTest : public ::testing::Test {
                       kDefaultHost,
                       kDefaultPort,
                       kDefaultCheckedForUpdateAt,
+                      kDefaultCheckedForLlamacppUpdateAt,
                       kDefaultLatestRelease};
   }
 
@@ -38,6 +39,7 @@ TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
                          5000,
                          "localhost",
                          "8080",
+                         123456789,
                          123456789,
                          "v1.0.0"};
 
@@ -66,6 +68,7 @@ TEST_F(CortexConfigTest, FromYaml_ReadsCorrectly) {
                          5000,
                          "localhost",
                          "8080",
+                         123456789,
                          123456789,
                          "v1.0.0"};
 

@@ -88,31 +88,28 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
 
   // Check new update
 #ifdef CORTEX_CPP_VERSION
-  if (cml_data_.check_upd) {
-    if (strcmp(CORTEX_CPP_VERSION, "default_version") != 0) {
-      // TODO(sang) find a better way to handle
-      // This is an extremely ugly way to deal with connection
-      // hang when network down
-      std::atomic<bool> done = false;
-      std::thread t([&]() {
-        if (auto latest_version =
-                commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
-            latest_version.has_value() &&
-            *latest_version != CORTEX_CPP_VERSION) {
-          CLI_LOG("\nNew Cortex release available: "
-                  << CORTEX_CPP_VERSION << " -> " << *latest_version);
-          CLI_LOG("To update, run: " << commands::GetRole()
-                                     << commands::GetCortexBinary()
-                                     << " update");
-        }
-        done = true;
-      });
-      // Do not wait for http connection timeout
-      t.detach();
-      int retry = 10;
-      while (!done && retry--) {
-        std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 10);
+  if (cml_data_.check_upd &&
+      strcmp(CORTEX_CPP_VERSION, "default_version") != 0) {
+    // TODO(sang) find a better way to handle
+    // This is an extremely ugly way to deal with connection
+    // hang when network down
+    std::atomic<bool> done = false;
+    std::thread t([&]() {
+      if (auto latest_version =
+              commands::CheckNewUpdate(commands::kTimeoutCheckUpdate);
+          latest_version.has_value() && *latest_version != CORTEX_CPP_VERSION) {
+        CLI_LOG("\nNew Cortex release available: "
+                << CORTEX_CPP_VERSION << " -> " << *latest_version);
+        CLI_LOG("To update, run: " << commands::GetRole()
+                                   << commands::GetCortexBinary() << " update");
       }
+      done = true;
+    });
+    // Do not wait for http connection timeout
+    t.detach();
+    int retry = 10;
+    while (!done && retry--) {
+      std::this_thread::sleep_for(commands::kTimeoutCheckUpdate / 10);
     }
   }
 #endif
