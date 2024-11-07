@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "json/value.h"
-
+#include "trantor/utils/Logger.h"
 class EngineI {
  public:
   virtual ~EngineI() {}
@@ -36,4 +36,5 @@ class EngineI {
 
   virtual bool SetFileLogger(int max_log_lines,
                              const std::string& log_path) = 0;
+  virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
 };

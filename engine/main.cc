@@ -57,7 +57,6 @@ void RunServer(std::optional<int> port) {
   }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
-
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
@@ -181,6 +180,9 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "--loglevel") == 0) {
+      std::string log_level = argv[i + 1];
+      logging_utils_helper::SetLogLevel(log_level);
     }
   }
 

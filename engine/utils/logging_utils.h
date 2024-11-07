@@ -30,3 +30,28 @@ inline bool is_server = false;
     LOG_ERROR << msg;              \
     std::cout << msg << std::endl; \
   }
+
+namespace logging_utils_helper {
+inline void SetLogLevel(const std::string& log_level) {
+  if (log_level == "TRACE") {
+    trantor::Logger::setLogLevel(trantor::Logger::kTrace);
+    std::cout << "Set log level to TRACE" << std::endl;
+  } else if (log_level == "DEBUG") {
+    trantor::Logger::setLogLevel(trantor::Logger::kDebug);
+    std::cout << "Set log level to DEBUG" << std::endl;
+  } else if (log_level == "INFO") {
+    trantor::Logger::setLogLevel(trantor::Logger::kInfo);
+    std::cout << "Set log level to INFO" << std::endl;
+  } else if (log_level == "WARN") {
+    trantor::Logger::setLogLevel(trantor::Logger::kWarn);
+    std::cout << "Set log level to WARN" << std::endl;
+  } else if (log_level == "ERROR") {
+    trantor::Logger::setLogLevel(trantor::Logger::kError);
+    std::cout << "Set log level to ERROR" << std::endl;
+  } else {
+    std::cerr << "Invalid log level: " << log_level
+              << ", loglevel must be (TRACE, DEBUG, INFO, WARN or ERROR)"
+              << std::endl;
+  }
+}
+}  // namespace logging_utils_helper
