@@ -101,6 +101,26 @@ int main(int argc, char* argv[]) {
 
   RemoveBinaryTempFileIfExists();
 
+  std::thread t1([]() {
+    try {
+
+      auto get_latest_llamacpp_version = []() {
+        auto res = github_release_utils::GetReleaseByVersion(
+            "janhq", "cortex.llamacpp", "latest");
+        if (res.has_error()) {
+          CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
+          return;
+        }
+        CTL_INF("Latest llamacpp version: " << res->tag_name);
+      };
+
+      get_latest_llamacpp_version();
+    } catch (const std::exception& e) {
+      CTL_ERR("Failed to get latest llama.cpp version: " << e.what());
+    }
+  });
+  t1.detach();
+
   trantor::FileLogger async_file_logger;
   SetupLogger(async_file_logger, verbose);
 

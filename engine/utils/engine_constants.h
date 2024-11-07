@@ -24,3 +24,5 @@ constexpr auto static kWindowsOs = "windows";
 constexpr auto static kMacOs = "mac";
 constexpr auto static kLinuxOs = "linux";
 constexpr auto static kUnsupportedOs = "Unsupported OS";
+
+constexpr auto static kCurlGetTimeout = 10;
