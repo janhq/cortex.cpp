@@ -36,7 +36,7 @@ const sidebars: SidebarsConfig = {
       label: "Installation",
       link: {
         type: "doc",
-        id: "installation"
+        id: "installation",
       },
       collapsed: true,
       items: [
@@ -74,11 +74,28 @@ const sidebars: SidebarsConfig = {
       },
       collapsed: true,
       items: [
-        { type: "doc", id: "architecture/data-folder", label: "Cortex Data Folder" },
+        {
+          type: "doc",
+          id: "architecture/data-folder",
+          label: "Cortex Data Folder",
+        },
         { type: "doc", id: "architecture/cortex-db", label: "cortex.db" },
         { type: "doc", id: "architecture/cortexrc", label: ".cortexrc" },
         { type: "doc", id: "architecture/updater", label: "Updater" },
-      ]
+      ],
+    },
+    {
+      type: "category",
+      label: "Configurations",
+      link: { type: "doc", id: "configurations/index" },
+      collapsed: true,
+      items: [
+        {
+          type: "doc",
+          id: "configurations/cors",
+          label: "CORS",
+        },
+      ],
     },
     {
       type: "html",
@@ -99,11 +116,19 @@ const sidebars: SidebarsConfig = {
     {
       type: "category",
       label: "Running Models",
-      link: { type: "doc", id: "capabilities/models/index"},
+      link: { type: "doc", id: "capabilities/models/index" },
       collapsed: true,
       items: [
-        { type: "doc", id: "capabilities/models/model-yaml", label: "model.yaml" },
-        { type: "doc", id: "capabilities/models/presets", label: "Model Presets" },
+        {
+          type: "doc",
+          id: "capabilities/models/model-yaml",
+          label: "model.yaml",
+        },
+        {
+          type: "doc",
+          id: "capabilities/models/presets",
+          label: "Model Presets",
+        },
       ],
     },
     {
@@ -115,8 +140,11 @@ const sidebars: SidebarsConfig = {
         { type: "doc", id: "engines/llamacpp", label: "llama.cpp" },
         // { type: "doc", id: "engines/tensorrt-llm", label: "TensorRT-LLM" },
         // { type: "doc", id: "engines/onnx", label: "ONNX" },
-        { type: "doc", id: "engines/engine-extension", label: "Building Engine Extensions" },
-        
+        {
+          type: "doc",
+          id: "engines/engine-extension",
+          label: "Building Engine Extensions",
+        },
       ],
     },
     {
@@ -124,10 +152,13 @@ const sidebars: SidebarsConfig = {
       label: "Hardware Awareness",
       link: { type: "doc", id: "capabilities/hardware/index" },
       collapsed: true,
-      items: [
-      ],
+      items: [],
     },
-    { type: "doc", id: "capabilities/text-generation", label: "Text Generation" },
+    {
+      type: "doc",
+      id: "capabilities/text-generation",
+      label: "Text Generation",
+    },
     // { type: "doc", id: "capabilities/image-generation", label: "Image Generation" },
     // { type: "doc", id: "capabilities/vision", label: "Vision" },
     // { type: "doc", id: "capabilities/audio-generation", label: "Audio Generation" },
@@ -141,14 +172,18 @@ const sidebars: SidebarsConfig = {
       value: "GUIDES",
       className: "sidebar-divider",
     },
-    { type: "doc", id: "guides/function-calling", label: "Function Calling"},
-    { type: "doc", id: "guides/structured-outputs", label: "Structured Outputs"},
+    { type: "doc", id: "guides/function-calling", label: "Function Calling" },
+    {
+      type: "doc",
+      id: "guides/structured-outputs",
+      label: "Structured Outputs",
+    },
     {
       type: "html",
       value: "ASSISTANTS",
       className: "sidebar-divider",
     },
-    { type: "doc", id: "assistants/index", label: "Assistants"},
+    { type: "doc", id: "assistants/index", label: "Assistants" },
     {
       type: "category",
       label: "Tools",
@@ -172,9 +207,9 @@ const sidebars: SidebarsConfig = {
     { type: "doc", id: "cli/models/index", label: "cortex models" },
     { type: "doc", id: "cli/engines/index", label: "cortex engines" },
     { type: "doc", id: "cli/ps", label: "cortex ps" },
-    { type: "doc", id: "cli/update", label: "cortex update" }, 
+    { type: "doc", id: "cli/update", label: "cortex update" },
     { type: "doc", id: "cli/stop", label: "cortex stop" },
-  ]
+  ],
 };
 
 export default sidebars;
