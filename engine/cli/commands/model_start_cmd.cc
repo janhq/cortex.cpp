@@ -42,6 +42,10 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
                 << commands::GetCortexBinary() << " run " << *model_id
                 << "` for interactive chat shell");
       }
+      auto root = json_helper::ParseJsonString(res->body);
+      if(!root["warning"].isNull()) {
+        CLI_LOG(root["warning"].asString());
+      }
       return true;
     } else {
       auto root = json_helper::ParseJsonString(res->body);

@@ -8,14 +8,15 @@
 #include "database/models.h"
 #include "hardware_service.h"
 #include "httplib.h"
+#include "services/engine_service.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
+#include "utils/hardware/gguf/gguf_file_estimate.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
-#include "utils/hardware/gguf/gguf_file_estimate.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -598,7 +599,7 @@ cpp::result<void, std::string> ModelService::DeleteModel(
   }
 }
 
-cpp::result<bool, std::string> ModelService::StartModel(
+cpp::result<StartModelResult, std::string> ModelService::StartModel(
     const std::string& model_handle,
     const StartParameterOverride& params_override) {
   namespace fs = std::filesystem;
@@ -628,7 +629,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
       } else {
         LOG_WARN << "model_path is empty";
-        return false;
+        return StartModelResult{.success = false};
       }
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
@@ -664,6 +665,65 @@ cpp::result<bool, std::string> ModelService::StartModel(
     // Calculate ram/vram needed to load model
     services::HardwareService hw_svc;
     auto hw_info = hw_svc.GetHardwareInfo();
+    assert(!!engine_svc_);
+    auto default_engine = engine_svc_->GetDefaultEngineVariant("llama-cpp");
+    bool is_cuda = false;
+    if (default_engine.has_error()) {
+      CTL_INF("Could not get default engine");
+    } else {
+      auto& de = default_engine.value();
+      is_cuda = de.variant.find("cuda") != std::string::npos;
+      CTL_INF("is_cuda: " << is_cuda);
+    }
+
+    std::optional<std::string> warning;
+    if (is_cuda && !system_info_utils::IsNvidiaSmiAvailable()) {
+      CTL_INF(
+          "Running cuda variant but nvidia-driver is not installed yet, "
+          "fallback to CPU mode");
+      auto res = engine_svc_->GetInstalledEngineVariants("llama-cpp");
+      if (res.has_error()) {
+        CTL_WRN("Could not get engine variants");
+        return cpp::fail("Nvidia-driver is not installed!");
+      } else {
+        auto& es = res.value();
+        std::sort(
+            es.begin(), es.end(),
+            [](const EngineVariantResponse& e1,
+               const EngineVariantResponse& e2) { return e1.name > e2.name; });
+        for (auto& e : es) {
+          CTL_INF(e.name << " " << e.version << " " << e.engine);
+          // Select the first CPU candidate
+          // TODO(sang) need to check os also
+          if (e.name.find("cuda") == std::string::npos) {
+            auto r = engine_svc_->SetDefaultEngineVariant("llama-cpp",
+                                                          e.version, e.name);
+            if (r.has_error()) {
+              CTL_WRN("Could not set default engine variant");
+              return cpp::fail("Nvidia-driver is not installed!");
+            } else {
+              CTL_INF("Change default engine to: " << e.name);
+              auto rl = engine_svc_->LoadEngine("llama-cpp");
+              if (rl.has_error()) {
+                return cpp::fail("Nvidia-driver is not installed!");
+              } else {
+                CTL_INF("Engine started");
+                is_cuda = false;
+                warning = "Nvidia-driver is not installed, use CPU variant: " +
+                          e.version + "-" + e.name;
+                break;
+              }
+            }
+          }
+        }
+        // If we reach here, means that no CPU variant to fallback
+        if (!warning) {
+          return cpp::fail(
+              "Nvidia-driver is not installed, no available CPU version to "
+              "fallback");
+        }
+      }
+    }
     // If in GPU acceleration mode:
     // We use all visible GPUs, so only need to sum all free vram
     auto free_vram_MiB = 0u;
@@ -671,33 +731,28 @@ cpp::result<bool, std::string> ModelService::StartModel(
       free_vram_MiB += gpu.free_vram;
     }
 
-    auto free_ram_MiB = hw_info.ram.available;
+    auto free_ram_MiB = hw_info.ram.available_MiB;
 
-    uint64_t vram_needed_MiB = 5000;
-    uint64_t ram_needed_MiB = 5000;
+    auto const& mp = json_data["model_path"].asString();
+    auto [vram_needed_MiB, ram_needed_MiB] = hardware::EstimateLLaMACppRun(
+        mp, json_data["ngl"].asInt(), json_data["ctx_len"].asInt());
 
-    // Check current running
-    // If GPU but nvidia driver is not found -> fallback immediately to CPU?
-    // Run first and then report to user
-    // unload engine
-    // engine get list
-    // set default engine
-    // start engine
-
-
-    if (vram_needed_MiB > free_vram_MiB) {
+    if (vram_needed_MiB > free_vram_MiB && is_cuda) {
       CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
                                    << ", available: " << free_vram_MiB);
       // Should recommend ngl, (maybe context_length)?
 
-      // TODO
-      return cpp::fail("Not enough VRAM");
+      return cpp::fail(
+          "Not enough RAM - required: " + std::to_string(vram_needed_MiB) +
+          ", available: " + std::to_string(free_vram_MiB));
     }
 
     if (ram_needed_MiB > free_ram_MiB) {
       CTL_WRN("Not enough RAM - " << "required: " << ram_needed_MiB
                                   << ", available: " << free_ram_MiB);
-      return cpp::fail("Not enough RAM");
+      return cpp::fail(
+          "Not enough RAM - required: " + std::to_string(ram_needed_MiB) +
+          ", available: " + std::to_string(free_ram_MiB));
     }
 
     // If not have enough memory, report back to user
@@ -707,10 +762,10 @@ cpp::result<bool, std::string> ModelService::StartModel(
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
     if (status == httplib::StatusCode::OK_200) {
-      return true;
+      return StartModelResult{.success = true, .warning = warning};
     } else if (status == httplib::StatusCode::Conflict_409) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
-      return true;
+      return StartModelResult{.success = true, .warning = warning};
     } else {
       // only report to user the error
       CTL_ERR("Model failed to start with status code: " << status);

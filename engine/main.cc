@@ -100,8 +100,8 @@ void RunServer(std::optional<int> port) {
   auto engine_service = std::make_shared<EngineService>(download_service);
   auto inference_svc =
       std::make_shared<services::InferenceService>(engine_service);
-  auto model_service =
-      std::make_shared<ModelService>(download_service, inference_svc);
+  auto model_service = std::make_shared<ModelService>(
+      download_service, inference_svc, engine_service);
   auto config_service = std::make_shared<ConfigService>();
 
   // initialize custom controllers
