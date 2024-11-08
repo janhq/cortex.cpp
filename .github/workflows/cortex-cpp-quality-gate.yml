@@ -97,20 +97,21 @@ jobs:
           cd engine
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
 
-      # - name: Run setup config
-      #   run: |
-      #     rm ~/.cortexrc
-      #     cd engine
-      #     echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
-      #     echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
-      #     echo "apiServerPort: 3928" >> ~/.cortexrc
-      #     ./build/cortex
-      #     cat ~/.cortexrc
+      - name: Run setup config
+        run: |
+          rm ~/.cortexrc
+          cd engine
+          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
+          echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
+          ./build/cortex
+          cat ~/.cortexrc
 
       - name: Run unit tests
         run: |
           cd engine
           make run-unit-tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
       - name: Run setup config
         run: |

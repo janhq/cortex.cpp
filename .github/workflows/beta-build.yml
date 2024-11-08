@@ -80,6 +80,17 @@ jobs:
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
 
+  build-docker-x64:
+    uses: ./.github/workflows/template-build-docker-x64.yml
+    secrets: inherit
+    needs: [get-update-version, get-cortex-llamacpp-latest-version]
+    with:
+      ref: ${{ github.ref }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-latest
+      cmake-extra-flags: "-DCORTEX_VARIANT=prod"
+      tags: "menloltd/cortex:${{ needs.get-update-version.outputs.new_version }}"
+
   update_release:
       needs: [get-update-version, create-draft-release, build-macos, build-windows-x64, build-linux-x64]
       permissions:
@@ -96,7 +107,7 @@ jobs:
           run: |
             gh release edit v${{ needs.get-update-version.outputs.new_version }} --draft=false --prerelease
             env:
-              GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   noti-discord:
     needs: [get-update-version, create-draft-release, build-macos, build-windows-x64, build-linux-x64, update_release]
