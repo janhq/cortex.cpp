@@ -10,27 +10,27 @@ using namespace drogon;
 class Models : public drogon::HttpController<Models, false> {
  public:
   METHOD_LIST_BEGIN
-  METHOD_ADD(Models::PullModel, "/pull", Post);
-  METHOD_ADD(Models::GetModelPullInfo, "/pull/info", Post);
+  METHOD_ADD(Models::PullModel, "/pull", Options, Post);
+  METHOD_ADD(Models::GetModelPullInfo, "/pull/info", Options, Post);
   METHOD_ADD(Models::AbortPullModel, "/pull", Options, Delete);
   METHOD_ADD(Models::ListModel, "", Get);
   METHOD_ADD(Models::GetModel, "/{1}", Get);
-  METHOD_ADD(Models::UpdateModel, "/{1}", Patch);
-  METHOD_ADD(Models::ImportModel, "/import", Post);
+  METHOD_ADD(Models::UpdateModel, "/{1}", Options, Patch);
+  METHOD_ADD(Models::ImportModel, "/import", Options, Post);
   METHOD_ADD(Models::DeleteModel, "/{1}", Options, Delete);
-  METHOD_ADD(Models::StartModel, "/start", Post);
-  METHOD_ADD(Models::StopModel, "/stop", Post);
+  METHOD_ADD(Models::StartModel, "/start", Options, Post);
+  METHOD_ADD(Models::StopModel, "/stop", Options, Post);
   METHOD_ADD(Models::GetModelStatus, "/status/{1}", Get);
 
-  ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Post);
+  ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Options, Post);
   ADD_METHOD_TO(Models::AbortPullModel, "/v1/models/pull", Options, Delete);
   ADD_METHOD_TO(Models::ListModel, "/v1/models", Get);
   ADD_METHOD_TO(Models::GetModel, "/v1/models/{1}", Get);
-  ADD_METHOD_TO(Models::UpdateModel, "/v1/models/{1}", Patch);
-  ADD_METHOD_TO(Models::ImportModel, "/v1/models/import", Post);
+  ADD_METHOD_TO(Models::UpdateModel, "/v1/models/{1}", Options, Patch);
+  ADD_METHOD_TO(Models::ImportModel, "/v1/models/import", Options, Post);
   ADD_METHOD_TO(Models::DeleteModel, "/v1/models/{1}", Options, Delete);
-  ADD_METHOD_TO(Models::StartModel, "/v1/models/start", Post);
-  ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Post);
+  ADD_METHOD_TO(Models::StartModel, "/v1/models/start", Options, Post);
+  ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Options, Post);
   ADD_METHOD_TO(Models::GetModelStatus, "/v1/models/status/{1}", Get);
   METHOD_LIST_END
 
