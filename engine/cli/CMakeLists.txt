@@ -71,6 +71,7 @@ find_package(CURL REQUIRED)
 find_package(SQLiteCpp REQUIRED)
 find_package(Trantor CONFIG REQUIRED)
 find_package(indicators CONFIG REQUIRED)
+find_package(lfreist-hwinfo CONFIG REQUIRED)
 
 
 add_executable(${TARGET_NAME} main.cc
@@ -81,6 +82,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/engine_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/inference_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../services/hardware_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_progress.cc
   )
@@ -96,6 +98,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp OpenSSL::SSL OpenS
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE Trantor::Trantor)
 target_link_libraries(${TARGET_NAME} PRIVATE indicators::indicators)
+target_link_libraries(${TARGET_NAME} PRIVATE lfreist-hwinfo::hwinfo)
 
 # ##############################################################################
 

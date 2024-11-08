@@ -6,6 +6,7 @@
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "database/models.h"
+#include "hardware_service.h"
 #include "httplib.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
@@ -14,6 +15,7 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/hardware/gguf/gguf_file_estimate.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -659,6 +661,46 @@ cpp::result<bool, std::string> ModelService::StartModel(
 #undef ASSIGN_IF_PRESENT
 
     CTL_INF(json_data.toStyledString());
+    // Calculate ram/vram needed to load model
+    services::HardwareService hw_svc;
+    auto hw_info = hw_svc.GetHardwareInfo();
+    // If in GPU acceleration mode:
+    // We use all visible GPUs, so only need to sum all free vram
+    auto free_vram_MiB = 0u;
+    for (const auto& gpu : hw_info.gpus) {
+      free_vram_MiB += gpu.free_vram;
+    }
+
+    auto free_ram_MiB = hw_info.ram.available;
+
+    uint64_t vram_needed_MiB = 5000;
+    uint64_t ram_needed_MiB = 5000;
+
+    // Check current running
+    // If GPU but nvidia driver is not found -> fallback immediately to CPU?
+    // Run first and then report to user
+    // unload engine
+    // engine get list
+    // set default engine
+    // start engine
+
+
+    if (vram_needed_MiB > free_vram_MiB) {
+      CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
+                                   << ", available: " << free_vram_MiB);
+      // Should recommend ngl, (maybe context_length)?
+
+      // TODO
+      return cpp::fail("Not enough VRAM");
+    }
+
+    if (ram_needed_MiB > free_ram_MiB) {
+      CTL_WRN("Not enough RAM - " << "required: " << ram_needed_MiB
+                                  << ", available: " << free_ram_MiB);
+      return cpp::fail("Not enough RAM");
+    }
+
+    // If not have enough memory, report back to user
     assert(!!inference_svc_);
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
@@ -670,6 +712,7 @@ cpp::result<bool, std::string> ModelService::StartModel(
       CTL_INF("Model '" + model_handle + "' is already loaded");
       return true;
     } else {
+      // only report to user the error
       CTL_ERR("Model failed to start with status code: " << status);
       return cpp::fail("Model failed to start: " + data["message"].asString());
     }
