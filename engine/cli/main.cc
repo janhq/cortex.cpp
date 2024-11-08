@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
       CLI_LOG(
           "New llama.cpp version available: " << config.latestLlamacppRelease);
       CLI_LOG("To update, run: " << commands::GetCortexBinary()
-                                 << " engines update llama-cpp");
+                                 << " engines update llama-cpp\n");
     }
   });
   t1.detach();

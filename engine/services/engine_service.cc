@@ -181,6 +181,16 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+  if (IsEngineLoaded(ne)) {
+    CTL_INF("Engine " << ne << " is already loaded, unloading it");
+    auto unload_res = UnloadEngine(ne);
+    if (unload_res.has_error()) {
+      CTL_INF("Failed to unload engine: " << unload_res.error());
+      return cpp::fail(unload_res.error());
+    } else {
+      CTL_INF("Engine " << ne << " unloaded successfully");
+    }
+  }
 
   std::optional<std::filesystem::path> path_to_remove = std::nullopt;
   if (version == std::nullopt && variant == std::nullopt) {
@@ -264,6 +274,16 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
   if (selected_variant == std::nullopt) {
     return cpp::fail("Failed to find a suitable variant for " + engine);
   }
+  if (IsEngineLoaded(engine)) {
+    CTL_INF("Engine " << engine << " is already loaded, unloading it");
+    auto unload_res = UnloadEngine(engine);
+    if (unload_res.has_error()) {
+      CTL_INF("Failed to unload engine: " << unload_res.error());
+      return cpp::fail(unload_res.error());
+    } else {
+      CTL_INF("Engine " << engine << " unloaded successfully");
+    }
+  }
   auto normalize_version = "v" + selected_variant->version;
 
   auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
@@ -276,7 +296,7 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
   auto variant_path = variant_folder_path / selected_variant->name;
   std::filesystem::create_directories(variant_folder_path);
   CLI_LOG("variant_folder_path: " + variant_folder_path.string());
-  auto on_finished = [this, engine, selected_variant,
+  auto on_finished = [this, engine, selected_variant, variant_folder_path,
                       normalize_version](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
     CLI_LOG("Engine zip path: " << finishedTask.items[0].localPath.string());
@@ -297,6 +317,22 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
       CTL_ERR("Failed to set default engine variant: " << res.error());
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
+    }
+
+    // remove other engines
+    auto engine_directories = file_manager_utils::GetEnginesContainerPath() /
+                              engine / selected_variant->name;
+
+    for (const auto& entry : std::filesystem::directory_iterator(
+             variant_folder_path.parent_path())) {
+      if (entry.is_directory() &&
+          entry.path().filename() != normalize_version) {
+        try {
+          std::filesystem::remove_all(entry.path());
+        } catch (const std::exception& e) {
+          CTL_WRN("Could not delete directory: " << e.what());
+        }
+      }
     }
 
     // remove the downloaded file
@@ -363,6 +399,16 @@ cpp::result<bool, std::string> EngineService::DownloadEngine(
       if (!std::filesystem::exists(engine_folder_path)) {
         CTL_INF("Creating " << engine_folder_path.string());
         std::filesystem::create_directories(engine_folder_path);
+      }
+      if (IsEngineLoaded(engine)) {
+        CTL_INF("Engine " << engine << " is already loaded, unloading it");
+        auto unload_res = UnloadEngine(engine);
+        if (unload_res.has_error()) {
+          CTL_INF("Failed to unload engine: " << unload_res.error());
+          return cpp::fail(unload_res.error());
+        } else {
+          CTL_INF("Engine " << engine << " unloaded successfully");
+        }
       }
       CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
       auto local_path = engine_folder_path / asset.name;
@@ -917,6 +963,17 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   }
   CTL_INF("Default variant: " << default_variant->variant
                               << ", version: " + default_variant->version);
+
+  if (IsEngineLoaded(ne)) {
+    CTL_INF("Engine " << ne << " is already loaded, unloading it");
+    auto unload_res = UnloadEngine(ne);
+    if (unload_res.has_error()) {
+      CTL_INF("Failed to unload engine: " << unload_res.error());
+      return cpp::fail(unload_res.error());
+    } else {
+      CTL_INF("Engine " << ne << " unloaded successfully");
+    }
+  }
 
   auto latest_version = GetLatestEngineVersion(ne);
   if (latest_version.has_error()) {

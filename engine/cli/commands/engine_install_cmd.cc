@@ -84,12 +84,25 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     std::vector<std::string> variant_selections;
     for (const auto& variant : variant_result.value()) {
       auto v_name = variant["name"].asString();
-      if (string_utils::StringContainsIgnoreCase(v_name, hw_inf_.sys_inf->os)) {
+      if (string_utils::StringContainsIgnoreCase(v_name, hw_inf_.sys_inf->os) &&
+          string_utils::StringContainsIgnoreCase(v_name,
+                                                 hw_inf_.sys_inf->arch)) {
         variant_selections.push_back(variant["name"].asString());
       }
     }
-    auto selected_variant =
-        cli_selection_utils::PrintSelection(variant_selections);
+    if (variant_selections.empty()) {
+      CTL_ERR("No suitable variant found for " << hw_inf_.sys_inf->os << " "
+                                               << hw_inf_.sys_inf->arch);
+      return false;
+    }
+
+    std::optional<std::string> selected_variant = std::nullopt;
+    if (variant_selections.size() == 1) {
+      selected_variant = variant_selections[0];
+    } else {
+      selected_variant =
+          cli_selection_utils::PrintSelection(variant_selections);
+    }
     if (selected_variant == std::nullopt) {
       CTL_ERR("Invalid variant selection");
       return false;
