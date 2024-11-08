@@ -101,6 +101,68 @@ int main(int argc, char* argv[]) {
 
   RemoveBinaryTempFileIfExists();
 
+  auto should_check_for_latest_llamacpp_version = true;
+  auto now = std::chrono::system_clock::now();
+
+  // read the yaml to see the last time we check for update
+  auto config = file_manager_utils::GetCortexConfig();
+  if (config.checkedForLlamacppUpdateAt != 0) {
+    // if it passed a day, then we should check
+    auto last_check =
+        std::chrono::system_clock::time_point(
+            std::chrono::milliseconds(config.checkedForLlamacppUpdateAt)) +
+        std::chrono::hours(24);
+    should_check_for_latest_llamacpp_version = now > last_check;
+  }
+
+  if (should_check_for_latest_llamacpp_version) {
+    std::thread t1([]() {
+      auto config = file_manager_utils::GetCortexConfig();
+      // TODO: namh current we only check for llamacpp. Need to add support for other engine
+      auto get_latest_version = []() -> cpp::result<std::string, std::string> {
+        try {
+          auto res = github_release_utils::GetReleaseByVersion(
+              "janhq", "cortex.llamacpp", "latest");
+          if (res.has_error()) {
+            CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
+            return cpp::fail("Failed to get latest llama.cpp version: " +
+                             res.error());
+          }
+          CTL_INF("Latest llamacpp version: " << res->tag_name);
+          return res->tag_name;
+        } catch (const std::exception& e) {
+          CTL_ERR("Failed to get latest llama.cpp version: " << e.what());
+          return cpp::fail("Failed to get latest llama.cpp version: " +
+                           std::string(e.what()));
+        }
+      };
+
+      auto res = get_latest_version();
+      if (res.has_error()) {
+        CTL_ERR("Failed to get latest llama.cpp version: " << res.error());
+        return;
+      }
+
+      auto now = std::chrono::system_clock::now();
+      CTL_DBG("latest llama.cpp version: " << res.value());
+      config.checkedForLlamacppUpdateAt =
+          std::chrono::duration_cast<std::chrono::milliseconds>(
+              now.time_since_epoch())
+              .count();
+      config.latestLlamacppRelease = res.value();
+
+      auto upd_config_res = config_yaml_utils::DumpYamlConfig(
+          config, file_manager_utils::GetConfigurationPath().string());
+      if (upd_config_res.has_error()) {
+        CTL_ERR("Failed to update config file: " << upd_config_res.error());
+      } else {
+        CTL_INF("Updated config file with latest llama.cpp version: "
+                << res.value());
+      }
+    });
+    t1.detach();
+  }
+
   trantor::FileLogger async_file_logger;
   SetupLogger(async_file_logger, verbose);
 

@@ -37,14 +37,16 @@ TEST_F(FileManagerConfigTest, GetDefaultDataFolderName) {
 
 TEST_F(FileManagerConfigTest, CreateConfigFileIfNotExist) {
 
-  file_manager_utils::CreateConfigFileIfNotExist();
+  auto result = file_manager_utils::CreateConfigFileIfNotExist();
+  EXPECT_FALSE(result.has_error());
   EXPECT_TRUE(
       std::filesystem::exists(file_manager_utils::GetConfigurationPath()));
   std::filesystem::remove(file_manager_utils::GetConfigurationPath());
 }
 
 TEST_F(FileManagerConfigTest, GetCortexConfig) {
-  file_manager_utils::CreateConfigFileIfNotExist();
+  auto result = file_manager_utils::CreateConfigFileIfNotExist();
+  EXPECT_FALSE(result.has_error());
   auto config = file_manager_utils::GetCortexConfig();
   EXPECT_FALSE(config.dataFolderPath.empty());
   EXPECT_FALSE(config.logFolderPath.empty());
@@ -61,8 +63,8 @@ TEST_F(FileManagerConfigTest, DumpYamlConfig) {
                                          .apiServerPort = "8080"};
 
   std::string test_file = "test_config.yaml";
-  config_yaml_utils::DumpYamlConfig(config, test_file);
-
+  auto result = config_yaml_utils::DumpYamlConfig(config, test_file);
+  EXPECT_FALSE(result.has_error());
   EXPECT_TRUE(std::filesystem::exists(test_file));
 
   // Clean up

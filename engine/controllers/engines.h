@@ -24,8 +24,10 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::UnloadEngine, "/{1}/load", Options, Delete);
   METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Post);
   METHOD_ADD(Engines::ListEngine, "", Get);
+
   METHOD_ADD(Engines::GetEngineVersions, "/{1}/versions", Get);
   METHOD_ADD(Engines::GetEngineVariants, "/{1}/versions/{2}", Get);
+  METHOD_ADD(Engines::GetLatestEngineVersion, "/{1}/latest", Get);
 
   ADD_METHOD_TO(Engines::GetInstalledEngineVariants, "/v1/engines/{1}", Get);
   ADD_METHOD_TO(Engines::InstallEngine,
