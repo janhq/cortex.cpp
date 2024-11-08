@@ -2,6 +2,9 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <unordered_map>
+#include "commands/config_get_cmd.h"
+#include "commands/config_upd_cmd.h"
 #include "commands/cortex_upd_cmd.h"
 #include "commands/engine_get_cmd.h"
 #include "commands/engine_install_cmd.h"
@@ -31,6 +34,7 @@ constexpr const auto kInferenceGroup = "Inference";
 constexpr const auto kModelsGroup = "Models";
 constexpr const auto kEngineGroup = "Engines";
 constexpr const auto kSystemGroup = "Server";
+constexpr const auto kConfigGroup = "Configurations";
 constexpr const auto kSubcommands = "Subcommands";
 }  // namespace
 
@@ -56,6 +60,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   SetupEngineCommands();
 
   SetupSystemCommands();
+
+  SetupConfigsCommands();
 
   app_.add_flag("--verbose", log_verbose, "Get verbose logs");
 
@@ -301,6 +307,62 @@ void CommandLineParser::SetupModelCommands() {
   });
 }
 
+void CommandLineParser::SetupConfigsCommands() {
+  auto config_cmd =
+      app_.add_subcommand("config", "Subcommands for managing configurations");
+  config_cmd->usage(
+      "Usage:\n" + commands::GetCortexBinary() +
+      " config status for listing all API server configuration.\n" +
+      commands::GetCortexBinary() +
+      " config --cors [on/off] to toggle CORS.\n" +
+      commands::GetCortexBinary() +
+      " config --allowed_origins [comma separated origin] to set a list of "
+      "allowed origin");
+  config_cmd->group(kConfigGroup);
+  auto config_status_cmd =
+      config_cmd->add_subcommand("status", "Print all configurations");
+  config_status_cmd->callback([this] {
+    if (std::exchange(executed_, true))
+      return;
+    commands::ConfigGetCmd().Exec(cml_data_.config.apiServerHost,
+                                  std::stoi(cml_data_.config.apiServerPort));
+  });
+
+  // TODO: this can be improved
+  std::vector<std::string> avai_opts{"cors", "allowed_origins"};
+  std::unordered_map<std::string, std::string> description{
+      {"cors", "[on/off] Toggling CORS."},
+      {"allowed_origins",
+       "Allowed origins for CORS. Comma separated. E.g. "
+       "http://localhost,https://cortex.so"}};
+  for (const auto& opt : avai_opts) {
+    std::string option = "--" + opt;
+    config_cmd->add_option(option, config_update_opts_[opt], description[opt])
+        ->expected(0, 1)
+        ->default_str("*");
+  }
+
+  config_cmd->callback([this, config_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+
+    auto is_empty = true;
+    for (const auto& [key, value] : config_update_opts_) {
+      if (!value.empty()) {
+        is_empty = false;
+        break;
+      }
+    }
+    if (is_empty) {
+      CLI_LOG(config_cmd->help());
+      return;
+    }
+    commands::ConfigUpdCmd().Exec(cml_data_.config.apiServerHost,
+                                  std::stoi(cml_data_.config.apiServerPort),
+                                  config_update_opts_);
+  });
+}
+
 void CommandLineParser::SetupEngineCommands() {
   auto engines_cmd =
       app_.add_subcommand("engines", "Subcommands for managing engines");
@@ -339,7 +401,7 @@ void CommandLineParser::SetupEngineCommands() {
       CLI_LOG(install_cmd->help());
     }
   });
-  for (auto& engine : engine_service_.kSupportEngines) {
+  for (const auto& engine : engine_service_.kSupportEngines) {
     std::string engine_name{engine};
     EngineInstall(install_cmd, engine_name, cml_data_.engine_version,
                   cml_data_.engine_src);
@@ -406,6 +468,16 @@ void CommandLineParser::SetupSystemCommands() {
   start_cmd->group(kSystemGroup);
   cml_data_.port = std::stoi(cml_data_.config.apiServerPort);
   start_cmd->add_option("-p, --port", cml_data_.port, "Server port to listen");
+  start_cmd->add_option("--loglevel", cml_data_.log_level,
+                        "Set up log level for server, accepted TRACE, DEBUG, "
+                        "INFO, WARN, ERROR");
+  if (cml_data_.log_level != "INFO" && cml_data_.log_level != "TRACE" &&
+      cml_data_.log_level != "DEBUG" && cml_data_.log_level != "WARN" &&
+      cml_data_.log_level != "ERROR") {
+    CLI_LOG("Invalid log level: " << cml_data_.log_level
+                                  << ", Set Loglevel to INFO");
+    cml_data_.log_level = "INFO";
+  }
   start_cmd->callback([this] {
     if (std::exchange(executed_, true))
       return;
@@ -422,7 +494,7 @@ void CommandLineParser::SetupSystemCommands() {
     }
     commands::ServerStartCmd ssc;
     ssc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort));
+             std::stoi(cml_data_.config.apiServerPort), cml_data_.log_level);
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");

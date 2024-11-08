@@ -51,8 +51,6 @@ body:
         - label: cortex.onnx (NPUs, DirectML)
 
   - type: input
-    validations:
-      required: true
     attributes:
       label: "Hardware Specs eg OS version, GPU"
       description:

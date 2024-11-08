@@ -42,7 +42,8 @@ std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
 std::string GetNightlyInstallerName(const std::string& v,
                                     const std::string& os_arch) {
   const std::string kCortex = "cortex";
-  std::string version = v == "latest" ? "" : (v + "-");
+  // Remove 'v' in file name
+  std::string version = v == "latest" ? "" : (v.substr(1) + "-");
 #if defined(__APPLE__) && defined(__MACH__)
   return kCortex + "-" + version + os_arch + "-network-installer.pkg";
 #elif defined(__linux__)
@@ -55,7 +56,8 @@ std::string GetNightlyInstallerName(const std::string& v,
 // C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
 std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
-  return "sudo touch /var/tmp/cortex_installer_skip_postinstall && sudo installer "
+  return "sudo touch /var/tmp/cortex_installer_skip_postinstall && sudo "
+         "installer "
          "-pkg " +
          exe_path +
          " -target / && sudo rm /var/tmp/cortex_installer_skip_postinstall";

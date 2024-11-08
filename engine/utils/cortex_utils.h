@@ -20,7 +20,6 @@
 #endif
 
 namespace cortex_utils {
-inline std::string models_folder = "./models";
 inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
@@ -31,42 +30,20 @@ inline std::string rtrim(const std::string& str) {
 }
 
 inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
-  auto resp = drogon::HttpResponse::newHttpResponse();
-#ifdef ALLOW_ALL_CORS
-  LOG_INFO << "Respond for all cors!";
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-#endif
-  return resp;
+  return drogon::HttpResponse::newHttpResponse();
 }
 
 inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
     const Json::Value& data) {
-  auto resp = drogon::HttpResponse::newHttpJsonResponse(data);
-#ifdef ALLOW_ALL_CORS
-  LOG_INFO << "Respond for all cors!";
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-#endif
-  // Drogon already set the content-type header to "application/json"
-  return resp;
+  return drogon::HttpResponse::newHttpJsonResponse(data);
 };
 
 inline drogon::HttpResponsePtr CreateCortexStreamResponse(
     const std::function<std::size_t(char*, std::size_t)>& callback,
     const std::string& attachmentFileName = "") {
-  auto resp = drogon::HttpResponse::newStreamResponse(
+  return drogon::HttpResponse::newStreamResponse(
       callback, attachmentFileName, drogon::CT_NONE, "text/event-stream");
-#ifdef ALLOW_ALL_CORS
-  LOG_INFO << "Respond for all cors!";
-  resp->addHeader("Access-Control-Allow-Origin", "*");
-#endif
-  return resp;
 }
-
-inline void ltrim(std::string& s) {
-  s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-            return !std::isspace(ch);
-          }));
-};
 
 #if defined(_WIN32)
 inline std::string GetCurrentPath() {

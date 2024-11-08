@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <memory>
+#include "controllers/configs.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
 #include "controllers/hardware.h"
@@ -8,6 +9,7 @@
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
 #include "cortex-common/cortexpythoni.h"
+#include "services/config_service.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -56,7 +58,6 @@ void RunServer(std::optional<int> port) {
   }
   std::cout << "Host: " << config.apiServerHost
             << " Port: " << config.apiServerPort << "\n";
-
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
@@ -101,6 +102,7 @@ void RunServer(std::optional<int> port) {
       std::make_shared<services::InferenceService>(engine_service);
   auto model_service =
       std::make_shared<ModelService>(download_service, inference_svc);
+  auto config_service = std::make_shared<ConfigService>();
 
   // initialize custom controllers
   auto engine_ctl = std::make_shared<Engines>(engine_service);
@@ -110,13 +112,15 @@ void RunServer(std::optional<int> port) {
   auto hw_ctl = std::make_shared<Hardware>();
   auto server_ctl =
       std::make_shared<inferences::server>(inference_svc, engine_service);
-      
+  auto config_ctl = std::make_shared<Configs>(config_service);
+
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
   drogon::app().registerController(pm_ctl);
   drogon::app().registerController(server_ctl);
   drogon::app().registerController(hw_ctl);
+  drogon::app().registerController(config_ctl);
 
   auto upload_path = std::filesystem::temp_directory_path() / "cortex-uploads";
   drogon::app().setUploadPath(upload_path.string());
@@ -132,6 +136,31 @@ void RunServer(std::optional<int> port) {
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
   drogon::app().disableSigtermHandling();
+
+  // CORS
+  drogon::app().registerPostHandlingAdvice(
+      [config_service](const drogon::HttpRequestPtr& req,
+                       const drogon::HttpResponsePtr& resp) {
+        if (!config_service->GetApiServerConfiguration()->cors) {
+          CTL_INF("CORS is disabled!");
+          return;
+        }
+
+        const std::string& origin = req->getHeader("Origin");
+        CTL_INF("Origin: " << origin);
+
+        auto allowed_origins =
+            config_service->GetApiServerConfiguration()->allowed_origins;
+
+        // Check if the origin is in our allowed list
+        auto it =
+            std::find(allowed_origins.begin(), allowed_origins.end(), origin);
+        if (it != allowed_origins.end()) {
+          resp->addHeader("Access-Control-Allow-Origin", origin);
+        } else if (allowed_origins.empty()) {
+          resp->addHeader("Access-Control-Allow-Origin", "*");
+        }
+      });
 
   drogon::app().run();
 }
@@ -157,6 +186,9 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "--loglevel") == 0) {
+      std::string log_level = argv[i + 1];
+      logging_utils_helper::SetLogLevel(log_level);
     }
   }
 

@@ -29,6 +29,9 @@ struct CortexConfig {
   std::string gitHubToken;
   std::string llamacppVariant;
   std::string llamacppVersion;
+
+  bool enableCors;
+  std::vector<std::string> allowedOrigins;
 };
 
 const std::string kDefaultHost{"127.0.0.1"};
@@ -36,6 +39,8 @@ const std::string kDefaultPort{"39281"};
 const int kDefaultMaxLines{100000};
 constexpr const uint64_t kDefaultCheckedForUpdateAt = 0u;
 constexpr const auto kDefaultLatestRelease = "default_version";
+constexpr const auto kDefaultCorsEnabled = true;
+const std::vector<std::string> kDefaultEnabledOrigins{};
 
 inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
                                                      const std::string& path) {
@@ -62,6 +67,8 @@ inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
     node["gitHubToken"] = config.gitHubToken;
     node["llamacppVariant"] = config.llamacppVariant;
     node["llamacppVersion"] = config.llamacppVersion;
+    node["enableCors"] = config.enableCors;
+    node["allowedOrigins"] = config.allowedOrigins;
 
     out_file << node;
     out_file.close();
@@ -89,7 +96,8 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["logOnnxPath"] || !node["logTensorrtLLMPath"] ||
          !node["huggingFaceToken"] || !node["gitHubUserAgent"] ||
          !node["gitHubToken"] || !node["llamacppVariant"] ||
-         !node["llamacppVersion"]);
+         !node["llamacppVersion"] || !node["enableCors"] ||
+         !node["allowedOrigins"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -135,7 +143,11 @@ inline CortexConfig FromYaml(const std::string& path,
         .llamacppVersion = node["llamacppVersion"]
                                ? node["llamacppVersion"].as<std::string>()
                                : "",
-    };
+        .enableCors = node["enableCors"] ? node["enableCors"].as<bool>() : true,
+        .allowedOrigins =
+            node["allowedOrigins"]
+                ? node["allowedOrigins"].as<std::vector<std::string>>()
+                : std::vector<std::string>{}};
     if (should_update_config) {
       auto result = DumpYamlConfig(config, path);
       if (result.has_error()) {
@@ -148,5 +160,4 @@ inline CortexConfig FromYaml(const std::string& path,
     throw;
   }
 }
-
 }  // namespace config_yaml_utils

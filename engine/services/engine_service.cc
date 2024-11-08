@@ -832,6 +832,11 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     } else {
       CTL_WRN("Method SetFileLogger is not supported yet");
     }
+    if (en->IsSupported("SetLogLevel")) {
+      en->SetLogLevel(trantor::Logger::logLevel());
+    } else {
+      CTL_WRN("Method SetLogLevel is not supported yet");
+    }
   }
   CTL_DBG("Loaded engine: " << ne);
   return {};

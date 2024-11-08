@@ -14,13 +14,14 @@ class Engines : public drogon::HttpController<Engines, false> {
 
   METHOD_ADD(Engines::GetInstalledEngineVariants, "/{1}", Get);
   METHOD_ADD(Engines::InstallEngine, "/{1}?version={2}&variant={3}", Post);
-  METHOD_ADD(Engines::UninstallEngine, "/{1}?version={2}&variant={3}", Delete);
+  METHOD_ADD(Engines::UninstallEngine, "/{1}?version={2}&variant={3}", Options,
+             Delete);
   METHOD_ADD(Engines::SetDefaultEngineVariant,
              "/{1}/default?version={2}&variant={3}", Post);
   METHOD_ADD(Engines::GetDefaultEngineVariant, "/{1}/default", Get);
 
   METHOD_ADD(Engines::LoadEngine, "/{1}/load", Post);
-  METHOD_ADD(Engines::UnloadEngine, "/{1}/load", Delete);
+  METHOD_ADD(Engines::UnloadEngine, "/{1}/load", Options, Delete);
   METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Post);
   METHOD_ADD(Engines::ListEngine, "", Get);
   METHOD_ADD(Engines::GetEngineVersions, "/{1}/versions", Get);
@@ -30,7 +31,7 @@ class Engines : public drogon::HttpController<Engines, false> {
   ADD_METHOD_TO(Engines::InstallEngine,
                 "/v1/engines/{1}?version={2}&variant={3}", Post);
   ADD_METHOD_TO(Engines::UninstallEngine,
-                "/v1/engines/{1}?version={2}&variant={3}", Delete);
+                "/v1/engines/{1}?version={2}&variant={3}", Options, Delete);
   ADD_METHOD_TO(Engines::SetDefaultEngineVariant,
                 "/v1/engines/{1}/default?version={2}&variant={3}", Post);
   ADD_METHOD_TO(Engines::GetDefaultEngineVariant, "/v1/engines/{1}/default",
