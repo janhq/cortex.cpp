@@ -18,7 +18,7 @@ class TestApiModelImport:
     def test_model_import_should_be_success(self):
         body_json = {'model': 'tinyllama:gguf',
                      'modelPath': '/path/to/local/gguf'}
-        response = requests.post("http://localhost:3928/models/import", json=body_json)              
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)              
         assert response.status_code == 200
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
@@ -26,7 +26,7 @@ class TestApiModelImport:
         body_json = {'model': 'tinyllama:gguf',
                      'modelPath': '/path/to/local/gguf',
                      'name': 'test_model'}
-        response = requests.post("http://localhost:3928/models/import", json=body_json)
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
         assert response.status_code == 200
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
@@ -35,10 +35,10 @@ class TestApiModelImport:
                      'modelPath': '/path/to/local/gguf',
                      'name': 'test_model',
                      'option': 'copy'}
-        response = requests.post("http://localhost:3928/models/import", json=body_json)
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
         assert response.status_code == 200
         # Test imported path
-        response = requests.get("http://localhost:3928/models/testing-model")
+        response = requests.get("http://localhost:3928/v1/models/testing-model")
         assert response.status_code == 200
         # Since this is a dynamic test - require actual file path
         # it's not safe to assert with the gguf file name
@@ -47,11 +47,11 @@ class TestApiModelImport:
     def test_model_import_with_invalid_path_should_fail(self):
         body_json = {'model': 'tinyllama:gguf',
                      'modelPath': '/invalid/path/to/gguf'}
-        response = requests.post("http://localhost:3928/models/import", json=body_json)
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
         assert response.status_code == 400
 
     def test_model_import_with_missing_model_should_fail(self):
         body_json = {'modelPath': '/path/to/local/gguf'}
-        response = requests.post("http://localhost:3928/models/import", json=body_json)
+        response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
         print(response)
         assert response.status_code == 409
