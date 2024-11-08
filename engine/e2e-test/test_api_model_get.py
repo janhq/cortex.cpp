@@ -18,5 +18,5 @@ class TestApiModelGet:
         stop_server()
 
     def test_models_get_should_be_successful(self):
-        response = requests.get("http://localhost:3928/models/tinyllama:gguf")
+        response = requests.get("http://localhost:3928/v1/models/tinyllama:gguf")
         assert response.status_code == 200

@@ -2,12 +2,12 @@
 
 # Install cortex.llamacpp engine
 
+echo "apiServerHost: 0.0.0.0" > /root/.cortexrc
+echo "enableCors: true" >> /root/.cortexrc
+
 cortex engines install llama-cpp -s /opt/cortex.llamacpp
-cortex -v
 
 # Start the cortex server
-
-sed -i 's/apiServerHost: 127.0.0.1/apiServerHost: 0.0.0.0/' /root/.cortexrc
 
 cortex start
 

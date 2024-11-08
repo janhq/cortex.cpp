@@ -21,7 +21,7 @@ class TestApiModelStop:
 
     def test_models_stop_should_be_successful(self):
         json_body = {"model": "tinyllama:gguf"}
-        response = requests.post("http://localhost:3928/models/start", json=json_body)
+        response = requests.post("http://localhost:3928/v1/models/start", json=json_body)
         assert response.status_code == 200, f"status_code: {response.status_code}"
-        response = requests.post("http://localhost:3928/models/stop", json=json_body)
+        response = requests.post("http://localhost:3928/v1/models/stop", json=json_body)
         assert response.status_code == 200, f"status_code: {response.status_code}"

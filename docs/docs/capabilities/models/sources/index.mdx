@@ -272,7 +272,7 @@ curl --request POST \
 Clients can abort a downloading task using the task ID. Below is a sample `curl` command to abort a download task:
 
 ```sh
-curl --location --request DELETE 'http://127.0.0.1:3928/models/pull' \
+curl --location --request DELETE 'http://127.0.0.1:39281/v1/models/pull' \
 --header 'Content-Type: application/json' \
 --data '{
     "taskId": "tinyllama:1b-gguf-q2-k"
