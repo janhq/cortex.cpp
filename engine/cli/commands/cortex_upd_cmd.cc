@@ -178,8 +178,9 @@ std::optional<std::string> CheckNewUpdate(
         auto result = config_yaml_utils::DumpYamlConfig(
             config, file_manager_utils::GetConfigurationPath().string());
         if (result.has_error()) {
-          CTL_ERR("Error update " << file_manager_utils::GetConfigurationPath()
-                                  << result.error());
+          CTL_ERR("Error update "
+                  << file_manager_utils::GetConfigurationPath().string()
+                  << result.error());
         }
         if (current_version != latest_version) {
           return latest_version;
