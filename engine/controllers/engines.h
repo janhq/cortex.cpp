@@ -13,16 +13,17 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_LIST_BEGIN
 
   METHOD_ADD(Engines::GetInstalledEngineVariants, "/{1}", Get);
-  METHOD_ADD(Engines::InstallEngine, "/{1}?version={2}&variant={3}", Post);
+  METHOD_ADD(Engines::InstallEngine, "/{1}?version={2}&variant={3}", Options,
+             Post);
   METHOD_ADD(Engines::UninstallEngine, "/{1}?version={2}&variant={3}", Options,
              Delete);
   METHOD_ADD(Engines::SetDefaultEngineVariant,
-             "/{1}/default?version={2}&variant={3}", Post);
+             "/{1}/default?version={2}&variant={3}", Options, Post);
   METHOD_ADD(Engines::GetDefaultEngineVariant, "/{1}/default", Get);
 
-  METHOD_ADD(Engines::LoadEngine, "/{1}/load", Post);
+  METHOD_ADD(Engines::LoadEngine, "/{1}/load", Options, Post);
   METHOD_ADD(Engines::UnloadEngine, "/{1}/load", Options, Delete);
-  METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Post);
+  METHOD_ADD(Engines::UpdateEngine, "/{1}/update", Options, Post);
   METHOD_ADD(Engines::ListEngine, "", Get);
 
   METHOD_ADD(Engines::GetEngineVersions, "/{1}/versions", Get);
@@ -31,17 +32,18 @@ class Engines : public drogon::HttpController<Engines, false> {
 
   ADD_METHOD_TO(Engines::GetInstalledEngineVariants, "/v1/engines/{1}", Get);
   ADD_METHOD_TO(Engines::InstallEngine,
-                "/v1/engines/{1}?version={2}&variant={3}", Post);
+                "/v1/engines/{1}?version={2}&variant={3}", Options, Post);
   ADD_METHOD_TO(Engines::UninstallEngine,
                 "/v1/engines/{1}?version={2}&variant={3}", Options, Delete);
   ADD_METHOD_TO(Engines::SetDefaultEngineVariant,
-                "/v1/engines/{1}/default?version={2}&variant={3}", Post);
+                "/v1/engines/{1}/default?version={2}&variant={3}", Options,
+                Post);
   ADD_METHOD_TO(Engines::GetDefaultEngineVariant, "/v1/engines/{1}/default",
                 Get);
 
-  ADD_METHOD_TO(Engines::LoadEngine, "/v1/engines/{1}/load", Post);
-  ADD_METHOD_TO(Engines::UnloadEngine, "/v1/engines/{1}/load", Post);
-  ADD_METHOD_TO(Engines::UpdateEngine, "/v1/engines/{1}/update", Post);
+  ADD_METHOD_TO(Engines::LoadEngine, "/v1/engines/{1}/load", Options, Post);
+  ADD_METHOD_TO(Engines::UnloadEngine, "/v1/engines/{1}/load", Options, Post);
+  ADD_METHOD_TO(Engines::UpdateEngine, "/v1/engines/{1}/update", Options, Post);
   ADD_METHOD_TO(Engines::GetEngineVersions, "/v1/engines/{1}/versions", Get);
   ADD_METHOD_TO(Engines::GetEngineVariants, "/v1/engines/{1}/versions/{2}",
                 Get);

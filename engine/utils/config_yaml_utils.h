@@ -44,7 +44,8 @@ constexpr const uint64_t kDefaultCheckedForLlamacppUpdateAt = 0u;
 constexpr const auto kDefaultLatestRelease = "default_version";
 constexpr const auto kDefaultLatestLlamacppRelease = "";
 constexpr const auto kDefaultCorsEnabled = true;
-const std::vector<std::string> kDefaultEnabledOrigins{};
+const std::vector<std::string> kDefaultEnabledOrigins{
+    "http://localhost:39281", "http://127.0.0.1:39281", "http://0.0.0.0:39281"};
 
 inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
                                                      const std::string& path) {
