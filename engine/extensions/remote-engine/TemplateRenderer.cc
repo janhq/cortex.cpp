@@ -1,8 +1,7 @@
 #include "TemplateRenderer.h"
 #include <stdexcept>
 #include <regex>
-#include <json/writer.h>
-#include <json/reader.h>
+
 
 TemplateRenderer::TemplateRenderer() {
     // Configure Inja environment
@@ -12,48 +11,32 @@ TemplateRenderer::TemplateRenderer() {
     // Add tojson function for all value types
     env_.add_callback("tojson", 1, [](inja::Arguments& args) {
         if (args.empty()) {
-            return inja::json(nullptr);
+            return nlohmann::json(nullptr);
         }
         const auto& value = *args[0];
         
         if (value.is_string()) {
-            return inja::json(std::string("\"") + value.get<std::string>() + "\"");
+            return nlohmann::json(std::string("\"") + value.get<std::string>() + "\"");
         }
         return value;
     });
 }
 
-std::string TemplateRenderer::jsonToString(const Json::Value& value) {
-    Json::StreamWriterBuilder writer;
-    return Json::writeString(writer, value);
-}
-
-bool TemplateRenderer::validateJson(const std::string& jsonStr) {
-    Json::Value root;
-    Json::CharReaderBuilder builder;
-    std::string errors;
-    std::istringstream iss(jsonStr);
-    return Json::parseFromStream(builder, iss, &root, &errors);
-}
-
 std::string TemplateRenderer::render(const std::string& tmpl, const Json::Value& data) {
     try {
-        // Create the input data structure expected by the template
-        Json::Value template_data;
-        template_data["input_request"] = data;
+        // Convert Json::Value to nlohmann::json
+        auto json_data = convertJsonValue(data);
         
-        // Convert to string for logging
-        std::string dataStr = jsonToString(template_data);
+        // Create the input data structure expected by the template
+        nlohmann::json template_data;
+        template_data["input_request"] = json_data;
         
         // Debug output
         LOG_DEBUG << "Template: " << tmpl;
-        LOG_DEBUG << "Data: " << dataStr;
-        
-        // Convert to inja's json format
-        auto inja_data = inja::json::parse(dataStr);
+        LOG_DEBUG << "Data: " << template_data.dump(2);
         
         // Render template
-        std::string result = env_.render(tmpl, inja_data);
+        std::string result = env_.render(tmpl, template_data);
         
         // Clean up any potential double quotes in JSON strings
         result = std::regex_replace(result, std::regex("\\\"\\\""), "\"");
@@ -61,9 +44,7 @@ std::string TemplateRenderer::render(const std::string& tmpl, const Json::Value&
         LOG_DEBUG << "Result: " << result;
         
         // Validate JSON
-        if (!validateJson(result)) {
-            throw std::runtime_error("Invalid JSON in rendered template");
-        }
+        auto parsed = nlohmann::json::parse(result);
         
         return result;
     }
@@ -74,16 +55,89 @@ std::string TemplateRenderer::render(const std::string& tmpl, const Json::Value&
     }
 }
 
+nlohmann::json TemplateRenderer::convertJsonValue(const Json::Value& input) {
+    if (input.isNull()) {
+        return nullptr;
+    }
+    else if (input.isBool()) {
+        return input.asBool();
+    }
+    else if (input.isInt()) {
+        return input.asInt();
+    }
+    else if (input.isUInt()) {
+        return input.asUInt();
+    }
+    else if (input.isDouble()) {
+        return input.asDouble();
+    }
+    else if (input.isString()) {
+        return input.asString();
+    }
+    else if (input.isArray()) {
+        nlohmann::json arr = nlohmann::json::array();
+        for (const auto& element : input) {
+            arr.push_back(convertJsonValue(element));
+        }
+        return arr;
+    }
+    else if (input.isObject()) {
+        nlohmann::json obj = nlohmann::json::object();
+        for (const auto& key : input.getMemberNames()) {
+            obj[key] = convertJsonValue(input[key]);
+        }
+        return obj;
+    }
+    return nullptr;
+}
+
+Json::Value TemplateRenderer::convertNlohmannJson(const nlohmann::json& input) {
+    if (input.is_null()) {
+        return Json::Value();
+    }
+    else if (input.is_boolean()) {
+        return Json::Value(input.get<bool>());
+    }
+    else if (input.is_number_integer()) {
+        return Json::Value(input.get<int>());
+    }
+    else if (input.is_number_unsigned()) {
+        return Json::Value(input.get<unsigned int>());
+    }
+    else if (input.is_number_float()) {
+        return Json::Value(input.get<double>());
+    }
+    else if (input.is_string()) {
+        return Json::Value(input.get<std::string>());
+    }
+    else if (input.is_array()) {
+        Json::Value arr(Json::arrayValue);
+        for (const auto& element : input) {
+            arr.append(convertNlohmannJson(element));
+        }
+        return arr;
+    }
+    else if (input.is_object()) {
+        Json::Value obj(Json::objectValue);
+        for (auto it = input.begin(); it != input.end(); ++it) {
+            obj[it.key()] = convertNlohmannJson(it.value());
+        }
+        return obj;
+    }
+    return Json::Value();
+}
+
+
+
+
+
 std::string TemplateRenderer::renderFile(const std::string& template_path, const Json::Value& data) {
     try {
-        // Convert JsonCpp Value to string
-        std::string dataStr = jsonToString(data);
-        
-        // Parse as inja json
-        auto inja_data = inja::json::parse(dataStr);
+        // Convert Json::Value to nlohmann::json
+        auto json_data = convertJsonValue(data);
         
         // Load and render template
-        return env_.render_file(template_path, inja_data);
+        return env_.render_file(template_path, json_data);
     }
     catch (const std::exception& e) {
         throw std::runtime_error(std::string("Template file rendering failed: ") + e.what());

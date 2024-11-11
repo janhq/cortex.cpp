@@ -2,14 +2,20 @@
 
 #include <string>
 #include <memory>
+#include <nlohmann/json.hpp>
 #include <inja/inja.hpp>
 #include "json/json.h"
 #include "trantor/utils/Logger.h"
-
 class TemplateRenderer {
 public:
     TemplateRenderer();
     ~TemplateRenderer() = default;
+
+    // Convert Json::Value to nlohmann::json
+    static nlohmann::json convertJsonValue(const Json::Value& input);
+    
+    // Convert nlohmann::json to Json::Value
+    static Json::Value convertNlohmannJson(const nlohmann::json& input);
 
     // Render template with data
     std::string render(const std::string& tmpl, const Json::Value& data);
@@ -18,11 +24,5 @@ public:
     std::string renderFile(const std::string& template_path, const Json::Value& data);
 
 private:
-    // Helper function to convert JsonCpp Value to string representation
-    static std::string jsonToString(const Json::Value& value);
-    
-    // Helper function to validate JSON string
-    static bool validateJson(const std::string& jsonStr);
-
     inja::Environment env_;
 };
