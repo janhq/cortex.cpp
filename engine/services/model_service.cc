@@ -12,7 +12,6 @@
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
-#include "utils/hardware/gguf/gguf_file_estimate.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
@@ -735,11 +734,9 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
     auto const& mp = json_data["model_path"].asString();
     auto ngl = json_data["ngl"].asInt();
-    auto [vram_needed_MiB, ram_needed_MiB] = hardware::EstimateLLaMACppRun(
-        mp, json_data["ngl"].asInt(), json_data["ctx_len"].asInt());
-
-    // for testing only
-    free_vram_MiB = 6000;
+    // Bypass for now
+    auto vram_needed_MiB = 0u;
+    auto ram_needed_MiB = 0u;
 
     if (vram_needed_MiB > free_vram_MiB && is_cuda) {
       CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
