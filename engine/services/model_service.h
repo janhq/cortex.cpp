@@ -8,6 +8,7 @@
 #include "database/models.h"
 #include "services/download_service.h"
 #include "services/inference_service.h"
+#include "utils/hardware/gguf/gguf_file_estimate.h"
 
 struct ModelPullInfo {
   std::string id;
@@ -96,6 +97,9 @@ class ModelService {
       std::optional<std::string> temp_name);
 
   bool HasModel(const std::string& id) const;
+
+  cpp::result<hardware::Estimation, std::string> GetEstimation(
+      const std::string& model_handle);
 
  private:
   /**

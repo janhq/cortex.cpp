@@ -171,6 +171,10 @@ void Models::ListModel(
         Json::Value obj = model_config.ToJson();
         obj["id"] = model_entry.model;
         obj["model"] = model_entry.model;
+        auto es = model_service_->GetEstimation(model_entry.model);
+        if (es.has_value()) {
+          obj["recommendation"] = hardware::ToJson(es.value());
+        }
         data.append(std::move(obj));
         yaml_handler.Reset();
       } catch (const std::exception& e) {

@@ -335,6 +335,41 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
+cpp::result<hardware::Estimation, std::string> ModelService::GetEstimation(
+    const std::string& model_handle) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    auto file_path = fmu::ToAbsoluteCortexDataPath(
+                         fs::path(model_entry.value().path_to_model_yaml))
+                         .parent_path() /
+                     "model.gguf";
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
+    auto mc = yaml_handler.GetModelConfig();
+
+    return hardware::EstimateLLaMACppRun(file_path.string(),
+                                         {.ngl = mc.ngl,
+                                          .ctx_len = mc.ctx_len,
+                                          .n_batch = 2048,
+                                          .n_ubatch = 2048,
+                                          .kv_cache_type = "f16"});
+  } catch (const std::exception& e) {
+    return cpp::fail("Fail to get model status with ID '" + model_handle +
+                     "': " + e.what());
+  }
+}
+
 cpp::result<std::string, std::string> ModelService::HandleUrl(
     const std::string& url) {
   auto url_obj = url_parser::FromUrlString(url);
@@ -771,27 +806,21 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
     auto const& mp = json_data["model_path"].asString();
     auto ngl = json_data["ngl"].asInt();
-    // Bypass for now
-    auto vram_needed_MiB = 0u;
-    auto ram_needed_MiB = 0u;
+    hardware::RunConfig rc = {.ngl = ngl,
+                              .ctx_len = json_data["ctx_len"].asInt(),
+                              .n_batch = 2048,
+                              .n_ubatch = 2048,
+                              .kv_cache_type = "f16"};
+    auto es = hardware::EstimateLLaMACppRun(mp, rc);
 
-    if (vram_needed_MiB > free_vram_MiB && is_cuda) {
-      CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
+    if (es.gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
+      CTL_WRN("Not enough VRAM - " << "required: " << es.gpu_mode.vram_MiB
                                    << ", available: " << free_vram_MiB);
-
-      return cpp::fail(
-          "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
-          " MiB, available: " + std::to_string(free_vram_MiB) +
-          " MiB - Should adjust ngl to " +
-          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
     }
 
-    if (ram_needed_MiB > free_ram_MiB) {
-      CTL_WRN("Not enough RAM - " << "required: " << ram_needed_MiB
+    if (es.cpu_mode.ram_MiB > free_ram_MiB) {
+      CTL_WRN("Not enough RAM - " << "required: " << es.cpu_mode.ram_MiB
                                   << ", available: " << free_ram_MiB);
-      return cpp::fail(
-          "Not enough RAM - required: " + std::to_string(ram_needed_MiB) +
-          " MiB,, available: " + std::to_string(free_ram_MiB) + " MiB");
     }
 
     assert(!!inference_svc_);
