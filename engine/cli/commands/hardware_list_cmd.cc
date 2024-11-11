@@ -113,7 +113,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
         "(Index)",        "ID",
         "Name",           "Version",
         "Total (MiB)",    "Available (MiB)",
-        "Driver Version", "Compute Capability"};
+        "Driver Version", "Compute Capability", "Activated"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
     table.add_row(header);
@@ -133,6 +133,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
           std::get<hardware::NvidiaAddInfo>(gpu.add_info).driver_version);
       row.emplace_back(
           std::get<hardware::NvidiaAddInfo>(gpu.add_info).compute_cap);
+      row.emplace_back(gpu.is_activated ? "Yes" : "No");
       table.add_row({row.begin(), row.end()});
     }
 

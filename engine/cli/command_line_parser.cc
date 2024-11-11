@@ -12,6 +12,7 @@
 #include "commands/engine_uninstall_cmd.h"
 #include "commands/engine_update_cmd.h"
 #include "commands/engine_use_cmd.h"
+#include "commands/hardware_activate_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_import_cmd.h"
@@ -509,6 +510,31 @@ void CommandLineParser::SetupHardwareCommands() {
           cml_data_.config.apiServerHost,
           std::stoi(cml_data_.config.apiServerPort), std::nullopt);
     }
+  });
+
+  auto hw_activate_cmd =
+      hw_cmd->add_subcommand("activate", "Activate hardware");
+  hw_activate_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                         " hardware activate --gpus [list_gpu]");
+  hw_activate_cmd->group(kSubcommands);
+  hw_activate_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+                              "List of GPU to activate, for example [0, 1]");
+  hw_activate_cmd->callback([this, hw_activate_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (hw_activate_cmd->get_options().empty()) {
+      CLI_LOG(hw_activate_cmd->help());
+      return;
+    }
+
+    if (hw_activate_opts_["gpus"].empty()) {
+      CLI_LOG("[list_gpu] is required\n");
+      CLI_LOG(hw_activate_cmd->help());
+      return;
+    }
+    commands::HardwareActivateCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), hw_activate_opts_);
   });
 }
 

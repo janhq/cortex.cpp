@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "common/hardware_config.h"
 #include "utils/hardware/cpu_info.h"
 #include "utils/hardware/gpu_info.h"
 #include "utils/hardware/os_info.h"
@@ -21,18 +22,15 @@ struct HardwareInfo {
   hardware::PowerInfo power;
 };
 
-struct ActivateHardwareConfig {
-  std::vector<int> gpus;
-};
-
 class HardwareService {
  public:
   HardwareInfo GetHardwareInfo();
   bool Restart(const std::string& host, int port);
-  void SetActivateHardwareConfig(const ActivateHardwareConfig& ahc);
+  void SetActivateHardwareConfig(const cortex::hw::ActivateHardwareConfig& ahc);
   bool ShouldRestart() const { return !!ahc_; }
   void UpdateHardwareInfos();
+
  private:
-  std::optional<ActivateHardwareConfig> ahc_;
+  std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
 };
 }  // namespace services

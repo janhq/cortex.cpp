@@ -2,6 +2,7 @@
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 #include "utils/scope_exit.h"
+#include "common/hardware_config.h"
 
 void Hardware::GetHardwareInfo(
     const HttpRequestPtr& req,
@@ -27,7 +28,7 @@ void Hardware::Activate(
   // {
   //   "gpus" : [0, 1]
   // }
-  services::ActivateHardwareConfig ahc;
+  cortex::hw::ActivateHardwareConfig ahc;
   if (auto o = req->getJsonObject(); o) {
     CTL_INF("activate: " << o->toStyledString());
     for (auto& g : (*o)["gpus"]) {

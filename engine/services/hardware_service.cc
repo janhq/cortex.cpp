@@ -191,7 +191,7 @@ bool HardwareService::Restart(const std::string& host, int port) {
 }
 
 void HardwareService::SetActivateHardwareConfig(
-    const ActivateHardwareConfig& ahc) {
+    const cortex::hw::ActivateHardwareConfig& ahc) {
   // Note: need to map software_id and hardware_id
   ahc_ = ahc;
   // Update to db
