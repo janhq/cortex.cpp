@@ -4,14 +4,63 @@
 #include <eventpp/eventqueue.h>
 #include <functional>
 #include <optional>
-#include <queue>
 #include <thread>
 #include <unordered_set>
+#include "common/download_task_queue.h"
 #include "common/event.h"
-#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 class DownloadService {
+ private:
+  static constexpr int MAX_CONCURRENT_TASKS = 4;
+
+  struct DownloadingData {
+    std::string task_id;
+    std::string item_id;
+    DownloadService* download_service;
+  };
+
+  // Each worker represents a thread. Each worker will have its own multi_handle
+  struct WorkerData {
+    CURLM* multi_handle;
+    std::unordered_map<std::string, std::shared_ptr<DownloadingData>>
+        downloading_data_map;
+  };
+  std::vector<std::unique_ptr<WorkerData>> worker_data_;
+
+  std::vector<std::thread> worker_threads_;
+
+  // Store all download tasks in a queue
+  DownloadTaskQueue task_queue_;
+
+  // Flag to stop Download service. Will stop all worker threads
+  std::atomic<bool> stop_flag_{false};
+
+  // Track active tasks across all workers
+  std::mutex active_tasks_mutex_;
+  std::unordered_map<std::string, std::shared_ptr<DownloadTask>> active_tasks_;
+
+  // sync primitives
+  std::condition_variable task_cv_;
+  std::mutex task_mutex_;
+
+  void WorkerThread(int worker_id);
+
+  void ProcessTask(DownloadTask& task, int worker_id);
+
+  void ProcessMultiDownload(
+      DownloadTask& task, CURLM* multi_handle,
+      const std::vector<std::pair<CURL*, FILE*>>& handles);
+
+  void SetUpCurlHandle(CURL* handle, const DownloadItem& item, FILE* file,
+                       DownloadingData* dl_data);
+
+  void EmitTaskStarted(const DownloadTask& task);
+
+  void EmitTaskStopped(const std::string& task_id);
+
+  void EmitTaskCompleted(const std::string& task_id);
+
  public:
   using OnDownloadTaskSuccessfully =
       std::function<void(const DownloadTask& task)>;
@@ -27,29 +76,13 @@ class DownloadService {
 
   explicit DownloadService(std::shared_ptr<EventQueue> event_queue)
       : event_queue_{event_queue} {
-    curl_global_init(CURL_GLOBAL_ALL);
-    stop_flag_ = false;
-    multi_handle_ = curl_multi_init();
-    worker_thread_ = std::thread(&DownloadService::WorkerThread, this);
+    InitializeWorkers();
   };
 
-  ~DownloadService() {
-    if (event_queue_ != nullptr) {
-      stop_flag_ = true;
-      queue_condition_.notify_one();
-
-      CTL_INF("DownloadService is being destroyed.");
-      curl_multi_cleanup(multi_handle_);
-      curl_global_cleanup();
-
-      if (worker_thread_.joinable()) {
-        worker_thread_.join();
-      }
-      CTL_INF("DownloadService is destroyed.");
-    }
-  }
+  ~DownloadService() { Shutdown(); }
 
   DownloadService(const DownloadService&) = delete;
+
   DownloadService& operator=(const DownloadService&) = delete;
 
   /**
@@ -77,10 +110,9 @@ class DownloadService {
   cpp::result<std::string, std::string> StopTask(const std::string& task_id);
 
  private:
-  struct DownloadingData {
-    std::string item_id;
-    DownloadService* download_service;
-  };
+  void InitializeWorkers();
+
+  void Shutdown();
 
   cpp::result<bool, std::string> Download(
       const std::string& download_id,
@@ -90,10 +122,7 @@ class DownloadService {
 
   CURLM* multi_handle_;
   std::thread worker_thread_;
-  std::atomic<bool> stop_flag_;
 
-  // task queue
-  std::queue<DownloadTask> task_queue_;
   std::mutex queue_mutex_;
   std::condition_variable queue_condition_;
 
@@ -106,15 +135,7 @@ class DownloadService {
       callbacks_;
   std::mutex callbacks_mutex_;
 
-  std::shared_ptr<DownloadTask> active_task_;
-  std::unordered_map<std::string, std::shared_ptr<DownloadingData>>
-      downloading_data_map_;
-
   void WorkerThread();
-
-  void ProcessCompletedTransfers();
-
-  void ProcessTask(DownloadTask& task);
 
   bool IsTaskTerminated(const std::string& task_id);
 
@@ -130,49 +151,55 @@ class DownloadService {
     if (downloading_data == nullptr) {
       return 0;
     }
-    const auto dl_item_id = downloading_data->item_id;
-    if (dltotal <= 0) {
+
+    if (downloading_data->download_service == nullptr) {
       return 0;
     }
 
-    auto dl_srv = downloading_data->download_service;
-    auto active_task = dl_srv->active_task_;
-    if (active_task == nullptr) {
-      return 0;
-    }
+    // Lock during the update and event emission
+    std::lock_guard<std::mutex> lock(
+        downloading_data->download_service->active_tasks_mutex_);
 
-    for (auto& item : active_task->items) {
-      if (item.id == dl_item_id) {
-        item.downloadedBytes = dlnow;
+    // Find and update the task
+    if (auto task_it = downloading_data->download_service->active_tasks_.find(
+            downloading_data->task_id);
+        task_it != downloading_data->download_service->active_tasks_.end()) {
+      auto& task = task_it->second;
+      // Find the specific item in the task
+      for (auto& item : task->items) {
+        if (item.id != downloading_data->item_id) {
+          // not the item we are looking for
+          continue;
+        }
+
+        if (dltotal == 0) {
+          // if dltotal is 0, we prevent to send the event
+          break;
+        }
+
         item.bytes = dltotal;
+        item.downloadedBytes = dlnow;
+
+        static auto last_event_time = std::chrono::steady_clock::now();
+        auto current_time = std::chrono::steady_clock::now();
+        auto time_since_last_event =
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                current_time - last_event_time)
+                .count();
+
+        // throttle event by 1 sec
+        if (time_since_last_event >= 1000) {
+          downloading_data->download_service->event_queue_->enqueue(
+              EventType::DownloadEvent,
+              DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
+                            .download_task_ = *task});
+
+          // Update the last event time
+          last_event_time = current_time;
+        }
+
         break;
       }
-    }
-
-    auto all_items_bytes_greater_than_zero =
-        std::all_of(active_task->items.begin(), active_task->items.end(),
-                    [](const DownloadItem& item) { return item.bytes > 0; });
-    if (!all_items_bytes_greater_than_zero) {
-      return 0;
-    }
-
-    // Check if one second has passed since the last event
-    static auto last_event_time = std::chrono::steady_clock::now();
-    auto current_time = std::chrono::steady_clock::now();
-    auto time_since_last_event =
-        std::chrono::duration_cast<std::chrono::milliseconds>(current_time -
-                                                              last_event_time)
-            .count();
-
-    // throttle event by 1 sec
-    if (time_since_last_event >= 1000) {
-      dl_srv->event_queue_->enqueue(
-          EventType::DownloadEvent,
-          DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-                        .download_task_ = *active_task});
-
-      // Update the last event time
-      last_event_time = current_time;
     }
 
     return 0;
