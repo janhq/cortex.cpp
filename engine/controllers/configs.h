@@ -11,10 +11,10 @@ class Configs : public drogon::HttpController<Configs, false> {
   METHOD_LIST_BEGIN
 
   METHOD_ADD(Configs::GetConfigurations, "", Get);
-  METHOD_ADD(Configs::UpdateConfigurations, "", Patch);
+  METHOD_ADD(Configs::UpdateConfigurations, "", Options, Patch);
 
   ADD_METHOD_TO(Configs::GetConfigurations, "/v1/configs", Get);
-  ADD_METHOD_TO(Configs::UpdateConfigurations, "/v1/configs", Patch);
+  ADD_METHOD_TO(Configs::UpdateConfigurations, "/v1/configs", Options, Patch);
 
   METHOD_LIST_END
 
