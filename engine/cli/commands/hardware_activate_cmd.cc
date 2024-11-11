@@ -6,13 +6,13 @@
 namespace commands {
 namespace {
 std::vector<int> ParseStringToVector(const std::string& str) {
-  // Remove the brackets from the string using regex
-  std::string cleanedStr =
+  // [0, 1, 2, 3]
+  std::string cleaned_str =
       std::regex_replace(str, std::regex(R"([\[\]\s])"), "");
 
   // Prepare to parse the cleaned string
   std::vector<int> result;
-  std::stringstream ss(cleanedStr);
+  std::stringstream ss(cleaned_str);
   std::string number;
 
   // Use getline to split by comma
@@ -36,7 +36,7 @@ bool HardwareActivateCmd::Exec(
     }
   }
 
-  // TODO(sang) should use curl but it does not work
+  // TODO(sang) should use curl but it does not work (?)
   Json::Value body;
   Json::Value gpus_json = Json::arrayValue;
   std::vector<int> gpus;

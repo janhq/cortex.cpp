@@ -26,7 +26,7 @@ class HardwareService {
  public:
   HardwareInfo GetHardwareInfo();
   bool Restart(const std::string& host, int port);
-  void SetActivateHardwareConfig(const cortex::hw::ActivateHardwareConfig& ahc);
+  bool SetActivateHardwareConfig(const cortex::hw::ActivateHardwareConfig& ahc);
   bool ShouldRestart() const { return !!ahc_; }
   void UpdateHardwareInfos();
 

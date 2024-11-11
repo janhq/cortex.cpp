@@ -190,10 +190,9 @@ bool HardwareService::Restart(const std::string& host, int port) {
   return true;
 }
 
-void HardwareService::SetActivateHardwareConfig(
+bool HardwareService::SetActivateHardwareConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
   // Note: need to map software_id and hardware_id
-  ahc_ = ahc;
   // Update to db
   cortex::db::Hardwares hw_db;
   auto activate = [&ahc](int software_id) {
@@ -201,11 +200,37 @@ void HardwareService::SetActivateHardwareConfig(
   };
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
+    bool need_update = false;
+    std::vector<int> activated_ids;
+    // Check if need to update
+    for (auto const& e : res.value()) {
+      if (e.activated) {
+        activated_ids.push_back(e.software_id);
+      }
+    }    
+    std::sort(activated_ids.begin(), activated_ids.end());
+    if (ahc.gpus.size() != activated_ids.size()) {
+      need_update = true;
+    } else {
+      for (size_t i = 0; i < ahc.gpus.size(); i++) {
+        if (ahc.gpus[i] != activated_ids[i])
+          need_update = true;
+      }
+    }
+
+    if (!need_update) {
+      CTL_INF("No hardware activation changes -> No need to update");
+      return false;
+    }
+
+    // Need to update, proceed
     for (auto& e : res.value()) {
       e.activated = activate(e.software_id);
       hw_db.UpdateHardwareEntry(e.uuid, e);
     }
   }
+  ahc_ = ahc;
+  return true;
 }
 
 void HardwareService::UpdateHardwareInfos() {

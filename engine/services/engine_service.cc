@@ -760,8 +760,8 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return cpp::fail(selected_engine_variant.error());
   }
 
-  // CTL_INF("Selected engine variant: "
-  //         << json_helper::DumpJsonString(selected_engine_variant->ToJson()));
+  CTL_INF("Selected engine variant: "
+          << json_helper::DumpJsonString(selected_engine_variant->ToJson()));
 
   auto user_defined_engine_path = getenv("ENGINE_PATH");
   const std::filesystem::path engine_dir_path = [&] {
