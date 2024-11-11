@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-
+namespace remote_engine {
 constexpr const int k200OK = 200;
 constexpr const int k400BadRequest = 400;
 constexpr const int k409Conflict = 409;
@@ -423,3 +423,4 @@ EngineI* get_engine() {
   return new RemoteEngine();
 }
 }
+}  // namespace remote_engine

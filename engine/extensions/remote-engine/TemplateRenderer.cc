@@ -1,7 +1,10 @@
+#if defined(_WIN32) || defined(_WIN64)
+#define NOMINMAX
+#endif
 #include "TemplateRenderer.h"
 #include <regex>
 #include <stdexcept>
-
+namespace remote_engine {
 TemplateRenderer::TemplateRenderer() {
   // Configure Inja environment
   env_.set_trim_blocks(true);
@@ -127,3 +130,4 @@ std::string TemplateRenderer::renderFile(const std::string& template_path,
                              e.what());
   }
 }
+}  // namespace remote_engine

@@ -11,6 +11,8 @@
 #include "extensions/remote-engine/TemplateRenderer.h"
 #include "utils/file_logger.h"
 // Helper for CURL response
+
+namespace remote_engine {
 struct CurlResponse {
   std::string body;
   bool error{false};
@@ -82,3 +84,5 @@ class RemoteEngine : public EngineI {
   bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
   void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
 };
+
+}  // namespace remote_engine

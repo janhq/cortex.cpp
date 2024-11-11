@@ -1,14 +1,18 @@
 #pragma once
 
-// clang-format off
-#include <nlohmann/json.hpp>
-#include <inja/inja.hpp>
-// clang-format on
 #include <memory>
 
 #include <string>
 #include "json/json.h"
 #include "trantor/utils/Logger.h"
+// clang-format off
+#if defined(_WIN32) || defined(_WIN64)
+#define NOMINMAX
+#endif
+#include <nlohmann/json.hpp>
+#include <inja/inja.hpp>
+// clang-format on
+namespace remote_engine {
 class TemplateRenderer {
  public:
   TemplateRenderer();
@@ -30,3 +34,5 @@ class TemplateRenderer {
  private:
   inja::Environment env_;
 };
+
+}  // namespace remote_engine
