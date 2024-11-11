@@ -41,6 +41,13 @@ bool ModelStartCmd::Exec(
     if (!HardwareActivateCmd().Exec(host, port, options)) {
       return false;
     }
+    // wait for server up, max for 3 seconds
+    int count = 6;
+    while (count--) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      if (commands::IsServerAlive(host, port))
+        break;      
+    }
   }
 
   // Call API to start model
@@ -71,7 +78,7 @@ bool ModelStartCmd::Exec(
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG("HTTP error: " << httplib::to_string(err));
     return false;
   }
 }

@@ -156,6 +156,8 @@ void CommandLineParser::SetupCommonCommands() {
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
   run_cmd->add_option("model_id", cml_data_.model_id, "");
+  run_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+                      "List of GPU to activate, for example [0, 1]");
   run_cmd->add_flag("-d,--detach", cml_data_.run_detach, "Detached mode");
   run_cmd->callback([this, run_cmd] {
     if (std::exchange(executed_, true))
@@ -163,7 +165,7 @@ void CommandLineParser::SetupCommonCommands() {
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
                         cml_data_.model_id, download_service_);
-    rc.Exec(cml_data_.run_detach);
+    rc.Exec(cml_data_.run_detach, hw_activate_opts_);
   });
 }
 
