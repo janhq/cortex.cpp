@@ -99,7 +99,7 @@ jobs:
 
       - name: Run setup config
         run: |
-          rm ~/.cortexrc
+          rm ~/.cortexrc -ErrorAction SilentlyContinue; exit 0
           cd engine
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
@@ -115,7 +115,7 @@ jobs:
 
       - name: Run setup config
         run: |
-          rm ~/.cortexrc
+          rm ~/.cortexrc -ErrorAction SilentlyContinue; exit 0
           cd engine
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
