@@ -665,7 +665,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     services::HardwareService hw_svc;
     auto hw_info = hw_svc.GetHardwareInfo();
     assert(!!engine_svc_);
-    auto default_engine = engine_svc_->GetDefaultEngineVariant("llama-cpp");
+    auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
     bool is_cuda = false;
     if (default_engine.has_error()) {
       CTL_INF("Could not get default engine");
@@ -680,7 +680,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       CTL_INF(
           "Running cuda variant but nvidia-driver is not installed yet, "
           "fallback to CPU mode");
-      auto res = engine_svc_->GetInstalledEngineVariants("llama-cpp");
+      auto res = engine_svc_->GetInstalledEngineVariants(kLlamaEngine);
       if (res.has_error()) {
         CTL_WRN("Could not get engine variants");
         return cpp::fail("Nvidia-driver is not installed!");
@@ -693,16 +693,15 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         for (auto& e : es) {
           CTL_INF(e.name << " " << e.version << " " << e.engine);
           // Select the first CPU candidate
-          // TODO(sang) need to check os also
           if (e.name.find("cuda") == std::string::npos) {
-            auto r = engine_svc_->SetDefaultEngineVariant("llama-cpp",
+            auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine,
                                                           e.version, e.name);
             if (r.has_error()) {
               CTL_WRN("Could not set default engine variant");
               return cpp::fail("Nvidia-driver is not installed!");
             } else {
               CTL_INF("Change default engine to: " << e.name);
-              auto rl = engine_svc_->LoadEngine("llama-cpp");
+              auto rl = engine_svc_->LoadEngine(kLlamaEngine);
               if (rl.has_error()) {
                 return cpp::fail("Nvidia-driver is not installed!");
               } else {
