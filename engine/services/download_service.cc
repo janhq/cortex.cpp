@@ -288,6 +288,7 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     fclose(pair.second);
   }
   downloading_data_map_.clear();
+  auto copied_task = *active_task_;
   active_task_.reset();
 
   RemoveTaskFromStopList(task.id);
@@ -298,15 +299,20 @@ void DownloadService::ProcessTask(DownloadTask& task) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
         DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
-                      .download_task_ = task});
+                      .download_task_ = copied_task});
   } else {
     CTL_INF("Executing callback..");
     ExecuteCallback(task);
 
+    // set all items to done
+    for (auto& item : copied_task.items) {
+      item.downloadedBytes = item.bytes;
+    }
+
     event_queue_->enqueue(
         EventType::DownloadEvent,
         DownloadEvent{.type_ = DownloadEventType::DownloadSuccess,
-                      .download_task_ = task});
+                      .download_task_ = copied_task});
   }
 }
 

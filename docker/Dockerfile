@@ -4,6 +4,8 @@ FROM base as build
 
 ARG CORTEX_CPP_VERSION=latest
 
+ARG CMAKE_EXTRA_FLAGS=""
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
@@ -47,7 +49,7 @@ COPY ./engine /app/engine
 
 COPY ./docs/static/openapi/cortex.json /app/docs/static/openapi/cortex.json
 
-RUN cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+RUN cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake ${CMAKE_EXTRA_FLAGS}"
 
 FROM base as runtime
 

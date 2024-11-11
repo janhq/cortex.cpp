@@ -176,7 +176,13 @@ inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,
-  };
+      .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
+      .checkedForLlamacppUpdateAt =
+          config_yaml_utils::kDefaultCheckedForLlamacppUpdateAt,
+      .latestRelease = config_yaml_utils::kDefaultLatestRelease,
+      .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
+      .enableCors = config_yaml_utils::kDefaultCorsEnabled,
+      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins};
   return DumpYamlConfig(config, config_path.string());
 }
 
@@ -195,7 +201,10 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,
       .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
+      .checkedForLlamacppUpdateAt =
+          config_yaml_utils::kDefaultCheckedForLlamacppUpdateAt,
       .latestRelease = config_yaml_utils::kDefaultLatestRelease,
+      .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
       .enableCors = config_yaml_utils::kDefaultCorsEnabled,
       .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins};
 

@@ -56,11 +56,10 @@ std::string GetNightlyInstallerName(const std::string& v,
 // C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
 std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
-  return "sudo touch /var/tmp/cortex_installer_skip_postinstall && sudo "
-         "installer "
+  return "sudo touch /var/tmp/cortex_installer_skip_postinstall_check && sudo installer "
          "-pkg " +
          exe_path +
-         " -target / && sudo rm /var/tmp/cortex_installer_skip_postinstall";
+         " -target / && sudo rm /var/tmp/cortex_installer_skip_postinstall_check";
 #elif defined(__linux__)
   return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y "
          "--allow-downgrades " +
@@ -175,8 +174,13 @@ std::optional<std::string> CheckNewUpdate(
         CTL_INF("Got the latest release, update to the config file: "
                 << latest_version)
         config.latestRelease = latest_version;
-        config_yaml_utils::DumpYamlConfig(
+        auto result = config_yaml_utils::DumpYamlConfig(
             config, file_manager_utils::GetConfigurationPath().string());
+        if (result.has_error()) {
+          CTL_ERR("Error update "
+                  << file_manager_utils::GetConfigurationPath().string()
+                  << result.error());
+        }
         if (current_version != latest_version) {
           return latest_version;
         }

@@ -25,7 +25,8 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb,
 inline std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
     const std::string& url);
 
-inline cpp::result<std::string, std::string> SimpleGet(const std::string& url) {
+inline cpp::result<std::string, std::string> SimpleGet(const std::string& url,
+                                                       const int timeout = -1) {
   // Initialize libcurl
   curl_global_init(CURL_GLOBAL_DEFAULT);
   auto curl = curl_easy_init();
@@ -50,6 +51,9 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url) {
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+  if (timeout > 0) {
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
+  }
 
   // Perform the request
   auto res = curl_easy_perform(curl);
@@ -242,9 +246,14 @@ inline cpp::result<YAML::Node, std::string> ReadRemoteYaml(
   }
 }
 
+/**
+ * SimpleGetJson is a helper function that sends a GET request to the given URL
+ *
+ * [timeout] is an optional parameter that specifies the timeout for the request. In second.
+ */
 inline cpp::result<Json::Value, std::string> SimpleGetJson(
-    const std::string& url) {
-  auto result = SimpleGet(url);
+    const std::string& url, const int timeout = -1) {
+  auto result = SimpleGet(url, timeout);
   if (result.has_error()) {
     CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
     return cpp::fail(result.error());

@@ -162,6 +162,14 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
         auto allowed_origins =
             config_service->GetApiServerConfiguration()->allowed_origins;
 
+        auto is_contains_asterisk =
+            std::find(allowed_origins.begin(), allowed_origins.end(), "*");
+        if (is_contains_asterisk != allowed_origins.end()) {
+          resp->addHeader("Access-Control-Allow-Origin", "*");
+          resp->addHeader("Access-Control-Allow-Methods", "*");
+          return;
+        }
+
         // Check if the origin is in our allowed list
         auto it =
             std::find(allowed_origins.begin(), allowed_origins.end(), origin);
@@ -170,6 +178,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
         } else if (allowed_origins.empty()) {
           resp->addHeader("Access-Control-Allow-Origin", "*");
         }
+        resp->addHeader("Access-Control-Allow-Methods", "*");
       });
 
   drogon::app().run();

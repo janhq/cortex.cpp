@@ -37,20 +37,20 @@ class server : public drogon::HttpController<server, false>,
   ~server();
   METHOD_LIST_BEGIN
   // list path definitions here;
-  METHOD_ADD(server::ChatCompletion, "chat_completion", Post);
-  METHOD_ADD(server::Embedding, "embedding", Post);
-  METHOD_ADD(server::LoadModel, "loadmodel", Post);
-  METHOD_ADD(server::UnloadModel, "unloadmodel", Post);
-  METHOD_ADD(server::ModelStatus, "modelstatus", Post);
+  METHOD_ADD(server::ChatCompletion, "chat_completion", Options, Post);
+  METHOD_ADD(server::Embedding, "embedding", Options, Post);
+  METHOD_ADD(server::LoadModel, "loadmodel", Options, Post);
+  METHOD_ADD(server::UnloadModel, "unloadmodel", Options, Post);
+  METHOD_ADD(server::ModelStatus, "modelstatus", Options, Post);
   METHOD_ADD(server::GetModels, "models", Get);
 
   // cortex.python API
-  METHOD_ADD(server::FineTuning, "finetuning", Post);
+  METHOD_ADD(server::FineTuning, "finetuning", Options, Post);
 
   // Openai compatible path
-  ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
-  ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Post);
-  ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Post);
+  ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Options, Post);
+  ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Options, Post);
+  ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Options, Post);
 
   METHOD_LIST_END
   void ChatCompletion(

@@ -149,6 +149,13 @@ class DownloadService {
       }
     }
 
+    auto all_items_bytes_greater_than_zero =
+        std::all_of(active_task->items.begin(), active_task->items.end(),
+                    [](const DownloadItem& item) { return item.bytes > 0; });
+    if (!all_items_bytes_greater_than_zero) {
+      return 0;
+    }
+
     // Check if one second has passed since the last event
     static auto last_event_time = std::chrono::steady_clock::now();
     auto current_time = std::chrono::steady_clock::now();

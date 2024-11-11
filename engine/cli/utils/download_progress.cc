@@ -50,13 +50,12 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     }
   }
 #endif
-  std::unordered_map<std::string, uint64_t> totals;
   status_ = DownloadStatus::DownloadStarted;
   std::unique_ptr<indicators::DynamicProgress<indicators::ProgressBar>> bars;
 
   std::vector<std::unique_ptr<indicators::ProgressBar>> items;
   indicators::show_console_cursor(false);
-  auto handle_message = [this, &bars, &items, &totals,
+  auto handle_message = [this, &bars, &items,
                          event_type](const std::string& message) {
     CTL_INF(message);
 
@@ -98,27 +97,24 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     }
     for (int i = 0; i < ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
-      uint64_t downloaded = it.downloadedBytes.value_or(0);
-      if (totals.find(it.id) == totals.end()) {
-        totals[it.id] = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
-        CTL_INF("Updated " << it.id << " - total: " << totals[it.id]);
-      }
-
-      if (ev.type_ == DownloadStatus::DownloadStarted ||
-          ev.type_ == DownloadStatus::DownloadUpdated) {
+      if (ev.type_ == DownloadStatus::DownloadUpdated) {
+        uint64_t downloaded = it.downloadedBytes.value_or(0u);
+        uint64_t total =
+            it.bytes.value_or(std::numeric_limits<uint64_t>::max());
         (*bars)[i].set_option(indicators::option::PrefixText{
             pad_string(Repo2Engine(it.id)) +
-            std::to_string(
-                int(static_cast<double>(downloaded) / totals[it.id] * 100)) +
+            std::to_string(int(static_cast<double>(downloaded) / total * 100)) +
             '%'});
         (*bars)[i].set_progress(
-            int(static_cast<double>(downloaded) / totals[it.id] * 100));
+            int(static_cast<double>(downloaded) / total * 100));
         (*bars)[i].set_option(indicators::option::PostfixText{
             format_utils::BytesToHumanReadable(downloaded) + "/" +
-            format_utils::BytesToHumanReadable(totals[it.id])});
+            format_utils::BytesToHumanReadable(total)});
       } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
+        uint64_t total =
+            it.bytes.value_or(std::numeric_limits<uint64_t>::max());
         (*bars)[i].set_progress(100);
-        auto total_str = format_utils::BytesToHumanReadable(totals[it.id]);
+        auto total_str = format_utils::BytesToHumanReadable(total);
         (*bars)[i].set_option(
             indicators::option::PostfixText{total_str + "/" + total_str});
         (*bars)[i].set_option(indicators::option::PrefixText{

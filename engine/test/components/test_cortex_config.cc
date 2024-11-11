@@ -18,6 +18,7 @@ class CortexConfigTest : public ::testing::Test {
                       kDefaultHost,
                       kDefaultPort,
                       kDefaultCheckedForUpdateAt,
+                      kDefaultCheckedForLlamacppUpdateAt,
                       kDefaultLatestRelease};
   }
 
@@ -39,9 +40,11 @@ TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
                          "localhost",
                          "8080",
                          123456789,
+                         123456789,
                          "v1.0.0"};
 
-  DumpYamlConfig(config, test_file_path);
+  auto result = DumpYamlConfig(config, test_file_path);
+  EXPECT_FALSE(result.has_error());
 
   // Verify that the file was created and contains the expected data
   YAML::Node node = YAML::LoadFile(test_file_path);
@@ -66,9 +69,11 @@ TEST_F(CortexConfigTest, FromYaml_ReadsCorrectly) {
                          "localhost",
                          "8080",
                          123456789,
+                         123456789,
                          "v1.0.0"};
 
-  DumpYamlConfig(config, test_file_path);
+  auto result = DumpYamlConfig(config, test_file_path);
+  EXPECT_FALSE(result.has_error());
 
   // Now read from the YAML file
   CortexConfig loaded_config = FromYaml(test_file_path, default_config);
