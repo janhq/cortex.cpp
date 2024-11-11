@@ -190,7 +190,7 @@
         ]
       }
     },
-    "v1/embeddings": {
+    "/v1/embeddings": {
       "post": {
         "summary": "Create embeddings",
         "description": "Creates an embedding vector representing the input text.",
@@ -204,22 +204,29 @@
                   "input": {
                     "oneOf": [
                       {
-                        "type": "string"
+                        "type": "string",
+                        "description":"The string that will be turned into an embedding."
                       },
                       {
                         "type": "array",
+                        "description" : "The array of strings that will be turned into an embedding.",
                         "items": {
                           "type": "string"
                         }
                       },
                       {
                         "type": "array",
+                        "description": "The array of integers that will be turned into an embedding.",
                         "items": {
                           "type": "integer"
+                          
                         }
                       },
                       {
                         "type": "array",
+
+                        "description" : "The array of arrays containing integers that will be turned into an embedding.",
+
                         "items": {
                           "type": "array",
                           "items": {
@@ -290,7 +297,10 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "Embeddings"
+        ]
       }
     },
     "/v1/chat/completions": {
