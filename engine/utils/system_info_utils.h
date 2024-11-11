@@ -19,10 +19,10 @@ constexpr static auto kUnsupported{"Unsupported"};
 constexpr static auto kCudaVersionRegex{R"(CUDA Version:\s*([\d\.]+))"};
 constexpr static auto kDriverVersionRegex{R"(Driver Version:\s*(\d+\.\d+))"};
 constexpr static auto kGpuQueryCommand{
-    "nvidia-smi --query-gpu=index,memory.total,memory.free,name,compute_cap "
+    "nvidia-smi --query-gpu=index,memory.total,memory.free,name,compute_cap,uuid "
     "--format=csv,noheader,nounits"};
 constexpr static auto kGpuInfoRegex{
-    R"((\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+))"};
+    R"((\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+),\s*([^\n,]+))"};
 
 struct SystemInfo {
   explicit SystemInfo(std::string os, std::string arch)
@@ -160,6 +160,7 @@ struct GpuInfo {
   std::optional<std::string> driver_version;
   std::optional<std::string> cuda_driver_version;
   std::optional<std::string> compute_cap;
+  std::string uuid;
 };
 
 inline std::vector<GpuInfo> GetGpuInfoListVulkan() {
@@ -247,7 +248,8 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
           GetGpuArch(match[4].str()),  // arch
           driver_version,              // driver_version
           cuda_version,                // cuda_driver_version
-          match[5].str()               // compute_cap
+          match[5].str(),              // compute_cap
+          match[6].str()               // uuid  
       };
       gpuInfoList.push_back(gpuInfo);
       search_start = match.suffix().first;

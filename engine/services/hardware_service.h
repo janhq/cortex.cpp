@@ -28,7 +28,11 @@ struct ActivateHardwareConfig {
 class HardwareService {
  public:
   HardwareInfo GetHardwareInfo();
-  bool Restart(const std::string& host, int port,
-               const ActivateHardwareConfig& ahc);
+  bool Restart(const std::string& host, int port);
+  void SetActivateHardwareConfig(const ActivateHardwareConfig& ahc);
+  bool ShouldRestart() const { return !!ahc_; }
+  void UpdateHardwareInfos();
+ private:
+  std::optional<ActivateHardwareConfig> ahc_;
 };
 }  // namespace services

@@ -13,6 +13,9 @@ struct LLaMACppComputationMemoryUsage {
   GGUFBytesScalar
       compute;  // Memory usage for computation graph (renamed from "graph")
   GGUFBytesScalar output;  // Memory usage for output during computation
+  GGUFBytesScalar Sum() const {
+    return footprint + input + std::max(compute, output);
+  }
 };
 
 struct LLaMACppParameterUsage {
@@ -26,11 +29,13 @@ struct LLaMACppWeightMemoryUsage {
   GGUFBytesScalar input;    // Memory usage for loading input tensors
   GGUFBytesScalar compute;  // Memory usage for loading compute tensors
   GGUFBytesScalar output;   // Memory usage for loading output tensors
+  GGUFBytesScalar Sum() const { return input + compute + output; }
 };
 
 struct LLaMACppKVCacheMemoryUsage {
   GGUFBytesScalar key;    // Memory usage for caching previous keys
   GGUFBytesScalar value;  // Memory usage for caching previous values
+  GGUFBytesScalar Sum() const { return key + value; }
 };
 
 struct LLaMACppRunDeviceUsage {
@@ -49,102 +54,6 @@ struct LLaMACppRunDeviceUsage {
   LLaMACppComputationMemoryUsage
       computation;  // Memory usage of computation processed by the device
 };
-
-// Elements returns the number of elements of the GGUFTensorInfo,
-// which is inspired by
-// https://github.com/ggerganov/ggml/blob/a10a8b880c059b3b29356eb9a9f8df72f03cdb6a/src/ggml.c#L2597-L2601.
-inline uint64_t Elements(const GGUFTensorInfo& ti) {
-  if (ti.n_dimensions == 0) {
-    return 0;
-  }
-
-  uint64_t ret = 1;
-  for (size_t i = 0; i < ti.n_dimensions; i++) {
-    ret *= ti.dimensions[i];
-  }
-  return ret;
-}
-
-// Bytes returns the number of bytes of the GGUFTensorInfo,
-// which is inspired by
-// https://github.com/ggerganov/ggml/blob/a10a8b880c059b3b29356eb9a9f8df72f03cdb6a/src/ggml.c#L2609-L2626.
-inline uint64_t Bytes(const GGUFTensorInfo& ti) {
-  if (ti.n_dimensions == 0) {
-    return 0;
-  }
-
-  if (kGGMLTypeTraits.find(ti.type) == kGGMLTypeTraits.end()) {
-    std::cout << "Invalid type: " << ti.type << std::endl;
-    assert(false);
-  }
-
-  auto& tt = kGGMLTypeTraits.at(ti.type);
-
-  std::vector<uint64_t> nb(ti.n_dimensions);
-  nb[0] = tt.type_size;
-  nb[1] = nb[0] * (ti.dimensions[0] / tt.block_size);
-  for (size_t i = 2; i < ti.n_dimensions; i++) {
-    nb[i] = nb[i - 1] * ti.dimensions[i - 1];
-  }
-
-  uint64_t ret;
-
-  if (tt.block_size == 1) {
-    ret = tt.type_size;
-    for (size_t i = 0; i < ti.n_dimensions; i++) {
-      ret += (ti.dimensions[i] - 1) * nb[1];
-    }
-    return ret;
-  }
-
-  ret = ti.dimensions[0] * nb[0] / tt.block_size;
-  for (size_t i = 1; i < ti.n_dimensions; i++) {
-    ret += (ti.dimensions[i] - 1) * nb[i];
-  }
-  return ret;
-}
-
-// Count returns the number of GGUF tensors of the GGUFTensorInfo,
-// which is always 1.
-inline uint64_t Count(GGUFTensorInfo& ti) {
-  return 1;
-}
-
-// Elements returns the number of elements of the GGUFTensorInfos.
-inline uint64_t Elements(const GGUFTensorInfos& tis) {
-  uint64_t ret;
-  for (auto const& ti : tis) {
-    ret += Elements(ti);
-  }
-  return ret;
-}
-
-// Bytes returns the number of bytes of the GGUFTensorInfos.
-inline uint64_t Bytes(const GGUFTensorInfos& tis) {
-  uint64_t ret;
-  for (auto const& ti : tis) {
-    ret += Bytes(ti);
-  }
-  return ret;
-}
-
-// Elements returns the number of elements of the GGUFLayerTensorInfos.
-inline uint64_t Elements(const GGUFFile::GGUFLayerTensorInfos& ltis) {
-  uint64_t ret;
-  for (auto const& lti : ltis) {
-    ret += Elements(*lti);
-  }
-  return ret;
-}
-
-// Bytes returns the number of bytes of the GGUFLayerTensorInfos.
-inline uint64_t Bytes(const GGUFFile::GGUFLayerTensorInfos& ltis) {
-  uint64_t ret;
-  for (auto const& lti : ltis) {
-    ret += Bytes(*lti);
-  }
-  return ret;
-}
 
 // Search returns a list of GGUFMetadataKV with the keys that match the given regex.
 inline std::vector<GGUFMetadataKV> Search(
@@ -168,11 +77,11 @@ inline std::vector<GGUFTensorInfo> Search(const GGUFTensorInfo& ti,
 }
 
 // Search returns a list of GGUFTensorInfo with the names that match the given regex.
-inline std::vector<GGUFTensorInfo> Search(const GGUFTensorInfos& tis,
-                                          const std::regex& key_regex) {
-  std::vector<GGUFTensorInfo> infos;
+inline std::vector<std::shared_ptr<GGUFTensorInfo>> Search(
+    const GGUFTensorInfos& tis, const std::regex& key_regex) {
+  std::vector<std::shared_ptr<GGUFTensorInfo>> infos;
   for (auto& ti : tis) {
-    if (std::regex_match(ti.name, key_regex)) {
+    if (std::regex_match(ti->name, key_regex)) {
       infos.push_back(ti);
     }
   }
@@ -180,20 +89,49 @@ inline std::vector<GGUFTensorInfo> Search(const GGUFTensorInfos& tis,
 }
 
 // Search returns a list of GGUFTensorInfo with the names that match the given regex.
-inline std::vector<GGUFTensorInfo> Search(
+inline std::vector<std::shared_ptr<GGUFTensorInfo>> Search(
+    const GGUFNamedTensorInfos& tis, const std::regex& key_regex) {
+  std::vector<std::shared_ptr<GGUFTensorInfo>> infos;
+  for (auto& tii : tis.items) {
+    if (auto v = std::dynamic_pointer_cast<GGUFNamedTensorInfos>(tii)) {
+      auto ret = Search(*v, key_regex);
+      infos.insert(infos.end(), ret.begin(), ret.end());
+    } else if (auto v = std::dynamic_pointer_cast<GGUFTensorInfo>(tii)) {
+      if (std::regex_match(tii->name, key_regex)) {
+        infos.push_back(std::static_pointer_cast<GGUFTensorInfo>(tii));
+      }
+    }
+  }
+  return infos;
+}
+
+// Search returns a list of GGUFTensorInfo with the names that match the given regex.
+inline std::vector<std::shared_ptr<GGUFTensorInfo>> Search(
     const GGUFFile::GGUFLayerTensorInfos& ltis, const std::regex& key_regex) {
-  std::vector<GGUFTensorInfo> infos;
+  std::vector<std::shared_ptr<GGUFTensorInfo>> infos;
   for (size_t i = 0; i < ltis.size(); i++) {
     if (auto v = std::dynamic_pointer_cast<GGUFNamedTensorInfos>(ltis[i])) {
-      for (auto gti : v->items) {
-        if (std::regex_match(gti->name, key_regex)) {
-          infos.push_back(*gti);
-        }
-      }
-    } else {
+      auto ret = Search(v->items, key_regex);
+      infos.insert(infos.end(), ret.begin(), ret.end());
+    } else if (auto v = std::dynamic_pointer_cast<GGUFTensorInfo>(ltis[i])) {
       if (std::regex_match(v->name, key_regex)) {
-        infos.push_back(*v);
+        infos.push_back(v);
       }
+    }
+  }
+
+  return infos;
+}
+
+inline std::vector<std::shared_ptr<GGUFTensorInfo>> Search(
+    const std::shared_ptr<GGUFTensorInfoI>& tii, const std::regex& key_regex) {
+  std::vector<std::shared_ptr<GGUFTensorInfo>> infos;
+  if (auto v = std::dynamic_pointer_cast<GGUFNamedTensorInfos>(tii)) {
+    auto ret = Search(*v, key_regex);
+    infos.insert(infos.end(), ret.begin(), ret.end());
+  } else {
+    if (std::regex_match(tii->name, key_regex)) {
+      infos.push_back(std::static_pointer_cast<GGUFTensorInfo>(tii));
     }
   }
 
@@ -208,36 +146,36 @@ enum LLaMACppSplitMode : uint32_t {
 };
 
 struct LLaMACppRunEstimateOptions {
-  GGUFArchitecture architecture;  // Pointer to architecture
-  GGUFTokenizer tokenizer;        // Pointer to tokenizer
-  int32_t context_size;           // context size
-  bool in_max_context_size;       // Flag for max context size
-  int32_t logical_batch_size;     // logical batch size
-  int32_t physical_batch_size;    // physical batch size
-  int32_t parallel_size;          // parallel size
-  GGMLType cache_key_type;        // cache key type
-  GGMLType cache_value_type;      // cache value type
-  bool offload_kv_cache;          // offload KV cache flag
-  uint64_t offfload_layers;       // offload layers count
-  bool flash_attention;           // Flag for flash attention
-  LLaMACppSplitMode split_mode;   // Split mode enum value
+  GGUFArchitecture architecture;              // Pointer to architecture
+  GGUFTokenizer tokenizer;                    // Pointer to tokenizer
+  int32_t context_size = 2048;                // context size
+  bool in_max_context_size;                   // Flag for max context size
+  int32_t logical_batch_size = 2048u;         // logical batch size
+  int32_t physical_batch_size = 512u;         // physical batch size
+  int32_t parallel_size;                      // parallel size
+  GGMLType cache_key_type = GGML_TYPE_F16;    // cache key type
+  GGMLType cache_value_type = GGML_TYPE_F16;  // cache value type
+  bool offload_kv_cache = true;               // offload KV cache flag
+  uint64_t offfload_layers;                   // offload layers count
+  bool flash_attention = true;                // Flag for flash attention
+  LLaMACppSplitMode split_mode;               // Split mode enum value
   std::vector<double>
-      tensor_split_fraction;            // Vector for tensor split fractions
-  int main_gpu_index;                   // Index of the main GPU
-  std::vector<std::string> RPCServers;  // List of RPC servers
+      tensor_split_fraction;             // Vector for tensor split fractions
+  int main_gpu_index;                    // Index of the main GPU
+  std::vector<std::string> rpc_servers;  // List of RPC servers
 
   std::shared_ptr<LLaMACppRunEstimate>
-      Projector;  // Pointer to projector estimate (optional)
+      projector;  // Pointer to projector estimate (optional)
   std::shared_ptr<LLaMACppRunEstimate>
-      Drafter;  // Pointer to drafter estimate (optional)
+      drafter;  // Pointer to drafter estimate (optional)
   std::vector<LLaMACppRunEstimate>
-      Adapters;  // Vector of adapter estimates (optional)
+      adapters;  // Vector of adapter estimates (optional)
   // std::vector<LLaMACppRunDeviceMetric> DeviceMetrics; // Vector of device metrics (optional)
 };
 
 struct LLaMACppRunEstimate {
-  std::string type;             // Type of the GGUF file
-  std::string architecture;     // Architecture description
+  std::string type;             // type of the GGUF file
+  std::string architecture;     // architecture description
   bool flash_attention;         // Flag for flash attention
   uint64_t context_size;        // Size of the context
   uint64_t offload_layers;      // Number of offloaded layers
@@ -250,7 +188,7 @@ struct LLaMACppRunEstimate {
   int32_t physical_batch_size;  // Physical batch size
 
   std::vector<LLaMACppRunDeviceUsage>
-      Devices;  // Usage for running the GGUF file
+      devices;  // Usage for running the GGUF file
 
   std::shared_ptr<LLaMACppRunEstimate>
       drafter;  // Memory usage of drafter (optional)
@@ -262,16 +200,9 @@ struct LLaMACppRunEstimate {
       maximum_tokens_per_second;  // Max tokens per second (optional)
 };
 
-LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
+inline LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf,
+                                               LLaMACppRunEstimateOptions& o) {
   LLaMACppRunEstimate e;
-  LLaMACppRunEstimateOptions o;
-  o.context_size = 2048;
-  o.cache_key_type = GGML_TYPE_F16;
-  o.cache_value_type = GGML_TYPE_F16;
-  o.offload_kv_cache = true;
-  o.logical_batch_size = 2048u;
-  o.physical_batch_size = 512u;
-  o.flash_attention = true;
 
   e.logical_batch_size = o.logical_batch_size;
   e.physical_batch_size = o.physical_batch_size;
@@ -291,39 +222,41 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
   n_parallell = 1;
   nKV = n_ctx;
 
-  uint64_t nOffloadLayers, nActualOffloadLayers;
-  auto nLoadLayers = 1;  // TODO
-  bool fullOffload, zeroOffload;
+  uint64_t n_offload_layers, n_actual_offload_layers;
+  auto n_load_layers = 1;  // TODO
+  bool full_offload, zero_offload;
 
   bool is_offload_output_layer;
 
-  GGUFArchitecture a = gf.Architecture();
+  GGUFArchitecture a = gf.architecture();
   GGUFTokenizer t = gf.Tokenizer();
 
-  e.type = a.Type;
-  e.architecture = a.Architecture;
+  e.type = a.type;
+  e.architecture = a.architecture;
 
+  // GGUF_LOG("type: " << a.type);
+  // GGUF_LOG("architecture: " << a.architecture);
   // Flash attention.
-  if (a.Type == "model") {
+  if (a.type == "model") {
     // Quantization requires flash attention,
     // see https://github.com/ggerganov/llama.cpp/blob/172c8256840ffd882ab9992ecedbb587d9b21f15/llama.cpp#L16055-L16058.
-    // if (*o.CacheValueType > GGML_TYPE_F16 && !o.FlashAttention) {
-    // 	o.FlashAttention = true;
-    // }
+    if (o.cache_value_type > GGML_TYPE_F16 && !o.flash_attention) {
+      o.flash_attention = true;
+    }
     // Grok is not compatible with flash attention,
     // see https://github.com/ggerganov/llama.cpp/blob/172c8256840ffd882ab9992ecedbb587d9b21f15/llama.cpp#L16050-L16053.
-    // if (a.Architecture == "grok") {
-    // 	o.FlashAttention = false;
-    // }
+    if (a.architecture == "grok") {
+      o.flash_attention = false;
+    }
 
-    // e.FlashAttention = o.FlashAttention;
+    e.flash_attention = o.flash_attention;
   }
 
   // Embedding.
-  if (a.Type == "model" && !a.AttentionCausal) {
-    // e.EmbeddingOnly = true;
-    // o.PhysicalBatchSize = o.LogicalBatchSize;
-    // // Reranking.
+  if (a.type == "model" && !a.attention_causal) {
+    e.embedding_only = true;
+    o.physical_batch_size = o.logical_batch_size;
+    // Reranking.
     // if _, found := gf.TensorInfos.Index([]string{"cls.bias", "cls.weight"}); found > 0 {
     // 	e.Reranking = true
     // }
@@ -333,17 +266,17 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
   // see https://github.com/ggerganov/llama.cpp/blob/a07c32ea54850c989f0ef6989da5b955b77b7172/ggml/src/ggml-rpc.cpp#L391-L397.
   {
     e.distributable = false;
-    if (a.Type == "model") {
+    if (a.type == "model") {
       e.distributable = true;
       for (size_t i = 0; i < gf.tensor_infos.size(); i++) {
-        if (auto it = kGGMLTypeTraits.find(gf.tensor_infos[i].type);
+        if (auto it = kGGMLTypeTraits.find(gf.tensor_infos[i]->type);
             it != kGGMLTypeTraits.end() && !it->second.is_quantized) {
           continue;
         }
-        if (gf.tensor_infos[i].dimensions.size() == 0) {
+        if (gf.tensor_infos[i]->dimensions.size() == 0) {
           continue;
         }
-        if (gf.tensor_infos[i].dimensions.size() % 512 == 0) {
+        if (gf.tensor_infos[i]->dimensions.size() % 512 == 0) {
           continue;
         }
         e.distributable = false;
@@ -352,14 +285,14 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
     }
   }
 
-  e.Devices.resize(2);
-  for (size_t i = 0; i < e.Devices.size(); i++) {
-    e.Devices[i].handle_last_layer = -1;
+  e.devices.resize(2);
+  for (size_t i = 0; i < e.devices.size(); i++) {
+    e.devices[i].handle_last_layer = -1;
   }
   // Footprint
   {
 
-    e.Devices[0].footprint = GGUFBytesScalar(5 * 1024 * 1024) /* model load */ +
+    e.devices[0].footprint = GGUFBytesScalar(5 * 1024 * 1024) /* model load */ +
                              (gf.size - gf.model_size) /* metadata */;
 
     // Tokens,
@@ -370,16 +303,16 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
     }
     fp += t.tokens_length *
           (32 /* id to token vector */ + (24 + 32) /* token to id map*/);
-    e.Devices[0].footprint += GGUFBytesScalar(fp);
+    e.devices[0].footprint += GGUFBytesScalar(fp);
 
     // Output buffer,
     // see https://github.com/ggerganov/llama.cpp/blob/7672adeec7a79ea271058c63106c142ba84f951a/llama.cpp#L11940-L12003.
-    float ob = 4 /* float32 size */ * (a.VocabularyLength + a.EmbeddingLength) *
-               n_parallell;
-    if (fullOffload) {
-      e.Devices[e.Devices.size() - 1].footprint += GGUFBytesScalar(ob);
+    float ob = 4 /* float32 size */ *
+               (a.vocabulary_length + a.embedding_length) * n_parallell;
+    if (full_offload) {
+      e.devices[e.devices.size() - 1].footprint += GGUFBytesScalar(ob);
     } else {
-      e.Devices[0].footprint += GGUFBytesScalar(ob);
+      e.devices[0].footprint += GGUFBytesScalar(ob);
     }
   }
 
@@ -391,6 +324,9 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
                   "output.bias", "output_norm.weight", "output_norm.bias"});
   auto& ioLs = cr0.before;
   auto& tfLs = cr0.after;
+  //   for(auto& t: tfLs) {
+  // GGUF_LOG(t->name << " " << t->type);
+  //   }
 
   auto cr1 = gf.Cut(ioLs, {"token_embd.weight", "token_embd_norm.weight",
                            "token_embd_norm.bias", "token_types.weight"});
@@ -401,88 +337,89 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
   // Weight
   {
     // Compute.
-    if (a.Type == "model") {
+    if (a.type == "model") {
       for (size_t i = 0, j = 0,
-                  offloadStart = tfLs.size() - int(nOffloadLayers);
+                  offloadStart = tfLs.size() - int(n_offload_layers);
            i < tfLs.size(); i++) {
-        if (i < int(nLoadLayers)) {
-          e.Devices[0].handle_layers += 1;
-          e.Devices[0].handle_last_layer = i;
-          e.Devices[0].weight.compute += GGUFBytesScalar(Bytes(*(tfLs[i])));
-          e.Devices[0].parameter.compute +=
-              GGUFParametersScalar(Elements(*(tfLs[i])));
+        if (i < int(n_load_layers)) {
+          e.devices[0].handle_layers += 1;
+          e.devices[0].handle_last_layer = i;
+          e.devices[0].weight.compute += GGUFBytesScalar(tfLs[i]->Bytes());
+          e.devices[0].parameter.compute +=
+              GGUFParametersScalar(tfLs[i]->Elements());
         } else if (i >= offloadStart) {
-          double x = double(i - offloadStart) / double(nActualOffloadLayers);
+          double x = double(i - offloadStart) / double(n_actual_offload_layers);
           j = std::upper_bound(o.tensor_split_fraction.begin(),
                                o.tensor_split_fraction.end(), x) -
               o.tensor_split_fraction.begin();
-          e.Devices[j + 1].handle_layers += 1;
-          e.Devices[j + 1].handle_last_layer = i;
-          e.Devices[j + 1].remote = j < o.RPCServers.size();
-          if (e.Devices[j + 1].remote) {
-            e.Devices[j + 1].position = j;
+          e.devices[j + 1].handle_layers += 1;
+          e.devices[j + 1].handle_last_layer = i;
+          e.devices[j + 1].remote = j < o.rpc_servers.size();
+          if (e.devices[j + 1].remote) {
+            e.devices[j + 1].position = j;
           } else {
-            e.Devices[j + 1].position = j - o.RPCServers.size();
+            e.devices[j + 1].position = j - o.rpc_servers.size();
           }
-          e.Devices[j + 1].weight.compute += GGUFBytesScalar(Bytes(*(tfLs[i])));
-          e.Devices[j + 1].parameter.compute +=
-              GGUFParametersScalar(Elements(*(tfLs[i])));
+          e.devices[j + 1].weight.compute +=
+              GGUFBytesScalar((tfLs[i])->Bytes());
+          e.devices[j + 1].parameter.compute +=
+              GGUFParametersScalar(tfLs[i]->Elements());
         }
       }
     } else {
-      e.Devices[1].weight.compute = GGUFBytesScalar(Bytes(ls));
-      e.Devices[1].parameter.compute = GGUFParametersScalar(Elements(ls));
+      e.devices[1].weight.compute = GGUFBytesScalar(Bytes(ls));
+      e.devices[1].parameter.compute = GGUFParametersScalar(Elements(ls));
     }
 
     // IO,
     // see https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L4930-L5002.
-    e.Devices[0].weight.input = GGUFBytesScalar(Bytes(ipLs));
-    e.Devices[0].parameter.input = GGUFParametersScalar(Elements(ipLs));
+    e.devices[0].weight.input = GGUFBytesScalar(Bytes(ipLs));
+    e.devices[0].parameter.input = GGUFParametersScalar(Elements(ipLs));
     GGUFBytesScalar wg;
     GGUFParametersScalar ps;
     if (auto [_, ok] = gf.Get(opLs, "output.weight"); ok) {
       wg = GGUFBytesScalar(Bytes(opLs));
       ps = GGUFParametersScalar(Elements(opLs));
-    } else if (a.AttentionCausal) {
+    } else if (a.attention_causal) {
       wg = GGUFBytesScalar(Bytes(opLs)) +
-           e.Devices[0].weight.input; /* duplicate the input layer */
+           e.devices[0].weight.input; /* duplicate the input layer */
       ps = GGUFParametersScalar(Elements(opLs) + Elements(ipLs));
     }
-    e.Devices[0].weight.output = wg;
-    if (fullOffload) {
-      e.Devices[e.Devices.size() - 1].handle_output_layer = true;
-      e.Devices[e.Devices.size() - 1].weight.output = wg;
-      e.Devices[e.Devices.size() - 1].parameter.output = ps;
+    e.devices[0].weight.output = wg;
+    if (full_offload) {
+      e.devices[e.devices.size() - 1].handle_output_layer = true;
+      e.devices[e.devices.size() - 1].weight.output = wg;
+      e.devices[e.devices.size() - 1].parameter.output = ps;
     } else {
-      e.Devices[0].handle_output_layer = true;
-      e.Devices[0].parameter.output = ps;
+      e.devices[0].handle_output_layer = true;
+      e.devices[0].parameter.output = ps;
     }
   }
 
   // KV cache,
   // see https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L2479-L2501.
   {
-    auto kps = a.EmbeddingKeyGQA * nKV;
-    auto vps = a.EmbeddingValueGQA * nKV;
+    auto kps = a.embedding_key_gqa * nKV;
+    auto vps = a.embedding_value_gqa * nKV;
     auto krs = RowSizeOf({kps}, o.cache_key_type).value_or(0);
     auto vrs = RowSizeOf({vps}, o.cache_key_type).value_or(0);
 
-    e.Devices[0].kv_cache.key = GGUFBytesScalar(krs * nLoadLayers);
-    e.Devices[0].kv_cache.value = GGUFBytesScalar(vrs * nLoadLayers);
-    e.Devices[0].parameter.kv_cache =
-        GGUFParametersScalar((kps + vps) * nLoadLayers);
+    e.devices[0].kv_cache.key = GGUFBytesScalar(krs * n_load_layers);
+    e.devices[0].kv_cache.value = GGUFBytesScalar(vrs * n_load_layers);
+    e.devices[0].parameter.kv_cache =
+        GGUFParametersScalar((kps + vps) * n_load_layers);
     if (!o.offload_kv_cache) {
-      e.Devices[0].kv_cache.key += GGUFBytesScalar(krs * nOffloadLayers);
-      e.Devices[0].kv_cache.value += GGUFBytesScalar(vrs * nOffloadLayers);
-      e.Devices[0].parameter.kv_cache +=
-          GGUFParametersScalar((kps + vps) * nOffloadLayers);
-    } else if (!zeroOffload) {
-      for (size_t i = 1; i < e.Devices.size(); i++) {
-        auto& d = e.Devices[i];
-        e.Devices[i + 1].kv_cache.key = GGUFBytesScalar(krs * d.handle_layers);
-        e.Devices[i + 1].kv_cache.value =
+      e.devices[0].kv_cache.key += GGUFBytesScalar(krs * n_offload_layers);
+      e.devices[0].kv_cache.value += GGUFBytesScalar(vrs * n_offload_layers);
+      e.devices[0].parameter.kv_cache +=
+          GGUFParametersScalar((kps + vps) * n_offload_layers);
+    } else if (!zero_offload) {
+      for (size_t i = 1; i < e.devices.size(); i++) {
+        auto& d = e.devices[i];
+        e.devices[i + 1].kv_cache.key = GGUFBytesScalar(krs * d.handle_layers);
+        e.devices[i + 1].kv_cache.value =
             GGUFBytesScalar(vrs * d.handle_layers);
-        e.Devices[i + 1].parameter.kv_cache =
+        e.devices[i + 1].parameter.kv_cache =
             GGUFParametersScalar((kps + vps) * d.handle_layers);
       }
     }
@@ -494,17 +431,17 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
     auto cm =
         GGMLTensorOverhead() * kGGMLComputationGraphNodesMaximum +
         GGMLComputationGraphOverhead(kGGMLComputationGraphNodesMaximum, false);
-    e.Devices[0].computation.footprint = GGUFBytesScalar(cm);
+    e.devices[0].computation.footprint = GGUFBytesScalar(cm);
 
     // Scheduler overhead,
     // see https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L16149.
-    e.Devices[0].computation.footprint += GGUFBytesScalar(4 * 1024 * 1024);
+    e.devices[0].computation.footprint += GGUFBytesScalar(4 * 1024 * 1024);
 
     // GGML context,
     // see https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L5015-L5036.
     auto gc = 2 /* buffer count */ * GGMLTensorOverhead() *
-              (uint64_t(gf.tensor_infos.size()) + 1 + a.BlockCount * 3);
-    e.Devices[0].computation.footprint += GGUFBytesScalar(gc);
+              (uint64_t(gf.tensor_infos.size()) + 1 + a.block_count * 3);
+    e.devices[0].computation.footprint += GGUFBytesScalar(gc);
 
     // Tensor usage,
     // see https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L16149.
@@ -514,7 +451,7 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
 
     auto inpTokens =
         RowSizeOf({n_batch}, GGML_TYPE_I32).value_or(0);  // I32 [n_batch]
-    auto inpEmbd = RowSizeOf({a.EmbeddingLength, n_batch}, GGML_TYPE_F32)
+    auto inpEmbd = RowSizeOf({a.embedding_length, n_batch}, GGML_TYPE_F32)
                        .value_or(0);  // F32 [n_embd, n_batch]
     auto inpPos =
         RowSizeOf({n_batch}, GGML_TYPE_I32).value_or(0);  // I32 [n_batch]
@@ -527,22 +464,22 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
     auto inpSSeq = RowSizeOf({nKV, n_batch}, GGML_TYPE_I32)
                        .value_or(0);  // I32 [n_kv, n_batch]
 
-    if (a.Type == "model" && a.Architecture == "mamba") {
-      e.Devices[0].computation.input =
+    if (a.type == "model" && a.architecture == "mamba") {
+      e.devices[0].computation.input =
           GGUFBytesScalar(inpTokens + inpEmbd + inpSMask + inpSSeq + inpOutIds);
-      if (!zeroOffload) {
+      if (!zero_offload) {
         auto v = GGUFBytesScalar(inpEmbd + inpSMask + inpSSeq + inpOutIds);
-        for (size_t i = 1; i < e.Devices.size(); i++) {
-          e.Devices[i + 1].computation.input += v;
+        for (size_t i = 1; i < e.devices.size(); i++) {
+          e.devices[i + 1].computation.input += v;
         }
       }
-    } else if (a.Type == "model") {
-      e.Devices[0].computation.input =
+    } else if (a.type == "model") {
+      e.devices[0].computation.input =
           GGUFBytesScalar(inpTokens + inpEmbd + inpPos + inpKQMask + inpOutIds);
-      if (!zeroOffload) {
+      if (!zero_offload) {
         auto v = GGUFBytesScalar(inpEmbd + inpPos + inpKQMask + inpOutIds);
-        for (size_t i = 1; i < e.Devices.size(); i++) {
-          e.Devices[i + 1].computation.input += v;
+        for (size_t i = 1; i < e.devices.size(); i++) {
+          e.devices[i + 1].computation.input += v;
         }
       }
     }
@@ -551,146 +488,148 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
     // the allocated memory can be reused for the next layer.
     // So, we only consider the usage of the largest layer,
     // which is the last layer by default.
-
-    if (a.Type == "model" && a.Architecture == "mamba") {
-      auto convInc = RowSizeOf({a.EmbeddingKeyGQA, nKV}, GGML_TYPE_F32)
+    if (a.type == "model" && a.architecture == "mamba") {
+      auto convInc = RowSizeOf({a.embedding_key_gqa, nKV}, GGML_TYPE_F32)
                          .value_or(0);  // F32 [n_embd_key_gqa, n_kv] reshape
-      std::regex pattern(R"(.*\.\d+\.(attn_norm|ssm_in|ssm_conv1d)\.weight)");
-      for (auto& l : Search(*(tfLs[tfLs.size() - 1]), pattern)) {
-        if (string_utils::EndsWith(l.name, ".ssm_conv1d.weight")) {
-          auto rs = RowSizeOf({l.dimensions[l.n_dimensions - 1], n_tokens},
+      std::regex pattern(R"(^.*\.\d+\.(attn_norm|ssm_in|ssm_conv1d)\.weight$)");
+      for (auto& l : Search(tfLs[tfLs.size() - 1], pattern)) {
+        if (string_utils::EndsWith(l->name, ".ssm_conv1d.weight")) {
+          auto rs = RowSizeOf({l->dimensions[l->n_dimensions - 1], n_tokens},
                               GGML_TYPE_F32);
           convInc += rs.value_or(0);
           continue;
         }
         // https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L10379.
-        auto rs = RowSizeOf({uint64_t(a.SSMInnerSize) * n_tokens +
-                             uint64_t(a.SSMConvolutionKernel) *
-                                 uint64_t(a.SSMInnerSize) * nKV},
+        auto rs = RowSizeOf({uint64_t(a.ssm_inner_size) * n_tokens +
+                             uint64_t(a.ssm_convolution_kernel) *
+                                 uint64_t(a.ssm_inner_size) * nKV},
                             GGML_TYPE_F32)
                       .value_or(0);
         convInc += rs;
       }
-      pattern = (R"(.*\.\d+\.ssm_(dt\.weight|a))");
+      pattern = (R"(^.*\.\d+\.ssm_(dt\.weight|a)$)");
       uint64_t ssmInc;
-      for (auto& l : Search(*(tfLs[tfLs.size() - 1]), pattern)) {
-        if (string_utils::EndsWith(l.name, ".ssm_a")) {
-          auto rs = RowSizeOf({l.dimensions[l.n_dimensions - 1], n_tokens},
+      for (auto& l : Search(tfLs[tfLs.size() - 1], pattern)) {
+        if (string_utils::EndsWith(l->name, ".ssm_a")) {
+          auto rs = RowSizeOf({l->dimensions[l->n_dimensions - 1], n_tokens},
                               GGML_TYPE_F32);
           ssmInc += rs.value_or(0);
           continue;
         }
         // https://github.com/ggerganov/llama.cpp/blob/d6ef0e77dd25f54fb5856af47e3926cf6f36c281/llama.cpp#L10413.
-        auto rs = RowSizeOf({uint64_t(a.SSMInnerSize) * n_tokens +
-                             uint64_t(a.SSMStateSize) *
-                                 uint64_t(a.SSMInnerSize) * nKV},
+        auto rs = RowSizeOf({uint64_t(a.ssm_inner_size) * n_tokens +
+                             uint64_t(a.ssm_state_size) *
+                                 uint64_t(a.ssm_inner_size) * nKV},
                             GGML_TYPE_F32)
                       .value_or(0);
         ssmInc += rs;
       }
       auto cp = GGUFBytesScalar(convInc + ssmInc);
-      for (size_t i = 1; i < e.Devices.size(); i++) {
-        e.Devices[i + 1].computation.compute = cp;
+      for (size_t i = 1; i < e.devices.size(); i++) {
+        e.devices[i + 1].computation.compute = cp;
       }
-    } else if (a.Type == "model") {
+    } else if (a.type == "model") {
       uint64_t loadAttnInc = 0;
-      uint64_t offloadAttnInc = 0;
+      uint64_t offload_attn_inc = 0;
       if (o.flash_attention) {
         // https://github.com/ggerganov/llama.cpp/blob/172c8256840ffd882ab9992ecedbb587d9b21f15/llama.cpp#L7387.
-        offloadAttnInc = RowSizeOf({nKV, n_tokens}, GGML_TYPE_F16).value_or(0);
-        std::regex pattern(R"(.*\.\d+\.attn_(norm|q|qkv)\.weight)");
-        for (auto& l : Search(*(tfLs[tfLs.size() - 1]), pattern)) {
-          if (string_utils::EndsWith(l.name, ".attn_norm.weight")) {
-            auto rs = RowSizeOf({l.dimensions[l.n_dimensions - 1], n_tokens},
+        offload_attn_inc =
+            RowSizeOf({nKV, n_tokens}, GGML_TYPE_F16).value_or(0);
+        std::regex pattern(R"(^.*\.\d+\.attn_(norm|q|qkv)\.weight$)");
+        for (auto& l : Search(tfLs[tfLs.size() - 1], pattern)) {
+          if (string_utils::EndsWith(l->name, ".attn_norm.weight")) {
+            auto rs = RowSizeOf({l->dimensions[l->n_dimensions - 1], n_tokens},
                                 GGML_TYPE_F32)
                           .value_or(0);
-            offloadAttnInc += rs;
+            offload_attn_inc += rs;
             continue;
           }
-          auto rs = Bytes(l);
-          offloadAttnInc += rs;
+          auto rs = l->Bytes();
+          offload_attn_inc += rs;
         }
         // https://github.com/ggerganov/llama.cpp/blob/172c8256840ffd882ab9992ecedbb587d9b21f15/llama.cpp#L6986-L6992.
-        auto rs = RowSizeOf({uint64_t(a.AttentionKeyLength), nKV,
-                             a.AttentionHeadCountKV},
+        auto rs = RowSizeOf({uint64_t(a.attention_key_length), nKV,
+                             a.attention_head_count_kv},
                             o.cache_key_type)
                       .value_or(0);
-        offloadAttnInc += rs;
+        offload_attn_inc += rs;
         // https://github.com/ggerganov/llama.cpp/blob/172c8256840ffd882ab9992ecedbb587d9b21f15/llama.cpp#L7000-L7007.
-        rs = RowSizeOf({uint64_t(a.AttentionValueLength), nKV,
-                        a.AttentionHeadCountKV},
+        rs = RowSizeOf({uint64_t(a.attention_value_length), nKV,
+                        a.attention_head_count_kv},
                        o.cache_value_type)
                  .value_or(0);
-        offloadAttnInc += rs;
+        offload_attn_inc += rs;
       } else {
-        uint64_t offloadAttnInc = 0;
-        std::regex pattern(R"(.*\.\d+\.attn_(norm|q|qkv)\.weight)");
-        for (auto& l : Search(*(tfLs[tfLs.size() - 1]), pattern)) {
+        uint64_t offload_attn_inc = 0;
+        std::regex pattern(R"(^.*\.\d+\.attn_(norm|q|qkv)\.weight$)");
+        for (auto& l : Search(tfLs[tfLs.size() - 1], pattern)) {
           uint64_t rs;
 
-          if (string_utils::EndsWith(l.name, ".attn_q.weight")) {
-            rs = RowSizeOf({l.dimensions[0], n_tokens}, GGML_TYPE_F32)
+          if (string_utils::EndsWith(l->name, ".attn_q.weight")) {
+            rs = RowSizeOf({l->dimensions[0], n_tokens}, GGML_TYPE_F32)
                      .value_or(0);
-            offloadAttnInc += rs * 2;  // Qcur, Qcur + RoPE.
-            loadAttnInc = rs;          // Vcur.
-            rs = RowSizeOf({nKV, n_tokens, a.AttentionHeadCount}, GGML_TYPE_F32)
-                     .value_or(0);
-            offloadAttnInc += rs;  // kq.
-            rs = RowSizeOf({uint64_t(a.AttentionKeyLength), nKV,
-                            a.AttentionHeadCountKV},
-                           o.cache_key_type)
-                     .value_or(0);
-            offloadAttnInc += rs * 2;  // k-?, v-?.
-          } else if (string_utils::EndsWith(l.name, ".attn_qkv.weight")) {
-            rs = RowSizeOf({l.dimensions[0], n_tokens}, GGML_TYPE_F32)
-                     .value_or(0);
-            offloadAttnInc += rs * 2;  // Qcur, Qcur + RoPE.
-            loadAttnInc = rs;          // Vcur.
-            rs = RowSizeOf({nKV, n_tokens, a.AttentionHeadCount}, GGML_TYPE_F32)
-                     .value_or(0);
-            offloadAttnInc += rs;  // kq.
-            rs = RowSizeOf({uint64_t(a.AttentionKeyLength), nKV,
-                            a.AttentionHeadCountKV},
-                           o.cache_key_type)
-                     .value_or(0);
-            offloadAttnInc += rs * 2;  // k-?, v-?.
-          } else {
-            rs = RowSizeOf({l.dimensions[l.n_dimensions - 1], n_tokens},
+            offload_attn_inc += rs * 2;  // Qcur, Qcur + RoPE.
+            loadAttnInc = rs;            // Vcur.
+            rs = RowSizeOf({nKV, n_tokens, a.attention_head_count},
                            GGML_TYPE_F32)
                      .value_or(0);
-            offloadAttnInc += rs;
+            offload_attn_inc += rs;  // kq.
+            rs = RowSizeOf({uint64_t(a.attention_key_length), nKV,
+                            a.attention_head_count_kv},
+                           o.cache_key_type)
+                     .value_or(0);
+            offload_attn_inc += rs * 2;  // k-?, v-?.
+          } else if (string_utils::EndsWith(l->name, ".attn_qkv.weight")) {
+            rs = RowSizeOf({l->dimensions[0], n_tokens}, GGML_TYPE_F32)
+                     .value_or(0);
+            offload_attn_inc += rs * 2;  // Qcur, Qcur + RoPE.
+            loadAttnInc = rs;            // Vcur.
+            rs = RowSizeOf({nKV, n_tokens, a.attention_head_count},
+                           GGML_TYPE_F32)
+                     .value_or(0);
+            offload_attn_inc += rs;  // kq.
+            rs = RowSizeOf({uint64_t(a.attention_key_length), nKV,
+                            a.attention_head_count_kv},
+                           o.cache_key_type)
+                     .value_or(0);
+            offload_attn_inc += rs * 2;  // k-?, v-?.
+          } else {
+            rs = RowSizeOf({l->dimensions[l->n_dimensions - 1], n_tokens},
+                           GGML_TYPE_F32)
+                     .value_or(0);
+            offload_attn_inc += rs;
           }
         }
       }
       uint64_t ffnInc = 0;
       std::regex pattern(
-          R"(.*\.\d+\.(attn_norm|ffn_norm|ffn_gate|ffn_up)\.weight)");
-      for (auto& l : Search(*(tfLs[tfLs.size() - 1]), pattern)) {
-        auto rs = RowSizeOf({l.dimensions[l.n_dimensions - 1], n_tokens},
+          R"(^.*\.\d+\.(attn_norm|ffn_norm|ffn_gate|ffn_up)\.weight$)");
+      for (auto& l : Search(tfLs[tfLs.size() - 1], pattern)) {
+        auto rs = RowSizeOf({l->dimensions[l->n_dimensions - 1], n_tokens},
                             GGML_TYPE_F32)
                       .value_or(0);
         ffnInc += rs;
       }
-      if (!zeroOffload) {
-        e.Devices[0].computation.compute =
+      if (!zero_offload) {
+        e.devices[0].computation.compute =
             GGUFBytesScalar(loadAttnInc + ffnInc);
       } else {
-        e.Devices[0].computation.compute = GGUFBytesScalar(loadAttnInc);
+        e.devices[0].computation.compute = GGUFBytesScalar(loadAttnInc);
       }
-      auto cp = GGUFBytesScalar(std::max(offloadAttnInc, ffnInc));
-      for (size_t i = 1; i < e.Devices.size(); i++) {
-        e.Devices[i + 1].computation.compute = cp;
+      auto cp = GGUFBytesScalar(std::max(offload_attn_inc, ffnInc));
+      for (size_t i = 1; i < e.devices.size(); i++) {
+        e.devices[i + 1].computation.compute = cp;
       }
       // Special case: we cannot use mmap for splitting expert weights in MoE.
-      if (a.ExpertCount > 0) {
-        std::regex pattern(R"(.*\.\d+\.ffn_gate_exps\.weight)");
-        e.no_mmap = Search(*(tfLs[0]), pattern).size() == 0;
+      if (a.expert_count > 0) {
+        std::regex pattern(R"(^.*\.\d+\.ffn_gate_exps\.weight$)");
+        e.no_mmap = Search(tfLs[0], pattern).size() == 0;
       }
     }
     // Finally, get the usage of output layer.
-    if (a.Type == "model") {
+    if (a.type == "model") {
       uint64_t outInc;
-      if (a.Architecture == "mamba") {
+      if (a.architecture == "mamba") {
         outInc += inpSMask + inpSSeq;
       }
       if (auto [l, ok] = gf.Get(opLs, "output.weight"); ok) {
@@ -705,26 +644,26 @@ LLaMACppRunEstimate EstimateLLaMACppRun(GGUFFile& gf) {
         outInc += rs;
       }
       size_t idx = 0;  // Default to the main host's RAM.
-      if (!fullOffload) {
-        if (e.Devices.size() !=
-            o.RPCServers.size() + 1) {  // If the main host has a GPU.
-          outInc += uint64_t(e.Devices[0].weight.output);
+      if (!full_offload) {
+        if (e.devices.size() !=
+            o.rpc_servers.size() + 1) {  // If the main host has a GPU.
+          outInc += uint64_t(e.devices[0].weight.output);
           idx = o.main_gpu_index + 1;
         }
       } else {
-        idx = e.Devices.size() - 1;  // The last device is the output device.
+        idx = e.devices.size() - 1;  // The last device is the output device.
       }
-      e.Devices[idx].computation.output += GGUFBytesScalar(outInc);
+
+      // e.devices[idx].computation.output += GGUFBytesScalar(outInc);
+      e.devices[0].computation.output += GGUFBytesScalar(outInc);
     }
   }
+  return e;
 }
 
-// Return vram, ram
+// Still have some bugs, bypass for now
 inline std::pair<uint64_t, uint64_t> EstimateLLaMACppRun(
     const std::string& file_path, int ngl, int ctx_len) {
-  if(file_path.find("tinyllama") != std::string::npos) 
-    return std::pair(600, 600);
-
-  return std::pair(6000, 6000);
+  return std::pair(0u, 0u);
 }
 }  // namespace hardware

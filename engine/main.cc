@@ -36,7 +36,7 @@
 #error "Unsupported platform!"
 #endif
 
-void RunServer(std::optional<int> port) {
+void RunServer(std::optional<int> port, bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   signal(SIGINT, SIG_IGN);
 #elif defined(_WIN32)
@@ -56,8 +56,10 @@ void RunServer(std::optional<int> port) {
       CTL_ERR("Error update " << config_path.string() << result.error());
     }
   }
-  std::cout << "Host: " << config.apiServerHost
-            << " Port: " << config.apiServerPort << "\n";
+  if (!ignore_cout) {
+    std::cout << "Host: " << config.apiServerHost
+              << " Port: " << config.apiServerPort << "\n";
+  }
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
       std::filesystem::path(config.logFolderPath) /
@@ -88,6 +90,14 @@ void RunServer(std::optional<int> port) {
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
+  auto hw_service = std::make_shared<services::HardwareService>();
+  hw_service->UpdateHardwareInfos();
+  if (hw_service->ShouldRestart()) {
+    CTL_INF("Restart to update hardware configuration");
+    hw_service->Restart(config.apiServerHost, std::stoi(config.apiServerPort));
+    return;
+  }
+
   using Event = cortex::event::Event;
   using EventQueue =
       eventpp::EventQueue<EventType,
@@ -109,7 +119,7 @@ void RunServer(std::optional<int> port) {
   auto model_ctl = std::make_shared<Models>(model_service, engine_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
-  auto hw_ctl = std::make_shared<Hardware>();
+  auto hw_ctl = std::make_shared<Hardware>(engine_service, hw_service);
   auto server_ctl =
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
@@ -163,6 +173,10 @@ void RunServer(std::optional<int> port) {
       });
 
   drogon::app().run();
+  if (hw_service->ShouldRestart()) {
+    CTL_INF("Restart to update hardware configuration");
+    hw_service->Restart(config.apiServerHost, std::stoi(config.apiServerPort));
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -179,6 +193,7 @@ int main(int argc, char* argv[]) {
   is_server = true;
 
   std::optional<int> server_port;
+  bool ignore_cout_log = false;
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
@@ -186,9 +201,11 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "--ignore_cout") == 0) {
+      ignore_cout_log = true;
     } else if (strcmp(argv[i], "--loglevel") == 0) {
       std::string log_level = argv[i + 1];
-      logging_utils_helper::SetLogLevel(log_level);
+      logging_utils_helper::SetLogLevel(log_level, ignore_cout_log);
     }
   }
 
@@ -231,6 +248,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  RunServer(server_port);
+  RunServer(server_port, ignore_cout_log);
   return 0;
 }

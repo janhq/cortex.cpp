@@ -734,17 +734,21 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     auto free_ram_MiB = hw_info.ram.available_MiB;
 
     auto const& mp = json_data["model_path"].asString();
+    auto ngl = json_data["ngl"].asInt();
     auto [vram_needed_MiB, ram_needed_MiB] = hardware::EstimateLLaMACppRun(
         mp, json_data["ngl"].asInt(), json_data["ctx_len"].asInt());
+
+    // for testing only
+    free_vram_MiB = 6000;
 
     if (vram_needed_MiB > free_vram_MiB && is_cuda) {
       CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
                                    << ", available: " << free_vram_MiB);
-      // Should recommend ngl, (maybe context_length)?
 
       return cpp::fail(
-          "Not enough RAM - required: " + std::to_string(vram_needed_MiB) +
-          ", available: " + std::to_string(free_vram_MiB));
+          "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
+          " MiB, available: " + std::to_string(free_vram_MiB) +
+          " MiB - Should adjust ngl to " + std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
     }
 
     if (ram_needed_MiB > free_ram_MiB) {
@@ -752,10 +756,9 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
                                   << ", available: " << free_ram_MiB);
       return cpp::fail(
           "Not enough RAM - required: " + std::to_string(ram_needed_MiB) +
-          ", available: " + std::to_string(free_ram_MiB));
+          " MiB,, available: " + std::to_string(free_ram_MiB) + " MiB");
     }
 
-    // If not have enough memory, report back to user
     assert(!!inference_svc_);
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));

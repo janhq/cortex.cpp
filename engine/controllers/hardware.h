@@ -1,12 +1,16 @@
 #pragma once
 
 #include <drogon/HttpController.h>
+#include "common/engine_servicei.h"
 #include "services/hardware_service.h"
 
 using namespace drogon;
 
 class Hardware : public drogon::HttpController<Hardware, false> {
  public:
+  explicit Hardware(std::shared_ptr<EngineServiceI> engine_svc,
+                    std::shared_ptr<services::HardwareService> hw_svc)
+      : engine_svc_(engine_svc), hw_svc_(hw_svc) {}
   METHOD_LIST_BEGIN
   METHOD_ADD(Hardware::GetHardwareInfo, "/hardware", Get);
   METHOD_ADD(Hardware::Activate, "/hardware/activate", Post);
@@ -22,5 +26,6 @@ class Hardware : public drogon::HttpController<Hardware, false> {
                 std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
-  services::HardwareService hw_svc_;
+  std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
+  std::shared_ptr<services::HardwareService> hw_svc_= nullptr;
 };

@@ -6,7 +6,7 @@
 void Hardware::GetHardwareInfo(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto hw_inf = hw_svc_.GetHardwareInfo();
+  auto hw_inf = hw_svc_->GetHardwareInfo();
   Json::Value ret;
   ret["cpu"] = hardware::ToJson(hw_inf.cpu);
   ret["os"] = hardware::ToJson(hw_inf.os);
@@ -22,24 +22,24 @@ void Hardware::GetHardwareInfo(
 void Hardware::Activate(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  app().quit();
-  Json::Value ret;
-  ret["message"] = "Done";
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-  resp->setStatusCode(k200OK);
-  callback(resp);
+  engine_svc_->UnloadEngine(kLlamaEngine);
 
-  LOG_INFO << "Restarting...";
   // {
   //   "gpus" : [0, 1]
   // }
   services::ActivateHardwareConfig ahc;
   if (auto o = req->getJsonObject(); o) {
+    CTL_INF("activate: " << o->toStyledString());
     for (auto& g : (*o)["gpus"]) {
       ahc.gpus.push_back(g.asInt());
     }
   }
+  hw_svc_->SetActivateHardwareConfig(ahc);
 
-  auto config = file_manager_utils::GetCortexConfig();
-  hw_svc_.Restart(config.apiServerHost, std::stoi(config.apiServerPort), ahc);
+  Json::Value ret;
+  ret["message"] = "Activated hardware configuration";
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  resp->setStatusCode(k200OK);
+  callback(resp);
+  app().quit();
 }

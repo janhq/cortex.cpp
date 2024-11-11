@@ -21,24 +21,29 @@ struct GPU {
   GPUAddInfo add_info;
   int64_t free_vram;
   int64_t total_vram;
+  std::string uuid;
+  bool is_activated = true;
 };
 
 inline Json::Value ToJson(const std::vector<GPU>& gpus) {
   Json::Value res(Json::arrayValue);
-  for (auto const& g : gpus) {
+  for (size_t i = 0; i < gpus.size(); i++) {
     Json::Value gpu;
-    gpu["name"] = g.name;
-    gpu["version"] = g.version;
+    gpu["id"] = std::to_string(i);
+    gpu["name"] = gpus[i].name;
+    gpu["version"] = gpus[i].version;
     Json::Value add_info;
-    if (std::holds_alternative<NvidiaAddInfo>(g.add_info)) {
-      auto& v = std::get<NvidiaAddInfo>(g.add_info);
+    if (std::holds_alternative<NvidiaAddInfo>(gpus[i].add_info)) {
+      auto& v = std::get<NvidiaAddInfo>(gpus[i].add_info);
       add_info["driver_version"] = v.driver_version;
       add_info["compute_cap"] = v.compute_cap;
     }
     gpu["additional_information"] = add_info;
 
-    gpu["free_vram"] = g.free_vram;
-    gpu["total_vram"] = g.total_vram;
+    gpu["free_vram"] = gpus[i].free_vram;
+    gpu["total_vram"] = gpus[i].total_vram;
+    gpu["uuid"] = gpus[i].uuid;
+    gpu["activated"] = gpus[i].is_activated;
     res.append(gpu);
   }
   return res;
@@ -60,7 +65,8 @@ inline std::vector<GPU> GetGPUInfo() {
                     .driver_version = n.driver_version.value_or("unknown"),
                     .compute_cap = n.compute_cap.value_or("unknown")},
             .free_vram = std::stoi(n.vram_free),
-            .total_vram = std::stoi(n.vram_total)});
+            .total_vram = std::stoi(n.vram_total),
+            .uuid = n.uuid});
   }
   return res;
 }

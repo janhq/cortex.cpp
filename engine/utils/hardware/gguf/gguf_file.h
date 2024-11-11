@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <algorithm>
 #include <any>
 #include <filesystem>
 #include <iostream>
@@ -10,7 +11,6 @@
 #include <unordered_set>
 #include <variant>
 #include <vector>
-#include <algorithm>
 
 #ifdef _WIN32
 #include <io.h>
@@ -26,6 +26,11 @@
 #include "gguf_file_tokenizer.h"
 #include "gguf_scalar.h"
 #include "utils/string_utils.h"
+
+#define GGUF_LOG(msg)                                                  \
+  do {                                                                 \
+    std::cout << __FILE__ << "(@" << __LINE__ << "): " << msg << '\n'; \
+  } while (false)
 
 namespace hardware {
 #undef min
@@ -75,7 +80,7 @@ struct GGUFMetadataKV {
 struct GGUFMetadataKVArrayValue {
   /* Basic */
 
-  // Type is the type of the array item.
+  // type is the type of the array item.
   GGUFMetadataValueType type;  // Enum to represent value types
 
   // Len is the length of the array.
@@ -92,18 +97,99 @@ struct GGUFMetadataKVArrayValue {
   int64_t size;  // Using int64_t for size
 };
 
-struct GGUFTensorInfo {
-  /* Basic */
-  virtual ~GGUFTensorInfo() {}
+inline std::string to_string(GGUFMetadataValueType vt, const std::any& v) {
+  switch (vt) {
+    case GGUFMetadataValueTypeUint8:
+      return std::to_string(std::any_cast<uint8_t>(v));
+    case GGUFMetadataValueTypeInt8:
+      return std::to_string(std::any_cast<int8_t>(v));
+    case GGUFMetadataValueTypeUint16:
+      return std::to_string(std::any_cast<uint16_t>(v));
+    case GGUFMetadataValueTypeInt16:
+      return std::to_string(std::any_cast<int16_t>(v));
+    case GGUFMetadataValueTypeUint32:
+      return std::to_string(std::any_cast<uint32_t>(v));
+    case GGUFMetadataValueTypeInt32:
+      return std::to_string(std::any_cast<int32_t>(v));
+    case GGUFMetadataValueTypeFloat32:
+      return std::to_string(std::any_cast<float>(v));
+    case GGUFMetadataValueTypeBool:
+      return std::to_string(std::any_cast<bool>(v));
+    case GGUFMetadataValueTypeString:
+      return std::any_cast<std::string>(v);
+    case GGUFMetadataValueTypeUint64:
+      return std::to_string(std::any_cast<uint64_t>(v));
+    case GGUFMetadataValueTypeInt64:
+      return std::to_string(std::any_cast<int64_t>(v));
+    case GGUFMetadataValueTypeFloat64:
+      return std::to_string(std::any_cast<double>(v));
+    default:
+      break;
+  }
+  return "array";
+}
+inline std::string to_string(const GGUFMetadataKVArrayValue& arr_v) {
+  std::string res;
+  auto num = std::min(size_t(5), arr_v.arr.size());
+  for (size_t i = 0; i < num; i++) {
+    res += to_string(arr_v.type, arr_v.arr[i]) + " ";
+  }
+  return res;
+}
+
+inline std::string to_string(const GGUFMetadataKV& kv) {
+  switch (kv.value_type) {
+    case GGUFMetadataValueTypeUint8:
+      return std::to_string(std::any_cast<uint8_t>(kv.value));
+    case GGUFMetadataValueTypeInt8:
+      return std::to_string(std::any_cast<int8_t>(kv.value));
+    case GGUFMetadataValueTypeUint16:
+      return std::to_string(std::any_cast<uint16_t>(kv.value));
+    case GGUFMetadataValueTypeInt16:
+      return std::to_string(std::any_cast<int16_t>(kv.value));
+    case GGUFMetadataValueTypeUint32:
+      return std::to_string(std::any_cast<uint32_t>(kv.value));
+    case GGUFMetadataValueTypeInt32:
+      return std::to_string(std::any_cast<int32_t>(kv.value));
+    case GGUFMetadataValueTypeFloat32:
+      return std::to_string(std::any_cast<float>(kv.value));
+    case GGUFMetadataValueTypeBool:
+      return std::to_string(std::any_cast<bool>(kv.value));
+    case GGUFMetadataValueTypeString:
+      return std::any_cast<std::string>(kv.value);
+    case GGUFMetadataValueTypeUint64:
+      return std::to_string(std::any_cast<uint64_t>(kv.value));
+    case GGUFMetadataValueTypeInt64:
+      return std::to_string(std::any_cast<int64_t>(kv.value));
+    case GGUFMetadataValueTypeFloat64:
+      return std::to_string(std::any_cast<double>(kv.value));
+    case GGUFMetadataValueTypeArray:
+      return to_string(std::any_cast<GGUFMetadataKVArrayValue>(kv.value));
+    default:
+      break;
+  }
+  return "Invalid type ";
+}
+
+struct GGUFTensorInfoI {
+  virtual ~GGUFTensorInfoI() {}
   // Name is the name of the tensor,
   // which is no larger than 64 bytes long.
   std::string name;
+
+  virtual uint64_t Elements() = 0;
+  virtual uint64_t Bytes() = 0;
+};
+
+struct GGUFTensorInfo : public GGUFTensorInfoI {
+  /* Basic */
+
   // NDimensions is the number of dimensions of the tensor.
   uint32_t n_dimensions;
   // Dimensions is the dimensions of the tensor,
   // the length is NDimensions.
   std::vector<uint64_t> dimensions;
-  // Type is the type of the tensor.
+  // type is the type of the tensor.
   GGMLType type;
   // Offset is the offset in bytes of the tensor's data in this file.
   //
@@ -116,6 +202,54 @@ struct GGUFTensorInfo {
   //
   // The offset is the start of the file.
   int64_t start_offset;
+
+  uint64_t Elements() {
+    if (n_dimensions == 0) {
+      return 0;
+    }
+
+    uint64_t ret = 1;
+    for (size_t i = 0; i < n_dimensions; i++) {
+      ret *= dimensions[i];
+    }
+    return ret;
+  }
+
+  uint64_t Bytes() {
+    if (n_dimensions == 0) {
+      return 0;
+    }
+
+    if (kGGMLTypeTraits.find(type) == kGGMLTypeTraits.end()) {
+      std::cout << "Invalid type: " << type << std::endl;
+      assert(false);
+    }
+
+    auto& tt = kGGMLTypeTraits.at(type);
+
+    std::vector<uint64_t> nb(n_dimensions);
+    nb[0] = tt.type_size;
+    nb[1] = nb[0] * (dimensions[0] / tt.block_size);
+    for (size_t i = 2; i < n_dimensions; i++) {
+      nb[i] = nb[i - 1] * dimensions[i - 1];
+    }
+
+    uint64_t ret;
+
+    if (tt.block_size == 1) {
+      ret = tt.type_size;
+      for (size_t i = 0; i < n_dimensions; i++) {
+        ret += (dimensions[i] - 1) * nb[1];
+      }
+      return ret;
+    }
+
+    ret = dimensions[0] * nb[0] / tt.block_size;
+    for (size_t i = 1; i < n_dimensions; i++) {
+      ret += (dimensions[i] - 1) * nb[i];
+    }
+    return ret;
+  }
 };
 
 struct GGUFHelper {
@@ -212,17 +346,18 @@ struct GGUFHelper {
   std::string ReadString() {
     auto l = Read<uint64_t>();
     std::string res(reinterpret_cast<const char*>(data), l);
+    auto r = res;
     data += l;
-    return res;
+    return r;
   }
 
   GGUFMetadataKVArrayValue ReadArray() {
     GGUFMetadataKVArrayValue v;
     v.start_offset = (data - d_close);
-    auto arr_type = Read<uint32_t>();
+    v.type = static_cast<GGUFMetadataValueType>(Read<uint32_t>());
     auto arr_length = Read<uint64_t>();
     for (uint64_t i = 0; i < arr_length; ++i) {
-      switch (arr_type) {
+      switch (v.type) {
         case GGUFMetadataValueTypeUint8:
           v.arr.push_back(Read<uint8_t>());
           break;
@@ -260,7 +395,7 @@ struct GGUFHelper {
           v.arr.push_back(Read<double>());
           break;
         default:
-          std::cout << "Invalid type: " << arr_type;
+          std::cout << "Invalid type: " << std::to_string(v.type);
       }
     }
     v.size = data - v.start_offset - d_close - 4 - 8;
@@ -309,18 +444,18 @@ struct GGUFHelper {
     return kv;
   }
 
-  GGUFTensorInfo ReadTensorInfo() {
-    GGUFTensorInfo ti;
-    ti.start_offset = data - d_close;
-    ti.name = ReadString();
-    ti.n_dimensions = Read<uint32_t>();
-    ti.dimensions.resize(ti.n_dimensions);
-    for (size_t i = 0; i < ti.n_dimensions; i++) {
-      ti.dimensions[i] = Read<uint64_t>();
+  std::shared_ptr<GGUFTensorInfo> ReadTensorInfo() {
+    auto ti = std::make_shared<GGUFTensorInfo>();
+    ti->start_offset = data - d_close;
+    ti->name = ReadString();
+    ti->n_dimensions = Read<uint32_t>();
+    ti->dimensions.resize(ti->n_dimensions);
+    for (size_t i = 0; i < ti->n_dimensions; i++) {
+      ti->dimensions[i] = Read<uint64_t>();
     }
     auto v = Read<uint32_t>();
-    ti.type = GGMLType(v);
-    ti.offset = Read<uint64_t>();
+    ti->type = GGMLType(v);
+    ti->offset = Read<uint64_t>();
     return ti;
   }
 };
@@ -340,7 +475,7 @@ struct GGUFHeader {
   std::vector<GGUFMetadataKV> metadata_kv;
 
   std::pair<GGUFMetadataKV, bool> Get(const std::string& name) {
-    for (auto& kv : metadata_kv) {
+    for (auto const& kv : metadata_kv) {
       if (kv.key == name) {
         return std::pair(kv, true);
       }
@@ -349,11 +484,26 @@ struct GGUFHeader {
   }
 };
 
-using GGUFTensorInfos = std::vector<GGUFTensorInfo>;
+using GGUFTensorInfos = std::vector<std::shared_ptr<GGUFTensorInfo>>;
 // using GGUFLayerTensorInfos = std::vector<std::shared_ptr<GGUFTensorInfos>>;
-struct GGUFNamedTensorInfos : public GGUFTensorInfo {
-  GGUFNamedTensorInfos(const std::string& n) { GGUFTensorInfo::name = n; }
-  std::vector<std::shared_ptr<GGUFTensorInfo>> items;
+struct GGUFNamedTensorInfos : public GGUFTensorInfoI {
+  GGUFNamedTensorInfos(const std::string& n) { GGUFTensorInfoI::name = n; }
+  std::vector<std::shared_ptr<GGUFTensorInfoI>> items;
+  uint64_t Elements() {
+    uint64_t ret;
+    for (auto const& i : items) {
+      ret += i->Elements();
+    }
+    return ret;
+  }
+
+  uint64_t Bytes() {
+    uint64_t ret;
+    for (auto const& i : items) {
+      ret += i->Bytes();
+    }
+    return ret;
+  }
 };
 
 struct GGUFFile {
@@ -363,7 +513,7 @@ struct GGUFFile {
   GGUFHeader header;
   // tensor_infos are the tensor infos of the GGUF file,
   // the size of TensorInfos is equal to `Header.TensorCount`.
-  std::vector<GGUFTensorInfo> tensor_infos;
+  std::vector<std::shared_ptr<GGUFTensorInfo>> tensor_infos;
 
   // padding is the padding size of the GGUF file,
   // which is used to split Header and TensorInfos from tensor data.
@@ -407,14 +557,15 @@ struct GGUFFile {
   // which describes how many bits are used to store a weight,
   // higher is better.
   GGUFBitsPerWeightScalar model_bits_per_weight;
-  using GGUFLayerTensorInfos = std::vector<std::shared_ptr<GGUFTensorInfo>>;
+  using GGUFLayerTensorInfos = std::vector<std::shared_ptr<GGUFTensorInfoI>>;
   GGUFLayerTensorInfos layers() {
     GGUFLayerTensorInfos ret;
-    std::unordered_map<std::string, std::shared_ptr<GGUFTensorInfo>> pm;
+    std::unordered_map<std::string, std::shared_ptr<GGUFTensorInfoI>> pm;
     for (size_t i = 0; i < tensor_infos.size(); i++) {
-      auto ps = string_utils::SplitBy(tensor_infos[i].name, ".");
+      auto ps = string_utils::SplitBy(tensor_infos[i]->name, ".");
       if (ps.size() < 2) {
-        ret.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+        ret.push_back(tensor_infos[i]);
+        // GGUF_LOG("GGUFTensorInfo type: " << ret.back()->type);
         continue;
       }
       if (ps[0] == "blk" || ps[0] == "mm") {
@@ -425,7 +576,9 @@ struct GGUFFile {
           ret.push_back(l);
         }
         auto& l = std::static_pointer_cast<GGUFNamedTensorInfos>(pm[p])->items;
-        l.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+
+        l.push_back(tensor_infos[i]);
+        // GGUF_LOG("type: " << l.back()->type << " ltype: " << pm[p]->type);
       } else if (ps[0] == "v" || ps[0] == "t") {  // Clip
         auto p = ps[0];
         if (pm.find(p) == pm.end()) {
@@ -435,7 +588,7 @@ struct GGUFFile {
         }
         auto& xl = std::static_pointer_cast<GGUFNamedTensorInfos>(pm[p])->items;
         if (ps[1] != "blk" || ps.size() < 3) {
-          xl.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+          xl.push_back(tensor_infos[i]);
           continue;
         }
         p = ps[0] + "." + ps[1] + "." + ps[2];
@@ -445,7 +598,7 @@ struct GGUFFile {
           xl.push_back(l);
         }
         auto& l = std::static_pointer_cast<GGUFNamedTensorInfos>(pm[p])->items;
-        l.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+        l.push_back(tensor_infos[i]);
       } else if (ps[0] == "decoder" || ps[0] == "encoder") {  // BERT
         auto p = ps[0];
         if (pm.find(p) == pm.end()) {
@@ -456,7 +609,7 @@ struct GGUFFile {
         auto& xl = std::static_pointer_cast<GGUFNamedTensorInfos>(pm[p])->items;
 
         if (ps[1] != "block" || ps.size() < 3) {
-          xl.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+          xl.push_back(tensor_infos[i]);
           continue;
         }
         p = ps[0] + "." + ps[1] + "." + ps[2];
@@ -467,9 +620,9 @@ struct GGUFFile {
           xl.push_back(l);
         }
         auto& l = std::static_pointer_cast<GGUFNamedTensorInfos>(pm[p])->items;
-        l.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+        l.push_back(tensor_infos[i]);
       } else {
-        ret.push_back(std::make_shared<GGUFTensorInfo>(tensor_infos[i]));
+        ret.push_back(tensor_infos[i]);
       }
     }
     return ret;
@@ -487,6 +640,7 @@ struct GGUFFile {
     std::unordered_set<std::string> ns(names.begin(), names.end());
     for (size_t i = 0; i < ltis.size(); i++) {
       if (auto v = std::dynamic_pointer_cast<GGUFNamedTensorInfos>(ltis[i])) {
+        // GGUF_LOG("sangnv");
         if (ns.find(v->name) != ns.end()) {
           res.before.push_back(v);
           continue;
@@ -504,10 +658,29 @@ struct GGUFFile {
   }
 
   std::pair<std::shared_ptr<GGUFTensorInfo>, bool> Get(
+      const std::vector<GGUFTensorInfo>& ltis, const std::string& name) {
+    for (auto const& gi : ltis) {
+      if (gi.name == name) {
+        return std::pair(std::make_shared<GGUFTensorInfo>(gi), true);
+      }
+    }
+    return std::make_pair(nullptr, false);
+  }
+
+  // Get returns the IGGUFTensorInfos with the given name,
+  // and true if found, and false otherwise.
+  std::pair<std::shared_ptr<GGUFTensorInfo>, bool> Get(
       const GGUFLayerTensorInfos& ltis, const std::string& name) {
-    for (auto& gi : ltis) {
-      if (gi->name == name) {
-        return std::pair(gi, true);
+    for (auto &lti : ltis) {
+      if (auto v = std::dynamic_pointer_cast<GGUFNamedTensorInfos>(lti)) {
+        auto [info, found] = Get(v->items, name);
+        if (found)
+          return std::pair(info, found);
+      } else {
+        auto s = std::static_pointer_cast<GGUFTensorInfo>(lti);
+        if (s->name == name) {
+          return std::pair(s, true);
+        }
       }
     }
     return std::make_pair(nullptr, false);
@@ -556,25 +729,25 @@ struct GGUFFile {
           std::any_cast<GGUFMetadataKVArrayValue>(v.value).len;
     }
     if (auto [v, ok] = header.Get(bosTokenIDKey); ok) {
-      gt.bos_token_id = std::any_cast<int64_t>(v.value);
+      gt.bos_token_id = std::stoll(to_string(v));
     }
     if (auto [v, ok] = header.Get(eosTokenIDKey); ok) {
-      gt.eos_token_id = std::any_cast<int64_t>(v.value);
+      gt.eos_token_id = std::stoll(to_string(v));
     }
     if (auto [v, ok] = header.Get(eotTokenIDKey); ok) {
-      gt.eot_token_id = std::any_cast<int64_t>(v.value);
+      gt.eot_token_id = std::stoll(to_string(v));
     }
     if (auto [v, ok] = header.Get(eomTokenIDKey); ok) {
-      gt.eom_token_id = std::any_cast<int64_t>(v.value);
+      gt.eom_token_id = std::stoll(to_string(v));
     }
     if (auto [v, ok] = header.Get(unknownTokenIDKey); ok) {
-      gt.unknown_token_id = std::any_cast<int64_t>(v.value);
+      gt.unknown_token_id = std::stoll(to_string(v));
     }
     if (auto [v, ok] = header.Get(separatorTokenIDKey); ok) {
-      gt.separator_token_id = std::any_cast<int64_t>(v.value);
+      gt.separator_token_id = std::stoll(to_string(v));
     }
     if (auto [v, ok] = header.Get(paddingTokenIDKey); ok) {
-      gt.padding_token_id = std::any_cast<int64_t>(v.value);
+      gt.padding_token_id = std::stoll(to_string(v));
     }
     return gt;
   }
@@ -600,69 +773,69 @@ struct GGUFFile {
     std::string visionAttentionLayerNormRMSEpsilonKey =
         "clip.vision.attention.layer_norm_epsilon";
 
-    ga.Type = "projector";
-    ga.Architecture = "clip";
+    ga.type = "projector";
+    ga.architecture = "clip";
 
     if (auto [v, ok] = header.Get(hasTextEncoderKey); ok) {
-      ga.ClipHasTextEncoder = std::any_cast<bool>(v.value);
+      ga.clip_has_text_encoder = std::any_cast<bool>(v.value);
     }
     if (auto [v, ok] = header.Get(hasVisionEncoderKey); ok) {
-      ga.ClipHasVisionEncoder = std::any_cast<bool>(v.value);
+      ga.clip_has_vision_encoder = std::any_cast<bool>(v.value);
     }
     if (auto [v, ok] = header.Get(projectorTypeKey); ok) {
-      ga.ClipProjectorType = std::any_cast<std::string>(v.value);
+      ga.clip_projector_type = std::any_cast<std::string>(v.value);
     } else {
-      ga.ClipProjectorType = "mlp";
+      ga.clip_projector_type = "mlp";
     }
 
     if (auto [v, ok] = header.Get(textEmbeddingLengthKey); ok) {
-      ga.EmbeddingLength = std::any_cast<uint64_t>(v.value);
+      ga.embedding_length = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(textBlockCountKey); ok) {
-      ga.BlockCount = std::any_cast<uint64_t>(v.value);
+      ga.block_count = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(textFeedForwardLengthKey); ok) {
-      ga.FeedForwardLength = std::any_cast<uint64_t>(v.value);
+      ga.feed_forward_length = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(textAttentionHeadCountKey); ok) {
-      ga.AttentionHeadCount = std::any_cast<uint64_t>(v.value);
+      ga.attention_head_count = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(textAttentionLayerNormRMSEpsilonKey); ok) {
-      ga.AttentionLayerNormRMSEpsilon = std::any_cast<float>(v.value);
+      ga.attention_layer_norm_rms_epsilon = std::any_cast<float>(v.value);
     }
 
     if (auto [v, ok] = header.Get(visionEmbeddingLengthKey); ok) {
-      ga.EmbeddingLength = std::any_cast<uint64_t>(v.value);
+      ga.embedding_length = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(visionBlockCountKey); ok) {
-      ga.BlockCount = std::any_cast<uint64_t>(v.value);
+      ga.block_count = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(visionFeedForwardLengthKey); ok) {
-      ga.FeedForwardLength = std::any_cast<uint64_t>(v.value);
+      ga.feed_forward_length = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(visionAttentionHeadCountKey); ok) {
-      ga.AttentionHeadCount = std::any_cast<uint64_t>(v.value);
+      ga.attention_head_count = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(visionAttentionLayerNormRMSEpsilonKey); ok) {
-      ga.AttentionLayerNormRMSEpsilon = std::any_cast<float>(v.value);
+      ga.attention_layer_norm_rms_epsilon = std::any_cast<float>(v.value);
     }
 
-    ga.AttentionHeadCountKV = ga.AttentionHeadCount;
+    ga.attention_head_count_kv = ga.attention_head_count;
 
     {
-      if (ga.AttentionHeadCountKV > 0) {
-        ga.EmbeddingGQA = ga.AttentionHeadCount / ga.AttentionHeadCountKV;
+      if (ga.attention_head_count_kv > 0) {
+        ga.embedding_gqa = ga.attention_head_count / ga.attention_head_count_kv;
       }
-      if (ga.AttentionHeadCount > 0) {
-        ga.EmbeddingKeyGQA =
-            uint64_t(ga.AttentionKeyLength) * ga.AttentionHeadCountKV;
-        ga.EmbeddingValueGQA =
-            uint64_t(ga.AttentionValueLength) * ga.AttentionHeadCountKV;
+      if (ga.attention_head_count > 0) {
+        ga.embedding_key_gqa =
+            uint64_t(ga.attention_key_length) * ga.attention_head_count_kv;
+        ga.embedding_value_gqa =
+            uint64_t(ga.attention_value_length) * ga.attention_head_count_kv;
       }
-      if (ga.Architecture == "mamba") {
-        ga.EmbeddingKeyGQA =
-            uint64_t((ga.SSMConvolutionKernel - 1) * ga.SSMInnerSize);
-        ga.EmbeddingValueGQA = uint64_t(ga.SSMStateSize * ga.SSMInnerSize);
+      if (ga.architecture == "mamba") {
+        ga.embedding_key_gqa =
+            uint64_t((ga.ssm_convolution_kernel - 1) * ga.ssm_inner_size);
+        ga.embedding_value_gqa = uint64_t(ga.ssm_state_size * ga.ssm_inner_size);
       }
     }
 
@@ -678,19 +851,19 @@ struct GGUFFile {
     const std::string controlVectorLayerCountKey2 =
         "control_vector.layer_count";
 
-    ga.Type = "adapter";
-    ga.Architecture = arch;
+    ga.type = "adapter";
+    ga.architecture = arch;
 
     if (auto [v, ok] = header.Get(typeKey); ok) {
-      ga.AdapterType = std::any_cast<std::string>(v.value);
+      ga.adapter_type = std::any_cast<std::string>(v.value);
     }
     if (auto [v, ok] = header.Get(loraAlphaKey); ok) {
-      ga.AdapterLoRAAlpha = std::any_cast<float>(v.value);
+      ga.adapter_lora_alpha = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(controlVectorLayerCountKey); ok) {
-      ga.AdapterControlVectorLayerCount = std::any_cast<uint32_t>(v.value);
+      ga.adapter_control_vector_layer_count = std::any_cast<uint32_t>(v.value);
     } else if (auto [v, ok] = header.Get(controlVectorLayerCountKey2); ok) {
-      ga.AdapterControlVectorLayerCount = std::any_cast<uint32_t>(v.value);
+      ga.adapter_control_vector_layer_count = std::any_cast<uint32_t>(v.value);
     }
 
     return ga;
@@ -742,141 +915,141 @@ struct GGUFFile {
     std::string vocabularyLengthKey = arch + ".vocab_size";
     std::string tokenizerGGMLTokensKey = "tokenizer.ggml.tokens";
 
-    ga.Type = "model";
-    ga.Architecture = arch;
+    ga.type = "model";
+    ga.architecture = arch;
 
     if (auto [v, ok] = header.Get(contextLengthKey); ok) {
-      ga.MaximumContextLength = std::any_cast<uint64_t>(v.value);
+      ga.max_context_length = std::stoull(to_string(v));
     }
     if (auto [v, ok] = header.Get(embeddingLengthKey); ok) {
-      ga.EmbeddingLength = std::any_cast<uint64_t>(v.value);
+      ga.embedding_length = std::stoull(to_string(v));
     }
     if (auto [v, ok] = header.Get(blockCountKey); ok) {
-      ga.BlockCount = std::any_cast<uint64_t>(v.value);
+      ga.block_count = std::stoull(to_string(v));
     }
     if (auto [v, ok] = header.Get(feedForwardLengthKey); ok) {
-      ga.FeedForwardLength = std::any_cast<uint64_t>(v.value);
+      ga.feed_forward_length = std::stoull(to_string(v));
     }
 
     if (auto [v, ok] = header.Get(expertCountKey); ok) {
-      ga.ExpertCount = std::any_cast<uint32_t>(v.value);
+      ga.expert_count = std::any_cast<uint32_t>(v.value);
     }
     if (auto [v, ok] = header.Get(expertUsedCountKey); ok) {
-      ga.ExpertUsedCount = std::any_cast<uint32_t>(v.value);
+      ga.expert_used_count = std::any_cast<uint32_t>(v.value);
     }
     if (auto [v, ok] = header.Get(expertFeedForwardLengthKey); ok) {
-      ga.ExpertFeedForwardLength = std::any_cast<uint64_t>(v.value);
+      ga.expert_feed_forward_length = std::any_cast<uint64_t>(v.value);
     }
     if (auto [v, ok] = header.Get(expertSharedFeedForwardLengthKey); ok) {
-      ga.ExpertSharedFeedForwardLength = std::any_cast<uint64_t>(v.value);
+      ga.expert_shared_feed_forward_length = std::any_cast<uint64_t>(v.value);
     }
 
     if (auto [v, ok] = header.Get(attentionHeadCountKey); ok) {
-      ga.AttentionHeadCount = std::any_cast<uint64_t>(v.value);
+      ga.attention_head_count = std::stoull(to_string(v));
     }
     if (auto [v, ok] = header.Get(attentionHeadCountKVKey); ok) {
-      ga.AttentionHeadCountKV = std::any_cast<uint64_t>(v.value);
+      ga.attention_head_count_kv = std::stoull(to_string(v));
     } else {
-      ga.AttentionHeadCountKV = ga.AttentionHeadCount;
+      ga.attention_head_count_kv = ga.attention_head_count;
     }
     if (auto [v, ok] = header.Get(attentionMaxALiBIBiasKey); ok) {
-      ga.AttentionMaxALiBIBias = std::any_cast<float>(v.value);
+      ga.attention_max_alibi_bias = std::stof(to_string(v));
     } else if (auto [v, ok] = header.Get(attentionMaxALiBIBiasKey2); ok) {
-      ga.AttentionMaxALiBIBias = std::any_cast<float>(v.value);
+      ga.attention_max_alibi_bias = std::stof(to_string(v));
     }
     if (auto [v, ok] = header.Get(attentionClampKQVKey); ok) {
-      ga.AttentionClampKQV = std::any_cast<float>(v.value);
+      ga.attention_clamp_kqv = std::any_cast<float>(v.value);
     } else if (auto [v, ok] = header.Get(attentionClampKQVKey2); ok) {
-      ga.AttentionClampKQV = std::any_cast<float>(v.value);
+      ga.attention_clamp_kqv = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(attentionLayerNormEpsilonKey); ok) {
-      ga.AttentionLayerNormEpsilon = std::any_cast<float>(v.value);
+      ga.attention_layer_norm_epsilon = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(attentionLayerNormRMSEpsilonKey); ok) {
-      ga.AttentionLayerNormRMSEpsilon = std::any_cast<float>(v.value);
+      ga.attention_layer_norm_rms_epsilon = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(attentionKeyLengthKey); ok) {
-      ga.AttentionKeyLength = std::any_cast<uint32_t>(v.value);
-    } else if (ga.AttentionHeadCount != 0) {
-      ga.AttentionKeyLength =
-          uint32_t(ga.EmbeddingLength / ga.AttentionHeadCount);
+      ga.attention_key_length = std::stoul(to_string(v));
+    } else if (ga.attention_head_count != 0) {
+      ga.attention_key_length =
+          uint32_t(ga.embedding_length / ga.attention_head_count);
     }
     if (auto [v, ok] = header.Get(attentionValueLengthKey); ok) {
-      ga.AttentionValueLength = std::any_cast<uint32_t>(v.value);
-    } else if (ga.AttentionHeadCount != 0) {
-      ga.AttentionValueLength =
-          uint32_t(ga.EmbeddingLength / ga.AttentionHeadCount);
+      ga.attention_value_length = std::stoul(to_string(v));
+    } else if (ga.attention_head_count != 0) {
+      ga.attention_value_length =
+          uint32_t(ga.embedding_length / ga.attention_head_count);
     }
     if (auto [v, ok] = header.Get(attentionCausalKey); ok) {
-      ga.AttentionCausal = std::any_cast<bool>(v.value);
+      ga.attention_causal = std::any_cast<bool>(v.value);
     } else {
-      ga.AttentionCausal = true;
+      ga.attention_causal = true;
     }
 
     if (auto [v, ok] = header.Get(ropeDimensionCountKey); ok) {
-      ga.RoPEDimensionCount = std::any_cast<uint64_t>(v.value);
+      ga.rope_dimension_count = std::stoull(to_string(v));
     }
     if (auto [v, ok] = header.Get(ropeFrequencyBaseKey); ok) {
-      ga.RoPEFrequencyBase = std::any_cast<float>(v.value);
+      ga.rope_frequency_base = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(ropeScaleLinearKey); ok) {
-      ga.RoPEScalingType = "linear";
-      ga.RoPEScalingFactor = std::any_cast<float>(v.value);
+      ga.rope_scaling_type = "linear";
+      ga.rope_scaling_factor = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(ropeScalingTypeKey); ok) {
-      ga.RoPEScalingType = std::any_cast<std::string>(v.value);
+      ga.rope_scaling_type = std::any_cast<std::string>(v.value);
     }
     if (auto [v, ok] = header.Get(ropeScalingFactorKey); ok) {
-      ga.RoPEScalingFactor = std::any_cast<float>(v.value);
+      ga.rope_scaling_factor = std::any_cast<float>(v.value);
     }
     if (auto [v, ok] = header.Get(ropeScalingOriginalContextKey); ok) {
-      ga.RoPEScalingOriginalContextLength = std::any_cast<uint64_t>(v.value);
+      ga.rope_scaling_original_context_length = std::stoull(to_string(v));
     }
     if (auto [v, ok] = header.Get(ropeScalingFinetunedKey); ok) {
-      ga.RoPEScalingFinetuned = std::any_cast<bool>(v.value);
+      ga.rope_scaling_finetuned = std::any_cast<bool>(v.value);
     }
 
     if (auto [v, ok] = header.Get(ssmConvolutionKernelKey); ok) {
-      ga.SSMConvolutionKernel = std::any_cast<uint32_t>(v.value);
+      ga.ssm_convolution_kernel = std::stoul(to_string(v));
     }
     if (auto [v, ok] = header.Get(ssmInnerSizeKey); ok) {
-      ga.SSMInnerSize = std::any_cast<uint32_t>(v.value);
+      ga.ssm_inner_size = std::stoul(to_string(v));
     }
     if (auto [v, ok] = header.Get(ssmStateSizeKey); ok) {
-      ga.SSMStateSize = std::any_cast<uint32_t>(v.value);
+      ga.ssm_state_size = std::stoul(to_string(v));
     }
     if (auto [v, ok] = header.Get(ssmTimeStepRankKey); ok) {
-      ga.SSMTimeStepRank = std::any_cast<uint32_t>(v.value);
+      ga.ssm_time_step_rank = std::stoul(to_string(v));
     }
 
     if (auto [v, ok] = header.Get(vocabularyLengthKey); ok) {
-      ga.VocabularyLength = std::any_cast<uint64_t>(v.value);
+      ga.vocabulary_length = std::stoull(to_string(v));
     } else if (auto [v, ok] = header.Get(tokenizerGGMLTokensKey); ok) {
-      ga.VocabularyLength =
+      ga.vocabulary_length =
           std::any_cast<GGUFMetadataKVArrayValue>(v.value).len;
     }
 
     {
-      if (ga.AttentionHeadCountKV > 0) {
-        ga.EmbeddingGQA = ga.AttentionHeadCount / ga.AttentionHeadCountKV;
+      if (ga.attention_head_count_kv > 0) {
+        ga.embedding_gqa = ga.attention_head_count / ga.attention_head_count_kv;
       }
-      if (ga.AttentionHeadCount > 0) {
-        ga.EmbeddingKeyGQA =
-            uint64_t(ga.AttentionKeyLength) * ga.AttentionHeadCountKV;
-        ga.EmbeddingValueGQA =
-            uint64_t(ga.AttentionValueLength) * ga.AttentionHeadCountKV;
+      if (ga.attention_head_count > 0) {
+        ga.embedding_key_gqa =
+            uint64_t(ga.attention_key_length) * ga.attention_head_count_kv;
+        ga.embedding_value_gqa =
+            uint64_t(ga.attention_value_length) * ga.attention_head_count_kv;
       }
-      if (ga.Architecture == "mamba") {
-        ga.EmbeddingKeyGQA =
-            uint64_t((ga.SSMConvolutionKernel - 1) * ga.SSMInnerSize);
-        ga.EmbeddingValueGQA = uint64_t(ga.SSMStateSize * ga.SSMInnerSize);
+      if (ga.architecture == "mamba") {
+        ga.embedding_key_gqa =
+            uint64_t((ga.ssm_convolution_kernel - 1) * ga.ssm_inner_size);
+        ga.embedding_value_gqa = uint64_t(ga.ssm_state_size * ga.ssm_inner_size);
       }
     }
 
     return ga;
   }
 
-  GGUFArchitecture Architecture() {
+  GGUFArchitecture architecture() {
     GGUFArchitecture ga;
     const std::string generalTypeKey = "general.type";
     const std::string generalArchitectureKey = "general.architecture";
@@ -910,21 +1083,118 @@ struct GGUFFile {
   }
 };
 
-GGUFFile ParseGgufFile(const std::string& path) {
+// Elements returns the number of elements of the GGUFTensorInfo,
+// which is inspired by
+// https://github.com/ggerganov/ggml/blob/a10a8b880c059b3b29356eb9a9f8df72f03cdb6a/src/ggml.c#L2597-L2601.
+inline uint64_t Elements(const GGUFTensorInfo& ti) {
+  if (ti.n_dimensions == 0) {
+    return 0;
+  }
+
+  uint64_t ret = 1;
+  for (size_t i = 0; i < ti.n_dimensions; i++) {
+    ret *= ti.dimensions[i];
+  }
+  return ret;
+}
+
+// Bytes returns the number of bytes of the GGUFTensorInfo,
+// which is inspired by
+// https://github.com/ggerganov/ggml/blob/a10a8b880c059b3b29356eb9a9f8df72f03cdb6a/src/ggml.c#L2609-L2626.
+inline uint64_t Bytes(const GGUFTensorInfo& ti) {
+  if (ti.n_dimensions == 0) {
+    return 0;
+  }
+
+  if (kGGMLTypeTraits.find(ti.type) == kGGMLTypeTraits.end()) {
+    std::cout << "Invalid type: " << ti.type << std::endl;
+    assert(false);
+  }
+
+  auto& tt = kGGMLTypeTraits.at(ti.type);
+
+  std::vector<uint64_t> nb(ti.n_dimensions);
+  nb[0] = tt.type_size;
+  nb[1] = nb[0] * (ti.dimensions[0] / tt.block_size);
+  for (size_t i = 2; i < ti.n_dimensions; i++) {
+    nb[i] = nb[i - 1] * ti.dimensions[i - 1];
+  }
+
+  uint64_t ret;
+
+  if (tt.block_size == 1) {
+    ret = tt.type_size;
+    for (size_t i = 0; i < ti.n_dimensions; i++) {
+      ret += (ti.dimensions[i] - 1) * nb[1];
+    }
+    return ret;
+  }
+
+  ret = ti.dimensions[0] * nb[0] / tt.block_size;
+  for (size_t i = 1; i < ti.n_dimensions; i++) {
+    ret += (ti.dimensions[i] - 1) * nb[i];
+  }
+  return ret;
+}
+
+// Count returns the number of GGUF tensors of the GGUFTensorInfo,
+// which is always 1.
+inline uint64_t Count(GGUFTensorInfo& ti) {
+  return 1;
+}
+
+// Elements returns the number of elements of the GGUFTensorInfos.
+inline uint64_t Elements(const GGUFTensorInfos& tis) {
+  uint64_t ret;
+  for (auto const& ti : tis) {
+    ret += Elements(*ti);
+  }
+  return ret;
+}
+
+// Bytes returns the number of bytes of the GGUFTensorInfos.
+inline uint64_t Bytes(const GGUFTensorInfos& tis) {
+  uint64_t ret;
+  for (auto const& ti : tis) {
+    ret += Bytes(*ti);
+  }
+  return ret;
+}
+
+// Elements returns the number of elements of the GGUFLayerTensorInfos.
+inline uint64_t Elements(const GGUFFile::GGUFLayerTensorInfos& ltis) {
+  uint64_t ret;
+  for (auto const& lti : ltis) {
+    ret += lti->Elements();
+  }
+  return ret;
+}
+
+// Bytes returns the number of bytes of the GGUFLayerTensorInfos.
+inline uint64_t Bytes(const GGUFFile::GGUFLayerTensorInfos& ltis) {
+  uint64_t ret;
+  for (auto const& lti : ltis) {
+    ret += lti->Bytes();
+  }
+  return ret;
+}
+
+inline GGUFFile ParseGgufFile(const std::string& path) {
   GGUFFile gf;
   GGUFHelper h;
   h.OpenAndMMap(path);
 
   GGUFMagic magic = h.Read<GGUFMagic>();
-  std::cout << "magic: " << magic << std::endl;
+  // GGUF_LOG("magic: " << magic);
   gf.header.magic = magic;
   GGUFVersion version = h.Read<GGUFVersion>();
   auto tensor_count = h.Read<uint64_t>();
-  ;
+  // GGUF_LOG("tensor_count: " << tensor_count);
   gf.header.tensor_count += tensor_count;
 
   auto metadata_kv_count = h.Read<uint64_t>();
   gf.header.metadata_kv_count += metadata_kv_count;
+  // GGUF_LOG("metadata_kv_count: " << metadata_kv_count);
 
   // metadata kv
   {
@@ -932,8 +1202,10 @@ GGUFFile ParseGgufFile(const std::string& path) {
     kvs.resize(metadata_kv_count);
     for (size_t i = 0; i < metadata_kv_count; i++) {
       kvs[i] = h.ReadMetadataKV();
+      // GGUF_LOG("i: " << i << " " << kvs[i].value_type << " " << kvs[i].key
+      //                << ": " << to_string(kvs[i]));
     }
-    for (auto& kv : kvs) {
+    for (auto const& kv : kvs) {
       if (kv.key == "split.no") {
         gf.header.metadata_kv_count--;
         continue;
@@ -952,21 +1224,36 @@ GGUFFile ParseGgufFile(const std::string& path) {
   //   }
   // }
   {
-    std::vector<GGUFTensorInfo> tis;
+    std::vector<std::shared_ptr<GGUFTensorInfo>> tis;
     tis.resize(tensor_count);
     for (size_t i = 0; i < tensor_count; i++) {
       tis[i] = h.ReadTensorInfo();
+      // auto tto_string = [](const std::vector<size_t>& ds) -> std::string {
+      //   std::string res = "[";
+      //   for (auto d : ds)
+      //     res += std::to_string(d) + " ";
+      //   return res + "]";
+      // };
+      // auto ds = tto_string(tis[i]->dimensions);
+      // GGUF_LOG("i: " << i << " name: " << tis[i]->name
+      //                << " type: " << to_string(tis[i]->type) << " dimensions: "
+      //                << std::to_string(tis[i]->n_dimensions) << " " << ds);
     }
     gf.tensor_infos = tis;
   }
 
   int64_t pds = h.data - h.d_close;
   int64_t padding;
+  // The global alignment to use, as described above.
+  // This can vary to allow for different alignment schemes, but it must be a multiple of 8.
+  // Some writers may not write the alignment.
+  // If the alignment is not specified, assume it is 32.
   uint32_t ag = 32;
   if (auto [v, ok] = gf.header.Get("general.alignment"); ok) {
     ag = std::any_cast<uint32_t>(v.value);
   }
   padding = int64_t(ag) - (pds % int64_t(ag));
+  // GGUF_LOG("pds: " << pds << ", padding: " << padding);
   gf.padding = padding;
   gf.split_paddings.push_back(padding);
 
@@ -984,5 +1271,17 @@ GGUFFile ParseGgufFile(const std::string& path) {
   auto model_size = GGUFBytesScalar(h.file_size - tensor_data_offset);
   gf.model_size += model_size;
   gf.split_model_sizes.push_back(model_size);
+
+  // model parameters
+  gf.model_parameters = GGUFParametersScalar(Elements(gf.tensor_infos));
+  // GGUF_LOG("model_parameters: " << gf.model_parameters);
+
+  // bpw
+  if (gf.model_parameters != 0) {
+    gf.model_bits_per_weight = GGUFBitsPerWeightScalar(
+        double(gf.model_size) * 8 / double(gf.model_parameters));
+    // GGUF_LOG("model_bits_per_weight: " << gf.model_bits_per_weight);
+  }
+  return gf;
 }
 }  // namespace hardware

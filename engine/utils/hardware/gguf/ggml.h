@@ -46,6 +46,81 @@ enum GGMLType {
   GGML_TYPE_COUNT,
 };
 
+inline std::string to_string(GGMLType t) {
+  switch (t) {
+    case GGML_TYPE_F32:
+      return "F32";
+    case GGML_TYPE_F16:
+      return "F16";
+    case GGML_TYPE_Q4_0:
+      return "Q4_0";
+    case GGML_TYPE_Q4_1:
+      return "Q4_1";
+    case GGML_TYPE_Q5_0:
+      return "Q5_0";
+    case GGML_TYPE_Q5_1:
+      return "Q5_1";
+    case GGML_TYPE_Q8_0:
+      return "Q8_0";
+    case GGML_TYPE_Q8_1:
+      return "Q8_1";
+    case GGML_TYPE_Q2_K:
+      return "Q2_K";
+    case GGML_TYPE_Q3_K:
+      return "Q3_K";
+    case GGML_TYPE_Q4_K:
+      return "Q4_K";
+    case GGML_TYPE_Q5_K:
+      return "Q5_K";
+    case GGML_TYPE_Q6_K:
+      return "Q6_K";
+    case GGML_TYPE_Q8_K:
+      return "Q8_K";
+    case GGML_TYPE_IQ2_XXS:
+      return "IQ2_XXS";
+    case GGML_TYPE_IQ2_XS:
+      return "IQ2_XS";
+    case GGML_TYPE_IQ3_XXS:
+      return "IQ3_XXS";
+    case GGML_TYPE_IQ1_S:
+      return "IQ1_S";
+    case GGML_TYPE_IQ4_NL:
+      return "IQ4_NL";
+    case GGML_TYPE_IQ3_S:
+      return "IQ3_S";
+    case GGML_TYPE_IQ2_S:
+      return "IQ2_S";
+    case GGML_TYPE_IQ4_XS:
+      return "IQ4_XS";
+    case GGML_TYPE_I8:
+      return "I8";
+    case GGML_TYPE_I16:
+      return "I16";
+    case GGML_TYPE_I32:
+      return "I32";
+    case GGML_TYPE_I64:
+      return "I64";
+    case GGML_TYPE_F64:
+      return "F64";
+    case GGML_TYPE_IQ1_M:
+      return "IQ1_M";
+    case GGML_TYPE_BF16:
+      return "BF16";
+    case GGML_TYPE_Q4_0_4_4:
+      return "Q4_0_4_4";
+    case GGML_TYPE_Q4_0_4_8:
+      return "Q4_0_4_8";
+    case GGML_TYPE_Q4_0_8_8:
+      return "Q4_0_8_8";
+    case GGML_TYPE_TQ1_0:
+      return "TQ1_0";
+    case GGML_TYPE_TQ2_0:
+      return "TQ2_0";
+    default:
+      return "Invalid";
+  }
+}
+
 struct GGMLTypeTrait {
   uint64_t block_size;
   uint64_t type_size;
@@ -126,13 +201,13 @@ inline cpp::result<uint64_t, std::string> RowSizeOf(
 
 // GGMLPadding returns the padded size of the given size according to given align,
 // see https://github.com/ggerganov/ggml/blob/0cbb7c0e053f5419cfbebb46fbf4d4ed60182cf5/include/ggml/ggml.h#L255.
-uint64_t GGMLPadding(uint64_t size, uint64_t align) {
+inline uint64_t GGMLPadding(uint64_t size, uint64_t align) {
   return (size + align - 1) & ~(align - 1);
 }
 
 // GGMLMemoryPadding returns the padded size of the given size according to GGML memory padding,
 // see https://github.com/ggerganov/ggml/blob/0cbb7c0/include/ggml/ggml.h#L238-L243.
-uint64_t GGMLMemoryPadding(uint64_t size) {
+inline uint64_t GGMLMemoryPadding(uint64_t size) {
   const uint64_t align = 16;
   return GGMLPadding(size, align);
 }
@@ -164,7 +239,7 @@ constexpr const uint64_t kGGMLComputationGraphNodesDefault = 2048;
 
 // GGMLHashSize returns the size of the hash table for the given base,
 // see https://github.com/ggerganov/ggml/blob/0cbb7c0e053f5419cfbebb46fbf4d4ed60182cf5/src/ggml.c#L17698-L17722.
-uint64_t GGMLHashSize(uint64_t base) {
+inline uint64_t GGMLHashSize(uint64_t base) {
   // next primes after powers of two
   constexpr const size_t primes[] = {
       2,          3,         5,        11,        17,        37,
@@ -192,7 +267,7 @@ uint64_t GGMLHashSize(uint64_t base) {
 
 // GGMLComputationGraphOverhead is the overhead of GGML graph in bytes,
 // see https://github.com/ggerganov/ggml/blob/0cbb7c0e053f5419cfbebb46fbf4d4ed60182cf5/src/ggml.c#L18905-L18917.
-uint64_t GGMLComputationGraphOverhead(uint64_t nodes, bool grads) {
+inline uint64_t GGMLComputationGraphOverhead(uint64_t nodes, bool grads) {
   const uint64_t pointer_size = 8;
 
   uint64_t g = kGGMLComputationGraphSize;
