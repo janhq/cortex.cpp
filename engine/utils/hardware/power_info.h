@@ -17,6 +17,14 @@ inline Json::Value ToJson(const PowerInfo& pi) {
   return res;
 }
 
+namespace power {
+inline PowerInfo FromJson(const Json::Value& root) {
+  return {.charging_status = root["charging_status"].asString(),
+          .battery_life = root["battery_life"].asInt(),
+          .is_power_saving = root["is_power_saving"].asBool()};
+}
+}  // namespace power
+
 inline PowerInfo GetPowerInfo() {
   return PowerInfo{};
 }

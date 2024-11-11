@@ -17,6 +17,14 @@ inline Json::Value ToJson(const StorageInfo& si) {
   return res;
 }
 
+namespace storage {
+inline StorageInfo FromJson(const Json::Value& root) {
+  return {.type = root["type"].asString(),
+          .total = root["total"].asInt64(),
+          .available = root["available"].asInt64()};
+}
+}  // namespace storage
+
 inline StorageInfo GetStorageInfo() {
   return StorageInfo{};
 }

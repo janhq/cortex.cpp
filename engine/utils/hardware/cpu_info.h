@@ -43,6 +43,19 @@ inline Json::Value ToJson(const CPU& cpu) {
   return res;
 }
 
+namespace cpu {
+inline CPU FromJson(const Json::Value& root) {
+  int cores = root["cores"].asInt();
+  std::string arch = root["arch"].asString();
+  std::string model = root["model"].asString();
+  std::vector<std::string> insts;
+  for (auto const& i : root["instructions"]) {
+    insts.emplace_back(i.asString());
+  }
+  return {.cores = cores, .arch = arch, .model = model, .instructions = insts};
+}
+}  // namespace cpu
+
 inline CPU GetCPUInfo() {
   auto cpu = hwinfo::getAllCPUs()[0];
   cortex::cpuid::CpuInfo inst;

@@ -49,6 +49,31 @@ inline Json::Value ToJson(const std::vector<GPU>& gpus) {
   return res;
 }
 
+namespace gpu {
+inline std::vector<GPU> FromJson(const Json::Value& root) {
+  assert(root.isArray());
+  std::vector<GPU> res;
+  for (auto const& gpu_json : root) {
+    GPU gpu;
+    gpu.id = gpu_json["id"].asString();
+    gpu.name = gpu_json["name"].asString();
+    gpu.version = gpu_json["version"].asString();
+    NvidiaAddInfo add_inf;
+    add_inf.driver_version =
+        gpu_json["additional_information"]["driver_version"].asString();
+    add_inf.compute_cap =
+        gpu_json["additional_information"]["compute_cap"].asString();
+    gpu.add_info = add_inf;
+    gpu.free_vram = gpu_json["free_vram"].asInt64();
+    gpu.total_vram = gpu_json["total_vram"].asInt64();
+    gpu.uuid = gpu_json["uuid"].asString();
+    gpu.is_activated = gpu_json["activated"].asBool();
+    res.emplace_back(gpu);
+  }
+  return res;
+}
+}  // namespace gpu
+
 inline std::vector<GPU> GetGPUInfo() {
   std::vector<GPU> res;
   // Only support for nvidia for now

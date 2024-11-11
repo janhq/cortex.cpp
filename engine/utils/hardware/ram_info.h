@@ -30,6 +30,14 @@ inline Json::Value ToJson(const Memory& m) {
   return res;
 }
 
+namespace memory {
+inline Memory FromJson(const Json::Value& root) {
+  return {.total_MiB = root["total"].asInt64(),
+          .available_MiB = root["available"].asInt64(),
+          .type = root["type"].asString()};
+}
+}  // namespace memory
+
 inline Memory GetMemoryInfo() {
   hwinfo::Memory m;
 #if defined(__APPLE__) && defined(__MACH__)

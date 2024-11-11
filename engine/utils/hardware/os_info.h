@@ -17,6 +17,13 @@ inline Json::Value ToJson(const OS& os) {
   return res;
 }
 
+namespace os {
+inline OS FromJson(const Json::Value& root) {
+  return {.name = root["name"].asString(),
+          .version = root["version"].asString()};
+}
+}  // namespace os
+
 inline OS GetOSInfo() {
   hwinfo::OS os;
   return OS{.name = os.name(),

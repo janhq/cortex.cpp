@@ -33,6 +33,7 @@ constexpr const auto kCommonCommandsGroup = "Common Commands";
 constexpr const auto kInferenceGroup = "Inference";
 constexpr const auto kModelsGroup = "Models";
 constexpr const auto kEngineGroup = "Engines";
+constexpr const auto kHardwareGroup = "Hardwares";
 constexpr const auto kSystemGroup = "Server";
 constexpr const auto kConfigGroup = "Configurations";
 constexpr const auto kSubcommands = "Subcommands";
@@ -58,6 +59,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   SetupModelCommands();
 
   SetupEngineCommands();
+
+  SetupHardwareCommands();
 
   SetupSystemCommands();
 
@@ -461,6 +464,52 @@ void CommandLineParser::SetupEngineCommands() {
   }
 
   EngineGet(engines_cmd);
+}
+
+void CommandLineParser::SetupHardwareCommands() {
+  // Hardware group commands
+  auto hw_cmd =
+      app_.add_subcommand("hardware", "Subcommands for managing hardware");
+  hw_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                " hardware [options] [subcommand]");
+  hw_cmd->group(kHardwareGroup);
+
+  hw_cmd->callback([this, hw_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (hw_cmd->get_subcommands().empty()) {
+      CLI_LOG(hw_cmd->help());
+    }
+  });
+
+  auto hw_list_cmd =
+      hw_cmd->add_subcommand("list", "List all hardware information");
+
+  hw_list_cmd->add_flag("--cpu", hw_opts_.show_cpu, "Display CPU information");
+  hw_list_cmd->add_flag("--os", hw_opts_.show_os, "Display OS information");
+  hw_list_cmd->add_flag("--ram", hw_opts_.show_ram, "Display RAM information");
+  hw_list_cmd->add_flag("--storage", hw_opts_.show_storage,
+                        "Display Storage information");
+  hw_list_cmd->add_flag("--gpu", hw_opts_.show_gpu, "Display GPU information");
+  hw_list_cmd->add_flag("--power", hw_opts_.show_power,
+                        "Display Power information");
+  hw_list_cmd->add_flag("--monitors", hw_opts_.show_monitors,
+                        "Display Monitors information");
+
+  hw_list_cmd->group(kSubcommands);
+  hw_list_cmd->callback([this]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (hw_opts_.has_flag()) {
+      commands::HardwareListCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), hw_opts_);
+    } else {
+      commands::HardwareListCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), std::nullopt);
+    }
+  });
 }
 
 void CommandLineParser::SetupSystemCommands() {
