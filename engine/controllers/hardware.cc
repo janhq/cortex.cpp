@@ -41,6 +41,15 @@ void Hardware::Activate(
     }
   }
   std::sort(ahc.gpus.begin(), ahc.gpus.end());
+  if (!hw_svc_->IsValidConfig(ahc)) {
+    Json::Value ret;
+    ret["message"] = "Invalid GPU index provided.";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  };
+  
   if (!hw_svc_->SetActivateHardwareConfig(ahc)) {
     Json::Value ret;
     ret["message"] = "The hardware configuration is already up to date.";
@@ -54,6 +63,9 @@ void Hardware::Activate(
 
   Json::Value ret;
   ret["message"] = "The hardware configuration has been activated.";
+  if (auto o = req->getJsonObject(); o) {
+    ret["activated_gpus"] = (*o)["gpus"];
+  }
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);

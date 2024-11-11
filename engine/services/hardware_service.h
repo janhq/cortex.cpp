@@ -29,6 +29,7 @@ class HardwareService {
   bool SetActivateHardwareConfig(const cortex::hw::ActivateHardwareConfig& ahc);
   bool ShouldRestart() const { return !!ahc_; }
   void UpdateHardwareInfos();
+  bool IsValidConfig(const cortex::hw::ActivateHardwareConfig& ahc);
 
  private:
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;

@@ -290,4 +290,21 @@ void HardwareService::UpdateHardwareInfos() {
     SetActivateHardwareConfig({.gpus = activated_gpu_af});
   }
 }
+
+bool HardwareService::IsValidConfig(
+    const cortex::hw::ActivateHardwareConfig& ahc) {
+  cortex::db::Hardwares hw_db;
+  auto is_valid = [&ahc](int software_id) {
+    return std::count(ahc.gpus.begin(), ahc.gpus.end(), software_id) > 0;
+  };
+  auto res = hw_db.LoadHardwareList();
+  if (res.has_value()) {
+    for (auto const& e : res.value()) {
+      if (!is_valid(e.software_id)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
 }  // namespace services
