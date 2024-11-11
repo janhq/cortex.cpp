@@ -131,7 +131,7 @@ void RunCmd::Exec(bool run_detach) {
 
           auto res =
               commands::ModelStartCmd(model_service_)
-                  .Exec(host_, port_, *model_id, false /*print_success_log*/);
+                  .Exec(host_, port_, *model_id, {}, false /*print_success_log*/);
           if (!res) {
             CLI_LOG("Error: Failed to start model");
             return;

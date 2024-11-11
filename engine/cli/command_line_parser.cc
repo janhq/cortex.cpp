@@ -194,6 +194,8 @@ void CommandLineParser::SetupModelCommands() {
   model_start_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " models start [model_id]");
   model_start_cmd->add_option("model_id", cml_data_.model_id, "");
+  model_start_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+                              "List of GPU to activate, for example [0, 1]");
   model_start_cmd->group(kSubcommands);
   model_start_cmd->callback([this, model_start_cmd]() {
     if (std::exchange(executed_, true))
@@ -205,7 +207,8 @@ void CommandLineParser::SetupModelCommands() {
     };
     commands::ModelStartCmd(model_service_)
         .Exec(cml_data_.config.apiServerHost,
-              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
+              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+              hw_activate_opts_);
   });
 
   auto stop_model_cmd =
