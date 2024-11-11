@@ -84,7 +84,6 @@ bool HardwareService::Restart(const std::string& host, int port) {
   };
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  // TODO(sang) if variable does not change, just return
   std::string cuda_visible_devices = "";
   for (auto i : (*ahc_).gpus) {
     if (!cuda_visible_devices.empty())
@@ -139,9 +138,6 @@ bool HardwareService::Restart(const std::string& host, int port) {
     if (!TryConnectToServer(host, port)) {
       return false;
     }
-    // std::cout << "Server started" << std::endl;
-    // std::cout << "API Documentation available at: http://" << host << ":"
-    //           << port << std::endl;
   }
 
 #else
@@ -182,9 +178,6 @@ bool HardwareService::Restart(const std::string& host, int port) {
     if (!TryConnectToServer(host, port)) {
       return false;
     }
-    // std::cout << "Server started" << std::endl;
-    // std::cout << "API Documentation available at: http://" << host << ":"
-    //           << port << std::endl;
   }
 #endif
   return true;
@@ -207,7 +200,7 @@ bool HardwareService::SetActivateHardwareConfig(
       if (e.activated) {
         activated_ids.push_back(e.software_id);
       }
-    }    
+    }
     std::sort(activated_ids.begin(), activated_ids.end());
     if (ahc.gpus.size() != activated_ids.size()) {
       need_update = true;
