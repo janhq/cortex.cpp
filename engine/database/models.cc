@@ -3,32 +3,40 @@
 #include <iostream>
 #include <sstream>
 #include "database.h"
+#include "schema_version.h"
 #include "utils/result.hpp"
 #include "utils/scope_exit.h"
 
 namespace cortex::db {
 
 Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT);");
+  InitializeDatabase();
 }
 
 Models::Models(SQLite::Database& db) : db_(db) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT UNIQUE);");
+  InitializeDatabase();
 }
 
 Models::~Models() {}
+
+void Models::InitializeDatabase() {
+  switch (SCHEMA_VERSION) {
+    case 0: {
+      db_.exec(
+          "CREATE TABLE IF NOT EXISTS models ("
+          "model_id TEXT PRIMARY KEY,"
+          "author_repo_id TEXT,"
+          "branch_name TEXT,"
+          "path_to_model_yaml TEXT,"
+          "model_alias TEXT);");
+      break;
+    }
+    default: {
+      CTL_ERR("Not supported, schema_version: " << SCHEMA_VERSION);
+      assert(false);
+    }
+  }
+}
 
 cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
     const {
