@@ -158,12 +158,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
       v += g;
     }
     CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto data_path = file_manager_utils::GetEnginesContainerPath();
-    auto llamacpp_path = data_path / "cortex.llamacpp/";
-    auto trt_path = data_path / "cortex.tensorrt-llm/";
-    if (!std::filesystem::exists(llamacpp_path)) {
-      std::filesystem::create_directory(llamacpp_path);
-    }
+    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
+    auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
 
     auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
     setenv(name, new_v.c_str(), true);
@@ -219,7 +215,10 @@ bool HardwareService::SetActivateHardwareConfig(
     // Need to update, proceed
     for (auto& e : res.value()) {
       e.activated = activate(e.software_id);
-      hw_db.UpdateHardwareEntry(e.uuid, e);
+      auto res = hw_db.UpdateHardwareEntry(e.uuid, e);
+      if (res.has_error()) {
+        CTL_WRN(res.error());
+      }
     }
   }
   ahc_ = ahc;
@@ -243,11 +242,14 @@ void HardwareService::UpdateHardwareInfos() {
   for (auto const& gpu : gpus) {
     // ignore error
     // Note: only support NVIDIA for now, so hardware_id = software_id
-    hw_db.AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
-                                   .type = "gpu",
-                                   .hardware_id = std::stoi(gpu.id),
-                                   .software_id = std::stoi(gpu.id),
-                                   .activated = true});
+    auto res = hw_db.AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
+                                              .type = "gpu",
+                                              .hardware_id = std::stoi(gpu.id),
+                                              .software_id = std::stoi(gpu.id),
+                                              .activated = true});
+    if (res.has_error()) {
+      CTL_WRN(res.error());
+    }
   }
 
   auto a = hw_db.LoadHardwareList();
