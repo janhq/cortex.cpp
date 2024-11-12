@@ -2,13 +2,94 @@
 
 #include <json/json.h>
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <limits>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include "utils/format_utils.h"
+#include "utils/remote_models_utils.h"
+#include "yaml-cpp/yaml.h"
 namespace config {
+
+struct RemoteModelConfig {
+  std::string model;
+  std::string api_key_template;
+  std::string engine;
+  std::string version;
+  Json::Value inference_params;
+  Json::Value TransformReq;
+  Json::Value TransformResp;
+  Json::Value metadata;
+  void LoadFromJson(const Json::Value& json) {
+    if (!json.isObject()) {
+      throw std::runtime_error("Input JSON must be an object");
+    }
+
+    // Load basic string fields
+    model = json.get("model", "").asString();
+    api_key_template = json.get("api_key_template", "").asString();
+    engine = json.get("engine", "").asString();
+    version = json.get("version", "").asString();
+
+    // Load JSON object fields directly
+    inference_params =
+        json.get("inference_params", Json::Value(Json::objectValue));
+    TransformReq = json.get("TransformReq", Json::Value(Json::objectValue));
+    TransformResp = json.get("TransformResp", Json::Value(Json::objectValue));
+    metadata = json.get("metadata", Json::Value(Json::objectValue));
+  }
+
+  void SaveToYamlFile(const std::string& filepath) const {
+    YAML::Node root;
+
+    // Convert basic fields
+    root["model"] = model;
+    root["api_key_template"] = api_key_template;
+    root["engine"] = engine;
+    root["version"] = version;
+
+    // Convert Json::Value to YAML::Node using utility function
+    root["inference_params"] =
+        remote_models_utils::jsonToYaml(inference_params);
+    root["TransformReq"] = remote_models_utils::jsonToYaml(TransformReq);
+    root["TransformResp"] = remote_models_utils::jsonToYaml(TransformResp);
+    root["metadata"] = remote_models_utils::jsonToYaml(metadata);
+
+    // Save to file
+    std::ofstream fout(filepath);
+    if (!fout.is_open()) {
+      throw std::runtime_error("Failed to open file for writing: " + filepath);
+    }
+    fout << root;
+  }
+
+  void LoadFromYamlFile(const std::string& filepath) {
+    YAML::Node root;
+    try {
+      root = YAML::LoadFile(filepath);
+    } catch (const YAML::Exception& e) {
+      throw std::runtime_error("Failed to parse YAML file: " +
+                               std::string(e.what()));
+    }
+
+    // Load basic fields
+    model = root["model"].as<std::string>("");
+    api_key_template = root["api_key_template"].as<std::string>("");
+    engine = root["engine"].as<std::string>("");
+    version = root["version"] ? root["version"].as<std::string>() : "";
+
+    // Load complex fields using utility function
+    inference_params =
+        remote_models_utils::yamlToJson(root["inference_params"]);
+    TransformReq = remote_models_utils::yamlToJson(root["TransformReq"]);
+    TransformResp = remote_models_utils::yamlToJson(root["TransformResp"]);
+    metadata = remote_models_utils::yamlToJson(root["metadata"]);
+  }
+};
+
 struct ModelConfig {
   std::string name;
   std::string model;

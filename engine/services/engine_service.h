@@ -13,6 +13,7 @@
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
+#include "extensions/remote-engine/remote_engine.h"
 
 // TODO: namh think of the other name
 struct DefaultEngineVariant {

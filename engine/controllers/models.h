@@ -21,6 +21,7 @@ class Models : public drogon::HttpController<Models, false> {
   METHOD_ADD(Models::StartModel, "/start", Options, Post);
   METHOD_ADD(Models::StopModel, "/stop", Options, Post);
   METHOD_ADD(Models::GetModelStatus, "/status/{1}", Get);
+  METHOD_ADD(Models::AddRemoteModel, "/add", Options, Post);
 
   ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Options, Post);
   ADD_METHOD_TO(Models::AbortPullModel, "/v1/models/pull", Options, Delete);
@@ -32,6 +33,7 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::StartModel, "/v1/models/start", Options, Post);
   ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Options, Post);
   ADD_METHOD_TO(Models::GetModelStatus, "/v1/models/status/{1}", Get);
+  ADD_METHOD_TO(Models::AddRemoteModel, "/v1/models/add", Options, Post);
   METHOD_LIST_END
 
   explicit Models(std::shared_ptr<ModelService> model_service,
@@ -54,6 +56,9 @@ class Models : public drogon::HttpController<Models, false> {
                    std::function<void(const HttpResponsePtr&)>&& callback,
                    const std::string& model_id) const;
   void ImportModel(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) const;
+  void AddRemoteModel(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) const;
   void DeleteModel(const HttpRequestPtr& req,
