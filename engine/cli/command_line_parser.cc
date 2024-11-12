@@ -64,6 +64,7 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   SetupConfigsCommands();
 
   app_.add_flag("--verbose", log_verbose, "Get verbose logs");
+  app_.add_flag("--foreground", cml_data_.foreground, "Run in foreground");
 
   // Logic is handled in main.cc, just for cli helper command
   std::string path;
@@ -476,6 +477,7 @@ void CommandLineParser::SetupSystemCommands() {
   start_cmd->add_option("--loglevel", cml_data_.log_level,
                         "Set up log level for server, accepted TRACE, DEBUG, "
                         "INFO, WARN, ERROR");
+  start_cmd->add_flag("--foreground", cml_data_.foreground, "Run server in foreground");
   if (cml_data_.log_level != "INFO" && cml_data_.log_level != "TRACE" &&
       cml_data_.log_level != "DEBUG" && cml_data_.log_level != "WARN" &&
       cml_data_.log_level != "ERROR") {
@@ -499,7 +501,7 @@ void CommandLineParser::SetupSystemCommands() {
     }
     commands::ServerStartCmd ssc;
     ssc.Exec(cml_data_.config.apiServerHost,
-             std::stoi(cml_data_.config.apiServerPort), cml_data_.log_level);
+             std::stoi(cml_data_.config.apiServerPort), cml_data_.foreground, cml_data_.log_level);
   });
 
   auto stop_cmd = app_.add_subcommand("stop", "Stop the API server");
