@@ -48,7 +48,7 @@ class DownloadService {
 
   void ProcessTask(DownloadTask& task, int worker_id);
 
-  void ProcessMultiDownload(
+  cpp::result<void, std::string> ProcessMultiDownload(
       DownloadTask& task, CURLM* multi_handle,
       const std::vector<std::pair<CURL*, FILE*>>& handles);
 
@@ -60,6 +60,8 @@ class DownloadService {
   void EmitTaskStopped(const std::string& task_id);
 
   void EmitTaskCompleted(const std::string& task_id);
+
+  void EmitTaskError(const std::string& task_id);
 
  public:
   using OnDownloadTaskSuccessfully =

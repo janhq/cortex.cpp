@@ -17,7 +17,7 @@ size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
   return written;
 }
 
-void ProcessCompletedTransfers(CURLM* multi_handle) {
+cpp::result<void, std::string> ProcessCompletedTransfers(CURLM* multi_handle) {
   CURLMsg* msg;
   int msgs_left;
   while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
@@ -31,6 +31,9 @@ void ProcessCompletedTransfers(CURLM* multi_handle) {
       if (result != CURLE_OK) {
         CTL_ERR("Transfer failed for URL: " << url << " Error: "
                                             << curl_easy_strerror(result));
+        // download failed
+        return cpp::fail("Transfer failed for URL: " + std::string(url) +
+                         " Error: " + curl_easy_strerror(result));
       } else {
         long response_code;
         curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
@@ -39,10 +42,15 @@ void ProcessCompletedTransfers(CURLM* multi_handle) {
         } else {
           CTL_ERR("Transfer failed with HTTP code: " << response_code
                                                      << " for URL: " << url);
+          // download failed
+          return cpp::fail("Transfer failed with HTTP code: " +
+                           std::to_string(response_code) +
+                           " for URL: " + std::string(url));
         }
       }
     }
   }
+  return {};
 }
 }  // namespace
 
@@ -334,7 +342,8 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
 
   EmitTaskStarted(task);
 
-  ProcessMultiDownload(task, worker_data->multi_handle, task_handles);
+  auto result =
+      ProcessMultiDownload(task, worker_data->multi_handle, task_handles);
 
   // clean up
   for (auto& [handle, file] : task_handles) {
@@ -343,13 +352,16 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
     fclose(file);
   }
 
-  ExecuteCallback(task);
-  EmitTaskCompleted(task.id);
+  if (!result.has_error()) {
+    // if the download has error, we are not run the callback
+    ExecuteCallback(task);
+    EmitTaskCompleted(task.id);
+  }
 
   worker_data->downloading_data_map.clear();
 }
 
-void DownloadService::ProcessMultiDownload(
+cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
     DownloadTask& task, CURLM* multi_handle,
     const std::vector<std::pair<CURL*, FILE*>>& handles) {
   int still_running = 0;
@@ -357,14 +369,18 @@ void DownloadService::ProcessMultiDownload(
     curl_multi_perform(multi_handle, &still_running);
     curl_multi_wait(multi_handle, nullptr, 0, MAX_WAIT_MSECS, nullptr);
 
-    ProcessCompletedTransfers(multi_handle);
+    auto result = ProcessCompletedTransfers(multi_handle);
+    if (result.has_error()) {
+      EmitTaskError(task.id);
+      return cpp::fail(result.error());
+    }
 
     if (task.status == DownloadTask::Status::Cancelled || stop_flag_) {
       EmitTaskStopped(task.id);
-      return;
+      return cpp::fail("Task " + task.id + " cancelled");
     }
-
   } while (still_running);
+  return {};
 }
 
 void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
@@ -428,6 +444,15 @@ void DownloadService::EmitTaskStopped(const std::string& task_id) {
     event_queue_->enqueue(
         EventType::DownloadEvent,
         DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
+                      .download_task_ = *it->second});
+  }
+}
+
+void DownloadService::EmitTaskError(const std::string& task_id) {
+  if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
+    event_queue_->enqueue(
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadError,
                       .download_task_ = *it->second});
   }
 }
