@@ -9,6 +9,7 @@ class TestCliEngineList:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
+        stop_server()
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
