@@ -82,10 +82,10 @@ inline std::string writeKeyValue(const std::string& key,
 };
 
 inline std::string BytesToHumanReadable(uint64_t bytes) {
-  const uint64_t KB = 1024;
-  const uint64_t MB = KB * 1024;
-  const uint64_t GB = MB * 1024;
-  const uint64_t TB = GB * 1024;
+  constexpr const uint64_t KB = 1024;
+  constexpr const uint64_t MB = KB * 1024;
+  constexpr const uint64_t GB = MB * 1024;
+  constexpr const uint64_t TB = GB * 1024;
 
   double result;
   std::string unit;
@@ -115,9 +115,9 @@ inline std::string BytesToHumanReadable(uint64_t bytes) {
 
 inline std::string TimeDownloadFormat(int seconds) {
   // Constants for time units
-  const uint64_t kSecondsInMinute = 60;
-  const uint64_t kSecondsInHour = kSecondsInMinute * 60;
-  const uint64_t kSecondsInDay = kSecondsInHour * 24;
+  constexpr const uint64_t kSecondsInMinute = 60;
+  constexpr const uint64_t kSecondsInHour = kSecondsInMinute * 60;
+  constexpr const uint64_t kSecondsInDay = kSecondsInHour * 24;
 
   uint64_t days = seconds / kSecondsInDay;
   seconds %= kSecondsInDay;
