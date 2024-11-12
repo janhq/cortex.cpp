@@ -289,7 +289,7 @@ void HardwareService::UpdateHardwareInfos() {
 
   if (need_restart) {
     CTL_INF("Need restart");
-    SetActivateHardwareConfig({.gpus = activated_gpu_af});
+    ahc_ = {.gpus = activated_gpu_af};
   }
 }
 
