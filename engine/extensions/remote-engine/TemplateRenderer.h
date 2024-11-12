@@ -8,6 +8,8 @@
 // clang-format off
 #if defined(_WIN32) || defined(_WIN64)
 #define NOMINMAX
+#undef min
+#undef max
 #endif
 #include <nlohmann/json.hpp>
 #include <inja/inja.hpp>

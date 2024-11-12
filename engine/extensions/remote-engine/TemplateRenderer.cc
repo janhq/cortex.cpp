@@ -1,5 +1,7 @@
 #if defined(_WIN32) || defined(_WIN64)
 #define NOMINMAX
+#undef min
+#undef max
 #endif
 #include "TemplateRenderer.h"
 #include <regex>

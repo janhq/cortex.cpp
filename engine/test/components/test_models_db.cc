@@ -6,6 +6,7 @@ namespace cortex::db {
 namespace {
 constexpr const auto kTestDb = "./test.db";
 }
+
 class ModelsTestSuite : public ::testing::Test {
  public:
   ModelsTestSuite()
@@ -21,9 +22,9 @@ class ModelsTestSuite : public ::testing::Test {
   SQLite::Database db_;
   cortex::db::Models model_list_;
 
-  const cortex::db::ModelEntry kTestModel{"test_model_id", "test_author",
-                                          "main", "/path/to/model.yaml",
-                                          "test_alias"};
+  const cortex::db::ModelEntry kTestModel{
+      "test_model_id", "test_format", "test_source", cortex::db::ModelStatus::Downloaded, "test_engine",
+      "test_author", "main", "/path/to/model.yaml", "test_alias"};
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {
@@ -33,8 +34,12 @@ TEST_F(ModelsTestSuite, TestAddModelEntry) {
   EXPECT_TRUE(retrieved_model);
   EXPECT_EQ(retrieved_model.value().model, kTestModel.model);
   EXPECT_EQ(retrieved_model.value().author_repo_id, kTestModel.author_repo_id);
+  EXPECT_EQ(retrieved_model.value().model_format, kTestModel.model_format);
+  EXPECT_EQ(retrieved_model.value().model_source, kTestModel.model_source);
+  EXPECT_EQ(retrieved_model.value().status, kTestModel.status);
+  EXPECT_EQ(retrieved_model.value().engine, kTestModel.engine);
 
-  // // Clean up
+  // Clean up
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
 }
 
@@ -59,14 +64,14 @@ TEST_F(ModelsTestSuite, TestUpdateModelEntry) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   cortex::db::ModelEntry updated_model = kTestModel;
+  updated_model.status = cortex::db::ModelStatus::Downloaded;
 
   EXPECT_TRUE(
       model_list_.UpdateModelEntry(kTestModel.model, updated_model).value());
 
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model);
   EXPECT_TRUE(retrieved_model);
-  EXPECT_TRUE(
-      model_list_.UpdateModelEntry(kTestModel.model, updated_model).value());
+  EXPECT_EQ(retrieved_model.value().status, updated_model.status);
 
   // Clean up
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
@@ -162,4 +167,5 @@ TEST_F(ModelsTestSuite, TestHasModel) {
   // Clean up
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
 }
+
 }  // namespace cortex::db
