@@ -55,8 +55,9 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
 
   std::vector<std::unique_ptr<indicators::ProgressBar>> items;
   indicators::show_console_cursor(false);
-  auto handle_message = [this, &bars, &items,
-                         event_type](const std::string& message) {
+  auto start = std::chrono::steady_clock::now();
+  auto handle_message = [this, &bars, &items, event_type,
+                         start](const std::string& message) {
     CTL_INF(message);
 
     auto pad_string = [](const std::string& str,
@@ -80,7 +81,7 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     if (ev.download_task_.type != event_type) {
       return;
     }
-
+    auto now = std::chrono::steady_clock::now();
     if (!bars) {
       bars = std::make_unique<
           indicators::DynamicProgress<indicators::ProgressBar>>();
@@ -91,7 +92,7 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
             indicators::option::End{"]"},
             indicators::option::PrefixText{pad_string(Repo2Engine(i.id))},
             indicators::option::ForegroundColor{indicators::Color::white},
-            indicators::option::ShowRemainingTime{true}));
+            indicators::option::ShowRemainingTime{false}));
         bars->push_back(*(items.back()));
       }
     }
@@ -101,6 +102,17 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
         uint64_t downloaded = it.downloadedBytes.value_or(0u);
         uint64_t total =
             it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+        auto d = std::chrono::duration_cast<std::chrono::seconds>(now - start)
+                     .count();
+        uint64_t bytes_per_sec = downloaded / (d + 1);
+        std::string time_remaining;
+        if (downloaded == total || bytes_per_sec == 0) {
+          time_remaining = "00m:00s";
+        } else {
+          time_remaining = format_utils::TimeDownloadFormat(
+              (total - downloaded) / bytes_per_sec);
+        }
+
         (*bars)[i].set_option(indicators::option::PrefixText{
             pad_string(Repo2Engine(it.id)) +
             std::to_string(int(static_cast<double>(downloaded) / total * 100)) +
@@ -108,6 +120,7 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
         (*bars)[i].set_progress(
             int(static_cast<double>(downloaded) / total * 100));
         (*bars)[i].set_option(indicators::option::PostfixText{
+            time_remaining + " " +
             format_utils::BytesToHumanReadable(downloaded) + "/" +
             format_utils::BytesToHumanReadable(total)});
       } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
@@ -115,8 +128,8 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
             it.bytes.value_or(std::numeric_limits<uint64_t>::max());
         (*bars)[i].set_progress(100);
         auto total_str = format_utils::BytesToHumanReadable(total);
-        (*bars)[i].set_option(
-            indicators::option::PostfixText{total_str + "/" + total_str});
+        (*bars)[i].set_option(indicators::option::PostfixText{
+            "00m:00s " + total_str + "/" + total_str});
         (*bars)[i].set_option(indicators::option::PrefixText{
             pad_string(Repo2Engine(it.id)) + "100%"});
         (*bars)[i].set_progress(100);

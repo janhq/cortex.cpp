@@ -8,7 +8,8 @@ class FormatUtilsTest : public ::testing::Test {};
 TEST_F(FormatUtilsTest, WriteKeyValue) {
   {
     YAML::Node node;
-    std::string result = format_utils::writeKeyValue("key", node["does_not_exist"]);
+    std::string result =
+        format_utils::writeKeyValue("key", node["does_not_exist"]);
     EXPECT_EQ(result, "");
   }
 
@@ -109,4 +110,45 @@ TEST_F(FormatUtilsTest, PrintFloat) {
   result =
       format_utils::print_float("key", std::numeric_limits<float>::quiet_NaN());
   EXPECT_EQ(result, "");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_ZeroSeconds) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(0), "00m:00s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_LessThanOneMinute) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(30), "00m:30s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_ExactlyOneMinute) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(60), "01m:00s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_LessThanOneHour) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(125), "02m:05s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_ExactlyOneHour) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(3600), "01h:00m:00s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_MoreThanOneHour) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(3661), "01h:01m:01s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_LessThanOneDay) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(86399),
+            "23h:59m:59s");  // 1 second less than a day
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_ExactlyOneDay) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(86400), "01d:00h:00m:00s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_MoreThanOneDay) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(90061), "01d:01h:01m:01s");
+}
+
+TEST_F(FormatUtilsTest, TimeDownloadFormat_LargeNumberOfSeconds) {
+  EXPECT_EQ(format_utils::TimeDownloadFormat(1000000), "11d:13h:46m:40s");
 }
