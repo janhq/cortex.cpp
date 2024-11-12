@@ -58,10 +58,10 @@ inline Memory GetMemoryInfo() {
                       &count) == KERN_SUCCESS) {
     used_memory =
         (vm_stat.active_count + vm_stat.inactive_count + vm_stat.wire_count) *
-        page_size / 1024;  // Convert to KB
+        page_size;
   }
-  return Memory{.total_MiB = total_memory / 1024,
-                .available_MiB = (total_memory - used_memory) / 1024};
+  return Memory{.total_MiB = ByteToMiB(total_memory),
+                .available_MiB = ByteToMiB(total_memory - used_memory)};
 #elif defined(__linux__) || defined(_WIN32)
   return Memory{.total_MiB = ByteToMiB(m.total_Bytes()),
                 .available_MiB = ByteToMiB(m.available_Bytes())};
