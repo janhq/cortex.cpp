@@ -49,7 +49,7 @@ void Hardware::Activate(
     callback(resp);
     return;
   };
-  
+
   if (!hw_svc_->SetActivateHardwareConfig(ahc)) {
     Json::Value ret;
     ret["message"] = "The hardware configuration is already up to date.";
@@ -59,7 +59,9 @@ void Hardware::Activate(
     return;
   }
 
-  engine_svc_->UnloadEngine(kLlamaEngine);
+  if (auto r = engine_svc_->UnloadEngine(kLlamaEngine); r.has_error()) {
+    CTL_WRN(r.error());
+  }
 
   Json::Value ret;
   ret["message"] = "The hardware configuration has been activated.";
