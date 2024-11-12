@@ -20,41 +20,6 @@ std::string Repo2Engine(const std::string& r) {
   }
   return r;
 };
-
-std::string TimeDownloadFormat(int seconds) {
-  // Constants for time units
-  const uint64_t kSecondsInMinute = 60;
-  const uint64_t kSecondsInHour = kSecondsInMinute * 60;
-  const uint64_t kSecondsInDay = kSecondsInHour * 24;
-
-  uint64_t days = seconds / kSecondsInDay;
-  seconds %= kSecondsInDay;
-
-  uint64_t hours = seconds / kSecondsInHour;
-  seconds %= kSecondsInHour;
-
-  uint64_t minutes = seconds / kSecondsInMinute;
-  seconds %= kSecondsInMinute;
-
-  std::ostringstream oss;
-
-  auto pad = [](const std::string& v) -> std::string {
-    if(v.size() == 1) return "0" + v;
-    return v;
-  };
-
-  if (days > 0) {
-    oss << days << "d:";
-  }
-  if (hours > 0 || days > 0) {
-    oss << hours << "h:";
-  }
-  oss << pad(std::to_string(minutes)) << "m:";
-
-  oss << pad(std::to_string(seconds)) << "s";
-
-  return oss.str();
-};
 }  // namespace
 bool DownloadProgress::Connect(const std::string& host, int port) {
   if (ws_) {
@@ -141,12 +106,13 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
                      .count();
         uint64_t bytes_per_sec = downloaded / (d + 1);
         std::string time_remaining;
-        if(downloaded == total || bytes_per_sec == 0) {
+        if (downloaded == total || bytes_per_sec == 0) {
           time_remaining = "00m:00s";
         } else {
-          time_remaining = TimeDownloadFormat((total - downloaded) / bytes_per_sec);
+          time_remaining = format_utils::TimeDownloadFormat(
+              (total - downloaded) / bytes_per_sec);
         }
-        
+
         (*bars)[i].set_option(indicators::option::PrefixText{
             pad_string(Repo2Engine(it.id)) +
             std::to_string(int(static_cast<double>(downloaded) / total * 100)) +
