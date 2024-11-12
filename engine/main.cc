@@ -35,15 +35,19 @@
 #error "Unsupported platform!"
 #endif
 
-void RunServer(std::optional<int> port) {
+void RunServer(std::optional<int> port, bool run_in_foreground) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
-  signal(SIGINT, SIG_IGN);
+  if (!run_in_foreground) {
+    signal(SIGINT, SIG_IGN);
+  }
 #elif defined(_WIN32)
-  auto console_ctrl_handler = +[](DWORD ctrl_type) -> BOOL {
-    return (ctrl_type == CTRL_C_EVENT) ? true : false;
-  };
-  SetConsoleCtrlHandler(
-      reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
+  if (!run_in_foreground) {
+    auto console_ctrl_handler = +[](DWORD ctrl_type) -> BOOL {
+      return (ctrl_type == CTRL_C_EVENT) ? true : false;
+    };
+    SetConsoleCtrlHandler(
+        reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
+  }
 #endif
   auto config = file_manager_utils::GetCortexConfig();
   if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
@@ -77,7 +81,6 @@ void RunServer(std::optional<int> port) {
            << " Port: " << config.apiServerPort << "\n";
 
   int thread_num = 1;
-
   int logical_cores = std::thread::hardware_concurrency();
   int drogon_thread_num = std::max(thread_num, logical_cores);
 
@@ -131,7 +134,6 @@ void RunServer(std::optional<int> port) {
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
   drogon::app().disableSigtermHandling();
 
-  // CORS
   drogon::app().registerPostHandlingAdvice(
       [config_service](const drogon::HttpRequestPtr& req,
                        const drogon::HttpResponsePtr& resp) {
@@ -153,7 +155,7 @@ void RunServer(std::optional<int> port) {
           resp->addHeader("Access-Control-Allow-Methods", "*");
           return;
         }
-
+        
         // Check if the origin is in our allowed list
         auto it =
             std::find(allowed_origins.begin(), allowed_origins.end(), origin);
@@ -180,18 +182,21 @@ int main(int argc, char* argv[]) {
 
   // avoid printing logs to terminal
   is_server = true;
-
   std::optional<int> server_port;
-  for (int i = 0; i < argc; i++) {
-    if (strcmp(argv[i], "--config_file_path") == 0) {
-      file_manager_utils::cortex_config_file_path = argv[i + 1];
-    } else if (strcmp(argv[i], "--data_folder_path") == 0) {
-      file_manager_utils::cortex_data_folder_path = argv[i + 1];
-    } else if (strcmp(argv[i], "--port") == 0) {
-      server_port = std::stoi(argv[i + 1]);
-    } else if (strcmp(argv[i], "--loglevel") == 0) {
-      std::string log_level = argv[i + 1];
+  bool run_in_foreground = true;
+
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "--config_file_path") == 0 && i + 1 < argc) {
+      file_manager_utils::cortex_config_file_path = argv[++i];
+    } else if (strcmp(argv[i], "--data_folder_path") == 0 && i + 1 < argc) {
+      file_manager_utils::cortex_data_folder_path = argv[++i];
+    } else if (strcmp(argv[i], "--port") == 0 && i + 1 < argc) {
+      server_port = std::stoi(argv[++i]);
+    } else if (strcmp(argv[i], "--loglevel") == 0 && i + 1 < argc) {
+      std::string log_level = argv[++i];
       logging_utils_helper::SetLogLevel(log_level);
+    } else if (strcmp(argv[i], "--foreground") == 0) {
+      run_in_foreground = false;
     }
   }
 
@@ -234,6 +239,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  RunServer(server_port);
+  RunServer(server_port, run_in_foreground);
   return 0;
 }

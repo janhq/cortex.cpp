@@ -17,6 +17,6 @@ inline bool IsServerAlive(const std::string& host, int port) {
 class ServerStartCmd {
  public:
   ServerStartCmd();
-  bool Exec(const std::string& host, int port, const std::optional<std::string>& log_level = std::nullopt);
+  bool Exec(const std::string& host, int port, const std::optional<bool>& foreground = std::nullopt, const std::optional<std::string>& log_level = std::nullopt);
 };
 }  // namespace commands
