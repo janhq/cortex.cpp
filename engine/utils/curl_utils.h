@@ -12,9 +12,9 @@
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
 
-namespace curl_utils {
+enum class RequestType { GET, PATCH, POST, DEL };
 
-enum class RequestType { GET, PATCH, POST, DELETE };
+namespace curl_utils {
 
 namespace {
 size_t WriteCallback(void* contents, size_t size, size_t nmemb,
@@ -108,7 +108,7 @@ inline cpp::result<std::string, std::string> SimpleRequest(
   } else if (request_type == RequestType::POST) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
     curl_easy_setopt(curl, CURLOPT_POST, 1L);
-  } else if (request_type == RequestType::DELETE) {
+  } else if (request_type == RequestType::DEL) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
   }
   // enable below line for debugging
@@ -207,7 +207,7 @@ inline cpp::result<Json::Value, std::string> SimplePostJson(
 
 inline cpp::result<Json::Value, std::string> SimpleDeleteJson(
     const std::string& url, const std::string& body = "") {
-  auto result = SimpleRequest(url, RequestType::DELETE, body);
+  auto result = SimpleRequest(url, RequestType::DEL, body);
   if (result.has_error()) {
     CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
     return cpp::fail(result.error());
