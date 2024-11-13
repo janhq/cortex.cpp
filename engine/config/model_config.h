@@ -2,6 +2,7 @@
 
 #include <json/json.h>
 #include <cmath>
+#include <ctime>
 #include <fstream>
 #include <iomanip>
 #include <limits>
@@ -19,6 +20,9 @@ struct RemoteModelConfig {
   std::string api_key_template;
   std::string engine;
   std::string version;
+  std::size_t created;
+  std::string object = "model";
+  std::string owned_by = "";
   Json::Value inference_params;
   Json::Value TransformReq;
   Json::Value TransformResp;
@@ -29,18 +33,42 @@ struct RemoteModelConfig {
     }
 
     // Load basic string fields
-    model = json.get("model", "").asString();
-    api_key_template = json.get("api_key_template", "").asString();
-    engine = json.get("engine", "").asString();
-    version = json.get("version", "").asString();
+    model = json.get("model", model).asString();
+    api_key_template =
+        json.get("api_key_template", api_key_template).asString();
+    engine = json.get("engine", engine).asString();
+    version = json.get("version", version).asString();
+    created = json.get("created", created).asUInt64();
+    object = json.get("object", object).asString();
+    owned_by = json.get("owned_by", owned_by).asString();
 
     // Load JSON object fields directly
-    inference_params =
-        json.get("inference_params", Json::Value(Json::objectValue));
-    TransformReq = json.get("TransformReq", Json::Value(Json::objectValue));
-    TransformResp = json.get("TransformResp", Json::Value(Json::objectValue));
-    metadata = json.get("metadata", Json::Value(Json::objectValue));
+    inference_params = json.get("inference_params", inference_params);
+    TransformReq = json.get("TransformReq", TransformReq);
+    TransformResp = json.get("TransformResp", TransformResp);
+    metadata = json.get("metadata", metadata);
   }
+
+  Json::Value ToJson() const {
+    Json::Value json;
+
+    // Add basic string fields
+    json["model"] = model;
+    json["api_key_template"] = api_key_template;
+    json["engine"] = engine;
+    json["version"] = version;
+    json["created"] = static_cast<Json::UInt64>(created);
+    json["object"] = object;
+    json["owned_by"] = owned_by;
+
+    // Add JSON object fields directly
+    json["inference_params"] = inference_params;
+    json["TransformReq"] = TransformReq;
+    json["TransformResp"] = TransformResp;
+    json["metadata"] = metadata;
+
+    return json;
+  };
 
   void SaveToYamlFile(const std::string& filepath) const {
     YAML::Node root;
@@ -50,6 +78,9 @@ struct RemoteModelConfig {
     root["api_key_template"] = api_key_template;
     root["engine"] = engine;
     root["version"] = version;
+    root["object"] = object;
+    root["owned_by"] = owned_by;
+    root["created"] = std::time(nullptr);
 
     // Convert Json::Value to YAML::Node using utility function
     root["inference_params"] =
@@ -80,6 +111,9 @@ struct RemoteModelConfig {
     api_key_template = root["api_key_template"].as<std::string>("");
     engine = root["engine"].as<std::string>("");
     version = root["version"] ? root["version"].as<std::string>() : "";
+    created = root["created"] ? root["created"].as<std::size_t>() : 0;
+    object = root["object"] ? root["object"].as<std::string>() : "model";
+    owned_by = root["owned_by"] ? root["owned_by"].as<std::string>() : "";
 
     // Load complex fields using utility function
     inference_params =

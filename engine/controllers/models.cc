@@ -7,6 +7,7 @@
 #include "models.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/http_util.h"
 #include "utils/logging_utils.h"
@@ -168,11 +169,27 @@ void Models::ListModel(
                 fs::path(model_entry.path_to_model_yaml))
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
-        Json::Value obj = model_config.ToJson();
-        obj["id"] = model_entry.model;
-        obj["model"] = model_entry.model;
-        data.append(std::move(obj));
-        yaml_handler.Reset();
+
+        if (model_config.engine == kOnnxEngine ||
+            model_config.engine == kLlamaEngine ||
+            model_config.engine == kTrtLlmEngine) {
+          Json::Value obj = model_config.ToJson();
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          data.append(std::move(obj));
+          yaml_handler.Reset();
+        } else {
+          config::RemoteModelConfig remote_model_config;
+          remote_model_config.LoadFromYamlFile(
+              fmu::ToAbsoluteCortexDataPath(
+                  fs::path(model_entry.path_to_model_yaml))
+                  .string());
+          Json::Value obj = remote_model_config.ToJson();
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          data.append(std::move(obj));
+        }
+
       } catch (const std::exception& e) {
         LOG_ERROR << "Failed to load yaml file for model: "
                   << model_entry.path_to_model_yaml << ", error: " << e.what();
@@ -218,17 +235,31 @@ void Models::GetModel(const HttpRequestPtr& req,
       callback(resp);
       return;
     }
+
     yaml_handler.ModelConfigFromFile(
         fmu::ToAbsoluteCortexDataPath(
             fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto model_config = yaml_handler.GetModelConfig();
+    if (model_config.engine == kOnnxEngine ||
+        model_config.engine == kLlamaEngine ||
+        model_config.engine == kTrtLlmEngine) {
+      ret = model_config.ToJson();
 
-    ret = model_config.ToJson();
-
-    ret["id"] = model_config.model;
-    ret["object"] = "model";
-    ret["result"] = "OK";
+      ret["id"] = model_config.model;
+      ret["object"] = "model";
+      ret["result"] = "OK";
+    } else {
+      config::RemoteModelConfig remote_model_config;
+      remote_model_config.LoadFromYamlFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      ret = remote_model_config.ToJson();
+      ret["id"] = remote_model_config.model;
+      ret["object"] = "model";
+      ret["result"] = "OK";
+    }
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -279,11 +310,23 @@ void Models::UpdateModel(const HttpRequestPtr& req,
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
-    model_config.FromJson(json_body);
-    yaml_handler.UpdateModelConfig(model_config);
-    yaml_handler.WriteYamlFile(yaml_fp.string());
-    std::string message = "Successfully update model ID '" + model_id +
-                          "': " + json_body.toStyledString();
+    std::string message;
+    if (model_config.engine == kOnnxEngine ||
+        model_config.engine == kLlamaEngine ||
+        model_config.engine == kTrtLlmEngine) {
+      model_config.FromJson(json_body);
+      yaml_handler.UpdateModelConfig(model_config);
+      yaml_handler.WriteYamlFile(yaml_fp.string());
+      message = "Successfully update model ID '" + model_id +
+                "': " + json_body.toStyledString();
+    } else {
+      config::RemoteModelConfig remote_model_config;
+      remote_model_config.LoadFromYamlFile(yaml_fp.string());
+      remote_model_config.LoadFromJson(json_body);
+      remote_model_config.SaveToYamlFile(yaml_fp.string());
+      message = "Successfully update model ID '" + model_id +
+                "': " + json_body.toStyledString();
+    }
     LOG_INFO << message;
     Json::Value ret;
     ret["result"] = "Updated successfully!";
