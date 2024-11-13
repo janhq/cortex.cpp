@@ -60,6 +60,7 @@ class CommandLineParser {
     std::string filter = "";
     std::string log_level = "INFO";
 
+    bool foreground = false;
     bool show_menu = false;
 
 
