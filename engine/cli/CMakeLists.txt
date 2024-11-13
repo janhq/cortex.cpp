@@ -78,6 +78,8 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/inference_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/hardware_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/remote_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/TemplateRenderer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_progress.cc
   )
@@ -114,11 +116,12 @@ aux_source_directory(../cortex-common CORTEX_COMMON)
 aux_source_directory(../config CONFIG_SRC)
 aux_source_directory(commands COMMANDS_SRC)
 aux_source_directory(../database DB_SRC)
+aux_source_directory(../extensions EX_SRC)
  
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.. )
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC} ${EX_SRC})
 
 set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}

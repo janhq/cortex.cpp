@@ -13,6 +13,61 @@
 // Helper for CURL response
 
 namespace remote_engine {
+
+struct StreamContext {
+  std::function<void(Json::Value&&, Json::Value&&)> callback;
+  std::string buffer;
+};
+
+static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
+                                  void* userdata) {
+  auto* context = static_cast<StreamContext*>(userdata);
+  std::string chunk(ptr, size * nmemb);
+
+  context->buffer += chunk;
+
+  // Process complete lines
+  size_t pos;
+  while ((pos = context->buffer.find('\n')) != std::string::npos) {
+    std::string line = context->buffer.substr(0, pos);
+    context->buffer = context->buffer.substr(pos + 1);
+
+    // Skip empty lines
+    if (line.empty() || line == "\r")
+      continue;
+
+    // Remove "data: " prefix if present
+    if (line.substr(0, 6) == "data: ") {
+      line = line.substr(6);
+    }
+
+    // Skip [DONE] message
+    if (line == "[DONE]") {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = false;
+      status["is_stream"] = true;
+      status["status_code"] = 200;
+      context->callback(std::move(status), Json::Value());
+      continue;
+    }
+
+    // Parse the JSON
+    Json::Value chunk_json;
+    Json::Reader reader;
+    if (reader.parse(line, chunk_json)) {
+      Json::Value status;
+      status["is_done"] = false;
+      status["has_error"] = false;
+      status["is_stream"] = true;
+      status["status_code"] = 200;
+      context->callback(std::move(status), std::move(chunk_json));
+    }
+  }
+
+  return size * nmemb;
+}
+
 struct CurlResponse {
   std::string body;
   bool error{false};
@@ -43,11 +98,13 @@ class RemoteEngine : public EngineI {
   CurlResponse MakeChatCompletionRequest(const ModelConfig& config,
                                          const std::string& body,
                                          const std::string& method = "POST");
+  CurlResponse MakeStreamingChatCompletionRequest(
+      const ModelConfig& config, const std::string& body,
+      std::function<void(Json::Value&&, Json::Value&&)> callback);
   CurlResponse MakeGetModelsRequest();
 
   // Internal model management
-  bool LoadModelConfig(const std::string& model,
-                       const std::string& yaml_path,
+  bool LoadModelConfig(const std::string& model, const std::string& yaml_path,
                        const std::string& api_key);
   ModelConfig* GetModelConfig(const std::string& model);
 

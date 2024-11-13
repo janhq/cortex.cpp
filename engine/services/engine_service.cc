@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <optional>
 #include "algorithm"
+#include "database/engines.h"
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
@@ -13,8 +14,6 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-#include "database/engines.h"
-
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
                                    const std::string& cuda_driver_version) {
@@ -230,7 +229,9 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
-  auto normalized_version = version == "latest" ? "latest" : string_utils::RemoveSubstring(version, "v");
+  auto normalized_version = version == "latest"
+                                ? "latest"
+                                : string_utils::RemoveSubstring(version, "v");
   auto res = GetEngineVariants(engine, version);
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine releases: " + res.error());
@@ -241,8 +242,11 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
 
   std::optional<EngineVariant> selected_variant = std::nullopt;
   if (variant_name.has_value()) {
-    auto latest_version_semantic = normalized_version == "latest" ? res.value()[0].version : normalized_version;
-    auto merged_variant_name = engine + "-" + latest_version_semantic + "-" + variant_name.value() + ".tar.gz";
+    auto latest_version_semantic = normalized_version == "latest"
+                                       ? res.value()[0].version
+                                       : normalized_version;
+    auto merged_variant_name = engine + "-" + latest_version_semantic + "-" +
+                               variant_name.value() + ".tar.gz";
 
     for (const auto& asset : res.value()) {
       if (asset.name == merged_variant_name) {
@@ -281,24 +285,31 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
   }
 
   auto normalize_version = "v" + selected_variant->version;
-  auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(selected_variant->name, engine, selected_variant->version);
-  auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() / engine / variant_folder_name.value() / normalize_version;
+  auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
+      selected_variant->name, engine, selected_variant->version);
+  auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() /
+                             engine / variant_folder_name.value() /
+                             normalize_version;
   auto variant_path = variant_folder_path / selected_variant->name;
 
   std::filesystem::create_directories(variant_folder_path);
   CLI_LOG("variant_folder_path: " + variant_folder_path.string());
 
-  auto on_finished = [this, engine, selected_variant, variant_folder_path, normalize_version](const DownloadTask& finishedTask) {
+  auto on_finished = [this, engine, selected_variant, variant_folder_path,
+                      normalize_version](const DownloadTask& finishedTask) {
     CLI_LOG("Engine zip path: " << finishedTask.items[0].localPath.string());
     CLI_LOG("Version: " + normalize_version);
 
     auto extract_path = finishedTask.items[0].localPath.parent_path();
-    archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(), extract_path.string(), true);
+    archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
+                                  extract_path.string(), true);
 
-    auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(selected_variant->name, engine, normalize_version);
-    
+    auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
+        selected_variant->name, engine, normalize_version);
+
     CLI_LOG("Extracted variant: " + variant.value());
-    auto res = SetDefaultEngineVariant(engine, normalize_version, variant.value());
+    auto res =
+        SetDefaultEngineVariant(engine, normalize_version, variant.value());
     if (res.has_error()) {
       CTL_ERR("Failed to set default engine variant: " << res.error());
     } else {
@@ -307,15 +318,13 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
 
     // Create engine entry in the database
     cortex::db::Engines engines;
-    auto create_res = engines.UpsertEngine(
-      engine,                         // engine_name
-      "",                               // todo - luke
-      "",                             // todo - luke
-      "",                                 // todo - luke
-      normalize_version,              
-      variant.value(),                
-      "Default",                        // todo - luke
-      ""                              // todo - luke
+    auto create_res = engines.UpsertEngine(engine,  // engine_name
+                                           "",      // todo - luke
+                                           "",      // todo - luke
+                                           "",      // todo - luke
+                                           normalize_version, variant.value(),
+                                           "Default",  // todo - luke
+                                           ""          // todo - luke
     );
 
     if (create_res.has_value()) {
@@ -324,8 +333,10 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
       CTL_INF("Engine entry created successfully");
     }
 
-    for (const auto& entry : std::filesystem::directory_iterator(variant_folder_path.parent_path())) {
-      if (entry.is_directory() && entry.path().filename() != normalize_version) {
+    for (const auto& entry : std::filesystem::directory_iterator(
+             variant_folder_path.parent_path())) {
+      if (entry.is_directory() &&
+          entry.path().filename() != normalize_version) {
         try {
           std::filesystem::remove_all(entry.path());
         } catch (const std::exception& e) {
@@ -342,20 +353,19 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
     CTL_INF("Finished!");
   };
 
-  auto downloadTask = DownloadTask{
-    .id = engine,
-    .type = DownloadType::Engine,
-    .items = {DownloadItem{
-      .id = engine,
-      .downloadUrl = selected_variant->browser_download_url,
-      .localPath = variant_path,
-    }}
-  };
+  auto downloadTask =
+      DownloadTask{.id = engine,
+                   .type = DownloadType::Engine,
+                   .items = {DownloadItem{
+                       .id = engine,
+                       .downloadUrl = selected_variant->browser_download_url,
+                       .localPath = variant_path,
+                   }}};
 
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
   if (add_task_result.has_error()) {
     return cpp::fail(add_task_result.error());
-  }  
+  }
   return {};
 }
 
@@ -750,6 +760,30 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // TODO (alex): Need to change this, now Hard code for testing remote engine
+  if (engine_name != kLlamaEngine && engine_name != kOnnxEngine &&
+      engine_name != kTrtLlmEngine) {
+    engines_[engine_name].engine = new remote_engine::RemoteEngine();
+    auto& en = std::get<EngineI*>(engines_[ne].engine);
+    auto config = file_manager_utils::GetCortexConfig();
+    if (en->IsSupported("SetFileLogger")) {
+      en->SetFileLogger(config.maxLogLines,
+                        (std::filesystem::path(config.logFolderPath) /
+                         std::filesystem::path(config.logLlamaCppPath))
+                            .string());
+    } else {
+      CTL_WRN("Method SetFileLogger is not supported yet");
+    }
+    if (en->IsSupported("SetLogLevel")) {
+      en->SetLogLevel(trantor::Logger::logLevel());
+    } else {
+      CTL_WRN("Method SetLogLevel is not supported yet");
+    }
+    return {};
+  }
+
+  // End hard code
+
   CTL_INF("Loading engine: " << ne);
 
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
@@ -933,6 +967,13 @@ EngineService::GetLatestEngineVersion(const std::string& engine) const {
 cpp::result<bool, std::string> EngineService::IsEngineReady(
     const std::string& engine) const {
   auto ne = NormalizeEngine(engine);
+
+  // Hard code to test remote engine
+  if (engine != kLlamaRepo && engine != kTrtLlmRepo && engine != kOnnxRepo) {
+    return true;
+  }
+
+  // End hard code
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {

@@ -10,6 +10,64 @@ constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
 constexpr const int kFileLoggerOption = 0;
 
+CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
+    const ModelConfig& config, const std::string& body,
+    std::function<void(Json::Value&&, Json::Value&&)> callback) {
+
+  CURL* curl = curl_easy_init();
+  CurlResponse response;
+
+  if (!curl) {
+    response.error = true;
+    response.error_message = "Failed to initialize CURL";
+    return response;
+  }
+
+  std::string full_url =
+      config.transform_req["chat_completions"]["url"].as<std::string>();
+
+  struct curl_slist* headers = nullptr;
+  if (!config.api_key.empty()) {
+    headers = curl_slist_append(headers, api_key_template_.c_str());
+  }
+
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  headers = curl_slist_append(headers, "Accept: text/event-stream");
+  headers = curl_slist_append(headers, "Cache-Control: no-cache");
+  headers = curl_slist_append(headers, "Connection: keep-alive");
+
+  StreamContext context{callback, ""};
+
+  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(curl, CURLOPT_POST, 1L);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, StreamWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &context);
+  curl_easy_setopt(curl, CURLOPT_TRANSFER_ENCODING, 1L);
+
+  CURLcode res = curl_easy_perform(curl);
+
+  if (res != CURLE_OK) {
+    response.error = true;
+    response.error_message = curl_easy_strerror(res);
+
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = true;
+    status["status_code"] = 500;
+
+    Json::Value error;
+    error["error"] = response.error_message;
+    callback(std::move(status), std::move(error));
+  }
+
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+  return response;
+}
+
 std::string ReplaceApiKeyPlaceholder(const std::string& templateStr,
                                      const std::string& apiKey) {
   const std::string placeholder = "{{api_key}}";
@@ -226,7 +284,12 @@ void RemoteEngine::LoadModel(
       !json_body->isMember("api_key")) {
     Json::Value error;
     error["error"] = "Missing required fields: model or model_path";
-    callback(Json::Value(), std::move(error));
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    callback(std::move(status), std::move(error));
     return;
   }
 
@@ -237,7 +300,12 @@ void RemoteEngine::LoadModel(
   if (!LoadModelConfig(model, model_path, api_key)) {
     Json::Value error;
     error["error"] = "Failed to load model configuration";
-    callback(Json::Value(), std::move(error));
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k500InternalServerError;
+    callback(std::move(status), std::move(error));
     return;
   }
   if (json_body->isMember("metadata")) {
@@ -246,7 +314,12 @@ void RemoteEngine::LoadModel(
 
   Json::Value response;
   response["status"] = "Model loaded successfully";
-  callback(Json::Value(), std::move(response));
+  Json::Value status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = k200OK;
+  callback(std::move(status), std::move(response));
 }
 
 void RemoteEngine::UnloadModel(
@@ -255,7 +328,12 @@ void RemoteEngine::UnloadModel(
   if (!json_body->isMember("model")) {
     Json::Value error;
     error["error"] = "Missing required field: model";
-    callback(Json::Value(), std::move(error));
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    callback(std::move(status), std::move(error));
     return;
   }
 
@@ -268,7 +346,12 @@ void RemoteEngine::UnloadModel(
 
   Json::Value response;
   response["status"] = "Model unloaded successfully";
-  callback(std::move(response), Json::Value());
+  Json::Value status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = k200OK;
+  callback(std::move(status), std::move(response));
 }
 
 void RemoteEngine::HandleChatCompletion(
@@ -300,7 +383,8 @@ void RemoteEngine::HandleChatCompletion(
     callback(std::move(status), std::move(error));
     return;
   }
-
+  bool is_stream =
+      json_body->isMember("stream") && (*json_body)["stream"].asBool();
   Json::FastWriter writer;
   std::string request_body = writer.write((*json_body));
   std::cout << "template: "
@@ -311,41 +395,45 @@ void RemoteEngine::HandleChatCompletion(
       model_config->transform_req["chat_completions"]["template"]
           .as<std::string>(),
       (*json_body));
+  if (is_stream) {
+    MakeStreamingChatCompletionRequest(*model_config, result, callback);
+  } else {
 
-  auto response = MakeChatCompletionRequest(*model_config, result);
+    auto response = MakeChatCompletionRequest(*model_config, result);
 
-  if (response.error) {
+    if (response.error) {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = true;
+      status["is_stream"] = false;
+      status["status_code"] = k400BadRequest;
+      Json::Value error;
+      error["error"] = response.error_message;
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
+    Json::Value response_json;
+    Json::Reader reader;
+    if (!reader.parse(response.body, response_json)) {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = true;
+      status["is_stream"] = false;
+      status["status_code"] = k500InternalServerError;
+      Json::Value error;
+      error["error"] = "Failed to parse response";
+      callback(std::move(status), std::move(error));
+      return;
+    }
     Json::Value status;
     status["is_done"] = true;
-    status["has_error"] = true;
+    status["has_error"] = false;
     status["is_stream"] = false;
-    status["status_code"] = k400BadRequest;
-    Json::Value error;
-    error["error"] = response.error_message;
-    callback(std::move(status), std::move(error));
-    return;
-  }
+    status["status_code"] = k200OK;
 
-  Json::Value response_json;
-  Json::Reader reader;
-  if (!reader.parse(response.body, response_json)) {
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k500InternalServerError;
-    Json::Value error;
-    error["error"] = "Failed to parse response";
-    callback(std::move(status), std::move(error));
-    return;
+    callback(std::move(status), std::move(response_json));
   }
-  Json::Value status;
-  status["is_done"] = true;
-  status["has_error"] = false;
-  status["is_stream"] = false;
-  status["status_code"] = k200OK;
-
-  callback(std::move(status), std::move(response_json));
 }
 
 void RemoteEngine::GetModelStatus(
@@ -417,6 +505,7 @@ bool RemoteEngine::SetFileLogger(int max_log_lines,
       });
   freopen(log_path.c_str(), "w", stderr);
   freopen(log_path.c_str(), "w", stdout);
+  return true;
 }
 
 void RemoteEngine::SetLogLevel(trantor::Logger::LogLevel log_level) {
