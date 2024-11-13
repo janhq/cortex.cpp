@@ -38,9 +38,9 @@ RemoteEngine::~RemoteEngine() {
 }
 
 RemoteEngine::ModelConfig* RemoteEngine::GetModelConfig(
-    const std::string& model_id) {
+    const std::string& model) {
   std::shared_lock lock(models_mutex_);
-  auto it = models_.find(model_id);
+  auto it = models_.find(model);
   if (it != models_.end()) {
     return &it->second;
   }
@@ -132,18 +132,18 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
   return response;
 }
 
-bool RemoteEngine::LoadModelConfig(const std::string& model_id,
+bool RemoteEngine::LoadModelConfig(const std::string& model,
                                    const std::string& yaml_path,
                                    const std::string& api_key) {
   try {
     YAML::Node config = YAML::LoadFile(yaml_path);
 
     ModelConfig model_config;
-    model_config.model_id = model_id;
+    model_config.model = model;
 
     // Required fields
     if (!config["api_key_template"]) {
-      LOG_ERROR << "Missing required fields in config for model " << model_id;
+      LOG_ERROR << "Missing required fields in config for model " << model;
       return false;
     }
 
@@ -157,12 +157,12 @@ bool RemoteEngine::LoadModelConfig(const std::string& model_id,
     if (config["TransformReq"]) {
       model_config.transform_req = config["TransformReq"];
     } else {
-      LOG_WARN << "Missing TransformReq in config for model " << model_id;
+      LOG_WARN << "Missing TransformReq in config for model " << model;
     }
     if (config["TransformResp"]) {
       model_config.transform_resp = config["TransformResp"];
     } else {
-      LOG_WARN << "Missing TransformResp in config for model " << model_id;
+      LOG_WARN << "Missing TransformResp in config for model " << model;
     }
 
     model_config.is_loaded = true;
@@ -170,12 +170,12 @@ bool RemoteEngine::LoadModelConfig(const std::string& model_id,
     // Thread-safe update of models map
     {
       std::unique_lock lock(models_mutex_);
-      models_[model_id] = std::move(model_config);
+      models_[model] = std::move(model_config);
     }
 
     return true;
   } catch (const YAML::Exception& e) {
-    LOG_ERROR << "Failed to load config for model " << model_id << ": "
+    LOG_ERROR << "Failed to load config for model " << model << ": "
               << e.what();
     return false;
   }
@@ -222,19 +222,19 @@ void RemoteEngine::GetModels(
 void RemoteEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  if (!json_body->isMember("model_id") || !json_body->isMember("model_path") ||
+  if (!json_body->isMember("model") || !json_body->isMember("model_path") ||
       !json_body->isMember("api_key")) {
     Json::Value error;
-    error["error"] = "Missing required fields: model_id or model_path";
+    error["error"] = "Missing required fields: model or model_path";
     callback(Json::Value(), std::move(error));
     return;
   }
 
-  const std::string& model_id = (*json_body)["model_id"].asString();
+  const std::string& model = (*json_body)["model"].asString();
   const std::string& model_path = (*json_body)["model_path"].asString();
   const std::string& api_key = (*json_body)["api_key"].asString();
 
-  if (!LoadModelConfig(model_id, model_path, api_key)) {
+  if (!LoadModelConfig(model, model_path, api_key)) {
     Json::Value error;
     error["error"] = "Failed to load model configuration";
     callback(Json::Value(), std::move(error));
@@ -252,18 +252,18 @@ void RemoteEngine::LoadModel(
 void RemoteEngine::UnloadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  if (!json_body->isMember("model_id")) {
+  if (!json_body->isMember("model")) {
     Json::Value error;
-    error["error"] = "Missing required field: model_id";
+    error["error"] = "Missing required field: model";
     callback(Json::Value(), std::move(error));
     return;
   }
 
-  const std::string& model_id = (*json_body)["model_id"].asString();
+  const std::string& model = (*json_body)["model"].asString();
 
   {
     std::unique_lock lock(models_mutex_);
-    models_.erase(model_id);
+    models_.erase(model);
   }
 
   Json::Value response;
@@ -286,8 +286,8 @@ void RemoteEngine::HandleChatCompletion(
     return;
   }
 
-  const std::string& model_id = (*json_body)["model"].asString();
-  auto* model_config = GetModelConfig(model_id);
+  const std::string& model = (*json_body)["model"].asString();
+  auto* model_config = GetModelConfig(model);
 
   if (!model_config || !model_config->is_loaded) {
     Json::Value status;
@@ -296,7 +296,7 @@ void RemoteEngine::HandleChatCompletion(
     status["is_stream"] = false;
     status["status_code"] = k400BadRequest;
     Json::Value error;
-    error["error"] = "Model not found or not loaded: " + model_id;
+    error["error"] = "Model not found or not loaded: " + model;
     callback(std::move(status), std::move(error));
     return;
   }
@@ -351,29 +351,34 @@ void RemoteEngine::HandleChatCompletion(
 void RemoteEngine::GetModelStatus(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  if (!json_body->isMember("model_id")) {
+  if (!json_body->isMember("model")) {
     Json::Value error;
-    error["error"] = "Missing required field: model_id";
+    error["error"] = "Missing required field: model";
     callback(Json::Value(), std::move(error));
     return;
   }
 
-  const std::string& model_id = (*json_body)["model_id"].asString();
-  auto* model_config = GetModelConfig(model_id);
+  const std::string& model = (*json_body)["model"].asString();
+  auto* model_config = GetModelConfig(model);
 
   if (!model_config) {
     Json::Value error;
-    error["error"] = "Model not found: " + model_id;
+    error["error"] = "Model not found: " + model;
     callback(Json::Value(), std::move(error));
     return;
   }
 
   Json::Value response;
-  response["model_id"] = model_id;
-  response["is_loaded"] = model_config->is_loaded;
-  response["url"] = model_config->url;
+  response["model"] = model;
+  response["model_loaded"] = model_config->is_loaded;
+  response["model_data"] = model_config->url;
 
-  callback(std::move(response), Json::Value());
+  Json::Value status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = k200OK;
+  callback(std::move(status), std::move(response));
 }
 
 // Implement remaining virtual functions

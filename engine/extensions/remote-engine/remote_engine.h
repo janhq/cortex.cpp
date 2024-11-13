@@ -23,7 +23,7 @@ class RemoteEngine : public EngineI {
  private:
   // Model configuration
   struct ModelConfig {
-    std::string model_id;
+    std::string model;
     std::string api_key;
     std::string url;
     YAML::Node transform_req;
@@ -46,10 +46,10 @@ class RemoteEngine : public EngineI {
   CurlResponse MakeGetModelsRequest();
 
   // Internal model management
-  bool LoadModelConfig(const std::string& model_id,
+  bool LoadModelConfig(const std::string& model,
                        const std::string& yaml_path,
                        const std::string& api_key);
-  ModelConfig* GetModelConfig(const std::string& model_id);
+  ModelConfig* GetModelConfig(const std::string& model);
 
  public:
   RemoteEngine();
