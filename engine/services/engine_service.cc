@@ -177,6 +177,18 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
     CTL_INF("engine_path: " << engine_path.string());
     archive_utils::ExtractArchive(path + "/" + matched_variant,
                                   engine_path.string(), true);
+
+    auto variant =
+        engine_matcher_utils::GetVariantFromNameAndVersion(ar, engine, v);
+    CTL_INF("Extracted variant: " + variant.value());
+    // set as default
+    auto res = SetDefaultEngineVariant(engine, v, variant.value());
+    if (res.has_error()) {
+      CTL_ERR("Failed to set default engine variant: " << res.error());
+      return false;
+    } else {
+      CTL_INF("Set default engine variant: " << res.value().variant);
+    }
   }
 
   return true;
