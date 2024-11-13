@@ -146,9 +146,10 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
           CTL_INF("Found cuda variant, extract it");
           found_cuda = true;
           // extract binary
-          auto engine_path =
-              file_manager_utils::GetEnginesContainerPath() / engine;
-          archive_utils::ExtractArchive(path + "/" + cf, engine_path.string());
+          auto cuda_path =
+              file_manager_utils::GetCudaToolkitPath(NormalizeEngine(engine));
+          archive_utils::ExtractArchive(path + "/" + cf, cuda_path.string(),
+                                        true);
         }
       }
     }
@@ -170,9 +171,12 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
                                     << ", will get engine from remote");
     // Go with the remote flow
   } else {
-    auto engine_path = file_manager_utils::GetEnginesContainerPath();
+    auto [v, ar] = engine_matcher_utils::GetVersionAndArch(matched_variant);
+    auto engine_path = file_manager_utils::GetEnginesContainerPath() /
+                       NormalizeEngine(engine) / ar / v;
+    CTL_INF("engine_path: " << engine_path.string());
     archive_utils::ExtractArchive(path + "/" + matched_variant,
-                                  engine_path.string());
+                                  engine_path.string(), true);
   }
 
   return true;
@@ -296,12 +300,12 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
 
   auto variant_path = variant_folder_path / selected_variant->name;
   std::filesystem::create_directories(variant_folder_path);
-  CLI_LOG("variant_folder_path: " + variant_folder_path.string());
+  CTL_INF("variant_folder_path: " + variant_folder_path.string());
   auto on_finished = [this, engine, selected_variant, variant_folder_path,
                       normalize_version](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
-    CLI_LOG("Engine zip path: " << finishedTask.items[0].localPath.string());
-    CLI_LOG("Version: " + normalize_version);
+    CTL_INF("Engine zip path: " << finishedTask.items[0].localPath.string());
+    CTL_INF("Version: " + normalize_version);
 
     auto extract_path = finishedTask.items[0].localPath.parent_path();
 
@@ -310,7 +314,7 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
 
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
         selected_variant->name, engine, normalize_version);
-    CLI_LOG("Extracted variant: " + variant.value());
+    CTL_INF("Extracted variant: " + variant.value());
     // set as default
     auto res =
         SetDefaultEngineVariant(engine, normalize_version, variant.value());
