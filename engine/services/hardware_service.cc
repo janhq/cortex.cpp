@@ -279,11 +279,13 @@ void HardwareService::UpdateHardwareInfos() {
   }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
-  if (value) {
-    LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
-  } else {
-    need_restart = true;
+  if (system_info_utils::IsNvidiaSmiAvailable()) {
+    const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
+    if (value) {
+      LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
+    } else {
+      need_restart = true;
+    }
   }
 #endif
 
