@@ -223,5 +223,11 @@ jobs:
         continue-on-error: true
         if: always()  
         run: |
+          echo "Log cortex server"
+          echo "--------------------------------------------------------------"
+          docker run cortex cat /root/cortexcpp/logs/cortex.log
+          echo "Log cortex cli"
+          echo "--------------------------------------------------------------"
+          docker run cortex cat /root/cortexcpp/logs/cortex-cli.log
           docker stop cortex
           docker rm cortex
