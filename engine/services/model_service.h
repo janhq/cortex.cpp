@@ -6,6 +6,7 @@
 #include "config/model_config.h"
 #include "services/download_service.h"
 #include "services/inference_service.h"
+#include "common/engine_servicei.h"
 
 struct ModelPullInfo {
   std::string id;
@@ -28,6 +29,11 @@ struct StartParameterOverride {
   bool bypass_model_check() const { return mmproj.has_value(); }
 };
 
+struct StartModelResult {
+ bool success;
+ std::optional<std::string> warning;
+};
+
 class ModelService {
  public:
   explicit ModelService(std::shared_ptr<DownloadService> download_service)
@@ -35,9 +41,11 @@ class ModelService {
 
   explicit ModelService(
       std::shared_ptr<DownloadService> download_service,
-      std::shared_ptr<services::InferenceService> inference_service)
+      std::shared_ptr<services::InferenceService> inference_service,
+      std::shared_ptr<EngineServiceI> engine_svc)
       : download_service_{download_service},
-        inference_svc_(inference_service) {};
+        inference_svc_(inference_service),
+        engine_svc_(engine_svc) {};
 
   /**
    * Return model id if download successfully
@@ -63,7 +71,7 @@ class ModelService {
    */
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
-  cpp::result<bool, std::string> StartModel(
+  cpp::result<StartModelResult, std::string> StartModel(
       const std::string& model_handle,
       const StartParameterOverride& params_override);
 
@@ -99,4 +107,5 @@ class ModelService {
   std::shared_ptr<DownloadService> download_service_;
   std::shared_ptr<services::InferenceService> inference_svc_;
   std::unordered_set<std::string> bypass_stop_check_set_;
+  std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
 };

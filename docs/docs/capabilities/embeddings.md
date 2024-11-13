@@ -6,7 +6,10 @@ title: Embeddings
 :::
 
 cortex.cpp now support embeddings endpoint with fully OpenAI compatible.
+<<<<<<< HEAD
 
+=======
+>>>>>>> a055f6906e43b3c3398874d540136425adae9114
 
 For embeddings API usage please refer to [API references](/api-reference#tag/chat/POST/v1/embeddings). This tutorial show you how to use embeddings in cortex with openai python SDK.
 
@@ -102,4 +105,7 @@ response = client.embeddings.create(input = [12,44,123], model=MODEL)
 # input as array of arrays contain tokens
 response = client.embeddings.create(input = [[912,312,54],[12,433,1241]], model=MODEL)
 ```
+<<<<<<< HEAD
 
+=======
+>>>>>>> a055f6906e43b3c3398874d540136425adae9114

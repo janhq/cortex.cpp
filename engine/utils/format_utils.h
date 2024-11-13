@@ -82,10 +82,10 @@ inline std::string writeKeyValue(const std::string& key,
 };
 
 inline std::string BytesToHumanReadable(uint64_t bytes) {
-  const uint64_t KB = 1024;
-  const uint64_t MB = KB * 1024;
-  const uint64_t GB = MB * 1024;
-  const uint64_t TB = GB * 1024;
+  constexpr const uint64_t KB = 1024;
+  constexpr const uint64_t MB = KB * 1024;
+  constexpr const uint64_t GB = MB * 1024;
+  constexpr const uint64_t TB = GB * 1024;
 
   double result;
   std::string unit;
@@ -112,4 +112,40 @@ inline std::string BytesToHumanReadable(uint64_t bytes) {
   out << std::fixed << std::setprecision(2) << result << " " << unit;
   return out.str();
 }
+
+inline std::string TimeDownloadFormat(int seconds) {
+  // Constants for time units
+  constexpr const uint64_t kSecondsInMinute = 60;
+  constexpr const uint64_t kSecondsInHour = kSecondsInMinute * 60;
+  constexpr const uint64_t kSecondsInDay = kSecondsInHour * 24;
+
+  uint64_t days = seconds / kSecondsInDay;
+  seconds %= kSecondsInDay;
+
+  uint64_t hours = seconds / kSecondsInHour;
+  seconds %= kSecondsInHour;
+
+  uint64_t minutes = seconds / kSecondsInMinute;
+  seconds %= kSecondsInMinute;
+
+  std::ostringstream oss;
+
+  auto pad = [](const std::string& v) -> std::string {
+    if (v.size() == 1)
+      return "0" + v;
+    return v;
+  };
+
+  if (days > 0) {
+    oss << pad(std::to_string(days)) << "d:";
+  }
+  if (hours > 0 || days > 0) {
+    oss << pad(std::to_string(hours)) << "h:";
+  }
+  oss << pad(std::to_string(minutes)) << "m:";
+
+  oss << pad(std::to_string(seconds)) << "s";
+
+  return oss.str();
+};
 }  // namespace format_utils

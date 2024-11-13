@@ -6,6 +6,8 @@
 #include "services/engine_service.h"
 #include "services/model_service.h"
 #include "utils/config_yaml_utils.h"
+#include "commands/hardware_list_cmd.h"
+#include "common/hardware_config.h"
 
 class CommandLineParser {
  public:
@@ -20,6 +22,8 @@ class CommandLineParser {
   void SetupModelCommands();
 
   void SetupEngineCommands();
+
+  void SetupHardwareCommands();
 
   void SetupSystemCommands();
 
@@ -70,4 +74,6 @@ class CommandLineParser {
   CmlData cml_data_;
   std::unordered_map<std::string, std::string> config_update_opts_;
   bool executed_ = false;
+  commands::HarwareOptions hw_opts_;
+  std::unordered_map<std::string, std::string> hw_activate_opts_;
 };

@@ -67,7 +67,8 @@ std::optional<std::string> SelectLocalModel(std::string host, int port,
   return model_id;
 }
 
-void RunCmd::Exec(bool run_detach) {
+void RunCmd::Exec(bool run_detach,
+                  const std::unordered_map<std::string, std::string>& options) {
   std::optional<std::string> model_id =
       SelectLocalModel(host_, port_, model_service_, model_handle_);
   if (!model_id.has_value()) {
@@ -129,9 +130,9 @@ void RunCmd::Exec(bool run_detach) {
             !commands::ModelStatusCmd(model_service_)
                  .IsLoaded(host_, port_, *model_id)) {
 
-          auto res =
-              commands::ModelStartCmd(model_service_)
-                  .Exec(host_, port_, *model_id, false /*print_success_log*/);
+          auto res = commands::ModelStartCmd(model_service_)
+                         .Exec(host_, port_, *model_id, options,
+                               false /*print_success_log*/);
           if (!res) {
             CLI_LOG("Error: Failed to start model");
             return;

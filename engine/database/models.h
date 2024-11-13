@@ -41,7 +41,6 @@ class Models {
   ModelStatus StringToStatus(const std::string& status_str) const;
 
  public:
-  static const std::string kModelListPath;
   cpp::result<std::vector<ModelEntry>, std::string> LoadModelList() const;
   Models();
   Models(SQLite::Database& db);

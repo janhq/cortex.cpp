@@ -531,8 +531,12 @@ void Models::StartModel(
     resp->setStatusCode(drogon::k400BadRequest);
     callback(resp);
   } else {
+    auto& v = result.value();
     Json::Value ret;
     ret["message"] = "Started successfully!";
+    if(v.warning) {
+      ret["warning"] = *(v.warning);
+    }
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);

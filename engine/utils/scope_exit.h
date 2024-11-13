@@ -1,6 +1,6 @@
 #pragma once
 
-namespace utils {
+namespace cortex::utils {
 template <typename F>
 struct ScopeExit {
   ScopeExit(F&& f) : f_(std::forward<F>(f)) {}
@@ -12,4 +12,4 @@ template <typename F>
 ScopeExit<F> makeScopeExit(F&& f) {
   return ScopeExit<F>(std::forward<F>(f));
 };
-}  // namespace utils
+}  // namespace cortex::utils
