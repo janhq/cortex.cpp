@@ -159,7 +159,8 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
 
   auto matched_variant = GetMatchedVariant(engine, variants);
   CTL_INF("Matched variant: " << matched_variant);
-  if (!found_cuda || matched_variant.empty()) {
+  if ((!found_cuda && system_info_utils::IsNvidiaSmiAvailable()) ||
+      matched_variant.empty()) {
     return false;
   }
 
