@@ -13,6 +13,9 @@
 #include "utils/url_parser.h"
 
 namespace curl_utils {
+
+enum class RequestType { GET, PATCH, POST, DELETE };
+
 namespace {
 size_t WriteCallback(void* contents, size_t size, size_t nmemb,
                      std::string* output) {
@@ -75,8 +78,9 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url,
   return readBuffer;
 }
 
-inline cpp::result<std::string, std::string> SimplePatch(
-    const std::string& url, const std::string& body = "") {
+inline cpp::result<std::string, std::string> SimpleRequest(
+    const std::string& url, const RequestType& request_type,
+    const std::string& body = "") {
   auto curl = curl_easy_init();
 
   if (!curl) {
@@ -87,6 +91,7 @@ inline cpp::result<std::string, std::string> SimplePatch(
   curl_slist* curl_headers = nullptr;
   curl_headers =
       curl_slist_append(curl_headers, "Content-Type: application/json");
+  curl_headers = curl_slist_append(curl_headers, "Expect:");
 
   if (headers.has_value()) {
     for (const auto& [key, value] : headers.value()) {
@@ -94,137 +99,47 @@ inline cpp::result<std::string, std::string> SimplePatch(
       curl_headers = curl_slist_append(curl_headers, header.c_str());
     }
   }
+  std::string readBuffer;
+
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
-
-  std::string readBuffer;
-
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+  if (request_type == RequestType::PATCH) {
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PATCH");
+  } else if (request_type == RequestType::POST) {
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "POST");
+    curl_easy_setopt(curl, CURLOPT_POST, 1L);
+  } else if (request_type == RequestType::DELETE) {
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+  }
+  // enable below line for debugging
+  // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-  // Set content length if body is not empty
-  if (!body.empty()) {
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
-    curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-  }
-
-  // Perform the request
-  auto res = curl_easy_perform(curl);
-
-  curl_slist_free_all(curl_headers);
-  curl_easy_cleanup(curl);
-  if (res != CURLE_OK) {
-    CTL_ERR("CURL request failed: " + std::string(curl_easy_strerror(res)));
-    return cpp::fail("CURL request failed: " +
-                     static_cast<std::string>(curl_easy_strerror(res)));
-  }
-  auto http_code = 0;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
-  if (http_code >= 400) {
-    CTL_ERR("HTTP request failed with status code: " +
-            std::to_string(http_code));
-    return cpp::fail(readBuffer);
-  }
-
-  return readBuffer;
-}
-
-inline cpp::result<std::string, std::string> SimplePost(
-    const std::string& url, const std::string& body = "") {
-  curl_global_init(CURL_GLOBAL_DEFAULT);
-  auto curl = curl_easy_init();
-
-  if (!curl) {
-    return cpp::fail("Failed to init CURL");
-  }
-
-  auto headers = GetHeaders(url);
-  curl_slist* curl_headers = nullptr;
-  if (headers.has_value()) {
-
-    for (const auto& [key, value] : headers.value()) {
-      auto header = key + ": " + value;
-      curl_headers = curl_slist_append(curl_headers, header.c_str());
-    }
-
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
-  }
-
-  std::string readBuffer;
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_POST, 1L);
-  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
   // Perform the request
   auto res = curl_easy_perform(curl);
 
+  auto http_code = 0L;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
+  // Clean up
   curl_slist_free_all(curl_headers);
   curl_easy_cleanup(curl);
+
   if (res != CURLE_OK) {
     CTL_ERR("CURL request failed: " + std::string(curl_easy_strerror(res)));
     return cpp::fail("CURL request failed: " +
                      static_cast<std::string>(curl_easy_strerror(res)));
   }
-  auto http_code = 0;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+
   if (http_code >= 400) {
     CTL_ERR("HTTP request failed with status code: " +
             std::to_string(http_code));
     return cpp::fail(readBuffer);
-  }
-
-  return readBuffer;
-}
-
-inline cpp::result<std::string, std::string> SimpleDelete(
-    const std::string& url) {
-
-  std::string readBuffer;
-  auto curl = curl_easy_init();
-
-  if (!curl) {
-    throw std::runtime_error("Failed to initialize CURL");
-  }
-
-  auto headers = GetHeaders(url);
-  curl_slist* curl_headers = nullptr;
-  if (headers.has_value()) {
-    for (const auto& [key, value] : headers.value()) {
-      auto header = key + ": " + value;
-      curl_headers = curl_slist_append(curl_headers, header.c_str());
-    }
-
-    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
-  }
-
-  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-  // Perform the request
-  auto res = curl_easy_perform(curl);
-
-  long responseCode;
-  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
-
-  curl_slist_free_all(curl_headers);
-  curl_easy_cleanup(curl);
-
-  if (res != CURLE_OK) {
-    throw std::runtime_error(std::string("Delete request failed: ") +
-                             curl_easy_strerror(res));
-  }
-
-  if (responseCode >= 400) {
-    throw std::runtime_error("HTTP error: " + std::to_string(responseCode) +
-                             "\nResponse: " + readBuffer);
   }
 
   return readBuffer;
@@ -271,7 +186,28 @@ inline cpp::result<Json::Value, std::string> SimpleGetJson(
 
 inline cpp::result<Json::Value, std::string> SimplePostJson(
     const std::string& url, const std::string& body = "") {
-  auto result = SimplePost(url, body);
+  auto result = SimpleRequest(url, RequestType::POST, body);
+  if (result.has_error()) {
+    CTL_INF("url: " + url);
+    CTL_INF("body: " + body);
+    CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
+    return cpp::fail(result.error());
+  }
+
+  CTL_INF("Response: " + result.value());
+  Json::Value root;
+  Json::Reader reader;
+  if (!reader.parse(result.value(), root)) {
+    return cpp::fail("JSON from " + url +
+                     " parsing error: " + reader.getFormattedErrorMessages());
+  }
+
+  return root;
+}
+
+inline cpp::result<Json::Value, std::string> SimpleDeleteJson(
+    const std::string& url, const std::string& body = "") {
+  auto result = SimpleRequest(url, RequestType::DELETE, body);
   if (result.has_error()) {
     CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
     return cpp::fail(result.error());
@@ -290,7 +226,7 @@ inline cpp::result<Json::Value, std::string> SimplePostJson(
 
 inline cpp::result<Json::Value, std::string> SimplePatchJson(
     const std::string& url, const std::string& body = "") {
-  auto result = SimplePatch(url, body);
+  auto result = SimpleRequest(url, RequestType::PATCH, body);
   if (result.has_error()) {
     CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
     return cpp::fail(result.error());
