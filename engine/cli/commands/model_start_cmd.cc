@@ -1,5 +1,6 @@
 #include "model_start_cmd.h"
 #include "cortex_upd_cmd.h"
+#include "hardware_activate_cmd.h"
 #include "httplib.h"
 #include "run_cmd.h"
 #include "server_start_cmd.h"
@@ -8,9 +9,10 @@
 #include "utils/logging_utils.h"
 
 namespace commands {
-bool ModelStartCmd::Exec(const std::string& host, int port,
-                         const std::string& model_handle,
-                         bool print_success_log) {
+bool ModelStartCmd::Exec(
+    const std::string& host, int port, const std::string& model_handle,
+    const std::unordered_map<std::string, std::string>& options,
+    bool print_success_log) {
   std::optional<std::string> model_id =
       SelectLocalModel(host, port, model_service_, model_handle);
 
@@ -26,6 +28,28 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
       return false;
     }
   }
+
+  //
+  bool should_activate_hw = false;
+  for (auto const& [_, v] : options) {
+    if (!v.empty()) {
+      should_activate_hw = true;
+      break;
+    }
+  }
+  if (should_activate_hw) {
+    if (!HardwareActivateCmd().Exec(host, port, options)) {
+      return false;
+    }
+    // wait for server up, max for 3 seconds
+    int count = 6;
+    while (count--) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      if (commands::IsServerAlive(host, port))
+        break;      
+    }
+  }
+
   // Call API to start model
   httplib::Client cli(host + ":" + std::to_string(port));
   Json::Value json_data;
@@ -42,6 +66,10 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
                 << commands::GetCortexBinary() << " run " << *model_id
                 << "` for interactive chat shell");
       }
+      auto root = json_helper::ParseJsonString(res->body);
+      if (!root["warning"].isNull()) {
+        CLI_LOG(root["warning"].asString());
+      }
       return true;
     } else {
       auto root = json_helper::ParseJsonString(res->body);
@@ -50,7 +78,7 @@ bool ModelStartCmd::Exec(const std::string& host, int port,
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG("HTTP error: " << httplib::to_string(err));
     return false;
   }
 }

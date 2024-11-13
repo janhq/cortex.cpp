@@ -205,11 +205,11 @@
                     "oneOf": [
                       {
                         "type": "string",
-                        "description":"The string that will be turned into an embedding."
+                        "description": "The string that will be turned into an embedding."
                       },
                       {
                         "type": "array",
-                        "description" : "The array of strings that will be turned into an embedding.",
+                        "description": "The array of strings that will be turned into an embedding.",
                         "items": {
                           "type": "string"
                         }
@@ -219,12 +219,11 @@
                         "description": "The array of integers that will be turned into an embedding.",
                         "items": {
                           "type": "integer"
-                          
                         }
                       },
                       {
                         "type": "array",
-                        "description" : "The array of arrays containing integers that will be turned into an embedding.",
+                        "description": "The array of arrays containing integers that will be turned into an embedding.",
                         "items": {
                           "type": "array",
                           "items": {
@@ -1764,6 +1763,134 @@
         ]
       }
     },
+    "/v1/hardware": {
+      "get": {
+        "summary": "Get hardware information",
+        "description": "Retrieves detailed information about the system's hardware configuration, including CPU, GPU(s), operating system, power status, RAM, and storage.",
+        "responses": {
+          "200": {
+            "description": "Hardware information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "cpu": {
+                      "$ref": "#/components/schemas/CPUDto"
+                    },
+                    "gpus": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GPUDto"
+                      }
+                    },
+                    "os": {
+                      "$ref": "#/components/schemas/OperatingSystemDto"
+                    },
+                    "power": {
+                      "$ref": "#/components/schemas/PowerDto"
+                    },
+                    "ram": {
+                      "$ref": "#/components/schemas/RAMDto"
+                    },
+                    "storage": {
+                      "$ref": "#/components/schemas/StorageDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Hardware"
+        ]
+      }
+    },
+    "/v1/hardware/activate": {
+      "post": {
+        "summary": "Activate GPUs",
+        "description": "Activates the specified GPUs based on their indices provided in the request body.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "gpus": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "example": [
+                      0,
+                      1,
+                      2
+                    ],
+                    "description": "An array of GPU indices to activate."
+                  }
+                },
+                "required": [
+                  "gpus"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The hardware configuration has been activated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "The hardware configuration has been activated.",
+                      "description": "Confirmation message indicating successful activation."
+                    },
+                    "activated_gpus": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "example": [
+                        0,
+                        1,
+                        2
+                      ],
+                      "description": "List of GPU indices that were activated."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid GPU index provided",
+                      "description": "Error message indicating what went wrong."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Hardware"
+        ]
+      }
+    },
     "/v1/configs": {
       "get": {
         "summary": "Get Configurations",
@@ -1928,6 +2055,10 @@
       "description": "Endpoints for managing the available engines within Cortex."
     },
     {
+      "name": "Hardware",
+      "description": "Endpoints for managing the available hardware within Cortex."
+    },
+    {
       "name": "System",
       "description": "Endpoints for stopping the Cortex API server, checking its status, and fetching system events."
     }
@@ -1939,6 +2070,7 @@
         "Chat",
         "Embeddings",
         "Engines",
+        "Hardware",
         "Events",
         "Pulling Models",
         "Running Models",
@@ -4772,6 +4904,217 @@
           "id",
           "object",
           "deleted"
+        ]
+      },
+      "CPUDto": {
+        "type": "object",
+        "properties": {
+          "arch": {
+            "type": "string",
+            "example": "amd64",
+            "description": "The architecture of the CPU."
+          },
+          "cores": {
+            "type": "integer",
+            "example": 8,
+            "description": "The number of CPU cores available."
+          },
+          "instructions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "fpu",
+              "mmx",
+              "sse",
+              "sse2",
+              "sse3",
+              "ssse3",
+              "sse4_1",
+              "sse4_2",
+              "pclmulqdq",
+              "avx",
+              "avx2",
+              "aes",
+              "f16c"
+            ],
+            "description": "A list of supported CPU instruction sets."
+          },
+          "model": {
+            "type": "string",
+            "example": "AMD Ryzen Threadripper PRO 5955WX 16-Cores",
+            "description": "The model name of the CPU."
+          }
+        },
+        "required": [
+          "arch",
+          "cores",
+          "instructions",
+          "model"
+        ]
+      },
+      "GPUDto": {
+        "type": "object",
+        "properties": {
+          "activated": {
+            "type": "boolean",
+            "example": true,
+            "description": "Indicates if the GPU is currently activated."
+          },
+          "additional_information": {
+            "type": "object",
+            "properties": {
+              "compute_cap": {
+                "type": "string",
+                "example": "8.6",
+                "description": "The compute capability of the GPU."
+              },
+              "driver_version": {
+                "type": "string",
+                "example": "535.183",
+                "description": "The version of the installed driver."
+              }
+            },
+            "required": [
+              "compute_cap",
+              "driver_version"
+            ]
+          },
+          "free_vram": {
+            "type": "integer",
+            "example": 23983,
+            "description": "The amount of free VRAM in MB."
+          },
+          "id": {
+            "type": "string",
+            "example": "0",
+            "description": "Unique identifier for the GPU."
+          },
+          "name": {
+            "type": "string",
+            "example": "NVIDIA GeForce RTX 3090",
+            "description": "The name of the GPU model."
+          },
+          "total_vram": {
+            "type": "integer",
+            "example": 24576,
+            "description": "The total VRAM available in MB."
+          },
+          "uuid": {
+            "type": "string",
+            "example": "GPU-5206045b-2a1c-1e7d-6c60-d7c367d02376",
+            "description": "The universally unique identifier for the GPU."
+          },
+          "version": {
+            "type": "string",
+            "example": "12.2",
+            "description": "The version of the GPU."
+          }
+        },
+        "required": [
+          "activated",
+          "additional_information",
+          "free_vram",
+          "id",
+          "name",
+          "total_vram",
+          "uuid",
+          "version"
+        ]
+      },
+      "OperatingSystemDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Ubuntu 24.04.1 LTS",
+            "description": "The name of the operating system."
+          },
+          "version": {
+            "type": "string",
+            "example": "24.04.1 LTS (Noble Numbat)",
+            "description": "The version of the operating system."
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ]
+      },
+      "PowerDto": {
+        "type": "object",
+        "properties": {
+          "battery_life": {
+            "type": "integer",
+            "example": 0,
+            "description": "The percentage of battery life remaining."
+          },
+          "charging_status": {
+            "type": "string",
+            "example": "",
+            "description": "The charging status of the device."
+          },
+          "is_power_saving": {
+            "type": "boolean",
+            "example": false,
+            "description": "Indicates if the power-saving mode is enabled."
+          }
+        },
+        "required": [
+          "battery_life",
+          "charging_status",
+          "is_power_saving"
+        ]
+      },
+      "RAMDto": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "integer",
+            "example": 11100,
+            "description": "The amount of available RAM in MB."
+          },
+          "total": {
+            "type": "integer",
+            "example": 15991,
+            "description": "The total RAM in MB."
+          },
+          "type": {
+            "type": "string",
+            "example": "",
+            "description": "The type of RAM."
+          }
+        },
+        "required": [
+          "available",
+          "total",
+          "type"
+        ]
+      },
+      "Storage": {
+        "type": "object",
+        "properties": {
+          "available": {
+            "type": "integer",
+            "example": 0,
+            "description": "The amount of available storage in MB."
+          },
+          "total": {
+            "type": "integer",
+            "example": 0,
+            "description": "The total storage in MB."
+          },
+          "type": {
+            "type": "string",
+            "example": "",
+            "description": "The type of storage."
+          }
+        },
+        "required": [
+          "available",
+          "total",
+          "type"
         ]
       }
     }

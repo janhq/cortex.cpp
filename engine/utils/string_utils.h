@@ -15,6 +15,11 @@ struct ParsePromptResult {
   std::string ai_prompt;
 };
 
+inline std::string RTrim(const std::string& str) {
+  size_t end = str.find_last_not_of("\n\t ");
+  return (end == std::string::npos) ? "" : str.substr(0, end + 1);
+}
+
 inline void Trim(std::string& s) {
   s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
             return !std::isspace(ch);

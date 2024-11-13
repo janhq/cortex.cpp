@@ -16,7 +16,7 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
   EXPECT_EQ(branches.value()["gguf"].ref, "refs/heads/gguf");
 }
 
-
+// TODO(sang) re-enable when main branch is fixed
 TEST_F(HuggingFaceUtilTestSuite, DISABLED_TestGetHuggingFaceModelRepoInfoSuccessfully) {
   auto model_info =
       huggingface_utils::GetHuggingFaceModelRepoInfo("cortexso", "tinyllama");
