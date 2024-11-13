@@ -38,7 +38,7 @@ struct RemoteModelConfig {
         json.get("api_key_template", api_key_template).asString();
     engine = json.get("engine", engine).asString();
     version = json.get("version", version).asString();
-    created = json.get("created", created).asUInt64();
+    created = json.get("created", static_cast<Json::UInt64>(created)).asUInt64();
     object = json.get("object", object).asString();
     owned_by = json.get("owned_by", owned_by).asString();
 
