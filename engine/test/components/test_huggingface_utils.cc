@@ -16,28 +16,29 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
   EXPECT_EQ(branches.value()["gguf"].ref, "refs/heads/gguf");
 }
 
-TEST_F(HuggingFaceUtilTestSuite, TestGetHuggingFaceModelRepoInfoSuccessfully) {
-  auto model_info =
-      huggingface_utils::GetHuggingFaceModelRepoInfo("cortexso", "tinyllama");
+// temporary disable this test due to the model got removed
+// TEST_F(HuggingFaceUtilTestSuite, TestGetHuggingFaceModelRepoInfoSuccessfully) {
+//   auto model_info =
+//       huggingface_utils::GetHuggingFaceModelRepoInfo("cortexso", "tinyllama");
 
-  EXPECT_TRUE(model_info.has_value());
-  EXPECT_EQ(model_info->id, "cortexso/tinyllama");
-  EXPECT_EQ(model_info->modelId, "cortexso/tinyllama");
-  EXPECT_EQ(model_info->author, "cortexso");
-  EXPECT_EQ(model_info->disabled, false);
-  EXPECT_EQ(model_info->gated, false);
+//   EXPECT_TRUE(model_info.has_value());
+//   EXPECT_EQ(model_info->id, "cortexso/tinyllama");
+//   EXPECT_EQ(model_info->modelId, "cortexso/tinyllama");
+//   EXPECT_EQ(model_info->author, "cortexso");
+//   EXPECT_EQ(model_info->disabled, false);
+//   EXPECT_EQ(model_info->gated, false);
 
-  auto tag_contains_gguf =
-      std::find(model_info->tags.begin(), model_info->tags.end(), "gguf") !=
-      model_info->tags.end();
-  EXPECT_TRUE(tag_contains_gguf);
+//   auto tag_contains_gguf =
+//       std::find(model_info->tags.begin(), model_info->tags.end(), "gguf") !=
+//       model_info->tags.end();
+//   EXPECT_TRUE(tag_contains_gguf);
 
-  auto contain_gguf_info = model_info->gguf.has_value();
-  EXPECT_TRUE(contain_gguf_info);
+//   auto contain_gguf_info = model_info->gguf.has_value();
+//   EXPECT_TRUE(contain_gguf_info);
 
-  auto sibling_not_empty = !model_info->siblings.empty();
-  EXPECT_TRUE(sibling_not_empty);
-}
+//   auto sibling_not_empty = !model_info->siblings.empty();
+//   EXPECT_TRUE(sibling_not_empty);
+// }
 
 TEST_F(HuggingFaceUtilTestSuite,
        TestGetHuggingFaceModelRepoInfoReturnNullGgufInfoWhenNotAGgufModel) {
