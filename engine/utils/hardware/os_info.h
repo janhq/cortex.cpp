@@ -1,28 +1,10 @@
 #pragma once
 #include <json/json.h>
 #include <string>
+#include "common/hardware_common.h"
 #include "hwinfo/hwinfo.h"
 
-namespace hardware {
-struct OS {
-  std::string name;
-  std::string version;
-  std::string arch;
-};
-
-inline Json::Value ToJson(const OS& os) {
-  Json::Value res;
-  res["version"] = os.version;
-  res["name"] = os.name;
-  return res;
-}
-
-namespace os {
-inline OS FromJson(const Json::Value& root) {
-  return {.name = root["name"].asString(),
-          .version = root["version"].asString()};
-}
-}  // namespace os
+namespace cortex::hw {
 
 inline OS GetOSInfo() {
   hwinfo::OS os;
@@ -30,4 +12,4 @@ inline OS GetOSInfo() {
             .version = os.version(),
             .arch = os.is32bit() ? "32 bit" : "64 bit"};
 }
-}  // namespace hardware
+}  // namespace cortex::hw

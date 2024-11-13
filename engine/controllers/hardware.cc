@@ -9,12 +9,12 @@ void Hardware::GetHardwareInfo(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto hw_inf = hw_svc_->GetHardwareInfo();
   Json::Value ret;
-  ret["cpu"] = hardware::ToJson(hw_inf.cpu);
-  ret["os"] = hardware::ToJson(hw_inf.os);
-  ret["ram"] = hardware::ToJson(hw_inf.ram);
-  ret["storage"] = hardware::ToJson(hw_inf.storage);
-  ret["gpus"] = hardware::ToJson(hw_inf.gpus);
-  ret["power"] = hardware::ToJson(hw_inf.power);
+  ret["cpu"] = cortex::hw::ToJson(hw_inf.cpu);
+  ret["os"] = cortex::hw::ToJson(hw_inf.os);
+  ret["ram"] = cortex::hw::ToJson(hw_inf.ram);
+  ret["storage"] = cortex::hw::ToJson(hw_inf.storage);
+  ret["gpus"] = cortex::hw::ToJson(hw_inf.gpus);
+  ret["power"] = cortex::hw::ToJson(hw_inf.power);
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);

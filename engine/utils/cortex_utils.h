@@ -24,11 +24,6 @@ inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
 
-inline std::string rtrim(const std::string& str) {
-  size_t end = str.find_last_not_of("\n\t ");
-  return (end == std::string::npos) ? "" : str.substr(0, end + 1);
-}
-
 inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
   return drogon::HttpResponse::newHttpResponse();
 }

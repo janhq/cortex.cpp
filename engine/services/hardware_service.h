@@ -14,12 +14,12 @@
 namespace services {
 
 struct HardwareInfo {
-  hardware::CPU cpu;
-  hardware::OS os;
-  hardware::Memory ram;
-  hardware::StorageInfo storage;
-  std::vector<hardware::GPU> gpus;
-  hardware::PowerInfo power;
+  cortex::hw::CPU cpu;
+  cortex::hw::OS os;
+  cortex::hw::Memory ram;
+  cortex::hw::StorageInfo storage;
+  std::vector<cortex::hw::GPU> gpus;
+  cortex::hw::PowerInfo power;
 };
 
 class HardwareService {

@@ -35,7 +35,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
   cortex::db::Hardwares hw_db;
-  auto gpus = hardware::GetGPUInfo();
+  auto gpus = cortex::hw::GetGPUInfo();
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
     // Only a few elements, brute-force is enough
@@ -48,12 +48,12 @@ HardwareInfo HardwareService::GetHardwareInfo() {
     };
   }
 
-  return HardwareInfo{.cpu = hardware::GetCPUInfo(),
-                      .os = hardware::GetOSInfo(),
-                      .ram = hardware::GetMemoryInfo(),
-                      .storage = hardware::GetStorageInfo(),
+  return HardwareInfo{.cpu = cortex::hw::GetCPUInfo(),
+                      .os = cortex::hw::GetOSInfo(),
+                      .ram = cortex::hw::GetMemoryInfo(),
+                      .storage = cortex::hw::GetStorageInfo(),
                       .gpus = gpus,
-                      .power = hardware::GetPowerInfo()};
+                      .power = cortex::hw::GetPowerInfo()};
 }
 
 bool HardwareService::Restart(const std::string& host, int port) {
@@ -227,7 +227,7 @@ bool HardwareService::SetActivateHardwareConfig(
 
 void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
-  auto gpus = hardware::GetGPUInfo();
+  auto gpus = cortex::hw::GetGPUInfo();
   cortex::db::Hardwares hw_db;
   auto b = hw_db.LoadHardwareList();
   std::vector<int> activated_gpu_bf;

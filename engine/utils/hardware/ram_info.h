@@ -2,41 +2,16 @@
 
 #include <json/json.h>
 #include <string>
-
+#include "common/hardware_common.h"
 #include "hwinfo/hwinfo.h"
+
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach/host_info.h>
 #include <mach/mach_host.h>
 #include <sys/sysctl.h>
 #endif
 
-namespace hardware {
-namespace {
-int64_t ByteToMiB(int64_t b) {
-  return b / 1024 / 1024;
-}
-}  // namespace
-struct Memory {
-  int64_t total_MiB;
-  int64_t available_MiB;
-  std::string type;
-};
-
-inline Json::Value ToJson(const Memory& m) {
-  Json::Value res;
-  res["total"] = m.total_MiB;
-  res["available"] = m.available_MiB;
-  res["type"] = m.type;
-  return res;
-}
-
-namespace memory {
-inline Memory FromJson(const Json::Value& root) {
-  return {.total_MiB = root["total"].asInt64(),
-          .available_MiB = root["available"].asInt64(),
-          .type = root["type"].asString()};
-}
-}  // namespace memory
+namespace cortex::hw {
 
 inline Memory GetMemoryInfo() {
   hwinfo::Memory m;
@@ -69,4 +44,4 @@ inline Memory GetMemoryInfo() {
   return Memory{};
 #endif
 }
-}  // namespace hardware
+}  // namespace cortex::hw

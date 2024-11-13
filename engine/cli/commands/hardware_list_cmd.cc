@@ -57,7 +57,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.add_row(header);
     table.format().font_color(Color::green);
     std::vector<std::string> row = {"1"};
-    hardware::CPU cpu = hardware::cpu::FromJson(result.value()["cpu"]);
+    cortex::hw::CPU cpu = cortex::hw::cpu::FromJson(result.value()["cpu"]);
     row.emplace_back(cpu.arch);
     row.emplace_back(std::to_string(cpu.cores));
     row.emplace_back(cpu.model);
@@ -80,7 +80,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.add_row(header);
     table.format().font_color(Color::green);
     std::vector<std::string> row = {"1"};
-    hardware::OS os = hardware::os::FromJson(result.value()["os"]);
+    cortex::hw::OS os = cortex::hw::os::FromJson(result.value()["os"]);
     row.emplace_back(os.version);
     row.emplace_back(os.name);
     table.add_row({row.begin(), row.end()});
@@ -98,7 +98,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.add_row(header);
     table.format().font_color(Color::green);
     std::vector<std::string> row = {"1"};
-    hardware::Memory m = hardware::memory::FromJson(result.value()["ram"]);
+    cortex::hw::Memory m = cortex::hw::memory::FromJson(result.value()["ram"]);
     row.emplace_back(std::to_string(m.total_MiB));
     row.emplace_back(std::to_string(m.available_MiB));
     table.add_row({row.begin(), row.end()});
@@ -120,8 +120,8 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.format().font_color(Color::green);
     int count = 1;
 
-    std::vector<hardware::GPU> gpus =
-        hardware::gpu::FromJson(result.value()["gpus"]);
+    std::vector<cortex::hw::GPU> gpus =
+        cortex::hw::gpu::FromJson(result.value()["gpus"]);
     for (auto const& gpu : gpus) {
       std::vector<std::string> row = {std::to_string(count)};
       row.emplace_back(gpu.id);
@@ -130,9 +130,9 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
       row.emplace_back(std::to_string(gpu.total_vram));
       row.emplace_back(std::to_string(gpu.free_vram));
       row.emplace_back(
-          std::get<hardware::NvidiaAddInfo>(gpu.add_info).driver_version);
+          std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).driver_version);
       row.emplace_back(
-          std::get<hardware::NvidiaAddInfo>(gpu.add_info).compute_cap);
+          std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).compute_cap);
       row.emplace_back(gpu.is_activated ? "Yes" : "No");
       table.add_row({row.begin(), row.end()});
     }
@@ -151,8 +151,8 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.add_row(header);
     table.format().font_color(Color::green);
     std::vector<std::string> row = {"1"};
-    hardware::StorageInfo si =
-        hardware::storage::FromJson(result.value()["storage"]);
+    cortex::hw::StorageInfo si =
+        cortex::hw::storage::FromJson(result.value()["storage"]);
     row.emplace_back(std::to_string(si.total));
     row.emplace_back(std::to_string(si.available));
     table.add_row({row.begin(), row.end()});
@@ -170,7 +170,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.add_row(header);
     table.format().font_color(Color::green);
     std::vector<std::string> row = {"1"};
-    hardware::PowerInfo pi = hardware::power::FromJson(result.value()["power"]);
+    cortex::hw::PowerInfo pi = cortex::hw::power::FromJson(result.value()["power"]);
     row.emplace_back(std::to_string(pi.battery_life));
     row.emplace_back(pi.charging_status);
     row.emplace_back(pi.is_power_saving ? "Yes" : "No");

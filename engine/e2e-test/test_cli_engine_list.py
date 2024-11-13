@@ -8,7 +8,7 @@ class TestCliEngineList:
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
-        # Setup
+        # Setup TODO(sang) should make all the test isolate
         stop_server()
         success = start_server()
         if not success:

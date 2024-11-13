@@ -661,6 +661,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 #undef ASSIGN_IF_PRESENT
 
     CTL_INF(json_data.toStyledString());
+    // TODO(sang) move this into another function
     // Calculate ram/vram needed to load model
     services::HardwareService hw_svc;
     auto hw_info = hw_svc.GetHardwareInfo();
