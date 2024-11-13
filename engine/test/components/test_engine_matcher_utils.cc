@@ -135,3 +135,27 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
               "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2.tar.gz");
   }
 }
+
+TEST_F(EngineMatcherUtilsTestSuite, TestGetVersionAndArch) {
+  {
+    std::string variant =
+        "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-avx-cuda-11-7.tar.gz";
+    auto [version, arch] = engine_matcher_utils::GetVersionAndArch(variant);
+    EXPECT_EQ(version, "v0.1.25-25.08.24");
+    EXPECT_EQ(arch, "linux-amd64-avx-cuda-11-7");
+  }
+
+  {
+    std::string variant = "cortex.llamacpp-0.1.25-windows-amd64-avx2.tar.gz";
+    auto [version, arch] = engine_matcher_utils::GetVersionAndArch(variant);
+    EXPECT_EQ(version, "v0.1.25");
+    EXPECT_EQ(arch, "windows-amd64-avx2");
+  }
+
+  {
+    std::string variant = "cortex.llamacpp-0.1.25-25.08.24-mac-amd64.tar.gz";
+    auto [version, arch] = engine_matcher_utils::GetVersionAndArch(variant);
+    EXPECT_EQ(version, "v0.1.25-25.08.24");
+    EXPECT_EQ(arch, "mac-amd64");
+  }
+}
