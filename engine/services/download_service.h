@@ -137,6 +137,11 @@ class DownloadService {
       callbacks_;
   std::mutex callbacks_mutex_;
 
+  std::unordered_map<std::string,
+                     std::chrono::time_point<std::chrono::steady_clock>>
+      event_emit_map_;
+  std::mutex event_emit_map_mutex;
+
   void WorkerThread();
 
   bool IsTaskTerminated(const std::string& task_id);
@@ -154,18 +159,17 @@ class DownloadService {
       return 0;
     }
 
-    if (downloading_data->download_service == nullptr) {
+    auto dl_srv = downloading_data->download_service;
+    if (dl_srv == nullptr) {
       return 0;
     }
 
     // Lock during the update and event emission
-    std::lock_guard<std::mutex> lock(
-        downloading_data->download_service->active_tasks_mutex_);
+    std::lock_guard<std::mutex> lock(dl_srv->active_tasks_mutex_);
 
     // Find and update the task
-    if (auto task_it = downloading_data->download_service->active_tasks_.find(
-            downloading_data->task_id);
-        task_it != downloading_data->download_service->active_tasks_.end()) {
+    if (auto task_it = dl_srv->active_tasks_.find(downloading_data->task_id);
+        task_it != dl_srv->active_tasks_.end()) {
       auto& task = task_it->second;
       // Find the specific item in the task
       for (auto& item : task->items) {
@@ -182,22 +186,38 @@ class DownloadService {
         item.bytes = dltotal;
         item.downloadedBytes = dlnow;
 
-        static auto last_event_time = std::chrono::steady_clock::now();
-        auto current_time = std::chrono::steady_clock::now();
-        auto time_since_last_event =
-            std::chrono::duration_cast<std::chrono::milliseconds>(
-                current_time - last_event_time)
-                .count();
+        // Emit the event
+        {
+          std::lock_guard<std::mutex> event_lock(dl_srv->event_emit_map_mutex);
+          // find the task id in event_emit_map
+          // if not found, add it to the map
+          auto should_emit_event{false};
+          if (dl_srv->event_emit_map_.find(task->id) !=
+              dl_srv->event_emit_map_.end()) {
+            auto last_event_time = dl_srv->event_emit_map_[task->id];
+            auto current_time = std::chrono::steady_clock::now();
 
-        // throttle event by 1 sec
-        if (time_since_last_event >= 1000) {
-          downloading_data->download_service->event_queue_->enqueue(
-              EventType::DownloadEvent,
-              DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
-                            .download_task_ = *task});
+            auto time_since_last_event =
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    current_time - last_event_time)
+                    .count();
+            if (time_since_last_event >= 1000) {
+              // if the time since last event is more than 1 sec, emit the event
+              should_emit_event = true;
+            }
+          } else {
+            // if the task id is not found in the map, emit
+            should_emit_event = true;
+          }
 
-          // Update the last event time
-          last_event_time = current_time;
+          if (should_emit_event) {
+            dl_srv->event_queue_->enqueue(
+                EventType::DownloadEvent,
+                DownloadEvent{.type_ = DownloadEventType::DownloadUpdated,
+                              .download_task_ = *task});
+            dl_srv->event_emit_map_[task->id] =
+                std::chrono::steady_clock::now();
+          }
         }
 
         break;

@@ -356,6 +356,10 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
     // if the download has error, we are not run the callback
     ExecuteCallback(task);
     EmitTaskCompleted(task.id);
+    {
+      std::lock_guard<std::mutex> lock(event_emit_map_mutex);
+      event_emit_map_.erase(task.id);
+    }
   }
 
   worker_data->downloading_data_map.clear();
@@ -372,11 +376,19 @@ cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
     auto result = ProcessCompletedTransfers(multi_handle);
     if (result.has_error()) {
       EmitTaskError(task.id);
+      {
+        std::lock_guard<std::mutex> lock(event_emit_map_mutex);
+        event_emit_map_.erase(task.id);
+      }
       return cpp::fail(result.error());
     }
 
     if (task.status == DownloadTask::Status::Cancelled || stop_flag_) {
       EmitTaskStopped(task.id);
+      {
+        std::lock_guard<std::mutex> lock(event_emit_map_mutex);
+        event_emit_map_.erase(task.id);
+      }
       return cpp::fail("Task " + task.id + " cancelled");
     }
   } while (still_running);
