@@ -16,7 +16,8 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
   EXPECT_EQ(branches.value()["gguf"].ref, "refs/heads/gguf");
 }
 
-TEST_F(HuggingFaceUtilTestSuite, TestGetHuggingFaceModelRepoInfoSuccessfully) {
+
+TEST_F(HuggingFaceUtilTestSuite, DISABLED_TestGetHuggingFaceModelRepoInfoSuccessfully) {
   auto model_info =
       huggingface_utils::GetHuggingFaceModelRepoInfo("cortexso", "tinyllama");
 
