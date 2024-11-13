@@ -13,6 +13,7 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
+#include "database/engines.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -302,6 +303,25 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
       CTL_ERR("Failed to set default engine variant: " << res.error());
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
+    }
+
+    // Create engine entry in the database
+    cortex::db::Engines engines;
+    auto create_res = engines.UpsertEngine(
+      engine,                         // engine_name
+      "",                               // todo - luke
+      "",                             // todo - luke
+      "",                                 // todo - luke
+      normalize_version,              
+      variant.value(),                
+      "Default",                        // todo - luke
+      ""                              // todo - luke
+    );
+
+    if (create_res.has_value()) {
+      CTL_ERR("Failed to create engine entry: " << create_res.value());
+    } else {
+      CTL_INF("Engine entry created successfully");
     }
 
     for (const auto& entry : std::filesystem::directory_iterator(variant_folder_path.parent_path())) {
