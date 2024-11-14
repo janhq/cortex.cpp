@@ -232,6 +232,10 @@ cpp::result<std::string, std::string> DownloadService::StopTask(
   if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
     CTL_INF("Found task " + task_id + " in active tasks");
     it->second->status = DownloadTask::Status::Cancelled;
+    {
+      std::lock_guard<std::mutex> lock(stop_mutex_);
+      tasks_to_stop_.insert(task_id);
+    }
     EmitTaskStopped(task_id);
     return task_id;
   }
@@ -368,7 +372,7 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
 cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
     DownloadTask& task, CURLM* multi_handle,
     const std::vector<std::pair<CURL*, FILE*>>& handles) {
-  int still_running = 0;
+  auto still_running = 0;
   do {
     curl_multi_perform(multi_handle, &still_running);
     curl_multi_wait(multi_handle, nullptr, 0, MAX_WAIT_MSECS, nullptr);
@@ -383,12 +387,16 @@ cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
       return cpp::fail(result.error());
     }
 
-    if (task.status == DownloadTask::Status::Cancelled || stop_flag_) {
-      EmitTaskStopped(task.id);
+    if (IsTaskTerminated(task.id) || stop_flag_) {
+      CTL_INF("IsTaskTerminated " + std::to_string(IsTaskTerminated(task.id)));
+      CTL_INF("stop_flag_ " + std::to_string(stop_flag_));
       {
         std::lock_guard<std::mutex> lock(event_emit_map_mutex);
         event_emit_map_.erase(task.id);
       }
+      CTL_INF("Emit task stopped: " << task.id);
+      EmitTaskStopped(task.id);
+      RemoveTaskFromStopList(task.id);
       return cpp::fail("Task " + task.id + " cancelled");
     }
   } while (still_running);
