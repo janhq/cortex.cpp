@@ -773,7 +773,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
 
   if (selected_engine_variant.has_error()) {
-    // TODO: namh need to fallback
     return cpp::fail(selected_engine_variant.error());
   }
 
@@ -781,17 +780,21 @@ cpp::result<void, std::string> EngineService::LoadEngine(
           << json_helper::DumpJsonString(selected_engine_variant->ToJson()));
 
   auto user_defined_engine_path = getenv("ENGINE_PATH");
+  CTL_DBG("user defined engine path: " << user_defined_engine_path);
   const std::filesystem::path engine_dir_path = [&] {
     if (user_defined_engine_path != nullptr) {
-      // for backward compatible
       return std::filesystem::path(user_defined_engine_path +
-                                   GetEnginePath(ne));
+                                   GetEnginePath(ne)) /
+             selected_engine_variant->variant /
+             selected_engine_variant->version;
     } else {
       return file_manager_utils::GetEnginesContainerPath() / ne /
              selected_engine_variant->variant /
              selected_engine_variant->version;
     }
   }();
+
+  CTL_DBG("Engine path: " << engine_dir_path.string());
 
   if (!std::filesystem::exists(engine_dir_path)) {
     CTL_ERR("Directory " + engine_dir_path.string() + " is not exist!");
