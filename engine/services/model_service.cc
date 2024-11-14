@@ -1,4 +1,6 @@
 #include "model_service.h"
+#include <curl/multi.h>
+#include <drogon/HttpTypes.h>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -7,7 +9,6 @@
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "hardware_service.h"
-#include "httplib.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
@@ -79,7 +80,8 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   url_parser::Url url = {
       .protocol = "https",
       .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
+      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch},
+  };
 
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {
@@ -812,9 +814,9 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       return StartModelResult{.success = true, .warning = warning};
-    } else if (status == httplib::StatusCode::Conflict_409) {
+    } else if (status == drogon::k409Conflict) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
       return StartModelResult{.success = true, .warning = warning};
     } else {
@@ -859,7 +861,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
     auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       if (bypass_check) {
         bypass_stop_check_set_.erase(model_handle);
       }
@@ -901,7 +903,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
         inference_svc_->GetModelStatus(std::make_shared<Json::Value>(root));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       return true;
     } else {
       CTL_ERR("Model failed to get model status with status code: " << status);

@@ -3,10 +3,6 @@
     "curl",
     "gtest",
     "cli11",
-    {
-      "name": "cpp-httplib",
-      "features": ["openssl"]
-    },
     "drogon",
     "jsoncpp",
     "minizip",

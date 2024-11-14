@@ -8,8 +8,7 @@ from test_api_engine_get import TestApiEngineGet
 
 ### models, keeps in order, note that we only uninstall engine after finishing all models test
 from test_api_model_pull_direct_url import TestApiModelPullDirectUrl
-from test_api_model_start import TestApiModelStart
-from test_api_model_stop import TestApiModelStop
+from test_api_model_start_stop import TestApiModelStartStop
 from test_api_model_get import TestApiModelGet
 from test_api_model_list import TestApiModelList
 from test_api_model_update import TestApiModelUpdate

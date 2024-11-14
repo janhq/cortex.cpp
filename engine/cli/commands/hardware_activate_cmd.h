@@ -1,7 +1,7 @@
 #pragma once
+
 #include <string>
 #include <unordered_map>
-#include "common/hardware_config.h"
 
 namespace commands {
 class HardwareActivateCmd {

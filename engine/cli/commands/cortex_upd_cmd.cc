@@ -1,9 +1,9 @@
 #include "cortex_upd_cmd.h"
-#include "httplib.h"
+#include "cli/commands/server_start_cmd.h"
 #include "server_stop_cmd.h"
 #include "utils/archive_utils.h"
+#include "utils/curl_utils.h"
 #include "utils/file_manager_utils.h"
-#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
 #include "utils/system_info_utils.h"
@@ -151,69 +151,62 @@ std::optional<std::string> CheckNewUpdate(
     return config.latestRelease;
   }
 
-  auto host_name = GetHostName();
-  auto release_path = GetReleasePath();
-  CTL_INF("Engine release path: " << host_name << release_path);
+  auto url = url_parser::Url{
+      .protocol = "https",
+      .host = GetHostName(),
+      .pathParams = GetReleasePath(),
+  };
 
-  httplib::Client cli(host_name);
-  if (timeout.has_value()) {
-    cli.set_connection_timeout(*timeout);
-    cli.set_read_timeout(*timeout);
+  CTL_INF("Engine release path: " << url.ToFullPath());
+
+  auto res = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (res.has_error()) {
+    CTL_INF("HTTP error: " << res.error());
+    return std::nullopt;
   }
-  if (auto res = cli.Get(release_path)) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      try {
-        auto get_latest = [](const Json::Value& data) -> std::string {
-          if (data.empty()) {
-            return "";
-          }
 
-          if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
-            for (const auto& d : data) {
-              if (auto tag = d["tag_name"].asString();
-                  tag.find(kBetaComp) != std::string::npos) {
-                return tag;
-              }
-            }
-            return data[0]["tag_name"].asString();
-          } else {
-            return data["tag_name"].asString();
-          }
-          return "";
-        };
-
-        auto json_res = json_helper::ParseJsonString(res->body);
-        std::string latest_version = get_latest(json_res);
-        if (latest_version.empty()) {
-          CTL_WRN("Release not found!");
-          return std::nullopt;
-        }
-        std::string current_version = CORTEX_CPP_VERSION;
-        CTL_INF("Got the latest release, update to the config file: "
-                << latest_version)
-        config.latestRelease = latest_version;
-        auto result =
-            config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
-                config, file_manager_utils::GetConfigurationPath().string());
-        if (result.has_error()) {
-          CTL_ERR("Error update "
-                  << file_manager_utils::GetConfigurationPath().string()
-                  << result.error());
-        }
-        if (current_version != latest_version) {
-          return latest_version;
-        }
-      } catch (const std::exception& e) {
-        CTL_INF("JSON parse error: " << e.what());
-        return std::nullopt;
+  try {
+    auto get_latest = [](const Json::Value& data) -> std::string {
+      if (data.empty()) {
+        return "";
       }
-    } else {
-      CTL_INF("HTTP error: " << res->status);
+
+      if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
+        for (const auto& d : data) {
+          if (auto tag = d["tag_name"].asString();
+              tag.find(kBetaComp) != std::string::npos) {
+            return tag;
+          }
+        }
+        return data[0]["tag_name"].asString();
+      } else {
+        return data["tag_name"].asString();
+      }
+      return "";
+    };
+
+    auto latest_version = get_latest(res.value());
+    if (latest_version.empty()) {
+      CTL_WRN("Release not found!");
       return std::nullopt;
     }
-  } else {
-    auto err = res.error();
-    CTL_INF("HTTP error: " << httplib::to_string(err));
+    std::string current_version = CORTEX_CPP_VERSION;
+    CTL_INF(
+        "Got the latest release, update to the config file: " << latest_version)
+    config.latestRelease = latest_version;
+    auto result =
+        config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+            config, file_manager_utils::GetConfigurationPath().string());
+    if (result.has_error()) {
+      CTL_ERR("Error update "
+              << file_manager_utils::GetConfigurationPath().string()
+              << result.error());
+    }
+    if (current_version != latest_version) {
+      return latest_version;
+    }
+  } catch (const std::exception& e) {
+    CTL_INF("JSON parse error: " << e.what());
     return std::nullopt;
   }
   return std::nullopt;
@@ -230,9 +223,9 @@ void CortexUpdCmd::Exec(const std::string& v, bool force) {
 
   {
     auto config = file_manager_utils::GetCortexConfig();
-    httplib::Client cli(config.apiServerHost + ":" + config.apiServerPort);
-    auto res = cli.Get("/healthz");
-    if (res) {
+    auto server_running = commands::IsServerAlive(
+        config.apiServerHost, std::stoi(config.apiServerPort));
+    if (server_running) {
       CLI_LOG("Server is running. Stopping server before updating!");
       commands::ServerStopCmd ssc(config.apiServerHost,
                                   std::stoi(config.apiServerPort));
@@ -270,38 +263,32 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
-  // Download file
-  auto github_host = GetHostName();
-  auto release_path = GetReleasePath();
-  CTL_INF("Engine release path: " << github_host << release_path);
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = GetHostName(),
+      .pathParams = GetReleasePath(),
+  };
+  CTL_INF("Engine release path: " << url_obj.ToFullPath());
 
-  httplib::Client cli(github_host);
-  if (auto res = cli.Get(release_path)) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      try {
-        auto json_data = json_helper::ParseJsonString(res->body);
-        if (json_data.empty()) {
-          CLI_LOG("Version not found: " << v);
-          return false;
-        }
+  auto res = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+  if (res.has_error()) {
+    CLI_LOG_ERROR("HTTP error: " << res.error());
+    return false;
+  }
 
-        if (downloaded_exe_path = HandleGithubRelease(
-                json_data["assets"],
-                {system_info->os + "-" + system_info->arch});
-            !downloaded_exe_path) {
-          return false;
-        }
-      } catch (const std::exception& e) {
-        CLI_LOG_ERROR("JSON parse error: " << e.what());
-        return false;
-      }
-    } else {
-      CLI_LOG_ERROR("HTTP error: " << res->status);
+  try {
+    if (res.value().empty()) {
+      CLI_LOG("Version not found: " << v);
       return false;
     }
-  } else {
-    auto err = res.error();
-    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
+
+    if (downloaded_exe_path = HandleGithubRelease(
+            res.value()["assets"], {system_info->os + "-" + system_info->arch});
+        !downloaded_exe_path) {
+      return false;
+    }
+  } catch (const std::exception& e) {
+    CLI_LOG_ERROR("JSON parse error: " << e.what());
     return false;
   }
 
@@ -330,50 +317,42 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
-  // Download file
-  auto github_host = GetHostName();
-  auto release_path = GetReleasePath();
-  CTL_INF("Engine release path: " << github_host << release_path);
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = GetHostName(),
+      .pathParams = GetReleasePath(),
+  };
+  CTL_INF("Engine release path: " << url_obj.ToFullPath());
+  auto res = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+  if (res.has_error()) {
+    CLI_LOG_ERROR("HTTP error: " << res.error());
+    return false;
+  }
 
-  httplib::Client cli(github_host);
-  if (auto res = cli.Get(release_path)) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      try {
-        auto json_res = json_helper::ParseJsonString(res->body);
-
-        Json::Value json_data;
-        for (const auto& jr : json_res) {
-          // Get the latest beta or match version
-          if (auto tag = jr["tag_name"].asString();
-              (v.empty() && tag.find(kBetaComp) != std::string::npos) ||
-              (tag == v)) {
-            json_data = jr;
-            break;
-          }
-        }
-
-        if (json_data.empty()) {
-          CLI_LOG("Version not found: " << v);
-          return false;
-        }
-
-        if (downloaded_exe_path = HandleGithubRelease(
-                json_data["assets"],
-                {system_info->os + "-" + system_info->arch});
-            !downloaded_exe_path) {
-          return false;
-        }
-      } catch (const std::exception& e) {
-        CLI_LOG_ERROR("JSON parse error: " << e.what());
-        return false;
+  try {
+    Json::Value json_data;
+    for (const auto& jr : res.value()) {
+      // Get the latest beta or match version
+      if (auto tag = jr["tag_name"].asString();
+          (v.empty() && tag.find(kBetaComp) != std::string::npos) ||
+          (tag == v)) {
+        json_data = jr;
+        break;
       }
-    } else {
-      CLI_LOG_ERROR("HTTP error: " << res->status);
+    }
+
+    if (json_data.empty()) {
+      CLI_LOG("Version not found: " << v);
       return false;
     }
-  } else {
-    auto err = res.error();
-    CLI_LOG_ERROR("HTTP error: " << httplib::to_string(err));
+
+    if (downloaded_exe_path = HandleGithubRelease(
+            json_data["assets"], {system_info->os + "-" + system_info->arch});
+        !downloaded_exe_path) {
+      return false;
+    }
+  } catch (const std::exception& e) {
+    CLI_LOG_ERROR("JSON parse error: " << e.what());
     return false;
   }
 
@@ -430,13 +409,15 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
         CLI_LOG_ERROR("Failed to create directories: " << e.what());
         return std::nullopt;
       }
-      auto download_task{DownloadTask{.id = "cortex",
-                                      .type = DownloadType::Cortex,
-                                      .items = {DownloadItem{
-                                          .id = "cortex",
-                                          .downloadUrl = download_url,
-                                          .localPath = local_path,
-                                      }}}};
+      auto download_task{DownloadTask{
+          .id = "cortex",
+          .type = DownloadType::Cortex,
+          .items = {DownloadItem{
+              .id = "cortex",
+              .downloadUrl = download_url,
+              .localPath = local_path,
+          }},
+      }};
 
       auto result = download_service_->AddDownloadTask(
           download_task, [](const DownloadTask& finishedTask) {

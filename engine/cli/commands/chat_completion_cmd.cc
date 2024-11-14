@@ -1,8 +1,8 @@
 #include "chat_completion_cmd.h"
+#include <curl/curl.h>
 #include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
-#include "httplib.h"
 #include "model_status_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/engine_constants.h"
@@ -16,29 +16,42 @@ constexpr const auto kMinDataChunkSize = 6u;
 constexpr const char* kUser = "user";
 constexpr const char* kAssistant = "assistant";
 
-}  // namespace
+struct StreamingCallback {
+  std::string* ai_chat;
+  bool is_done;
 
-struct ChunkParser {
-  std::string content;
-  bool is_done = false;
+  StreamingCallback() : ai_chat(nullptr), is_done(false) {}
+};
 
-  ChunkParser(const char* data, size_t data_length) {
-    if (data && data_length > kMinDataChunkSize) {
-      std::string s(data + kMinDataChunkSize, data_length - kMinDataChunkSize);
-      if (s.find("[DONE]") != std::string::npos) {
-        is_done = true;
-      } else {
-        try {
-          content =
-              json_helper::ParseJsonString(s)["choices"][0]["delta"]["content"]
-                  .asString();
-        } catch (const std::exception& e) {
-          CTL_WRN("JSON parse error: " << e.what());
-        }
+size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
+  auto* callback = static_cast<StreamingCallback*>(userdata);
+  size_t data_length = size * nmemb;
+
+  if (ptr && data_length > kMinDataChunkSize) {
+    std::string chunk(ptr + kMinDataChunkSize, data_length - kMinDataChunkSize);
+    if (chunk.find("[DONE]") != std::string::npos) {
+      callback->is_done = true;
+      std::cout << std::endl;
+      return data_length;
+    }
+
+    try {
+      std::string content =
+          json_helper::ParseJsonString(chunk)["choices"][0]["delta"]["content"]
+              .asString();
+      std::cout << content << std::flush;
+      if (callback->ai_chat) {
+        *callback->ai_chat += content;
       }
+    } catch (const std::exception& e) {
+      CTL_WRN("JSON parse error: " << e.what());
     }
   }
-};
+
+  return data_length;
+}
+
+}  // namespace
 
 void ChatCompletionCmd::Exec(const std::string& host, int port,
                              const std::string& model_handle, std::string msg) {
@@ -68,95 +81,101 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
                              const std::string& model_handle,
                              const config::ModelConfig& mc, std::string msg) {
   auto address = host + ":" + std::to_string(port);
+
   // Check if server is started
-  {
-    if (!commands::IsServerAlive(host, port)) {
-      CLI_LOG("Server is not started yet, please run `"
-              << commands::GetCortexBinary() << " start` to start server!");
-      return;
-    }
+  if (!commands::IsServerAlive(host, port)) {
+    CLI_LOG("Server is not started yet, please run `"
+            << commands::GetCortexBinary() << " start` to start server!");
+    return;
   }
 
   // Only check if llamacpp engine
   if ((mc.engine.find(kLlamaEngine) != std::string::npos ||
        mc.engine.find(kLlamaRepo) != std::string::npos) &&
-      !commands::ModelStatusCmd(model_service_)
-           .IsLoaded(host, port, model_handle)) {
+      !commands::ModelStatusCmd().IsLoaded(host, port, model_handle)) {
     CLI_LOG("Model is not loaded yet!");
     return;
   }
 
+  auto curl = curl_easy_init();
+  if (!curl) {
+    CLI_LOG("Failed to initialize CURL");
+    return;
+  }
+
+  std::string url = "http://" + address + "/v1/chat/completions";
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+  struct curl_slist* headers = nullptr;
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
   // Interactive mode or not
   bool interactive = msg.empty();
 
-  // Some instruction for user here
   if (interactive) {
-    std::cout << "Inorder to exit, type `exit()`" << std::endl;
+    std::cout << "In order to exit, type `exit()`" << std::endl;
   }
-  // Model is loaded, start to chat
-  {
-    do {
-      std::string user_input = std::move(msg);
-      if (user_input.empty()) {
-        std::cout << "> ";
-        if (!std::getline(std::cin, user_input)) {
-          break;
-        }
-      }
 
-      string_utils::Trim(user_input);
-      if (user_input == kExitChat) {
+  do {
+    std::string user_input = std::move(msg);
+    if (user_input.empty()) {
+      std::cout << "> ";
+      if (!std::getline(std::cin, user_input)) {
         break;
       }
+    }
 
-      if (!user_input.empty()) {
-        httplib::Client cli(address);
-        Json::Value json_data = mc.ToJson();
-        Json::Value new_data;
-        new_data["role"] = kUser;
-        new_data["content"] = user_input;
-        histories_.push_back(std::move(new_data));
-        json_data["engine"] = mc.engine;
-        Json::Value msgs_array(Json::arrayValue);
-        for (const auto& m : histories_) {
-          msgs_array.append(m);
-        }
-        json_data["messages"] = msgs_array;
-        json_data["model"] = model_handle;
-        //TODO: support non-stream
-        json_data["stream"] = true;
-        auto data_str = json_data.toStyledString();
-        // std::cout << data_str << std::endl;
-        cli.set_read_timeout(std::chrono::seconds(60));
-        // std::cout << "> ";
-        httplib::Request req;
-        req.headers = httplib::Headers();
-        req.set_header("Content-Type", "application/json");
-        req.method = "POST";
-        req.path = "/v1/chat/completions";
-        req.body = data_str;
-        std::string ai_chat;
-        req.content_receiver = [&](const char* data, size_t data_length,
-                                   uint64_t offset, uint64_t total_length) {
-          ChunkParser cp(data, data_length);
-          if (cp.is_done) {
-            std::cout << std::endl;
-            return false;
-          }
-          std::cout << cp.content << std::flush;
-          ai_chat += cp.content;
-          return true;
-        };
-        cli.send(req);
+    string_utils::Trim(user_input);
+    if (user_input == kExitChat) {
+      break;
+    }
 
+    if (!user_input.empty()) {
+      // Prepare JSON payload
+      Json::Value new_data;
+      new_data["role"] = kUser;
+      new_data["content"] = user_input;
+      histories_.push_back(std::move(new_data));
+
+      Json::Value json_data = mc.ToJson();
+      json_data["engine"] = mc.engine;
+
+      Json::Value msgs_array(Json::arrayValue);
+      for (const auto& m : histories_) {
+        msgs_array.append(m);
+      }
+
+      json_data["messages"] = msgs_array;
+      json_data["model"] = model_handle;
+      json_data["stream"] = true;
+
+      std::string json_payload = json_data.toStyledString();
+
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_payload.c_str());
+
+      std::string ai_chat;
+      StreamingCallback callback;
+      callback.ai_chat = &ai_chat;
+
+      curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+      curl_easy_setopt(curl, CURLOPT_WRITEDATA, &callback);
+
+      CURLcode res = curl_easy_perform(curl);
+
+      if (res != CURLE_OK) {
+        CLI_LOG("CURL request failed: " << curl_easy_strerror(res));
+      } else {
         Json::Value ai_res;
         ai_res["role"] = kAssistant;
         ai_res["content"] = ai_chat;
         histories_.push_back(std::move(ai_res));
       }
-      // std::cout << "ok Done" << std::endl;
-    } while (interactive);
-  }
-}
+    }
+  } while (interactive);
 
-};  // namespace commands
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+}
+}  // namespace commands

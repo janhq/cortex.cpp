@@ -149,9 +149,9 @@ void CommandLineParser::SetupCommonCommands() {
       return;
     }
     try {
-      commands::ModelPullCmd(download_service_)
-          .Exec(cml_data_.config.apiServerHost,
-                std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
+      commands::ModelPullCmd().Exec(cml_data_.config.apiServerHost,
+                                    std::stoi(cml_data_.config.apiServerPort),
+                                    cml_data_.model_id);
     } catch (const std::exception& e) {
       CLI_LOG(e.what());
     }
@@ -214,10 +214,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_start_cmd->help());
       return;
     };
-    commands::ModelStartCmd(model_service_)
-        .Exec(cml_data_.config.apiServerHost,
-              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
-              hw_activate_opts_);
+    commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
+                                   std::stoi(cml_data_.config.apiServerPort),
+                                   cml_data_.model_id, hw_activate_opts_);
   });
 
   auto stop_model_cmd =
@@ -234,9 +233,9 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(stop_model_cmd->help());
       return;
     };
-    commands::ModelStopCmd(model_service_)
-        .Exec(cml_data_.config.apiServerHost,
-              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
+    commands::ModelStopCmd().Exec(cml_data_.config.apiServerHost,
+                                  std::stoi(cml_data_.config.apiServerPort),
+                                  cml_data_.model_id);
   });
 
   auto list_models_cmd =

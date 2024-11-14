@@ -1,8 +1,9 @@
 #include "model_get_cmd.h"
-#include "httplib.h"
 #include "server_start_cmd.h"
+#include "utils/curl_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
+#include "utils/url_parser.h"
 
 namespace commands {
 
@@ -17,20 +18,19 @@ void ModelGetCmd::Exec(const std::string& host, int port,
     }
   }
 
-  // Call API to delete model
-  httplib::Client cli(host + ":" + std::to_string(port));
-  auto res = cli.Get("/v1/models/" + model_handle);
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      CLI_LOG(res->body);
-    } else {
-      auto root = json_helper::ParseJsonString(res->body);
-      CLI_LOG(root["message"].asString());
-    }
-  } else {
-    auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
-  }
-}
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "models", model_handle},
+  };
 
+  auto res = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (res.has_error()) {
+    auto root = json_helper::ParseJsonString(res.error());
+    CLI_LOG(root["message"].asString());
+    return;
+  }
+
+  CLI_LOG(res.value().toStyledString());
+}
 }  // namespace commands

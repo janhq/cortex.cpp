@@ -25,8 +25,6 @@ bool TryConnectToServer(const std::string& host, int port) {
 }
 }  // namespace
 
-ServerStartCmd::ServerStartCmd() {}
-
 bool ServerStartCmd::Exec(const std::string& host, int port,
                           const std::optional<std::string>& log_level) {
   std::string log_level_;

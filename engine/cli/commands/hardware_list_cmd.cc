@@ -1,21 +1,12 @@
 #include "hardware_list_cmd.h"
-
 #include <json/reader.h>
 #include <json/value.h>
 #include <iostream>
-
 #include <vector>
-#include "httplib.h"
 #include "server_start_cmd.h"
+#include "services/hardware_service.h"
 #include "utils/curl_utils.h"
-#include "utils/hardware/cpu_info.h"
-#include "utils/hardware/gpu_info.h"
-#include "utils/hardware/os_info.h"
-#include "utils/hardware/power_info.h"
-#include "utils/hardware/ram_info.h"
-#include "utils/hardware/storage_info.h"
 #include "utils/logging_utils.h"
-#include "utils/string_utils.h"
 // clang-format off
 #include <tabulate/table.hpp>
 // clang-format on
