@@ -89,7 +89,7 @@ jobs:
       new_version: ${{ needs.get-update-version.outputs.new_version }}
       runs-on: ubuntu-latest
       cmake-extra-flags: "-DCORTEX_VARIANT=prod"
-      tags: "menloltd/cortex:${{ needs.get-update-version.outputs.new_version }}"
+      tags: "menloltd/cortex:beta-${{ needs.get-update-version.outputs.new_version }}"
 
   update_release:
       needs: [get-update-version, create-draft-release, build-macos, build-windows-x64, build-linux-x64]
@@ -140,4 +140,5 @@ jobs:
               - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
               - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
               - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64.tar.gz
+            - Docker: menloltd/cortex:beta-${{ env.VERSION }}
             - Github Release: https://github.com/janhq/cortex.cpp/releases/tag/v${{ env.VERSION }}
