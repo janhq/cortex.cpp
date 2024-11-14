@@ -3,11 +3,10 @@
 #include <memory>
 #include <unordered_map>
 #include "CLI/CLI.hpp"
+#include "commands/hardware_list_cmd.h"
 #include "services/engine_service.h"
 #include "services/model_service.h"
 #include "utils/config_yaml_utils.h"
-#include "commands/hardware_list_cmd.h"
-#include "common/hardware_config.h"
 
 class CommandLineParser {
  public:
@@ -40,6 +39,10 @@ class CommandLineParser {
 
   void EngineUse(CLI::App* parent, const std::string& engine_name);
 
+  void EngineLoad(CLI::App* parent, const std::string& engine_name);
+
+  void EngineUnload(CLI::App* parent, const std::string& engine_name);
+
   void ModelUpdate(CLI::App* parent);
 
   CLI::App app_;
@@ -65,7 +68,6 @@ class CommandLineParser {
     std::string log_level = "INFO";
 
     bool show_menu = false;
-
 
     int port;
     config_yaml_utils::CortexConfig config;

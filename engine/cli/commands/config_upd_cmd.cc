@@ -63,7 +63,7 @@ void commands::ConfigUpdCmd::Exec(
   }
 
   auto update_cnf_result =
-      curl_utils::SimplePatch(url.ToFullPath(), json.toStyledString());
+      curl_utils::SimplePatchJson(url.ToFullPath(), json.toStyledString());
   if (update_cnf_result.has_error()) {
     CLI_LOG_ERROR(update_cnf_result.error());
     return;
