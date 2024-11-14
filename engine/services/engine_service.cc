@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <optional>
+#include <vector>
 #include "algorithm"
 #include "database/engines.h"
 #include "extensions/remote-engine/remote_engine.h"
@@ -1060,4 +1061,54 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
                             .variant = default_variant->variant,
                             .from = default_variant->version,
                             .to = latest_version->tag_name};
+}
+
+
+cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngineEntries() {
+    cortex::db::Engines engines;
+    auto get_res = engines.GetEngines();
+    
+    if (!get_res.has_value()) {
+        return cpp::fail("Failed to get engine entries");
+    }
+    
+    return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryById(int id) {
+    cortex::db::Engines engines;
+    auto get_res = engines.GetEngineById(id);
+    
+    if (!get_res.has_value()) {
+        return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
+    }
+    
+    return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryByNameAndVariant(
+    const std::string& engine_name, const std::optional<std::string> variant = std::nullopt) {
+    
+    cortex::db::Engines engines;
+    auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+    
+    if (!get_res.has_value()) {
+        if (variant.has_value()) {
+            return cpp::fail("Variant " + variant.value() + " not found for engine " + engine_name);
+        } else {
+            return cpp::fail("Engine " + engine_name + " not found");
+        }
+    }
+    
+    return get_res.value();
+}
+
+std::string DeleteEngineEntryById(int id) {
+    cortex::db::Engines engines;
+    auto delete_res = engines.DeleteEngineById(id);
+    if (delete_res.has_value()) {
+        return delete_res.value();
+    } else {
+        return "Failed to delete engine entry";
+    }
 }

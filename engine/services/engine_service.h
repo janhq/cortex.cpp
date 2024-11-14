@@ -9,6 +9,7 @@
 
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
+#include "database/engines.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
@@ -123,6 +124,11 @@ class EngineService : public EngineServiceI {
 
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
+
+  cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryById(int id);
+
+  cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryByNameAndVariant(
+      const std::string& engine_name, const std::optional<std::string> variant);
 
  private:
   cpp::result<bool, std::string> DownloadEngine(

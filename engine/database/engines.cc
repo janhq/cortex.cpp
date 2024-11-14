@@ -1,5 +1,4 @@
 #include "engines.h"
-#include <optional>
 #include <SQLiteCpp/Database.h>
 #include "database.h"
 
@@ -19,7 +18,7 @@ void CreateTable(SQLite::Database& db) {
         "metadata TEXT,"
         "date_created TEXT DEFAULT CURRENT_TIMESTAMP,"
         "date_updated TEXT DEFAULT CURRENT_TIMESTAMP,"
-        "UNIQUE(engine_name, variant));");  // Add UNIQUE constraint
+        "UNIQUE(engine_name, variant));");
 }
 
 Engines::Engines() : db_(cortex::db::Database::GetInstance().db()) {
@@ -85,16 +84,46 @@ std::optional<EngineEntry> Engines::UpsertEngine(const std::string& engine_name,
     }
 }
 
-std::optional<EngineEntry> Engines::GetEngine(int id, const std::string& engine_name) const {
+std::optional<std::vector<EngineEntry>> Engines::GetEngines() const {
     try {
         SQLite::Statement query(db_,
             "SELECT id, engine_name, type, api_key, url, version, variant, status, metadata, date_created, date_updated "
             "FROM engines "
-            "WHERE (id = ? OR engine_name = ?) AND status = 'Default' "
+            "WHERE status = 'Default' "
+            "ORDER BY date_updated DESC");
+
+        std::vector<EngineEntry> engines;
+        while (query.executeStep()) {
+            engines.push_back(EngineEntry{
+                query.getColumn(0).getInt(),
+                query.getColumn(1).getString(),
+                query.getColumn(2).getString(),
+                query.getColumn(3).getString(),
+                query.getColumn(4).getString(),
+                query.getColumn(5).getString(),
+                query.getColumn(6).getString(),
+                query.getColumn(7).getString(),
+                query.getColumn(8).getString(),
+                query.getColumn(9).getString(),
+                query.getColumn(10).getString()
+            });
+        }
+
+        return engines;
+    } catch (const std::exception& e) {
+        return std::nullopt;
+    }
+}
+
+std::optional<EngineEntry> Engines::GetEngineById(int id) const {
+    try {
+        SQLite::Statement query(db_,
+            "SELECT id, engine_name, type, api_key, url, version, variant, status, metadata, date_created, date_updated "
+            "FROM engines "
+            "WHERE id = ? AND status = 'Default' "
             "ORDER BY date_updated DESC LIMIT 1");
 
         query.bind(1, id);
-        query.bind(2, engine_name);
 
         if (query.executeStep()) {
             return EngineEntry{
@@ -118,7 +147,50 @@ std::optional<EngineEntry> Engines::GetEngine(int id, const std::string& engine_
     }
 }
 
-std::optional<std::string> Engines::DeleteEngine(int id) {
+std::optional<EngineEntry> Engines::GetEngineByNameAndVariant(const std::string& engine_name, const std::optional<std::string> variant) const {
+    try {
+        std::string queryStr = 
+            "SELECT id, engine_name, type, api_key, url, version, variant, status, metadata, date_created, date_updated "
+            "FROM engines "
+            "WHERE engine_name = ? AND status = 'Default' ";
+        
+        if (variant) {
+            queryStr += "AND variant = ? ";
+        }
+        
+        queryStr += "ORDER BY date_updated DESC LIMIT 1";
+        
+        SQLite::Statement query(db_, queryStr);
+        
+        query.bind(1, engine_name);
+        
+        if (variant) {
+            query.bind(2, variant.value());
+        }
+
+        if (query.executeStep()) {
+            return EngineEntry{
+                query.getColumn(0).getInt(),
+                query.getColumn(1).getString(),
+                query.getColumn(2).getString(),
+                query.getColumn(3).getString(),
+                query.getColumn(4).getString(),
+                query.getColumn(5).getString(),
+                query.getColumn(6).getString(),
+                query.getColumn(7).getString(),
+                query.getColumn(8).getString(),
+                query.getColumn(9).getString(),
+                query.getColumn(10).getString()
+            };
+        } else {
+            return std::nullopt;
+        }
+    } catch (const std::exception& e) {
+        return std::nullopt;
+    }
+}
+
+std::optional<std::string> Engines::DeleteEngineById(int id) {
     try {
         SQLite::Statement query(db_,
             "DELETE FROM engines WHERE id = ?");

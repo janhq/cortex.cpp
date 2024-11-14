@@ -46,9 +46,11 @@ class Engines {
                                           const std::string& status,
                                           const std::string& metadata);
 
-  std::optional<EngineEntry> GetEngine(int id, const std::string& engine_name) const;
+  std::optional<std::vector<EngineEntry>> GetEngines() const;
+  std::optional<EngineEntry> GetEngineById(int id) const;
+  std::optional<EngineEntry> GetEngineByNameAndVariant(const std::string& engine_name, const std::optional<std::string> variant = std::nullopt) const;
 
-  std::optional<std::string> DeleteEngine(int id);
+  std::optional<std::string> DeleteEngineById(int id);
 };
 
 }  // namespace cortex::db
