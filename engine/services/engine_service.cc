@@ -317,16 +317,15 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
-
-    // Create engine entry in the database
-    cortex::db::Engines engines;
-    auto create_res = engines.UpsertEngine(engine,  // engine_name
-                                           "",      // todo - luke
-                                           "",      // todo - luke
-                                           "",      // todo - luke
-                                           normalize_version, variant.value(),
-                                           "Default",  // todo - luke
-                                           ""          // todo - luke
+    auto create_res = EngineService::UpsertEngine(
+                                          engine,  // engine_name
+                                          "",      // todo - luke
+                                          "",      // todo - luke
+                                          "",      // todo - luke
+                                          normalize_version, 
+                                          variant.value(),
+                                          "Default",  // todo - luke
+                                          ""          // todo - luke
     );
 
     if (create_res.has_value()) {
@@ -1064,7 +1063,7 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
 }
 
 
-cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngineEntries() {
+cpp::result<std::vector<cortex::db::EngineEntry>, std::string> EngineService::GetEngines() {
     cortex::db::Engines engines;
     auto get_res = engines.GetEngines();
     
@@ -1075,7 +1074,7 @@ cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngineEntries(
     return get_res.value();
 }
 
-cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryById(int id) {
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(int id) {
     cortex::db::Engines engines;
     auto get_res = engines.GetEngineById(id);
     
@@ -1086,7 +1085,7 @@ cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryById(int id) {
     return get_res.value();
 }
 
-cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryByNameAndVariant(
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineByNameAndVariant(
     const std::string& engine_name, const std::optional<std::string> variant = std::nullopt) {
     
     cortex::db::Engines engines;
@@ -1103,7 +1102,25 @@ cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryByNameAndVariant
     return get_res.value();
 }
 
-std::string DeleteEngineEntryById(int id) {
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
+    const std::string& engine_name,
+    const std::string& type,
+    const std::string& api_key,
+    const std::string& url,
+    const std::string& version,
+    const std::string& variant,
+    const std::string& status,
+    const std::string& metadata) {
+    cortex::db::Engines engines;
+    auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url, version, variant, status, metadata);
+    if (upsert_res.has_value()) {
+      return upsert_res.value();
+    } else {
+      return cpp::fail("Failed to upsert engine entry");
+    }
+}
+
+std::string EngineService::DeleteEngine(int id) {
     cortex::db::Engines engines;
     auto delete_res = engines.DeleteEngineById(id);
     if (delete_res.has_value()) {

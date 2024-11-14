@@ -125,10 +125,24 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
-  cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryById(int id);
+  cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
 
-  cpp::result<cortex::db::EngineEntry, std::string> GetEngineEntryByNameAndVariant(
+  cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);
+
+  cpp::result<cortex::db::EngineEntry, std::string> GetEngineByNameAndVariant(
       const std::string& engine_name, const std::optional<std::string> variant);
+
+  cpp::result<cortex::db::EngineEntry, std::string> UpsertEngine(
+    const std::string& engine_name,
+    const std::string& type,
+    const std::string& api_key,
+    const std::string& url,
+    const std::string& version,
+    const std::string& variant,
+    const std::string& status,
+    const std::string& metadata);
+
+  std::string DeleteEngine(int id);
 
  private:
   cpp::result<bool, std::string> DownloadEngine(
