@@ -20,8 +20,6 @@ class Models {
  private:
   SQLite::Database& db_;
 
-  void InitializeDatabase();
-
   bool IsUnique(const std::vector<ModelEntry>& entries,
                 const std::string& model_id,
                 const std::string& model_alias) const;

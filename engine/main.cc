@@ -201,6 +201,8 @@ int main(int argc, char* argv[]) {
   // avoid printing logs to terminal
   is_server = true;
 
+  // check if migration is needed
+
   std::optional<int> server_port;
   bool ignore_cout_log = false;
   for (int i = 0; i < argc; i++) {
