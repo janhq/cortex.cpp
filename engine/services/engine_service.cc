@@ -4,6 +4,7 @@
 #include <optional>
 #include "algorithm"
 #include "database/engines.h"
+#include "extensions/remote-engine/remote_engine.h"
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
