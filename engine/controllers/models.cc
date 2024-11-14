@@ -534,7 +534,7 @@ void Models::StartModel(
     auto& v = result.value();
     Json::Value ret;
     ret["message"] = "Started successfully!";
-    if(v.warning) {
+    if (v.warning) {
       ret["warning"] = *(v.warning);
     }
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);

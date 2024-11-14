@@ -1,15 +1,17 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
-#include <vector>
 #include <unordered_map>
-#include <optional>
+#include <vector>
 
+#include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
 #include "database/engines.h"
+#include "extensions/remote-engine/remote_engine.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
@@ -17,8 +19,6 @@
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
-#include "common/engine_servicei.h"
-
 namespace system_info_utils {
 struct SystemInfo;
 }
@@ -76,7 +76,7 @@ class EngineService : public EngineServiceI {
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
-  cpp::result<bool, std::string> IsEngineReady(const std::string& engine) const;
+  cpp::result<bool, std::string> IsEngineReady(const std::string& engine);
   cpp::result<bool, std::string> InstallEngineAsync(
       const std::string& engine, const std::string& version = "latest",
       const std::string& src = "");
@@ -130,17 +130,14 @@ class EngineService : public EngineServiceI {
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineByNameAndVariant(
-      const std::string& engine_name, const std::optional<std::string> variant);
+      const std::string& engine_name,
+      const std::optional<std::string> variant = std::nullopt);
 
   cpp::result<cortex::db::EngineEntry, std::string> UpsertEngine(
-    const std::string& engine_name,
-    const std::string& type,
-    const std::string& api_key,
-    const std::string& url,
-    const std::string& version,
-    const std::string& variant,
-    const std::string& status,
-    const std::string& metadata);
+      const std::string& engine_name, const std::string& type,
+      const std::string& api_key, const std::string& url,
+      const std::string& version, const std::string& variant,
+      const std::string& status, const std::string& metadata);
 
   std::string DeleteEngine(int id);
 

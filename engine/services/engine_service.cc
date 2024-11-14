@@ -200,6 +200,18 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+  // TODO: handle uninstall remote engine
+  // only delete a remote engine if no model are using it
+  auto exist_engine = GetEngineByNameAndVariant(engine);
+  if (exist_engine.has_value() && exist_engine.value().type == "remote") {
+    auto result = DeleteEngine(exist_engine.value().id);
+    if (!result.empty()) {  // This mean no error when delete model
+      CTL_ERR("Failed to delete engine: " << result);
+      return cpp::fail(result);
+    }
+    return cpp::result<bool, std::string>(true);
+  }
+
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);
@@ -337,16 +349,15 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
-    auto create_res = EngineService::UpsertEngine(
-                                          engine,  // engine_name
-                                          "",      // todo - luke
-                                          "",      // todo - luke
-                                          "",      // todo - luke
-                                          normalize_version, 
-                                          variant.value(),
-                                          "Default",  // todo - luke
-                                          ""          // todo - luke
-    );
+    auto create_res =
+        EngineService::UpsertEngine(engine,   // engine_name
+                                    "local",  // todo - luke
+                                    "",       // todo - luke
+                                    "",       // todo - luke
+                                    normalize_version, variant.value(),
+                                    "Default",  // todo - luke
+                                    ""          // todo - luke
+        );
 
     if (create_res.has_value()) {
       CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
@@ -781,9 +792,14 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
-  // TODO (alex): Need to change this, now Hard code for testing remote engine
+  // Check for remote engine
   if (engine_name != kLlamaEngine && engine_name != kOnnxEngine &&
       engine_name != kTrtLlmEngine) {
+    auto exist_engine = GetEngineByNameAndVariant(engine_name);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+    }
+
     engines_[engine_name].engine = new remote_engine::RemoteEngine();
     auto& en = std::get<EngineI*>(engines_[ne].engine);
     auto config = file_manager_utils::GetCortexConfig();
@@ -986,11 +1002,15 @@ EngineService::GetLatestEngineVersion(const std::string& engine) const {
 }
 
 cpp::result<bool, std::string> EngineService::IsEngineReady(
-    const std::string& engine) const {
+    const std::string& engine) {
   auto ne = NormalizeEngine(engine);
 
-  // Hard code to test remote engine
+  // Check for remote engine
   if (engine != kLlamaRepo && engine != kTrtLlmRepo && engine != kOnnxRepo) {
+    auto exist_engine = GetEngineByNameAndVariant(engine);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine + "' is not installed");
+    }
     return true;
   }
 
@@ -1082,70 +1102,70 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
                             .to = latest_version->tag_name};
 }
 
+cpp::result<std::vector<cortex::db::EngineEntry>, std::string>
+EngineService::GetEngines() {
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngines();
 
-cpp::result<std::vector<cortex::db::EngineEntry>, std::string> EngineService::GetEngines() {
-    cortex::db::Engines engines;
-    auto get_res = engines.GetEngines();
-    
-    if (!get_res.has_value()) {
-        return cpp::fail("Failed to get engine entries");
-    }
-    
-    return get_res.value();
+  if (!get_res.has_value()) {
+    return cpp::fail("Failed to get engine entries");
+  }
+
+  return get_res.value();
 }
 
-cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(int id) {
-    cortex::db::Engines engines;
-    auto get_res = engines.GetEngineById(id);
-    
-    if (!get_res.has_value()) {
-        return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
-    }
-    
-    return get_res.value();
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
+    int id) {
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngineById(id);
+
+  if (!get_res.has_value()) {
+    return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
+  }
+
+  return get_res.value();
 }
 
-cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineByNameAndVariant(
-    const std::string& engine_name, const std::optional<std::string> variant = std::nullopt) {
-    
-    cortex::db::Engines engines;
-    auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
-    
-    if (!get_res.has_value()) {
-        if (variant.has_value()) {
-            return cpp::fail("Variant " + variant.value() + " not found for engine " + engine_name);
-        } else {
-            return cpp::fail("Engine " + engine_name + " not found");
-        }
+cpp::result<cortex::db::EngineEntry, std::string>
+EngineService::GetEngineByNameAndVariant(
+    const std::string& engine_name, const std::optional<std::string> variant) {
+
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+
+  if (!get_res.has_value()) {
+    if (variant.has_value()) {
+      return cpp::fail("Variant " + variant.value() + " not found for engine " +
+                       engine_name);
+    } else {
+      return cpp::fail("Engine " + engine_name + " not found");
     }
-    
-    return get_res.value();
+  }
+
+  return get_res.value();
 }
 
 cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
-    const std::string& engine_name,
-    const std::string& type,
-    const std::string& api_key,
-    const std::string& url,
-    const std::string& version,
-    const std::string& variant,
-    const std::string& status,
-    const std::string& metadata) {
-    cortex::db::Engines engines;
-    auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url, version, variant, status, metadata);
-    if (upsert_res.has_value()) {
-      return upsert_res.value();
-    } else {
-      return cpp::fail("Failed to upsert engine entry");
-    }
+    const std::string& engine_name, const std::string& type,
+    const std::string& api_key, const std::string& url,
+    const std::string& version, const std::string& variant,
+    const std::string& status, const std::string& metadata) {
+  cortex::db::Engines engines;
+  auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url,
+                                         version, variant, status, metadata);
+  if (upsert_res.has_value()) {
+    return upsert_res.value();
+  } else {
+    return cpp::fail("Failed to upsert engine entry");
+  }
 }
 
 std::string EngineService::DeleteEngine(int id) {
-    cortex::db::Engines engines;
-    auto delete_res = engines.DeleteEngineById(id);
-    if (delete_res.has_value()) {
-        return delete_res.value();
-    } else {
-        return "Failed to delete engine entry";
-    }
+  cortex::db::Engines engines;
+  auto delete_res = engines.DeleteEngineById(id);
+  if (delete_res.has_value()) {
+    return delete_res.value();
+  } else {
+    return "";
+  }
 }

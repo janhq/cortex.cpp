@@ -621,6 +621,50 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
               .string());
       auto mc = yaml_handler.GetModelConfig();
 
+      // Running remote model
+      if (mc.engine != kLlamaEngine && mc.engine != kOnnxEngine &&
+          mc.engine != kTrtLlmEngine) {
+
+        config::RemoteModelConfig remote_mc;
+        remote_mc.LoadFromYamlFile(
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string());
+        auto remote_engine_entry =
+            engine_svc_->GetEngineByNameAndVariant(mc.engine);
+        if (remote_engine_entry.has_error()) {
+          CTL_WRN("Remote engine error: " + model_entry.error());
+          return cpp::fail(remote_engine_entry.error());
+        }
+        auto remote_engine_json = remote_engine_entry.value().ToJson();
+        json_data = remote_mc.ToJson();
+
+        json_data["api_key"] = std::move(remote_engine_json["api_key"]);
+        json_data["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string();
+        json_data["metadata"] = std::move(remote_engine_json["metadata"]);
+
+        auto ir =
+            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+        auto status = std::get<0>(ir)["status_code"].asInt();
+        auto data = std::get<1>(ir);
+        if (status == httplib::StatusCode::OK_200) {
+          return StartModelResult{.success = true, .warning = ""};
+        } else if (status == httplib::StatusCode::Conflict_409) {
+          CTL_INF("Model '" + model_handle + "' is already loaded");
+          return StartModelResult{.success = true, .warning = ""};
+        } else {
+          // only report to user the error
+          CTL_ERR("Model failed to start with status code: " << status);
+          return cpp::fail("Model failed to start: " +
+                           data["message"].asString());
+        }
+      }
+
+      // end hard code
+
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
         // TODO(sang) support multiple files
@@ -745,7 +789,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       return cpp::fail(
           "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
           " MiB, available: " + std::to_string(free_vram_MiB) +
-          " MiB - Should adjust ngl to " + std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
+          " MiB - Should adjust ngl to " +
+          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
     }
 
     if (ram_needed_MiB > free_ram_MiB) {
