@@ -50,7 +50,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   if (!ho.has_value() || ho.value().show_cpu) {
     std::cout << "CPU Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{"(Index)", "Arch", "Cores", "Model",
+    std::vector<std::string> column_headers{"#", "Arch", "Cores", "Model",
                                             "Instructions"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
@@ -74,7 +74,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   if (!ho.has_value() || ho.value().show_os) {
     std::cout << "OS Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{"(Index)", "Version", "Name"};
+    std::vector<std::string> column_headers{"#", "Version", "Name"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
     table.add_row(header);
@@ -91,7 +91,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   if (!ho.has_value() || ho.value().show_ram) {
     std::cout << "RAM Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{"(Index)", "Total (MiB)",
+    std::vector<std::string> column_headers{"#", "Total (MiB)",
                                             "Available (MiB)"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
@@ -110,7 +110,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     std::cout << "GPU Information:" << std::endl;
     Table table;
     std::vector<std::string> column_headers{
-        "(Index)",        "ID",
+        "#",        "GPU ID",
         "Name",           "Version",
         "Total (MiB)",    "Available (MiB)",
         "Driver Version", "Compute Capability", "Activated"};
@@ -144,7 +144,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   if (!ho.has_value() || ho.value().show_storage) {
     std::cout << "Storage Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{"(Index)", "Total (GiB)",
+    std::vector<std::string> column_headers{"#", "Total (GiB)",
                                             "Available (GiB)"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
@@ -163,7 +163,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   if (!ho.has_value() || ho.value().show_power) {
     std::cout << "Power Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{"(Index)", "Battery Life",
+    std::vector<std::string> column_headers{"#", "Battery Life",
                                             "Charging Status", "Power Saving"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
