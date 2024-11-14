@@ -229,8 +229,10 @@ void Engines::SetDefaultEngineVariant(
     resp->setStatusCode(k400BadRequest);
     callback(resp);
   } else {
-    auto resp =
-        cortex_utils::CreateCortexHttpJsonResponse(result.value().ToJson());
+    Json::Value res;
+    res["message"] = "Engine " + result.value().variant + " " +
+                     result.value().version + " set as default";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k200OK);
     callback(resp);
   }
