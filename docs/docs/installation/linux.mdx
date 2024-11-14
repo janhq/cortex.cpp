@@ -20,43 +20,35 @@ This instruction is for stable releases. For beta and nightly releases, please r
 
 ### Prerequisites
 - OpenMPI
+- curl
+- jq
+- tar
 
 ### Install Cortex.cpp
 
-1. Download the Linux installer:
-    - From release: https://github.com/janhq/cortex.cpp/releases
-    - From quick download links:
-        - Local installer `.deb`:
-            - Stable: https://app.cortexcpp.com/download/latest/linux-amd64-local
-            - Beta: https://app.cortexcpp.com/download/beta/linux-amd64-local
-            - Nightly: https://app.cortexcpp.com/download/nightly/linux-amd64-local
-        - Network installer `.deb`:
-            - Stable: https://app.cortexcpp.com/download/latest/linux-amd64-network
-            - Beta: https://app.cortexcpp.com/download/beta/linux-amd64-network
-            - Nightly: https://app.cortexcpp.com/download/nightly/linux-amd64-network
-        - Binary:
-            - Stable: https://app.cortexcpp.com/download/latest/linux-amd64-binary
-            - Beta: https://app.cortexcpp.com/download/beta/linux-amd64-binary
-            - Nightly: https://app.cortexcpp.com/download/nightly/linux-amd64-binary
+1. Install cortex with one command
 
-2. Install Cortex.cpp using the following command:
-    ```bash
-    # Installer
-    sudo apt install ./cortex-<version>-linux-amd64-network-installer.deb
+- Linux debian base distros
+   ```bash
+   # Network installer
+   curl -s https://raw.githubusercontent.com/janhq/cortex/dev/engine/templates/linux/install.sh | sudo bash -s 
 
+   # Local installer
+   curl -s https://raw.githubusercontent.com/janhq/cortex/dev/engine/templates/linux/install.sh | sudo bash -s -- --deb_local 
+   ```
 
-    # Binary
-    tar -xvf cortex-<version>-linux-amd64.tar.gz
-    cd cortex
-    sudo mv cortex /usr/bin/cortex
-    sudo chmod +x /usr/bin/Cortexs
-    sudo mv cortex-server /usr/bin/cortex-server
+- Other linux distros
+   ```bash
+   curl -s https://raw.githubusercontent.com/janhq/cortex/dev/engine/templates/linux/install.sh | sudo bash -s
+   ```
 
-    ## For binary, you need to install engine manually after extracting the binary
-    cortex engines install llama-cpp
-    ```
+- Parameters
+  - `--channel <channel_name>` cortex channel will be installed `stable`, `beta` or `nightly`. Default vaule is `stable`
+  - `--version <version>` version cortex want to install Ex `--version 1.0.2`. Default the script will get latest version of corresponding channel
+  - `--is_update` the current command run is for update
+  - `--deb_local` Using local installer for linux debian base distros
 
-3. Ensure that Cortex.cpp is sucessfulyy installed:
+2. Ensure that Cortex.cpp is sucessfulyy installed:
     ```bash
     # Stable
     cortex -v
@@ -79,7 +71,7 @@ By default, Cortex.cpp is installed in the following directory:
 ## Uninstall Cortex.cpp
 ```bash
 # Stable version
-sudo apt remove cortexcpp
+sudo /usr/bin/cortex-uninstall.sh
 ```
 
 ## Build from Source
@@ -116,7 +108,7 @@ sudo apt remove cortexcpp
 
 ## Update cortex to latest version
 :::info
-The script requires sudo permission. Supported for debians based systems only (Ubuntu, Debian, etc).
+The script requires sudo permission. Supported for all linux distros.
 :::
 ```bash
 sudo cortex update
