@@ -106,14 +106,18 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     std::cout << std::endl;
   }
 
- if (!ho.has_value() || ho.value().show_gpu) {
+  if (!ho.has_value() || ho.value().show_gpu) {
     std::cout << "GPU Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{
-        "#",        "GPU ID",
-        "Name",           "Version",
-        "Total (MiB)",    "Available (MiB)",
-        "Driver Version", "Compute Capability", "Activated"};
+    std::vector<std::string> column_headers{"#",
+                                            "GPU ID",
+                                            "Name",
+                                            "Version",
+                                            "Total (MiB)",
+                                            "Available (MiB)",
+                                            "Driver Version",
+                                            "Compute Capability",
+                                            "Activated"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
     table.add_row(header);
@@ -170,7 +174,8 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     table.add_row(header);
     table.format().font_color(Color::green);
     std::vector<std::string> row = {"1"};
-    cortex::hw::PowerInfo pi = cortex::hw::power::FromJson(result.value()["power"]);
+    cortex::hw::PowerInfo pi =
+        cortex::hw::power::FromJson(result.value()["power"]);
     row.emplace_back(std::to_string(pi.battery_life));
     row.emplace_back(pi.charging_status);
     row.emplace_back(pi.is_power_saving ? "Yes" : "No");
