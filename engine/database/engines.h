@@ -9,11 +9,20 @@
 namespace cortex::db {
 
 struct EngineEntry {
-    std::string engine;
+    int id;
+    std::string engine_name;
+    std::string type;
+    std::string api_key;
+    std::string url;
+    std::string version;
+    std::string variant;
+    std::string status;
+    std::string metadata;
+    std::string date_created;
+    std::string date_updated;
 };
 
 class Engines {
-
  private:
   SQLite::Database& db_;
 
@@ -28,7 +37,7 @@ class Engines {
   Engines(SQLite::Database& db);
   ~Engines();
 
-  std::optional<std::string> UpsertEngine(const std::string& engine_name,
+  std::optional<EngineEntry> UpsertEngine(const std::string& engine_name,
                                           const std::string& type,
                                           const std::string& api_key,
                                           const std::string& url,

@@ -32,8 +32,7 @@ Engines::Engines(SQLite::Database& db) : db_(db) {
 
 Engines::~Engines() {}
 
-// Function to create a new engine and save it into the database
-std::optional<std::string> Engines::UpsertEngine(const std::string& engine_name,
+std::optional<EngineEntry> Engines::UpsertEngine(const std::string& engine_name,
                                                  const std::string& type,
                                                  const std::string& api_key,
                                                  const std::string& url,
@@ -52,7 +51,8 @@ std::optional<std::string> Engines::UpsertEngine(const std::string& engine_name,
             "version = excluded.version, "
             "status = excluded.status, "
             "metadata = excluded.metadata, "
-            "date_updated = CURRENT_TIMESTAMP;");
+            "date_updated = CURRENT_TIMESTAMP "
+            "RETURNING id, engine_name, type, api_key, url, version, variant, status, metadata, date_created, date_updated;");
 
         query.bind(1, engine_name);
         query.bind(2, type);
@@ -63,17 +63,33 @@ std::optional<std::string> Engines::UpsertEngine(const std::string& engine_name,
         query.bind(7, status);
         query.bind(8, metadata);
 
-        query.exec();
-        return std::nullopt;
+        if (query.executeStep()) {
+            return EngineEntry{
+                query.getColumn(0).getInt(),
+                query.getColumn(1).getString(),
+                query.getColumn(2).getString(),
+                query.getColumn(3).getString(),
+                query.getColumn(4).getString(),
+                query.getColumn(5).getString(),
+                query.getColumn(6).getString(),
+                query.getColumn(7).getString(),
+                query.getColumn(8).getString(),
+                query.getColumn(9).getString(),
+                query.getColumn(10).getString()
+            };
+        } else {
+            return std::nullopt;
+        }
     } catch (const std::exception& e) {
-        return std::string("Failed to upsert engine: ") + e.what();
+        return std::nullopt;
     }
 }
 
 std::optional<EngineEntry> Engines::GetEngine(int id, const std::string& engine_name) const {
     try {
         SQLite::Statement query(db_,
-            "SELECT engine_name FROM engines "
+            "SELECT id, engine_name, type, api_key, url, version, variant, status, metadata, date_created, date_updated "
+            "FROM engines "
             "WHERE (id = ? OR engine_name = ?) AND status = 'Default' "
             "ORDER BY date_updated DESC LIMIT 1");
 
@@ -81,7 +97,19 @@ std::optional<EngineEntry> Engines::GetEngine(int id, const std::string& engine_
         query.bind(2, engine_name);
 
         if (query.executeStep()) {
-            return EngineEntry{query.getColumn(0).getString()};
+            return EngineEntry{
+                query.getColumn(0).getInt(),
+                query.getColumn(1).getString(),
+                query.getColumn(2).getString(),
+                query.getColumn(3).getString(),
+                query.getColumn(4).getString(),
+                query.getColumn(5).getString(),
+                query.getColumn(6).getString(),
+                query.getColumn(7).getString(),
+                query.getColumn(8).getString(),
+                query.getColumn(9).getString(),
+                query.getColumn(10).getString()
+            };
         } else {
             return std::nullopt;
         }

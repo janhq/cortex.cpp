@@ -329,7 +329,7 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
     );
 
     if (create_res.has_value()) {
-      CTL_ERR("Failed to create engine entry: " << create_res.value());
+      CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
     } else {
       CTL_INF("Engine entry created successfully");
     }
