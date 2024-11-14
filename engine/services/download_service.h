@@ -178,13 +178,12 @@ class DownloadService {
           continue;
         }
 
-        if (dltotal == 0) {
-          // if dltotal is 0, we prevent to send the event
-          break;
-        }
-
         item.bytes = dltotal;
         item.downloadedBytes = dlnow;
+
+        if (item.bytes == 0 || item.bytes == item.downloadedBytes) {
+          break;
+        }
 
         // Emit the event
         {
