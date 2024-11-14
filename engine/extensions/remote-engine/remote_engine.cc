@@ -120,7 +120,6 @@ CurlResponse RemoteEngine::MakeGetModelsRequest() {
   struct curl_slist* headers = nullptr;
 
   headers = curl_slist_append(headers, api_key_template_.c_str());
-  std::cout << "api_key: " << api_key_template_ << std::endl;
 
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
@@ -162,7 +161,6 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
   if (!config.api_key.empty()) {
 
     headers = curl_slist_append(headers, api_key_template_.c_str());
-    std::cout << "api_key: " << api_key_template_ << std::endl;
   }
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
@@ -386,15 +384,48 @@ void RemoteEngine::HandleChatCompletion(
   bool is_stream =
       json_body->isMember("stream") && (*json_body)["stream"].asBool();
   Json::FastWriter writer;
-  std::string request_body = writer.write((*json_body));
-  std::cout << "template: "
-            << model_config->transform_req["chat_completions"]["template"]
-                   .as<std::string>()
-            << std::endl;
-  std::string result = renderer_.render(
-      model_config->transform_req["chat_completions"]["template"]
-          .as<std::string>(),
-      (*json_body));
+  // Transform request
+  std::string result;
+  try {
+    // Check if required YAML nodes exist
+    if (!model_config->transform_req["chat_completions"]) {
+      throw std::runtime_error(
+          "Missing 'chat_completions' node in transform_req");
+    }
+    if (!model_config->transform_req["chat_completions"]["template"]) {
+      throw std::runtime_error("Missing 'template' node in chat_completions");
+    }
+
+    // Validate JSON body
+    if (!json_body || json_body->isNull()) {
+      throw std::runtime_error("Invalid or null JSON body");
+    }
+
+    // Get template string with error check
+    std::string template_str;
+    try {
+      template_str = model_config->transform_req["chat_completions"]["template"]
+                         .as<std::string>();
+    } catch (const YAML::BadConversion& e) {
+      throw std::runtime_error("Failed to convert template node to string: " +
+                               std::string(e.what()));
+    }
+
+    // Render with error handling
+    try {
+      result = renderer_.render(template_str, *json_body);
+    } catch (const std::exception& e) {
+      throw std::runtime_error("Template rendering error: " +
+                               std::string(e.what()));
+    }
+
+  } catch (const std::exception& e) {
+    // Log error and potentially rethrow or handle accordingly
+    LOG_WARN << "Error in TransformRequest: " << e.what();
+    LOG_WARN << "Using original request body";
+    result = (*json_body).toStyledString();
+  }
+
   if (is_stream) {
     MakeStreamingChatCompletionRequest(*model_config, result, callback);
   } else {
@@ -426,13 +457,71 @@ void RemoteEngine::HandleChatCompletion(
       callback(std::move(status), std::move(error));
       return;
     }
+
+    // Transform Response
+    std::string response_str;
+    try {
+      // Check if required YAML nodes exist
+      if (!model_config->transform_resp["chat_completions"]) {
+        throw std::runtime_error(
+            "Missing 'chat_completions' node in transform_resp");
+      }
+      if (!model_config->transform_resp["chat_completions"]["template"]) {
+        throw std::runtime_error("Missing 'template' node in chat_completions");
+      }
+
+      // Validate JSON body
+      if (!response_json || response_json.isNull()) {
+        throw std::runtime_error("Invalid or null JSON body");
+      }
+
+      // Get template string with error check
+      std::string template_str;
+      try {
+        template_str =
+            model_config->transform_resp["chat_completions"]["template"]
+                .as<std::string>();
+      } catch (const YAML::BadConversion& e) {
+        throw std::runtime_error("Failed to convert template node to string: " +
+                                 std::string(e.what()));
+      }
+
+      // Render with error handling
+      try {
+        response_str = renderer_.render(template_str, response_json);
+      } catch (const std::exception& e) {
+        throw std::runtime_error("Template rendering error: " +
+                                 std::string(e.what()));
+      }
+
+    } catch (const std::exception& e) {
+      // Log error and potentially rethrow or handle accordingly
+      LOG_WARN << "Error in TransformRequest: " << e.what();
+      LOG_WARN << "Using original request body";
+      response_str = response_json.toStyledString();
+    }
+
+    Json::Reader reader_final;
+    Json::Value response_json_final;
+    if (!reader_final.parse(response_str, response_json_final)) {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = true;
+      status["is_stream"] = false;
+      status["status_code"] = k500InternalServerError;
+      Json::Value error;
+      error["error"] = "Failed to parse response";
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
     Json::Value status;
     status["is_done"] = true;
     status["has_error"] = false;
     status["is_stream"] = false;
     status["status_code"] = k200OK;
 
-    callback(std::move(status), std::move(response_json));
+    callback(std::move(status), std::move(response_json_final));
   }
 }
 
