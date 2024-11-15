@@ -9,9 +9,12 @@
 #include "commands/engine_get_cmd.h"
 #include "commands/engine_install_cmd.h"
 #include "commands/engine_list_cmd.h"
+#include "commands/engine_load_cmd.h"
 #include "commands/engine_uninstall_cmd.h"
+#include "commands/engine_unload_cmd.h"
 #include "commands/engine_update_cmd.h"
 #include "commands/engine_use_cmd.h"
+#include "commands/hardware_activate_cmd.h"
 #include "commands/model_del_cmd.h"
 #include "commands/model_get_cmd.h"
 #include "commands/model_import_cmd.h"
@@ -33,6 +36,7 @@ constexpr const auto kCommonCommandsGroup = "Common Commands";
 constexpr const auto kInferenceGroup = "Inference";
 constexpr const auto kModelsGroup = "Models";
 constexpr const auto kEngineGroup = "Engines";
+constexpr const auto kHardwareGroup = "Hardware";
 constexpr const auto kSystemGroup = "Server";
 constexpr const auto kConfigGroup = "Configurations";
 constexpr const auto kSubcommands = "Subcommands";
@@ -58,6 +62,8 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   SetupModelCommands();
 
   SetupEngineCommands();
+
+  SetupHardwareCommands();
 
   SetupSystemCommands();
 
@@ -157,6 +163,8 @@ void CommandLineParser::SetupCommonCommands() {
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
   run_cmd->add_option("model_id", cml_data_.model_id, "");
+  run_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+                      "List of GPU to activate, for example [0, 1]");
   run_cmd->add_flag("-d,--detach", cml_data_.run_detach, "Detached mode");
   run_cmd->callback([this, run_cmd] {
     if (std::exchange(executed_, true))
@@ -164,7 +172,7 @@ void CommandLineParser::SetupCommonCommands() {
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
                         cml_data_.model_id, download_service_);
-    rc.Exec(cml_data_.run_detach);
+    rc.Exec(cml_data_.run_detach, hw_activate_opts_);
   });
 }
 
@@ -195,6 +203,8 @@ void CommandLineParser::SetupModelCommands() {
   model_start_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " models start [model_id]");
   model_start_cmd->add_option("model_id", cml_data_.model_id, "");
+  model_start_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+                              "List of GPU to activate, for example [0, 1]");
   model_start_cmd->group(kSubcommands);
   model_start_cmd->callback([this, model_start_cmd]() {
     if (std::exchange(executed_, true))
@@ -206,7 +216,8 @@ void CommandLineParser::SetupModelCommands() {
     };
     commands::ModelStartCmd(model_service_)
         .Exec(cml_data_.config.apiServerHost,
-              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id);
+              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+              hw_activate_opts_);
   });
 
   auto stop_model_cmd =
@@ -465,7 +476,113 @@ void CommandLineParser::SetupEngineCommands() {
     EngineUse(engine_use_cmd, engine_name);
   }
 
+  auto engine_load_cmd = engines_cmd->add_subcommand("load", "Load engine");
+  engine_load_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                         " engines load [engine_name]");
+  engine_load_cmd->callback([this, engine_load_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (engine_load_cmd->get_subcommands().empty()) {
+      CLI_LOG("[engine_name] is required\n");
+      CLI_LOG(engine_load_cmd->help());
+    }
+  });
+  engine_load_cmd->group(kSubcommands);
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineLoad(engine_load_cmd, engine_name);
+  }
+
+  auto engine_unload_cmd =
+      engines_cmd->add_subcommand("unload", "Unload engine");
+  engine_unload_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " engines unload [engine_name]");
+  engine_unload_cmd->callback([this, engine_unload_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (engine_unload_cmd->get_subcommands().empty()) {
+      CLI_LOG("[engine_name] is required\n");
+      CLI_LOG(engine_unload_cmd->help());
+    }
+  });
+  engine_unload_cmd->group(kSubcommands);
+  for (auto& engine : engine_service_.kSupportEngines) {
+    std::string engine_name{engine};
+    EngineUnload(engine_unload_cmd, engine_name);
+  }
+
   EngineGet(engines_cmd);
+}
+
+void CommandLineParser::SetupHardwareCommands() {
+  // Hardware group commands
+  auto hw_cmd =
+      app_.add_subcommand("hardware", "Subcommands for managing hardware");
+  hw_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                " hardware [options] [subcommand]");
+  hw_cmd->group(kHardwareGroup);
+
+  hw_cmd->callback([this, hw_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (hw_cmd->get_subcommands().empty()) {
+      CLI_LOG(hw_cmd->help());
+    }
+  });
+
+  auto hw_list_cmd =
+      hw_cmd->add_subcommand("list", "List all hardware information");
+
+  hw_list_cmd->add_flag("--cpu", hw_opts_.show_cpu, "Display CPU information");
+  hw_list_cmd->add_flag("--os", hw_opts_.show_os, "Display OS information");
+  hw_list_cmd->add_flag("--ram", hw_opts_.show_ram, "Display RAM information");
+  hw_list_cmd->add_flag("--storage", hw_opts_.show_storage,
+                        "Display Storage information");
+  hw_list_cmd->add_flag("--gpu", hw_opts_.show_gpu, "Display GPU information");
+  hw_list_cmd->add_flag("--power", hw_opts_.show_power,
+                        "Display Power information");
+  hw_list_cmd->add_flag("--monitors", hw_opts_.show_monitors,
+                        "Display Monitors information");
+
+  hw_list_cmd->group(kSubcommands);
+  hw_list_cmd->callback([this]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (hw_opts_.has_flag()) {
+      commands::HardwareListCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), hw_opts_);
+    } else {
+      commands::HardwareListCmd().Exec(
+          cml_data_.config.apiServerHost,
+          std::stoi(cml_data_.config.apiServerPort), std::nullopt);
+    }
+  });
+
+  auto hw_activate_cmd =
+      hw_cmd->add_subcommand("activate", "Activate hardware");
+  hw_activate_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                         " hardware activate --gpus [list_gpu]");
+  hw_activate_cmd->group(kSubcommands);
+  hw_activate_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+                              "List of GPU to activate, for example [0, 1]");
+  hw_activate_cmd->callback([this, hw_activate_cmd]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (hw_activate_cmd->get_options().empty()) {
+      CLI_LOG(hw_activate_cmd->help());
+      return;
+    }
+
+    if (hw_activate_opts_["gpus"].empty()) {
+      CLI_LOG("[list_gpu] is required\n");
+      CLI_LOG(hw_activate_cmd->help());
+      return;
+    }
+    commands::HardwareActivateCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), hw_activate_opts_);
+  });
 }
 
 void CommandLineParser::SetupSystemCommands() {
@@ -607,6 +724,44 @@ void CommandLineParser::EngineUpdate(CLI::App* parent,
           std::stoi(cml_data_.config.apiServerPort), engine_name);
     } catch (const std::exception& e) {
       CTL_ERR(e.what());
+    }
+  });
+}
+
+void CommandLineParser::EngineUnload(CLI::App* parent,
+                                     const std::string& engine_name) {
+  auto sub_cmd = parent->add_subcommand(engine_name, "");
+  sub_cmd->usage("Usage:\n" + commands::GetCortexBinary() + " engines unload " +
+                 engine_name);
+  sub_cmd->group(kEngineGroup);
+
+  sub_cmd->callback([this, engine_name] {
+    if (std::exchange(executed_, true))
+      return;
+    auto result = commands::EngineUnloadCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), engine_name);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
+    }
+  });
+}
+
+void CommandLineParser::EngineLoad(CLI::App* parent,
+                                   const std::string& engine_name) {
+  auto sub_cmd = parent->add_subcommand(engine_name, "");
+  sub_cmd->usage("Usage:\n" + commands::GetCortexBinary() + " engines load " +
+                 engine_name);
+  sub_cmd->group(kEngineGroup);
+
+  sub_cmd->callback([this, engine_name] {
+    if (std::exchange(executed_, true))
+      return;
+    auto result = commands::EngineLoadCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), engine_name);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
     }
   });
 }

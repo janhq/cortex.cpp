@@ -17,11 +17,13 @@ void ModelStopCmd::Exec(const std::string& host, int port,
     if (res->status == httplib::StatusCode::OK_200) {
       CLI_LOG("Model unloaded!");
     } else {
-      CTL_ERR("Model failed to unload with status code: " << res->status);
+      auto root = json_helper::ParseJsonString(res->body);
+      CLI_LOG(root["message"].asString());
+      return;
     }
   } else {
     auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+    CLI_LOG("HTTP error: " << httplib::to_string(err));
   }
 }
 

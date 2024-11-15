@@ -13,36 +13,7 @@
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
-
-// TODO: namh think of the other name
-struct DefaultEngineVariant {
-  std::string engine;
-  std::string version;
-  std::string variant;
-
-  Json::Value ToJson() const {
-    Json::Value root;
-    root["engine"] = engine;
-    root["version"] = version;
-    root["variant"] = variant;
-    return root;
-  }
-};
-
-// TODO: namh think of the other name
-struct EngineVariantResponse {
-  std::string name;
-  std::string version;
-  std::string engine;
-
-  Json::Value ToJson() const {
-    Json::Value root;
-    root["name"] = name;
-    root["version"] = version;
-    root["engine"] = engine;
-    return root;
-  }
-};
+#include "common/engine_servicei.h"
 
 struct EngineUpdateResult {
   std::string engine;
@@ -66,7 +37,7 @@ struct SystemInfo;
 
 using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
 
-class EngineService {
+class EngineService: public EngineServiceI {
  private:
   using EngineRelease = github_release_utils::GitHubRelease;
   using EngineVariant = github_release_utils::GitHubAsset;

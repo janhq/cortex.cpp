@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace cortex::cpuid {
 /// The CpuInfo object extract information about which, if any, additional
@@ -119,6 +120,8 @@ class CpuInfo {
   bool has_neon() const;
 
   std::string to_string();
+
+  std::vector<std::string> instructions();
 
  public:
   /// Private implementation

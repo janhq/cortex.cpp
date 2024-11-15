@@ -12,6 +12,7 @@ class TestApiModelPullDirectUrl:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
+        stop_server()
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
@@ -42,11 +43,11 @@ class TestApiModelPullDirectUrl:
         myobj = {
             "model": "https://huggingface.co/afrideva/zephyr-smol_llama-100m-sft-full-GGUF/blob/main/zephyr-smol_llama-100m-sft-full.q2_k.gguf"
         }
-        response = requests.post("http://localhost:3928/models/pull", json=myobj)
+        response = requests.post("http://localhost:3928/v1/models/pull", json=myobj)
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
         get_model_response = requests.get(
-            "http://127.0.0.1:3928/models/afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf"
+            "http://127.0.0.1:3928/v1/models/afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf"
         )
         assert get_model_response.status_code == 200
         assert (
@@ -60,11 +61,11 @@ class TestApiModelPullDirectUrl:
             "model": "https://huggingface.co/afrideva/zephyr-smol_llama-100m-sft-full-GGUF/blob/main/zephyr-smol_llama-100m-sft-full.q2_k.gguf",
             "name": "smol_llama_100m"
         }
-        response = requests.post("http://localhost:3928/models/pull", json=myobj)
+        response = requests.post("http://localhost:3928/v1/models/pull", json=myobj)
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
         get_model_response = requests.get(
-            "http://127.0.0.1:3928/models/afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf"
+            "http://127.0.0.1:3928/v1/models/afrideva:zephyr-smol_llama-100m-sft-full-GGUF:zephyr-smol_llama-100m-sft-full.q2_k.gguf"
         )
         assert get_model_response.status_code == 200
         print(get_model_response.json()["name"])

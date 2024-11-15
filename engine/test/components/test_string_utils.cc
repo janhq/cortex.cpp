@@ -287,3 +287,5 @@ TEST_F(StringUtilsTestSuite, LargeInputPerformance) {
   // and doesn't crash with large inputs
   EXPECT_EQ(RemoveSubstring(large_input, to_remove), "");
 }
+
+

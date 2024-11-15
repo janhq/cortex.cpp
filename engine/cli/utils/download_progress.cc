@@ -34,7 +34,8 @@ bool DownloadProgress::Connect(const std::string& host, int port) {
   return true;
 }
 
-bool DownloadProgress::Handle(const DownloadType& event_type) {
+bool DownloadProgress::Handle(
+    const std::unordered_set<DownloadType>& event_type) {
   assert(!!ws_);
 #if defined(_WIN32)
   HANDLE h_out = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -50,14 +51,18 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     }
   }
 #endif
-  std::unordered_map<std::string, uint64_t> totals;
-  status_ = DownloadStatus::DownloadStarted;
+  for (auto et : event_type) {
+    status_[et] = DownloadStatus::DownloadStarted;
+  }
   std::unique_ptr<indicators::DynamicProgress<indicators::ProgressBar>> bars;
 
-  std::vector<std::unique_ptr<indicators::ProgressBar>> items;
+  std::unordered_map<std::string,
+                     std::pair<int, std::unique_ptr<indicators::ProgressBar>>>
+      items;
   indicators::show_console_cursor(false);
-  auto handle_message = [this, &bars, &items, &totals,
-                         event_type](const std::string& message) {
+  auto start = std::chrono::steady_clock::now();
+  auto handle_message = [this, &bars, &items, event_type,
+                         start](const std::string& message) {
     CTL_INF(message);
 
     auto pad_string = [](const std::string& str,
@@ -78,58 +83,77 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     auto ev = cortex::event::GetDownloadEventFromJson(
         json_helper::ParseJsonString(message));
     // Ignore other task type
-    if (ev.download_task_.type != event_type) {
+    if (event_type.find(ev.download_task_.type) == event_type.end()) {
       return;
     }
-
+    auto now = std::chrono::steady_clock::now();
     if (!bars) {
       bars = std::make_unique<
           indicators::DynamicProgress<indicators::ProgressBar>>();
-      for (auto& i : ev.download_task_.items) {
-        items.emplace_back(std::make_unique<indicators::ProgressBar>(
-            indicators::option::BarWidth{50}, indicators::option::Start{"["},
-            indicators::option::Fill{"="}, indicators::option::Lead{">"},
-            indicators::option::End{"]"},
-            indicators::option::PrefixText{pad_string(Repo2Engine(i.id))},
-            indicators::option::ForegroundColor{indicators::Color::white},
-            indicators::option::ShowRemainingTime{true}));
-        bars->push_back(*(items.back()));
+    }
+    for (auto& i : ev.download_task_.items) {
+      if (items.find(i.id) == items.end()) {
+        auto idx = items.size();
+        items[i.id] = std::pair(
+            idx,
+            std::make_unique<indicators::ProgressBar>(
+                indicators::option::BarWidth{50},
+                indicators::option::Start{"["}, indicators::option::Fill{"="},
+                indicators::option::Lead{">"}, indicators::option::End{"]"},
+                indicators::option::PrefixText{pad_string(Repo2Engine(i.id))},
+                indicators::option::ForegroundColor{indicators::Color::white},
+                indicators::option::ShowRemainingTime{false}));
+
+        bars->push_back(*(items.at(i.id).second));
       }
     }
     for (int i = 0; i < ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
-      uint64_t downloaded = it.downloadedBytes.value_or(0);
-      if (totals.find(it.id) == totals.end()) {
-        totals[it.id] = it.bytes.value_or(std::numeric_limits<uint64_t>::max());
-        CTL_INF("Updated " << it.id << " - total: " << totals[it.id]);
-      }
+      if (ev.type_ == DownloadStatus::DownloadUpdated) {
+        uint64_t downloaded = it.downloadedBytes.value_or(0u);
+        uint64_t total =
+            it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+        auto d = std::chrono::duration_cast<std::chrono::seconds>(now - start)
+                     .count();
+        uint64_t bytes_per_sec = downloaded / (d + 1);
+        std::string time_remaining;
+        if (downloaded == total || bytes_per_sec == 0) {
+          time_remaining = "00m:00s";
+        } else {
+          time_remaining = format_utils::TimeDownloadFormat(
+              (total - downloaded) / bytes_per_sec);
+        }
 
-      if (ev.type_ == DownloadStatus::DownloadStarted ||
-          ev.type_ == DownloadStatus::DownloadUpdated) {
-        (*bars)[i].set_option(indicators::option::PrefixText{
-            pad_string(Repo2Engine(it.id)) +
-            std::to_string(
-                int(static_cast<double>(downloaded) / totals[it.id] * 100)) +
-            '%'});
-        (*bars)[i].set_progress(
-            int(static_cast<double>(downloaded) / totals[it.id] * 100));
-        (*bars)[i].set_option(indicators::option::PostfixText{
-            format_utils::BytesToHumanReadable(downloaded) + "/" +
-            format_utils::BytesToHumanReadable(totals[it.id])});
+        (*bars)[items.at(it.id).first].set_option(
+            indicators::option::PrefixText{
+                pad_string(Repo2Engine(it.id)) +
+                std::to_string(
+                    int(static_cast<double>(downloaded) / total * 100)) +
+                '%'});
+        (*bars)[items.at(it.id).first].set_progress(
+            int(static_cast<double>(downloaded) / total * 100));
+        (*bars)[items.at(it.id).first].set_option(
+            indicators::option::PostfixText{
+                time_remaining + " " +
+                format_utils::BytesToHumanReadable(downloaded) + "/" +
+                format_utils::BytesToHumanReadable(total)});
       } else if (ev.type_ == DownloadStatus::DownloadSuccess) {
-        (*bars)[i].set_progress(100);
-        auto total_str = format_utils::BytesToHumanReadable(totals[it.id]);
-        (*bars)[i].set_option(
-            indicators::option::PostfixText{total_str + "/" + total_str});
-        (*bars)[i].set_option(indicators::option::PrefixText{
-            pad_string(Repo2Engine(it.id)) + "100%"});
-        (*bars)[i].set_progress(100);
+        uint64_t total =
+            it.bytes.value_or(std::numeric_limits<uint64_t>::max());
+        (*bars)[items.at(it.id).first].set_progress(100);
+        auto total_str = format_utils::BytesToHumanReadable(total);
+        (*bars)[items.at(it.id).first].set_option(
+            indicators::option::PostfixText{"00m:00s " + total_str + "/" +
+                                            total_str});
+        (*bars)[items.at(it.id).first].set_option(
+            indicators::option::PrefixText{pad_string(Repo2Engine(it.id)) +
+                                           "100%"});
+        (*bars)[items.at(it.id).first].set_progress(100);
 
         CTL_INF("Download success");
       }
+      status_[ev.download_task_.type] = ev.type_;
     }
-
-    status_ = ev.type_;
   };
 
   while (ws_->getReadyState() != easywsclient::WebSocket::CLOSED &&
@@ -143,7 +167,9 @@ bool DownloadProgress::Handle(const DownloadType& event_type) {
     SetConsoleMode(h_out, dw_original_out_mode);
   }
 #endif
-  if (status_ == DownloadStatus::DownloadError)
-    return false;
+  for (auto const& [_, v] : status_) {
+    if (v == DownloadStatus::DownloadError)
+      return false;
+  }
   return true;
 }
