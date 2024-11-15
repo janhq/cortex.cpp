@@ -222,7 +222,6 @@ cpp::result<std::string, std::string> DownloadService::StopTask(
   CTL_INF("Stopping task: " << task_id);
   auto cancelled = task_queue_.cancelTask(task_id);
   if (cancelled) {
-    EmitTaskStopped(task_id);
     return task_id;
   }
   CTL_INF("Not found in pending task, try to find task " + task_id +
@@ -236,7 +235,6 @@ cpp::result<std::string, std::string> DownloadService::StopTask(
       std::lock_guard<std::mutex> lock(stop_mutex_);
       tasks_to_stop_.insert(task_id);
     }
-    EmitTaskStopped(task_id);
     return task_id;
   }
 
@@ -356,7 +354,15 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
     fclose(file);
   }
 
-  if (!result.has_error()) {
+  if (result.has_error()) {
+    if (result.error().type == DownloadEventType::DownloadStopped) {
+      RemoveTaskFromStopList(task.id);
+      EmitTaskStopped(task.id);
+    } else {
+      EmitTaskError(task.id);
+    }
+  } else {
+    // success
     // if the download has error, we are not run the callback
     ExecuteCallback(task);
     EmitTaskCompleted(task.id);
@@ -369,7 +375,7 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
   worker_data->downloading_data_map.clear();
 }
 
-cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
+cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
     DownloadTask& task, CURLM* multi_handle,
     const std::vector<std::pair<CURL*, FILE*>>& handles) {
   auto still_running = 0;
@@ -379,25 +385,21 @@ cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
 
     auto result = ProcessCompletedTransfers(multi_handle);
     if (result.has_error()) {
-      EmitTaskError(task.id);
-      {
-        std::lock_guard<std::mutex> lock(event_emit_map_mutex);
-        event_emit_map_.erase(task.id);
-      }
-      return cpp::fail(result.error());
+      return cpp::fail(ProcessDownloadFailed{
+          .message = result.error(),
+          .task_id = task.id,
+          .type = DownloadEventType::DownloadError,
+      });
     }
 
     if (IsTaskTerminated(task.id) || stop_flag_) {
       CTL_INF("IsTaskTerminated " + std::to_string(IsTaskTerminated(task.id)));
       CTL_INF("stop_flag_ " + std::to_string(stop_flag_));
-      {
-        std::lock_guard<std::mutex> lock(event_emit_map_mutex);
-        event_emit_map_.erase(task.id);
-      }
-      CTL_INF("Emit task stopped: " << task.id);
-      EmitTaskStopped(task.id);
-      RemoveTaskFromStopList(task.id);
-      return cpp::fail("Task " + task.id + " cancelled");
+      return cpp::fail(ProcessDownloadFailed{
+          .message = result.error(),
+          .task_id = task.id,
+          .type = DownloadEventType::DownloadStopped,
+      });
     }
   } while (still_running);
   return {};
