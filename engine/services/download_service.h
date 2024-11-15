@@ -10,6 +10,12 @@
 #include "common/event.h"
 #include "utils/result.hpp"
 
+struct ProcessDownloadFailed {
+  std::string message;
+  std::string task_id;
+  cortex::event::DownloadEventType type;
+};
+
 class DownloadService {
  private:
   static constexpr int MAX_CONCURRENT_TASKS = 4;
@@ -48,7 +54,7 @@ class DownloadService {
 
   void ProcessTask(DownloadTask& task, int worker_id);
 
-  cpp::result<void, std::string> ProcessMultiDownload(
+  cpp::result<void, ProcessDownloadFailed> ProcessMultiDownload(
       DownloadTask& task, CURLM* multi_handle,
       const std::vector<std::pair<CURL*, FILE*>>& handles);
 
