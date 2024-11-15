@@ -1,22 +1,49 @@
 #pragma once
 #include <SQLiteCpp/Database.h>
+#include <filesystem>
 #include <string>
+#include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 namespace cortex::migr::v0 {
 // Data folder
+namespace fmu = file_manager_utils;
 
-inline cpp::result<bool, std::string> MigrateUp() {
+// cortexcpp
+//   |__ models
+//   |     |__ cortex.so
+//   |          |__ tinyllama
+//   |                |__ gguf
+//   |__ engines
+//   |     |__ cortex.llamacpp
+//   |           |__ deps
+//   |           |__ windows-amd64-avx
+//   |__ logs
+//
+inline cpp::result<bool, std::string> MigrateFolderStructureUp() {
+  if (!std::filesystem::exists(fmu::GetCortexDataPath() / "models")) {
+    std::filesystem::create_directory(fmu::GetCortexDataPath() / "models");
+  }
+
+  if (!std::filesystem::exists(fmu::GetCortexDataPath() / "engines")) {
+    std::filesystem::create_directory(fmu::GetCortexDataPath() / "engines");
+  }
+
+  if (!std::filesystem::exists(fmu::GetCortexDataPath() / "logs")) {
+    std::filesystem::create_directory(fmu::GetCortexDataPath() / "logs");
+  }
+
   return true;
 }
 
-inline cpp::result<bool, std::string> MigrateDown() {
+inline cpp::result<bool, std::string> MigrateFolderStructureDown() {
+  CTL_INF("Folder structure already up to date!");
   return true;
 }
 
 // Database
-inline cpp::result<bool, std::string> MigrateUp(SQLite::Database& db) {
+inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
   try {
     db.exec(
         "CREATE TABLE IF NOT EXISTS schema_version ( version INTEGER NOT "
@@ -46,9 +73,16 @@ inline cpp::result<bool, std::string> MigrateUp(SQLite::Database& db) {
   }
 };
 
-inline cpp::result<bool, std::string> MigrateDown(SQLite::Database& db) {
-  CTL_INF("No need to drop tables for version 0");
-  return true;
+inline cpp::result<bool, std::string> MigrateDBDown(SQLite::Database& db) {
+  try {
+    db.exec("DROP TABLE IF EXISTS hardware;");
+    db.exec("DROP TABLE IF EXISTS models;");
+    CTL_INF("Migration down completed successfully.");
+    return true;
+  } catch (const std::exception& e) {
+    CTL_WRN("Migration down failed: " << e.what());
+    return cpp::fail(e.what());
+  }
 }
 
 };  // namespace cortex::migr::v0
