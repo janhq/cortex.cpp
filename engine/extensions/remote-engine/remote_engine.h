@@ -13,9 +13,8 @@
 // Helper for CURL response
 
 namespace remote_engine {
-
 struct StreamContext {
-  std::function<void(Json::Value&&, Json::Value&&)> callback;
+  std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
   std::string buffer;
 };
 
@@ -37,32 +36,34 @@ static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
       continue;
 
     // Remove "data: " prefix if present
-    if (line.substr(0, 6) == "data: ") {
-      line = line.substr(6);
-    }
+    // if (line.substr(0, 6) == "data: ")
+    // {
+    //     line = line.substr(6);
+    // }
 
     // Skip [DONE] message
-    if (line == "[DONE]") {
+    std::cout << line << std::endl;
+    if (line == "data: [DONE]") {
       Json::Value status;
       status["is_done"] = true;
       status["has_error"] = false;
       status["is_stream"] = true;
       status["status_code"] = 200;
-      context->callback(std::move(status), Json::Value());
-      continue;
+      (*context->callback)(std::move(status), Json::Value());
+      break;
     }
 
     // Parse the JSON
     Json::Value chunk_json;
+    chunk_json["data"] = line + "\n\n";
     Json::Reader reader;
-    if (reader.parse(line, chunk_json)) {
-      Json::Value status;
-      status["is_done"] = false;
-      status["has_error"] = false;
-      status["is_stream"] = true;
-      status["status_code"] = 200;
-      context->callback(std::move(status), std::move(chunk_json));
-    }
+
+    Json::Value status;
+    status["is_done"] = false;
+    status["has_error"] = false;
+    status["is_stream"] = true;
+    status["status_code"] = 200;
+    (*context->callback)(std::move(status), std::move(chunk_json));
   }
 
   return size * nmemb;
@@ -100,7 +101,7 @@ class RemoteEngine : public EngineI {
                                          const std::string& method = "POST");
   CurlResponse MakeStreamingChatCompletionRequest(
       const ModelConfig& config, const std::string& body,
-      std::function<void(Json::Value&&, Json::Value&&)> callback);
+      const std::function<void(Json::Value&&, Json::Value&&)>& callback);
   CurlResponse MakeGetModelsRequest();
 
   // Internal model management

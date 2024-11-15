@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 namespace remote_engine {
+
 constexpr const int k200OK = 200;
 constexpr const int k400BadRequest = 400;
 constexpr const int k409Conflict = 409;
@@ -12,7 +13,7 @@ constexpr const int kFileLoggerOption = 0;
 
 CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
     const ModelConfig& config, const std::string& body,
-    std::function<void(Json::Value&&, Json::Value&&)> callback) {
+    const std::function<void(Json::Value&&, Json::Value&&)>& callback) {
 
   CURL* curl = curl_easy_init();
   CurlResponse response;
@@ -36,7 +37,10 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   headers = curl_slist_append(headers, "Cache-Control: no-cache");
   headers = curl_slist_append(headers, "Connection: keep-alive");
 
-  StreamContext context{callback, ""};
+  StreamContext context{
+      std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
+          callback),
+      ""};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -418,7 +422,6 @@ void RemoteEngine::HandleChatCompletion(
       throw std::runtime_error("Template rendering error: " +
                                std::string(e.what()));
     }
-
   } catch (const std::exception& e) {
     // Log error and potentially rethrow or handle accordingly
     LOG_WARN << "Error in TransformRequest: " << e.what();
@@ -493,7 +496,6 @@ void RemoteEngine::HandleChatCompletion(
         throw std::runtime_error("Template rendering error: " +
                                  std::string(e.what()));
       }
-
     } catch (const std::exception& e) {
       // Log error and potentially rethrow or handle accordingly
       LOG_WARN << "Error in TransformRequest: " << e.what();
