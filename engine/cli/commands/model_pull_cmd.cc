@@ -143,7 +143,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   dp.Connect(host, port);
-  if (!dp.Handle(DownloadType::Model))
+  if (!dp.Handle({DownloadType::Model}))
     return std::nullopt;
   if (force_stop)
     return std::nullopt;
