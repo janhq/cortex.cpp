@@ -87,6 +87,7 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
 
+  // TODO: namh add header here
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -189,6 +190,7 @@ cpp::result<bool, std::string> DownloadService::Download(
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
+  // TODO: namh add proxy setting here
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
@@ -407,6 +409,22 @@ cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
 
 void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
                                       FILE* file, DownloadingData* dl_data) {
+  auto configuration = config_service_->GetApiServerConfiguration();
+  if (configuration.has_value()) {
+    if (!configuration->proxy_url.empty()) {
+      auto proxy_url = configuration->proxy_url;
+      auto verify_proxy_ssl = configuration->verify_proxy_ssl;
+
+      CTL_DBG("=== Proxy configuration ===");
+      CTL_DBG("Proxy url: " << proxy_url);
+      CTL_DBG("Verify proxy ssl: " << verify_proxy_ssl);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYPEER,
+                       verify_proxy_ssl ? 1L : 0L);
+    }
+  }
+
   curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);

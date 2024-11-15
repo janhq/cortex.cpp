@@ -206,7 +206,10 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       .latestRelease = config_yaml_utils::kDefaultLatestRelease,
       .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
       .enableCors = config_yaml_utils::kDefaultCorsEnabled,
-      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins};
+      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins,
+      .proxyUrl = "",
+      .verifyProxySsl = true,
+  };
 
   return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
 }

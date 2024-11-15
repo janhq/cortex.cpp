@@ -5,14 +5,51 @@
 #include <unordered_map>
 #include <vector>
 
+// current only support basic auth
+enum class ProxyAuthMethod {
+  Basic,
+  Digest,
+  DigestIe,
+  Bearer,
+  Negotiate,
+  Ntlm,
+  NtlmWb,
+  Any,
+  AnySafe,
+  AuthOnly,
+  AwsSigV4
+};
+
 class ApiServerConfiguration {
  public:
   ApiServerConfiguration(bool cors = true,
-                         std::vector<std::string> allowed_origins = {})
-      : cors{cors}, allowed_origins{allowed_origins} {}
+                         std::vector<std::string> allowed_origins = {},
+                         bool verify_proxy_ssl = true,
+                         const std::string& proxy_url = "",
+                         const std::string& proxy_username = "",
+                         const std::string& proxy_password = "")
+      : cors{cors},
+        allowed_origins{allowed_origins},
+        proxy_url{proxy_url},
+        proxy_username{proxy_username},
+        proxy_password{proxy_password} {}
 
+  // cors
   bool cors{true};
   std::vector<std::string> allowed_origins;
+
+  // proxy
+  bool verify_proxy_ssl{true};
+  ProxyAuthMethod proxy_auth_method{ProxyAuthMethod::Basic};
+  std::string proxy_url{""};
+  std::string proxy_username{""};
+  std::string proxy_password{""};
+  // TODO: namh should we support proxy headers?
+  // TODO: namh should we allow configurable timeout? proxy add overhead to request
+
+  // just placeholder here
+  bool verify_peer_ssl{true};
+  bool verify_host_ssl{true};
 
   Json::Value ToJson() const {
     Json::Value root;
@@ -21,6 +58,12 @@ class ApiServerConfiguration {
     for (const auto& origin : allowed_origins) {
       root["allowed_origins"].append(origin);
     }
+    root["verify_proxy_ssl"] = verify_proxy_ssl;
+    // TODO: namh add proxy auth method
+    root["proxy_url"] = proxy_url;
+    root["proxy_username"] = proxy_username;
+    root["proxy_password"] = proxy_password;
+
     return root;
   }
 
@@ -31,6 +74,42 @@ class ApiServerConfiguration {
     const std::unordered_map<std::string,
                              std::function<bool(const Json::Value&)>>
         field_updater{
+            {"verify_proxy_ssl",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isBool()) {
+                 return false;
+               }
+               verify_proxy_ssl = value.asBool();
+               return true;
+             }},
+
+            {"proxy_url",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isString()) {
+                 return false;
+               }
+               proxy_url = value.asString();
+               return true;
+             }},
+
+            {"proxy_username",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isString()) {
+                 return false;
+               }
+               proxy_username = value.asString();
+               return true;
+             }},
+
+            {"proxy_password",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isString()) {
+                 return false;
+               }
+               proxy_password = value.asString();
+               return true;
+             }},
+
             {"cors",
              [this](const Json::Value& value) -> bool {
                if (!value.isBool()) {

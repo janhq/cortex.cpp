@@ -73,6 +73,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_logger.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/command_line_parser.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../services/config_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/download_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/engine_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc

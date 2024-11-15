@@ -1,4 +1,5 @@
 #pragma once
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -32,8 +33,11 @@ struct CortexConfig {
   std::string llamacppVariant;
   std::string llamacppVersion;
 
+  // TODO: we are adding too many things into cortexrc
   bool enableCors;
   std::vector<std::string> allowedOrigins;
+  std::string proxyUrl;
+  bool verifyProxySsl;
 };
 
 const std::string kDefaultHost{"127.0.0.1"};
@@ -76,6 +80,8 @@ inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
     node["llamacppVersion"] = config.llamacppVersion;
     node["enableCors"] = config.enableCors;
     node["allowedOrigins"] = config.allowedOrigins;
+    node["proxyUrl"] = config.proxyUrl;
+    node["verifyProxySsl"] = config.verifyProxySsl;
 
     out_file << node;
     out_file.close();
@@ -105,7 +111,8 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["huggingFaceToken"] || !node["gitHubUserAgent"] ||
          !node["gitHubToken"] || !node["llamacppVariant"] ||
          !node["llamacppVersion"] || !node["enableCors"] ||
-         !node["allowedOrigins"]);
+         !node["allowedOrigins"] || !node["proxyUrl"] ||
+         !node["verifyProxySsl"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -147,23 +154,31 @@ inline CortexConfig FromYaml(const std::string& path,
                 : default_cfg.latestLlamacppRelease,
         .huggingFaceToken = node["huggingFaceToken"]
                                 ? node["huggingFaceToken"].as<std::string>()
-                                : "",
+                                : default_cfg.huggingFaceToken,
         .gitHubUserAgent = node["gitHubUserAgent"]
                                ? node["gitHubUserAgent"].as<std::string>()
-                               : "",
-        .gitHubToken =
-            node["gitHubToken"] ? node["gitHubToken"].as<std::string>() : "",
+                               : default_cfg.gitHubUserAgent,
+        .gitHubToken = node["gitHubToken"]
+                           ? node["gitHubToken"].as<std::string>()
+                           : default_cfg.gitHubToken,
         .llamacppVariant = node["llamacppVariant"]
                                ? node["llamacppVariant"].as<std::string>()
-                               : "",
+                               : default_cfg.llamacppVariant,
         .llamacppVersion = node["llamacppVersion"]
                                ? node["llamacppVersion"].as<std::string>()
-                               : "",
-        .enableCors = node["enableCors"] ? node["enableCors"].as<bool>() : true,
+                               : default_cfg.llamacppVersion,
+        .enableCors = node["enableCors"] ? node["enableCors"].as<bool>()
+                                         : default_cfg.enableCors,
         .allowedOrigins =
             node["allowedOrigins"]
                 ? node["allowedOrigins"].as<std::vector<std::string>>()
-                : std::vector<std::string>{}};
+                : default_cfg.allowedOrigins,
+        .proxyUrl = node["proxyUrl"] ? node["proxyUrl"].as<std::string>()
+                                     : default_cfg.proxyUrl,
+        .verifyProxySsl = node["verifyProxySsl"]
+                              ? node["verifyProxySsl"].as<bool>()
+                              : default_cfg.verifyProxySsl,
+    };
     if (should_update_config) {
       auto result = DumpYamlConfig(config, path);
       if (result.has_error()) {

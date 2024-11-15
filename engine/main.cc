@@ -106,13 +106,14 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
 
-  auto download_service = std::make_shared<DownloadService>(event_queue_ptr);
+  auto config_service = std::make_shared<ConfigService>();
+  auto download_service =
+      std::make_shared<DownloadService>(event_queue_ptr, config_service);
   auto engine_service = std::make_shared<EngineService>(download_service);
   auto inference_svc =
       std::make_shared<services::InferenceService>(engine_service);
   auto model_service = std::make_shared<ModelService>(
       download_service, inference_svc, engine_service);
-  auto config_service = std::make_shared<ConfigService>();
 
   // initialize custom controllers
   auto engine_ctl = std::make_shared<Engines>(engine_service);
