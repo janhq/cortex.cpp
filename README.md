@@ -108,7 +108,7 @@ Once downloaded, the model `.gguf` and `model.yml` files are stored in `~\cortex
 | Model /Engine  | llama.cpp             | Command                       |
 | -------------- | --------------------- | ----------------------------- |
 | phi-3.5        | ✅                    | cortex run phi3.5             |
-| llama3.2       | ✅                    | cortex run llama3.1           |
+| llama3.2       | ✅                    | cortex run llama3.2           |
 | llama3.1       | ✅                    | cortex run llama3.1           |
 | codestral      | ✅                    | cortex run codestral          |
 | gemma2         | ✅                    | cortex run gemma2             |
