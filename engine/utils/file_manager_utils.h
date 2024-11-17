@@ -150,48 +150,13 @@ inline cpp::result<void, std::string> UpdateCortexConfig(
   return DumpYamlConfig(config, config_path.string());
 }
 
-inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
-  auto config_path = GetConfigurationPath();
-  if (std::filesystem::exists(config_path)) {
-    // already exists, no need to create
-    return {};
-  }
-
-  auto default_data_folder_name = GetDefaultDataFolderName();
-
-  CLI_LOG("Config file not found. Creating one at " + config_path.string());
-  auto defaultDataFolderPath =
-      cortex_data_folder_path.empty()
-          ? file_manager_utils::GetHomeDirectoryPath() /
-                default_data_folder_name
-          : std::filesystem::path(cortex_data_folder_path);
-  CLI_LOG("Default data folder path: " + defaultDataFolderPath.string());
-
-  auto config = config_yaml_utils::CortexConfig{
-      .logFolderPath = defaultDataFolderPath.string(),
-      .logLlamaCppPath = kLogsLlamacppBaseName,
-      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
-      .logOnnxPath = kLogsOnnxBaseName,
-      .dataFolderPath = defaultDataFolderPath.string(),
-      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
-      .apiServerHost = config_yaml_utils::kDefaultHost,
-      .apiServerPort = config_yaml_utils::kDefaultPort,
-      .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
-      .checkedForLlamacppUpdateAt =
-          config_yaml_utils::kDefaultCheckedForLlamacppUpdateAt,
-      .latestRelease = config_yaml_utils::kDefaultLatestRelease,
-      .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
-      .enableCors = config_yaml_utils::kDefaultCorsEnabled,
-      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins};
-  return DumpYamlConfig(config, config_path.string());
-}
-
-inline config_yaml_utils::CortexConfig GetCortexConfig() {
+inline config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
   auto default_data_folder_path =
       file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
-  auto default_cfg = config_yaml_utils::CortexConfig{
+
+  return config_yaml_utils::CortexConfig{
       .logFolderPath = default_data_folder_path.string(),
       .logLlamaCppPath = kLogsLlamacppBaseName,
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
@@ -206,8 +171,40 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       .latestRelease = config_yaml_utils::kDefaultLatestRelease,
       .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
       .enableCors = config_yaml_utils::kDefaultCorsEnabled,
-      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins};
+      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins,
+      .proxyUrl = "",
+      .verifyProxySsl = true,
+      .verifyProxyHostSsl = true,
+      .proxyUsername = "",
+      .proxyPassword = "",
+      .noProxy = config_yaml_utils::kDefaultNoProxy,
+      .verifyPeerSsl = true,
+      .verifyHostSsl = true,
+  };
+}
 
+inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
+  auto config_path = GetConfigurationPath();
+  if (std::filesystem::exists(config_path)) {
+    // already exists, no need to create
+    return {};
+  }
+
+  auto default_data_folder_name = GetDefaultDataFolderName();
+
+  CLI_LOG("Config file not found. Creating one at " + config_path.string());
+  auto config = GetDefaultConfig();
+  CLI_LOG("Default data folder path: " + config.dataFolderPath);
+  return DumpYamlConfig(config, config_path.string());
+}
+
+inline config_yaml_utils::CortexConfig GetCortexConfig() {
+  auto config_path = GetConfigurationPath();
+  auto default_data_folder_name = GetDefaultDataFolderName();
+  auto default_data_folder_path =
+      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
+
+  auto default_cfg = GetDefaultConfig();
   return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
 }
 
@@ -238,6 +235,7 @@ inline std::filesystem::path GetCortexDataPath() {
 inline std::filesystem::path GetCortexLogPath() {
   // TODO: We will need to support user to move the data folder to other place.
   // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
+
   // currently we will store cortex data at ~/cortexcpp
   auto config = GetCortexConfig();
   std::filesystem::path log_folder_path;
