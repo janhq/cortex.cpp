@@ -67,7 +67,7 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
   };
 
   // Backup folder structure
-  // TODO(any) update logic if the folder structure changes
+  // Update logic if the folder structure changes
 
   // Migrate folder structure
   if (last_schema_version <= target_schema_version) {
@@ -87,7 +87,7 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
   }
 
   // Update database on folder structure changes
-  // TODO(any) update logic if the folder structure changes
+  // Update logic if the folder structure changes
 
   // Migrate database
   if (last_schema_version < target_schema_version) {
@@ -108,20 +108,21 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
 
 cpp::result<bool, std::string> MigrationManager::UpFolderStructure(int current,
                                                                    int target) {
-  assert(current <= target);
-  for (int i = current; i < target; i++) {
-    if (auto res = DoUpFolderStructure(i /*version*/); res.has_error()) {
-      // Restore db and file structure
+  assert(current < target);
+  for (int v = current + 1; v <= target; v++) {
+    if (auto res = DoUpFolderStructure(v /*version*/); res.has_error()) {
+      return res;
     }
   }
   return true;
 }
+
 cpp::result<bool, std::string> MigrationManager::DownFolderStructure(
     int current, int target) {
-  assert(current >= target);
-  for (int i = current; i >= target; i--) {
-    if (auto res = DoDownFolderStructure(i /*version*/); res.has_error()) {
-      // Restore db and file structure
+  assert(current > target);
+  for (int v = current; v > target; v--) {
+    if (auto res = DoDownFolderStructure(v /*version*/); res.has_error()) {
+      return res;
     }
   }
   return true;
