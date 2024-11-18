@@ -55,14 +55,18 @@ Cortex also has a [Network Installer](#network-installer) which downloads the ne
 
 <h4> 
   <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:15px; width: 15px" />
-  Linux: 
+  Linux debian based distros: 
  <a href='https://app.cortexcpp.com/download/latest/linux-amd64-local'><b>cortex-linux-local-installer.deb</b></a>
 </h4>
 
 - For Linux: Download the installer and run the following command in terminal:
 
 ```bash
-    sudo apt install ./cortex-local-installer.deb
+    # Linux debian based distros
+    curl -s https://raw.githubusercontent.com/janhq/cortex/dev/engine/templates/linux/install.sh | sudo bash -s -- --deb_local
+
+    # Other Linux distros
+    curl -s https://raw.githubusercontent.com/janhq/cortex/dev/engine/templates/linux/install.sh | sudo bash -s
 ```
 
 - The binary will be installed in the `/usr/bin/` directory.
@@ -108,7 +112,7 @@ Once downloaded, the model `.gguf` and `model.yml` files are stored in `~\cortex
 | Model /Engine  | llama.cpp             | Command                       |
 | -------------- | --------------------- | ----------------------------- |
 | phi-3.5        | ✅                    | cortex run phi3.5             |
-| llama3.2       | ✅                    | cortex run llama3.1           |
+| llama3.2       | ✅                    | cortex run llama3.2           |
 | llama3.1       | ✅                    | cortex run llama3.1           |
 | codestral      | ✅                    | cortex run codestral          |
 | gemma2         | ✅                    | cortex run gemma2             |
@@ -160,7 +164,7 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
 
 <h4> 
   <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 15px" />
-  Linux: 
+  Linux debian based distros: 
  <a href='https://app.cortexcpp.com/download/latest/linux-amd64-network'><b>cortex-linux-network-installer.deb</b></a>
 </h4>
   
@@ -181,7 +185,7 @@ Cortex releases 2 preview versions for advanced users to try new features early 
     <td style="text-align:center"><b>Version</b></td>
     <td style="text-align:center"><b>Windows</b></td>
     <td style="text-align:center"><b>MacOS</b></td>
-    <td style="text-align:center"><b>Linux</b></td>
+    <td style="text-align:center"><b>Linux debian based distros</b></td>
   </tr>
   <tr style="text-align:center">
     <td style="text-align:center"><b>Beta (Preview)</b></td>
@@ -234,7 +238,7 @@ Cortex releases 2 preview versions for advanced users to try new features early 
     <td style="text-align:center"><b>Version Type</b></td>
     <td style="text-align:center"><b>Windows</b></td>
     <td style="text-align:center"><b>MacOS</b></td>
-    <td style="text-align:center"><b>Linux</b></td>
+    <td style="text-align:center"><b>Linux debian based distros</b></td>
   </tr>
   <tr style="text-align:center">
     <td style="text-align:center"><b>Beta (Preview)</b></td>
