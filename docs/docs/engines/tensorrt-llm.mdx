@@ -1,0 +1,72 @@
+---
+title: TensorRT-LLM
+description: TensorRT-LLM Model Format
+unlisted: true
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex uses the `tensorrt-llm` inference library for NVIDIA GPUs acceleration.
+
+## Run Model
+```bash
+## Initialize the TensorRT-LLM engine
+cortex engines tensorrt-llm init
+
+## Run a TensorRT-LLM model
+cortex run openhermes-2.5:7b-tensorrt-llm
+```
+## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
+```yaml
+name: Openhermes-2.5 7b Linux Ada
+model: openhermes-2.5:7B-tensorrt-llm
+version: 1
+
+# Engine / Model Settings
+engine: tensorrt-llm
+os: linux
+gpu_arch: ada
+quantization_method: awq
+precision: int4
+tp: 1
+trtllm_version: 0.9.0
+ctx_len: 2048 # Infer from base config.json -> max_position_embeddings
+text_model: false
+prompt_template: "<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+
+# Results Preferences
+temperature: 0.7
+max_tokens: 2048
+stream: true # true | false
+
+```
+## Model Parameters
+
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `top_p`                | The cumulative probability threshold for token sampling.                             | No           |
+| `temperature`          | Controls the randomness of predictions by scaling logits before applying softmax.    | No           |
+| `frequency_penalty`    | Penalizes new tokens based on their existing frequency in the sequence so far.       | No           |
+| `presence_penalty`     | Penalizes new tokens based on whether they appear in the sequence so far.            | No           |
+| `stop`                 | Specifies the stopping condition for the model, which can be a word, a letter, or a specific text. | No           |
+| `max_tokens`           | Maximum number of tokens in the output.                                              | Yes          |
+| `stream`               | Enables or disables streaming mode for the output (true or false).                   | Yes          |
+| `engine`               | Specifies the engine to be used for model execution.                                 | Yes          |
+| `os`                   | Operating system used.                                                               | Yes          |
+| `gpu_arch`             | GPU architecture used.                                                               | Yes          |
+| `quantization_method`  | Method used for quantization.                                                        | Yes          |
+| `precision`            | Precision level used.                                                                | Yes          |
+| `tp`                   | Number of tensor parallelism partitions.                                             | Yes          |
+| `trtllm_version`       | Version of TensorRT-LLM being used.                                                  | Yes          |
+| `ctx_len`              | Context length (maximum number of tokens).                                           | Yes          |
+| `text_model`           | Indicates if the text model is being used (true or false).                           | Yes          |
+| `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
+
+<!-- :::info
+You can download a `TensorRT-LLM` model from the following:
+- [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub)
+- [HuggingFace Model Repos](/docs/capabilities/models/sources/hugging-face)
+- Nvidia Catalog (Coming Soon!)
+::: -->

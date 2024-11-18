@@ -1,0 +1,155 @@
+---
+title: Troubleshooting
+description: Troubleshooting
+slug: "troubleshooting"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Admonition from '@theme/Admonition';
+
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+## Model No Response
+
+In this issue, the model and the engine load successfully, but when interacting with the model, the model either times out or does not respond. This issue may occur when Cortex is running with low or insufficient VRAM hardware.
+
+To resolve this issue:
+<Tabs>
+    <TabItem value="Windows" label="Windows">
+    1. `cortex stop` to stop the Cortex process and model if you have started a model before. 
+    2. To make sure the processes are terminated, open your **Task Manager**.
+    3. Search for any **Jan** or **Cortex** processes → **Terminate** the tasks.
+    4. Rerun `cortex`.
+    </TabItem>
+    <TabItem value="Mac" label="Mac">
+    1. `cortex stop` to stop the Cortex process and model if you have started a model before. 
+    2. To make sure the processes are terminated, open your **Activity Monitor**.
+    3. Search for any **Jan** or **Cortex** processes → **Terminate** the tasks.
+    4. Rerun `cortex`
+    </TabItem>
+</Tabs>
+
+## Axios Error
+```bash
+AxiosError: getaddrinfo ENOTFOUND api.github.com
+```
+
+This issue occurs for several reasons:
+
+- Bad internet connection when Cortex trying to download the model or the engine data.
+- If you attempt to run a model with a specific engine that has not been initialized yet after installing Cortex.
+
+To resolve this issue:
+
+1. Ensure your internet connection is good, or restart your model.
+2.  Follow the command below to restart the Cortex process:
+
+```bash
+# Stop the Cortex process
+cortex stop
+# Start the Cortex process
+cortex
+# Init the engine
+cortex engines <engine_name> init
+```
+
+## Engine Installation Error
+
+```bash
+Installing engine . . .Error:EPERM: operation not permitted
+```
+This issue occurs when an engine runs in the background and you attempt to run a different engine without stopping the previous one.
+
+To resolve this issue, follow the steps below:
+
+```bash
+# Stop the Cortex process
+cortex stop
+# Start the Cortex process
+cortex
+# Init the engine
+cortex run <model_id>:<engine_name>
+```
+
+## 500 Status Code
+
+"500 status code ("no body") indicates an internal server error with no additional details provided. This issue may occur for several reasons:
+
+1. Cortex is running in low or insufficient VRAM hardware.
+2. The engine version is outdated, while the model requires the latest version of the engine.
+
+To resolve this issue:
+<Tabs>
+    <TabItem value="Windows" label="Windows">
+    To solve the insufficient VRAM:
+
+    1. `cortex stop` to stop the Cortex process and model if you have started a model before. 
+    2. To make sure the processes are terminated, open your **Task Manager**.
+    3. Search for any **Jan** or **Cortex** processes → Terminate the tasks.
+    4. Rerun `cortex`.
+
+    To solve the error caused by the outdated engine version:
+
+    1. Re-initialize the engine that you want to use:
+
+    ```bash
+    # ONNX Engine
+    cortex engines onnx init
+    # TensorRT-LLM Engine
+    cortex engines tensorrt-llm init
+    ```
+
+    2. Rerun `cortex` → run the model you want to use.
+    </TabItem>
+    <TabItem value="Mac" label="Mac" >
+    To solve the insufficient VRAM:
+    1. `cortex stop` to stop the Cortex process and model if you have started a model before. 
+    2. To make sure the processes are terminated, open your **Activity Monitor**.
+    3. Search for any **Jan** or **Cortex** processes → **Terminate** the tasks.
+    4. Rerun `cortex`.
+
+    To solve the error caused by the outdated engine version:
+
+    1. Re-initialize the engine that you want to use:
+
+    ```bash
+    # ONNX Engine
+    cortex engines onnx init
+    # TensorRT-LLM Engine
+    cortex engines tensorrt-llm init
+    ```
+
+    2. Rerun `cortex` → run the model you want to use.
+    </TabItem>
+</Tabs>
+
+## 426 Error Code
+
+This issue occurs when a new Cortex process is started without fully stopping the previous Cortex processes. This causes a heavy load on port `39281` and requires a protocol upgrade.
+
+To resolve this issue:
+
+<Tabs>
+    <TabItem value="Windows" label="Windows">
+```bash
+# Check for network connections using port 1337 to find the Cortex PID.
+netstat -an | findstr :1337
+
+# Terminate Cortex process by its Process ID (PID).
+taskkill /f /pid [pid]
+```
+    </TabItem>
+    <TabItem value="Mac" label="Mac" >
+```bash
+# Check for network connections using port 1337 to find the Cortex PID.
+lsof -i :1337
+
+# Terminate Cortex process by its Process ID (PID).
+kill -9 [pid]
+```
+    </TabItem>
+</Tabs>

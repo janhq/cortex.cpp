@@ -1,0 +1,48 @@
+---
+title: Cortex Ps
+description: Cortex ps command.
+slug: "ps"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# `cortex ps`
+
+This command shows the running model and its status (Engine, RAM, VRAM, and Uptime).
+
+## Usage
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex ps [options]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe ps [options]
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following table:
+
+```bash
+> cortex ps
++------------------------+-----------+-----------+-----------+-------------------------------+
+| Model                  | Engine    | RAM       | VRAM      | Uptime                        |
++------------------------+-----------+-----------+-----------+-------------------------------+
+| llama3.2:3b-gguf-q4-km | llama-cpp | 308.23 MB | 1.87 GB   | 7 seconds                     |
++------------------------+-----------+-----------+-----------+-------------------------------+
+| tinyllama:1b-gguf      | llama-cpp | 35.16 MB  | 636.18 MB | 1 hour, 5 minutes, 45 seconds |
++------------------------+-----------+-----------+-----------+-------------------------------+
+```
+## Options
+
+| Option            | Description                                           | Required | Default value | Example     |
+|-------------------|-------------------------------------------------------|----------|---------------|-------------|
+| `-h`, `--help`      | Display help information for the command.             | No       | -             | `-h`    |
+
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::

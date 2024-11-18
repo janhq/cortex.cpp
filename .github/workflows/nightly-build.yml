@@ -1,0 +1,142 @@
+name: CI Cortex CPP Nightly Build
+
+on:
+  schedule:
+      - cron: '0 20 * * *' # At 8 PM UTC everyday
+  workflow_dispatch:
+    inputs:
+      public_provider:
+        type: choice
+        description: 'Public Provider'
+        options:
+          - none
+          - aws-s3
+        default: none
+
+jobs:
+  set-public-provider:
+    runs-on: ubuntu-latest
+    outputs:
+      public_provider: ${{ steps.set-public-provider.outputs.public_provider }}
+      ref: ${{ steps.set-public-provider.outputs.ref }}
+    steps:
+      - name: Set public provider
+        id: set-public-provider
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "::set-output name=public_provider::${{ github.event.inputs.public_provider }}"
+            echo "::set-output name=ref::${{ github.ref }}"
+          else
+            if [ "${{ github.event_name }}" == "schedule" ]; then
+              echo "::set-output name=public_provider::aws-s3"
+              echo "::set-output name=ref::refs/heads/dev"
+            elif [ "${{ github.event_name }}" == "push" ]; then
+              echo "::set-output name=public_provider::aws-s3"
+              echo "::set-output name=ref::${{ github.ref }}"
+            else
+              echo "::set-output name=public_provider::none"
+              echo "::set-output name=ref::${{ github.ref }}"
+            fi
+          fi
+
+  # Job create Update app version based on latest release tag with build number and save to output
+  get-update-version:
+    uses: ./.github/workflows/template-get-update-version.yml
+
+  get-cortex-llamacpp-latest-version:
+    uses: ./.github/workflows/template-cortex-llamacpp-latest-version.yml
+
+  build-macos:
+    uses: ./.github/workflows/template-build-macos.yml
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
+    secrets: inherit
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+
+  build-windows-x64:
+    uses: ./.github/workflows/template-build-windows-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: windows-cuda-11-7
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=C:/w/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static -DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      build-deps-cmake-flags: "-DCMAKE_BUILD_TYPE=RELEASE -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CUDA_COMPILER_LAUNCHER=ccache -GNinja"
+      ccache-dir: 'C:\Users\ContainerAdministrator\AppData\Local\ccache'
+      channel: nightly
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+          
+  build-linux-x64:
+    uses: ./.github/workflows/template-build-linux-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-20-04
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+
+  update-latest-version:
+    runs-on: ubuntu-latest
+    if: needs.set-public-provider.outputs.public_provider == 'aws-s3'
+    needs: [get-update-version, set-public-provider, build-linux-x64, build-macos, build-windows-x64, get-cortex-llamacpp-latest-version]
+    steps:
+      - name: Update latest version
+        id: update-latest-version
+        run: |
+          echo "{\"tag_name\": \"v${{ needs.get-update-version.outputs.new_version }}\"}" > version.json
+          aws s3 cp version.json s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/version.json
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-universal-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-amd64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-universal-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-arm64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-universal-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-universal/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-amd64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-mac-universal-network-installer.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-universal/cortex-mac-universal-network-installer.pkg
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux-amd64-network-installer.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-amd64/cortex-linux-amd64-network-installer.deb
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-windows-amd64-network-installer.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-windows-amd64-network-installer.exe
+
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.DELTA_AWS_REGION }}
+          AWS_EC2_METADATA_DISABLED: "true"
+
+  build-docker-x64:
+    if: needs.set-public-provider.outputs.public_provider == 'aws-s3'
+    uses: ./.github/workflows/template-build-docker-x64.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version, update-latest-version]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      new_version: nightly-${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-latest
+      cmake-extra-flags: "-DCORTEX_VARIANT=prod"
+      tags: menloltd/cortex:nightly-${{ needs.get-update-version.outputs.new_version }}
+
+  noti-discord-nightly-and-update-url-readme:
+    needs: [build-macos, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version, update-latest-version, build-docker-x64]
+    secrets: inherit
+    if: github.event_name == 'schedule'
+    uses: ./.github/workflows/template-noti-discord.yaml
+    with:
+      build_reason: Nightly
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+
+  noti-discord-manual:
+    needs: [build-macos, build-windows-x64, build-linux-x64, get-update-version, set-public-provider, get-cortex-llamacpp-latest-version, build-docker-x64]
+    secrets: inherit
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.public_provider == 'aws-s3'
+    uses: ./.github/workflows/template-noti-discord.yaml
+    with:
+      build_reason: Manual
+      new_version: ${{ needs.get-update-version.outputs.new_version }}

@@ -1,0 +1,9 @@
+.tabs {
+  border-bottom: 1px;
+  border-style: solid;
+  @apply dark:border-neutral-800 border-neutral-200;
+}
+.tabs__item {
+  padding: 6px;
+  margin: 0 8px;
+}

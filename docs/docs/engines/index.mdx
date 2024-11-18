@@ -1,0 +1,214 @@
+---
+slug: /engines
+title: Engines
+---
+
+import DocCardList from "@theme/DocCardList";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# Engines
+
+Engines in Cortex serve as execution drivers for machine learning models, providing the runtime environment necessary for model operations. Each engine is specifically designed to optimize the performance and ensure compatibility with its corresponding model types.
+
+## Supported Engines
+
+Cortex currently supports three industry-standard engines:
+
+| Engine                                                   | Source    | Description                                                                            |
+| -------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------- |
+| [llama.cpp](https://github.com/ggerganov/llama.cpp)      | ggerganov | Inference of Meta's LLaMA model (and others) in pure C/C++                             |
+| [ONNX Runtime](https://github.com/microsoft/onnxruntime) | Microsoft | ONNX Runtime: cross-platform, high performance ML inferencing and training accelerator |
+| [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM)   | NVIDIA    | GPU-optimized inference engine for large language models                               |
+
+> **Note:** Cortex also supports users in building their own engines.
+
+## Features
+
+- **Engine Retrieval**: Install engines with a single click.
+- **Engine Management**: Easily manage engines by type, variant, and version.
+- **User-Friendly Interface**: Access models via Command Line Interface (CLI) or HTTP API.
+- **Engine Selection**: Select the appropriate engines to run your models.
+
+## Usage
+
+Cortex offers comprehensive support for multiple engine types, including [llama.cpp](https://github.com/ggerganov/llama.cpp), [ONNX Runtime](https://github.com/microsoft/onnxruntime), and [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM). These engines are utilized to load their corresponding model types. The platform provides a flexible management system for different engine variants and versions, enabling developers and users to easily rollback changes or compare performance metrics across different engine versions.
+
+### Installing an engine
+
+Cortex makes it extremely easy to install an engine. For example, to run a `GGUF` model, you will need the `llama-cpp` engine. To install it, simply enter `cortex engines install llama-cpp` into your terminal and wait for the process to complete. Cortex will automatically pull the latest stable version suitable for your PC's specifications.
+
+#### CLI
+
+To install an engine using the CLI, use the following command:
+
+```sh
+cortex engines install llama-cpp
+Validating download items, please wait..
+Start downloading..
+llama-cpp           100%[==================================================] [00m:00s] 1.24 MB/1.24 MB
+Engine llama-cpp downloaded successfully!
+```
+
+#### HTTP API
+
+To install an engine using the HTTP API, use the following command:
+
+```sh
+curl --location --request POST 'http://127.0.0.1:39281/engines/install/llama-cpp'
+```
+
+Example response:
+
+```json
+{
+  "message": "Engine llama-cpp starts installing!"
+}
+```
+
+### Listing engines
+
+Cortex allowing clients to easily list current engines and their statuses. Each engine type can have different variants and versions, which are crucial for debugging and performance optimization. Different variants cater to specific hardware configurations, such as CUDA for NVIDIA GPUs and Vulkan for AMD GPUs on Windows, or AVX512 support for CPUs.
+
+#### CLI
+
+You can list the available engines using the following command:
+
+```sh
+cortex engines list
++---+--------------+-------------------+---------+-----------+--------------+
+| # | Name         | Supported Formats | Version | Variant   | Status       |
++---+--------------+-------------------+---------+-----------+--------------+
+| 1 | onnxruntime  | ONNX              |         |           | Incompatible |
++---+--------------+-------------------+---------+-----------+--------------+
+| 2 | llama-cpp    | GGUF              | 0.1.37  | mac-arm64 | Ready        |
++---+--------------+-------------------+---------+-----------+--------------+
+| 3 | tensorrt-llm | TensorRT Engines  |         |           | Incompatible |
++---+--------------+-------------------+---------+-----------+--------------+
+```
+
+#### HTTP API
+
+You can also retrieve the list of engines via the HTTP API:
+
+```sh
+curl --location 'http://127.0.0.1:39281/v1/engines'
+```
+
+Example response:
+
+```json
+{
+  "data": [
+    {
+      "description": "This extension enables chat completion API calls using the Onnx engine",
+      "format": "ONNX",
+      "name": "onnxruntime",
+      "productName": "onnxruntime",
+      "status": "Incompatible",
+      "variant": "",
+      "version": ""
+    },
+    {
+      "description": "This extension enables chat completion API calls using the LlamaCPP engine",
+      "format": "GGUF",
+      "name": "llama-cpp",
+      "productName": "llama-cpp",
+      "status": "Ready",
+      "variant": "mac-arm64",
+      "version": "0.1.37"
+    },
+    {
+      "description": "This extension enables chat completion API calls using the TensorrtLLM engine",
+      "format": "TensorRT Engines",
+      "name": "tensorrt-llm",
+      "productName": "tensorrt-llm",
+      "status": "Incompatible",
+      "variant": "",
+      "version": ""
+    }
+  ],
+  "object": "list",
+  "result": "OK"
+}
+```
+
+### Getting detail information of an engine
+
+Cortex allows users to retrieve detailed information about a specific engine. This includes supported formats, versions, variants, and status. This feature helps users understand the capabilities and compatibility of the engine they are working with.
+
+#### CLI
+
+To retrieve detailed information about an engine using the CLI, use the following command:
+
+```sh
+cortex engines get llama-cpp
++-----------+-------------------+---------+-----------+--------+
+| Name      | Supported Formats | Version | Variant   | Status |
++-----------+-------------------+---------+-----------+--------+
+| llama-cpp | GGUF              | 0.1.37  | mac-arm64 | Ready  |
++-----------+-------------------+---------+-----------+--------+
+```
+
+This command will display information such as the engine's name, supported formats, version, variant, and status.
+
+#### HTTP API
+
+To retrieve detailed information about an engine using the HTTP API, send a GET request to the appropriate endpoint:
+
+```sh
+curl --location 'http://127.0.0.1:39281/engines/llama-cpp'
+```
+
+This request will return a JSON response containing detailed information about the engine, including its description, format, name, product name, status, variant, and version.
+Example response:
+
+```json
+{
+  "description": "This extension enables chat completion API calls using the LlamaCPP engine",
+  "format": "GGUF",
+  "name": "llama-cpp",
+  "productName": "llama-cpp",
+  "status": "Not Installed",
+  "variant": "",
+  "version": ""
+}
+```
+
+### Uninstalling an engine
+
+Cortex provides an easy way to uninstall an engine. This is useful when users want to uninstall the current version and then install the latest stable version of a particular engine.
+
+#### CLI
+
+To uninstall an engine, use the following CLI command:
+
+```sh
+cortex engines uninstall llama-cpp
+```
+
+#### HTTP API
+
+To uninstall an engine using the HTTP API, send a DELETE request to the appropriate endpoint.
+
+```sh
+curl --location --request DELETE 'http://127.0.0.1:39281/engines/llama-cpp'
+```
+
+Example response:
+
+```json
+{
+  "message": "Engine llama-cpp uninstalled successfully!"
+}
+```
+
+### Upcoming Engine Features
+
+- Enhanced engine update mechanism with automated compatibility checks
+- Seamless engine switching between variants and versions
+- Improved Vulkan engine support with optimized performance
+
+<DocCardList />

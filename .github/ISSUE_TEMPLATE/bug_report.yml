@@ -1,0 +1,58 @@
+name: "\U0001F41B Bug Report"
+description: "If something isn't working as expected \U0001F914"
+labels: [ "type: bug" ]
+title: 'bug: [DESCRIPTION]'
+
+body:
+  - type: input
+    validations:
+      required: true
+    attributes:
+      label: "Cortex version"
+      description: "**Tip:** `cortex -v` outputs the version number"
+  
+  - type: textarea
+    validations:
+      required: true
+    attributes:
+      label: "Describe the issue and expected behaviour"
+      description: "A clear & concise description of the issue encountered"
+
+  - type: textarea
+    attributes:
+      label: "Steps to Reproduce"
+      description: |
+        Please list out steps to reproduce the issue
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+
+  - type: textarea
+    attributes:
+      label: "Screenshots / Logs"
+      description: |
+        Please include cortex-cli.log and cortex.log files in: ~/cortex/logs/
+
+  - type: checkboxes
+    attributes:
+      label: "What is your OS?"
+      options:
+        - label: Windows
+        - label: Mac Silicon 
+        - label: Mac Intel
+        - label: Linux / Ubuntu
+
+  - type: checkboxes
+    attributes:
+      label: "What engine are you running?"
+      options:
+        - label: cortex.llamacpp (default)
+        - label: cortex.tensorrt-llm (Nvidia GPUs)
+        - label: cortex.onnx (NPUs, DirectML)
+
+  - type: input
+    attributes:
+      label: "Hardware Specs eg OS version, GPU"
+      description:
+
+  

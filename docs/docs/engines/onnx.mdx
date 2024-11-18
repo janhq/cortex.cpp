@@ -1,0 +1,61 @@
+---
+title: ONNX
+description: ONNX Model Format
+unlisted: true
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex uses `onnxruntime-genai` with DirectML to provide GPU acceleration for AMD, Intel, NVIDIA, and Qualcomm GPUs.
+
+## Run Model
+```bash
+## Initialize the ONNX engine
+cortex engines onnx init
+
+## Run an ONNX model
+cortex run openhermes-2.5:7b-onnx
+```
+## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
+```yaml
+name: openhermes-2.5
+model: openhermes
+version: 1
+
+# Engine / Model Settings
+engine: onnx
+prompt_template: "<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{prompt}<|im_end|>\n<|im_start|>assistant\n"
+
+# Results Preferences
+top_p: 1.0
+temperature: 1.0
+frequency_penalty: 0
+presence_penalty: 0
+max_tokens: 2048 
+stream: true # true | false
+
+```
+## Model Parameters
+
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `top_p`                | The cumulative probability threshold for token sampling.                             | No  |
+| `temperature`          | Controls the randomness of predictions by scaling logits before applying softmax.    | No   |
+| `frequency_penalty`    | Penalizes new tokens based on their existing frequency in the sequence so far.       | No   |
+| `presence_penalty`     | Penalizes new tokens based on whether they appear in the sequence so far.            | No   |
+| `stop`                 | Specifies the stopping condition for the model, which can be a word, a letter, or a specific text. | No          |
+| `max_tokens`           | Maximum number of tokens in the output.                                              | Yes          |
+| `stream`               | Enables or disables streaming mode for the output (true or false).                   | Yes          |
+| `ngl`                  | Number of attention heads.                                                           | Yes          |
+| `ctx_len`              | Context length (maximum number of tokens).                                           | Yes          |
+| `engine`               | Specifies the engine to be used for model execution.                                 | Yes          |
+| `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
+
+
+<!-- :::info
+You can download a `ONNX` model from the following:
+- [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub)
+- [HuggingFace Model Repos](/docs/capabilities/models/sources/hugging-face)
+::: -->

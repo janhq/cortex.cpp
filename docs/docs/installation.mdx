@@ -1,0 +1,109 @@
+---
+title: Installation
+description: Cortex Installation
+slug: "installation"
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+import Admonition from '@theme/Admonition';
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+## Cortex.cpp Installation
+### Cortex.cpp offers four installer types
+- Network Installers download a minimal system and require an internet connection to fetch packages during installation.
+- Local Installers include all necessary packages, enabling offline installation without internet access.
+- Dockerfile Installers are used to build a Docker image for Cortex.
+- Binary files without package management.
+
+### Cortex.cpp supports three channels
+
+- Stable: The latest stable release on github.
+- Beta: The release candidate for the next stable release, available on github release with the tag `vx.y.z-rc1`
+- Nightly: The nightly build of the latest code on dev branch, available on [discord](https://discord.com/channels/1107178041848909847/1283654073488379904).
+
+For more information, please check out [different channels](#different-channels).
+
+### Download URLs
+
+| Type     | Version       | Operating System | Download Link                                                                                     |
+|----------|---------------|------------------|---------------------------------------------------------------------------------------------------|
+| **Local**    | **Stable**  | **Windows**      | [Download](https://app.cortexcpp.com/download/latest/windows-amd64-local)                         |
+| **Local**    | **Stable**  | **Linux**        | [Download](https://app.cortexcpp.com/download/latest/linux-amd64-local)                           |
+| **Local**    | **Stable**  | **MacOS**        | [Download](https://app.cortexcpp.com/download/latest/mac-universal-local)                         |
+
+:::info
+For other versions, please look at [cortex.cpp repo](https://github.com/janhq/cortex.cpp) or each installer page.
+:::
+
+
+## Minimum Requirements
+
+### OS
+- MacOS 12 or later
+- Windows 10 or later
+- Linux: Ubuntu 20.04 or later, Debian 11 or later (For other distributions, please use the Dockerfile installer or binary files, we have not tested on other distributions yet.)
+
+### Hardware
+#### CPU
+:::info
+- Cortex.cpp supports a processor that can handle AVX2. For the full list, please see [here](https://en.wikipedia.org/wiki/Advanced_Vector_Extensions#CPUs_with_AVX2).
+- We support older processors with AVX, AVX-512 and non-AVX, though this is not recommended.
+:::
+
+##### Intel CPU
+- Haswell processors (Q2 2013) and newer.
+- Tiger Lake (Q3 2020) and newer for Celeron and Pentium processors.
+##### AMD CPU
+- Excavator processors (Q2 2015) and newer.
+
+#### RAM
+:::info
+We support DDR2 RAM as the minimum requirement but recommend using newer generations of RAM for improved performance.
+:::
+- 8GB for running up to 3B models (int4).
+- 16GB for running up to 7B models (int4).
+- 32GB for running up to 13B models (int4).
+
+#### GPU
+:::info
+Having at least 6GB VRAM when using NVIDIA, AMD, or Intel Arc GPUs is recommended.
+:::
+- 6GB can load the 3B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+- 8GB can load the 7B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+- 12GB can load the 13B model (int4) with `ngl` at 120 ~ full speed on CPU/ GPU.
+:::info
+- [NVIDIA driver](https://www.nvidia.com/Download/index.aspx) version 470.63.01 or higher.
+  *Note: Users must install the driver by themselves.*
+- [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) version 12.0 or higher. *Note: Cortex.cpp will automatically detect and install the required version of cudart to the user's machine.*
+:::
+#### Disk
+- At least 10GB for app storage and model download.
+
+## Different channels
+
+Different channels have different features, stability levels, binary file name, app folder and data folder.
+
+### Stable
+- App name: `cortexcpp`
+- Binary file name: `cortex`, `cortex-server` for linux and mac; `cortex.exe`, `cortex-server.exe` for windows.;
+- App folder (Windows Only): `C:\Users\<username>\AppData\Local\cortexcpp`
+- Data folder: `~/cortexcpp` for linux and mac; `C:\Users\<username>\cortexcpp` for windows.
+- Uninstaller script (Mac Only): `cortex-uninstall.sh`
+
+### Beta
+- App name: `cortexcpp-beta`
+- Binary file name: `cortex-beta`, `cortex-server-beta` for linux and mac; `cortex-beta.exe`, `cortex-server-beta.exe` for windows.;
+- App folder (Windows Only): `C:\Users\<username>\AppData\Local\cortexcpp-beta`
+- Data folder: `~/cortexcpp-beta` for linux and mac; `C:\Users\<username>\cortexcpp-beta` for windows.
+- Uninstaller script (Mac Only): `cortex-beta-uninstall.sh`
+
+### Nightly
+- App name: `cortexcpp-nightly`
+- Binary file name: `cortex-nightly`, `cortex-server-nightly` for linux and mac; `cortex-nightly.exe`, `cortex-server-nightly.exe` for windows.;
+- App folder (Windows Only): `C:\Users\<username>\AppData\Local\cortexcpp-nightly`
+- Data folder: `~/cortexcpp-nightly` for linux and mac; `C:\Users\<username>\cortexcpp-nightly` for windows.
+- Uninstaller script (Mac Only): `cortex-nightly-uninstall.sh`

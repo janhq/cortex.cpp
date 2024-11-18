@@ -1,0 +1,82 @@
+---
+title: Data Folder and App Folder
+description: Cortex.cpp's data folder and app folder.
+slug: "data-folder"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+When you install Cortex.cpp, three types of files will be generated on your device:
+
+- **Binary Files**
+- **Configuration Files**
+- **Data Folder**
+
+## Binary Files - under the App Folder
+These are the executable files of the Cortex.cpp application. The file format varies depending on the operating system:
+
+- **Windows**:
+  - cli: `C:\Users\<username>\AppData\Local\cortexcpp\cortex.exe`
+  - server: `C:\Users\<username>\AppData\Local\cortexcpp\cortex-server.exe`
+- **Linux**:
+  - cli: `/usr/bin/cortex`
+  - server: `/usr/bin/cortex-server`
+- **macOS**:
+  - cli: `/usr/local/bin/cortex`
+  - server: `/usr/local/bin/cortex-server`
+
+## Cortex.cpp Data Folder
+The data folder stores the engines, models, and logs required by Cortex.cpp. This folder is located at:
+
+- **Windows**: `C:\Users\<username>\cortexcpp`
+- **Linux**: `/home/<username>/cortexcpp`
+- **macOS**: `/Users/<username>\cortexcpp`
+
+### Folder Structure
+The Cortex.cpp data folder typically follows this structure:
+
+<Tabs>
+  <TabItem value="Stable" label="Stable">
+  ```yaml
+  ~/.cortex
+    ├── models/
+    │   └── model.list
+    │   └── huggingface.co/
+    │       └── <repo_name>/
+              └── <branch_name>/
+                └── model.yaml
+                └── model.gguf
+    │   └── cortex.so/
+    │       └── <repo_name>/
+    │         └── <branch_name>/
+                └── ...engine_files
+                └── model.yaml
+    │   └── imported/
+            └── imported_model.yaml
+    ├── logs/
+    │   └── cortex.txt
+        └── cortex-cli.txt
+    └── engines/
+        └── llamacpp
+  ```
+  </TabItem>
+</Tabs>
+
+#### `cortexcpp`
+The main directory that stores all Cortex-related files, located in the user's home directory.
+#### `models/`
+Contains the AI models used by Cortex for processing and generating responses.
+:::info
+For more information regarding the `model.list` and `model.yaml`, please see [here](/docs/capabilities/models/model-yaml).
+:::
+#### `logs/`
+Stores log files that are essential for troubleshooting and monitoring the performance of the Cortex.cpp API server and CLI.
+
+We use Trantor for logging, which ensures non-blocking, thread-safe, multi-stream file logging without affecting system performance. Trantor automatically creates a new log file for each server session, based on the date and time, simplifying debugging. It also supports setting limits on log file size and the number of log files per session.
+#### `engines/`
+Stores the necessary dependencies and engine files needed to run Cortex on supported engines.

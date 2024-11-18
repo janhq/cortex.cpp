@@ -1,0 +1,71 @@
+---
+title: Cortex Pull
+description: Cortex CLI.
+slug: "pull"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# `cortex pull`
+:::info
+This CLI command calls the following API endpoint:
+- [Download Model](/api-reference#tag/pulling-models/post/v1/models/pull)
+:::
+This command displays downloaded models, or displays models available for downloading. 
+
+There are 3 ways to download models:
+- From Cortex's [Built-in models](/models): `cortex pull <model_name>`
+- HuggingFace repository handle: `cortex pull <author/RepoID>`
+- HuggingFace direct URL: `cortex pull <huggingface URL ending with .gguf>`
+
+Each of these will display the model quantizations available, to be selected for download.
+
+For more information, please refer to [Pulling Models](/docs/capabilities/models/sources).
+
+The downloaded model file will be stored in the [Cortex Data Folder](/docs/architecture/data-folder).
+
+
+## Usage
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex pull [options] <model_id> 
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe pull [options] <model_id> 
+  ```
+  </TabItem>
+</Tabs>
+
+For example, this returns the following:
+```bash
+> cortex pull llama3.2
+Downloaded models:
+    llama3.2:3b-gguf-q4-km
+
+Available to download:
+    1. llama3.2:3b-gguf-q2-k
+    2. llama3.2:3b-gguf-q3-kl
+    3. llama3.2:3b-gguf-q3-km
+    4. llama3.2:3b-gguf-q3-ks
+    5. llama3.2:3b-gguf-q4-ks
+    6. llama3.2:3b-gguf-q5-km
+    7. llama3.2:3b-gguf-q5-ks
+    8. llama3.2:3b-gguf-q6-k
+    9. llama3.2:3b-gguf-q8-0
+
+Select a model (1-9):
+```
+
+## Options
+
+| Option         | Description                                       | Required | Default value | Example     |
+| -------------- | ------------------------------------------------- | -------- | ------------- | ----------- |
+| `model_id`     | The identifier of the model you want to download. | Yes      | -             | `mistral` |
+| `-h`, `--help` | Display help information for the command.         | No       | -             | `-h`        |

@@ -1,0 +1,150 @@
+---
+title: Chat Completions
+description: Chat Completions Feature
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex's Chat API is compatible with OpenAI’s [Chat Completions](https://platform.openai.com/docs/api-reference/chat) endpoint. It is a drop-in replacement for local inference.
+
+For local inference, Cortex is [multi-engine](#multiple-local-engines) and supports the following model formats:
+
+- `GGUF`: A generalizable LLM format that runs across CPUs and GPUs. Cortex implements a GGUF runtime through [llama.cpp](https://github.com/ggerganov/llama.cpp/).
+- `TensorRT`: A production-ready, enterprise-grade LLM format optimized for fast inference on NVIDIA GPUs. Cortex implements a TensorRT runtime through [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM).
+- `ONNX`: A cross-platform machine learning accelerator for inference. Cortex implements an ONNX runtime through [ONNX Runtime](https://github.com/microsoft/onnxruntime).
+
+Cortex routes requests to multiple APIs for remote inference while providing a single, easy-to-use, OpenAI-compatible endpoint.
+
+## Usage
+### CLI
+
+```bash 
+# Streaming 
+cortex chat --model mistral
+```
+### API
+<Tabs>
+  <TabItem value="single" label="Single Request Example">
+  ```bash
+  curl http://localhost:39281/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Hello"
+      },
+    ],
+    "model": "",
+    "stream": true,
+    "max_tokens": 1,
+    "stop": [
+        null
+    ],
+    "frequency_penalty": 1,
+    "presence_penalty": 1,
+    "temperature": 1,
+    "top_p": 1
+  }'
+
+  ```
+  </TabItem>
+  <TabItem value="dialogue" label="Dialogue Request Example">
+  ```bash
+  curl http://localhost:39281/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "Who won the world series in 2020?"
+      },
+      {
+        "role": "assistant",
+        "content": "The Los Angeles Dodgers won the World Series in 2020."
+      },
+      {
+        "role": "user",
+        "content": "Where was it played?"
+      }
+    ],
+    "model": "",
+    "stream": true,
+    "max_tokens": 1,
+    "stop": [
+        null
+    ],
+    "frequency_penalty": 1,
+    "presence_penalty": 1,
+    "temperature": 1,
+    "top_p": 1
+  }'
+
+  ```
+  </TabItem>
+  <TabItem value="response" label="Endpoint Response">
+  ```bash
+  {
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Hello, how may I assist you this evening?",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1700215278,
+  "id": "sofpJrnBGUnchO8QhA0s",
+  "model": "_",
+  "object": "chat.completion",
+  "system_fingerprint": "_",
+  "usage": {
+    "completion_tokens": 13,
+    "prompt_tokens": 90,
+    "total_tokens": 103
+  }
+}
+  ```
+  </TabItem>
+</Tabs>
+## Capabilities
+
+### Multiple Local Engines
+
+Cortex scales applications from prototype to production, running on CPU-only laptops with llama.cpp and GPU-accelerated with TensorRT-LLM.
+
+To configure each engine, refer to the [`cortex engines init`](/docs/cli/engines/init) command.
+
+Learn more about our engine architecture:
+
+- cortex.cpp
+- [llamacpp](/docs/cortex-llamacpp)
+- tensorrt-llm
+- [onnx](/docs/cortex-onnx)
+
+### Multiple Remote APIs
+
+Cortex also acts as an aggregator for remote inference requests from a single endpoint. Currently, Cortex supports:
+
+- OpenAI
+- Groq
+- Anthropic
+- MistralAI
+
+:::note
+Learn more about Chat Completions capabilities:
+- [Chat Completions API Reference](/api-reference#tag/inference/post/chat/completions)
+- [`cortex run` CLI command](/docs/cli/run)
+:::

@@ -1,0 +1,258 @@
+---
+title: ONNX
+description: Onnx Architecture
+slug: "cortex-onnx"
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+## Introduction
+Cortex.onnx is a C++ inference library for Windows that relies on [onnxruntime-genai](https://github.com/microsoft/onnxruntime-genai), utilizing DirectML for hardware acceleration. [DirectML](https://github.com/microsoft/DirectML) is a high-performance DirectX 12 library for machine learning, providing GPU acceleration across various hardware and drivers, including AMD, Intel, NVIDIA, and Qualcomm GPUs. It integrates and sometimes upstreams [onnxruntime-genai](https://github.com/microsoft/onnxruntime-genai) for inference tasks.
+
+
+:::info
+The current valid combinations for executor and precision are:
+- FP32 CPU
+- FP32 CUDA
+- FP16 CUDA
+- FP16 DML
+- INT4 CPU
+- INT4 CUDA
+- INT4 DML
+:::
+
+## Usage
+```sh
+cortex engines onnx init
+```
+The command will check, download, and install these dependencies for Windows:
+```
+- engine.dll
+- D3D12Core.dll
+- DirectML.dll
+- onnxruntime.rel.dll
+- onnxruntime-genai.dll
+- MSBuild libraries:
+   - msvcp140.dll
+   - vcruntime140.dll
+   - vcruntime140_1.dll
+```
+:::info
+To include `onnx` in your own server implementation, follow the steps [here](https://github.com/janhq/onnx/tree/main/examples/server).
+:::
+
+#### Get ONNX Models
+You can download precompiled ONNX models from the [Cortex Hub](https://huggingface.co/cortexso) on Hugging Face. These models include configurations, tokenizers, and dependencies tailored for optimal performance with the `onnx` engine.
+
+
+## Interface
+
+`onnx` has the following Interfaces:
+
+- **HandleChatCompletion:** Processes chat completion tasks.
+  ```cpp
+  void HandleChatCompletion(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback);
+  ```
+- **LoadModel:** Loads a model based on the specifications.
+  ```cpp
+  void LoadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback);
+  ```
+- **UnloadModel:** Unloads a model as specified.
+  ```cpp
+  void UnloadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback);
+  ```
+- **GetModelStatus:** Retrieves the status of a model.
+  ```cpp
+  void GetModelStatus(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback);
+  ```
+All the interfaces above contain the following parameters:
+
+| Parameter  | Description                                    |
+|------------|------------------------------------------------|
+| `jsonBody` | The requested content is in JSON format.          |
+| `callback` | A function that handles the response.          |
+
+
+## Architecture
+import Diagram from "../src/components/Diagram"
+
+<Diagram diagramPath={"/diagrams/ONNX.excalidraw"} />
+
+### Main Components
+These are the main components that interact to provide an API for `inference` tasks using the `onnxruntime-genai` library:
+- **cortex-cpp**: Responsible for handling API requests and responses.
+- **enginei**: Engine interface for inference.
+- **onnx**: It makes APIs accessible through an engine interface, allowing others to use its features easily.
+- **onnx_engine**:  Exposes APIs for inference. It loads and unloads models and simplifies API calls to **`onnxruntime_genai`**.
+- **onnxruntime_genai**: A submodule from the **`onnxruntime_genai`** repository that provides the core functionality for inferences.
+
+### Communication Protocols
+
+#### Load a Model
+```mermaid
+sequenceDiagram
+    participant JS as Cortex-JS
+    participant CPP as Cortex-CPP
+    participant ONNX as Cortex.onnx
+
+    JS->>CPP: HTTP request load model
+    CPP->>CPP: Load engine
+    CPP->>ONNX: Load model
+    ONNX->>ONNX: Cache chat template
+    ONNX->>ONNX: Create onnx model
+    ONNX->>ONNX: Create tokenizer
+    ONNX-->>CPP: Callback
+    CPP-->>JS: HTTP response
+
+```
+
+The diagram above illustrates the interaction between three components: `cortex-js`, `cortex-cpp`, and `onnx` when using the `onnx` engine in Cortex:
+
+1. **HTTP Request from cortex-js to cortex-cpp**:
+   - `cortex-js` sends an HTTP request to `cortex-cpp` to load a model.
+
+2. **Engine Loading in cortex-cpp**:
+   - Upon receiving the HTTP request, `cortex-cpp` initiates the loading of the engine.
+
+3. **Model Loading from cortex-cpp to onnx**:
+   - `cortex-cpp` then requests `onnx` to load the model.
+
+4. **Model Preparation in onnx**:
+   - `onnx` performs the following tasks:
+     - **Create Tokenizer**: Initializes a tokenizer for the model.
+     - **Create ONNX Model**: Sets up the ONNX model for inference.
+     - **Cache Chat Template**: Caches the chat template for future use.
+
+5. **Callback from onnx to cortex-cpp**:
+   - Once the model is loaded and ready, `onnx` sends a callback to `cortex-cpp` to indicate the completion of the model loading process.
+
+6. **HTTP Response from cortex-cpp to cortex-js**:
+   - `cortex-cpp` sends an HTTP response back to `cortex-js`, indicating that the model has been successfully loaded and is ready for use.
+
+#### Stream Inference
+```mermaid
+sequenceDiagram
+    participant JS as Cortex-JS
+    participant CPP as Cortex-CPP
+    participant ONNX as Cortex.onnx
+
+    JS->>CPP: HTTP request chat completion
+    CPP->>ONNX: Request chat completion
+    ONNX->>ONNX: Apply chat template
+    ONNX->>ONNX: Encode
+    ONNX->>ONNX: Set search options
+    ONNX->>ONNX: Create generator
+    loop Wait for done
+        ONNX->>ONNX: Compute logits
+        ONNX->>ONNX: Generate next token
+        ONNX->>ONNX: Decode new token
+        ONNX-->>CPP: Callback
+        CPP-->>JS: HTTP stream response
+    end
+
+```
+
+The diagram above illustrates the interaction between three components: `cortex-js`, `cortex-cpp`, and `onnx` when using the `onnx` engine to call the `chat completions endpoint` with the stream inference option:
+
+1. **HTTP Request from cortex-js to `cortex-cpp`**:
+   - `cortex-js` sends an HTTP request to `cortex-cpp` for chat completion.
+
+2. **Request Chat Completion from `cortex-cpp` to `onnx`**:
+   - `cortex-cpp` forwards the request to `onnx` to process the chat completion.
+
+3. **Chat Processing in `onnx`**:
+   - `onnx` performs the following tasks:
+     - **Apply Chat Template**: Applies the chat template.
+     - **Encode**: Encodes the input data.
+     - **Set Search Options**: Configures search options for inference.
+     - **Create Generator**: Creates a generator for token generation.
+
+4. **Token Generation in `onnx`**:
+   - `onnx` executes the following steps in a loop to generate the response:
+     - **Compute Logits**: Computes the logits.
+     - **Generate Next Token**: Generates the next token.
+     - **Decode New Token**: Decodes the newly generated token.
+
+5. **Callback from `onnx` to `cortex-cpp`**:
+   - Once a token is generated, `onnx` sends a callback to `cortex-cpp`.
+
+6. **HTTP Stream Response from `cortex-cpp` to `cortex-js`**:
+   - `cortex-cpp` streams the response back to `cortex-js` as the tokens are generated.
+
+7. **Wait for Done in `cortex-js`**:
+   - `cortex-js` waits until the entire response is received and the process is completed.
+
+#### Non-stream Inference
+
+```mermaid
+sequenceDiagram
+    participant JS as Cortex-JS
+    participant CPP as Cortex-CPP
+    participant ONNX as Cortex.onnx
+
+    JS->>CPP: HTTP request chat completion
+    CPP->>ONNX: Request chat completion
+    ONNX->>ONNX: Apply chat template
+    ONNX->>ONNX: Encode
+    ONNX->>ONNX: Set search options
+    ONNX->>ONNX: Create generator
+    ONNX->>ONNX: Generate output
+    ONNX->>ONNX: Decode output
+    ONNX-->>CPP: Callback
+    CPP-->>JS: HTTP response
+
+```
+The diagram above illustrates the interaction between three components: `cortex-js`, `cortex-cpp`, and `onnx` when using the `onnx` engine to call the `chat completions endpoint` with the non-stream inference option:
+
+1. **HTTP Request from `cortex-js` to `cortex-cpp`**:
+   - `cortex-js` sends an HTTP request to `cortex-cpp` for chat completion.
+
+2. **Request Chat Completion from `cortex-cpp` to `onnx`**:
+   - `cortex-cpp` forwards the request to `onnx` to process the chat completion.
+
+3. **Chat Processing in `onnx`**:
+   - `onnx` performs the following tasks:
+     - **Apply Chat Template**: Applies the chat template.
+     - **Encode**: Encodes the input data.
+     - **Set Search Options**: Configures search options for inference.
+     - **Create Generator**: Creates a generator to process the request.
+
+4. **Output Generation in `onnx`**:
+   - `onnx` executes the following steps to generate the response:
+     - **Generate Output**: Generates the output based on the processed data.
+     - **Decode Output**: Decodes the generated output.
+
+5. **Callback from `onnx` to `cortex-cpp`**:
+   - Once the output is generated and ready, `onnx` sends a callback to `cortex-cpp` to indicate the completion of the chat completion process.
+
+6. **HTTP Response from `cortex-cpp` to `cortex-js`**:
+   - `cortex-cpp` sends an HTTP response back to `cortex-js`, providing the generated output.
+
+## Code Structure
+```
+.
+├── base                              # Engine interface definition
+|   └── cortex-common                 # Common interfaces used for all engines
+|      └── enginei.h                  # Define abstract classes and interface methods for engines
+├── examples                          # Server example to integrate engine
+│   └── server.cc                     # Example server demonstrating engine integration
+├── onnxruntime-genai
+│   └── (files from upstream onnxruntime-genai)
+├── src                               # Source implementation for onnx engine
+│   ├── chat_completion_request.h     # OpenAI compatible request handling
+│   ├── onnx_engine.h                   # Implementation onnx engine of model loading and inference 
+|   ├── onnx_engine.cc
+├── third-party                       # Dependencies of the onnx project
+    └── (list of third-party dependencies)
+
+```

@@ -1,0 +1,106 @@
+---
+title: Llama.cpp
+description: GGUF Model Format.
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex uses `llama.cpp` as the default engine by default the `GGUF` format is supported by Cortex.
+
+:::info
+Cortex automatically generates any `GGUF` model from the HuggingFace repo that does not have the `model.yaml` file.
+:::
+
+## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
+```yaml
+## BEGIN GENERAL GGUF METADATA
+id: Mistral-Nemo-Instruct-2407 # Model ID unique between models (author / quantization)
+model: mistral-nemo # Model ID which is used for request construct - should be unique between models (author / quantization)
+name: Mistral-Nemo-Instruct-2407 # metadata.general.name
+version: 2 # metadata.version
+files:             # can be universal protocol (models://) OR absolute local file path (file://) OR https remote URL (https://)
+  - /home/thuan/cortex/models/mistral-nemo-q8/Mistral-Nemo-Instruct-2407.Q6_K.gguf
+# END GENERAL GGUF METADATA
+
+# BEGIN INFERENCE PARAMETERS
+# BEGIN REQUIRED
+stop:                # tokenizer.ggml.eos_token_id
+  - </s>
+# END REQUIRED
+
+# BEGIN OPTIONAL
+stream: true # Default true?
+top_p: 0.949999988 # Ranges: 0 to 1
+temperature: 0.699999988 # Ranges: 0 to 1
+frequency_penalty: 0 # Ranges: 0 to 1
+presence_penalty: 0 # Ranges: 0 to 1
+max_tokens: 1024000 # Should be default to context length
+seed: -1
+dynatemp_range: 0
+dynatemp_exponent: 1
+top_k: 40
+min_p: 0.0500000007
+tfs_z: 1
+typ_p: 1
+repeat_last_n: 64
+repeat_penalty: 1
+mirostat: false
+mirostat_tau: 5
+mirostat_eta: 0.100000001
+penalize_nl: false
+ignore_eos: false
+n_probs: 0
+min_keep: 0
+# END OPTIONAL
+# END INFERENCE PARAMETERS
+
+# BEGIN MODEL LOAD PARAMETERS
+# BEGIN REQUIRED
+engine: cortex.llamacpp # engine to run model
+prompt_template: "[INST] <<SYS>>\n{system_message}\n<</SYS>>\n{prompt}[/INST]"
+# END REQUIRED
+
+# BEGIN OPTIONAL
+ctx_len: 1024000 # llama.context_length | 0 or undefined = loaded from model
+ngl: 41 # Undefined = loaded from model
+# END OPTIONAL
+# END MODEL LOAD PARAMETERS
+
+```
+## Model Parameters
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `top_p`                | The cumulative probability threshold for token sampling.                             | No  |
+| `temperature`          | Controls the randomness of predictions by scaling logits before applying softmax.    | No   |
+| `frequency_penalty`    | Penalizes new tokens based on their existing frequency in the sequence so far.       | No   |
+| `presence_penalty`     | Penalizes new tokens based on whether they appear in the sequence so far.            | No   |
+| `max_tokens`           | Maximum number of tokens in the output.                                              | No          |
+| `stream`               | Enables or disables streaming mode for the output (true or false).                   | No          |
+| `ngl`                  | Number of attention heads.                                                           | No          |
+| `ctx_len`              | Context length (maximum number of tokens).                                           | No          |
+| `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
+| `stop`                 | Specifies the stopping condition for the model, which can be a word, a letter, or a specific text. | Yes          |
+| `seed`               | Random seed value used to initialize the generation process.                                           | No           |
+| `dynatemp_range`     | Dynamic temperature range used to adjust randomness during generation.                                 | No           |
+| `dynatemp_exponent`  | Exponent used to adjust the effect of dynamic temperature.                                             | No           |
+| `top_k`              | Limits the number of highest probability tokens to consider during sampling.                           | No           |
+| `min_p`              | Minimum cumulative probability for nucleus sampling.                                                   | No           |
+| `tfs_z`              | Top-p frequency selection parameter.                                                                   | No           |
+| `typ_p`              | Typical sampling probability threshold.                                                                | No           |
+| `repeat_last_n`      | Number of tokens to consider for the repetition penalty.                                               | No           |
+| `repeat_penalty`     | Penalty applied to repeated tokens to reduce their likelihood of being selected again.                 | No           |
+| `mirostat`           | Enables or disables the use of Mirostat algorithm for dynamic temperature adjustment.                  | No           |
+| `mirostat_tau`       | Target surprise value for Mirostat algorithm.                                                          | No           |
+| `mirostat_eta`       | Learning rate for Mirostat algorithm.                                                                  | No           |
+| `penalize_nl`        | Whether newline characters should be penalized during sampling.                                         | No           |
+| `ignore_eos`         | If true, ignores the end of sequence token, allowing generation to continue indefinitely.              | No           |
+| `n_probs`            | Number of top token probabilities to return in the output.                                             | No           |
+| `min_keep`           | Minimum number of tokens to keep during top-k sampling.                                                | No           |
+
+<!-- :::info
+You can download a `GGUF` model from the following:
+- [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub)
+- [HuggingFace Model Repos](/docs/capabilities/models/sources/hugging-face)
+::: -->

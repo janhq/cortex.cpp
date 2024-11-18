@@ -1,0 +1,26 @@
+#!/usr/bin/env sh
+set -e
+DESTINATION_BINARY_NAME=cortex
+DATA_FOLDER_NAME=.cortex
+CONFIGURATION_FILE_NAME=.cortexrc
+
+if [ -f "/var/tmp/cortex_installer_skip_postinstall_check" ]; then
+    echo "Skipping postinstall script."
+    exit 0
+fi
+
+USER_TO_RUN_AS=$(stat -f "%Su" /dev/console)
+
+echo "Start server before downloading server for user $USER_TO_RUN_AS"
+sudo -u $USER_TO_RUN_AS /usr/local/bin/$DESTINATION_BINARY_NAME start
+
+echo "Download cortex.llamacpp engines by default for user $USER_TO_RUN_AS"
+sudo -u $USER_TO_RUN_AS /usr/local/bin/$DESTINATION_BINARY_NAME engines install llama-cpp
+
+echo "Stop server"
+sudo -u $USER_TO_RUN_AS /usr/local/bin/$DESTINATION_BINARY_NAME stop
+
+sudo chown -R $USER_TO_RUN_AS:staff "/Users/$USER_TO_RUN_AS/$DATA_FOLDER_NAME"
+sudo chown $USER_TO_RUN_AS:staff "/Users/$USER_TO_RUN_AS/$CONFIGURATION_FILE_NAME"
+
+exit 0

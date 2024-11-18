@@ -1,0 +1,116 @@
+---
+title: Mac Installation
+description: Install Cortex CLI on Mac.
+slug: 'mac'
+---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+## Cortex.cpp Installation
+:::info
+Before installation, make sure that you have met the [minimum requirements](/docs/installation#minimum-requirements) to run Cortex.
+This instruction is for stable releases. For beta and nightly releases, please replace `cortex` with `cortex-beta` and `cortex-nightly`, respectively.
+:::
+
+1. Download the Linux installer:
+    - From release: https://github.com/janhq/cortex.cpp/releases
+    - From quick download links:
+        - Local installer `.deb`:
+            - Stable: https://app.cortexcpp.com/download/latest/mac-universal-local
+            - Beta: https://app.cortexcpp.com/download/beta/mac-universal-local
+            - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-local
+        - Network installer `.deb`:
+            - Stable: https://app.cortexcpp.com/download/latest/mac-universal-network
+            - Beta: https://app.cortexcpp.com/download/beta/mac-universal-network
+            - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-network
+        - Binary:
+            - Stable: https://app.cortexcpp.com/download/latest/mac-universal-binary
+            - Beta: https://app.cortexcpp.com/download/beta/mac-universal-binary
+            - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-binary
+
+2. Install Cortex.cpp by double-clicking the pkg downloaded file.
+
+3. Ensure that Cortex.cpp is sucessfulyy installed:
+    ```bash
+    # Stable
+    cortex -v
+    ```
+
+### Data Folder
+By default, Cortex.cpp is installed in the following directory:
+```
+# Binary Location
+/usr/local/bin/cortex
+/usr/local/bin/cortex-server
+/usr/local/bin/cortex-uninstall.sh
+
+# Application Data (Engines, Models and Logs folders)
+/Users/<username>/cortexcpp
+
+# Configuration File
+/Users/<username>/.cortexrc
+```
+## Uninstall Cortex.cpp
+Run the uninstaller script:
+```bash
+sudo sh cortex-uninstall.sh
+```
+
+:::info
+The script requires sudo permission.
+:::
+
+## Build from Source
+
+### Prerequisites
+- CMake >= 3.10
+- gcc/g++ >= 9
+- ninja-build
+- make-gnu
+
+### Build Cortex.cpp
+
+1. **Clone the Cortex Repository**
+   ```bash
+   git clone https://github.com/janhq/cortex.cpp.git
+   cd cortex.cpp
+   git submodule update --init
+   ```
+2. Build the Cortex.cpp :
+
+  <Tabs>
+    <TabItem value="Mac Silicon" label="Mac Silicon">
+    ```sh
+    cd engine
+    make configure-vcpkg
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+    ```
+    </TabItem>
+    <TabItem value="Mac Intel" label="Mac Intel">
+    ```sh
+    cd engine
+    make configure-vcpkg
+    make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=latest -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+    ```
+    </TabItem>
+  </Tabs>
+
+3. Verify that Cortex.cpp is builded correctly by getting help information.
+
+    ```sh
+    # Get the help information
+    ./build/cortex -h
+    ```
+
+## Update cortex to latest version
+:::info
+The script requires sudo permission.
+:::
+```bash
+sudo cortex update
+```

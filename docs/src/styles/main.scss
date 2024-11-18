@@ -2,12 +2,14 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
-@import "./tweaks/navbar.scss";
-@import "./tweaks/sidebar.scss";
-@import "./tweaks/code-block.scss";
-@import "./tweaks/breadcrumb.scss";
-@import "./tweaks/markdown.scss";
-@import "./tweaks/redocusaurus.scss";
-
-@import "./components/base.scss";
-@import "./components/typography.scss";
+@import "./base.scss";
+@import "./codehike.scss";
+@import "./footer.scss";
+@import "./navbar.scss";
+@import "./sidebar.scss";
+@import "./tabs.scss";
+@import "./alert.scss";
+@import "./pagination.scss";
+@import "./cardContainer.scss";
+@import "./models-detail.scss";
+@import "./apiReference.scss";

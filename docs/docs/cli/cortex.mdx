@@ -1,0 +1,39 @@
+---
+title: Cortex
+description: Cortex CLI.
+slug: /cli
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# `cortex`
+This command list all the available commands within the Cortex commands.
+
+## Usage
+:::info
+You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
+:::
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe
+  ```
+  </TabItem>
+</Tabs>
+
+## Sub Commands
+
+- [cortex start](/docs/cli/start): Start the Cortex API server (starts automatically with other commands)
+- [cortex run](/docs/cli/run): Shortcut for `cortex models start`. Pull a remote model or start a local model, and start chatting.
+- [cortex pull](/docs/cli/pull): Download a model.
+- [cortex models](/docs/cli/models): Manage and configure models.
+- [cortex ps](/docs/cli/ps): Display active models and their operational status.
+- [cortex engines](/docs/cli/engines): Manage Cortex engines.
+- [cortex update](/docs/cli/update): Update the Cortex version.
+- [cortex stop](/docs/cli/stop): Stop the Cortex API server.

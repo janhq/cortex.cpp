@@ -1,0 +1,55 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Space+Grotesk:wght@300..700&display=swap");
+
+:root {
+  --ifm-color-primary: #2563eb;
+  --ifm-color-primary-dark: #2159d4;
+  --ifm-color-primary-darker: #1e4fbc;
+  --ifm-color-primary-darkest: #1a45a5;
+  --ifm-color-primary-light: #3b73ed;
+  --ifm-color-primary-lighter: #5182ef;
+  --ifm-color-primary-lightest: #6692f1;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  /* Custom */
+  --ifm-navbar-background-color: #fff;
+  --ifm-background-color: #fff;
+  --ifm-toc-border-color: transparent;
+  --ifm-font-family-base: "Inter";
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+html[data-theme="dark"] {
+  --ifm-color-primary: #4377e9;
+  --ifm-color-primary-dark: #3c6bd2;
+  --ifm-color-primary-darker: #365fba;
+  --ifm-color-primary-darkest: #2f53a3;
+  --ifm-color-primary-light: #5685eb;
+  --ifm-color-primary-lighter: #6992ed;
+  --ifm-color-primary-lightest: #7ba0f0;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  /* Custom */
+  --ifm-navbar-background-color: #111;
+  --ifm-background-color: #111;
+  --ifm-toc-border-color: transparent;
+  --ifm-font-family-base: "Inter";
+}
+
+.openai-coverage {
+  p {
+    margin-bottom: 0;
+  }
+}
+
+.plugin-docs {
+  main {
+    padding: 80px 0;
+  }
+}
+
+.sidebar-heading-type {
+  color: var(--method-color) !important;
+}
+
+.scalar-component.scalar-codeblock-pre {
+  border-radius: 0;
+}

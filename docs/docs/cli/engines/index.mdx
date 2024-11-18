@@ -1,0 +1,177 @@
+---
+title: Cortex Engines
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+# `cortex engines`
+
+This command allows you to manage various engines available within Cortex.
+
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex engines [options] [subcommand]
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe engines [options] [subcommand]
+  ```
+  </TabItem>
+</Tabs>
+
+
+**Options**:
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+{/* | `-vk`, `--vulkan`             | Install Vulkan engine.                                                                           | No       | `false`       | `-vk`                         | */}
+
+---
+# Subcommands:
+## `cortex engines list`
+:::info
+This CLI command calls the following API endpoint:
+- [List Engines](/api-reference#tag/engines/get/v1/engines)
+:::
+This command lists all the Cortex's engines.
+
+
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex engines list
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe engines list
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following:
+```
++---+--------------+-------------------+---------+----------------------------+---------------+
+| # | Name         | Supported Formats | Version | Variant                    | Status        |
++---+--------------+-------------------+---------+----------------------------+---------------+
+| 1 | onnxruntime  | ONNX              |         |                            | Incompatible  |
++---+--------------+-------------------+---------+----------------------------+---------------+
+| 2 | llama-cpp    | GGUF              | 0.1.34  | linux-amd64-avx2-cuda-12-0 | Ready         |
++---+--------------+-------------------+---------+----------------------------+---------------+
+| 3 | tensorrt-llm | TensorRT Engines  |         |                            | Not Installed |
++---+--------------+-------------------+---------+----------------------------+---------------+
+```
+
+## `cortex engines get`
+:::info
+This CLI command calls the following API endpoint:
+- [Get Engine](/api-reference#tag/engines/get/v1/engines/{name})
+:::
+This command returns an engine detail defined by an engine `engine_name`.
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex engines get <engine_name>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe engines get <engine_name>
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following:
+```
++-----------+-------------------+---------+-----------+--------+
+| Name      | Supported Formats | Version | Variant   | Status |
++-----------+-------------------+---------+-----------+--------+
+| llama-cpp | GGUF              | 0.1.37  | mac-arm64 | Ready  |
++-----------+-------------------+---------+-----------+--------+
+```
+:::info
+To get an engine name, run the [`engines list`](/docs/cli/engines/list) command.
+:::
+
+
+**Options**:
+
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `engine_name`        | The name of the engine that you want to retrieve.     | Yes      | -             | `llama-cpp`|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+
+
+
+## `cortex engines install`
+:::info
+This CLI command calls the following API endpoint:
+- [Init Engine](/api-reference#tag/engines/post/v1/engines/{name}/init)
+:::
+This command downloads the required dependencies and installs the engine within Cortex. Currently, Cortex supports three engines:
+- `llama-cpp`
+- `onnxruntime`
+- `tensorrt-llm`
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex engines install [options] <engine_name>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe engines install [options] <engine_name>
+
+  ```
+  </TabItem>
+</Tabs>
+
+**Options**:
+
+| Option                    | Description                                        | Required | Default value | Example              |
+|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
+| `engine_name`            | The name of the engine you want to install.                         | Yes       | `llama-cpp`, `onnxruntime`, `tensorrt-llm`  | -             |
+| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |
+
+## `cortex engines uninstall`
+
+This command uninstalls the engine within Cortex.
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex engines uninstall [options] <engine_name>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe engines uninstall [options] <engine_name>
+  ```
+  </TabItem>
+</Tabs>
+
+For Example:
+```bash
+## Llama.cpp engine
+cortex engines uninstall llama-cpp
+```
+
+**Options**:
+
+| Option                    | Description                                        | Required | Default value | Example              |
+|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
+| `engine_name`            | The name of the engine you want to uninstall.                         | Yes       | -             | -             |
+| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |

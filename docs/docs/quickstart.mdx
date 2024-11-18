@@ -1,0 +1,176 @@
+---
+title: Quickstart
+description: Cortex Quickstart.
+slug: quickstart
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+
+:::info
+Cortex.cpp is in active development. If you have any questions, please reach out to us:
+- [GitHub](https://github.com/janhq/cortex.cpp/issues/new/choose)
+- [Discord](https://discord.com/invite/FTk2MvZwJH)
+:::
+
+## Local Installation
+Cortex has an Local Installer that packages all required dependencies, so that no internet connection is required during the installation process.
+  - [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
+  - [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
+  - [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
+
+## Start Cortex.cpp API Server
+This command starts the Cortex.cpp API server at `localhost:39281`.
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex start
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe start
+  ```
+  </TabItem>
+</Tabs>
+
+## Pull a Model & Select Quantization
+This command allows users to download a model from these Model Hubs:
+- [Cortex Built-in Models](https://cortex.so/models)
+- [Hugging Face](https://huggingface.co) (GGUF): `cortex pull <author/ModelRepo>`
+
+It displays available quantizations, recommends a default and downloads the desired quantization. 
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  $ cortex pull llama3.2 
+  $ cortex pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  $ cortex pull llama3.2 
+  $ cortex.exe pull bartowski/Meta-Llama-3.1-8B-Instruct-GGUF
+  ```
+  </TabItem>
+</Tabs>
+
+## Run a Model
+This command downloads the default `gguf` model format from the [Cortex Hub](https://huggingface.co/cortexso), starts the model, and chat with the model.
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex run llama3.2
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe run llama3.2
+  ```
+  </TabItem>
+</Tabs>
+:::info
+All model files are stored in the `~/cortex/models` folder.
+:::
+
+## Using the Model
+### API
+```curl
+curl http://localhost:39281/v1/chat/completions \
+-H "Content-Type: application/json" \
+-d '{
+  "model": "",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello"
+    },
+  ],
+  "model": "mistral",
+  "stream": true,
+  "max_tokens": 1,
+  "stop": [
+      null
+  ],
+  "frequency_penalty": 1,
+  "presence_penalty": 1,
+  "temperature": 1,
+  "top_p": 1
+}'
+```
+Refer to our [API documentation](https://cortex.so/api-reference) for more details.
+
+## Show the System State
+This command displays the running model and the hardware system status (RAM, Engine, VRAM, Uptime)
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex ps
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe ps
+  ```
+  </TabItem>
+</Tabs>
+
+## Stop a Model
+This command stops the running model.
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex models stop llama3.2
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe models stop llama3.2
+  ```
+  </TabItem>
+</Tabs>
+
+## Stop Cortex.cpp API Server
+This command starts the Cortex.cpp API server at `localhost:39281`.
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex stop
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe stop
+  ```
+  </TabItem>
+</Tabs>
+
+<!-- ## Run Different Model Variants
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  # Run Mistral in ONNX format
+  cortex run mistral:onnx
+
+  # Run Mistral in TensorRT-LLM format
+  cortex run mistral:tensorrt-llm
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  # Run Mistral in ONNX format
+  cortex.exe run mistral:onnx
+
+  # Run Mistral in TensorRT-LLM format
+  cortex.exe run mistral:tensorrt-llm
+  ```
+  </TabItem>
+</Tabs> -->
+
+## What's Next?
+Now that Cortex.cpp is set up, here are the next steps to explore:
+
+1. Adjust the folder path and configuration using the [`.cortexrc`](/docs/architecture/cortexrc) file.
+2. Explore the Cortex.cpp [data folder](/docs/architecture/data-folder) to understand how it stores data.
+3. Learn about the structure of the [`model.yaml`](/docs/capabilities/models/model-yaml) file in Cortex.cpp.
