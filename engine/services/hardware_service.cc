@@ -297,6 +297,8 @@ void HardwareService::UpdateHardwareInfos() {
 
 bool HardwareService::IsValidConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
+  if (ahc.gpus.empty())
+    return true;
   cortex::db::Hardwares hw_db;
   auto is_valid = [&ahc](int software_id) {
     return std::count(ahc.gpus.begin(), ahc.gpus.end(), software_id) > 0;

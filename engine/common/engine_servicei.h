@@ -1,7 +1,8 @@
 #pragma once
+
+#include <json/value.h>
 #include <string>
 #include <vector>
-#include "json/json.h"
 #include "utils/result.hpp"
 
 // TODO: namh think of the other name
@@ -37,12 +38,12 @@ struct EngineVariantResponse {
 class EngineServiceI {
  public:
   virtual ~EngineServiceI() {}
-  
+
   virtual cpp::result<DefaultEngineVariant, std::string>
   SetDefaultEngineVariant(const std::string& engine, const std::string& version,
                           const std::string& variant) = 0;
 
-virtual cpp::result<DefaultEngineVariant, std::string>
+  virtual cpp::result<DefaultEngineVariant, std::string>
   GetDefaultEngineVariant(const std::string& engine) = 0;
 
   virtual cpp::result<std::vector<EngineVariantResponse>, std::string>
@@ -53,5 +54,4 @@ virtual cpp::result<DefaultEngineVariant, std::string>
 
   virtual cpp::result<void, std::string> UnloadEngine(
       const std::string& engine_name) = 0;
-
 };
