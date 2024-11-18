@@ -10,6 +10,7 @@
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include "utils/string_utils.h"
 
 namespace {
 size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
@@ -75,6 +76,10 @@ void SetUpProxy(CURL* handle, std::shared_ptr<ConfigService> config_service) {
       CTL_INF("Verify host ssl: " << verify_host_ssl);
 
       curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+      if (string_utils::StartsWith(proxy_url, "https")) {
+        curl_easy_setopt(handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
+      }
+
       curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
       curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST,
                        verify_host_ssl ? 2L : 0L);

@@ -95,6 +95,11 @@ const sidebars: SidebarsConfig = {
           id: "configurations/cors",
           label: "CORS",
         },
+        {
+          type: "doc",
+          id: "configurations/proxy",
+          label: "Proxy",
+        },
       ],
     },
     {
