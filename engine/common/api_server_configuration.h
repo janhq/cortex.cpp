@@ -20,6 +20,78 @@ enum class ProxyAuthMethod {
   AwsSigV4
 };
 
+struct ApiConfigurationMetadata {
+  std::string name;
+  std::string desc;
+  std::string group;
+  std::string accept_value;
+  std::string default_value;
+
+  bool allow_empty = false;
+};
+
+static const std::unordered_map<std::string, ApiConfigurationMetadata>
+    CONFIGURATIONS = {
+        {"cors",
+         ApiConfigurationMetadata{
+             .name = "cors",
+             .desc = "Cross-Origin Resource Sharing configuration.",
+             .group = "CORS",
+             .accept_value = "[on|off]",
+             .default_value = "on"}},
+        {"allowed_origins",
+         ApiConfigurationMetadata{
+             .name = "allowed_origins",
+             .desc = "Allowed origins for CORS. Comma separated. E.g. "
+                     "http://localhost,https://cortex.so",
+             .group = "CORS",
+             .accept_value = "comma separated",
+             .default_value = "*",
+             .allow_empty = true}},
+        {"proxy_url", ApiConfigurationMetadata{.name = "proxy_url",
+                                               .desc = "Proxy URL",
+                                               .group = "Proxy",
+                                               .accept_value = "string",
+                                               .default_value = ""}},
+        {"proxy_username", ApiConfigurationMetadata{.name = "proxy_username",
+                                                    .desc = "Proxy Username",
+                                                    .group = "Proxy",
+                                                    .accept_value = "string",
+                                                    .default_value = ""}},
+        {"proxy_password", ApiConfigurationMetadata{.name = "proxy_password",
+                                                    .desc = "Proxy Password",
+                                                    .group = "Proxy",
+                                                    .accept_value = "string",
+                                                    .default_value = ""}},
+        {"verify_proxy_ssl",
+         ApiConfigurationMetadata{.name = "verify_proxy_ssl",
+                                  .desc = "Verify SSL for proxy",
+                                  .group = "Proxy",
+                                  .accept_value = "[on|off]",
+                                  .default_value = "on"}},
+        {"verify_proxy_host_ssl",
+         ApiConfigurationMetadata{.name = "verify_proxy_host_ssl",
+                                  .desc = "Verify SSL for proxy",
+                                  .group = "Proxy",
+                                  .accept_value = "[on|off]",
+                                  .default_value = "on"}},
+        {"no_proxy", ApiConfigurationMetadata{.name = "no_proxy",
+                                              .desc = "No proxy for hosts",
+                                              .group = "Proxy",
+                                              .accept_value = "string",
+                                              .default_value = ""}},
+        {"verify_peer_ssl", ApiConfigurationMetadata{.name = "verify_peer_ssl",
+                                                     .desc = "Verify peer SSL",
+                                                     .group = "Proxy",
+                                                     .accept_value = "[on|off]",
+                                                     .default_value = "on"}},
+        {"verify_host_ssl", ApiConfigurationMetadata{.name = "verify_host_ssl",
+                                                     .desc = "Verify host SSL",
+                                                     .group = "Proxy",
+                                                     .accept_value = "[on|off]",
+                                                     .default_value = "on"}},
+};
+
 class ApiServerConfiguration {
  public:
   ApiServerConfiguration(

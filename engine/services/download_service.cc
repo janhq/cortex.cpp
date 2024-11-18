@@ -52,6 +52,48 @@ cpp::result<void, std::string> ProcessCompletedTransfers(CURLM* multi_handle) {
   }
   return {};
 }
+
+void SetUpProxy(CURL* handle, std::shared_ptr<ConfigService> config_service) {
+  auto configuration = config_service->GetApiServerConfiguration();
+  if (configuration.has_value()) {
+    if (!configuration->proxy_url.empty()) {
+      auto proxy_url = configuration->proxy_url;
+      auto verify_proxy_ssl = configuration->verify_proxy_ssl;
+      auto verify_proxy_host_ssl = configuration->verify_proxy_host_ssl;
+
+      auto verify_ssl = configuration->verify_peer_ssl;
+      auto verify_host_ssl = configuration->verify_host_ssl;
+
+      auto proxy_username = configuration->proxy_username;
+      auto proxy_password = configuration->proxy_password;
+
+      CTL_INF("=== Proxy configuration ===");
+      CTL_INF("Proxy url: " << proxy_url);
+      CTL_INF("Verify proxy ssl: " << verify_proxy_ssl);
+      CTL_INF("Verify proxy host ssl: " << verify_proxy_host_ssl);
+      CTL_INF("Verify ssl: " << verify_ssl);
+      CTL_INF("Verify host ssl: " << verify_host_ssl);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST,
+                       verify_host_ssl ? 2L : 0L);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYPEER,
+                       verify_proxy_ssl ? 1L : 0L);
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYHOST,
+                       verify_proxy_host_ssl ? 2L : 0L);
+
+      auto proxy_auth = proxy_username + ":" + proxy_password;
+      curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, proxy_auth.c_str());
+
+      curl_easy_setopt(handle, CURLOPT_NOPROXY,
+                       configuration->no_proxy.c_str());
+    }
+  } else {
+    CTL_ERR("Failed to get configuration");
+  }
+}
 }  // namespace
 
 cpp::result<bool, std::string> DownloadService::AddDownloadTask(
@@ -87,7 +129,7 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
 
-  // TODO: namh add header here
+  SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -190,7 +232,8 @@ cpp::result<bool, std::string> DownloadService::Download(
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
-  // TODO: namh add proxy setting here
+
+  SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
@@ -339,7 +382,6 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
     });
     worker_data->downloading_data_map[item.id] = dl_data_ptr;
 
-    CTL_ERR("Namh Setup curl");
     SetUpCurlHandle(handle, item, file, dl_data_ptr.get());
     curl_multi_add_handle(worker_data->multi_handle, handle);
     task_handles.push_back(std::make_pair(handle, file));
@@ -410,49 +452,7 @@ cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
 
 void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
                                       FILE* file, DownloadingData* dl_data) {
-  auto configuration = config_service_->GetApiServerConfiguration();
-  if (configuration.has_value()) {
-    if (!configuration->proxy_url.empty()) {
-      auto proxy_url = configuration->proxy_url;
-      auto verify_proxy_ssl = configuration->verify_proxy_ssl;
-      auto verify_proxy_host_ssl = configuration->verify_proxy_host_ssl;
-
-      auto verify_ssl = configuration->verify_peer_ssl;
-      auto verify_host_ssl = configuration->verify_host_ssl;
-
-      auto proxy_username = configuration->proxy_username;
-      auto proxy_password = configuration->proxy_password;
-
-      CTL_ERR("=== Proxy configuration ===");
-      CTL_ERR("Proxy url: " << proxy_url);
-      CTL_ERR("Verify proxy ssl: " << verify_proxy_ssl);
-      CTL_ERR("Verify proxy host ssl: " << verify_proxy_host_ssl);
-      CTL_ERR("Verify ssl: " << verify_ssl);
-      CTL_ERR("Verify host ssl: " << verify_host_ssl);
-
-      curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
-      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
-      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST,
-                       verify_host_ssl ? 2L : 0L);
-
-      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYPEER,
-                       verify_proxy_ssl ? 1L : 0L);
-      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYHOST,
-                       verify_proxy_host_ssl ? 2L : 0L);
-
-      if (!proxy_username.empty()) {
-        std::string proxy_auth = proxy_username + ":" + proxy_password;
-        CTL_ERR("Proxy auth: " << proxy_auth);
-        curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, proxy_auth.c_str());
-      }
-
-      curl_easy_setopt(handle, CURLOPT_NOPROXY,
-                       configuration->no_proxy.c_str());
-    }
-  } else {
-    CTL_ERR("Failed to get configuration");
-  }
-
+  SetUpProxy(handle, config_service_);
   curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
@@ -460,7 +460,6 @@ void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
   curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
   curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, ProgressCallback);
   curl_easy_setopt(handle, CURLOPT_XFERINFODATA, dl_data);
-  curl_easy_setopt(handle, CURLOPT_VERBOSE, 1L);
 
   auto headers = curl_utils::GetHeaders(item.downloadUrl);
   if (headers) {
