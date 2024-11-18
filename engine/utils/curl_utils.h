@@ -23,6 +23,43 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb,
   output->append((char*)contents, totalSize);
   return totalSize;
 }
+
+void SetUpProxy(CURL* handle) {
+  auto config = file_manager_utils::GetCortexConfig();
+  if (!config.proxyUrl.empty()) {
+    auto proxy_url = config.proxyUrl;
+    auto verify_proxy_ssl = config.verifyProxySsl;
+    auto verify_proxy_host_ssl = config.verifyProxyHostSsl;
+
+    auto verify_ssl = config.verifyPeerSsl;
+    auto verify_host_ssl = config.verifyHostSsl;
+
+    auto proxy_username = config.proxyUsername;
+    auto proxy_password = config.proxyPassword;
+    auto no_proxy = config.noProxy;
+
+    CTL_INF("=== Proxy configuration ===");
+    CTL_INF("Proxy url: " << proxy_url);
+    CTL_INF("Verify proxy ssl: " << verify_proxy_ssl);
+    CTL_INF("Verify proxy host ssl: " << verify_proxy_host_ssl);
+    CTL_INF("Verify ssl: " << verify_ssl);
+    CTL_INF("Verify host ssl: " << verify_host_ssl);
+
+    curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
+    curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, verify_host_ssl ? 2L : 0L);
+
+    curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYPEER,
+                     verify_proxy_ssl ? 1L : 0L);
+    curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYHOST,
+                     verify_proxy_host_ssl ? 2L : 0L);
+
+    auto proxy_auth = proxy_username + ":" + proxy_password;
+    curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, proxy_auth.c_str());
+
+    curl_easy_setopt(handle, CURLOPT_NOPROXY, no_proxy.c_str());
+  }
+}
 }  // namespace
 
 inline std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
@@ -51,6 +88,7 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url,
 
   std::string readBuffer;
 
+  SetUpProxy(curl);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
@@ -101,6 +139,7 @@ inline cpp::result<std::string, std::string> SimpleRequest(
   }
   std::string readBuffer;
 
+  SetUpProxy(curl);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   if (request_type == RequestType::PATCH) {
@@ -111,8 +150,6 @@ inline cpp::result<std::string, std::string> SimpleRequest(
   } else if (request_type == RequestType::DEL) {
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
   }
-  // enable below line for debugging
-  // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);

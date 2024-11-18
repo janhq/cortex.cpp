@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include "common/download_task_queue.h"
 #include "common/event.h"
+#include "services/config_service.h"
 #include "utils/result.hpp"
 
 struct ProcessDownloadFailed {
@@ -19,6 +20,8 @@ struct ProcessDownloadFailed {
 class DownloadService {
  private:
   static constexpr int MAX_CONCURRENT_TASKS = 4;
+
+  std::shared_ptr<ConfigService> config_service_;
 
   struct DownloadingData {
     std::string task_id;
@@ -82,8 +85,9 @@ class DownloadService {
 
   explicit DownloadService() = default;
 
-  explicit DownloadService(std::shared_ptr<EventQueue> event_queue)
-      : event_queue_{event_queue} {
+  explicit DownloadService(std::shared_ptr<EventQueue> event_queue,
+                           std::shared_ptr<ConfigService> config_service)
+      : event_queue_{event_queue}, config_service_{config_service} {
     InitializeWorkers();
   };
 
