@@ -36,9 +36,6 @@ std::unique_ptr<system_info_utils::SystemInfo> GetSystemInfoWithUniversal() {
   return system_info;
 }
 
-// https://delta.jan.ai/cortex/v1.0.0-176/windows-amd64/cortex-1.0.0-176-windows-amd64-network-installer.exe
-// https://delta.jan.ai/cortex/v1.0.0-176/mac-universal/cortex-1.0.0-176-mac-universal-network-installer.pkg
-// https://delta.jan.ai/cortex/v1.0.0-176/linux-amd64/cortex-1.0.0-176-linux-amd64-network-installer.deb
 std::string GetNightlyInstallerName(const std::string& v,
                                     const std::string& os_arch) {
   const std::string kCortex = "cortex";
@@ -53,13 +50,14 @@ std::string GetNightlyInstallerName(const std::string& v,
 #endif
 }
 
-// C:\Users\vansa\AppData\Local\Temp\cortex\cortex-windows-amd64-network-installer.exe
 std::string GetInstallCmd(const std::string& exe_path) {
 #if defined(__APPLE__) && defined(__MACH__)
-  return "sudo touch /var/tmp/cortex_installer_skip_postinstall_check && sudo installer "
+  return "sudo touch /var/tmp/cortex_installer_skip_postinstall_check && sudo "
+         "installer "
          "-pkg " +
          exe_path +
-         " -target / && sudo rm /var/tmp/cortex_installer_skip_postinstall_check";
+         " -target / && sudo rm "
+         "/var/tmp/cortex_installer_skip_postinstall_check";
 #elif defined(__linux__)
   return "echo -e \"n\\n\" | sudo SKIP_POSTINSTALL=true apt install -y "
          "--allow-downgrades " +
@@ -70,8 +68,22 @@ std::string GetInstallCmd(const std::string& exe_path) {
 #endif
 }
 
+std::string GetInstallCmdLinux(const std::string& script_path,
+                               const std::string& channel,
+                               const std::string& version) {
+  std::string cmd = "sudo " + script_path;
+  if (!channel.empty()) {
+    cmd += " --channel " + channel;
+  }
+  if (!version.empty()) {
+    cmd += " --version " + version.substr(1);
+  }
+  return cmd + " --is_update";
+}
+
 bool InstallNewVersion(const std::filesystem::path& dst,
-                       const std::string& exe_path) {
+                       const std::string& exe_script_path,
+                       const std::string& channel, const std::string& version) {
   std::filesystem::path temp = dst.parent_path() / "cortex_temp";
   auto restore_binary = [&temp, &dst]() {
     if (std::filesystem::exists(temp)) {
@@ -86,7 +98,14 @@ bool InstallNewVersion(const std::filesystem::path& dst,
     // rename binary
     std::rename(dst.string().c_str(), temp.string().c_str());
     // install here
-    CommandExecutor c(GetInstallCmd(exe_path));
+    std::string install_cmd;
+#if defined(__linux__)
+    install_cmd = GetInstallCmdLinux(exe_script_path, channel, version);
+#else
+    install_cmd = GetInstallCmd(exe_script_path);
+#endif
+    CTL_INF("Cmd: " << install_cmd);
+    CommandExecutor c(install_cmd);
     auto output = c.execute();
     if (!std::filesystem::exists(dst)) {
       CLI_LOG_ERROR("Something went wrong: could not execute command");
@@ -110,7 +129,6 @@ bool InstallNewVersion(const std::filesystem::path& dst,
   }
   return true;
 }
-
 }  // namespace
 
 std::optional<std::string> CheckNewUpdate(
@@ -200,76 +218,6 @@ std::optional<std::string> CheckNewUpdate(
   return std::nullopt;
 }
 
-bool ReplaceBinaryInflight(const std::filesystem::path& src,
-                           const std::filesystem::path& dst) {
-  if (src == dst) {
-    // Already has the newest
-    return true;
-  }
-
-  std::filesystem::path temp = dst.parent_path() / "cortex_temp";
-  auto restore_binary = [&temp, &dst]() {
-    if (std::filesystem::exists(temp)) {
-      std::rename(temp.string().c_str(), dst.string().c_str());
-      CLI_LOG("Restored binary file");
-    }
-  };
-
-  try {
-    if (std::filesystem::exists(temp)) {
-      std::filesystem::remove(temp);
-    }
-#if !defined(_WIN32)
-    // Get permissions of the executable file
-    struct stat dst_file_stat;
-    if (stat(dst.string().c_str(), &dst_file_stat) != 0) {
-      CLI_LOG_ERROR(
-          "Error getting permissions of executable file: " << dst.string());
-      return false;
-    }
-
-    // Get owner and group of the executable file
-    uid_t dst_file_owner = dst_file_stat.st_uid;
-    gid_t dst_file_group = dst_file_stat.st_gid;
-#endif
-
-    std::rename(dst.string().c_str(), temp.string().c_str());
-    std::filesystem::copy_file(
-        src, dst, std::filesystem::copy_options::overwrite_existing);
-
-#if !defined(_WIN32)
-    // Set permissions of the executable file
-    if (chmod(dst.string().c_str(), dst_file_stat.st_mode) != 0) {
-      CLI_LOG_ERROR(
-          "Error setting permissions of executable file: " << dst.string());
-      restore_binary();
-      return false;
-    }
-
-    // Set owner and group of the executable file
-    if (chown(dst.string().c_str(), dst_file_owner, dst_file_group) != 0) {
-      CLI_LOG_ERROR(
-          "Error setting owner and group of executable file: " << dst.string());
-      restore_binary();
-      return false;
-    }
-
-    // Remove cortex_temp
-    if (unlink(temp.string().c_str()) != 0) {
-      CLI_LOG_ERROR("Error deleting self: " << strerror(errno));
-      restore_binary();
-      return false;
-    }
-#endif
-  } catch (const std::exception& e) {
-    CLI_LOG_ERROR("Something went wrong: " << e.what());
-    restore_binary();
-    return false;
-  }
-
-  return true;
-}
-
 void CortexUpdCmd::Exec(const std::string& v, bool force) {
   // Check for update, if current version is the latest, notify to user
   if (auto latest_version = commands::CheckNewUpdate(std::nullopt);
@@ -314,6 +262,9 @@ void CortexUpdCmd::Exec(const std::string& v, bool force) {
 }
 
 bool CortexUpdCmd::GetStable(const std::string& v) {
+#if defined(__linux__)
+  return GetLinuxInstallScript(v, "stable");
+#else
   std::optional<std::string> downloaded_exe_path;
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
@@ -366,10 +317,14 @@ bool CortexUpdCmd::GetStable(const std::string& v) {
   });
 
   assert(!!downloaded_exe_path);
-  return InstallNewVersion(dst, downloaded_exe_path.value());
+  return InstallNewVersion(dst, downloaded_exe_path.value(), "", "");
+#endif
 }
 
 bool CortexUpdCmd::GetBeta(const std::string& v) {
+#if defined(__linux__)
+  return GetLinuxInstallScript(v, "beta");
+#else
   std::optional<std::string> downloaded_exe_path;
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
@@ -434,7 +389,8 @@ bool CortexUpdCmd::GetBeta(const std::string& v) {
   });
 
   assert(!!downloaded_exe_path);
-  return InstallNewVersion(dst, downloaded_exe_path.value());
+  return InstallNewVersion(dst, downloaded_exe_path.value(), "", "");
+#endif
 }
 
 std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
@@ -500,6 +456,9 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
 }
 
 bool CortexUpdCmd::GetNightly(const std::string& v) {
+#if defined(__linux__)
+  return GetLinuxInstallScript(v, "nightly");
+#else
   auto system_info = GetSystemInfoWithUniversal();
   CTL_INF("OS: " << system_info->os << ", Arch: " << system_info->arch);
 
@@ -566,6 +525,82 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
     }
   });
 
-  return InstallNewVersion(dst, localPath.string());
+  return InstallNewVersion(dst, localPath.string(), "", "");
+#endif
+}
+
+bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
+                                         const std::string& channel) {
+  std::vector<std::string> path_list;
+  if (channel == "nightly") {
+    path_list = {"janhq",  "cortex.cpp", "feat",  "linux-bash-install-script",
+                 "engine", "templates",  "linux", "install.sh"};
+  } else {
+    path_list = {"janhq",     "cortex.cpp", "main",      "engine",
+                 "templates", "linux",      "install.sh"};
+  }
+  auto url_obj = url_parser::Url{
+      .protocol = "https",
+      .host = "raw.githubusercontent.com",
+      .pathParams = path_list,
+  };
+
+  CTL_INF("Linux installer script path: " << url_parser::FromUrl(url_obj));
+
+  std::filesystem::path localPath =
+      std::filesystem::temp_directory_path() / "cortex" / path_list.back();
+  try {
+    if (!std::filesystem::exists(localPath.parent_path())) {
+      std::filesystem::create_directories(localPath.parent_path());
+    }
+  } catch (const std::filesystem::filesystem_error& e) {
+    CLI_LOG_ERROR("Failed to create directories: " << e.what());
+    return false;
+  }
+  auto download_task =
+      DownloadTask{.id = "cortex",
+                   .type = DownloadType::Cortex,
+                   .items = {DownloadItem{
+                       .id = "cortex",
+                       .downloadUrl = url_parser::FromUrl(url_obj),
+                       .localPath = localPath,
+                   }}};
+
+  auto result = download_service_->AddDownloadTask(
+      download_task, [](const DownloadTask& finishedTask) {
+        // try to unzip the downloaded file
+        CTL_INF("Downloaded cortex path: "
+                << finishedTask.items[0].localPath.string());
+
+        CTL_INF("Finished!");
+      });
+  if (result.has_error()) {
+    CLI_LOG_ERROR("Failed to download: " << result.error());
+    return false;
+  }
+
+  auto executable_path = file_manager_utils::GetExecutableFolderContainerPath();
+  auto dst = executable_path / GetCortexBinary();
+  cortex::utils::ScopeExit se([]() {
+    auto cortex_tmp = std::filesystem::temp_directory_path() / "cortex";
+    try {
+      auto n = std::filesystem::remove_all(cortex_tmp);
+      CTL_INF("Deleted " << n << " files or directories");
+    } catch (const std::exception& e) {
+      CTL_WRN(e.what());
+    }
+  });
+  try {
+    std::filesystem::permissions(localPath,
+                                 std::filesystem::perms::owner_exec |
+                                     std::filesystem::perms::group_exec |
+                                     std::filesystem::perms::others_exec,
+                                 std::filesystem::perm_options::add);
+  } catch (const std::filesystem::filesystem_error& e) {
+    CTL_WRN("Error: " << e.what());
+    return false;
+  }
+
+  return InstallNewVersion(dst, localPath.string(), channel, v);
 }
 }  // namespace commands
