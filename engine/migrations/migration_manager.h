@@ -23,6 +23,7 @@ class MigrationManager {
   cpp::result<bool, std::string> DoUpDB(int version);
   cpp::result<bool, std::string> DoDownDB(int version);
 
+  cpp::result<bool, std::string> UpdateSchemaVersion(int version);
  private:
   MigrationHelper mgr_helper_;
   SQLite::Database& db_;

@@ -59,7 +59,7 @@ inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
 
     db.exec(
         "CREATE TABLE IF NOT EXISTS hardware ("
-        "uuid TEXT NOT NULL, "
+        "uuid TEXT PRIMARY KEY, "
         "type TEXT NOT NULL, "
         "hardware_id INTEGER NOT NULL, "
         "software_id INTEGER NOT NULL, "
