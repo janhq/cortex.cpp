@@ -189,7 +189,7 @@ jobs:
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
   build-docker-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24-04-docker
     steps:
       - name: Getting the repo
         uses: actions/checkout@v3
@@ -225,3 +225,4 @@ jobs:
         run: |
           docker stop cortex
           docker rm cortex
+          echo "y\n" | docker system prune -af
