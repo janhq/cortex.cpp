@@ -326,14 +326,8 @@ void CommandLineParser::SetupModelCommands() {
 void CommandLineParser::SetupConfigsCommands() {
   auto config_cmd =
       app_.add_subcommand("config", "Subcommands for managing configurations");
-  config_cmd->usage(
-      "Usage:\n" + commands::GetCortexBinary() +
-      " config status for listing all API server configuration.\n" +
-      commands::GetCortexBinary() +
-      " config --cors [on/off] to toggle CORS.\n" +
-      commands::GetCortexBinary() +
-      " config --allowed_origins [comma separated origin] to set a list of "
-      "allowed origin");
+  config_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                    " config [option] [value]");
   config_cmd->group(kConfigGroup);
   auto config_status_cmd =
       config_cmd->add_subcommand("status", "Print all configurations");
@@ -344,18 +338,18 @@ void CommandLineParser::SetupConfigsCommands() {
                                   std::stoi(cml_data_.config.apiServerPort));
   });
 
-  // TODO: this can be improved
-  std::vector<std::string> avai_opts{"cors", "allowed_origins"};
-  std::unordered_map<std::string, std::string> description{
-      {"cors", "[on/off] Toggling CORS."},
-      {"allowed_origins",
-       "Allowed origins for CORS. Comma separated. E.g. "
-       "http://localhost,https://cortex.so"}};
-  for (const auto& opt : avai_opts) {
-    std::string option = "--" + opt;
-    config_cmd->add_option(option, config_update_opts_[opt], description[opt])
-        ->expected(0, 1)
-        ->default_str("*");
+  for (const auto& [key, opt] : CONFIGURATIONS) {
+    std::string option = "--" + opt.name;
+    auto option_cmd =
+        config_cmd->add_option(option, config_update_opts_[opt.name], opt.desc)
+            ->group(opt.group)
+            ->default_str(opt.default_value);
+
+    if (opt.allow_empty) {
+      option_cmd->expected(0, 1);
+    } else {
+      option_cmd->expected(1);
+    }
   }
 
   config_cmd->callback([this, config_cmd] {

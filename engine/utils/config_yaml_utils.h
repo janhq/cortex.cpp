@@ -1,4 +1,5 @@
 #pragma once
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -34,6 +35,16 @@ struct CortexConfig {
 
   bool enableCors;
   std::vector<std::string> allowedOrigins;
+
+  std::string proxyUrl;
+  bool verifyProxySsl;
+  bool verifyProxyHostSsl;
+  std::string proxyUsername;
+  std::string proxyPassword;
+  std::string noProxy;
+
+  bool verifyPeerSsl;
+  bool verifyHostSsl;
 };
 
 const std::string kDefaultHost{"127.0.0.1"};
@@ -46,6 +57,7 @@ constexpr const auto kDefaultLatestLlamacppRelease = "";
 constexpr const auto kDefaultCorsEnabled = true;
 const std::vector<std::string> kDefaultEnabledOrigins{
     "http://localhost:39281", "http://127.0.0.1:39281", "http://0.0.0.0:39281"};
+constexpr const auto kDefaultNoProxy = "localhost,127.0.0.1";
 
 inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
                                                      const std::string& path) {
@@ -76,6 +88,14 @@ inline cpp::result<void, std::string> DumpYamlConfig(const CortexConfig& config,
     node["llamacppVersion"] = config.llamacppVersion;
     node["enableCors"] = config.enableCors;
     node["allowedOrigins"] = config.allowedOrigins;
+    node["proxyUrl"] = config.proxyUrl;
+    node["verifyProxySsl"] = config.verifyProxySsl;
+    node["verifyProxyHostSsl"] = config.verifyProxyHostSsl;
+    node["proxyUsername"] = config.proxyUsername;
+    node["proxyPassword"] = config.proxyPassword;
+    node["noProxy"] = config.noProxy;
+    node["verifyPeerSsl"] = config.verifyPeerSsl;
+    node["verifyHostSsl"] = config.verifyHostSsl;
 
     out_file << node;
     out_file.close();
@@ -105,7 +125,11 @@ inline CortexConfig FromYaml(const std::string& path,
          !node["huggingFaceToken"] || !node["gitHubUserAgent"] ||
          !node["gitHubToken"] || !node["llamacppVariant"] ||
          !node["llamacppVersion"] || !node["enableCors"] ||
-         !node["allowedOrigins"]);
+         !node["allowedOrigins"] || !node["proxyUrl"] ||
+         !node["proxyUsername"] || !node["proxyPassword"] ||
+         !node["verifyPeerSsl"] || !node["verifyHostSsl"] ||
+         !node["verifyProxySsl"] || !node["verifyProxyHostSsl"] ||
+         !node["noProxy"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -147,23 +171,48 @@ inline CortexConfig FromYaml(const std::string& path,
                 : default_cfg.latestLlamacppRelease,
         .huggingFaceToken = node["huggingFaceToken"]
                                 ? node["huggingFaceToken"].as<std::string>()
-                                : "",
+                                : default_cfg.huggingFaceToken,
         .gitHubUserAgent = node["gitHubUserAgent"]
                                ? node["gitHubUserAgent"].as<std::string>()
-                               : "",
-        .gitHubToken =
-            node["gitHubToken"] ? node["gitHubToken"].as<std::string>() : "",
+                               : default_cfg.gitHubUserAgent,
+        .gitHubToken = node["gitHubToken"]
+                           ? node["gitHubToken"].as<std::string>()
+                           : default_cfg.gitHubToken,
         .llamacppVariant = node["llamacppVariant"]
                                ? node["llamacppVariant"].as<std::string>()
-                               : "",
+                               : default_cfg.llamacppVariant,
         .llamacppVersion = node["llamacppVersion"]
                                ? node["llamacppVersion"].as<std::string>()
-                               : "",
-        .enableCors = node["enableCors"] ? node["enableCors"].as<bool>() : true,
+                               : default_cfg.llamacppVersion,
+        .enableCors = node["enableCors"] ? node["enableCors"].as<bool>()
+                                         : default_cfg.enableCors,
         .allowedOrigins =
             node["allowedOrigins"]
                 ? node["allowedOrigins"].as<std::vector<std::string>>()
-                : std::vector<std::string>{}};
+                : default_cfg.allowedOrigins,
+        .proxyUrl = node["proxyUrl"] ? node["proxyUrl"].as<std::string>()
+                                     : default_cfg.proxyUrl,
+        .verifyProxySsl = node["verifyProxySsl"]
+                              ? node["verifyProxySsl"].as<bool>()
+                              : default_cfg.verifyProxySsl,
+        .verifyProxyHostSsl = node["verifyProxyHostSsl"]
+                                  ? node["verifyProxyHostSsl"].as<bool>()
+                                  : default_cfg.verifyProxyHostSsl,
+        .proxyUsername = node["proxyUsername"]
+                             ? node["proxyUsername"].as<std::string>()
+                             : default_cfg.proxyUsername,
+        .proxyPassword = node["proxyPassword"]
+                             ? node["proxyPassword"].as<std::string>()
+                             : default_cfg.proxyPassword,
+        .noProxy = node["noProxy"] ? node["noProxy"].as<std::string>()
+                                   : default_cfg.noProxy,
+        .verifyPeerSsl = node["verifyPeerSsl"]
+                             ? node["verifyPeerSsl"].as<bool>()
+                             : default_cfg.verifyPeerSsl,
+        .verifyHostSsl = node["verifyHostSsl"]
+                             ? node["verifyHostSsl"].as<bool>()
+                             : default_cfg.verifyHostSsl,
+    };
     if (should_update_config) {
       auto result = DumpYamlConfig(config, path);
       if (result.has_error()) {
