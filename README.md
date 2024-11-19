@@ -56,14 +56,18 @@ Cortex also has a [Network Installer](#network-installer) which downloads the ne
 
 <h4> 
   <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:15px; width: 15px" />
-  Linux: 
- <a href='https://app.cortexcpp.com/download/latest/linux-amd64-local'><b>cortex.deb</b></a> (Coming soon: Linux installation script)
+  Linux debian based distros: 
+ <a href='https://app.cortexcpp.com/download/latest/linux-amd64-local'><b>cortex-linux-local-installer.deb</b></a>
 </h4>
 
 - For Linux: Download the installer and run the following command in terminal:
 
 ```bash
-    sudo apt install ./cortex-local-installer.deb
+    # Linux debian based distros
+    curl -s https://raw.githubusercontent.com/janhq/cortex/main/engine/templates/linux/install.sh | sudo bash -s -- --deb_local
+
+    # Other Linux distros
+    curl -s https://raw.githubusercontent.com/janhq/cortex/main/engine/templates/linux/install.sh | sudo bash -s
 ```
 
 - The binary will be installed in the `/usr/bin/` directory.
@@ -149,6 +153,28 @@ Select a model (1-9):
 ```
 
 ## Advanced Installation
+
+### Network Installer (Stable)
+
+Cortex.cpp is available with a Network Installer, which is a smaller installer but requires internet connection during installation to download the necessary dependencies.
+
+<h4> 
+  <img src='https://github.com/janhq/docs/blob/main/static/img/windows.png' style="height:14px; width: 14px" />
+  Windows: 
+  <a href='https://app.cortexcpp.com/download/latest/windows-amd64-local'><b>cortex-windows-network-installer.exe</b></a>
+</h4>
+
+<h4> 
+  <img src='https://github.com/janhq/docs/blob/main/static/img/mac.png' style="height:15px; width: 15px" />
+  MacOS (Universal): 
+ <a href='https://app.cortexcpp.com/download/latest/mac-universal-network'><b>cortex-mac-network-installer.pkg</b></a>
+</h4>
+
+<h4> 
+  <img src='https://github.com/janhq/docs/blob/main/static/img/linux.png' style="height:14px; width: 15px" />
+  Linux debian based distros: 
+ <a href='https://app.cortexcpp.com/download/latest/linux-amd64-network'><b>cortex-linux-network-installer.deb</b></a>
+</h4>
   
 ### Beta & Nightly Versions (Local Installer)
 
@@ -163,7 +189,7 @@ Cortex releases Beta and Nightly versions for advanced users to try new features
     <td style="text-align:center"><b>Version</b></td>
     <td style="text-align:center"><b>Windows</b></td>
     <td style="text-align:center"><b>MacOS</b></td>
-    <td style="text-align:center"><b>Linux</b></td>
+    <td style="text-align:center"><b>Linux debian based distros</b></td>
   </tr>
   <tr style="text-align:center">
     <td style="text-align:center"><b>Beta (Preview)</b></td>
@@ -218,7 +244,7 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
     <td style="text-align:center"><b>Version Type</b></td>
     <td style="text-align:center"><b>Windows</b></td>
     <td style="text-align:center"><b>MacOS</b></td>
-    <td style="text-align:center"><b>Linux</b></td>
+    <td style="text-align:center"><b>Linux debian based distros</b></td>
   </tr>
   <tr style="text-align:center">
     <td style="text-align:center"><b>Stable (Recommended)</b></td>
