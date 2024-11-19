@@ -97,9 +97,14 @@ const sidebars: SidebarsConfig = {
         },
         {
           type: "doc",
+          id: "configurations/proxy",
+          label: "Proxy",
+        },
+        {
+          type: "doc",
           id: "configurations/token",
           label: "Token",
-        },
+        }
       ],
     },
     {
