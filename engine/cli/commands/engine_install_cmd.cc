@@ -183,8 +183,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     return false;
   }
 
-  CLI_LOG("Validating download items, please wait..")
-
   if (!dp_res.get())
     return false;
 

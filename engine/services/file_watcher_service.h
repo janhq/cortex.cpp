@@ -22,10 +22,12 @@
 class FileWatcherService {
  private:
 #if defined(_WIN32)
-  HANDLE dirHandle;
+  HANDLE dir_handle;
 #elif defined(__APPLE__)
   FSEventStreamRef event_stream;
 #else  // Linux
+  int fd;
+  int wd;
   std::unordered_map<int, std::string> watchDescriptors;
 #endif
 
@@ -52,11 +54,11 @@ class FileWatcherService {
 
   void stop() {
 #ifdef _WIN32
-    CloseHandle(dirHandle);
+    CloseHandle(dir_handle);
 #endif
 
 #ifdef Linux
-    cleanupWatches();
+    CleanupWatches();
 #endif
     running = false;
     if (watchThread.joinable()) {
@@ -121,49 +123,66 @@ class FileWatcherService {
 
 #elif defined(_WIN32)
   void watcherThread() {
-    dirHandle = CreateFileA(
-        path.c_str(), FILE_LIST_DIRECTORY,
-        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-        OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
+    dir_handle =
+        CreateFileA(watchPath.c_str(), FILE_LIST_DIRECTORY,
+                    FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
+                    FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
-    if (dirHandle == INVALID_HANDLE_VALUE) {
+    if (dir_handle == INVALID_HANDLE_VALUE) {
       throw std::runtime_error("Failed to open directory");
     }
 
     char buffer[4096];
-    DWORD bytesReturned;
     OVERLAPPED overlapped = {0};
+    overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+    DWORD bytesReturned;
 
     while (running) {
-      if (ReadDirectoryChangesW(
-              dirHandle, buffer, sizeof(buffer),
-              TRUE,  // Watch subtree
+      if (!ReadDirectoryChangesW(
+              dir_handle, buffer, sizeof(buffer), TRUE,
               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME,
               &bytesReturned, &overlapped, NULL)) {
-        FILE_NOTIFY_INFORMATION* event = (FILE_NOTIFY_INFORMATION*)buffer;
-        do {
-          if (event->Action == FILE_ACTION_REMOVED) {
-            wchar_t fileName[MAX_PATH];
-            wcsncpy_s(fileName, event->FileName,
-                      event->FileNameLength / sizeof(wchar_t));
-            fileName[event->FileNameLength / sizeof(wchar_t)] = '\0';
-            std::wcout << L"Deleted: " << fileName << std::endl;
+        break;
+      }
+
+      if (WaitForSingleObject(overlapped.hEvent, INFINITE) != WAIT_OBJECT_0) {
+        break;
+      }
+
+      if (!GetOverlappedResult(dir_handle, &overlapped, &bytesReturned,
+                               FALSE)) {
+        break;
+      }
+
+      FILE_NOTIFY_INFORMATION* event = (FILE_NOTIFY_INFORMATION*)buffer;
+      do {
+        if (event->Action == FILE_ACTION_REMOVED) {
+          std::wstring fileName(event->FileName,
+                                event->FileNameLength / sizeof(wchar_t));
+
+          std::string file_name_str(fileName.begin(), fileName.end());
+          if (file_name_str.find(".yaml") != std::string::npos ||
+              file_name_str.find(".yml") != std::string::npos) {
             model_service_->ForceIndexingModelList();
           }
+        }
 
-          if (event->NextEntryOffset == 0) {
-            break;
-          }
-          event = (FILE_NOTIFY_INFORMATION*)((uint8_t*)event +
-                                             event->NextEntryOffset);
-        } while (true);
-      }
+        if (event->NextEntryOffset == 0)
+          break;
+        event = (FILE_NOTIFY_INFORMATION*)((uint8_t*)event +
+                                           event->NextEntryOffset);
+      } while (true);
+
+      ResetEvent(overlapped.hEvent);
     }
+
+    CloseHandle(overlapped.hEvent);
+    CloseHandle(dir_handle);
   }
 
 #else  // Linux
 
-  void addWatch(const std::string& dirPath) {
+  void AddWatch(const std::string& dirPath) {
     wd = inotify_add_watch(fd, dirPath.c_str(),
                            IN_DELETE | IN_CREATE | IN_DELETE_SELF);
     if (wd < 0) {
@@ -175,12 +194,12 @@ class FileWatcherService {
     for (const auto& entry :
          std::filesystem::recursive_directory_iterator(dirPath)) {
       if (std::filesystem::is_directory(entry)) {
-        addWatch(entry.path().string());
+        AddWatch(entry.path().string());
       }
     }
   }
 
-  void cleanupWatches() {
+  void CleanupWatches() {
     for (const auto& [wd, path] : watchDescriptors) {
       inotify_rm_watch(fd, wd);
     }
@@ -199,7 +218,7 @@ class FileWatcherService {
     }
 
     // Add initial watch on the main directory
-    addWatch(path);
+    AddWatch(path);
 
     char buffer[4096];
     while (running) {

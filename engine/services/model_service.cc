@@ -116,7 +116,6 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
 void ModelService::ForceIndexingModelList() {
   CTL_INF("Force indexing model list");
 
-  // bad code, refactor later on
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
@@ -140,16 +139,10 @@ void ModelService::ForceIndexingModelList() {
       Json::Value obj = model_config.ToJson();
       yaml_handler.Reset();
     } catch (const std::exception& e) {
-      LOG_ERROR << "Failed to load yaml file for model: "
-                << model_entry.path_to_model_yaml << ", error: " << e.what();
       // remove in db
       auto remove_result =
           modellist_handler.DeleteModelEntry(model_entry.model);
-      if (remove_result.has_error()) {
-        LOG_ERROR << "Failed to remove model in db: " << remove_result.error();
-      } else {
-        LOG_INFO << "Removed model in db: " << model_entry.model;
-      }
+      // silently ignore result
     }
   }
 }

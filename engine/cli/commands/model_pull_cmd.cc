@@ -96,8 +96,6 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
 
   CTL_INF("model: " << model << ", model_id: " << model_id);
 
-  // Send request download model to server
-  CLI_LOG("Validating download items, please wait..")
   Json::Value json_data;
   json_data["model"] = model;
   auto data_str = json_data.toStyledString();
