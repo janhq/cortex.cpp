@@ -59,4 +59,21 @@ inline void SetLogLevel(const std::string& log_level, bool ignore_cout) {
               << std::endl;
   }
 }
+
+inline std::string LogLevelStr(const trantor::Logger::LogLevel& log_level) {
+  switch (log_level) {
+    case trantor::Logger::kTrace:
+      return "TRACE";
+    case trantor::Logger::kDebug:
+      return "DEBUG";
+    case trantor::Logger::kInfo:
+      return "INFO";
+    case trantor::Logger::kWarn:
+      return "WARN";
+    case trantor::Logger::kError:
+      return "ERROR";
+    default:
+      return "UNKNOWN";
+  }
+}
 }  // namespace logging_utils_helper

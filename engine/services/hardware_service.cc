@@ -117,6 +117,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
   std::string params = "--ignore_cout";
   params += " --config_file_path " + get_config_file_path();
   params += " --data_folder_path " + get_data_folder_path();
+  params += " --loglevel " +
+            logging_utils_helper::LogLevelStr(trantor::Logger::logLevel());
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
   // Create child process
   if (!CreateProcess(
@@ -166,9 +168,12 @@ bool HardwareService::Restart(const std::string& host, int port) {
     CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
 #endif
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
-    execl(p.c_str(), exe.c_str(), "--ignore_cout", "--config_file_path",
-          get_config_file_path().c_str(), "--data_folder_path",
-          get_data_folder_path().c_str(), "--loglevel", "INFO", (char*)0);
+    execl(
+        p.c_str(), exe.c_str(), "--ignore_cout", "--config_file_path",
+        get_config_file_path().c_str(), "--data_folder_path",
+        get_data_folder_path().c_str(), "--loglevel",
+        logging_utils_helper::LogLevelStr(trantor::Logger::logLevel()).c_str(),
+        (char*)0);
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {
