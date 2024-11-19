@@ -153,7 +153,7 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-
+  model_service_->ForceIndexingModelList();
   // Iterate through directory
 
   cortex::db::Models modellist_handler;

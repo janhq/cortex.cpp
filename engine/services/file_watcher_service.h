@@ -85,8 +85,6 @@ class FileWatcherService {
 
     for (size_t i = 0; i < numEvents; i++) {
       if (eventFlags[i] & kFSEventStreamEventFlagItemRemoved) {
-        std::cout << "File deleted: " << paths[i]
-                  << std::endl;  // todo: remove after debug finished
         watcher->model_service_->ForceIndexingModelList();
       }
     }
@@ -161,10 +159,7 @@ class FileWatcherService {
                                 event->FileNameLength / sizeof(wchar_t));
 
           std::string file_name_str(fileName.begin(), fileName.end());
-          if (file_name_str.find(".yaml") != std::string::npos ||
-              file_name_str.find(".yml") != std::string::npos) {
-            model_service_->ForceIndexingModelList();
-          }
+          model_service_->ForceIndexingModelList();
         }
 
         if (event->NextEntryOffset == 0)
@@ -232,7 +227,7 @@ class FileWatcherService {
         struct inotify_event* event = (struct inotify_event*)&buffer[i];
         if (event->mask & IN_DELETE) {
           auto deletedPath = watchDescriptors[event->wd] + "/" + event->name;
-          std::cout << "Deleted: " << deletedPath << std::endl;
+          model_service_->ForceIndexingModelList();
         }
         i += sizeof(struct inotify_event) + event->len;
       }
