@@ -1,0 +1,120 @@
+---
+title: Token
+description: Setting up token
+slug: "token"
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+# Token Configuration Guide
+
+This document describes how to configure HuggingFace token settings for Cortex.
+
+## Command Line Interface (CLI)
+
+### Basic Usage
+
+```bash
+cortex config [OPTIONS] [COMMAND]
+```
+
+### Commands
+
+- `status`: Display all current configurations
+
+```bash
+cortex config status
+```
+
+Example Output:
+
+```bash
++-----------------------+------------------------+
+| Config name           | Value                  |
++-----------------------+------------------------+
+| huggingface_token     |                        |
++-----------------------+------------------------+
+```
+
+### Options
+
+| Option                              | Description                 | Example                                           |
+| ----------------------------------- | --------------------------- | ------------------------------------------------- |
+| `-h, --help`                        | Print help message and exit |
+| `--huggingface_token <token>`       | Set HuggingFace token       | `cortex config --huggingface_token token`         |
+
+## Token API Configuration
+
+### Endpoints
+
+#### Get Current Configuration
+
+```http
+GET /v1/configs
+```
+
+Retrieves the current configuration settings.
+
+##### Response
+
+```json
+{
+  "allowed_origins": [
+    "http://localhost:39281",
+    "http://127.0.0.1:39281",
+    "http://0.0.0.0:39281"
+  ],
+  "cors": true,
+  "huggingface_token": ""
+}
+```
+
+#### Update Configuration
+
+```http
+PATCH /v1/configs
+```
+
+Updates HuggingFace token configuration settings.
+
+##### Request Headers
+
+```
+Content-Type: application/json
+```
+
+##### Request Body
+
+```json
+{
+  "huggingface_token": "token"
+}
+```
+
+##### Parameters
+
+| Field                   | Type    | Description                               |
+| ----------------------- | ------- | ------------------------------------------|
+| `huggingface_token`     | string  | HuggingFace token to pull models          |
+
+##### Response
+
+```json
+{
+  "config": {
+    "allowed_origins": [
+      "http://localhost:39281",
+      "http://127.0.0.1:39281",
+      "http://0.0.0.0:39281"
+    ],
+    "cors": true,
+    "huggingface_token": "token"
+  },
+  "message": "Configuration updated successfully"
+}
+```
