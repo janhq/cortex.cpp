@@ -602,8 +602,9 @@ void CommandLineParser::SetupSystemCommands() {
                                             << " to " << cml_data_.port);
       auto config_path = file_manager_utils::GetConfigurationPath();
       cml_data_.config.apiServerPort = std::to_string(cml_data_.port);
-      auto result = config_yaml_utils::DumpYamlConfig(cml_data_.config,
-                                                      config_path.string());
+      auto result =
+          config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+              cml_data_.config, config_path.string());
       if (result.has_error()) {
         CLI_LOG("Error update " << config_path.string() << result.error());
       }

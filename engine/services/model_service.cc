@@ -381,6 +381,10 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   return unique_model_id;
 }
 
+bool ModelService::HasModel(const std::string& id) const {
+  return cortex::db::Models().HasModel(id);
+}
+
 cpp::result<DownloadTask, std::string>
 ModelService::DownloadModelFromCortexsoAsync(
     const std::string& name, const std::string& branch,
@@ -745,7 +749,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       return cpp::fail(
           "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
           " MiB, available: " + std::to_string(free_vram_MiB) +
-          " MiB - Should adjust ngl to " + std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
+          " MiB - Should adjust ngl to " +
+          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
     }
 
     if (ram_needed_MiB > free_ram_MiB) {
