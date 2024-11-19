@@ -20,8 +20,7 @@ int GetSchemaVersion(SQLite::Database& db) {
           query.getColumn(0).getInt();  // Get the version from the first column
     }
   } catch (const std::exception& e) {
-    CTL_WRN("SQLite error: " << e.what());
-    // Handle exceptions, possibly setting a default version or taking corrective action
+    // CTL_WRN("SQLite error: " << e.what());
   }
 
   return version;
@@ -53,7 +52,7 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
     if (std::filesystem::exists(cortex_tmp)) {
       try {
         auto n = std::filesystem::remove_all(cortex_tmp);
-        CTL_INF("Deleted " << n << " files or directories");
+        // CTL_INF("Deleted " << n << " files or directories");
       } catch (const std::exception& e) {
         CTL_WRN(e.what());
       }
@@ -159,7 +158,7 @@ cpp::result<bool, std::string> MigrationManager::UpDB(int current, int target) {
     }
   }
   // Save database
-  return UpdateSchemaVersion(target);
+  return UpdateSchemaVersion(current, target);
 }
 cpp::result<bool, std::string> MigrationManager::DownDB(int current,
                                                         int target) {
@@ -170,7 +169,7 @@ cpp::result<bool, std::string> MigrationManager::DownDB(int current,
     }
   }
   // Save database
-  return UpdateSchemaVersion(target);
+  return UpdateSchemaVersion(current, target);
 }
 
 cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
@@ -196,13 +195,26 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
 }
 
 cpp::result<bool, std::string> MigrationManager::UpdateSchemaVersion(
-    int version) {
+    int old_version, int new_version) {
+  if (old_version == new_version)
+    return true;
   try {
+    db_.exec("BEGIN TRANSACTION;");
+
     SQLite::Statement insert(db_,
                              "INSERT INTO schema_version (version) VALUES (?)");
-    insert.bind(1, version);
+    insert.bind(1, new_version);
     insert.exec();
-    CTL_INF("Inserted: " << version);
+
+    if (old_version != -1) {
+      SQLite::Statement del(db_,
+                            "DELETE FROM schema_version WHERE version = ?");
+      del.bind(1, old_version);
+      del.exec();
+    }
+
+    db_.exec("COMMIT;");
+    // CTL_INF("Inserted: " << version);
     return true;
   } catch (const std::exception& e) {
     CTL_WRN(e.what());

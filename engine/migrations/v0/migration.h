@@ -38,7 +38,7 @@ inline cpp::result<bool, std::string> MigrateFolderStructureUp() {
 }
 
 inline cpp::result<bool, std::string> MigrateFolderStructureDown() {
-  CTL_INF("Folder structure already up to date!");
+  // CTL_INF("Folder structure already up to date!");
   return true;
 }
 
@@ -46,8 +46,8 @@ inline cpp::result<bool, std::string> MigrateFolderStructureDown() {
 inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
   try {
     db.exec(
-        "CREATE TABLE IF NOT EXISTS schema_version ( version INTEGER NOT "
-        "NULL);");
+        "CREATE TABLE IF NOT EXISTS schema_version ( version INTEGER PRIMARY "
+        "KEY);");
 
     db.exec(
         "CREATE TABLE IF NOT EXISTS models ("
@@ -65,7 +65,7 @@ inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
         "software_id INTEGER NOT NULL, "
         "activated INTEGER NOT NULL CHECK (activated IN (0, 1)));");
 
-    CTL_INF("Database migration up completed successfully.");
+    // CTL_INF("Database migration up completed successfully.");
     return true;
   } catch (const std::exception& e) {
     CTL_WRN("Migration up failed: " << e.what());
@@ -77,7 +77,7 @@ inline cpp::result<bool, std::string> MigrateDBDown(SQLite::Database& db) {
   try {
     db.exec("DROP TABLE IF EXISTS hardware;");
     db.exec("DROP TABLE IF EXISTS models;");
-    CTL_INF("Migration down completed successfully.");
+    // CTL_INF("Migration down completed successfully.");
     return true;
   } catch (const std::exception& e) {
     CTL_WRN("Migration down failed: " << e.what());

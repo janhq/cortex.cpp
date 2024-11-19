@@ -26,11 +26,11 @@ cpp::result<bool, std::string> MigrationHelper::BackupDatabase(
 
     sqlite3_backup_finish(backup);
     sqlite3_close(backup_db);
-    CTL_INF("Backup completed successfully.");
+    // CTL_INF("Backup completed successfully.");
     return true;
   } catch (const std::exception& e) {
     CTL_WRN("Error during backup: " << e.what());
-    cpp::fail(e.what());
+    return cpp::fail(e.what());
   }
 }
 
@@ -60,7 +60,7 @@ cpp::result<bool, std::string> MigrationHelper::RestoreDatabase(
 
     sqlite3_backup_finish(backup);
     sqlite3_close(backup_db);
-    CTL_INF("Restore completed successfully.");
+    // CTL_INF("Restore completed successfully.");
     return true;
   } catch (const std::exception& e) {
     CTL_WRN("Error during restore: " << e.what());
