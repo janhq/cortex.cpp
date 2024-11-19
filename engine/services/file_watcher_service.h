@@ -218,7 +218,7 @@ class FileWatcherService {
     }
 
     // Add initial watch on the main directory
-    AddWatch(path);
+    AddWatch(watchPath);
 
     char buffer[4096];
     while (running) {
