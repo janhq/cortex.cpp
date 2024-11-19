@@ -104,7 +104,7 @@ const sidebars: SidebarsConfig = {
           type: "doc",
           id: "configurations/token",
           label: "Token",
-        }
+        },
       ],
     },
     {
