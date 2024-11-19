@@ -92,6 +92,8 @@ class ModelService {
       const std::string& url, std::optional<std::string> temp_model_id,
       std::optional<std::string> temp_name);
 
+  bool HasModel(const std::string& id) const;
+
  private:
   /**
    * Handle downloading model which have following pattern: author/model_name
