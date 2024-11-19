@@ -151,8 +151,9 @@ int main(int argc, char* argv[]) {
               .count();
       config.latestLlamacppRelease = res.value();
 
-      auto upd_config_res = config_yaml_utils::DumpYamlConfig(
-          config, file_manager_utils::GetConfigurationPath().string());
+      auto upd_config_res =
+          config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+              config, file_manager_utils::GetConfigurationPath().string());
       if (upd_config_res.has_error()) {
         CTL_ERR("Failed to update config file: " << upd_config_res.error());
       } else {
