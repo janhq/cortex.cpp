@@ -34,7 +34,7 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
     const {
   try {
     db_.exec("BEGIN TRANSACTION;");
-    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
     return LoadModelListNoLock();
   } catch (const std::exception& e) {
     CTL_WRN(e.what());
@@ -174,7 +174,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
                                                      bool use_short_alias) {
   try {
     db_.exec("BEGIN TRANSACTION;");
-    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
     auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());
@@ -236,7 +236,7 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
   }
   try {
     db_.exec("BEGIN TRANSACTION;");
-    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
     auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());

@@ -21,7 +21,7 @@ void EngineUninstallCmd::Exec(const std::string& host, int port,
                              .host = host + ":" + std::to_string(port),
                              .pathParams = {"v1", "engines", engine}};
 
-  auto result = curl_utils::SimpleDelete(url.ToFullPath());
+  auto result = curl_utils::SimpleDeleteJson(url.ToFullPath());
   if (result.has_error()) {
     CTL_ERR(result.error());
     return;

@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 #include "CLI/CLI.hpp"
+#include "commands/hardware_list_cmd.h"
 #include "services/engine_service.h"
 #include "services/model_service.h"
 #include "utils/config_yaml_utils.h"
@@ -21,6 +22,8 @@ class CommandLineParser {
 
   void SetupEngineCommands();
 
+  void SetupHardwareCommands();
+
   void SetupSystemCommands();
 
   void SetupConfigsCommands();
@@ -35,6 +38,10 @@ class CommandLineParser {
   void EngineGet(CLI::App* parent);
 
   void EngineUse(CLI::App* parent, const std::string& engine_name);
+
+  void EngineLoad(CLI::App* parent, const std::string& engine_name);
+
+  void EngineUnload(CLI::App* parent, const std::string& engine_name);
 
   void ModelUpdate(CLI::App* parent);
 
@@ -62,7 +69,6 @@ class CommandLineParser {
 
     bool show_menu = false;
 
-
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
@@ -70,4 +76,6 @@ class CommandLineParser {
   CmlData cml_data_;
   std::unordered_map<std::string, std::string> config_update_opts_;
   bool executed_ = false;
+  commands::HarwareOptions hw_opts_;
+  std::unordered_map<std::string, std::string> hw_activate_opts_;
 };

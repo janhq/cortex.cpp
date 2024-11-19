@@ -48,10 +48,11 @@
 #include <vector>
 namespace config {
 
-#if (defined(_MSC_VER) && _MSC_VER >= 1900 && defined(__cpp_char8_t)) || __cplusplus >= 202002L
-    #define LU8(x) reinterpret_cast<const char*>(u8##x)
+#if (defined(_MSC_VER) && _MSC_VER >= 1900 && defined(__cpp_char8_t)) || \
+    __cplusplus >= 202002L
+#define LU8(x) reinterpret_cast<const char*>(u8##x)
 #else
-    #define LU8(x) u8##x
+#define LU8(x) u8##x
 #endif
 
 typedef struct llama_chat_message {
@@ -167,13 +168,10 @@ static int32_t llama_chat_apply_template_internal(
     std::string system_prompt = "";
     for (auto message : chat) {
       std::string role(message->role);
-      if (role == "system") {
-        // there is no system message for gemma, but we will merge it with user prompt, so nothing is broken
-        system_prompt = trim(message->content);
-        continue;
-      }
       // in gemma, "assistant" is "model"
       role = role == "assistant" ? "model" : message->role;
+      // in gemma2, "system" is "user"
+      role = role == "system" ? "user" : role;
       ss << "<start_of_turn>" << role << "\n";
       if (!system_prompt.empty() && role != "model") {
         ss << system_prompt << "\n\n";

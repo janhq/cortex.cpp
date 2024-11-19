@@ -36,8 +36,13 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     DownloadProgress dp;
     dp.Connect(host_, port_);
     // engine can be small, so need to start ws first
-    auto dp_res = std::async(std::launch::deferred, [&dp, &engine] {
-      return dp.Handle(DownloadType::Engine);
+    auto dp_res = std::async(std::launch::deferred, [&dp] {
+      bool need_cuda_download = !system_info_utils::GetCudaVersion().empty();
+      if (need_cuda_download) {
+        return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
+      } else {
+        return dp.Handle({DownloadType::Engine});
+      }
     });
 
     auto versions_url = url_parser::Url{
@@ -133,12 +138,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     if (!dp_res.get())
       return false;
 
-    bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
-    if (check_cuda_download) {
-      if (!dp.Handle(DownloadType::CudaToolkit))
-        return false;
-    }
-
     CLI_LOG("Engine " << engine << " downloaded successfully!")
     return true;
   }
@@ -147,8 +146,14 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   DownloadProgress dp;
   dp.Connect(host_, port_);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred,
-                           [&dp] { return dp.Handle(DownloadType::Engine); });
+  auto dp_res = std::async(std::launch::deferred, [&dp] {
+    bool need_cuda_download = !system_info_utils::GetCudaVersion().empty();
+    if (need_cuda_download) {
+      return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
+    } else {
+      return dp.Handle({DownloadType::Engine});
+    }
+  });
 
   auto install_url = url_parser::Url{
       .protocol = "http",
@@ -182,12 +187,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
 
   if (!dp_res.get())
     return false;
-
-  bool check_cuda_download = !system_info_utils::GetCudaVersion().empty();
-  if (check_cuda_download) {
-    if (!dp.Handle(DownloadType::CudaToolkit))
-      return false;
-  }
 
   CLI_LOG("Engine " << engine << " downloaded successfully!")
   return true;

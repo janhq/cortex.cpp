@@ -16,6 +16,7 @@
     "eventpp",
     "sqlitecpp",
     "trantor",
-    "indicators"
+    "indicators",
+    "lfreist-hwinfo"
   ]
 }

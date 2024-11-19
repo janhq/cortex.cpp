@@ -27,7 +27,6 @@ class Models {
   cpp::result<std::vector<ModelEntry>, std::string> LoadModelListNoLock() const;
 
  public:
-  static const std::string kModelListPath;
   cpp::result<std::vector<ModelEntry>, std::string> LoadModelList() const;
   Models();
   Models(SQLite::Database& db);

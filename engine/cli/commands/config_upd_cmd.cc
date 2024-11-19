@@ -1,35 +1,39 @@
 #include "config_upd_cmd.h"
 #include "commands/server_start_cmd.h"
+#include "common/api_server_configuration.h"
 #include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 #include "utils/url_parser.h"
 
 namespace {
-const std::vector<std::string> config_keys{"cors", "allowed_origins"};
-
 inline Json::Value NormalizeJson(
     const std::unordered_map<std::string, std::string> options) {
   Json::Value root;
   for (const auto& [key, value] : options) {
-    if (std::find(config_keys.begin(), config_keys.end(), key) ==
-        config_keys.end()) {
+    if (CONFIGURATIONS.find(key) == CONFIGURATIONS.end()) {
       continue;
     }
+    auto config = CONFIGURATIONS.at(key);
 
-    if (key == "cors") {
+    if (config.accept_value == "[on|off]") {
       if (string_utils::EqualsIgnoreCase("on", value)) {
-        root["cors"] = true;
+        root[key] = true;
       } else if (string_utils::EqualsIgnoreCase("off", value)) {
-        root["cors"] = false;
+        root[key] = false;
       }
-    } else if (key == "allowed_origins") {
+    } else if (config.accept_value == "comma separated") {
       auto origins = string_utils::SplitBy(value, ",");
       Json::Value origin_array(Json::arrayValue);
       for (const auto& origin : origins) {
         origin_array.append(origin);
       }
       root[key] = origin_array;
+    } else if (config.accept_value == "string") {
+      root[key] = value;
+    } else {
+      CTL_ERR("Not support configuration type: " << config.accept_value
+                                                 << " for config key: " << key);
     }
   }
 
@@ -50,20 +54,28 @@ void commands::ConfigUpdCmd::Exec(
     }
   }
 
+  auto non_null_opts = std::unordered_map<std::string, std::string>();
+  for (const auto& [key, value] : options) {
+    if (value.empty()) {
+      continue;
+    }
+    non_null_opts[key] = value;
+  }
+
   auto url = url_parser::Url{
       .protocol = "http",
       .host = host + ":" + std::to_string(port),
       .pathParams = {"v1", "configs"},
   };
 
-  auto json = NormalizeJson(options);
+  auto json = NormalizeJson(non_null_opts);
   if (json.empty()) {
     CLI_LOG_ERROR("Invalid configuration options provided");
     return;
   }
 
   auto update_cnf_result =
-      curl_utils::SimplePatch(url.ToFullPath(), json.toStyledString());
+      curl_utils::SimplePatchJson(url.ToFullPath(), json.toStyledString());
   if (update_cnf_result.has_error()) {
     CLI_LOG_ERROR(update_cnf_result.error());
     return;

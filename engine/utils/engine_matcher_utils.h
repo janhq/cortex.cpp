@@ -172,4 +172,27 @@ inline std::string Validate(const std::vector<std::string>& variants,
 
   return cuda_compatible;
 }
+
+inline std::pair<std::string, std::string> GetVersionAndArch(
+    const std::string& file_name) {
+  // Remove the file extension
+  std::string base = file_name.substr(0, file_name.find("tar") - 1);
+
+  size_t arch_pos = 0;
+  if (base.find("windows") != std::string::npos) {
+    arch_pos = base.find("-windows");
+  } else if (base.find("linux") != std::string::npos) {
+    arch_pos = base.find("-linux");
+  } else {
+    arch_pos = base.find("-mac");
+  }
+
+  // Extract architecture part
+  auto arch = base.substr(arch_pos + 1);
+
+  // Extract version part
+  size_t v_pos = base.find_first_of('-');
+  auto version = base.substr(v_pos + 1, arch_pos - v_pos - 1);
+  return std::pair("v" + version, arch);
+}
 }  // namespace engine_matcher_utils

@@ -127,7 +127,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
     dp.ForceStop();
   };
 
-  utils::ScopeExit se([]() { shutdown_handler = {}; });
+  cortex::utils::ScopeExit se([]() { shutdown_handler = {}; });
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   struct sigaction sigint_action;
   sigint_action.sa_handler = signal_handler;
@@ -143,7 +143,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   dp.Connect(host, port);
-  if (!dp.Handle(DownloadType::Model))
+  if (!dp.Handle({DownloadType::Model}))
     return std::nullopt;
   if (force_stop)
     return std::nullopt;

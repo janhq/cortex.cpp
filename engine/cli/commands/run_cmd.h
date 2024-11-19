@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 #include "services/engine_service.h"
 #include "services/model_service.h"
 
@@ -21,7 +22,8 @@ class RunCmd {
         engine_service_{EngineService(download_service)},
         model_service_{ModelService(download_service)} {};
 
-  void Exec(bool chat_flag);
+  void Exec(bool chat_flag,
+            const std::unordered_map<std::string, std::string>& options);
 
  private:
   std::string host_;
