@@ -51,7 +51,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
     auto config_path = file_manager_utils::GetConfigurationPath();
     config.apiServerPort = std::to_string(*port);
     auto result =
-        config_yaml_utils::DumpYamlConfig(config, config_path.string());
+        config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+            config, config_path.string());
     if (result.has_error()) {
       CTL_ERR("Error update " << config_path.string() << result.error());
     }

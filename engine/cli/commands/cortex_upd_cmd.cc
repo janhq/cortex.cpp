@@ -192,8 +192,9 @@ std::optional<std::string> CheckNewUpdate(
         CTL_INF("Got the latest release, update to the config file: "
                 << latest_version)
         config.latestRelease = latest_version;
-        auto result = config_yaml_utils::DumpYamlConfig(
-            config, file_manager_utils::GetConfigurationPath().string());
+        auto result =
+            config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+                config, file_manager_utils::GetConfigurationPath().string());
         if (result.has_error()) {
           CTL_ERR("Error update "
                   << file_manager_utils::GetConfigurationPath().string()
