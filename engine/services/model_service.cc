@@ -8,7 +8,6 @@
 #include "database/models.h"
 #include "hardware_service.h"
 #include "httplib.h"
-#include "services/engine_service.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
@@ -113,6 +112,47 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
                       .items = download_items};
 }
 }  // namespace
+
+void ModelService::ForceIndexingModelList() {
+  CTL_INF("Force indexing model list");
+
+  // bad code, refactor later on
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  auto list_entry = modellist_handler.LoadModelList();
+  if (list_entry.has_error()) {
+    CTL_ERR("Failed to load model list: " << list_entry.error());
+    return;
+  }
+
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+
+  CTL_DBG("Database model size: " + std::to_string(list_entry.value().size()));
+  for (const auto& model_entry : list_entry.value()) {
+    try {
+      yaml_handler.ModelConfigFromFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.path_to_model_yaml))
+              .string());
+      auto model_config = yaml_handler.GetModelConfig();
+      Json::Value obj = model_config.ToJson();
+      yaml_handler.Reset();
+    } catch (const std::exception& e) {
+      LOG_ERROR << "Failed to load yaml file for model: "
+                << model_entry.path_to_model_yaml << ", error: " << e.what();
+      // remove in db
+      auto remove_result =
+          modellist_handler.DeleteModelEntry(model_entry.model);
+      if (remove_result.has_error()) {
+        LOG_ERROR << "Failed to remove model in db: " << remove_result.error();
+      } else {
+        LOG_INFO << "Removed model in db: " << model_entry.model;
+      }
+    }
+  }
+}
 
 cpp::result<std::string, std::string> ModelService::DownloadModel(
     const std::string& input) {
@@ -745,7 +785,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       return cpp::fail(
           "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
           " MiB, available: " + std::to_string(free_vram_MiB) +
-          " MiB - Should adjust ngl to " + std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
+          " MiB - Should adjust ngl to " +
+          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
     }
 
     if (ram_needed_MiB > free_ram_MiB) {
