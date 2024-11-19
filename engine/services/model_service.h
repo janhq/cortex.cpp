@@ -3,10 +3,10 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include "common/engine_servicei.h"
 #include "config/model_config.h"
 #include "services/download_service.h"
 #include "services/inference_service.h"
-#include "common/engine_servicei.h"
 
 struct ModelPullInfo {
   std::string id;
@@ -26,12 +26,15 @@ struct StartParameterOverride {
   std::optional<std::string> cache_type;
   std::optional<std::string> mmproj;
   std::optional<std::string> model_path;
-  bool bypass_model_check() const { return mmproj.has_value(); }
+  bool bypass_llama_model_path = false;
+  bool bypass_model_check() const {
+    return mmproj.has_value() || bypass_llama_model_path;
+  }
 };
 
 struct StartModelResult {
- bool success;
- std::optional<std::string> warning;
+  bool success;
+  std::optional<std::string> warning;
 };
 
 class ModelService {
