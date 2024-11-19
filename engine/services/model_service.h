@@ -27,7 +27,10 @@ struct StartParameterOverride {
   std::optional<std::string> cache_type;
   std::optional<std::string> mmproj;
   std::optional<std::string> model_path;
-  bool bypass_model_check() const { return mmproj.has_value(); }
+  bool bypass_llama_model_path = false;
+  bool bypass_model_check() const {
+    return mmproj.has_value() || bypass_llama_model_path;
+  }
 };
 
 struct StartModelResult {
@@ -91,6 +94,8 @@ class ModelService {
   cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
       const std::string& url, std::optional<std::string> temp_model_id,
       std::optional<std::string> temp_name);
+
+  bool HasModel(const std::string& id) const;
 
  private:
   /**

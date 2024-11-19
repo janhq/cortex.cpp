@@ -6,10 +6,10 @@ cpp::result<ApiServerConfiguration, std::string>
 ConfigService::UpdateApiServerConfiguration(const Json::Value& json) {
   auto config = file_manager_utils::GetCortexConfig();
   ApiServerConfiguration api_server_config{
-      config.enableCors,         config.allowedOrigins, config.verifyProxySsl,
-      config.verifyProxyHostSsl, config.proxyUrl,       config.proxyUsername,
-      config.proxyPassword,      config.noProxy,        config.verifyPeerSsl,
-      config.verifyHostSsl};
+      config.enableCors,         config.allowedOrigins,  config.verifyProxySsl,
+      config.verifyProxyHostSsl, config.proxyUrl,        config.proxyUsername,
+      config.proxyPassword,      config.noProxy,         config.verifyPeerSsl,
+      config.verifyHostSsl,      config.huggingFaceToken};
 
   std::vector<std::string> updated_fields;
   std::vector<std::string> invalid_fields;
@@ -35,6 +35,8 @@ ConfigService::UpdateApiServerConfiguration(const Json::Value& json) {
   config.verifyPeerSsl = api_server_config.verify_peer_ssl;
   config.verifyHostSsl = api_server_config.verify_host_ssl;
 
+  config.huggingFaceToken = api_server_config.hf_token;
+
   auto result = file_manager_utils::UpdateCortexConfig(config);
   return api_server_config;
 }
@@ -43,8 +45,8 @@ cpp::result<ApiServerConfiguration, std::string>
 ConfigService::GetApiServerConfiguration() {
   auto config = file_manager_utils::GetCortexConfig();
   return ApiServerConfiguration{
-      config.enableCors,         config.allowedOrigins, config.verifyProxySsl,
-      config.verifyProxyHostSsl, config.proxyUrl,       config.proxyUsername,
-      config.proxyPassword,      config.noProxy,        config.verifyPeerSsl,
-      config.verifyHostSsl};
+      config.enableCors,         config.allowedOrigins,  config.verifyProxySsl,
+      config.verifyProxyHostSsl, config.proxyUrl,        config.proxyUsername,
+      config.proxyPassword,      config.noProxy,         config.verifyPeerSsl,
+      config.verifyHostSsl,      config.huggingFaceToken};
 }

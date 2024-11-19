@@ -414,6 +414,10 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   return unique_model_id;
 }
 
+bool ModelService::HasModel(const std::string& id) const {
+  return cortex::db::Models().HasModel(id);
+}
+
 cpp::result<DownloadTask, std::string>
 ModelService::DownloadModelFromCortexsoAsync(
     const std::string& name, const std::string& branch,
