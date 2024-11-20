@@ -22,7 +22,7 @@
 class FileWatcherService {
  private:
 #if defined(_WIN32)
-  HANDLE dir_handle = INVALID_HANDLE_VALUE
+  HANDLE dir_handle = INVALID_HANDLE_VALUE;
   HANDLE stop_event;
 #elif defined(__APPLE__)
   FSEventStreamRef event_stream;
