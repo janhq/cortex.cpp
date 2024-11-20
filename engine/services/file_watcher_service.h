@@ -22,6 +22,7 @@ class FileWatcherService {
  private:
 #if defined(_WIN32)
   HANDLE dir_handle;
+  HANDLE stop_event;
 #elif defined(__APPLE__)
   FSEventStreamRef event_stream;
 #else  // Linux
@@ -37,10 +38,16 @@ class FileWatcherService {
     if (!std::filesystem::exists(path)) {
       throw std::runtime_error("Path does not exist: " + path);
     }
+#ifdef _WIN32
+    stop_event = CreateEvent(NULL, TRUE, FALSE, NULL);
+#endif
     CTL_INF("FileWatcherService created: " + path);
   }
 
-  ~FileWatcherService() { stop(); }
+  ~FileWatcherService() {
+    CTL_INF("FileWatcherService destructor");
+    stop();
+  }
 
   void start() {
     if (running_) {
@@ -52,16 +59,44 @@ class FileWatcherService {
   }
 
   void stop() {
+    if (!running_) {
+      return;
+    }
+
     running_ = false;
+
+#ifdef _WIN32
+    // Signal the stop event
+    SetEvent(stop_event);
+#elif defined(__APPLE__)
+    if (event_stream) {
+      FSEventStreamStop(event_stream);
+      FSEventStreamInvalidate(event_stream);
+    }
+#else  // Linux
+    // For Linux, closing the fd will interrupt the read() call
+    if (fd >= 0) {
+      close(fd);
+    }
+#endif
+
+    // Add timeout to avoid infinite waiting
     if (watch_thread_.joinable()) {
       watch_thread_.join();
     }
 
 #ifdef _WIN32
-    CloseHandle(dir_handle);
-#endif
-
-#ifdef Linux
+    if (stop_event != NULL) {
+      CloseHandle(stop_event);
+    }
+    if (dir_handle != INVALID_HANDLE_VALUE) {
+      CloseHandle(dir_handle);
+    }
+#elif defined(__APPLE__)
+    if (event_stream) {
+      FSEventStreamRelease(event_stream);
+    }
+#else  // Linux
     CleanupWatches();
 #endif
     CTL_INF("FileWatcherService stopped!");
@@ -134,7 +169,7 @@ class FileWatcherService {
     OVERLAPPED overlapped = {0};
     overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     DWORD bytesReturned;
-
+    HANDLE events[] = {overlapped.hEvent, stop_event};
     while (running_) {
       if (!ReadDirectoryChangesW(
               dir_handle, buffer, sizeof(buffer), TRUE,
@@ -143,11 +178,14 @@ class FileWatcherService {
         break;
       }
 
-      if (WaitForSingleObject(overlapped.hEvent, INFINITE) != WAIT_OBJECT_0) {
+      // Wait for either file change event or stop event
+      DWORD result = WaitForMultipleObjects(2, events, FALSE, INFINITE);
+      if (result == WAIT_OBJECT_0 + 1) {  // stop_event was signaled
         break;
       }
 
-      if (!GetOverlappedResult(dir_handle, &overlapped, &bytesReturned,
+      if (result != WAIT_OBJECT_0 ||
+          !GetOverlappedResult(dir_handle, &overlapped, &bytesReturned,
                                FALSE)) {
         break;
       }
