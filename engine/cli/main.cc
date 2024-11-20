@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     t1.detach();
   }
 
-  trantor::FileLogger async_file_logger;
+  static trantor::FileLogger async_file_logger;
   SetupLogger(async_file_logger, verbose);
 
   if (should_install_server) {
