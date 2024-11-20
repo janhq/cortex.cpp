@@ -13,6 +13,7 @@
 #include <windows.h>
 
 #else  // Linux
+#include <poll.h>
 #include <limits.h>
 #include <sys/inotify.h>
 #include <unistd.h>
@@ -21,7 +22,7 @@
 class FileWatcherService {
  private:
 #if defined(_WIN32)
-  HANDLE dir_handle;
+  HANDLE dir_handle = INVALID_HANDLE_VALUE
   HANDLE stop_event;
 #elif defined(__APPLE__)
   FSEventStreamRef event_stream;
@@ -34,7 +35,7 @@ class FileWatcherService {
  public:
   FileWatcherService(const std::string& path,
                      std::shared_ptr<ModelService> model_service)
-      : watch_path_{path}, running_{false} {
+      : watch_path_{path}, running_{false}, model_service_{model_service} {
     if (!std::filesystem::exists(path)) {
       throw std::runtime_error("Path does not exist: " + path);
     }
@@ -75,11 +76,12 @@ class FileWatcherService {
     }
 #else  // Linux
     // For Linux, closing the fd will interrupt the read() call
+    CTL_INF("before close fd!");
     if (fd >= 0) {
       close(fd);
     }
 #endif
-
+    CTL_INF("before join!");
     // Add timeout to avoid infinite waiting
     if (watch_thread_.joinable()) {
       watch_thread_.join();
@@ -216,23 +218,36 @@ class FileWatcherService {
 #else  // Linux
 
   void AddWatch(const std::string& dirPath) {
-    wd = inotify_add_watch(fd, dirPath.c_str(),
-                           IN_DELETE | IN_CREATE | IN_DELETE_SELF);
+    const int watch_flags = IN_DELETE | IN_DELETE_SELF | IN_CREATE;
+    wd = inotify_add_watch(fd, dirPath.c_str(), watch_flags);
     if (wd < 0) {
-      throw std::runtime_error("Failed to add watch on: " + dirPath);
+      throw std::runtime_error("Failed to add watch on " + dirPath + 
+                             ": " + std::string(strerror(errno)));
     }
     watch_descriptors[wd] = dirPath;
 
-    // Recursively add watches to subdirectories
-    for (const auto& entry :
-         std::filesystem::recursive_directory_iterator(dirPath)) {
-      if (std::filesystem::is_directory(entry)) {
-        AddWatch(entry.path().string());
+    // Add watches for subdirectories
+    try {
+      for (const auto& entry : 
+           std::filesystem::recursive_directory_iterator(dirPath)) {
+        if (std::filesystem::is_directory(entry)) {
+          int subwd = inotify_add_watch(fd, entry.path().c_str(), watch_flags);
+          if (subwd >= 0) {
+            watch_descriptors[subwd] = entry.path().string();
+          } else {
+            CTL_ERR("Failed to add watch for subdirectory " + 
+                    entry.path().string() + ": " + 
+                    std::string(strerror(errno)));
+          }
+        }
       }
+    } catch (const std::filesystem::filesystem_error& e) {
+      CTL_ERR("Error walking directory tree: " + std::string(e.what()));
     }
   }
 
   void CleanupWatches() {
+    CTL_INF("Cleanup Watches");
     for (const auto& [wd, path] : watch_descriptors) {
       inotify_rm_watch(fd, wd);
     }
@@ -245,33 +260,88 @@ class FileWatcherService {
   }
 
   void WatcherThread() {
-    fd = inotify_init();
+    fd = inotify_init1(IN_NONBLOCK);
     if (fd < 0) {
-      throw std::runtime_error("Failed to initialize inotify");
+      CTL_ERR("Failed to initialize inotify: " + std::string(strerror(errno)));
+      return;
     }
 
-    // Add initial watch on the main directory
-    AddWatch(watch_path_);
+    try {
+      AddWatch(watch_path_);
+    } catch (const std::exception& e) {
+      CTL_ERR("Failed to add watch: " + std::string(e.what()));
+      close(fd);
+      return;
+    }
 
+        const int POLL_TIMEOUT_MS = 1000; // 1 second timeout
     char buffer[4096];
+    struct pollfd pfd = {
+        .fd = fd,
+        .events = POLLIN,
+        .revents = 0
+    };
+    
     while (running_) {
-      int length = read(fd, buffer, sizeof(buffer));
-      if (length < 0) {
+      // Poll will sleep until either:
+      // 1. Events are available (POLLIN)
+      // 2. POLL_TIMEOUT_MS milliseconds have elapsed
+      // 3. An error occurs
+      int poll_result = poll(&pfd, 1, POLL_TIMEOUT_MS);
+      
+      if (poll_result < 0) {
+        if (errno == EINTR) {
+          // System call was interrupted, just retry
+          continue;
+        }
+        CTL_ERR("Poll failed: " + std::string(strerror(errno)));
+        break;
+      }
+      
+      if (poll_result == 0) {  // Timeout - no events
+        // No need to sleep - poll() already waited
         continue;
       }
 
-      int i = 0;
-      while (i < length) {
-        struct inotify_event* event = (struct inotify_event*)&buffer[i];
-        if (event->mask & IN_DELETE) {
-          auto deletedPath = watch_descriptors[event->wd] + "/" + event->name;
-          model_service_->ForceIndexingModelList();
+      if (pfd.revents & POLLERR || pfd.revents & POLLNVAL) {
+        CTL_ERR("Poll error on fd");
+        break;
+      }
+
+      // Read all pending events
+      while (running_) {
+        int length = read(fd, buffer, sizeof(buffer));
+        if (length < 0) {
+          if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            // No more events to read
+            break;
+          }
+          CTL_ERR("Read error: " + std::string(strerror(errno)));
+          break;
         }
-        i += sizeof(struct inotify_event) + event->len;
+
+        if (length == 0) {
+          break;
+        }
+
+        // Process events
+        size_t i = 0;
+        while (i < static_cast<size_t>(length)) {
+          struct inotify_event* event = 
+              reinterpret_cast<struct inotify_event*>(&buffer[i]);
+          
+          if (event->mask & (IN_DELETE | IN_DELETE_SELF)) {
+            try {
+              model_service_->ForceIndexingModelList();
+            } catch (const std::exception& e) {
+              CTL_ERR("Error processing delete event: " + std::string(e.what()));
+            }
+          }
+          
+          i += sizeof(struct inotify_event) + event->len;
+        }
       }
     }
-
-    close(fd);
   }
 #endif
 };
