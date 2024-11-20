@@ -1,5 +1,4 @@
 #include <atomic>
-#include <iostream>
 #include <memory>
 #include <string>
 #include <thread>
@@ -28,13 +27,13 @@ class FileWatcherService {
 #else  // Linux
   int fd;
   int wd;
-  std::unordered_map<int, std::string> watchDescriptors;
+  std::unordered_map<int, std::string> watch_descriptors;
 #endif
 
  public:
   FileWatcherService(const std::string& path,
                      std::shared_ptr<ModelService> model_service)
-      : watchPath{path}, running{false} {
+      : watch_path_{path}, running_{false} {
     if (!std::filesystem::exists(path)) {
       throw std::runtime_error("Path does not exist: " + path);
     }
@@ -44,15 +43,20 @@ class FileWatcherService {
   ~FileWatcherService() { stop(); }
 
   void start() {
-    if (running) {
+    if (running_) {
       return;
     }
 
-    running = true;
-    watchThread = std::thread(&FileWatcherService::watcherThread, this);
+    running_ = true;
+    watch_thread_ = std::thread(&FileWatcherService::WatcherThread, this);
   }
 
   void stop() {
+    running_ = false;
+    if (watch_thread_.joinable()) {
+      watch_thread_.join();
+    }
+
 #ifdef _WIN32
     CloseHandle(dir_handle);
 #endif
@@ -60,17 +64,13 @@ class FileWatcherService {
 #ifdef Linux
     CleanupWatches();
 #endif
-    running = false;
-    if (watchThread.joinable()) {
-      watchThread.join();
-    }
     CTL_INF("FileWatcherService stopped!");
   }
 
  private:
-  std::string watchPath;
-  std::atomic<bool> running;
-  std::thread watchThread;
+  std::string watch_path_;
+  std::atomic<bool> running_;
+  std::thread watch_thread_;
   std::shared_ptr<ModelService> model_service_;
 
 #ifdef __APPLE__
@@ -90,9 +90,9 @@ class FileWatcherService {
     }
   }
 
-  void watcherThread() {
+  void WatcherThread() {
     // macOS implementation
-    auto mypath = CFStringCreateWithCString(NULL, watchPath.c_str(),
+    auto mypath = CFStringCreateWithCString(NULL, watch_path_.c_str(),
                                             kCFStringEncodingUTF8);
     auto path_to_watch = CFArrayCreate(NULL, (const void**)&mypath, 1, NULL);
 
@@ -108,7 +108,7 @@ class FileWatcherService {
     FSEventStreamSetDispatchQueue(event_stream, queue);
     FSEventStreamStart(event_stream);
 
-    while (running) {
+    while (running_) {
       CFRunLoopRunInMode(kCFRunLoopDefaultMode, 1.0, false);
     }
 
@@ -120,7 +120,7 @@ class FileWatcherService {
   }
 
 #elif defined(_WIN32)
-  void watcherThread() {
+  void WatcherThread() {
     dir_handle =
         CreateFileA(watchPath.c_str(), FILE_LIST_DIRECTORY,
                     FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
@@ -183,7 +183,7 @@ class FileWatcherService {
     if (wd < 0) {
       throw std::runtime_error("Failed to add watch on: " + dirPath);
     }
-    watchDescriptors[wd] = dirPath;
+    watch_descriptors[wd] = dirPath;
 
     // Recursively add watches to subdirectories
     for (const auto& entry :
@@ -195,10 +195,10 @@ class FileWatcherService {
   }
 
   void CleanupWatches() {
-    for (const auto& [wd, path] : watchDescriptors) {
+    for (const auto& [wd, path] : watch_descriptors) {
       inotify_rm_watch(fd, wd);
     }
-    watchDescriptors.clear();
+    watch_descriptors.clear();
 
     if (fd >= 0) {
       close(fd);
@@ -206,7 +206,7 @@ class FileWatcherService {
     }
   }
 
-  void watcherThread() {
+  void WatcherThread() {
     fd = inotify_init();
     if (fd < 0) {
       throw std::runtime_error("Failed to initialize inotify");
@@ -226,7 +226,7 @@ class FileWatcherService {
       while (i < length) {
         struct inotify_event* event = (struct inotify_event*)&buffer[i];
         if (event->mask & IN_DELETE) {
-          auto deletedPath = watchDescriptors[event->wd] + "/" + event->name;
+          auto deletedPath = watch_descriptors[event->wd] + "/" + event->name;
           model_service_->ForceIndexingModelList();
         }
         i += sizeof(struct inotify_event) + event->len;
