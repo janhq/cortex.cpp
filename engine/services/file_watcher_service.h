@@ -122,7 +122,7 @@ class FileWatcherService {
 #elif defined(_WIN32)
   void WatcherThread() {
     dir_handle =
-        CreateFileA(watchPath.c_str(), FILE_LIST_DIRECTORY,
+        CreateFileA(watch_path_.c_str(), FILE_LIST_DIRECTORY,
                     FILE_SHARE_READ | FILE_SHARE_DELETE, NULL, OPEN_EXISTING,
                     FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OVERLAPPED, NULL);
 
@@ -135,7 +135,7 @@ class FileWatcherService {
     overlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     DWORD bytesReturned;
 
-    while (running) {
+    while (running_) {
       if (!ReadDirectoryChangesW(
               dir_handle, buffer, sizeof(buffer), TRUE,
               FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME,
