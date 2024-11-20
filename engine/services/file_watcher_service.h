@@ -213,10 +213,10 @@ class FileWatcherService {
     }
 
     // Add initial watch on the main directory
-    AddWatch(watchPath);
+    AddWatch(watch_path_);
 
     char buffer[4096];
-    while (running) {
+    while (running_) {
       int length = read(fd, buffer, sizeof(buffer));
       if (length < 0) {
         continue;
