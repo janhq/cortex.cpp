@@ -731,7 +731,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         for (auto& e : es) {
           CTL_INF(e.name << " " << e.version << " " << e.engine);
           // Select the first CPU candidate
-          if (e.name.find("cuda") == std::string::npos) {
+          if (e.name.find("cuda") == std::string::npos &&
+              e.name.find("avx") != std::string::npos) {
             auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine,
                                                           e.version, e.name);
             if (r.has_error()) {
