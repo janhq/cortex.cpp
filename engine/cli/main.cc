@@ -97,6 +97,23 @@ int main(int argc, char* argv[]) {
     if (result.has_error()) {
       CTL_ERR("Error creating config file: " << result.error());
     }
+    namespace fmu = file_manager_utils;
+    // Override data folder path if it is configured and changed
+    if (!fmu::cortex_data_folder_path.empty()) {
+      auto cfg = file_manager_utils::GetCortexConfig();
+      if (cfg.dataFolderPath != fmu::cortex_data_folder_path ||
+          cfg.logFolderPath != fmu::cortex_data_folder_path) {
+        cfg.dataFolderPath = fmu::cortex_data_folder_path;
+        cfg.logFolderPath = fmu::cortex_data_folder_path;
+        auto config_path = file_manager_utils::GetConfigurationPath();
+        auto result =
+            config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+                cfg, config_path.string());
+        if (result.has_error()) {
+          CTL_ERR("Error update " << config_path.string() << result.error());
+        }
+      }
+    }
   }
 
   RemoveBinaryTempFileIfExists();
@@ -164,7 +181,7 @@ int main(int argc, char* argv[]) {
     t1.detach();
   }
 
-  trantor::FileLogger async_file_logger;
+  static trantor::FileLogger async_file_logger;
   SetupLogger(async_file_logger, verbose);
 
   if (should_install_server) {

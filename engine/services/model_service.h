@@ -5,6 +5,7 @@
 #include <string>
 #include "common/engine_servicei.h"
 #include "config/model_config.h"
+#include "database/models.h"
 #include "services/download_service.h"
 #include "services/inference_service.h"
 
@@ -39,6 +40,8 @@ struct StartModelResult {
 
 class ModelService {
  public:
+  void ForceIndexingModelList();
+
   explicit ModelService(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service} {};
 

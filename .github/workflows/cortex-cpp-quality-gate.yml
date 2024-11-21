@@ -198,8 +198,8 @@ jobs:
       
       - name: Run Docker
         run: |
-          docker build -t menloltd/cortex:test -f docker/Dockerfile .
-          docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
+          sudo docker build -t menloltd/cortex:test -f docker/Dockerfile .
+          sudo docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
 
       - name: use python
         uses: actions/setup-python@v5
@@ -217,6 +217,6 @@ jobs:
         continue-on-error: true
         if: always()  
         run: |
-          docker stop cortex
-          docker rm cortex
-          echo "y\n" | docker system prune -af
+          sudo docker stop cortex
+          sudo docker rm cortex
+          echo "y\n" | sudo docker system prune -af
