@@ -86,9 +86,6 @@ inline std::string GetReleasePath() {
 std::optional<std::string> CheckNewUpdate(
     std::optional<std::chrono::milliseconds> timeout);
 
-bool ReplaceBinaryInflight(const std::filesystem::path& src,
-                           const std::filesystem::path& dst);
-
 // This class manages the 'cortex update' command functionality
 // There are three release types available:
 // - Stable: Only retrieves the latest version
@@ -109,5 +106,11 @@ class CortexUpdCmd {
   std::optional<std::string> HandleGithubRelease(const Json::Value& assets,
                                                  const std::string& os_arch);
   bool GetNightly(const std::string& v);
+
+  // For Linux, we use different approach to update
+  // The installation bash script will perform the following tasks (all logic for update will be put into the bash script):
+  // - Detect whether the user is performing a new installation or an update.
+  // - Detect whether a .deb package needs to be installed or if the binary file should be installed directly.
+  bool GetLinuxInstallScript(const std::string& v, const std::string& channel);
 };
 }  // namespace commands

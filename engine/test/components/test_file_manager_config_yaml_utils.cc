@@ -63,7 +63,9 @@ TEST_F(FileManagerConfigTest, DumpYamlConfig) {
                                          .apiServerPort = "8080"};
 
   std::string test_file = "test_config.yaml";
-  auto result = config_yaml_utils::DumpYamlConfig(config, test_file);
+  auto result =
+      config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+          config, test_file);
   EXPECT_FALSE(result.has_error());
   EXPECT_TRUE(std::filesystem::exists(test_file));
 
@@ -83,7 +85,8 @@ TEST_F(FileManagerConfigTest, FromYaml) {
   out_file.close();
 
   config_yaml_utils::CortexConfig default_config{};
-  auto config = config_yaml_utils::FromYaml(test_file, default_config);
+  auto config = config_yaml_utils::CortexConfigMgr::GetInstance().FromYaml(
+      test_file, default_config);
 
   EXPECT_EQ(config.logFolderPath, "/path/to/logs");
   EXPECT_EQ(config.dataFolderPath, "/path/to/data");

@@ -90,6 +90,13 @@ static const std::unordered_map<std::string, ApiConfigurationMetadata>
                                                      .group = "Proxy",
                                                      .accept_value = "[on|off]",
                                                      .default_value = "on"}},
+        {"huggingface_token",
+         ApiConfigurationMetadata{.name = "huggingface_token",
+                                  .desc = "HuggingFace token to pull models",
+                                  .group = "Token",
+                                  .accept_value = "string",
+                                  .default_value = "",
+                                  .allow_empty = true}},
 };
 
 class ApiServerConfiguration {
@@ -99,7 +106,8 @@ class ApiServerConfiguration {
       bool verify_proxy_ssl = true, bool verify_proxy_host_ssl = true,
       const std::string& proxy_url = "", const std::string& proxy_username = "",
       const std::string& proxy_password = "", const std::string& no_proxy = "",
-      bool verify_peer_ssl = true, bool verify_host_ssl = true)
+      bool verify_peer_ssl = true, bool verify_host_ssl = true,
+      const std::string& hf_token = "")
       : cors{cors},
         allowed_origins{allowed_origins},
         verify_proxy_ssl{verify_proxy_ssl},
@@ -109,7 +117,8 @@ class ApiServerConfiguration {
         proxy_password{proxy_password},
         no_proxy{no_proxy},
         verify_peer_ssl{verify_peer_ssl},
-        verify_host_ssl{verify_host_ssl} {}
+        verify_host_ssl{verify_host_ssl},
+        hf_token{hf_token} {}
 
   // cors
   bool cors{true};
@@ -127,6 +136,9 @@ class ApiServerConfiguration {
   bool verify_peer_ssl{true};
   bool verify_host_ssl{true};
 
+  // token
+  std::string hf_token{""};
+
   Json::Value ToJson() const {
     Json::Value root;
     root["cors"] = cors;
@@ -142,6 +154,7 @@ class ApiServerConfiguration {
     root["no_proxy"] = no_proxy;
     root["verify_peer_ssl"] = verify_peer_ssl;
     root["verify_host_ssl"] = verify_host_ssl;
+    root["huggingface_token"] = hf_token;
 
     return root;
   }
@@ -222,6 +235,15 @@ class ApiServerConfiguration {
                  return false;
                }
                proxy_password = value.asString();
+               return true;
+             }},
+
+            {"huggingface_token",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isString()) {
+                 return false;
+               }
+               hf_token = value.asString();
                return true;
              }},
 
