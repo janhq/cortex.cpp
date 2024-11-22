@@ -174,6 +174,9 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
       res.gpu_mode.recommend_ngl =
           (double)rc.free_vram_MiB / res.gpu_mode.vram_MiB * rc.ngl;
     }
+#if defined(__APPLE__) && defined(__MACH__)
+    res.cpu_mode.ram_MiB = res.gpu_mode.vram_MiB + res.gpu_mode.ram_MiB;
+#endif
   }
   return res;
 }

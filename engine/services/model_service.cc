@@ -364,6 +364,11 @@ cpp::result<hardware::Estimation, std::string> ModelService::GetEstimation(
     for (const auto& gpu : hw_info.gpus) {
       free_vram_MiB += gpu.free_vram;
     }
+
+#if defined(__APPLE__) && defined(__MACH__)
+    free_vram_MiB = hw_info.ram.available_MiB;
+#endif
+
     return hardware::EstimateLLaMACppRun(file_path.string(),
                                          {.ngl = mc.ngl,
                                           .ctx_len = mc.ctx_len,
@@ -1061,6 +1066,10 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
   }
 
   auto free_ram_MiB = hw_info.ram.available_MiB;
+
+#if defined(__APPLE__) && defined(__MACH__)
+  free_vram_MiB = free_ram_MiB;
+#endif
 
   hardware::RunConfig rc = {.ngl = ngl,
                             .ctx_len = ctx_len,
