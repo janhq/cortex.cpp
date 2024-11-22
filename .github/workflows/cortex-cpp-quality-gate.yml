@@ -102,7 +102,7 @@ jobs:
           cd engine
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
-          ./build/cortex
+          # ./build/cortex
           cat ~/.cortexrc
 
       - name: Run unit tests
@@ -115,10 +115,10 @@ jobs:
       - name: Run setup config
         run: |
           cd engine
-          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
+          echo "apiServerPort: 3928" > ~/.cortexrc
+          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" >> ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
-          echo "apiServerPort: 3928" >> ~/.cortexrc
-          ./build/cortex
+          # ./build/cortex
           cat ~/.cortexrc
 
       - name: Run e2e tests

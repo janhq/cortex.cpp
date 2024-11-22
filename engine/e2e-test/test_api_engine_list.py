@@ -8,6 +8,9 @@ class TestApiEngineList:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
+        # Not sure why but on macOS amd, the first start server timeouts with CI
+        start_server()
+        stop_server()
         success = start_server()
         if not success:
             raise Exception("Failed to start server")
