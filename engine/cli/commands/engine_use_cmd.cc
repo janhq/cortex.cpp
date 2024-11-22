@@ -62,12 +62,11 @@ cpp::result<void, std::string> EngineUseCmd::Exec(const std::string& host,
     return cpp::fail("Invalid version selection");
   }
 
-  auto set_default_engine_variant =
-      url_parser::Url{.protocol = "http",
-                      .host = host + ":" + std::to_string(port),
-                      .pathParams = {"v1", "engines", engine, "default"},
-                      .queries = {{"version", selected_version.value()},
-                                  {"variant", selected_variant.value()}}};
+  auto set_default_engine_variant = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "engines", engine, "default"},
+  };
 
   auto response =
       curl_utils::SimplePostJson(set_default_engine_variant.ToFullPath());
