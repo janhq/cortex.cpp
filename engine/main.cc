@@ -12,6 +12,7 @@
 #include "database/database.h"
 #include "migrations/migration_manager.h"
 #include "services/config_service.h"
+#include "services/file_watcher_service.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -53,7 +54,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
     auto config_path = file_manager_utils::GetConfigurationPath();
     config.apiServerPort = std::to_string(*port);
     auto result =
-        config_yaml_utils::DumpYamlConfig(config, config_path.string());
+        config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+            config, config_path.string());
     if (result.has_error()) {
       CTL_ERR("Error update " << config_path.string() << result.error());
     }
@@ -108,6 +110,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
 
+  auto model_dir_path = file_manager_utils::GetModelsContainerPath();
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
       std::make_shared<DownloadService>(event_queue_ptr, config_service);
@@ -116,6 +119,10 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<services::InferenceService>(engine_service);
   auto model_service = std::make_shared<ModelService>(
       download_service, inference_svc, engine_service);
+
+  auto file_watcher_srv = std::make_shared<FileWatcherService>(
+      model_dir_path.string(), model_service);
+  file_watcher_srv->start();
 
   // initialize custom controllers
   auto engine_ctl = std::make_shared<Engines>(engine_service);
@@ -234,6 +241,23 @@ int main(int argc, char* argv[]) {
     auto result = file_manager_utils::CreateConfigFileIfNotExist();
     if (result.has_error()) {
       LOG_ERROR << "Error creating config file: " << result.error();
+    }
+    namespace fmu = file_manager_utils;
+    // Override data folder path if it is configured and changed
+    if (!fmu::cortex_data_folder_path.empty()) {
+      auto cfg = file_manager_utils::GetCortexConfig();
+      if (cfg.dataFolderPath != fmu::cortex_data_folder_path ||
+          cfg.logFolderPath != fmu::cortex_data_folder_path) {
+        cfg.dataFolderPath = fmu::cortex_data_folder_path;
+        cfg.logFolderPath = fmu::cortex_data_folder_path;
+        auto config_path = file_manager_utils::GetConfigurationPath();
+        auto result =
+            config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+                cfg, config_path.string());
+        if (result.has_error()) {
+          CTL_ERR("Error update " << config_path.string() << result.error());
+        }
+      }
     }
   }
 

@@ -10,6 +10,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include "utils/string_utils.h"
 #include "utils/url_parser.h"
 
 enum class RequestType { GET, PATCH, POST, DEL };
@@ -24,7 +25,7 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb,
   return totalSize;
 }
 
-void SetUpProxy(CURL* handle) {
+void SetUpProxy(CURL* handle, const std::string& url) {
   auto config = file_manager_utils::GetCortexConfig();
   if (!config.proxyUrl.empty()) {
     auto proxy_url = config.proxyUrl;
@@ -39,13 +40,18 @@ void SetUpProxy(CURL* handle) {
     auto no_proxy = config.noProxy;
 
     CTL_INF("=== Proxy configuration ===");
+    CTL_INF("Request url: " << url);
     CTL_INF("Proxy url: " << proxy_url);
     CTL_INF("Verify proxy ssl: " << verify_proxy_ssl);
     CTL_INF("Verify proxy host ssl: " << verify_proxy_host_ssl);
     CTL_INF("Verify ssl: " << verify_ssl);
     CTL_INF("Verify host ssl: " << verify_host_ssl);
+    CTL_INF("No proxy: " << no_proxy);
 
     curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+    if (string_utils::StartsWith(proxy_url, "https")) {
+      curl_easy_setopt(handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
+    }
     curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
     curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, verify_host_ssl ? 2L : 0L);
 
@@ -88,7 +94,7 @@ inline cpp::result<std::string, std::string> SimpleGet(const std::string& url,
 
   std::string readBuffer;
 
-  SetUpProxy(curl);
+  SetUpProxy(curl, url);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
@@ -139,7 +145,7 @@ inline cpp::result<std::string, std::string> SimpleRequest(
   }
   std::string readBuffer;
 
-  SetUpProxy(curl);
+  SetUpProxy(curl, url);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   if (request_type == RequestType::PATCH) {

@@ -17,6 +17,7 @@
 #endif
 
 namespace file_manager_utils {
+namespace cyu = config_yaml_utils;
 constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
 constexpr std::string_view kDefaultConfigurationPath = "user_home";
 constexpr std::string_view kProdVariant = "prod";
@@ -147,14 +148,18 @@ inline cpp::result<void, std::string> UpdateCortexConfig(
     return cpp::fail("Config file not found: " + config_path.string());
   }
 
-  return DumpYamlConfig(config, config_path.string());
+  return cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
+      config, config_path.string());
 }
 
 inline config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
   auto default_data_folder_path =
-      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
+      cortex_data_folder_path.empty()
+          ? file_manager_utils::GetHomeDirectoryPath() /
+                default_data_folder_name
+          : std::filesystem::path(cortex_data_folder_path);
 
   return config_yaml_utils::CortexConfig{
       .logFolderPath = default_data_folder_path.string(),
@@ -190,22 +195,19 @@ inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
     return {};
   }
 
-  auto default_data_folder_name = GetDefaultDataFolderName();
-
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto config = GetDefaultConfig();
   CLI_LOG("Default data folder path: " + config.dataFolderPath);
-  return DumpYamlConfig(config, config_path.string());
+  return cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
+      config, config_path.string());
 }
 
 inline config_yaml_utils::CortexConfig GetCortexConfig() {
   auto config_path = GetConfigurationPath();
-  auto default_data_folder_name = GetDefaultDataFolderName();
-  auto default_data_folder_path =
-      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
 
   auto default_cfg = GetDefaultConfig();
-  return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
+  return config_yaml_utils::CortexConfigMgr::GetInstance().FromYaml(
+      config_path.string(), default_cfg);
 }
 
 inline std::filesystem::path GetCortexDataPath() {

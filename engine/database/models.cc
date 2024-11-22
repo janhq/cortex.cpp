@@ -248,6 +248,11 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
 cpp::result<bool, std::string> Models::DeleteModelEntry(
     const std::string& identifier) {
   try {
+    // delete only if its there
+    if (!HasModel(identifier)) {
+      return true;
+    }
+
     SQLite::Statement del(
         db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
     del.bind(1, identifier);
