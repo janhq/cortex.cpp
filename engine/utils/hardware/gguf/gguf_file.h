@@ -429,8 +429,6 @@ struct GGUFHeader {
 };
 
 struct GGUFFile {
-  /* Basic */
-
   // header is the header of the GGUF file.
   GGUFHeader header;
   // tensor_infos are the tensor infos of the GGUF file,

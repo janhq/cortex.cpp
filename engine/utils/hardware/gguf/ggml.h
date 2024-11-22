@@ -48,47 +48,47 @@ enum GGMLType {
 
 inline float GetQuantBit(GGMLType gt) {
   switch (gt) {
+    case GGML_TYPE_I32:
     case GGML_TYPE_F32:
       return 32.0;
+    case GGML_TYPE_I16:
+    case GGML_TYPE_BF16:
     case GGML_TYPE_F16:
       return 16.0;
-    case GGML_TYPE_Q4_0:
-    case GGML_TYPE_Q4_1:
-    case GGML_TYPE_Q5_0:
-    case GGML_TYPE_Q5_1:
-    case GGML_TYPE_Q8_0:
-    case GGML_TYPE_Q8_1:
-    case GGML_TYPE_Q2_K:
-    return 2.5625;
-    case GGML_TYPE_Q3_K:
-    return 3.4375;
-    case GGML_TYPE_Q4_K:
-      return 4.5;
-    case GGML_TYPE_Q5_K:
-    return 5.5;
-    case GGML_TYPE_Q6_K:
-      return 6.5625;
-    case GGML_TYPE_Q8_K:
+    case GGML_TYPE_IQ2_S:
     case GGML_TYPE_IQ2_XXS:
     case GGML_TYPE_IQ2_XS:
+      return 2.31;
+    case GGML_TYPE_Q2_K:
+      return 2.5625;
     case GGML_TYPE_IQ3_XXS:
-    case GGML_TYPE_IQ1_S:
-    case GGML_TYPE_IQ4_NL:
     case GGML_TYPE_IQ3_S:
-    case GGML_TYPE_IQ2_S:
-    case GGML_TYPE_IQ4_XS:
-    case GGML_TYPE_I8:
-    case GGML_TYPE_I16:
-    case GGML_TYPE_I32:
-    case GGML_TYPE_I64:
-    case GGML_TYPE_F64:
-    case GGML_TYPE_IQ1_M:
-    case GGML_TYPE_BF16:
+    case GGML_TYPE_Q3_K:
+      return 3.4375;
     case GGML_TYPE_Q4_0_4_4:
     case GGML_TYPE_Q4_0_4_8:
     case GGML_TYPE_Q4_0_8_8:
-    case GGML_TYPE_TQ1_0:
-    case GGML_TYPE_TQ2_0:
+    case GGML_TYPE_IQ4_NL:
+    case GGML_TYPE_IQ4_XS:
+    case GGML_TYPE_Q4_0:
+    case GGML_TYPE_Q4_1:
+    case GGML_TYPE_Q4_K:
+      return 4.5;
+    case GGML_TYPE_Q5_0:
+    case GGML_TYPE_Q5_1:
+    case GGML_TYPE_Q5_K:
+      return 5.5;
+    case GGML_TYPE_Q6_K:
+      return 6.5625;
+    case GGML_TYPE_I8:
+    case GGML_TYPE_Q8_0:
+    case GGML_TYPE_Q8_1:
+    case GGML_TYPE_Q8_K:
+      return 8.0;
+
+    case GGML_TYPE_I64:
+    case GGML_TYPE_F64:
+      return 64.0;
 
     default:
       return 8.0;

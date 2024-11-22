@@ -93,17 +93,17 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
   for (auto const& ti : gf.tensor_infos) {
     if (ti->name == "output.weight") {
       quant_bit_out = GetQuantBit(ti->type);
-      std::cout << ti->type << std::endl;
+      // std::cout << ti->type << std::endl;
     } else if (ti->name == "token_embd.weight") {
       quant_bit_in = GetQuantBit(ti->type);
-      std::cout << ti->type << std::endl;
+      // std::cout << ti->type << std::endl;
     }
   }
   // output.weight
   // token_embd.weight
-  std::cout << "embedding_length: " << embedding_length << std::endl;
-  std::cout << "n_vocab: " << n_vocab << std::endl;
-  std::cout << "file_size: " << file_size << std::endl;
+  // std::cout << "embedding_length: " << embedding_length << std::endl;
+  // std::cout << "n_vocab: " << n_vocab << std::endl;
+  // std::cout << "file_size: " << file_size << std::endl;
   // Model weight
   int64_t token_embeddings_size =
       n_vocab * embedding_length * 2 * quant_bit_in / 16;
@@ -119,12 +119,12 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
 
   int64_t ram_usage = token_embeddings_size + offload;
   int64_t vram_usage = file_size - ram_usage;
-  std::cout << "token_embeddings_size: " << BytesToMiB(token_embeddings_size)
-            << std::endl;
-  std::cout << "output_layer_size: " << BytesToMiB(output_layer_size)
-            << std::endl;
-  std::cout << "ram_usage: " << BytesToMiB(ram_usage) << std::endl;
-  std::cout << "vram_usage: " << BytesToMiB(vram_usage) << std::endl;
+  // std::cout << "token_embeddings_size: " << BytesToMiB(token_embeddings_size)
+  //           << std::endl;
+  // std::cout << "output_layer_size: " << BytesToMiB(output_layer_size)
+  //           << std::endl;
+  // std::cout << "ram_usage: " << BytesToMiB(ram_usage) << std::endl;
+  // std::cout << "vram_usage: " << BytesToMiB(vram_usage) << std::endl;
 
   // KV cache
   // kv_cache_size = ctx_len/8192 * hidden_dim/4096 * quant_bit/16 * num_block/33 * 1 (GB)
@@ -135,7 +135,7 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
                           hidden_dim / 4096 * kv_quant_bit / 16 * num_block /
                           33;  //(bytes)
 
-  std::cout << "kv_cache_size: " << BytesToMiB(kv_cache_size) << std::endl;
+  // std::cout << "kv_cache_size: " << BytesToMiB(kv_cache_size) << std::endl;
 
   // VRAM = (min(n_batch, n_ubatch))/ 512 * 266 (MiB)
   int64_t preprocessing_buffer_size =
@@ -144,8 +144,8 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
   if (total_ngl != rc.ngl) {
     preprocessing_buffer_size += output_layer_size;
   }
-  std::cout << "preprocessing_buffer_size: "
-            << BytesToMiB(preprocessing_buffer_size) << std::endl;
+  // std::cout << "preprocessing_buffer_size: "
+  //           << BytesToMiB(preprocessing_buffer_size) << std::endl;
 
   // CPU mode
   {

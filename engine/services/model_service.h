@@ -99,7 +99,8 @@ class ModelService {
   bool HasModel(const std::string& id) const;
 
   cpp::result<hardware::Estimation, std::string> GetEstimation(
-      const std::string& model_handle);
+      const std::string& model_handle, const std::string& kv_cache = "f16",
+      int n_batch = 2048, int n_ubatch = 2048);
 
  private:
   /**
@@ -115,6 +116,10 @@ class ModelService {
    */
   cpp::result<std::string, std::string> HandleCortexsoModel(
       const std::string& modelName);
+
+  cpp::result<std::optional<std::string>, std::string> MayFallbackToCpu(
+      const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
+      int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
   std::shared_ptr<DownloadService> download_service_;
   std::shared_ptr<services::InferenceService> inference_svc_;
