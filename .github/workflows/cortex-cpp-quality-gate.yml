@@ -198,8 +198,13 @@ jobs:
       
       - name: Run Docker
         run: |
-          sudo docker build -t menloltd/cortex:test -f docker/Dockerfile .
-          sudo docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
+          docker build \
+            --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
+            --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
+            --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
+            --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
+            -t menloltd/cortex:test -f docker/Dockerfile.cache .
+          docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
 
       - name: use python
         uses: actions/setup-python@v5
@@ -217,6 +222,6 @@ jobs:
         continue-on-error: true
         if: always()  
         run: |
-          sudo docker stop cortex
-          sudo docker rm cortex
-          echo "y\n" | sudo docker system prune -af
+          docker stop cortex
+          docker rm cortex
+          echo "y\n" | docker system prune -af
