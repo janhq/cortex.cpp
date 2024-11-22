@@ -76,15 +76,17 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
   int32_t total_ngl = 0;
   auto file_size = std::filesystem::file_size(file_path);
   for (auto const& kv : gf.header.metadata_kv) {
-    if (kv.key == "llama.embedding_length") {
+    if (kv.key.find("embedding_length") != std::string::npos) {
       embedding_length = std::any_cast<uint32_t>(kv.value);
     } else if (kv.key == "tokenizer.ggml.tokens") {
       n_vocab = std::any_cast<GGUFMetadataKVArrayValue>(kv.value).arr.size();
-    } else if (kv.key == "llama.block_count") {
+    } else if (kv.key.find("block_count") != std::string::npos) {
       num_block = std::any_cast<uint32_t>(kv.value);
       total_ngl = num_block + 1;
     }
   }
+
+  // std::cout << n_vocab << std::endl;
 
   // token_embeddings_size = n_vocab * embedding_length * 2 * quant_bit_in/16 bytes
   int32_t quant_bit_in = 0;
@@ -139,8 +141,8 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
 
   // VRAM = (min(n_batch, n_ubatch))/ 512 * 266 (MiB)
   int64_t preprocessing_buffer_size =
-      (double)std::min(rc.n_batch, rc.n_ubatch) / 512 * 266 * 1024 * 1024 /
-      4;  //(bytes)
+      (double)std::min(rc.n_batch, rc.n_ubatch) / 512 * 266 * 1024 * 1024 *
+      n_vocab / 128256 /*llama3 n_vocab*/;  //(bytes)
   if (total_ngl != rc.ngl) {
     preprocessing_buffer_size += output_layer_size;
   }
@@ -161,7 +163,10 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
     res.gpu_mode.ctx_len = rc.ctx_len;
     res.gpu_mode.ngl = rc.ngl;
     res.gpu_mode.ram_MiB = BytesToMiB(ram_usage);
+    // We also need to reserve extra 100 MiB -200 MiB of Ram for some small buffers during processing
+    constexpr const int64_t kDeltaVramMiB = 200;
     res.gpu_mode.vram_MiB =
+        kDeltaVramMiB +
         BytesToMiB(vram_usage + kv_cache_size + preprocessing_buffer_size);
     if (rc.free_vram_MiB > res.gpu_mode.vram_MiB) {
       res.gpu_mode.recommend_ngl = total_ngl;
