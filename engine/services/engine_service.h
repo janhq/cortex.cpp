@@ -4,6 +4,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
 #include "services/download_service.h"
@@ -13,7 +14,6 @@
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
-#include "common/engine_servicei.h"
 
 struct EngineUpdateResult {
   std::string engine;
@@ -37,7 +37,7 @@ struct SystemInfo;
 
 using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
 
-class EngineService: public EngineServiceI {
+class EngineService : public EngineServiceI {
  private:
   using EngineRelease = github_release_utils::GitHubRelease;
   using EngineVariant = github_release_utils::GitHubAsset;
@@ -69,17 +69,13 @@ class EngineService: public EngineServiceI {
    */
   cpp::result<bool, std::string> IsEngineReady(const std::string& engine) const;
 
-  cpp::result<bool, std::string> InstallEngineAsync(
-      const std::string& engine, const std::string& version = "latest",
-      const std::string& src = "");
-
   /**
    * Handling install engine variant.
    *
    * If no version provided, choose `latest`.
    * If no variant provided, automatically pick the best variant.
    */
-  cpp::result<void, std::string> InstallEngineAsyncV2(
+  cpp::result<void, std::string> InstallEngineAsync(
       const std::string& engine, const std::string& version,
       const std::optional<std::string> variant_name);
 
@@ -125,11 +121,7 @@ class EngineService: public EngineServiceI {
       const std::string& engine);
 
  private:
-  cpp::result<bool, std::string> DownloadEngine(
-      const std::string& engine, const std::string& version = "latest",
-      bool async = false);
-
-  cpp::result<void, std::string> DownloadEngineV2(
+  cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
 
