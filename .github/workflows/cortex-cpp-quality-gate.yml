@@ -102,7 +102,7 @@ jobs:
           cd engine
           echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
-          ./build/cortex
+          # ./build/cortex
           cat ~/.cortexrc
 
       - name: Run unit tests
@@ -115,10 +115,10 @@ jobs:
       - name: Run setup config
         run: |
           cd engine
-          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" > ~/.cortexrc
+          echo "apiServerPort: 3928" > ~/.cortexrc
+          echo "huggingFaceToken: ${{ secrets.HUGGINGFACE_TOKEN_READ }}" >> ~/.cortexrc
           echo "gitHubToken: ${{ secrets.PAT_SERVICE_ACCOUNT }}" >> ~/.cortexrc
-          echo "apiServerPort: 3928" >> ~/.cortexrc
-          ./build/cortex
+          # ./build/cortex
           cat ~/.cortexrc
 
       - name: Run e2e tests
@@ -205,6 +205,7 @@ jobs:
             --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
             -t menloltd/cortex:test -f docker/Dockerfile.cache .
           docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
+          sleep 20
 
       - name: use python
         uses: actions/setup-python@v5
@@ -222,6 +223,7 @@ jobs:
         continue-on-error: true
         if: always()  
         run: |
+          docker logs cortex
           docker stop cortex
           docker rm cortex
           echo "y\n" | docker system prune -af

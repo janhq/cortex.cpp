@@ -13,18 +13,18 @@ cd /opt/cortex.llamacpp
 
 # Download the cortex.llamacpp engines
 echo -e "Downloading Cortex Llama version $VERSION"
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx-cuda-11-7.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx-cuda-12-0.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx2-cuda-11-7.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx2-cuda-12-0.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx2.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx512-cuda-11-7.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx512-cuda-12-0.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx512.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-noavx-cuda-11-7.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-noavx-cuda-12-0.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-noavx.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-vulkan.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cuda-11-7-linux-amd64.tar.gz > /dev/null
-wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cuda-12-0-linux-amd64.tar.gz > /dev/null
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx-cuda-11-7.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx-cuda-12-0.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx2-cuda-11-7.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx2-cuda-12-0.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx2.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx512-cuda-11-7.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx512-cuda-12-0.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-avx512.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-noavx-cuda-11-7.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-noavx-cuda-12-0.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-noavx.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cortex.llamacpp-$VERSION-linux-amd64-vulkan.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cuda-11-7-linux-amd64.tar.gz
+wget https://github.com/janhq/cortex.llamacpp/releases/download/v$VERSION/cuda-12-0-linux-amd64.tar.gz

@@ -1234,9 +1234,9 @@
     },
     "/v1/engines/{name}": {
       "get": {
-        "operationId": "EnginesController_findOne",
-        "summary": "Get an engine",
-        "description": "Retrieves an engine instance, providing basic information about the engine.",
+        "operationId": "EnginesController_listInstalledEngines",
+        "summary": "List installed engines",
+        "description": "List installed engines for a particular engine type.",
         "parameters": [
           {
             "name": "name",
@@ -1292,10 +1292,12 @@
           }
         },
         "tags": ["Engines"]
-      },
-      "post": {
-        "summary": "Install an engine",
-        "description": "Install an engine of a specific type, with optional version and variant",
+      }
+    },
+    "/v1/engines/{name}/releases": {
+      "get": {
+        "summary": "List released engines",
+        "description": "List released engines of a specific engine type.",
         "parameters": [
           {
             "name": "name",
@@ -1307,24 +1309,6 @@
               "default": "llama-cpp"
             },
             "description": "The type of engine"
-          },
-          {
-            "name": "version",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The version of the engine to install (optional)"
-          },
-          {
-            "name": "variant",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The variant of the engine to install (optional)"
           }
         ],
         "responses": {
@@ -1332,7 +1316,149 @@
             "description": "Successful installation",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "draft": {
+                        "type": "boolean",
+                        "example": false
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "v0.1.39-20.11.24"
+                      },
+                      "prerelease": {
+                        "type": "boolean",
+                        "example": true
+                      },
+                      "published_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-11-20T17:39:40Z"
+                      },
+                      "url": {
+                        "type": "string",
+                        "example": "https://api.github.com/repos/janhq/cortex.llamacpp/releases/186479804"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Engines"]
+      }
+    },
+    "/v1/engines/{name}/releases/latest": {
+      "get": {
+        "summary": "Get latest release",
+        "description": "Return variants for the latest engine release of a specific engine type.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
+            },
+            "description": "The type of engine"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-11-15T10:39:39Z"
+                      },
+                      "download_count": {
+                        "type": "integer",
+                        "example": 76
+                      },
+                      "name": {
+                        "type": "string",
+                        "example": "0.1.39-linux-amd64-avx-cuda-11-7"
+                      },
+                      "size": {
+                        "type": "integer",
+                        "example": 151215080
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Engines"]
+      }
+    },
+    "/v1/engines/{name}/install": {
+      "post": {
+        "summary": "Install an engine",
+        "description": "Install an engine of a specific type, with optional version and variant. If none are provided, the latest version and most suitable variant will be installed.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
+            },
+            "description": "The type of engine"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "description": "The version of the engine to install (optional)",
+                    "example": "v0.1.39"
+                  },
+                  "variant": {
+                    "type": "string",
+                    "description": "The variant of the engine to install (optional)",
+                    "example": "mac-arm64"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Engine starts installing!"
+                    }
+                  }
+                }
               }
             }
           }
@@ -1341,7 +1467,7 @@
       },
       "delete": {
         "summary": "Uninstall an engine",
-        "description": "Uninstall an engine based on type, version, and variant",
+        "description": "Uninstall an engine based on engine, version, and variant. If version and variant are not provided, all versions and variants of the engine will be uninstalled.",
         "parameters": [
           {
             "name": "name",
@@ -1353,26 +1479,30 @@
               "default": "llama-cpp"
             },
             "description": "The type of engine"
-          },
-          {
-            "name": "version",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The version of the engine to uninstall (optional)"
-          },
-          {
-            "name": "variant",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The variant of the engine to uninstall (optional)"
           }
         ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "description": "The version of the engine to uninstall (optional)",
+                    "example": "v0.1.39"
+                  },
+                  "variant": {
+                    "type": "string",
+                    "description": "The variant of the engine to uninstall (optional)",
+                    "example": "mac-arm64"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful uninstallation",
@@ -1381,28 +1511,10 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": {
-                      "type": "boolean",
-                      "description": "Indicates if the uninstallation was successful"
-                    },
                     "message": {
                       "type": "string",
-                      "description": "Description of the uninstallation action taken"
-                    },
-                    "uninstalledEngines": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "version": {
-                            "type": "string"
-                          },
-                          "variant": {
-                            "type": "string"
-                          }
-                        }
-                      },
-                      "description": "List of uninstalled engine versions and variants"
+                      "description": "Engine llama-cpp uninstalled successfully!",
+                      "example": "Engine llama-cpp uninstalled successfully!"
                     }
                   }
                 }
@@ -1419,6 +1531,44 @@
                     "error": {
                       "type": "string",
                       "description": "Error message describing the issue with the request"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Engines"]
+      }
+    },
+    "/v1/engines/{name}/update": {
+      "post": {
+        "summary": "Update engine",
+        "description": "Updates the specified engine type using the engine variant currently set as default.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
+            },
+            "description": "The name of the engine to update"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Engine updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Engine updated successfully"
                     }
                   }
                 }
@@ -1593,44 +1743,6 @@
                     "message": {
                       "type": "string",
                       "example": "Engine unloaded successfully"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "tags": ["Engines"]
-      }
-    },
-    "/v1/engines/{name}/update": {
-      "post": {
-        "summary": "Update engine",
-        "description": "Updates the specified engine type using the engine variant currently set as default.",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
-              "default": "llama-cpp"
-            },
-            "description": "The name of the engine to update"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Engine updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string",
-                      "example": "Engine updated successfully"
                     }
                   }
                 }
