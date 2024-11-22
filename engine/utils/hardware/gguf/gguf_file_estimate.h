@@ -14,6 +14,7 @@ struct RunConfig {
   int n_batch;
   int n_ubatch;
   std::string kv_cache_type;
+  int64_t free_vram_MiB;
 };
 
 struct CpuMode {
@@ -25,6 +26,7 @@ struct GpuMode {
   int64_t vram_MiB;
   int ngl;
   int ctx_len;
+  int recommend_ngl;
 };
 
 struct Estimation {
@@ -42,6 +44,7 @@ inline Json::Value ToJson(const Estimation& es) {
   gpu["vram"] = es.gpu_mode.vram_MiB;
   gpu["ngl"] = es.gpu_mode.ngl;
   gpu["context_length"] = es.gpu_mode.ctx_len;
+  gpu["recommend_ngl"] = es.gpu_mode.recommend_ngl;
   gpus.append(gpu);
   res["cpu_mode"] = cpu;
   res["gpu_mode"] = gpus;
@@ -160,13 +163,13 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
     res.gpu_mode.ram_MiB = BytesToMiB(ram_usage);
     res.gpu_mode.vram_MiB =
         BytesToMiB(vram_usage + kv_cache_size + preprocessing_buffer_size);
+    if (rc.free_vram_MiB > res.gpu_mode.vram_MiB) {
+      res.gpu_mode.recommend_ngl = total_ngl;
+    } else {
+      res.gpu_mode.recommend_ngl =
+          (double)rc.free_vram_MiB / res.gpu_mode.vram_MiB * rc.ngl;
+    }
   }
   return res;
 }
-// CPU_Mapped model buffer size =    35.16 MiB
-// CUDA0 model buffer size =   601.02 MiB
-// CUDA0 KV buffer size =    88.00 MiB
-// CUDA_Host  output buffer size =     0.12 MiB
-// CUDA0 compute buffer size =   266.00 MiB
-// CUDA_Host compute buffer size =    48.02 MiB
 }  // namespace hardware

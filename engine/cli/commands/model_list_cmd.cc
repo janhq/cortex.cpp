@@ -19,7 +19,8 @@ using Row_t =
 
 void ModelListCmd::Exec(const std::string& host, int port,
                         const std::string& filter, bool display_engine,
-                        bool display_version) {
+                        bool display_version, bool display_cpu_mode,
+                        bool display_gpu_mode) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
@@ -38,9 +39,12 @@ void ModelListCmd::Exec(const std::string& host, int port,
     column_headers.push_back("Version");
   }
 
-  column_headers.push_back("CPU Mode");
-  column_headers.push_back("GPU Mode");
-
+  if (display_cpu_mode) {
+    column_headers.push_back("CPU Mode");
+  }
+  if (display_gpu_mode) {
+    column_headers.push_back("GPU Mode");
+  }
   Row_t header{column_headers.begin(), column_headers.end()};
   table.add_row(header);
   table.format().font_color(Color::green);
@@ -73,18 +77,26 @@ void ModelListCmd::Exec(const std::string& host, int port,
             row.push_back(v["version"].asString());
           }
 
-          if(auto& r = v["recommendation"]; !r.isNull()) {
-            if(!r["cpu_mode"].isNull()) {
-              row.push_back("RAM: " + r["cpu_mode"]["ram"].asString() + " MiB");
+          if (auto& r = v["recommendation"]; !r.isNull()) {
+            if (display_cpu_mode) {
+              if (!r["cpu_mode"].isNull()) {
+                row.push_back("RAM: " + r["cpu_mode"]["ram"].asString() +
+                              " MiB");
+              }
             }
 
-            if(!r["gpu_mode"].isNull()) {
-              std::string s;
-              s += "ngl: " + r["gpu_mode"][0]["ngl"].asString() + " - ";
-              s += "context length: " + r["gpu_mode"][0]["context_length"].asString() + " - ";
-              s += "RAM: " + r["gpu_mode"][0]["ram"].asString() + " MiB - ";
-              s += "VRAM: " + r["gpu_mode"][0]["vram"].asString() + " MiB";
-              row.push_back(s);
+            if (display_gpu_mode) {
+              if (!r["gpu_mode"].isNull()) {
+                std::string s;
+                s += "ngl: " + r["gpu_mode"][0]["ngl"].asString() + " - ";
+                s += "context: " +
+                     r["gpu_mode"][0]["context_length"].asString() + " - ";
+                s += "RAM: " + r["gpu_mode"][0]["ram"].asString() + " MiB - ";
+                s += "VRAM: " + r["gpu_mode"][0]["vram"].asString() + " MiB - ";
+                s += "recommend ngl: " +
+                     r["gpu_mode"][0]["recommend_ngl"].asString();
+                row.push_back(s);
+              }
             }
           }
 

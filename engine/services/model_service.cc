@@ -357,13 +357,19 @@ cpp::result<hardware::Estimation, std::string> ModelService::GetEstimation(
             fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto mc = yaml_handler.GetModelConfig();
-
+    services::HardwareService hw_svc;
+    auto hw_info = hw_svc.GetHardwareInfo();
+    auto free_vram_MiB = 0u;
+    for (const auto& gpu : hw_info.gpus) {
+      free_vram_MiB += gpu.free_vram;
+    }
     return hardware::EstimateLLaMACppRun(file_path.string(),
                                          {.ngl = mc.ngl,
                                           .ctx_len = mc.ctx_len,
                                           .n_batch = 2048,
                                           .n_ubatch = 2048,
-                                          .kv_cache_type = "f16"});
+                                          .kv_cache_type = "f16",
+                                          .free_vram_MiB = free_vram_MiB});
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
@@ -810,7 +816,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
                               .ctx_len = json_data["ctx_len"].asInt(),
                               .n_batch = 2048,
                               .n_ubatch = 2048,
-                              .kv_cache_type = "f16"};
+                              .kv_cache_type = "f16",
+                              .free_vram_MiB = free_vram_MiB};
     auto es = hardware::EstimateLLaMACppRun(mp, rc);
 
     if (es.gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
