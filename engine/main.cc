@@ -1,18 +1,22 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <memory>
+#include "common/repository/message_repository.h"
 #include "controllers/configs.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
 #include "controllers/hardware.h"
+#include "controllers/messages.h"
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
 #include "cortex-common/cortexpythoni.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
+#include "repositories/message_fs_repository.h"
 #include "services/config_service.h"
 #include "services/file_watcher_service.h"
+#include "services/message_service.h"
 #include "services/model_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -116,6 +120,9 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
 
+  std::shared_ptr<MessageRepository> msg_repo =
+      std::make_shared<MessageFsRepository>();
+  auto message_srv = std::make_shared<MessageService>(msg_repo);
   auto model_dir_path = file_manager_utils::GetModelsContainerPath();
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
@@ -131,6 +138,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
+  auto message_ctl = std::make_shared<Messages>(message_srv);
   auto engine_ctl = std::make_shared<Engines>(engine_service);
   auto model_ctl = std::make_shared<Models>(model_service, engine_service);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
@@ -140,6 +148,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
 
+  drogon::app().registerController(message_ctl);
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
