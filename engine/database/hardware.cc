@@ -1,27 +1,13 @@
-#include "hardwares.h"
+#include "hardware.h"
 #include "database.h"
 #include "utils/scope_exit.h"
 
 namespace cortex::db {
 
 Hardwares::Hardwares() : db_(cortex::db::Database::GetInstance().db()) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS hardwares ("
-      "uuid TEXT PRIMARY KEY,"
-      "type TEXT,"
-      "hardware_id INTEGER,"
-      "software_id INTEGER,"
-      "activated INTEGER);");
 }
 
 Hardwares::Hardwares(SQLite::Database& db) : db_(db) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS hardwares ("
-      "uuid TEXT PRIMARY KEY,"
-      "type TEXT,"
-      "hardware_id INTEGER,"
-      "software_id INTEGER,"
-      "activated INTEGER);");
 }
 
 Hardwares::~Hardwares() {}
@@ -35,7 +21,7 @@ Hardwares::LoadHardwareList() const {
     SQLite::Statement query(
         db_,
         "SELECT uuid, type, "
-        "hardware_id, software_id, activated FROM hardwares");
+        "hardware_id, software_id, activated FROM hardware");
 
     while (query.executeStep()) {
       HardwareEntry entry;
@@ -57,7 +43,7 @@ cpp::result<bool, std::string> Hardwares::AddHardwareEntry(
   try {
     SQLite::Statement insert(
         db_,
-        "INSERT INTO hardwares (uuid, type, "
+        "INSERT INTO hardware (uuid, type, "
         "hardware_id, software_id, activated) VALUES (?, ?, "
         "?, ?, ?)");
     insert.bind(1, new_entry.uuid);
@@ -77,7 +63,7 @@ cpp::result<bool, std::string> Hardwares::UpdateHardwareEntry(
     const std::string& id, const HardwareEntry& updated_entry) {
   try {
     SQLite::Statement upd(db_,
-                          "UPDATE hardwares "
+                          "UPDATE hardware "
                           "SET hardware_id = ?, software_id = ?, activated = ? "
                           "WHERE uuid = ?");
     upd.bind(1, updated_entry.hardware_id);
@@ -97,7 +83,7 @@ cpp::result<bool, std::string> Hardwares::UpdateHardwareEntry(
 cpp::result<bool, std::string> Hardwares::DeleteHardwareEntry(
     const std::string& id) {
   try {
-    SQLite::Statement del(db_, "DELETE from hardwares WHERE uuid = ?");
+    SQLite::Statement del(db_, "DELETE from hardware WHERE uuid = ?");
     del.bind(1, id);
     if (del.exec() == 1) {
       CTL_INF("Deleted: " << id);

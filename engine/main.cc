@@ -9,6 +9,8 @@
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
 #include "cortex-common/cortexpythoni.h"
+#include "database/database.h"
+#include "migrations/migration_manager.h"
 #include "services/config_service.h"
 #include "services/file_watcher_service.h"
 #include "services/model_service.h"
@@ -208,6 +210,15 @@ int main(int argc, char* argv[]) {
 
   // avoid printing logs to terminal
   is_server = true;
+
+  // check if migration is needed
+  if (auto res = cortex::migr::MigrationManager(
+                     cortex::db::Database::GetInstance().db())
+                     .Migrate();
+      res.has_error()) {
+    CLI_LOG("Error: " << res.error());
+    return 1;
+  }
 
   std::optional<int> server_port;
   bool ignore_cout_log = false;
