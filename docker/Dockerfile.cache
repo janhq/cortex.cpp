@@ -47,17 +47,58 @@ ARG CMAKE_EXTRA_FLAGS=""
 
 WORKDIR /app
 
+# Build arguments for remote cache
+ARG REMOTE_CACHE_URL=""
+ARG MINIO_ENDPOINT_URL=""
+ARG MINIO_ACCESS_KEY=""
+ARG MINIO_SECRET_KEY=""
+
+# Configure cache
+ENV LOCAL_CACHE_DIR="/vcpkg-cache"
+RUN mkdir -p ${LOCAL_CACHE_DIR}
+
+# Configure MinIO alias (if remote cache is provided)
+RUN if [ -n "${REMOTE_CACHE_URL}" ]; then \
+      echo "Setting up MinIO for remote cache..." && \
+      aws configure set default.s3.signature_version s3v4 && \
+      aws configure set aws_access_key_id ${MINIO_ACCESS_KEY} && \
+      aws configure set aws_secret_access_key ${MINIO_SECRET_KEY} && \
+      aws configure set default.region us-east-1; \
+    else \
+      echo "No remote cache provided, using local fallback..."; \
+    fi
+
+# Sync cache from MinIO (if remote cache is provided)
+RUN if [ -n "${REMOTE_CACHE_URL}" ]; then \
+      echo "Downloading cache from MinIO..." && \
+      aws --endpoint-url=${MINIO_ENDPOINT_URL} s3 sync s3://vcpkg-cache ${LOCAL_CACHE_DIR}; \
+    else \
+      echo "No remote cache provided, skipping download."; \
+    fi
+
 # Copy source code
 COPY ./engine /app/engine
 COPY ./docs/static/openapi/cortex.json /app/docs/static/openapi/cortex.json
 
 # Build project
 # Configure vcpkg binary sources
-RUN cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake ${CMAKE_EXTRA_FLAGS}"
+RUN export VCPKG_BINARY_SOURCES="files,${LOCAL_CACHE_DIR},readwrite;default"; \
+    cd engine && make configure-vcpkg && make build CMAKE_EXTRA_FLAGS="-DCORTEX_CPP_VERSION=${CORTEX_CPP_VERSION} -DCMAKE_BUILD_TEST=OFF -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake ${CMAKE_EXTRA_FLAGS}"
+
+    # Upload updated cache to MinIO (if remote cache is provided)
+RUN if [ -n "${REMOTE_CACHE_URL}" ]; then \
+      echo "Uploading cache to MinIO..." && \
+      aws --endpoint-url=${MINIO_ENDPOINT_URL} s3 sync ${LOCAL_CACHE_DIR} s3://vcpkg-cache; \
+    else \
+      echo "No remote cache provided, skipping upload."; \
+    fi
 
 # Stage 3: Runtime
+FROM common as runtime
 
 WORKDIR /app
+
+# Copy built binaries from the build stage
 COPY --from=build /app/engine/build/cortex /usr/local/bin/cortex
 COPY --from=build /app/engine/build/cortex-server /usr/local/bin/cortex-server
 
