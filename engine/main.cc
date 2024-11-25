@@ -150,6 +150,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   LOG_INFO << "Please load your model";
 #ifndef _WIN32
   drogon::app().enableReusePort();
+#else
+  drogon::app().enableDateHeader(false);
 #endif
   drogon::app().addListener(config.apiServerHost,
                             std::stoi(config.apiServerPort));
