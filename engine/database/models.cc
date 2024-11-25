@@ -9,23 +9,9 @@
 namespace cortex::db {
 
 Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT);");
 }
 
 Models::Models(SQLite::Database& db) : db_(db) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT UNIQUE);");
 }
 
 Models::~Models() {}
