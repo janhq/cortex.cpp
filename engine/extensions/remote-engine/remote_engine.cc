@@ -3,13 +3,18 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include "utils/logging_utils.h"
 namespace remote_engine {
-
+namespace {
 constexpr const int k200OK = 200;
 constexpr const int k400BadRequest = 400;
 constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
 constexpr const int kFileLoggerOption = 0;
+bool is_anthropic(const std::string& model) {
+  return model.find("claude") != std::string::npos;
+}
+}  // namespace
 
 CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
     const ModelConfig& config, const std::string& body,
@@ -166,6 +171,11 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
 
     headers = curl_slist_append(headers, api_key_template_.c_str());
   }
+
+  if (is_anthropic(config.model)) {
+    std::string v = "anthropic-version: " + config.version;
+    headers = curl_slist_append(headers, v.c_str());
+  }
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
@@ -200,6 +210,13 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
 
     ModelConfig model_config;
     model_config.model = model;
+    if (is_anthropic(model)) {
+      if (!config["version"]) {
+        CTL_ERR("Missing version for model: " << model);
+        return false;
+      }
+      model_config.version = config["version"].as<std::string>();
+    }
 
     // Required fields
     if (!config["api_key_template"]) {

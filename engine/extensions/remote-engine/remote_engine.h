@@ -80,6 +80,7 @@ class RemoteEngine : public EngineI {
   // Model configuration
   struct ModelConfig {
     std::string model;
+    std::string version;
     std::string api_key;
     std::string url;
     YAML::Node transform_req;
