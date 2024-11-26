@@ -209,11 +209,7 @@
                       },
                       {
                         "type": "array",
-<<<<<<< HEAD
-                        "description" : "The array of strings that will be turned into an embedding.",
-=======
                         "description": "The array of strings that will be turned into an embedding.",
->>>>>>> a055f6906e43b3c3398874d540136425adae9114
                         "items": {
                           "type": "string"
                         }
@@ -223,21 +219,11 @@
                         "description": "The array of integers that will be turned into an embedding.",
                         "items": {
                           "type": "integer"
-<<<<<<< HEAD
-                          
-=======
->>>>>>> a055f6906e43b3c3398874d540136425adae9114
                         }
                       },
                       {
                         "type": "array",
-<<<<<<< HEAD
-
-                        "description" : "The array of arrays containing integers that will be turned into an embedding.",
-
-=======
                         "description": "The array of arrays containing integers that will be turned into an embedding.",
->>>>>>> a055f6906e43b3c3398874d540136425adae9114
                         "items": {
                           "type": "array",
                           "items": {
