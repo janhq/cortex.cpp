@@ -93,7 +93,7 @@ void ModelListCmd::Exec(const std::string& host, int port,
                      r["gpu_mode"][0]["context_length"].asString() + " - ";
                 s += "RAM: " + r["gpu_mode"][0]["ram"].asString() + " MiB - ";
                 s += "VRAM: " + r["gpu_mode"][0]["vram"].asString() + " MiB - ";
-                s += "recommend ngl: " +
+                s += "recommended ngl: " +
                      r["gpu_mode"][0]["recommend_ngl"].asString();
                 row.push_back(s);
               }
