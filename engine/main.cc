@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
       auto cfg = file_manager_utils::GetCortexConfig();
       if (cfg.dataFolderPath != fmu::cortex_data_folder_path ||
           cfg.logFolderPath != fmu::cortex_data_folder_path) {
-        cfg.dataFolderPath = fmu::cortex_data_folder_path;
+        // cfg.dataFolderPath = _TEXT(fmu::cortex_data_folder_path.string());
         cfg.logFolderPath = fmu::cortex_data_folder_path;
         auto config_path = file_manager_utils::GetConfigurationPath();
         auto result =

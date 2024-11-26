@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <mutex>
+#include <string>
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "yaml-cpp/yaml.h"
@@ -28,7 +28,7 @@ struct CortexConfig {
   std::string logLlamaCppPath;
   std::string logTensorrtLLMPath;
   std::string logOnnxPath;
-  std::string dataFolderPath;
+  std::wstring dataFolderPath;
 
   int maxLogLines;
   std::string apiServerHost;
@@ -165,7 +165,7 @@ class CortexConfigMgr {
                              ? node["logOnnxPath"].as<std::string>()
                              : default_cfg.logOnnxPath,
           .dataFolderPath = node["dataFolderPath"]
-                                ? node["dataFolderPath"].as<std::string>()
+                                ? node["dataFolderPath"].as<std::wstring>()
                                 : default_cfg.dataFolderPath,
           .maxLogLines = node["maxLogLines"] ? node["maxLogLines"].as<int>()
                                              : default_cfg.maxLogLines,

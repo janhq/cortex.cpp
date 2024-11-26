@@ -19,7 +19,7 @@
 namespace file_manager_utils {
 namespace cyu = config_yaml_utils;
 constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
-constexpr std::string_view kDefaultConfigurationPath = "user_home";
+const std::wstring kDefaultConfigurationPath = L"user_home";
 constexpr std::string_view kProdVariant = "prod";
 constexpr std::string_view kBetaVariant = "beta";
 constexpr std::string_view kNightlyVariant = "nightly";
@@ -27,9 +27,9 @@ constexpr char kLogsLlamacppBaseName[] = "./logs/cortex.log";
 constexpr char kLogsTensorrtllmBaseName[] = "./logs/cortex.log";
 constexpr char kLogsOnnxBaseName[] = "./logs/cortex.log";
 
-inline std::string cortex_config_file_path;
+inline std::filesystem::path cortex_config_file_path;
 
-inline std::string cortex_data_folder_path;
+inline std::filesystem::path cortex_data_folder_path;
 
 inline std::filesystem::path GetExecutableFolderContainerPath() {
 #if defined(__APPLE__) && defined(__MACH__)
@@ -95,7 +95,7 @@ inline std::filesystem::path GetConfigurationPath() {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT kProdVariant
 #endif
-  std::string config_file_path;
+  std::filesystem::path config_file_path;
   if (cortex_config_file_path.empty()) {
     config_file_path = CORTEX_CONFIG_FILE_PATH;
   } else {
@@ -103,7 +103,6 @@ inline std::filesystem::path GetConfigurationPath() {
   }
 
   if (config_file_path != kDefaultConfigurationPath) {
-    // CTL_INF("Config file path: " + config_file_path);
     return std::filesystem::path(config_file_path);
   }
 
@@ -166,7 +165,7 @@ inline config_yaml_utils::CortexConfig GetDefaultConfig() {
       .logLlamaCppPath = kLogsLlamacppBaseName,
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
       .logOnnxPath = kLogsOnnxBaseName,
-      .dataFolderPath = default_data_folder_path.string(),
+      // .dataFolderPath = default_data_folder_path.string(), // TODO: namh
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,
@@ -197,7 +196,10 @@ inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
 
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
   auto config = GetDefaultConfig();
-  CLI_LOG("Default data folder path: " + config.dataFolderPath);
+  // CLI_LOG("Default data folder path: " + config.dataFolderPath);
+  std::wcout << "Default data folder path: " << config.dataFolderPath
+             << std::endl;
+
   return cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
       config, config_path.string());
 }
