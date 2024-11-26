@@ -2,9 +2,9 @@
 
 #include <json/json.h>
 #include <filesystem>
+#include <optional>
 #include <sstream>
 #include <string>
-#include <optional>
 
 enum class DownloadType { Model, Engine, Miscellaneous, CudaToolkit, Cortex };
 
