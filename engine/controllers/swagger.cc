@@ -1,5 +1,6 @@
 #include "swagger.h"
 #include "cortex_openapi.h"
+#include "utils/cortex_utils.h"
 
 constexpr auto ScalarUi = R"(
 <!doctype html>
@@ -31,7 +32,7 @@ Json::Value SwaggerController::generateOpenAPISpec() {
 void SwaggerController::serveSwaggerUI(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback) const {
-  auto resp = drogon::HttpResponse::newHttpResponse();
+  auto resp = cortex_utils::CreateCortexHttpResponse();
   resp->setBody(ScalarUi);
   resp->setContentTypeCode(drogon::CT_TEXT_HTML);
   callback(resp);
@@ -41,6 +42,6 @@ void SwaggerController::serveOpenAPISpec(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback) const {
   Json::Value spec = generateOpenAPISpec();
-  auto resp = drogon::HttpResponse::newHttpJsonResponse(spec);
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(spec);
   callback(resp);
 }
