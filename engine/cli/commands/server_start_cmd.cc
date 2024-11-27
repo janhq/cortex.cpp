@@ -62,19 +62,20 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   params += " --data_folder_path " + get_data_folder_path();
   params += " --loglevel " + log_level_;
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
+  std::wstring w = std::wstring(cmds.begin(), cmds.end());
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          const_cast<char*>(
-              cmds.c_str()),  // Command line (replace with your actual executable)
-          NULL,               // Process handle not inheritable
-          NULL,               // Thread handle not inheritable
-          FALSE,              // Set handle inheritance to FALSE
-          0,                  // No creation flags
-          NULL,               // Use parent's environment block
-          NULL,               // Use parent's starting directory
-          &si,                // Pointer to STARTUPINFO structure
-          &pi))               // Pointer to PROCESS_INFORMATION structure
+          const_cast<wchar_t*>(
+              w.c_str()),  // Command line (replace with your actual executable)
+          NULL,            // Process handle not inheritable
+          NULL,            // Thread handle not inheritable
+          TRUE,           // Set handle inheritance
+          0,               // No creation flags
+          NULL,            // Use parent's environment block
+          NULL,            // Use parent's starting directory
+          &si,             // Pointer to STARTUPINFO structure
+          &pi))            // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
@@ -115,7 +116,8 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
           get_config_file_path().c_str(), "--data_folder_path",
-          get_data_folder_path().c_str(), "--loglevel", log_level_.c_str(), (char*)0);
+          get_data_folder_path().c_str(), "--loglevel", log_level_.c_str(),
+          (char*)0);
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {
