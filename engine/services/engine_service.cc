@@ -13,6 +13,7 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
+#include "utils/cortex_utils.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -702,7 +703,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     // 3. Add dll directory if met other conditions
 
     auto add_dll = [this](const std::string& e_type, const std::string& p) {
-      auto ws = std::wstring(p.begin(), p.end());
+      auto ws = cortex_utils::UTF8ToUTF16(p);
       if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
         CTL_DBG("Added dll directory: " << p);
         engines_[e_type].cookie = cookie;
