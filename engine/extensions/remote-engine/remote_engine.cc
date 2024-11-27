@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 namespace remote_engine {
 namespace {
@@ -14,7 +15,137 @@ constexpr const int kFileLoggerOption = 0;
 bool is_anthropic(const std::string& model) {
   return model.find("claude") != std::string::npos;
 }
+
+struct AnthropicChunk {
+  std::string type;
+  std::string id;
+  int index;
+  std::string msg;
+  std::string model;
+  std::string stop_reason;
+  bool should_ignore = false;
+
+  AnthropicChunk(const std::string& str) {
+    if (str.size() > 6) {
+      std::string s = str.substr(6);
+      try {
+        auto root = json_helper::ParseJsonString(s);
+        type = root["type"].asString();
+        if (type == "message_start") {
+          id = root["message"]["id"].asString();
+          model = root["message"]["model"].asString();
+        } else if (type == "content_block_delta") {
+          index = root["index"].asInt();
+          if (root["delta"]["type"].asString() == "text_delta") {
+            msg = root["delta"]["text"].asString();
+          }
+        } else if (type == "message_delta") {
+          stop_reason = root["delta"]["stop_reason"].asString();
+        } else {
+          // ignore other messages
+          should_ignore = true;
+        }
+      } catch (const std::exception& e) {
+        should_ignore = true;
+        CTL_WRN("JSON parse error: " << e.what());
+      }
+    } else {
+      should_ignore = true;
+    }
+  }
+
+  std::string ToOpenAiFormatString() {
+    Json::Value root;
+    root["id"] = id;
+    root["object"] = "chat.completion.chunk";
+    root["created"] = Json::Value();
+    root["model"] = model;
+    root["system_fingerprint"] = "fp_e76890f0c3";
+    Json::Value choices(Json::arrayValue);
+    Json::Value choice;
+    Json::Value content;
+    choice["index"] = 0;
+    content["content"] = msg;
+    if (type == "message_start") {
+      content["role"] = "assistant";
+      content["refusal"] = Json::Value();
+    }
+    choice["delta"] = content;
+    choice["finish_reason"] = stop_reason.empty() ? Json::Value() : stop_reason;
+    choices.append(choice);
+    root["choices"] = choices;
+    return "data: " + json_helper::DumpJsonString(root);
+  }
+};
+
 }  // namespace
+
+size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
+                           void* userdata) {
+  auto* context = static_cast<StreamContext*>(userdata);
+  std::string chunk(ptr, size * nmemb);
+
+  context->buffer += chunk;
+
+  // Process complete lines
+  size_t pos;
+  while ((pos = context->buffer.find('\n')) != std::string::npos) {
+    std::string line = context->buffer.substr(0, pos);
+    context->buffer = context->buffer.substr(pos + 1);
+    CTL_TRC(line);
+
+    // Skip empty lines
+    if (line.empty() || line == "\r" ||
+        line.find("event:") != std::string::npos)
+      continue;
+
+    // Remove "data: " prefix if present
+    // if (line.substr(0, 6) == "data: ")
+    // {
+    //     line = line.substr(6);
+    // }
+
+    // Skip [DONE] message
+    // std::cout << line << std::endl;
+    if (line == "data: [DONE]" ||
+        line.find("message_stop") != std::string::npos) {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = false;
+      status["is_stream"] = true;
+      status["status_code"] = 200;
+      (*context->callback)(std::move(status), Json::Value());
+      break;
+    }
+
+    // Parse the JSON
+    Json::Value chunk_json;
+    if (is_anthropic(context->model)) {
+      AnthropicChunk ac(line);
+      if (ac.should_ignore)
+        continue;
+      ac.model = context->model;
+      if (ac.type == "message_start") {
+        context->id = ac.id;
+      } else {
+        ac.id = context->id;
+      }
+      chunk_json["data"] = ac.ToOpenAiFormatString() + "\n\n";
+    } else {
+      chunk_json["data"] = line + "\n\n";
+    }
+    Json::Reader reader;
+
+    Json::Value status;
+    status["is_done"] = false;
+    status["has_error"] = false;
+    status["is_stream"] = true;
+    status["status_code"] = 200;
+    (*context->callback)(std::move(status), std::move(chunk_json));
+  }
+
+  return size * nmemb;
+}
 
 CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
     const ModelConfig& config, const std::string& body,
@@ -37,6 +168,11 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
     headers = curl_slist_append(headers, api_key_template_.c_str());
   }
 
+  if (is_anthropic(config.model)) {
+    std::string v = "anthropic-version: " + config.version;
+    headers = curl_slist_append(headers, v.c_str());
+  }
+
   headers = curl_slist_append(headers, "Content-Type: application/json");
   headers = curl_slist_append(headers, "Accept: text/event-stream");
   headers = curl_slist_append(headers, "Cache-Control: no-cache");
@@ -45,7 +181,7 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   StreamContext context{
       std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
           callback),
-      ""};
+      "", "", config.model};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -249,6 +385,7 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
       std::unique_lock lock(models_mutex_);
       models_[model] = std::move(model_config);
     }
+    CTL_DBG("LoadModelConfig successfully: " << model << ", " << yaml_path);
 
     return true;
   } catch (const YAML::Exception& e) {
@@ -339,6 +476,7 @@ void RemoteEngine::LoadModel(
   status["is_stream"] = false;
   status["status_code"] = k200OK;
   callback(std::move(status), std::move(response));
+  CTL_INF("Model loaded successfully: " << model);
 }
 
 void RemoteEngine::UnloadModel(

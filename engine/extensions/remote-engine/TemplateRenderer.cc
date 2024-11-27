@@ -6,6 +6,7 @@
 #include "TemplateRenderer.h"
 #include <regex>
 #include <stdexcept>
+#include "utils/logging_utils.h"
 namespace remote_engine {
 TemplateRenderer::TemplateRenderer() {
   // Configure Inja environment
