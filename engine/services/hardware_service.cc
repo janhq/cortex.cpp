@@ -5,6 +5,8 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <minwindef.h>
 #include <processenv.h>
+#include <codecvt>
+#include <locale>
 #endif
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
@@ -120,12 +122,14 @@ bool HardwareService::Restart(const std::string& host, int port) {
   params += " --data_folder_path " + get_data_folder_path();
   params += " --loglevel " + luh::LogLevelStr(luh::global_log_level);
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
-  std::wstring w = std::wstring(cmds.begin(), cmds.end());
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  std::wstring wcmds = converter.from_bytes(cmds);
+  std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
+  mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          const_cast<wchar_t*>(
-              w.c_str()),  // Command line (replace with your actual executable)
+          mutable_cmds.data(),  // Command line (replace with your actual executable)
           NULL,               // Process handle not inheritable
           NULL,               // Thread handle not inheritable
           TRUE,               // Handle inheritance

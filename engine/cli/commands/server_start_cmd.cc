@@ -3,6 +3,10 @@
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <codecvt>
+#include <locale>
+#endif
 namespace commands {
 
 namespace {
@@ -62,12 +66,14 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   params += " --data_folder_path " + get_data_folder_path();
   params += " --loglevel " + log_level_;
   std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
-  std::wstring w = std::wstring(cmds.begin(), cmds.end());
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+  std::wstring wcmds = converter.from_bytes(cmds);
+  std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
+  mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          const_cast<wchar_t*>(
-              w.c_str()),  // Command line (replace with your actual executable)
+          mutable_cmds.data(),  // Command line (replace with your actual executable)
           NULL,            // Process handle not inheritable
           NULL,            // Thread handle not inheritable
           TRUE,           // Set handle inheritance

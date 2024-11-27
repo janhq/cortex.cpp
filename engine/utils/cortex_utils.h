@@ -65,18 +65,15 @@ inline drogon::HttpResponsePtr CreateCortexStreamResponse(
 
 #if defined(_WIN32)
 inline std::string GetCurrentPath() {
-  wchar_t path[MAX_PATH];
-  DWORD result = GetModuleFileNameW(NULL, path, MAX_PATH);
+  char path[MAX_PATH];
+  DWORD result = GetModuleFileNameA(NULL, path, MAX_PATH);
   if (result == 0) {
-    std::wcerr << L"Error getting module file name." << std::endl;
+    std::cerr << "Error getting module file name." << std::endl;
     return "";
   }
-  std::wstring::size_type pos = std::wstring(path).find_last_of(L"\\/");
-  auto ws = std::wstring(path).substr(0, pos);
-  std::string res;
-  std::transform(ws.begin(), ws.end(), std::back_inserter(res),
-                 [](wchar_t c) { return (char)c; });
-  return res;
+
+  std::string::size_type pos = std::string(path).find_last_of("\\/");
+  return std::string(path).substr(0, pos);
 }
 #else
 inline std::string GetCurrentPath() {
