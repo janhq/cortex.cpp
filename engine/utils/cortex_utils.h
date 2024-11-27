@@ -17,8 +17,12 @@
 #include <unistd.h>
 #endif
 
-#if __APPLE__
+#if defined(__APPLE__)
 #include <mach-o/dyld.h>
+#endif
+
+#if defined(_WIN32)
+#include <windows.h>
 #endif
 
 namespace cortex_utils {
@@ -64,6 +68,26 @@ inline drogon::HttpResponsePtr CreateCortexStreamResponse(
 }
 
 #if defined(_WIN32)
+
+inline std::wstring UTF8ToUTF16(const std::string& utf8) {
+  if (utf8.empty()) {
+    return std::wstring();
+  }
+
+  // First, get the size of the output buffer
+  int size_needed =
+      MultiByteToWideChar(CP_UTF8, 0, &utf8[0], (int)utf8.size(), NULL, 0);
+
+  // Allocate the output buffer
+  std::wstring utf16(size_needed, 0);
+
+  // Do the actual conversion
+  MultiByteToWideChar(CP_UTF8, 0, &utf8[0], (int)utf8.size(), &utf16[0],
+                      size_needed);
+
+  return utf16;
+}
+
 inline std::string GetCurrentPath() {
   char path[MAX_PATH];
   DWORD result = GetModuleFileNameA(NULL, path, MAX_PATH);
