@@ -816,6 +816,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     } else {
       CTL_WRN("Method SetLogLevel is not supported yet");
     }
+    CTL_INF("Loaded engine: " << engine_name);
     return {};
   }
 
