@@ -1,5 +1,7 @@
 #include "database/models.h"
 #include <drogon/HttpTypes.h>
+#include <filesystem>
+#include <optional>
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "models.h"
@@ -26,15 +28,29 @@ void Models::PullModel(const HttpRequestPtr& req,
     return;
   }
 
+  std::optional<std::string> desired_model_id = std::nullopt;
+  auto id = (*(req->getJsonObject())).get("id", "").asString();
+  if (!id.empty()) {
+    desired_model_id = id;
+  }
+
+  std::optional<std::string> desired_model_name = std::nullopt;
+  auto name_value = (*(req->getJsonObject())).get("name", "").asString();
+
+  if (!name_value.empty()) {
+    desired_model_name = name_value;
+  }
+
   auto handle_model_input =
       [&, model_handle]() -> cpp::result<DownloadTask, std::string> {
     CTL_INF("Handle model input, model handle: " + model_handle);
     if (string_utils::StartsWith(model_handle, "https")) {
-      return model_service_->HandleDownloadUrlAsync(model_handle);
+      return model_service_->HandleDownloadUrlAsync(
+          model_handle, desired_model_id, desired_model_name);
     } else if (model_handle.find(":") != std::string::npos) {
       auto model_and_branch = string_utils::SplitBy(model_handle, ":");
       return model_service_->DownloadModelFromCortexsoAsync(
-          model_and_branch[0], model_and_branch[1]);
+          model_and_branch[0], model_and_branch[1], desired_model_id);
     }
 
     return cpp::fail("Invalid model handle or not supported!");
@@ -51,6 +67,45 @@ void Models::PullModel(const HttpRequestPtr& req,
     Json::Value ret;
     ret["message"] = "Model start downloading!";
     ret["task"] = result.value().ToJsonCpp();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::GetModelPullInfo(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  if (!http_util::HasFieldInReq(req, callback, "model")) {
+    return;
+  }
+
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto res = model_service_->GetModelPullInfo(model_handle);
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto const& info = res.value();
+    Json::Value ret;
+    Json::Value downloaded(Json::arrayValue);
+    for (auto const& s : info.downloaded_models) {
+      downloaded.append(s);
+    }
+    Json::Value avails(Json::arrayValue);
+    for (auto const& s : info.available_models) {
+      avails.append(s);
+    }
+    ret["id"] = info.id;
+    ret["modelSource"] = info.model_source;
+    ret["defaultBranch"] = info.default_branch;
+    ret["message"] = "Get model pull information successfully";
+    ret["downloadedModels"] = downloaded;
+    ret["availableModels"] = avails;
+    ret["downloadUrl"] = info.download_url;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -98,7 +153,7 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-
+  model_service_->ForceIndexingModelList();
   // Iterate through directory
 
   cortex::db::Models modellist_handler;
@@ -107,7 +162,6 @@ void Models::ListModel(
   auto list_entry = modellist_handler.LoadModelList();
   if (list_entry) {
     for (const auto& model_entry : list_entry.value()) {
-      // auto model_entry = modellist_handler.GetModelInfo(model_handle);
       try {
         yaml_handler.ModelConfigFromFile(
             fmu::ToAbsoluteCortexDataPath(
@@ -116,7 +170,6 @@ void Models::ListModel(
         auto model_config = yaml_handler.GetModelConfig();
         Json::Value obj = model_config.ToJson();
         obj["id"] = model_entry.model;
-        obj["model_alias"] = model_entry.model_alias;
         obj["model"] = model_entry.model;
         data.append(std::move(obj));
         yaml_handler.Reset();
@@ -156,7 +209,6 @@ void Models::GetModel(const HttpRequestPtr& req,
     config::YamlHandler yaml_handler;
     auto model_entry = modellist_handler.GetModelInfo(model_id);
     if (model_entry.has_error()) {
-      // CLI_LOG("Error: " + model_entry.error());
       ret["id"] = model_id;
       ret["object"] = "model";
       ret["result"] = "Fail to get model information";
@@ -268,6 +320,8 @@ void Models::ImportModel(
   }
   auto modelHandle = (*(req->getJsonObject())).get("model", "").asString();
   auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
+  auto modelName = (*(req->getJsonObject())).get("name", "").asString();
+  auto option = (*(req->getJsonObject())).get("option", "symlink").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   cortex::db::Models modellist_utils_obj;
@@ -287,8 +341,24 @@ void Models::ImportModel(
         std::filesystem::path(model_yaml_path).parent_path());
     gguf_handler.Parse(modelPath);
     config::ModelConfig model_config = gguf_handler.GetModelConfig();
-    model_config.files.push_back(modelPath);
+    // There are 2 options: symlink and copy
+    if (option == "copy") {
+      // Copy GGUF file to the destination path
+      std::filesystem::path file_path =
+          std::filesystem::path(model_yaml_path).parent_path() /
+          std::filesystem::path(modelPath).filename();
+      std::filesystem::copy_file(
+          modelPath, file_path, std::filesystem::copy_options::update_existing);
+      model_config.files.push_back(file_path.string());
+      auto size = std::filesystem::file_size(file_path);
+      model_config.size = size;
+    } else {
+      model_config.files.push_back(modelPath);
+      auto size = std::filesystem::file_size(modelPath);
+      model_config.size = size;
+    }
     model_config.model = modelHandle;
+    model_config.name = modelName.empty() ? model_config.name : modelName;
     yaml_handler.UpdateModelConfig(model_config);
 
     if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
@@ -333,83 +403,90 @@ void Models::ImportModel(
   }
 }
 
-void Models::SetModelAlias(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
-  if (!http_util::HasFieldInReq(req, callback, "model") ||
-      !http_util::HasFieldInReq(req, callback, "modelAlias")) {
-    return;
-  }
-  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto model_alias = (*(req->getJsonObject())).get("modelAlias", "").asString();
-  LOG_DEBUG << "GetModel, Model handle: " << model_handle
-            << ", Model alias: " << model_alias;
-
-  cortex::db::Models modellist_handler;
-  try {
-    auto result = modellist_handler.UpdateModelAlias(model_handle, model_alias);
-    if (result.has_error()) {
-      std::string message = result.error();
-      LOG_ERROR << message;
-      Json::Value ret;
-      ret["result"] = "Set alias failed!";
-      ret["modelHandle"] = model_handle;
-      ret["message"] = message;
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-    } else {
-      if (result.value()) {
-        std::string message = "Successfully set model alias '" + model_alias +
-                              "' for modeID '" + model_handle + "'.";
-        LOG_INFO << message;
-        Json::Value ret;
-        ret["result"] = "OK";
-        ret["modelHandle"] = model_handle;
-        ret["message"] = message;
-        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-        resp->setStatusCode(k200OK);
-        callback(resp);
-      } else {
-        std::string message = "Unable to set model alias for modelID '" +
-                              model_handle + "': model alias '" + model_alias +
-                              "' is not unique!";
-        LOG_ERROR << message;
-        Json::Value ret;
-        ret["result"] = "Set alias failed!";
-        ret["modelHandle"] = model_handle;
-        ret["message"] = message;
-        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-        resp->setStatusCode(k400BadRequest);
-        callback(resp);
-      }
-    }
-  } catch (const std::exception& e) {
-    std::string message = "Error when setting model alias ('" + model_alias +
-                          "') for modelID '" + model_handle + "':" + e.what();
-    LOG_ERROR << message;
-    Json::Value ret;
-    ret["result"] = "Set alias failed!";
-    ret["modelHandle"] = model_handle;
-    ret["message"] = message;
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k400BadRequest);
-    callback(resp);
-  }
-}
-
 void Models::StartModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!http_util::HasFieldInReq(req, callback, "model"))
     return;
-  auto config = file_manager_utils::GetCortexConfig();
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto custom_prompt_template =
-      (*(req->getJsonObject())).get("prompt_template", "").asString();
-  auto result = model_service_->StartModel(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_handle,
-      custom_prompt_template);
+  StartParameterOverride params_override;
+  if (auto& o = (*(req->getJsonObject()))["prompt_template"]; !o.isNull()) {
+    params_override.custom_prompt_template = o.asString();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["cache_enabled"]; !o.isNull()) {
+    params_override.cache_enabled = o.asBool();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["ngl"]; !o.isNull()) {
+    params_override.ngl = o.asInt();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["n_parallel"]; !o.isNull()) {
+    params_override.n_parallel = o.asInt();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["ctx_len"]; !o.isNull()) {
+    params_override.ctx_len = o.asInt();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["cache_type"]; !o.isNull()) {
+    params_override.cache_type = o.asString();
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
+    params_override.mmproj = o.asString();
+  }
+
+  // Support both llama_model_path and model_path for backward compatible
+  // model_path has higher priority
+  if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
+    params_override.model_path = o.asString();
+    if (auto& mp = (*(req->getJsonObject()))["model_path"]; mp.isNull()) {
+      // Bypass if model does not exist in DB and llama_model_path exists
+      if (std::filesystem::exists(params_override.model_path.value()) &&
+          !model_service_->HasModel(model_handle)) {
+        CTL_INF("llama_model_path exists, bypass check model id");
+        params_override.bypass_llama_model_path = true;
+      }
+    }
+  }
+
+  if (auto& o = (*(req->getJsonObject()))["model_path"]; !o.isNull()) {
+    params_override.model_path = o.asString();
+  }
+
+  auto model_entry = model_service_->GetDownloadedModel(model_handle);
+  if (!model_entry.has_value() && !params_override.bypass_model_check()) {
+    Json::Value ret;
+    ret["message"] = "Cannot find model: " + model_handle;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  std::string engine_name = params_override.bypass_model_check()
+                                ? kLlamaEngine
+                                : model_entry.value().engine;
+  auto engine_validate = engine_service_->IsEngineReady(engine_name);
+  if (engine_validate.has_error()) {
+    Json::Value ret;
+    ret["message"] = engine_validate.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  if (!engine_validate.value()) {
+    Json::Value ret;
+    ret["message"] = "Engine is not ready! Please install first!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto result = model_service_->StartModel(model_handle, params_override);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -417,8 +494,12 @@ void Models::StartModel(
     resp->setStatusCode(drogon::k400BadRequest);
     callback(resp);
   } else {
+    auto& v = result.value();
     Json::Value ret;
     ret["message"] = "Started successfully!";
+    if (v.warning) {
+      ret["warning"] = *(v.warning);
+    }
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -427,12 +508,12 @@ void Models::StartModel(
 
 void Models::StopModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!http_util::HasFieldInReq(req, callback, "model"))
+  if (!http_util::HasFieldInReq(req, callback, "model")) {
     return;
-  auto config = file_manager_utils::GetCortexConfig();
+  }
+
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  auto result = model_service_->StopModel(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_handle);
+  auto result = model_service_->StopModel(model_handle);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -452,10 +533,7 @@ void Models::GetModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& model_id) {
-  auto config = file_manager_utils::GetCortexConfig();
-
-  auto result = model_service_->GetModelStatus(
-      config.apiServerHost, std::stoi(config.apiServerPort), model_id);
+  auto result = model_service_->GetModelStatus(model_id);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();

@@ -2,17 +2,20 @@
 
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
-#include "utils/cpuid/cpu_info.h"
-#include "utils/engine_constants.h"
-#include "utils/file_manager_utils.h"
 #include "utils/function_calling/common.h"
+
 using namespace inferences;
-using json = nlohmann::json;
+
 namespace inferences {
 
-server::server() {
+server::server(std::shared_ptr<services::InferenceService> inference_service,
+               std::shared_ptr<EngineService> engine_service)
+    : inference_svc_(inference_service), engine_service_(engine_service) {
 #if defined(_WIN32)
-  SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+  if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
+      should_use_dll_search_path) {
+    SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+  }
 #endif
 };
 
@@ -24,8 +27,9 @@ void server::ChatCompletion(
   LOG_DEBUG << "Start chat completion";
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
+  LOG_DEBUG << "request body: " << json_body->toStyledString();
   auto q = std::make_shared<services::SyncQueue>();
-  auto ir = inference_svc_.HandleChatCompletion(q, json_body);
+  auto ir = inference_svc_->HandleChatCompletion(q, json_body);
   if (ir.has_error()) {
     auto err = ir.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
@@ -47,7 +51,7 @@ void server::Embedding(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   LOG_TRACE << "Start embedding";
   auto q = std::make_shared<services::SyncQueue>();
-  auto ir = inference_svc_.HandleEmbedding(q, req->getJsonObject());
+  auto ir = inference_svc_->HandleEmbedding(q, req->getJsonObject());
   if (ir.has_error()) {
     auto err = ir.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
@@ -64,7 +68,10 @@ void server::Embedding(const HttpRequestPtr& req,
 void server::UnloadModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_.UnloadModel(req->getJsonObject());
+  auto engine = (*req->getJsonObject())["engine"].asString();
+  auto model = (*req->getJsonObject())["model_id"].asString();
+  CTL_INF("Unloading model: " + model + ", engine: " + engine);
+  auto ir = inference_svc_->UnloadModel(engine, model);
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
   resp->setStatusCode(
       static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
@@ -74,7 +81,7 @@ void server::UnloadModel(
 void server::ModelStatus(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_.GetModelStatus(req->getJsonObject());
+  auto ir = inference_svc_->GetModelStatus(req->getJsonObject());
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
   resp->setStatusCode(
       static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
@@ -84,7 +91,7 @@ void server::ModelStatus(
 void server::GetModels(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   LOG_TRACE << "Start to get models";
-  auto ir = inference_svc_.GetModels(req->getJsonObject());
+  auto ir = inference_svc_->GetModels(req->getJsonObject());
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
   resp->setStatusCode(
       static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
@@ -92,18 +99,10 @@ void server::GetModels(const HttpRequestPtr& req,
   LOG_TRACE << "Done get models";
 }
 
-void server::GetEngines(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_.GetEngines(req->getJsonObject());
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(ir);
-  callback(resp);
-}
-
 void server::FineTuning(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_.FineTuning(req->getJsonObject());
+  auto ir = inference_svc_->FineTuning(req->getJsonObject());
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
   resp->setStatusCode(
       static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
@@ -113,22 +112,12 @@ void server::FineTuning(
 
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_.LoadModel(req->getJsonObject());
+  auto ir = inference_svc_->LoadModel(req->getJsonObject());
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
   resp->setStatusCode(
       static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
   callback(resp);
   LOG_TRACE << "Done load model";
-}
-
-void server::UnloadEngine(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto ir = inference_svc_.UnloadEngine(req->getJsonObject());
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(ir));
-  resp->setStatusCode(
-      static_cast<HttpStatusCode>(std::get<0>(ir)["status_code"].asInt()));
-  callback(resp);
 }
 
 void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
@@ -153,7 +142,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
     }
 
     auto str = res["data"].asString();
-    LOG_TRACE << "data: " << str;
+    LOG_DEBUG << "data: " << str;
     std::size_t n = std::min(str.size(), buf_size);
     memcpy(buf, str.data(), n);
 
@@ -169,6 +158,7 @@ void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                  services::SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
   function_calling_utils::PostProcessResponse(res);
+  LOG_DEBUG << "response: " << res.toStyledString();
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
   resp->setStatusCode(
       static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));

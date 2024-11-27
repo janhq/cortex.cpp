@@ -105,6 +105,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "stable" ]; then
             echo "::set-output name=package_name::cortexcpp"
             echo "::set-output name=destination_binary_name::cortex"
+            echo "::set-output name=destination_binary_server_name::cortex-server"
             echo "::set-output name=data_folder_name::cortexcpp"
             echo "::set-output name=configuration_file_name::.cortexrc"
             echo "::set-output name=uninstaller_file_name::cortex-uninstall.sh"
@@ -116,6 +117,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "beta" ]; then
             echo "::set-output name=package_name::cortexcpp-beta"
             echo "::set-output name=destination_binary_name::cortex-beta"
+            echo "::set-output name=destination_binary_server_name::cortex-server-beta"
             echo "::set-output name=data_folder_name::cortexcpp-beta"
             echo "::set-output name=configuration_file_name::.cortexrc-beta"
             echo "::set-output name=uninstaller_file_name::cortex-beta-uninstall.sh"
@@ -127,6 +129,7 @@ jobs:
           if [ "${{ inputs.channel }}" == "nightly" ]; then
             echo "::set-output name=package_name::cortexcpp-nightly"
             echo "::set-output name=destination_binary_name::cortex-nightly"
+            echo "::set-output name=destination_binary_server_name::cortex-server-nightly"
             echo "::set-output name=data_folder_name::cortexcpp-nightly"
             echo "::set-output name=configuration_file_name::.cortexrc-nightly"
             echo "::set-output name=uninstaller_file_name::cortex-nightly-uninstall.sh"
@@ -169,29 +172,15 @@ jobs:
         with:
           python-version: '3.10' 
           
-      # - name: Run e2e tests
-      #   run: |
-      #     cd engine
-      #     cp build/cortex.exe build/cortex-nightly.exe
-      #     cp build/cortex.exe build/cortex-beta.exe
-      #     python -m pip install --upgrade pip
-      #     python -m pip install pytest
-      #     python -m pip install requests          
-      #     python e2e-test/main.py
-      #     rm build/cortex-nightly.exe
-      #     rm build/cortex-beta.exe
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
       - name: Pre-package
         run: |
           cd engine
-          make pre-package DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
+          make pre-package DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}"
 
       - name: Code Signing binaries
         run: |
           cd engine
-          make codesign-binary DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
+          make codesign-binary DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}" AZURE_KEY_VAULT_URI="${{ secrets.AZURE_KEY_VAULT_URI }}" AZURE_CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}" AZURE_TENANT_ID="${{ secrets.AZURE_TENANT_ID }}" AZURE_CLIENT_SECRET="${{ secrets.AZURE_CLIENT_SECRET }}" AZURE_CERT_NAME="${{ secrets.AZURE_CERT_NAME }}"
 
       - name: Update version in installer.iss using sed
         shell: bash
@@ -208,7 +197,7 @@ jobs:
         shell: bash
         run: |
           cd engine
-          make build-installer PACKAGE_NAME=${{ steps.set-output-params.outputs.package_name }} VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}"
+          make build-installer PACKAGE_NAME=${{ steps.set-output-params.outputs.package_name }} VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}"
           ls ../
 
       - name: Build local Installers
@@ -287,6 +276,7 @@ jobs:
           Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
           refreshenv
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz
+          aws s3 cp ./network-setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-windows-amd64-network-installer.exe
 
           aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-nightly.tar.gz
           aws s3 cp ./network-setup.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/windows-amd64/cortex-${{ inputs.new_version }}-windows-amd64-network-installer.exe

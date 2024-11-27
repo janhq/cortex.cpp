@@ -1,6 +1,7 @@
 ---
 title: ONNX
-description: ONNX Model Format.
+description: ONNX Model Format
+unlisted: true
 ---
 
 :::warning
@@ -17,7 +18,7 @@ cortex engines onnx init
 ## Run an ONNX model
 cortex run openhermes-2.5:7b-onnx
 ```
-## [`model.yaml`](/docs/model-yaml) Sample
+## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
 ```yaml
 name: openhermes-2.5
 model: openhermes
@@ -53,8 +54,8 @@ stream: true # true | false
 | `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
 
 
-:::info
+<!-- :::info
 You can download a `ONNX` model from the following:
-- [Cortex Model Repos](/docs/hub/cortex-hub)
-- [HuggingFace Model Repos](/docs/hub/hugging-face)
-:::
+- [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub)
+- [HuggingFace Model Repos](/docs/capabilities/models/sources/hugging-face)
+::: -->

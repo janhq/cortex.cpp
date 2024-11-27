@@ -9,23 +9,9 @@
 namespace cortex::db {
 
 Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT);");
 }
 
 Models::Models(SQLite::Database& db) : db_(db) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT UNIQUE);");
 }
 
 Models::~Models() {}
@@ -34,7 +20,7 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
     const {
   try {
     db_.exec("BEGIN TRANSACTION;");
-    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
     return LoadModelListNoLock();
   } catch (const std::exception& e) {
     CTL_WRN(e.what());
@@ -174,11 +160,10 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
                                                      bool use_short_alias) {
   try {
     db_.exec("BEGIN TRANSACTION;");
-    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
     auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());
-      std::cout << "Test: " << model_list.error();
       return cpp::fail(model_list.error());
     }
     if (IsUnique(model_list.value(), new_entry.model, new_entry.model_alias)) {
@@ -237,7 +222,7 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
   }
   try {
     db_.exec("BEGIN TRANSACTION;");
-    utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
+    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
     auto model_list = LoadModelListNoLock();
     if (model_list.has_error()) {
       CTL_WRN(model_list.error());
@@ -263,6 +248,11 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
 cpp::result<bool, std::string> Models::DeleteModelEntry(
     const std::string& identifier) {
   try {
+    // delete only if its there
+    if (!HasModel(identifier)) {
+      return true;
+    }
+
     SQLite::Statement del(
         db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
     del.bind(1, identifier);
@@ -275,17 +265,11 @@ cpp::result<bool, std::string> Models::DeleteModelEntry(
 
 cpp::result<std::vector<std::string>, std::string> Models::FindRelatedModel(
     const std::string& identifier) const {
-  // TODO (namh): add check for alias as well
   try {
     std::vector<std::string> related_models;
     SQLite::Statement query(
-        db_,
-        "SELECT model_id FROM models WHERE model_id LIKE ? OR model_id LIKE ? "
-        "OR model_id LIKE ? OR model_id LIKE ?");
-    query.bind(1, identifier + ":%");
-    query.bind(2, "%:" + identifier);
-    query.bind(3, "%:" + identifier + ":%");
-    query.bind(4, identifier);
+        db_, "SELECT model_id FROM models WHERE model_id LIKE ?");
+    query.bind(1, "%" + identifier + "%");
 
     while (query.executeStep()) {
       related_models.push_back(query.getColumn(0).getString());

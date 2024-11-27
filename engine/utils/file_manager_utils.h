@@ -2,9 +2,11 @@
 #include <filesystem>
 #include <string>
 #include <string_view>
+#include "common/download_task.h"
 #include "logging_utils.h"
-#include "services/download_service.h"
 #include "utils/config_yaml_utils.h"
+#include "utils/engine_constants.h"
+#include "utils/result.hpp"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -15,6 +17,7 @@
 #endif
 
 namespace file_manager_utils {
+namespace cyu = config_yaml_utils;
 constexpr std::string_view kCortexConfigurationFileName = ".cortexrc";
 constexpr std::string_view kDefaultConfigurationPath = "user_home";
 constexpr std::string_view kProdVariant = "prod";
@@ -125,7 +128,7 @@ inline std::string GetDefaultDataFolderName() {
 #ifndef CORTEX_VARIANT
 #define CORTEX_VARIANT "prod"
 #endif
-  std::string default_data_folder_name{config_yaml_utils::kCortexFolderName};
+  std::string default_data_folder_name{kCortexFolderName};
   std::string variant{CORTEX_VARIANT};
   std::string env_postfix{""};
   if (variant == kBetaVariant) {
@@ -137,43 +140,28 @@ inline std::string GetDefaultDataFolderName() {
   return default_data_folder_name;
 }
 
-inline void CreateConfigFileIfNotExist() {
+inline cpp::result<void, std::string> UpdateCortexConfig(
+    const config_yaml_utils::CortexConfig& config) {
   auto config_path = GetConfigurationPath();
-  if (std::filesystem::exists(config_path)) {
-    // already exists
-    return;
+  if (!std::filesystem::exists(config_path)) {
+    CTL_ERR("Config file not found: " << config_path.string());
+    return cpp::fail("Config file not found: " + config_path.string());
   }
 
-  auto default_data_folder_name = GetDefaultDataFolderName();
-
-  CLI_LOG("Config file not found. Creating one at " + config_path.string());
-  auto defaultDataFolderPath =
-      cortex_data_folder_path.empty()
-          ? file_manager_utils::GetHomeDirectoryPath() /
-                default_data_folder_name
-          : std::filesystem::path(cortex_data_folder_path) /
-                default_data_folder_name;
-  CLI_LOG("Default data folder path: " + defaultDataFolderPath.string());
-
-  auto config = config_yaml_utils::CortexConfig{
-      .logFolderPath = defaultDataFolderPath.string(),
-      .logLlamaCppPath = kLogsLlamacppBaseName,
-      .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
-      .logOnnxPath = kLogsOnnxBaseName,
-      .dataFolderPath = defaultDataFolderPath.string(),
-      .maxLogLines = config_yaml_utils::kDefaultMaxLines,
-      .apiServerHost = config_yaml_utils::kDefaultHost,
-      .apiServerPort = config_yaml_utils::kDefaultPort,
-  };
-  DumpYamlConfig(config, config_path.string());
+  return cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
+      config, config_path.string());
 }
 
-inline config_yaml_utils::CortexConfig GetCortexConfig() {
+inline config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
   auto default_data_folder_path =
-      file_manager_utils::GetHomeDirectoryPath() / default_data_folder_name;
-  auto default_cfg = config_yaml_utils::CortexConfig{
+      cortex_data_folder_path.empty()
+          ? file_manager_utils::GetHomeDirectoryPath() /
+                default_data_folder_name
+          : std::filesystem::path(cortex_data_folder_path);
+
+  return config_yaml_utils::CortexConfig{
       .logFolderPath = default_data_folder_path.string(),
       .logLlamaCppPath = kLogsLlamacppBaseName,
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
@@ -183,21 +171,59 @@ inline config_yaml_utils::CortexConfig GetCortexConfig() {
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,
       .checkedForUpdateAt = config_yaml_utils::kDefaultCheckedForUpdateAt,
+      .checkedForLlamacppUpdateAt =
+          config_yaml_utils::kDefaultCheckedForLlamacppUpdateAt,
       .latestRelease = config_yaml_utils::kDefaultLatestRelease,
+      .latestLlamacppRelease = config_yaml_utils::kDefaultLatestLlamacppRelease,
+      .enableCors = config_yaml_utils::kDefaultCorsEnabled,
+      .allowedOrigins = config_yaml_utils::kDefaultEnabledOrigins,
+      .proxyUrl = "",
+      .verifyProxySsl = true,
+      .verifyProxyHostSsl = true,
+      .proxyUsername = "",
+      .proxyPassword = "",
+      .noProxy = config_yaml_utils::kDefaultNoProxy,
+      .verifyPeerSsl = true,
+      .verifyHostSsl = true,
   };
+}
 
-  return config_yaml_utils::FromYaml(config_path.string(), default_cfg);
+inline cpp::result<void, std::string> CreateConfigFileIfNotExist() {
+  auto config_path = GetConfigurationPath();
+  if (std::filesystem::exists(config_path)) {
+    // already exists, no need to create
+    return {};
+  }
+
+  CLI_LOG("Config file not found. Creating one at " + config_path.string());
+  auto config = GetDefaultConfig();
+  CLI_LOG("Default data folder path: " + config.dataFolderPath);
+  return cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
+      config, config_path.string());
+}
+
+inline config_yaml_utils::CortexConfig GetCortexConfig() {
+  auto config_path = GetConfigurationPath();
+
+  auto default_cfg = GetDefaultConfig();
+  return config_yaml_utils::CortexConfigMgr::GetInstance().FromYaml(
+      config_path.string(), default_cfg);
 }
 
 inline std::filesystem::path GetCortexDataPath() {
-  CreateConfigFileIfNotExist();
+  auto result = CreateConfigFileIfNotExist();
+  if (result.has_error()) {
+    CTL_ERR("Error creating config file: " << result.error());
+    return std::filesystem::path{};
+  }
+
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {
     data_folder_path = std::filesystem::path(config.dataFolderPath);
   } else {
     auto home_path = GetHomeDirectoryPath();
-    data_folder_path = home_path / config_yaml_utils::kCortexFolderName;
+    data_folder_path = home_path / kCortexFolderName;
   }
 
   if (!std::filesystem::exists(data_folder_path)) {
@@ -211,6 +237,7 @@ inline std::filesystem::path GetCortexDataPath() {
 inline std::filesystem::path GetCortexLogPath() {
   // TODO: We will need to support user to move the data folder to other place.
   // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
+
   // currently we will store cortex data at ~/cortexcpp
   auto config = GetCortexConfig();
   std::filesystem::path log_folder_path;
@@ -218,7 +245,7 @@ inline std::filesystem::path GetCortexLogPath() {
     log_folder_path = std::filesystem::path(config.logFolderPath);
   } else {
     auto home_path = GetHomeDirectoryPath();
-    log_folder_path = home_path / config_yaml_utils::kCortexFolderName;
+    log_folder_path = home_path / kCortexFolderName;
   }
 
   if (!std::filesystem::exists(log_folder_path)) {
@@ -239,7 +266,10 @@ inline void CreateDirectoryRecursively(const std::string& path) {
 }
 
 inline std::filesystem::path GetModelsContainerPath() {
-  CreateConfigFileIfNotExist();
+  auto result = CreateConfigFileIfNotExist();
+  if (result.has_error()) {
+    CTL_ERR("Error creating config file: " << result.error());
+  }
   auto cortex_path = GetCortexDataPath();
   auto models_container_path = cortex_path / "models";
 
@@ -252,8 +282,23 @@ inline std::filesystem::path GetModelsContainerPath() {
   return models_container_path;
 }
 
+inline std::filesystem::path GetCudaToolkitPath(const std::string& engine) {
+  auto engine_path = getenv("ENGINE_PATH")
+                         ? std::filesystem::path(getenv("ENGINE_PATH"))
+                         : GetCortexDataPath();
+
+  auto cuda_path = engine_path / "engines" / engine / "deps";
+  if (!std::filesystem::exists(cuda_path)) {
+    std::filesystem::create_directories(cuda_path);
+  }
+
+  return cuda_path;
+}
+
 inline std::filesystem::path GetEnginesContainerPath() {
-  auto cortex_path = GetCortexDataPath();
+  auto cortex_path = getenv("ENGINE_PATH")
+                         ? std::filesystem::path(getenv("ENGINE_PATH"))
+                         : GetCortexDataPath();
   auto engines_container_path = cortex_path / "engines";
 
   if (!std::filesystem::exists(engines_container_path)) {

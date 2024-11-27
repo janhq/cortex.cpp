@@ -1,6 +1,7 @@
 ---
 title: TensorRT-LLM
-description: TensorRT-LLM Model Format.
+description: TensorRT-LLM Model Format
+unlisted: true
 ---
 
 :::warning
@@ -17,7 +18,7 @@ cortex engines tensorrt-llm init
 ## Run a TensorRT-LLM model
 cortex run openhermes-2.5:7b-tensorrt-llm
 ```
-## [`model.yaml`](/docs/model-yaml) Sample
+## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
 ```yaml
 name: Openhermes-2.5 7b Linux Ada
 model: openhermes-2.5:7B-tensorrt-llm
@@ -63,9 +64,9 @@ stream: true # true | false
 | `text_model`           | Indicates if the text model is being used (true or false).                           | Yes          |
 | `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
 
-:::info
+<!-- :::info
 You can download a `TensorRT-LLM` model from the following:
-- [Cortex Model Repos](/docs/hub/cortex-hub)
-- [HuggingFace Model Repos](/docs/hub/hugging-face)
+- [Cortex Model Repos](/docs/capabilities/models/sources/cortex-hub)
+- [HuggingFace Model Repos](/docs/capabilities/models/sources/hugging-face)
 - Nvidia Catalog (Coming Soon!)
-:::
+::: -->

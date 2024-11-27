@@ -22,6 +22,7 @@ struct ModelConfig {
   bool stream = std::numeric_limits<bool>::quiet_NaN();
   int ngl = std::numeric_limits<int>::quiet_NaN();
   int ctx_len = std::numeric_limits<int>::quiet_NaN();
+  int n_parallel = 1;
   std::string engine;
   std::string prompt_template;
   std::string system_template;
@@ -57,6 +58,7 @@ struct ModelConfig {
   bool ignore_eos = false;
   int n_probs = 0;
   int min_keep = 0;
+  uint64_t size = 0;
   std::string grammar;
 
   void FromJson(const Json::Value& json) {
@@ -69,6 +71,8 @@ struct ModelConfig {
     //   model = json["model"].asString();
     if (json.isMember("version"))
       version = json["version"].asString();
+    if (json.isMember("size"))
+      size = json["size"].asUInt64();
 
     if (json.isMember("stop") && json["stop"].isArray()) {
       stop.clear();
@@ -125,6 +129,8 @@ struct ModelConfig {
       ngl = json["ngl"].asInt();
     if (json.isMember("ctx_len"))
       ctx_len = json["ctx_len"].asInt();
+    if (json.isMember("n_parallel"))
+      n_parallel = json["n_parallel"].asInt();
     if (json.isMember("engine"))
       engine = json["engine"].asString();
     if (json.isMember("prompt_template"))
@@ -173,6 +179,7 @@ struct ModelConfig {
     obj["name"] = name;
     obj["model"] = model;
     obj["version"] = version;
+    obj["size"] = size;
 
     Json::Value stop_array(Json::arrayValue);
     for (const auto& s : stop) {
@@ -204,6 +211,7 @@ struct ModelConfig {
     obj["min_keep"] = min_keep;
     obj["ngl"] = ngl;
     obj["ctx_len"] = ctx_len;
+    obj["n_parallel"] = n_parallel;
     obj["engine"] = engine;
     obj["prompt_template"] = prompt_template;
     obj["system_template"] = system_template;
@@ -265,6 +273,7 @@ struct ModelConfig {
     oss << format_utils::print_comment("END REQUIRED");
     oss << format_utils::print_comment("BEGIN OPTIONAL");
 
+    oss << format_utils::print_float("size", size);
     oss << format_utils::print_bool("stream", stream);
     oss << format_utils::print_float("top_p", top_p);
     oss << format_utils::print_float("temperature", temperature);
@@ -313,6 +322,8 @@ struct ModelConfig {
     if (ctx_len != std::numeric_limits<int>::quiet_NaN())
       oss << format_utils::print_kv("ctx_len", std::to_string(ctx_len),
                                     format_utils::MAGENTA);
+    oss << format_utils::print_kv("n_parallel", std::to_string(n_parallel),
+                                  format_utils::MAGENTA);
     if (ngl != std::numeric_limits<int>::quiet_NaN())
       oss << format_utils::print_kv("ngl", std::to_string(ngl),
                                     format_utils::MAGENTA);

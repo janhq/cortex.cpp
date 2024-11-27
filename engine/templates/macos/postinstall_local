@@ -4,6 +4,11 @@ DESTINATION_BINARY_NAME=cortex
 DATA_FOLDER_NAME=.cortex
 CONFIGURATION_FILE_NAME=.cortexrc
 
+if [ -f "/var/tmp/cortex_installer_skip_postinstall_check" ]; then
+    echo "Skipping postinstall script."
+    exit 0
+fi
+
 USER_TO_RUN_AS=$(stat -f "%Su" /dev/console)
 
 echo "Download cortex.llamacpp engines by default for user $USER_TO_RUN_AS"

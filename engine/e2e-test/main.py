@@ -11,7 +11,6 @@ from test_api_model_pull_direct_url import TestApiModelPullDirectUrl
 from test_api_model_start import TestApiModelStart
 from test_api_model_stop import TestApiModelStop
 from test_api_model_get import TestApiModelGet
-from test_api_model_alias import TestApiModelAlias
 from test_api_model_list import TestApiModelList
 from test_api_model_update import TestApiModelUpdate
 from test_api_model_delete import TestApiModelDelete

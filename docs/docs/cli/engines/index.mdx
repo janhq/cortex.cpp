@@ -5,43 +5,21 @@ title: Cortex Engines
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
 # `cortex engines`
 
 This command allows you to manage various engines available within Cortex.
 
 
-
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex engines [options] [subcommand]
-
-  # Beta
-  cortex-beta engines [options] [subcommand]
-
-  # Nightly
-  cortex-nightly engines [options] [subcommand]
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe engines [options] [subcommand]
-  
-  # Beta
-  cortex-beta.exe engines [options] [subcommand]
-
-  # Nightly
-  cortex-nightly.exe engines [options] [subcommand]
   ```
   </TabItem>
 </Tabs>
@@ -54,69 +32,8 @@ You can use the `--verbose` flag to display more detailed output of the internal
 | `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
 {/* | `-vk`, `--vulkan`             | Install Vulkan engine.                                                                           | No       | `false`       | `-vk`                         | */}
 
-## `cortex engines get`
-:::info
-This CLI command calls the following API endpoint:
-- [Get Engine](/api-reference#tag/engines/get/v1/engines/{name})
-:::
-This command returns an engine detail defined by an engine `engine_name`.
-
-
-
-**Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
-<Tabs>
-  <TabItem value="MacOs/Linux" label="MacOs/Linux">
-  ```sh
-  # Stable
-  cortex engines get <engine_name>
-
-  # Beta
-  cortex-beta engines get <engine_name>
-
-  # Nightly
-  cortex-nightly engines get <engine_name>
-  ```
-  </TabItem>
-  <TabItem value="Windows" label="Windows">
-  ```sh
-  # Stable
-  cortex.exe engines get <engine_name>
-  
-  # Beta
-  cortex-beta.exe engines get <engine_name>
-
-  # Nightly
-  cortex-nightly.exe engines get <engine_name>
-  ```
-  </TabItem>
-</Tabs>
-
-For example, it returns the following:
-```bash
-┌─────────────┬────────────────────────────────────────────────────────────────────────────┐
-│ (index)     │ Values                                                                     │
-├─────────────┼────────────────────────────────────────────────────────────────────────────┤
-│ name        │ 'onnx'                                                              │
-│ description │ 'This extension enables chat completion API calls using the Cortex engine' │
-│ version     │ '0.0.1'                                                                    │
-│ productName │ 'Cortex Inference Engine'                                                  │
-└─────────────┴────────────────────────────────────────────────────────────────────────────┘
-```
-:::info
-To get an engine name, run the [`engines list`](/docs/cli/engines/list) command first.
-:::
-
-
-**Options**:
-
-| Option            | Description                                           | Required | Default value | Example         |
-|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
-| `engine_name`        | The name of the engine that you want to retrieve.     | Yes      | -             | `llama-cpp`|
-| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
-
+---
+# Subcommands:
 ## `cortex engines list`
 :::info
 This CLI command calls the following API endpoint:
@@ -127,38 +44,21 @@ This command lists all the Cortex's engines.
 
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
-  cortex engines list [options]
-
-  # Beta
-  cortex-beta engines list [options]
-
-  # Nightly
-  cortex-nightly engines list [options]
+  cortex engines list
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
-  cortex.exe engines list [options]
-  
-  # Beta
-  cortex-beta.exe engines list [options]
-
-  # Nightly
-  cortex-nightly.exe engines list [options]
+  cortex.exe engines list
   ```
   </TabItem>
 </Tabs>
 
 For example, it returns the following:
-```bash
+```
 +---+--------------+-------------------+---------+----------------------------+---------------+
 | # | Name         | Supported Formats | Version | Variant                    | Status        |
 +---+--------------+-------------------+---------+----------------------------+---------------+
@@ -170,11 +70,47 @@ For example, it returns the following:
 +---+--------------+-------------------+---------+----------------------------+---------------+
 ```
 
+## `cortex engines get`
+:::info
+This CLI command calls the following API endpoint:
+- [Get Engine](/api-reference#tag/engines/get/v1/engines/{name})
+:::
+This command returns an engine detail defined by an engine `engine_name`.
+
+**Usage**:
+<Tabs>
+  <TabItem value="MacOs/Linux" label="MacOs/Linux">
+  ```sh
+  cortex engines get <engine_name>
+  ```
+  </TabItem>
+  <TabItem value="Windows" label="Windows">
+  ```sh
+  cortex.exe engines get <engine_name>
+  ```
+  </TabItem>
+</Tabs>
+
+For example, it returns the following:
+```
++-----------+-------------------+---------+-----------+--------+
+| Name      | Supported Formats | Version | Variant   | Status |
++-----------+-------------------+---------+-----------+--------+
+| llama-cpp | GGUF              | 0.1.37  | mac-arm64 | Ready  |
++-----------+-------------------+---------+-----------+--------+
+```
+:::info
+To get an engine name, run the [`engines list`](/docs/cli/engines/list) command.
+:::
+
+
 **Options**:
 
-| Option                    | Description                                        | Required | Default value | Example              |
-|---------------------------|----------------------------------------------------|----------|---------------|----------------------|
-| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |
+| Option            | Description                                           | Required | Default value | Example         |
+|-------------------|-------------------------------------------------------|----------|---------------|-----------------|
+| `engine_name`        | The name of the engine that you want to retrieve.     | Yes      | -             | `llama-cpp`|
+| `-h`, `--help`    | Display help information for the command.             | No       | -             | `-h`        |
+
 
 
 ## `cortex engines install`
@@ -188,54 +124,25 @@ This command downloads the required dependencies and installs the engine within 
 - `tensorrt-llm`
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex engines install [options] <engine_name>
-
-  # Beta
-  cortex-beta engines install [options] <engine_name>
-
-  # Nightly
-  cortex-nightly engines install [options] <engine_name>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe engines install [options] <engine_name>
-  
-  # Beta
-  cortex-beta.exe engines install [options] <engine_name>
 
-  # Nightly
-  cortex-nightly.exe engines install [options] <engine_name>
   ```
   </TabItem>
 </Tabs>
-
-For Example:
-```bash
-## Llama.cpp engine
-cortex engines install llama-cpp
-
-## ONNX engine
-cortex engines install onnxruntime
-
-## Tensorrt-LLM engine
-cortex engines install tensorrt-llm
-
-```
 
 **Options**:
 
 | Option                    | Description                                        | Required | Default value | Example              |
 |---------------------------|----------------------------------------------------|----------|---------------|----------------------|
-| `engine_name`            | The name of the engine you want to install.                         | Yes       | -             | -             |
+| `engine_name`            | The name of the engine you want to install.                         | Yes       | `llama-cpp`, `onnxruntime`, `tensorrt-llm`  | -             |
 | `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |
 
 ## `cortex engines uninstall`
@@ -243,32 +150,15 @@ cortex engines install tensorrt-llm
 This command uninstalls the engine within Cortex.
 
 **Usage**:
-:::info
-You can use the `--verbose` flag to display more detailed output of the internal processes. To apply this flag, use the following format: `cortex --verbose [subcommand]`.
-:::
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  # Stable
   cortex engines uninstall [options] <engine_name>
-
-  # Beta
-  cortex-beta engines uninstall [options] <engine_name>
-
-  # Nightly
-  cortex-nightly engines uninstall [options] <engine_name>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  # Stable
   cortex.exe engines uninstall [options] <engine_name>
-  
-  # Beta
-  cortex-beta.exe engines uninstall [options] <engine_name>
-
-  # Nightly
-  cortex-nightly.exe engines uninstall [options] <engine_name>
   ```
   </TabItem>
 </Tabs>
@@ -277,13 +167,6 @@ For Example:
 ```bash
 ## Llama.cpp engine
 cortex engines uninstall llama-cpp
-
-## ONNX engine
-cortex engines uninstall onnxruntime
-
-## Tensorrt-LLM engine
-cortex engines uninstall tensorrt-llm
-
 ```
 
 **Options**:

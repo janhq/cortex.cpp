@@ -1,5 +1,12 @@
 #!/bin/sh
 DESTINATION_BINARY_NAME=cortex
+
+if [ "$SKIP_POSTINSTALL" = "true" ]; then
+    echo "Skipping postinstall script."
+    exit 0
+fi
+
 USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
 echo "Download cortex.llamacpp engines by default for user $USER_TO_RUN_AS"
 sudo -u $USER_TO_RUN_AS env PATH=$PATH:/usr/lib/wsl/lib /usr/bin/$DESTINATION_BINARY_NAME engines install llama-cpp
+sudo -u $USER_TO_RUN_AS env PATH=$PATH:/usr/lib/wsl/lib /usr/bin/$DESTINATION_BINARY_NAME stop

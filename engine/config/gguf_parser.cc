@@ -2,13 +2,12 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
-#include <fstream>
 #include <iostream>
-#include <map>
 #include <regex>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 #ifdef _WIN32
 #include <io.h>
@@ -41,7 +40,6 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
   if (file_handle_ == INVALID_HANDLE_VALUE) {
     throw std::runtime_error("Failed to open file");
   }
-
   // Get the file size
   LARGE_INTEGER file_size_struct;
   if (!GetFileSizeEx(file_handle_, &file_size_struct)) {
@@ -71,24 +69,9 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
   CloseHandle(file_handle_);
 
 #else
-  FILE* fd = fopen(file_path.c_str(), "rb");
-  if (!fd) {
-    perror("Error opening file");
-    throw std::runtime_error("Failed to open file");
-  }
-
-  // Get file size
-  // file_size_ = lseek(fd, 0, SEEK_END);
-  fseek(fd, 0, SEEK_END);  // move file pointer to end of file
-  file_size_ = ftell(fd);  // get the file size, in bytes
-  fclose(fd);
-  if (file_size_ == -1) {
-    perror("Error getting file size");
-    // close(fd);
-    throw std::runtime_error("Failed to get file size");
-  }
+  file_size_ = std::filesystem::file_size(file_path);
+ 
   int file_descriptor = open(file_path.c_str(), O_RDONLY);
-  ;
   // Memory-map the file
   data_ = static_cast<uint8_t*>(
       mmap(nullptr, file_size_, PROT_READ, MAP_PRIVATE, file_descriptor, 0));

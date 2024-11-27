@@ -1,0 +1,224 @@
+---
+title: model.yaml
+description: The model.yaml
+---
+
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+Cortex.cpp utilizes a `model.yaml` file to specify the configuration for running a model. Models can be downloaded from the Cortex Model Hub or Hugging Face repositories. Once downloaded, the model data is parsed and stored in the `models` folder.
+
+## Structure of `model.yaml`
+
+Here is an example of `model.yaml` format:
+```yaml
+# BEGIN GENERAL METADATA
+model: gemma-2-9b-it-Q8_0 ## Model ID which is used for request construct - should be unique between models (author / quantization)
+name: Llama 3.1      ## metadata.general.name
+version: 1           ## metadata.version
+sources:             ## can be universal protocol (models://) OR absolute local file path (file://) OR https remote URL (https://)
+  - models://huggingface/bartowski/Mixtral-8x22B-v0.1/main/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf # for downloaded model from HF
+  - files://C:/Users/user/Downloads/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf # for imported model
+# END GENERAL METADATA
+
+# BEGIN INFERENCE PARAMETERS
+## BEGIN REQUIRED
+stop:                ## tokenizer.ggml.eos_token_id
+  - <|end_of_text|>
+  - <|eot_id|>
+  - <|eom_id|>
+## END REQUIRED
+## BEGIN OPTIONAL
+stream: true         # Default true?
+top_p: 0.9           # Ranges: 0 to 1
+temperature: 0.6     # Ranges: 0 to 1
+frequency_penalty: 0 # Ranges: 0 to 1
+presence_penalty: 0  # Ranges: 0 to 1
+max_tokens: 8192     # Should be default to context length
+seed: -1
+dynatemp_range: 0
+dynatemp_exponent: 1
+top_k: 40
+min_p: 0.05
+tfs_z: 1
+typ_p: 1
+repeat_last_n: 64
+repeat_penalty: 1
+mirostat: false
+mirostat_tau: 5
+mirostat_eta: 0.1
+penalize_nl: false
+ignore_eos: false
+n_probs: 0
+n_parallels: 1
+min_keep: 0
+## END OPTIONAL
+# END INFERENCE PARAMETERS
+
+# BEGIN MODEL LOAD PARAMETERS
+## BEGIN REQUIRED
+prompt_template: |+  # tokenizer.chat_template
+  <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+  {system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+  {prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+## END REQUIRED
+## BEGIN OPTIONAL
+ctx_len: 0          # llama.context_length | 0 or undefined = loaded from model
+ngl: 33             # Undefined = loaded from model
+engine: llama-cpp
+## END OPTIONAL
+# END MODEL LOAD PARAMETERS
+
+```
+
+The `model.yaml` is composed of three high-level sections:
+
+### Model Metadata
+```yaml
+model: gemma-2-9b-it-Q8_0 
+name: Llama 3.1      
+version: 1          
+sources:             
+  - models://huggingface/bartowski/Mixtral-8x22B-v0.1/main/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf 
+  - files://C:/Users/user/Downloads/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf 
+```
+Cortex Meta consists of essential metadata that identifies the model within Cortex.cpp. The required parameters include:
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `name`        | The identifier name of the model, used as the `model_id`. |Yes          |
+| `model`       | Details specifying the variant of the model, including size or quantization. |Yes          |
+| `version`     | The version number of the model. |Yes          |
+| `sources`     | The source file of the model. |Yes          |
+
+### Inference Parameters
+```yaml
+stop:                
+  - <|end_of_text|>
+  - <|eot_id|>
+  - <|eom_id|>
+stream: true # Default true?
+top_p: 0.9 # Ranges: 0 to 1
+temperature: 0.6 # Ranges: 0 to 1
+frequency_penalty: 0 # Ranges: 0 to 1
+presence_penalty: 0 # Ranges: 0 to 1
+max_tokens: 8192 # Should be default to context length
+seed: -1
+dynatemp_range: 0
+dynatemp_exponent: 1
+top_k: 40
+min_p: 0.05
+tfs_z: 1
+typ_p: 1
+repeat_last_n: 64
+repeat_penalty: 1
+mirostat: false
+mirostat_tau: 5
+mirostat_eta: 0.1
+penalize_nl: false
+ignore_eos: false
+n_probs: 0
+n_parallels: 1
+min_keep: 0
+
+```
+Inference parameters define how the results will be produced. The required parameters include:
+
+| **Parameter** | **Description** | **Required** |
+|---------------|-----------------|--------------|
+| `stream` | Enables or disables streaming mode for the output (true or false). | No |
+| `top_p` | The cumulative probability threshold for token sampling. Ranges from 0 to 1. | No |
+| `temperature` | Controls the randomness of predictions by scaling logits before applying softmax. Ranges from 0 to 1. | No |
+| `frequency_penalty` | Penalizes new tokens based on their existing frequency in the sequence so far. Ranges from 0 to 1. | No |
+| `presence_penalty` | Penalizes new tokens based on whether they appear in the sequence so far. Ranges from 0 to 1. | No |
+| `max_tokens` | Maximum number of tokens in the output for 1 turn. | No |
+| `seed` | Seed for the random number generator. `-1` means no seed. | No |
+| `dynatemp_range` | Dynamic temperature range. | No |
+| `dynatemp_exponent` | Dynamic temperature exponent. | No |
+| `top_k` | The number of most likely tokens to consider at each step. | No |
+| `min_p` | Minimum probability threshold for token sampling. | No |
+| `tfs_z` | The z-score used for Typical token sampling. | No |
+| `typ_p` | The cumulative probability threshold used for Typical token sampling. | No |
+| `repeat_last_n` | Number of previous tokens to penalize for repeating. | No |
+| `repeat_penalty` | Penalty for repeating tokens. | No |
+| `mirostat` | Enables or disables Mirostat sampling (true or false). | No |
+| `mirostat_tau` | Target entropy value for Mirostat sampling. | No |
+| `mirostat_eta` | Learning rate for Mirostat sampling. | No |
+| `penalize_nl` | Penalizes newline tokens (true or false). | No |
+| `ignore_eos` | Ignores the end-of-sequence token (true or false). | No |
+| `n_probs` | Number of probabilities to return. | No |
+| `min_keep` | Minimum number of tokens to keep. | No |
+| `n_parallels` | Number of parallel streams to use. This params allow you to use multiple chat terminal at the same time. Notice that you need to update `ctx_len` coressponding to `n_parallels` (e.g n_parallels=1, ctx_len=2048 -> n_parallels=2, ctx_len=4096. ) | No |
+| `stop` | Specifies the stopping condition for the model, which can be a word, a letter, or a specific text. | Yes |
+
+
+### Model Load Parameters
+```yaml
+prompt_template: |+  
+  <|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+  {system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+  {prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+ctx_len: 0          
+ngl: 33 
+engine: llama-cpp
+
+```
+Model load parameters include the options that control how Cortex.cpp runs the model. The required parameters include:
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `ngl`                  | Number of model layers will be offload to GPU.                                                           | No          |
+| `ctx_len`              | Context length (maximum number of tokens).                                           | No          |
+| `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
+| `engine`      | The engine that run model, default to `llama-cpp` for local model with gguf format.      | Yes          |
+
+All parameters from the `model.yml` file are used for running the model via the [CLI run command](/docs/cli/run). These parameters also act as defaults when using the [model start API](/api-reference#tag/models/post/v1/models/start) through cortex.cpp.
+
+## Runtime parameters
+
+In addition to predefined parameters in `model.yml`, Cortex.cpp supports runtime parameters to override these settings when using the [model start API](/api-reference#tag/models/post/v1/models/start).
+
+### Model start params
+
+Cortex.cpp supports the following parameters when starting a model via the [model start API](/api-reference#tag/models/post/v1/models/start) for the `llama-cpp engine`:
+
+```
+cache_enabled: bool
+ngl: int
+n_parallel: int
+cache_type: string
+ctx_len: int
+
+## Support for vision model
+mmproj: string 
+llama_model_path: string
+model_path: string
+```
+
+| **Parameter**          | **Description**                                                                      | **Required** |
+|------------------------|--------------------------------------------------------------------------------------|--------------|
+| `cache_type`           | Data type of the KV cache in llama.cpp models. Supported types are `f16`, `q8_0`, and `q4_0`, default is `f16`.  | No          |
+| `cache_enabled`           |Enables caching of conversation history for reuse in subsequent requests. Default is `false`  | No          |
+| `mmproj`           |  path to mmproj GGUF model, support for llava model   | No          |
+| `llama_model_path` | path to llm GGUF model  | No          |
+
+These parameters will override the `model.yml` parameters when starting model through the API.
+
+### Chat completion API parameters
+
+The API is accessible at the `/v1/chat/completions` URL and accepts all parameters from the chat completion API as described [API reference](/api-reference#tag/chat/post/v1/chat/completions)
+
+With the `llama-cpp` engine, cortex.cpp accept all parameters from [`model.yml` inference section](#Inference Parameters) and accept all parameters from the chat completion API.
+
+<!-- :::info
+You can download all the supported model formats from the following:
+- [Cortex Model Repos](/docs/hub/cortex-hub)
+- [HuggingFace Model Repos](/docs/hub/hugging-face)
+::: -->

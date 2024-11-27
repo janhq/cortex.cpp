@@ -1,9 +1,9 @@
 #pragma once
 
+#include <SQLiteCpp/Database.h>
 #include <trantor/utils/Logger.h>
 #include <string>
 #include <vector>
-#include "SQLiteCpp/SQLiteCpp.h"
 #include "utils/result.hpp"
 
 namespace cortex::db {
@@ -27,7 +27,6 @@ class Models {
   cpp::result<std::vector<ModelEntry>, std::string> LoadModelListNoLock() const;
 
  public:
-  static const std::string kModelListPath;
   cpp::result<std::vector<ModelEntry>, std::string> LoadModelList() const;
   Models();
   Models(SQLite::Database& db);

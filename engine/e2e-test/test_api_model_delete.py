@@ -1,6 +1,5 @@
 import pytest
 import requests
-from test_runner import popen, run
 from test_runner import start_server, stop_server
 
 
@@ -19,5 +18,5 @@ class TestApiModelDelete:
         stop_server()
 
     def test_models_delete_should_be_successful(self):
-        response = requests.delete("http://localhost:3928/models/tinyllama:gguf")
+        response = requests.delete("http://localhost:3928/v1/models/tinyllama:gguf")
         assert response.status_code == 200

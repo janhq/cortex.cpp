@@ -10,11 +10,13 @@
     "drogon",
     "jsoncpp",
     "minizip",
-    "nlohmann-json",
     "yaml-cpp",
     "libarchive",
     "tabulate",
     "eventpp",
-    "sqlitecpp"
+    "sqlitecpp",
+    "trantor",
+    "indicators",
+    "lfreist-hwinfo"
   ]
 }

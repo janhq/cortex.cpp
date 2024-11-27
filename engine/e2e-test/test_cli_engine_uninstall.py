@@ -1,5 +1,11 @@
 import pytest
-from test_runner import run
+import requests
+from test_runner import (
+    run,
+    start_server,
+    stop_server,
+    wait_for_websocket_download_success_event,
+)
 
 
 class TestCliEngineUninstall:
@@ -7,16 +13,19 @@ class TestCliEngineUninstall:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
         # Setup
-        # Preinstall llamacpp engine
-        run("Install Engine", ["engines", "install", "llama-cpp"],timeout = None)
+        stop_server()
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
 
         yield
 
-        # Teardown
-        # Clean up, removing installed engine
-        run("Uninstall Engine", ["engines", "uninstall", "llama-cpp"])
+        stop_server()
 
-    def test_engines_uninstall_llamacpp_should_be_successfully(self):
+    @pytest.mark.asyncio
+    async def test_engines_uninstall_llamacpp_should_be_successfully(self):
+        requests.post("http://127.0.0.1:3928/v1/engines/llama-cpp/install")
+        await wait_for_websocket_download_success_event(timeout=120)
         exit_code, output, error = run(
             "Uninstall engine", ["engines", "uninstall", "llama-cpp"]
         )

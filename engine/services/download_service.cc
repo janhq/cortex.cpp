@@ -1,68 +1,109 @@
 #include "download_service.h"
 #include <curl/curl.h>
-#include <httplib.h>
 #include <stdio.h>
 #include <filesystem>
 #include <mutex>
 #include <optional>
 #include <ostream>
 #include <utility>
-#include "download_service.h"
+#include "utils/curl_utils.h"
 #include "utils/format_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
-
-#ifdef _WIN32
-#define ftell64(f) _ftelli64(f)
-#define fseek64(f, o, w) _fseeki64(f, o, w)
-#else
-#define ftell64(f) ftello(f)
-#define fseek64(f, o, w) fseeko(f, o, w)
-#endif
+#include "utils/string_utils.h"
 
 namespace {
 size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
   size_t written = fwrite(ptr, size, nmemb, (FILE*)userdata);
   return written;
 }
-}  // namespace
 
-cpp::result<void, std::string> DownloadService::VerifyDownloadTask(
-    DownloadTask& task) const noexcept {
-  CLI_LOG("Validating download items, please wait..");
+cpp::result<void, std::string> ProcessCompletedTransfers(CURLM* multi_handle) {
+  CURLMsg* msg;
+  int msgs_left;
+  while ((msg = curl_multi_info_read(multi_handle, &msgs_left))) {
+    if (msg->msg == CURLMSG_DONE) {
+      auto handle = msg->easy_handle;
+      auto result = msg->data.result;
 
-  auto total_download_size{0};
-  std::optional<std::string> err_msg = std::nullopt;
+      char* url = nullptr;
+      curl_easy_getinfo(handle, CURLINFO_EFFECTIVE_URL, &url);
 
-  for (auto& item : task.items) {
-    auto file_size = GetFileSize(item.downloadUrl);
-    if (file_size.has_error()) {
-      err_msg = file_size.error();
-      break;
+      if (result != CURLE_OK) {
+        CTL_ERR("Transfer failed for URL: " << url << " Error: "
+                                            << curl_easy_strerror(result));
+        // download failed
+        return cpp::fail("Transfer failed for URL: " + std::string(url) +
+                         " Error: " + curl_easy_strerror(result));
+      } else {
+        long response_code;
+        curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &response_code);
+        if (response_code == 200) {
+          CTL_INF("Transfer completed for URL: " << url);
+        } else {
+          CTL_ERR("Transfer failed with HTTP code: " << response_code
+                                                     << " for URL: " << url);
+          // download failed
+          return cpp::fail("Transfer failed with HTTP code: " +
+                           std::to_string(response_code) +
+                           " for URL: " + std::string(url));
+        }
+      }
     }
-
-    item.bytes = file_size.value();
-    total_download_size += file_size.value();
   }
-
-  if (err_msg.has_value()) {
-    CTL_ERR(err_msg.value());
-    return cpp::fail(err_msg.value());
-  }
-
   return {};
 }
+
+void SetUpProxy(CURL* handle, std::shared_ptr<ConfigService> config_service) {
+  auto configuration = config_service->GetApiServerConfiguration();
+  if (configuration.has_value()) {
+    if (!configuration->proxy_url.empty()) {
+      auto proxy_url = configuration->proxy_url;
+      auto verify_proxy_ssl = configuration->verify_proxy_ssl;
+      auto verify_proxy_host_ssl = configuration->verify_proxy_host_ssl;
+
+      auto verify_ssl = configuration->verify_peer_ssl;
+      auto verify_host_ssl = configuration->verify_host_ssl;
+
+      auto proxy_username = configuration->proxy_username;
+      auto proxy_password = configuration->proxy_password;
+
+      CTL_INF("=== Proxy configuration ===");
+      CTL_INF("Proxy url: " << proxy_url);
+      CTL_INF("Verify proxy ssl: " << verify_proxy_ssl);
+      CTL_INF("Verify proxy host ssl: " << verify_proxy_host_ssl);
+      CTL_INF("Verify ssl: " << verify_ssl);
+      CTL_INF("Verify host ssl: " << verify_host_ssl);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+      if (string_utils::StartsWith(proxy_url, "https")) {
+        curl_easy_setopt(handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
+      }
+
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST,
+                       verify_host_ssl ? 2L : 0L);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYPEER,
+                       verify_proxy_ssl ? 1L : 0L);
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYHOST,
+                       verify_proxy_host_ssl ? 2L : 0L);
+
+      auto proxy_auth = proxy_username + ":" + proxy_password;
+      curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, proxy_auth.c_str());
+
+      curl_easy_setopt(handle, CURLOPT_NOPROXY,
+                       configuration->no_proxy.c_str());
+    }
+  } else {
+    CTL_ERR("Failed to get configuration");
+  }
+}
+}  // namespace
 
 cpp::result<bool, std::string> DownloadService::AddDownloadTask(
     DownloadTask& task,
     std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
-  auto validating_result = VerifyDownloadTask(task);
-  if (validating_result.has_error()) {
-    return cpp::fail(validating_result.error());
-  }
-
-  // all items are valid, start downloading
-  // if any item from the task failed to download, the whole task will be
-  // considered failed
   std::optional<std::string> dl_err_msg = std::nullopt;
   bool has_task_done = false;
   for (const auto& item : task.items) {
@@ -76,7 +117,6 @@ cpp::result<bool, std::string> DownloadService::AddDownloadTask(
     }
   }
   if (dl_err_msg.has_value()) {
-    // CTL_ERR(dl_err_msg.value());
     return cpp::fail(dl_err_msg.value());
   }
 
@@ -88,17 +128,29 @@ cpp::result<bool, std::string> DownloadService::AddDownloadTask(
 
 cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
     const std::string& url) const noexcept {
-  CURL* curl;
-  curl = curl_easy_init();
 
+  auto curl = curl_easy_init();
   if (!curl) {
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
 
+  SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  CURLcode res = curl_easy_perform(curl);
+
+  auto headers = curl_utils::GetHeaders(url);
+  if (headers.has_value()) {
+    curl_slist* curl_headers = nullptr;
+
+    for (const auto& [key, value] : headers.value()) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+  }
+  auto res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
     return cpp::fail(static_cast<std::string>(
@@ -116,11 +168,7 @@ cpp::result<bool, std::string> DownloadService::Download(
     const DownloadItem& download_item) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
 
-  CURL* curl;
-  FILE* file;
-  CURLcode res;
-
-  curl = curl_easy_init();
+  auto curl = curl_easy_init();
   if (!curl) {
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
@@ -128,11 +176,10 @@ cpp::result<bool, std::string> DownloadService::Download(
   std::string mode = "wb";
   if (std::filesystem::exists(download_item.localPath) &&
       download_item.bytes.has_value()) {
-    curl_off_t existing_file_size = GetLocalFileSize(download_item.localPath);
-    if (existing_file_size == -1) {
-      CLI_LOG("Cannot get file size: " << download_item.localPath.string()
-                                       << " . Start download over!");
-    } else {
+    try {
+      curl_off_t existing_file_size =
+          std::filesystem::file_size(download_item.localPath);
+
       CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
                                      << download_item.localPath.string()
                                      << " - " << existing_file_size);
@@ -166,32 +213,48 @@ cpp::result<bool, std::string> DownloadService::Download(
           return false;
         }
       }
+    } catch (const std::filesystem::filesystem_error& e) {
+      CLI_LOG("Cannot get file size: "
+              << e.what() << download_item.localPath.string() << "\n");
     }
   }
 
-  file = fopen(download_item.localPath.string().c_str(), mode.c_str());
+  auto file = fopen(download_item.localPath.string().c_str(), mode.c_str());
   if (!file) {
     return cpp::fail("Failed to open output file " +
                      download_item.localPath.string());
   }
 
   curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
+  auto headers = curl_utils::GetHeaders(download_item.downloadUrl);
+  if (headers.has_value()) {
+    curl_slist* curl_headers = nullptr;
+
+    for (const auto& [key, value] : headers.value()) {
+      auto header = key + ": " + value;
+      curl_headers = curl_slist_append(curl_headers, header.c_str());
+    }
+
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
+  }
+
+  SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   if (mode == "ab") {
-    auto local_file_size = GetLocalFileSize(download_item.localPath);
-    if (local_file_size != -1) {
-      curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE,
-                       GetLocalFileSize(download_item.localPath));
-    } else {
-      CTL_ERR("Cannot get file size: " << download_item.localPath.string());
+    try {
+      curl_off_t local_file_size =
+          std::filesystem::file_size(download_item.localPath);
+      curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE, local_file_size);
+    } catch (const std::filesystem::filesystem_error& e) {
+      CTL_ERR("Cannot get file size: " << e.what() << '\n');
     }
   }
 
-  res = curl_easy_perform(curl);
+  auto res = curl_easy_perform(curl);
 
   if (res != CURLE_OK) {
     return cpp::fail("Download failed! Error: " +
@@ -203,194 +266,231 @@ cpp::result<bool, std::string> DownloadService::Download(
   return true;
 }
 
-curl_off_t DownloadService::GetLocalFileSize(
-    const std::filesystem::path& path) const {
-  FILE* file = fopen(path.string().c_str(), "r");
-  if (!file) {
-    return -1;
+cpp::result<std::string, std::string> DownloadService::StopTask(
+    const std::string& task_id) {
+  // First try to cancel in queue
+  CTL_INF("Stopping task: " << task_id);
+  auto cancelled = task_queue_.cancelTask(task_id);
+  if (cancelled) {
+    return task_id;
   }
-
-  if (fseek64(file, 0, SEEK_END) != 0) {
-    return -1;
-  }
-
-  curl_off_t file_size = ftell64(file);
-  fclose(file);
-  return file_size;
-}
-
-void DownloadService::WorkerThread() {
-  while (!stop_flag_) {
-    DownloadTask task;
+  CTL_INF("Not found in pending task, try to find task " + task_id +
+          " in active tasks");
+  // Check if task is currently being processed
+  std::lock_guard<std::mutex> lock(active_tasks_mutex_);
+  if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
+    CTL_INF("Found task " + task_id + " in active tasks");
+    it->second->status = DownloadTask::Status::Cancelled;
     {
-      std::unique_lock<std::mutex> lock(queue_mutex_);
-      queue_condition_.wait(
-          lock, [this] { return !task_queue_.empty() || stop_flag_; });
-      if (stop_flag_) {
-        CTL_INF("Stopping download service..");
-        break;
-      }
-      task = std::move(task_queue_.front());
-      task_queue_.pop();
+      std::lock_guard<std::mutex> lock(stop_mutex_);
+      tasks_to_stop_.insert(task_id);
     }
-    ProcessTask(task);
+    return task_id;
+  }
+
+  CTL_WRN("Task not found");
+  return cpp::fail("Task not found");
+}
+
+void DownloadService::InitializeWorkers() {
+  for (auto i = 0; i < MAX_CONCURRENT_TASKS; ++i) {
+    auto worker_data = std::make_unique<WorkerData>();
+    worker_data->multi_handle = curl_multi_init();
+    worker_data_.push_back(std::move(worker_data));
+
+    worker_threads_.emplace_back([this, i]() { this->WorkerThread(i); });
+    CTL_INF("Starting worker thread: " << i);
   }
 }
 
-void DownloadService::ProcessTask(DownloadTask& task) {
-  CTL_INF("Processing task: " + task.id);
+void DownloadService::Shutdown() {
+  stop_flag_ = true;
+  task_cv_.notify_all();  // Wake up all waiting threads
+
+  for (auto& thread : worker_threads_) {
+    if (thread.joinable()) {
+      thread.join();
+    }
+  }
+
+  for (auto& worker_data : worker_data_) {
+    curl_multi_cleanup(worker_data->multi_handle);
+  }
+
+  // Clean up any remaining callbacks
+  std::lock_guard<std::mutex> lock(callbacks_mutex_);
+  callbacks_.clear();
+}
+
+void DownloadService::WorkerThread(int worker_id) {
+  auto& worker_data = worker_data_[worker_id];
+
+  while (!stop_flag_) {
+    std::unique_lock<std::mutex> lock(task_mutex_);
+
+    // Wait for a task or stop signal
+    task_cv_.wait(lock, [this] {
+      auto pending_task = task_queue_.getNextPendingTask();
+      return pending_task.has_value() || stop_flag_;
+    });
+
+    if (stop_flag_) {
+      break;
+    }
+
+    auto maybe_task = task_queue_.pop();
+    lock.unlock();
+
+    if (!maybe_task || maybe_task->status == DownloadTask::Status::Cancelled) {
+      continue;
+    }
+
+    auto task = std::move(maybe_task.value());
+
+    // Register active task
+    {
+      std::lock_guard<std::mutex> active_lock(active_tasks_mutex_);
+      active_tasks_[task.id] = std::make_shared<DownloadTask>(task);
+    }
+
+    ProcessTask(task, worker_id);
+
+    // Remove from active tasks
+    {
+      std::lock_guard<std::mutex> active_lock(active_tasks_mutex_);
+      active_tasks_.erase(task.id);
+    }
+  }
+}
+
+void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
+  auto& worker_data = worker_data_[worker_id];
   std::vector<std::pair<CURL*, FILE*>> task_handles;
 
-  downloading_data_ = std::make_shared<DownloadingData>(DownloadingData{
-      .item_id = "",
-      .download_task = &task,
-      .event_queue = event_queue_.get(),
-  });
-
-  for (auto& item : task.items) {
-    CURL* handle = curl_easy_init();
-    if (handle == nullptr) {
-      // skip the task
+  task.status = DownloadTask::Status::InProgress;
+  for (const auto& item : task.items) {
+    auto handle = curl_easy_init();
+    if (!handle) {
       CTL_ERR("Failed to init curl!");
       return;
     }
-
-    FILE* file;
-    file = fopen(item.localPath.string().c_str(), "wb");
+    auto file = fopen(item.localPath.string().c_str(), "wb");
     if (!file) {
       CTL_ERR("Failed to open output file " + item.localPath.string());
+      curl_easy_cleanup(handle);
       return;
     }
-    downloading_data_->item_id = item.id;
-    curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
-    curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
-    curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, ProgressCallback);
-    curl_easy_setopt(handle, CURLOPT_XFERINFODATA, downloading_data_.get());
+    auto dl_data_ptr = std::make_shared<DownloadingData>(DownloadingData{
+        .task_id = task.id,
+        .item_id = item.id,
+        .download_service = this,
+    });
+    worker_data->downloading_data_map[item.id] = dl_data_ptr;
 
-    curl_multi_add_handle(multi_handle_, handle);
+    SetUpCurlHandle(handle, item, file, dl_data_ptr.get());
+    curl_multi_add_handle(worker_data->multi_handle, handle);
     task_handles.push_back(std::make_pair(handle, file));
-    CTL_INF("Adding item to multi curl: " + item.ToString());
   }
 
-  event_queue_->enqueue(
-      EventType::DownloadEvent,
-      DownloadEvent{.type_ = DownloadEventType::DownloadStarted,
-                    .download_task_ = task});
+  EmitTaskStarted(task);
 
-  int still_running = 0;
-  bool is_terminated = false;
+  auto result =
+      ProcessMultiDownload(task, worker_data->multi_handle, task_handles);
+
+  // clean up
+  for (auto& [handle, file] : task_handles) {
+    curl_multi_remove_handle(worker_data->multi_handle, handle);
+    curl_easy_cleanup(handle);
+    fclose(file);
+  }
+
+  if (result.has_error()) {
+    if (result.error().type == DownloadEventType::DownloadStopped) {
+      RemoveTaskFromStopList(task.id);
+      EmitTaskStopped(task.id);
+    } else {
+      EmitTaskError(task.id);
+    }
+  } else {
+    // success
+    // if the download has error, we are not run the callback
+    ExecuteCallback(task);
+    EmitTaskCompleted(task.id);
+    {
+      std::lock_guard<std::mutex> lock(event_emit_map_mutex);
+      event_emit_map_.erase(task.id);
+    }
+  }
+
+  worker_data->downloading_data_map.clear();
+}
+
+cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
+    DownloadTask& task, CURLM* multi_handle,
+    const std::vector<std::pair<CURL*, FILE*>>& handles) {
+  auto still_running = 0;
   do {
-    curl_multi_perform(multi_handle_, &still_running);
-    curl_multi_wait(multi_handle_, NULL, 0, MAX_WAIT_MSECS, NULL);
+    curl_multi_perform(multi_handle, &still_running);
+    curl_multi_wait(multi_handle, nullptr, 0, MAX_WAIT_MSECS, nullptr);
+
+    auto result = ProcessCompletedTransfers(multi_handle);
+    if (result.has_error()) {
+      return cpp::fail(ProcessDownloadFailed{
+          .message = result.error(),
+          .task_id = task.id,
+          .type = DownloadEventType::DownloadError,
+      });
+    }
 
     if (IsTaskTerminated(task.id) || stop_flag_) {
       CTL_INF("IsTaskTerminated " + std::to_string(IsTaskTerminated(task.id)));
       CTL_INF("stop_flag_ " + std::to_string(stop_flag_));
-
-      is_terminated = true;
-      break;
+      return cpp::fail(ProcessDownloadFailed{
+          .message = result.error(),
+          .task_id = task.id,
+          .type = DownloadEventType::DownloadStopped,
+      });
     }
   } while (still_running);
-
-  if (stop_flag_) {
-    CTL_INF("Download service is stopping..");
-
-    // try to close file
-    for (auto pair : task_handles) {
-      fclose(pair.second);
-    }
-
-    return;
-  }
-
-  ProcessCompletedTransfers();
-  for (auto pair : task_handles) {
-    curl_multi_remove_handle(multi_handle_, pair.first);
-    curl_easy_cleanup(pair.first);
-    fclose(pair.second);
-  }
-  downloading_data_.reset();
-
-  RemoveTaskFromStopList(task.id);
-
-  // if terminate by API calling and not from process stopping, we emit
-  // DownloadStopped event
-  if (is_terminated) {
-    event_queue_->enqueue(
-        EventType::DownloadEvent,
-        DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
-                      .download_task_ = task});
-  } else {
-    CTL_INF("Executing callback..");
-    ExecuteCallback(task);
-
-    event_queue_->enqueue(
-        EventType::DownloadEvent,
-        DownloadEvent{.type_ = DownloadEventType::DownloadSuccess,
-                      .download_task_ = task});
-  }
+  return {};
 }
 
-cpp::result<std::string, std::string> DownloadService::StopTask(
-    const std::string& task_id) {
-  std::lock_guard<std::mutex> lock(stop_mutex_);
+void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
+                                      FILE* file, DownloadingData* dl_data) {
+  SetUpProxy(handle, config_service_);
+  curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
+  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
+  curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
+  curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(handle, CURLOPT_NOPROGRESS, 0L);
+  curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, ProgressCallback);
+  curl_easy_setopt(handle, CURLOPT_XFERINFODATA, dl_data);
 
-  tasks_to_stop_.insert(task_id);
-  CTL_INF("Added task to stop list: " << task_id);
-  return task_id;
-}
-
-void DownloadService::ProcessCompletedTransfers() {
-  CURLMsg* msg;
-  int remaining_msg_count;
-
-  while ((msg = curl_multi_info_read(multi_handle_, &remaining_msg_count))) {
-    if (msg->msg == CURLMSG_DONE) {
-      auto handle = msg->easy_handle;
-
-      auto return_code = msg->data.result;
-      char* url;
-      curl_easy_getinfo(handle, CURLINFO_EFFECTIVE_URL, &url);
-      if (return_code != CURLE_OK) {
-        CTL_ERR("Download failed for: " << url << " - "
-                                        << curl_easy_strerror(return_code));
-        continue;
-      }
-
-      auto http_status_code = 0;
-      curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &http_status_code);
-      if (http_status_code == 200) {
-        CTL_INF("Download completed successfully for: " << url);
-      } else {
-        CTL_ERR("Download failed for: " << url << " - HTTP status code: "
-                                        << http_status_code);
-      }
+  auto headers = curl_utils::GetHeaders(item.downloadUrl);
+  if (headers) {
+    curl_slist* curl_headers = nullptr;
+    for (const auto& [key, value] : headers.value()) {
+      curl_headers =
+          curl_slist_append(curl_headers, (key + ": " + value).c_str());
     }
+    curl_easy_setopt(handle, CURLOPT_HTTPHEADER, curl_headers);
   }
 }
 
 cpp::result<DownloadTask, std::string> DownloadService::AddTask(
     DownloadTask& task, std::function<void(const DownloadTask&)> callback) {
-  auto validate_result = VerifyDownloadTask(task);
-  if (validate_result.has_error()) {
-    return cpp::fail(validate_result.error());
-  }
-
-  {
+  {  // adding item to callback map
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
     callbacks_[task.id] = std::move(callback);
   }
 
-  {
+  {  // adding task to queue
     std::lock_guard<std::mutex> lock(queue_mutex_);
     task_queue_.push(task);
     CTL_INF("Task added to queue: " << task.id);
   }
 
-  queue_condition_.notify_one();
+  task_cv_.notify_one();
   return task;
 }
 
@@ -405,11 +505,55 @@ void DownloadService::RemoveTaskFromStopList(const std::string& task_id) {
   tasks_to_stop_.erase(task_id);
 }
 
+void DownloadService::EmitTaskStarted(const DownloadTask& task) {
+  event_queue_->enqueue(
+      EventType::DownloadEvent,
+      DownloadEvent{.type_ = DownloadEventType::DownloadStarted,
+                    .download_task_ = task});
+}
+
+void DownloadService::EmitTaskStopped(const std::string& task_id) {
+  if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
+    event_queue_->enqueue(
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadStopped,
+                      .download_task_ = *it->second});
+  }
+}
+
+void DownloadService::EmitTaskError(const std::string& task_id) {
+  if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
+    event_queue_->enqueue(
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadError,
+                      .download_task_ = *it->second});
+  }
+}
+
+void DownloadService::EmitTaskCompleted(const std::string& task_id) {
+  std::lock_guard<std::mutex> lock(active_tasks_mutex_);
+  if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
+    for (auto& item : it->second->items) {
+      item.downloadedBytes = item.bytes;
+    }
+    event_queue_->enqueue(
+        EventType::DownloadEvent,
+        DownloadEvent{.type_ = DownloadEventType::DownloadSuccess,
+                      .download_task_ = *it->second});
+  }
+}
+
 void DownloadService::ExecuteCallback(const DownloadTask& task) {
-  std::lock_guard<std::mutex> lock(callbacks_mutex_);
-  auto it = callbacks_.find(task.id);
-  if (it != callbacks_.end()) {
-    it->second(task);
-    callbacks_.erase(it);
+  std::lock_guard<std::mutex> active_task_lock(active_tasks_mutex_);
+  if (auto it = active_tasks_.find(task.id); it != active_tasks_.end()) {
+    for (auto& item : it->second->items) {
+      item.downloadedBytes = item.bytes;
+    }
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    auto callback = callbacks_.find(task.id);
+    if (callback != callbacks_.end()) {
+      callback->second(*it->second);
+      callbacks_.erase(callback);
+    }
   }
 }

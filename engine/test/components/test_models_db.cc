@@ -1,5 +1,3 @@
-#include <filesystem>
-#include <iostream>
 #include "database/models.h"
 #include "gtest/gtest.h"
 #include "utils/file_manager_utils.h"
@@ -15,7 +13,19 @@ class ModelsTestSuite : public ::testing::Test {
         model_list_(db_) {}
   void SetUp() {
     try {
-      db_.exec("DELETE FROM models");
+      db_.exec(
+          "CREATE TABLE IF NOT EXISTS models ("
+          "model_id TEXT PRIMARY KEY,"
+          "author_repo_id TEXT,"
+          "branch_name TEXT,"
+          "path_to_model_yaml TEXT,"
+          "model_alias TEXT);");
+    } catch (const std::exception& e) {}
+  }
+
+  void TearDown() {
+    try {
+      db_.exec("DROP TABLE IF EXISTS models;");
     } catch (const std::exception& e) {}
   }
 

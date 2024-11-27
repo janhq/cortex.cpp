@@ -1,10 +1,11 @@
-#include <nlohmann/json.hpp>
+#pragma once
+
+#include <memory>
 #include <string>
 
 #if defined(_WIN32)
 #define NOMINMAX
 #endif
-#pragma once
 
 #include <drogon/HttpController.h>
 
@@ -13,11 +14,8 @@
 #define CPPHTTPLIB_NO_EXCEPTIONS 1
 #endif
 
-#include <condition_variable>
 #include <cstddef>
 #include <string>
-#include <variant>
-
 #include "common/base.h"
 #include "services/inference_service.h"
 
@@ -25,45 +23,34 @@
 #define SERVER_VERBOSE 1
 #endif
 
-using json = nlohmann::json;
-
 using namespace drogon;
 
 namespace inferences {
 
-class server : public drogon::HttpController<server>,
+class server : public drogon::HttpController<server, false>,
                public BaseModel,
                public BaseChatCompletion,
                public BaseEmbedding {
  public:
-  server();
+  server(std::shared_ptr<services::InferenceService> inference_service,
+         std::shared_ptr<EngineService> engine_service);
   ~server();
   METHOD_LIST_BEGIN
   // list path definitions here;
-  METHOD_ADD(server::ChatCompletion, "chat_completion", Post);
-  METHOD_ADD(server::Embedding, "embedding", Post);
-  METHOD_ADD(server::LoadModel, "loadmodel", Post);
-  METHOD_ADD(server::UnloadModel, "unloadmodel", Post);
-  METHOD_ADD(server::ModelStatus, "modelstatus", Post);
+  METHOD_ADD(server::ChatCompletion, "chat_completion", Options, Post);
+  METHOD_ADD(server::Embedding, "embedding", Options, Post);
+  METHOD_ADD(server::LoadModel, "loadmodel", Options, Post);
+  METHOD_ADD(server::UnloadModel, "unloadmodel", Options, Post);
+  METHOD_ADD(server::ModelStatus, "modelstatus", Options, Post);
   METHOD_ADD(server::GetModels, "models", Get);
-  METHOD_ADD(server::GetEngines, "engines", Get);
 
   // cortex.python API
-  METHOD_ADD(server::FineTuning, "finetuning", Post);
+  METHOD_ADD(server::FineTuning, "finetuning", Options, Post);
 
   // Openai compatible path
-  ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Post);
-  // ADD_METHOD_TO(server::GetModels, "/v1/models", Get);
-  ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Post);
-
-  // ADD_METHOD_TO(server::handlePrelight, "/v1/chat/completions", Options);
-  // NOTE: prelight will be added back when browser support is properly planned
-
-  ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Post);
-  // ADD_METHOD_TO(server::handlePrelight, "/v1/embeddings", Options);
-
-  // PATH_ADD("/llama/chat_completion", Post);
-  METHOD_ADD(server::UnloadEngine, "unloadengine", Post);
+  ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Options, Post);
+  ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Options, Post);
+  ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Options, Post);
 
   METHOD_LIST_END
   void ChatCompletion(
@@ -84,14 +71,9 @@ class server : public drogon::HttpController<server>,
   void GetModels(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void GetEngines(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) override;
   void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void UnloadEngine(const HttpRequestPtr& req,
-                    std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
@@ -100,6 +82,7 @@ class server : public drogon::HttpController<server>,
                            services::SyncQueue& q);
 
  private:
-  services::InferenceService inference_svc_;
+  std::shared_ptr<services::InferenceService> inference_svc_;
+  std::shared_ptr<EngineService> engine_service_;
 };
 };  // namespace inferences

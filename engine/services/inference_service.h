@@ -1,11 +1,9 @@
 #pragma once
 
-#include <optional>
-#include <variant>
-#include "common/base.h"
-#include "cortex-common/EngineI.h"
-#include "cortex-common/cortexpythoni.h"
-#include "utils/dylib.h"
+#include <condition_variable>
+#include <mutex>
+#include <queue>
+#include "services/engine_service.h"
 #include "utils/result.hpp"
 
 namespace services {
@@ -34,6 +32,9 @@ struct SyncQueue {
 
 class InferenceService {
  public:
+  explicit InferenceService(std::shared_ptr<EngineService> engine_service)
+      : engine_service_{engine_service} {}
+
   cpp::result<void, InferResult> HandleChatCompletion(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
 
@@ -42,34 +43,19 @@ class InferenceService {
 
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
-  InferResult UnloadModel(std::shared_ptr<Json::Value> json_body);
+  InferResult UnloadModel(const std::string& engine,
+                          const std::string& model_id);
 
   InferResult GetModelStatus(std::shared_ptr<Json::Value> json_body);
 
   InferResult GetModels(std::shared_ptr<Json::Value> json_body);
 
-  Json::Value GetEngines(std::shared_ptr<Json::Value> json_body);
-
   InferResult FineTuning(std::shared_ptr<Json::Value> json_body);
 
-  InferResult UnloadEngine(std::shared_ptr<Json::Value> json_body);
-
  private:
-  bool IsEngineLoaded(const std::string& e);
-
   bool HasFieldInReq(std::shared_ptr<Json::Value> json_body,
                      const std::string& field);
 
- private:
-  using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
-  struct EngineInfo {
-    std::unique_ptr<cortex_cpp::dylib> dl;
-    EngineV engine;
-#if defined(_WIN32)
-    DLL_DIRECTORY_COOKIE cookie;
-#endif
-  };
-  // TODO(sang) move engines_ into engine service?
-  std::unordered_map<std::string, EngineInfo> engines_;
+  std::shared_ptr<EngineService> engine_service_;
 };
 }  // namespace services

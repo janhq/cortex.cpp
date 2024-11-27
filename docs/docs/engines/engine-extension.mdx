@@ -1,0 +1,89 @@
+---
+title: Building Engine Extensions
+description: Cortex supports Engine Extensions to integrate both :ocal inference engines, and Remote APIs.
+---
+
+:::info
+🚧 Cortex is currently under development, and this page is a stub for future development. 
+:::
+
+<!-- 
+import Tabs from "@theme/Tabs";
+import TabItem from "@theme/TabItem";
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+
+
+This document provides a step-by-step guide to adding a new engine to the Cortex codebase, similar to the `OpenAIEngineExtension`.
+
+
+## Integrate a New Remote Engine
+
+### Step 1: Create the New Engine Extension
+
+1. Navigate to the `cortex-js/src/extensions` directory.
+2. Create a new file named `<new-engine>.engine.ts` (replace `<new-engine>` with the name of your engine).
+3. Implement your new engine extension class using the following template:
+
+```typescript
+class <NewEngine>EngineExtension extends OAIEngineExtension {
+  apiUrl = 'https://api.<new-engine>.com/v1/chat/completions';
+  name = '<new-engine>';
+  productName = '<New Engine> Inference Engine';
+  description = 'This extension enables <New Engine> chat completion API calls';
+  version = '0.0.1';
+  apiKey?: string;
+}
+```
+
+:::info
+Be sure to replace all placeholders with the appropriate values for your engine.
+:::
+
+### Step 2: Register the New Engine
+
+1. Open the `extensions.module.ts` located at `cortex-js/src/extensions/`.
+
+2. Register your new engine in the provider array using the following code:
+
+```typescript
+[
+    new OpenAIEngineExtension(httpService, configUsecases, eventEmitter),
+    //... other remote engines
+    new <NewEngine>EngineExtension(httpService, configUsecases, eventEmitter),
+]
+```
+
+## Explanation of Key Properties and Methods
+| **Value**                   | **Description**                                                                                  |
+|------------------------------------|--------------------------------------------------------------------------------------------------|
+| `apiUrl`                           | This is the URL endpoint for the new engine's API. It is used to make chat completion requests.   |
+| `name`                             | This is a unique identifier for the engine. It is used internally to reference the engine.        |
+| `productName`                      | This is a human-readable name for the engine. It is used for display purposes.                    |
+| `description`                      | This provides a brief description of what the engine does. It is used for documentation and display purposes. |
+| `version`                          | This indicates the version of the engine extension. It is used for version control and display purposes. |
+| `eventEmmitter.on('config.updated')` | This is an event listener that listens for configuration updates. When the configuration for the engine is updated, this listener updates the `apiKey` and the engine's status. |
+| `onLoad`                           | This method is called when the engine extension is loaded. It retrieves the engine's configuration (such as the `apiKey`) and sets the engine's status based on whether the `apiKey` is available. |
+
+## Advanced: Transforming Payloads and Responses
+
+Some engines require custom transformations for the payload sent to the API and the response received from the API. This is achieved using the `transformPayload` and `transformResponse` methods. These methods allow you to modify the data structure to match the specific requirements of the engine.
+
+### `transformPayload`
+
+The `transformPayload` method is used to transform the data before sending it to the engine's API. This method takes the original payload and modifies it as needed.
+
+**Example: Anthropic Engine**
+
+In the Anthropic Engine, the `transformPayload` method extracts the system message and other messages, and includes additional parameters like `model`, `stream`, and `max_tokens`.
+
+### `transformResponse`
+
+The `transformResponse` method is used to transform the data received from the engine's API. This method processes the response and converts it into a format that the application can use.
+
+**Example: Anthropic Engine**
+
+In the Anthropic Engine, the `transformResponse` method handles both stream and non-stream responses. It processes the response data and converts it into a standardized format.
+ -->

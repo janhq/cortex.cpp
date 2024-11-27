@@ -9,14 +9,14 @@ body:
       required: true
     attributes:
       label: "Cortex version"
-      description: "**Tip:** The version is in the app's bottom right corner"
-
+      description: "**Tip:** `cortex -v` outputs the version number"
+  
   - type: textarea
     validations:
       required: true
     attributes:
-      label: "Describe the Bug"
-      description: "A clear & concise description of the bug"
+      label: "Describe the issue and expected behaviour"
+      description: "A clear & concise description of the issue encountered"
 
   - type: textarea
     attributes:
@@ -31,15 +31,16 @@ body:
     attributes:
       label: "Screenshots / Logs"
       description: |
-        You can find logs in: ~/cortex/logs
+        Please include cortex-cli.log and cortex.log files in: ~/cortex/logs/
 
   - type: checkboxes
     attributes:
       label: "What is your OS?"
       options:
-        - label: MacOS
         - label: Windows
-        - label: Linux
+        - label: Mac Silicon 
+        - label: Mac Intel
+        - label: Linux / Ubuntu
 
   - type: checkboxes
     attributes:
@@ -48,3 +49,10 @@ body:
         - label: cortex.llamacpp (default)
         - label: cortex.tensorrt-llm (Nvidia GPUs)
         - label: cortex.onnx (NPUs, DirectML)
+
+  - type: input
+    attributes:
+      label: "Hardware Specs eg OS version, GPU"
+      description:
+
+  

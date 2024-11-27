@@ -18,5 +18,5 @@ class TestApiModelList:
         stop_server()
 
     def test_models_list_should_be_successful(self):
-        response = requests.get("http://localhost:3928/models")
+        response = requests.get("http://localhost:3928/v1/models")
         assert response.status_code == 200

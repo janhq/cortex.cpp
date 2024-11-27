@@ -4,6 +4,17 @@ from test_runner import run
 
 class TestCliModelPullCortexso:
 
+    def setup_and_teardown(self):
+        # Setup
+        success = start_server()
+        if not success:
+            raise Exception("Failed to start server")
+
+        yield
+
+        # Teardown
+        stop_server()
+    
     def test_model_pull_with_direct_url_should_be_success(self):
         exit_code, output, error = run(
             "Pull model",

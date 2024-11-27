@@ -6,6 +6,7 @@
 #include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "database/models.h"
+#include "hardware_service.h"
 #include "httplib.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
@@ -17,7 +18,9 @@
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
-               std::optional<std::string> author) {
+               std::optional<std::string> author,
+               std::optional<std::string> name,
+               std::optional<std::uint64_t> size) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
@@ -32,6 +35,9 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
       fmu::ToRelativeCortexDataPath(fs::path(ggufDownloadItem.localPath));
   model_config.files = {file_rel_path.string()};
   model_config.model = ggufDownloadItem.id;
+  model_config.name =
+      name.has_value() ? name.value() : gguf_handler.GetModelConfig().name;
+  model_config.size = size.value_or(0);
   yaml_handler.UpdateModelConfig(model_config);
 
   auto yaml_path{ggufDownloadItem.localPath};
@@ -42,7 +48,12 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
   }
 
   auto url_obj = url_parser::FromUrlString(ggufDownloadItem.downloadUrl);
-  auto branch = url_obj.pathParams[3];
+  if (url_obj.has_error()) {
+    CTL_WRN("Error parsing url: " << ggufDownloadItem.downloadUrl);
+    return;
+  }
+
+  auto branch = url_obj->pathParams[3];
   CTL_INF("Adding model to modellist with branch: " << branch);
 
   auto rel = file_manager_utils::ToRelativeCortexDataPath(yaml_name);
@@ -63,33 +74,30 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
 cpp::result<DownloadTask, std::string> GetDownloadTask(
     const std::string& modelId, const std::string& branch = "main") {
-  using namespace nlohmann;
   url_parser::Url url = {
       .protocol = "https",
-      .host = ModelService::kHuggingFaceHost,
+      .host = kHuggingFaceHost,
       .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
 
-  httplib::Client cli(url.GetProtocolAndHost());
-  auto res = cli.Get(url.GetPathAndQuery());
-  if (res->status != httplib::StatusCode::OK_200) {
+  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (result.has_error()) {
     return cpp::fail("Model " + modelId + " not found");
   }
-  auto jsonResponse = json::parse(res->body);
 
   std::vector<DownloadItem> download_items{};
   auto model_container_path = file_manager_utils::GetModelsContainerPath() /
                               "cortex.so" / modelId / branch;
   file_manager_utils::CreateDirectoryRecursively(model_container_path.string());
 
-  for (const auto& [key, value] : jsonResponse.items()) {
-    auto path = value["path"].get<std::string>();
+  for (const auto& value : result.value()) {
+    auto path = value["path"].asString();
     if (path == ".gitattributes" || path == ".gitignore" ||
         path == "README.md") {
       continue;
     }
     url_parser::Url download_url = {
         .protocol = "https",
-        .host = ModelService::kHuggingFaceHost,
+        .host = kHuggingFaceHost,
         .pathParams = {"cortexso", modelId, "resolve", branch, path}};
 
     auto local_path = model_container_path / path;
@@ -99,14 +107,45 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
                      .localPath = local_path});
   }
 
-  DownloadTask download_tasks{
-      .id = branch == "main" ? modelId : modelId + "-" + branch,
-      .type = DownloadType::Model,
-      .items = download_items};
-
-  return download_tasks;
+  return DownloadTask{.id = branch == "main" ? modelId : modelId + "-" + branch,
+                      .type = DownloadType::Model,
+                      .items = download_items};
 }
 }  // namespace
+
+void ModelService::ForceIndexingModelList() {
+  CTL_INF("Force indexing model list");
+
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  auto list_entry = modellist_handler.LoadModelList();
+  if (list_entry.has_error()) {
+    CTL_ERR("Failed to load model list: " << list_entry.error());
+    return;
+  }
+
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+
+  CTL_DBG("Database model size: " + std::to_string(list_entry.value().size()));
+  for (const auto& model_entry : list_entry.value()) {
+    try {
+      yaml_handler.ModelConfigFromFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.path_to_model_yaml))
+              .string());
+      auto model_config = yaml_handler.GetModelConfig();
+      Json::Value obj = model_config.ToJson();
+      yaml_handler.Reset();
+    } catch (const std::exception& e) {
+      // remove in db
+      auto remove_result =
+          modellist_handler.DeleteModelEntry(model_entry.model);
+      // silently ignore result
+    }
+  }
+}
 
 cpp::result<std::string, std::string> ModelService::DownloadModel(
     const std::string& input) {
@@ -197,64 +236,72 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
 
 std::optional<config::ModelConfig> ModelService::GetDownloadedModel(
     const std::string& modelId) const {
-  auto models_path = file_manager_utils::GetModelsContainerPath();
-  if (!std::filesystem::exists(models_path) ||
-      !std::filesystem::is_directory(models_path)) {
+
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+  auto model_entry = modellist_handler.GetModelInfo(modelId);
+  if (!model_entry.has_value()) {
     return std::nullopt;
   }
 
-  for (const auto& entry : std::filesystem::directory_iterator(models_path)) {
-    if (entry.is_regular_file() &&
-        entry.path().filename().string() == modelId &&
-        entry.path().extension() == ".yaml") {
-      try {
-        config::YamlHandler handler;
-        handler.ModelConfigFromFile(entry.path().string());
-        auto model_conf = handler.GetModelConfig();
-        return model_conf;
-      } catch (const std::exception& e) {
-        LOG_ERROR << "Error reading yaml file '" << entry.path().string()
-                  << "': " << e.what();
-      }
-    }
+  try {
+    config::YamlHandler yaml_handler;
+    namespace fs = std::filesystem;
+    namespace fmu = file_manager_utils;
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
+    return yaml_handler.GetModelConfig();
+  } catch (const std::exception& e) {
+    LOG_ERROR << "Error reading yaml file '" << model_entry->path_to_model_yaml
+              << "': " << e.what();
+    return std::nullopt;
   }
-  return std::nullopt;
 }
 
 cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
-    const std::string& url) {
+    const std::string& url, std::optional<std::string> temp_model_id,
+    std::optional<std::string> temp_name) {
   auto url_obj = url_parser::FromUrlString(url);
+  if (url_obj.has_error()) {
+    return cpp::fail("Invalid url: " + url);
+  }
 
-  if (url_obj.host == kHuggingFaceHost) {
-    if (url_obj.pathParams[2] == "blob") {
-      url_obj.pathParams[2] = "resolve";
+  if (url_obj->host == kHuggingFaceHost) {
+    if (url_obj->pathParams[2] == "blob") {
+      url_obj->pathParams[2] = "resolve";
     }
   }
-  auto author{url_obj.pathParams[0]};
-  auto model_id{url_obj.pathParams[1]};
-  auto file_name{url_obj.pathParams.back()};
+  auto author{url_obj->pathParams[0]};
+  auto model_id{url_obj->pathParams[1]};
+  auto file_name{url_obj->pathParams.back()};
 
   if (author == "cortexso") {
-    return DownloadModelFromCortexsoAsync(model_id);
+    return DownloadModelFromCortexsoAsync(model_id, url_obj->pathParams[3]);
   }
 
-  if (url_obj.pathParams.size() < 5) {
+  if (url_obj->pathParams.size() < 5) {
     return cpp::fail("Invalid url: " + url);
   }
 
   std::string huggingFaceHost{kHuggingFaceHost};
-  std::string unique_model_id{author + ":" + model_id + ":" + file_name};
-
   cortex::db::Models modellist_handler;
-  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
+  std::string unique_model_id = "";
+  if (temp_model_id.has_value()) {
+    unique_model_id = temp_model_id.value();
+  } else {
+    unique_model_id = author + ":" + model_id + ":" + file_name;
+  }
 
+  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
   if (model_entry.has_value()) {
     CLI_LOG("Model already downloaded: " << unique_model_id);
     return cpp::fail("Please delete the model before downloading again");
   }
 
   auto local_path{file_manager_utils::GetModelsContainerPath() /
-                  "huggingface.co" / author / model_id / file_name};
+                  kHuggingFaceHost / author / model_id / file_name};
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
@@ -264,7 +311,7 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
     std::filesystem::create_directories(local_path.parent_path());
   }
 
-  auto download_url = url_parser::FromUrl(url_obj);
+  auto download_url = url_parser::FromUrl(url_obj.value());
   // this assume that the model being downloaded is a single gguf file
   auto downloadTask{DownloadTask{.id = model_id,
                                  .type = DownloadType::Model,
@@ -274,9 +321,14 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
                                      .localPath = local_path,
                                  }}}};
 
-  auto on_finished = [&](const DownloadTask& finishedTask) {
+  auto on_finished = [author, temp_name](const DownloadTask& finishedTask) {
+    // Sum downloadedBytes from all items
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(gguf_download_item, author);
+    ParseGguf(gguf_download_item, author, temp_name, model_size);
   };
 
   downloadTask.id = unique_model_id;
@@ -286,22 +338,25 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 cpp::result<std::string, std::string> ModelService::HandleUrl(
     const std::string& url) {
   auto url_obj = url_parser::FromUrlString(url);
+  if (url_obj.has_error()) {
+    return cpp::fail("Invalid url: " + url);
+  }
 
-  if (url_obj.host == kHuggingFaceHost) {
-    if (url_obj.pathParams[2] == "blob") {
-      url_obj.pathParams[2] = "resolve";
+  if (url_obj->host == kHuggingFaceHost) {
+    if (url_obj->pathParams[2] == "blob") {
+      url_obj->pathParams[2] = "resolve";
     }
   }
-  auto author{url_obj.pathParams[0]};
-  auto model_id{url_obj.pathParams[1]};
-  auto file_name{url_obj.pathParams.back()};
+  auto author{url_obj->pathParams[0]};
+  auto model_id{url_obj->pathParams[1]};
+  auto file_name{url_obj->pathParams.back()};
 
   if (author == "cortexso") {
     return DownloadModelFromCortexso(model_id);
   }
 
-  if (url_obj.pathParams.size() < 5) {
-    if (url_obj.pathParams.size() < 2) {
+  if (url_obj->pathParams.size() < 5) {
+    if (url_obj->pathParams.size() < 2) {
       return cpp::fail("Invalid url: " + url);
     }
     return DownloadHuggingFaceGgufModel(author, model_id, std::nullopt);
@@ -315,11 +370,11 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
 
   if (model_entry.has_value()) {
     CLI_LOG("Model already downloaded: " << unique_model_id);
-    return cpp::fail("Please delete the model before downloading again");
+    return unique_model_id;
   }
 
   auto local_path{file_manager_utils::GetModelsContainerPath() /
-                  "huggingface.co" / author / model_id / file_name};
+                  kHuggingFaceHost / author / model_id / file_name};
 
   try {
     std::filesystem::create_directories(local_path.parent_path());
@@ -329,7 +384,7 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
     std::filesystem::create_directories(local_path.parent_path());
   }
 
-  auto download_url = url_parser::FromUrl(url_obj);
+  auto download_url = url_parser::FromUrl(url_obj.value());
   // this assume that the model being downloaded is a single gguf file
   auto downloadTask{DownloadTask{.id = model_id,
                                  .type = DownloadType::Model,
@@ -339,9 +394,14 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
                                      .localPath = local_path,
                                  }}}};
 
-  auto on_finished = [&](const DownloadTask& finishedTask) {
+  auto on_finished = [author](const DownloadTask& finishedTask) {
+    // Sum downloadedBytes from all items
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(gguf_download_item, author);
+    ParseGguf(gguf_download_item, author, std::nullopt, model_size);
   };
 
   auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
@@ -354,17 +414,35 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
   return unique_model_id;
 }
 
+bool ModelService::HasModel(const std::string& id) const {
+  return cortex::db::Models().HasModel(id);
+}
+
 cpp::result<DownloadTask, std::string>
-ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
-                                             const std::string& branch) {
+ModelService::DownloadModelFromCortexsoAsync(
+    const std::string& name, const std::string& branch,
+    std::optional<std::string> temp_model_id) {
 
   auto download_task = GetDownloadTask(name, branch);
   if (download_task.has_error()) {
     return cpp::fail(download_task.error());
   }
 
-  std::string model_id{name + ":" + branch};
-  auto on_finished = [&, model_id](const DownloadTask& finishedTask) {
+  cortex::db::Models modellist_handler;
+  std::string unique_model_id = "";
+  if (temp_model_id.has_value()) {
+    unique_model_id = temp_model_id.value();
+  } else {
+    unique_model_id = name + ":" + branch;
+  }
+
+  auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
+  if (model_entry.has_value()) {
+    return cpp::fail("Please delete the model before downloading again");
+  }
+
+  auto on_finished = [unique_model_id,
+                      branch](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
@@ -375,7 +453,8 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
     }
 
     if (model_yml_item == nullptr) {
-      CTL_WRN("model.yml not found in the downloaded files for " + model_id);
+      CTL_WRN("model.yml not found in the downloaded files for " +
+              unique_model_id);
       return;
     }
     auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
@@ -383,7 +462,13 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
-    mc.model = model_id;
+    mc.model = unique_model_id;
+
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
+    mc.size = model_size;
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
@@ -392,11 +477,11 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{.model = model_id,
+    cortex::db::ModelEntry model_entry{.model = unique_model_id,
                                        .author_repo_id = "cortexso",
                                        .branch_name = branch,
                                        .path_to_model_yaml = rel.string(),
-                                       .model_alias = model_id};
+                                       .model_alias = unique_model_id};
     auto result = modellist_utils_obj.AddModelEntry(model_entry);
     if (result.has_error()) {
       CTL_ERR("Error adding model to modellist: " + result.error());
@@ -404,9 +489,8 @@ ModelService::DownloadModelFromCortexsoAsync(const std::string& name,
   };
 
   auto task = download_task.value();
-  task.id = model_id;
-
-  return download_service_->AddTask(download_task.value(), on_finished);
+  task.id = unique_model_id;
+  return download_service_->AddTask(task, on_finished);
 }
 
 cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
@@ -418,7 +502,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
   }
 
   std::string model_id{name + ":" + branch};
-  auto on_finished = [&, model_id](const DownloadTask& finishedTask) {
+  auto on_finished = [branch, model_id](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
@@ -506,6 +590,14 @@ cpp::result<void, std::string> ModelService::DeleteModel(
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
+  auto result = StopModel(model_handle);
+  if (result.has_error()) {
+    CTL_INF("Failed to stop model " << model_handle
+                                    << ", error: " << result.error());
+  } else {
+    CTL_INF("Model " << model_handle << " stopped successfully");
+  }
+
   try {
     auto model_entry = modellist_handler.GetModelInfo(model_handle);
     if (model_entry.has_error()) {
@@ -549,72 +641,180 @@ cpp::result<void, std::string> ModelService::DeleteModel(
   }
 }
 
-cpp::result<bool, std::string> ModelService::StartModel(
-    const std::string& host, int port, const std::string& model_handle,
-    std::optional<std::string> custom_prompt_template) {
+cpp::result<StartModelResult, std::string> ModelService::StartModel(
+    const std::string& model_handle,
+    const StartParameterOverride& params_override) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
   try {
-    auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    if (model_entry.has_error()) {
-      CTL_WRN("Error: " + model_entry.error());
-      return cpp::fail(model_entry.error());
-    }
-    yaml_handler.ModelConfigFromFile(
-        fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.value().path_to_model_yaml))
-            .string());
-    auto mc = yaml_handler.GetModelConfig();
+    Json::Value json_data;
+    // Currently we don't support download vision models, so we need to bypass check
+    if (!params_override.bypass_model_check()) {
+      auto model_entry = modellist_handler.GetModelInfo(model_handle);
+      if (model_entry.has_error()) {
+        CTL_WRN("Error: " + model_entry.error());
+        return cpp::fail(model_entry.error());
+      }
+      yaml_handler.ModelConfigFromFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      auto mc = yaml_handler.GetModelConfig();
 
-    httplib::Client cli(host + ":" + std::to_string(port));
-
-    Json::Value json_data = mc.ToJson();
-    if (mc.files.size() > 0) {
-      // TODO(sang) support multiple files
-      json_data["model_path"] =
-          fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
-    } else {
-      LOG_WARN << "model_path is empty";
-      return false;
-    }
-    json_data["model"] = model_handle;
-    if (!custom_prompt_template.value_or("").empty()) {
-      auto parse_prompt_result =
-          string_utils::ParsePrompt(custom_prompt_template.value());
-      json_data["system_prompt"] = parse_prompt_result.system_prompt;
-      json_data["user_prompt"] = parse_prompt_result.user_prompt;
-      json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
-    } else {
+      json_data = mc.ToJson();
+      if (mc.files.size() > 0) {
+        // TODO(sang) support multiple files
+        json_data["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+      } else {
+        LOG_WARN << "model_path is empty";
+        return StartModelResult{.success = false};
+      }
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
-    }
-
-    auto data_str = json_data.toStyledString();
-    CTL_INF(data_str);
-    cli.set_read_timeout(std::chrono::seconds(60));
-    auto res = cli.Post("/inferences/server/loadmodel", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else if (res->status == httplib::StatusCode::Conflict_409) {
-        CTL_INF("Model '" + model_handle + "' is already loaded");
-        return true;
-      } else {
-        CTL_ERR("Model failed to load with status code: " << res->status);
-        return cpp::fail("Model failed to load with status code: " +
-                         std::to_string(res->status));
-      }
     } else {
-      auto err = res.error();
-      CTL_ERR("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      bypass_stop_check_set_.insert(model_handle);
     }
 
+    json_data["model"] = model_handle;
+    if (auto& cpt = params_override.custom_prompt_template;
+        !cpt.value_or("").empty()) {
+      auto parse_prompt_result = string_utils::ParsePrompt(cpt.value());
+      json_data["system_prompt"] = parse_prompt_result.system_prompt;
+      json_data["user_prompt"] = parse_prompt_result.user_prompt;
+      json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
+    }
+
+#define ASSIGN_IF_PRESENT(json_obj, param_override, param_name) \
+  if (param_override.param_name) {                              \
+    json_obj[#param_name] = param_override.param_name.value();  \
+  }
+
+    ASSIGN_IF_PRESENT(json_data, params_override, cache_enabled);
+    ASSIGN_IF_PRESENT(json_data, params_override, ngl);
+    ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
+    ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
+    ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
+    ASSIGN_IF_PRESENT(json_data, params_override, mmproj);
+    ASSIGN_IF_PRESENT(json_data, params_override, model_path);
+#undef ASSIGN_IF_PRESENT
+
+    CTL_INF(json_data.toStyledString());
+    // TODO(sang) move this into another function
+    // Calculate ram/vram needed to load model
+    services::HardwareService hw_svc;
+    auto hw_info = hw_svc.GetHardwareInfo();
+    assert(!!engine_svc_);
+    auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
+    bool is_cuda = false;
+    if (default_engine.has_error()) {
+      CTL_INF("Could not get default engine");
+    } else {
+      auto& de = default_engine.value();
+      is_cuda = de.variant.find("cuda") != std::string::npos;
+      CTL_INF("is_cuda: " << is_cuda);
+    }
+
+    std::optional<std::string> warning;
+    if (is_cuda && !system_info_utils::IsNvidiaSmiAvailable()) {
+      CTL_INF(
+          "Running cuda variant but nvidia-driver is not installed yet, "
+          "fallback to CPU mode");
+      auto res = engine_svc_->GetInstalledEngineVariants(kLlamaEngine);
+      if (res.has_error()) {
+        CTL_WRN("Could not get engine variants");
+        return cpp::fail("Nvidia-driver is not installed!");
+      } else {
+        auto& es = res.value();
+        std::sort(
+            es.begin(), es.end(),
+            [](const EngineVariantResponse& e1,
+               const EngineVariantResponse& e2) { return e1.name > e2.name; });
+        for (auto& e : es) {
+          CTL_INF(e.name << " " << e.version << " " << e.engine);
+          // Select the first CPU candidate
+          if (e.name.find("cuda") == std::string::npos) {
+            auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine,
+                                                          e.version, e.name);
+            if (r.has_error()) {
+              CTL_WRN("Could not set default engine variant");
+              return cpp::fail("Nvidia-driver is not installed!");
+            } else {
+              CTL_INF("Change default engine to: " << e.name);
+              auto rl = engine_svc_->LoadEngine(kLlamaEngine);
+              if (rl.has_error()) {
+                return cpp::fail("Nvidia-driver is not installed!");
+              } else {
+                CTL_INF("Engine started");
+                is_cuda = false;
+                warning = "Nvidia-driver is not installed, use CPU variant: " +
+                          e.version + "-" + e.name;
+                break;
+              }
+            }
+          }
+        }
+        // If we reach here, means that no CPU variant to fallback
+        if (!warning) {
+          return cpp::fail(
+              "Nvidia-driver is not installed, no available CPU version to "
+              "fallback");
+        }
+      }
+    }
+    // If in GPU acceleration mode:
+    // We use all visible GPUs, so only need to sum all free vram
+    auto free_vram_MiB = 0u;
+    for (const auto& gpu : hw_info.gpus) {
+      free_vram_MiB += gpu.free_vram;
+    }
+
+    auto free_ram_MiB = hw_info.ram.available_MiB;
+
+    auto const& mp = json_data["model_path"].asString();
+    auto ngl = json_data["ngl"].asInt();
+    // Bypass for now
+    auto vram_needed_MiB = 0u;
+    auto ram_needed_MiB = 0u;
+
+    if (vram_needed_MiB > free_vram_MiB && is_cuda) {
+      CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
+                                   << ", available: " << free_vram_MiB);
+
+      return cpp::fail(
+          "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
+          " MiB, available: " + std::to_string(free_vram_MiB) +
+          " MiB - Should adjust ngl to " +
+          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
+    }
+
+    if (ram_needed_MiB > free_ram_MiB) {
+      CTL_WRN("Not enough RAM - " << "required: " << ram_needed_MiB
+                                  << ", available: " << free_ram_MiB);
+      return cpp::fail(
+          "Not enough RAM - required: " + std::to_string(ram_needed_MiB) +
+          " MiB,, available: " + std::to_string(free_ram_MiB) + " MiB");
+    }
+
+    assert(!!inference_svc_);
+    auto ir =
+        inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      return StartModelResult{.success = true, .warning = warning};
+    } else if (status == httplib::StatusCode::Conflict_409) {
+      CTL_INF("Model '" + model_handle + "' is already loaded");
+      return StartModelResult{.success = true, .warning = warning};
+    } else {
+      // only report to user the error
+      CTL_ERR("Model failed to start with status code: " << status);
+      return cpp::fail("Model failed to start: " + data["message"].asString());
+    }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to load model with ID '" + model_handle +
                      "': " + e.what());
@@ -622,48 +822,45 @@ cpp::result<bool, std::string> ModelService::StartModel(
 }
 
 cpp::result<bool, std::string> ModelService::StopModel(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& model_handle) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
   try {
-    auto model_entry = modellist_handler.GetModelInfo(model_handle);
-    if (model_entry.has_error()) {
-      CTL_WRN("Error: " + model_entry.error());
-      return cpp::fail(model_entry.error());
-    }
-    yaml_handler.ModelConfigFromFile(
-        fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.value().path_to_model_yaml))
-            .string());
-    auto mc = yaml_handler.GetModelConfig();
-
-    httplib::Client cli(host + ":" + std::to_string(port));
-
-    Json::Value json_data;
-    json_data["model"] = model_handle;
-    json_data["engine"] = mc.engine;
-    auto data_str = json_data.toStyledString();
-    CTL_INF(data_str);
-    cli.set_read_timeout(std::chrono::seconds(60));
-    auto res = cli.Post("/inferences/server/unloadmodel", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else {
-        CTL_ERR("Model failed to unload with status code: " << res->status);
-        return cpp::fail("Model failed to unload with status code: " +
-                         std::to_string(res->status));
+    auto bypass_check = (bypass_stop_check_set_.find(model_handle) !=
+                         bypass_stop_check_set_.end());
+    std::string engine_name = "";
+    if (!bypass_check) {
+      auto model_entry = modellist_handler.GetModelInfo(model_handle);
+      if (model_entry.has_error()) {
+        CTL_WRN("Error: " + model_entry.error());
+        return cpp::fail(model_entry.error());
       }
-    } else {
-      auto err = res.error();
-      CTL_ERR("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      yaml_handler.ModelConfigFromFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      auto mc = yaml_handler.GetModelConfig();
+      engine_name = mc.engine;
     }
-
+    if (bypass_check) {
+      engine_name = kLlamaEngine;
+    }
+    assert(inference_svc_);
+    auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      if (bypass_check) {
+        bypass_stop_check_set_.erase(model_handle);
+      }
+      return true;
+    } else {
+      CTL_ERR("Model failed to stop with status code: " << status);
+      return cpp::fail("Model failed to stop: " + data["message"].asString());
+    }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to unload model with ID '" + model_handle +
                      "': " + e.what());
@@ -671,7 +868,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
 }
 
 cpp::result<bool, std::string> ModelService::GetModelStatus(
-    const std::string& host, int port, const std::string& model_handle) {
+    const std::string& model_handle) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -689,33 +886,152 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
             .string());
     auto mc = yaml_handler.GetModelConfig();
 
-    httplib::Client cli(host + ":" + std::to_string(port));
-    nlohmann::json json_data;
-    json_data["model"] = model_handle;
-    json_data["engine"] = mc.engine;
+    Json::Value root;
+    root["model"] = model_handle;
+    root["engine"] = mc.engine;
 
-    auto data_str = json_data.dump();
-
-    auto res = cli.Post("/inferences/server/modelstatus", httplib::Headers(),
-                        data_str.data(), data_str.size(), "application/json");
-    if (res) {
-      if (res->status == httplib::StatusCode::OK_200) {
-        return true;
-      } else {
-        CTL_INF("Model failed to get model status with status code: "
-                << res->status);
-        return cpp::fail("Model failed to get model status with status code: " +
-                         std::to_string(res->status));
-      }
+    auto ir =
+        inference_svc_->GetModelStatus(std::make_shared<Json::Value>(root));
+    auto status = std::get<0>(ir)["status_code"].asInt();
+    auto data = std::get<1>(ir);
+    if (status == httplib::StatusCode::OK_200) {
+      return true;
     } else {
-      auto err = res.error();
-      CTL_WRN("HTTP error: " << httplib::to_string(err));
-      return cpp::fail("HTTP error: " + httplib::to_string(err));
+      CTL_ERR("Model failed to get model status with status code: " << status);
+      return cpp::fail("Model failed to get model status: " +
+                       data["message"].asString());
     }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
   }
+}
+
+cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
+    const std::string& input) {
+  if (input.empty()) {
+    return cpp::fail(
+        "Input must be Cortex Model Hub handle or HuggingFace url!");
+  }
+  auto model_name = input;
+
+  if (string_utils::StartsWith(input, "https://")) {
+    auto url_obj = url_parser::FromUrlString(input);
+    if (url_obj.has_error()) {
+      return cpp::fail("Invalid url: " + input);
+    }
+    if (url_obj->host == kHuggingFaceHost) {
+      if (url_obj->pathParams[2] == "blob") {
+        url_obj->pathParams[2] = "resolve";
+      }
+    }
+
+    auto author{url_obj->pathParams[0]};
+    auto model_id{url_obj->pathParams[1]};
+    auto file_name{url_obj->pathParams.back()};
+    if (author == "cortexso") {
+      return ModelPullInfo{
+          .id = model_id + ":" + url_obj->pathParams[3],
+          .downloaded_models = {},
+          .available_models = {},
+          .download_url = url_parser::FromUrl(url_obj.value())};
+    }
+    return ModelPullInfo{.id = author + ":" + model_id + ":" + file_name,
+                         .downloaded_models = {},
+                         .available_models = {},
+                         .download_url = url_parser::FromUrl(url_obj.value())};
+  }
+
+  if (input.find(":") != std::string::npos) {
+    auto parsed = string_utils::SplitBy(input, ":");
+    if (parsed.size() != 2) {
+      return cpp::fail("Invalid model handle: " + input);
+    }
+    return ModelPullInfo{.id = input,
+                         .downloaded_models = {},
+                         .available_models = {},
+                         .download_url = input};
+  }
+
+  if (input.find("/") != std::string::npos) {
+    auto parsed = string_utils::SplitBy(input, "/");
+    if (parsed.size() != 2) {
+      return cpp::fail("Invalid model handle: " + input);
+    }
+
+    auto author = parsed[0];
+    model_name = parsed[1];
+    if (author != "cortexso") {
+      auto repo_info =
+          huggingface_utils::GetHuggingFaceModelRepoInfo(author, model_name);
+
+      if (!repo_info.has_value()) {
+        return cpp::fail("Model not found");
+      }
+
+      if (!repo_info->gguf.has_value()) {
+        return cpp::fail(
+            "Not a GGUF model. Currently, only GGUF single file is "
+            "supported.");
+      }
+
+      std::vector<std::string> options{};
+      for (const auto& sibling : repo_info->siblings) {
+        if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
+          options.push_back(sibling.rfilename);
+        }
+      }
+
+      return ModelPullInfo{
+          .id = author + ":" + model_name,
+          .downloaded_models = {},
+          .available_models = options,
+          .download_url =
+              huggingface_utils::GetDownloadableUrl(author, model_name, "")};
+    }
+  }
+  auto branches =
+      huggingface_utils::GetModelRepositoryBranches("cortexso", model_name);
+  if (branches.has_error()) {
+    return cpp::fail(branches.error());
+  }
+
+  auto default_model_branch = huggingface_utils::GetDefaultBranch(model_name);
+
+  cortex::db::Models modellist_handler;
+  auto downloaded_model_ids = modellist_handler.FindRelatedModel(model_name)
+                                  .value_or(std::vector<std::string>{});
+
+  std::vector<std::string> avai_download_opts{};
+  for (const auto& branch : branches.value()) {
+    if (branch.second.name == "main") {  // main branch only have metadata. skip
+      continue;
+    }
+    auto model_id = model_name + ":" + branch.second.name;
+    if (std::find(downloaded_model_ids.begin(), downloaded_model_ids.end(),
+                  model_id) !=
+        downloaded_model_ids.end()) {  // if downloaded, we skip it
+      continue;
+    }
+    avai_download_opts.emplace_back(model_id);
+  }
+
+  if (avai_download_opts.empty()) {
+    // TODO: only with pull, we return
+    return cpp::fail("No variant available");
+  }
+  std::optional<std::string> normalized_def_branch = std::nullopt;
+  if (default_model_branch.has_value()) {
+    normalized_def_branch = model_name + ":" + default_model_branch.value();
+  }
+  string_utils::SortStrings(downloaded_model_ids);
+  string_utils::SortStrings(avai_download_opts);
+
+  return ModelPullInfo{.id = model_name,
+                       .default_branch = normalized_def_branch.value_or(""),
+                       .downloaded_models = downloaded_model_ids,
+                       .available_models = avai_download_opts,
+                       .model_source = "cortexso"};
 }
 
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(

@@ -173,9 +173,9 @@ std::string CpuInfo::to_string() {
   s += "avx512_er = " + get(impl->has_avx512_er) + "| ";
   s += "avx512_cd = " + get(impl->has_avx512_cd) + "| ";
   s += "avx512_bw = " + get(impl->has_avx512_bw) + "| ";
-  s += "has_avx512_vl = " + get(impl->has_avx512_vl) + "| ";
-  s += "has_avx512_vbmi = " + get(impl->has_avx512_vbmi) + "| ";
-  s += "has_avx512_vbmi2 = " + get(impl->has_avx512_vbmi2) + "| ";
+  s += "avx512_vl = " + get(impl->has_avx512_vl) + "| ";
+  s += "avx512_vbmi = " + get(impl->has_avx512_vbmi) + "| ";
+  s += "avx512_vbmi2 = " + get(impl->has_avx512_vbmi2) + "| ";
   s += "avx512_vnni = " + get(impl->has_avx512_vnni) + "| ";
   s += "avx512_bitalg = " + get(impl->has_avx512_bitalg) + "| ";
   s += "avx512_vpopcntdq = " + get(impl->has_avx512_vpopcntdq) + "| ";
@@ -187,4 +187,43 @@ std::string CpuInfo::to_string() {
   return s;
 }
 
-}  // namespace cpuid
+std::vector<std::string> CpuInfo::instructions() {
+  std::vector<std::string> res;
+#define ADD_FEATURE_IF_PRESENT(feature_name) \
+  if (impl->has_##feature_name)              \
+    res.emplace_back(#feature_name);
+
+  ADD_FEATURE_IF_PRESENT(fpu);
+  ADD_FEATURE_IF_PRESENT(mmx);
+  ADD_FEATURE_IF_PRESENT(sse);
+  ADD_FEATURE_IF_PRESENT(sse2);
+  ADD_FEATURE_IF_PRESENT(sse3);
+  ADD_FEATURE_IF_PRESENT(ssse3);
+  ADD_FEATURE_IF_PRESENT(sse4_1);
+  ADD_FEATURE_IF_PRESENT(sse4_2);
+  ADD_FEATURE_IF_PRESENT(pclmulqdq);
+  ADD_FEATURE_IF_PRESENT(avx);
+  ADD_FEATURE_IF_PRESENT(avx2);
+  ADD_FEATURE_IF_PRESENT(avx512_f);
+  ADD_FEATURE_IF_PRESENT(avx512_dq);
+  ADD_FEATURE_IF_PRESENT(avx512_ifma);
+  ADD_FEATURE_IF_PRESENT(avx512_pf);
+  ADD_FEATURE_IF_PRESENT(avx512_er);
+  ADD_FEATURE_IF_PRESENT(avx512_cd);
+  ADD_FEATURE_IF_PRESENT(avx512_bw);
+  ADD_FEATURE_IF_PRESENT(avx512_vl);
+  ADD_FEATURE_IF_PRESENT(avx512_vbmi);
+  ADD_FEATURE_IF_PRESENT(avx512_vbmi2);
+  ADD_FEATURE_IF_PRESENT(avx512_vnni);
+  ADD_FEATURE_IF_PRESENT(avx512_bitalg);
+  ADD_FEATURE_IF_PRESENT(avx512_vpopcntdq);
+  ADD_FEATURE_IF_PRESENT(avx512_4vnniw);
+  ADD_FEATURE_IF_PRESENT(avx512_4fmaps);
+  ADD_FEATURE_IF_PRESENT(avx512_vp2intersect);
+  ADD_FEATURE_IF_PRESENT(aes);
+  ADD_FEATURE_IF_PRESENT(f16c);
+#undef ADD_FEATURE_IF_PRESENT
+  return res;
+}
+
+}  // namespace cortex::cpuid
