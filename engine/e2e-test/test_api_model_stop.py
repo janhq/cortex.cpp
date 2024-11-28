@@ -26,6 +26,7 @@ class TestApiModelStop:
         response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
+        time.sleep(30)
         
         json_body = {"model": "tinyllama:gguf"}
         response = requests.post(

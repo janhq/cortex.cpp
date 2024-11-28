@@ -1,4 +1,5 @@
 import pytest
+import time
 import requests
 from test_runner import run, start_server, stop_server
 from test_runner import (
@@ -25,6 +26,8 @@ class TestApiModelStart:
         response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
+        # TODO(sang) need to fix for cuda download
+        time.sleep(30)
         
         json_body = {
             "model": "tinyllama:gguf"

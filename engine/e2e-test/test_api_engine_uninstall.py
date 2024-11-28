@@ -1,4 +1,5 @@
 import pytest
+import time
 import requests
 from test_runner import (
     run,
@@ -27,6 +28,7 @@ class TestApiEngineUninstall:
         response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
+        time.sleep(30)
         
         response = requests.delete("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
