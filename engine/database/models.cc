@@ -1,6 +1,5 @@
 #include "models.h"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 #include "database.h"
 #include "utils/result.hpp"
@@ -8,11 +7,9 @@
 
 namespace cortex::db {
 
-Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
-}
+Models::Models() : db_(cortex::db::Database::GetInstance().db()) {}
 
-Models::Models(SQLite::Database& db) : db_(db) {
-}
+Models::Models(SQLite::Database& db) : db_(db) {}
 
 Models::~Models() {}
 
