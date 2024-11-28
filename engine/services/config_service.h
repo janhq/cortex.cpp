@@ -8,6 +8,5 @@ class ConfigService {
   cpp::result<ApiServerConfiguration, std::string> UpdateApiServerConfiguration(
       const Json::Value& json);
 
-  cpp::result<ApiServerConfiguration, std::string> GetApiServerConfiguration()
-      const;
+  cpp::result<ApiServerConfiguration, std::string> GetApiServerConfiguration();
 };

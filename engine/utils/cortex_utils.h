@@ -3,7 +3,9 @@
 #include <drogon/HttpResponse.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <ctime>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <random>
@@ -24,20 +26,41 @@ inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
 
+// example: Mon, 25 Nov 2024 09:57:03 GMT
+inline std::string GetDateRFC1123() {
+  std::time_t now = std::time(nullptr);
+  std::tm* gmt_time = std::gmtime(&now);
+  std::ostringstream oss;
+  oss << std::put_time(gmt_time, "%a, %d %b %Y %H:%M:%S GMT");
+  return oss.str();
+}
+
 inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
-  return drogon::HttpResponse::newHttpResponse();
+  auto res = drogon::HttpResponse::newHttpResponse();
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
 }
 
 inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
     const Json::Value& data) {
-  return drogon::HttpResponse::newHttpJsonResponse(data);
+  auto res = drogon::HttpResponse::newHttpJsonResponse(data);
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
 };
 
 inline drogon::HttpResponsePtr CreateCortexStreamResponse(
     const std::function<std::size_t(char*, std::size_t)>& callback,
     const std::string& attachmentFileName = "") {
-  return drogon::HttpResponse::newStreamResponse(
+  auto res = drogon::HttpResponse::newStreamResponse(
       callback, attachmentFileName, drogon::CT_NONE, "text/event-stream");
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
 }
 
 #if defined(_WIN32)

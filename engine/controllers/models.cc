@@ -154,7 +154,7 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-
+  model_service_->ForceIndexingModelList();
   // Iterate through directory
 
   cortex::db::Models modellist_handler;
@@ -487,6 +487,14 @@ void Models::StartModel(
   // model_path has higher priority
   if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
     params_override.model_path = o.asString();
+    if (auto& mp = (*(req->getJsonObject()))["model_path"]; mp.isNull()) {
+      // Bypass if model does not exist in DB and llama_model_path exists
+      if (std::filesystem::exists(params_override.model_path.value()) &&
+          !model_service_->HasModel(model_handle)) {
+        CTL_INF("llama_model_path exists, bypass check model id");
+        params_override.bypass_llama_model_path = true;
+      }
+    }
   }
 
   if (auto& o = (*(req->getJsonObject()))["model_path"]; !o.isNull()) {

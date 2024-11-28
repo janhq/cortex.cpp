@@ -71,12 +71,12 @@ std::string GetEnginePath(std::string_view e) {
 };
 }  // namespace
 
-cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
+cpp::result<void, std::string> EngineService::InstallEngineAsync(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
   auto ne = NormalizeEngine(engine);
-  CTL_INF("InstallEngineAsyncV2: " << ne << ", " << version << ", "
-                                   << variant_name.value_or(""));
+  CTL_INF("InstallEngineAsync: " << ne << ", " << version << ", "
+                                 << variant_name.value_or(""));
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
     return cpp::fail("Engine " + ne + " is not supported on macOS");
@@ -86,7 +86,7 @@ cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
     return cpp::fail("Engine " + ne + " is not supported on Linux");
   }
 
-  auto result = DownloadEngineV2(ne, version, variant_name);
+  auto result = DownloadEngine(ne, version, variant_name);
   if (result.has_error()) {
     return cpp::fail(result.error());
   }
@@ -95,25 +95,6 @@ cpp::result<void, std::string> EngineService::InstallEngineAsyncV2(
     return cpp::fail(cuda_res.error());
   }
   return {};
-}
-
-cpp::result<bool, std::string> EngineService::InstallEngineAsync(
-    const std::string& engine, const std::string& version,
-    const std::string& src) {
-  // Although this function is called async, only download tasks are performed async
-  auto ne = NormalizeEngine(engine);
-  if (!src.empty()) {
-    auto res = UnzipEngine(ne, version, src);
-    // If has error or engine is installed successfully
-    if (res.has_error() || res.value()) {
-      return res;
-    }
-  }
-  auto result = DownloadEngine(ne, version, true /*async*/);
-  if (result.has_error()) {
-    return result;
-  }
-  return DownloadCuda(ne, true /*async*/);
 }
 
 cpp::result<bool, std::string> EngineService::UnzipEngine(
@@ -256,7 +237,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   }
 }
 
-cpp::result<void, std::string> EngineService::DownloadEngineV2(
+cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
@@ -399,101 +380,6 @@ cpp::result<void, std::string> EngineService::DownloadEngineV2(
     return cpp::fail(add_task_result.error());
   }
   return {};
-}
-
-cpp::result<bool, std::string> EngineService::DownloadEngine(
-    const std::string& engine, const std::string& version, bool async) {
-  auto res = GetEngineVariants(engine, version);
-  if (res.has_error()) {
-    return cpp::fail("Failed to fetch engine releases: " + res.error());
-  }
-
-  if (res.value().empty()) {
-    return cpp::fail("No release found for " + version);
-  }
-
-  auto os_arch{hw_inf_.sys_inf->os + "-" + hw_inf_.sys_inf->arch};
-
-  std::vector<std::string> variants;
-  for (const auto& asset : res.value()) {
-    variants.push_back(asset.name);
-  }
-
-  CTL_INF("engine: " << engine);
-  CTL_INF("CUDA version: " << hw_inf_.cuda_driver_version);
-  auto matched_variant = GetMatchedVariant(engine, variants);
-  CTL_INF("Matched variant: " << matched_variant);
-  if (matched_variant.empty()) {
-    CTL_ERR("No variant found for " << os_arch);
-    return cpp::fail("No variant found for " + os_arch);
-  }
-
-  for (const auto& asset : res.value()) {
-    if (asset.name == matched_variant) {
-      CTL_INF("Download url: " << asset.browser_download_url);
-
-      std::filesystem::path engine_folder_path =
-          file_manager_utils::GetContainerFolderPath(
-              file_manager_utils::DownloadTypeToString(DownloadType::Engine)) /
-          engine;
-
-      if (!std::filesystem::exists(engine_folder_path)) {
-        CTL_INF("Creating " << engine_folder_path.string());
-        std::filesystem::create_directories(engine_folder_path);
-      }
-      if (IsEngineLoaded(engine)) {
-        CTL_INF("Engine " << engine << " is already loaded, unloading it");
-        auto unload_res = UnloadEngine(engine);
-        if (unload_res.has_error()) {
-          CTL_INF("Failed to unload engine: " << unload_res.error());
-          return cpp::fail(unload_res.error());
-        } else {
-          CTL_INF("Engine " << engine << " unloaded successfully");
-        }
-      }
-      CTL_INF("Engine folder path: " << engine_folder_path.string() << "\n");
-      auto local_path = engine_folder_path / asset.name;
-      auto downloadTask{
-          DownloadTask{.id = engine,
-                       .type = DownloadType::Engine,
-                       .items = {DownloadItem{
-                           .id = engine,
-                           .downloadUrl = asset.browser_download_url,
-                           .localPath = local_path,
-                       }}}};
-
-      auto on_finished = [](const DownloadTask& finishedTask) {
-        // try to unzip the downloaded file
-        CTL_INF(
-            "Engine zip path: " << finishedTask.items[0].localPath.string());
-
-        std::filesystem::path extract_path =
-            finishedTask.items[0].localPath.parent_path().parent_path();
-
-        archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
-                                      extract_path.string());
-
-        // remove the downloaded file
-        try {
-          std::filesystem::remove(finishedTask.items[0].localPath);
-        } catch (const std::exception& e) {
-          CTL_WRN("Could not delete file: " << e.what());
-        }
-        CTL_INF("Finished!");
-      };
-
-      if (async) {
-        auto res = download_service_->AddTask(downloadTask, on_finished);
-        if (res.has_error()) {
-          return cpp::fail(res.error());
-        }
-        return true;
-      } else {
-        return download_service_->AddDownloadTask(downloadTask, on_finished);
-      }
-    }
-  }
-  return true;
 }
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
@@ -827,7 +713,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
 
   if (selected_engine_variant.has_error()) {
-    // TODO: namh need to fallback
     return cpp::fail(selected_engine_variant.error());
   }
 
@@ -835,17 +720,21 @@ cpp::result<void, std::string> EngineService::LoadEngine(
           << json_helper::DumpJsonString(selected_engine_variant->ToJson()));
 
   auto user_defined_engine_path = getenv("ENGINE_PATH");
+  CTL_DBG("user defined engine path: " << user_defined_engine_path);
   const std::filesystem::path engine_dir_path = [&] {
     if (user_defined_engine_path != nullptr) {
-      // for backward compatible
       return std::filesystem::path(user_defined_engine_path +
-                                   GetEnginePath(ne));
+                                   GetEnginePath(ne)) /
+             selected_engine_variant->variant /
+             selected_engine_variant->version;
     } else {
       return file_manager_utils::GetEnginesContainerPath() / ne /
              selected_engine_variant->variant /
              selected_engine_variant->version;
     }
   }();
+
+  CTL_DBG("Engine path: " << engine_dir_path.string());
 
   if (!std::filesystem::exists(engine_dir_path)) {
     CTL_ERR("Directory " + engine_dir_path.string() + " is not exist!");
@@ -950,7 +839,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       CTL_WRN("Method SetFileLogger is not supported yet");
     }
     if (en->IsSupported("SetLogLevel")) {
-      en->SetLogLevel(trantor::Logger::logLevel());
+      en->SetLogLevel(logging_utils_helper::global_log_level);
     } else {
       CTL_WRN("Method SetLogLevel is not supported yet");
     }
@@ -1094,8 +983,8 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
           << default_variant->variant << " is not up-to-date! Current: "
           << default_variant->version << ", latest: " << latest_version->name);
 
-  auto res = InstallEngineAsyncV2(engine, latest_version->tag_name,
-                                  default_variant->variant);
+  auto res = InstallEngineAsync(engine, latest_version->tag_name,
+                                default_variant->variant);
 
   return EngineUpdateResult{.engine = engine,
                             .variant = default_variant->variant,

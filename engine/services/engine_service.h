@@ -19,9 +19,6 @@
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
-namespace system_info_utils {
-struct SystemInfo;
-}
 
 struct EngineUpdateResult {
   std::string engine;
@@ -76,12 +73,18 @@ class EngineService : public EngineServiceI {
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
+  /**
+   * Check if an engines is ready (have at least one variant installed)
+   */
   cpp::result<bool, std::string> IsEngineReady(const std::string& engine);
-  cpp::result<bool, std::string> InstallEngineAsync(
-      const std::string& engine, const std::string& version = "latest",
-      const std::string& src = "");
 
-  cpp::result<void, std::string> InstallEngineAsyncV2(
+  /**
+   * Handling install engine variant.
+   *
+   * If no version provided, choose `latest`.
+   * If no variant provided, automatically pick the best variant.
+   */
+  cpp::result<void, std::string> InstallEngineAsync(
       const std::string& engine, const std::string& version,
       const std::optional<std::string> variant_name);
 
@@ -142,11 +145,7 @@ class EngineService : public EngineServiceI {
   std::string DeleteEngine(int id);
 
  private:
-  cpp::result<bool, std::string> DownloadEngine(
-      const std::string& engine, const std::string& version = "latest",
-      bool async = false);
-
-  cpp::result<void, std::string> DownloadEngineV2(
+  cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
 

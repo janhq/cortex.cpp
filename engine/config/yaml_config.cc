@@ -8,6 +8,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/format_utils.h"
 #include "yaml_config.h"
+
 namespace config {
 // Method to read YAML file
 void YamlHandler::Reset() {
@@ -44,6 +45,7 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
     throw;
   }
 }
+
 void YamlHandler::SplitPromptTemplate(ModelConfig& mc) {
   if (mc.prompt_template.size() > 0) {
     auto& pt = mc.prompt_template;
@@ -220,7 +222,7 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
       yaml_node_["ngl"] = model_config_.ngl;
     if (!std::isnan(static_cast<double>(model_config_.ctx_len)))
       yaml_node_["ctx_len"] = model_config_.ctx_len;
-    if (!std::isnan(static_cast<double>(model_config_.n_parallel))) 
+    if (!std::isnan(static_cast<double>(model_config_.n_parallel)))
       yaml_node_["n_parallel"] = model_config_.n_parallel;
     if (!std::isnan(static_cast<double>(model_config_.tp)))
       yaml_node_["tp"] = model_config_.tp;
@@ -377,7 +379,8 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     outFile << format_utils::writeKeyValue(
         "ctx_len", yaml_node_["ctx_len"],
         "llama.context_length | 0 or undefined = loaded from model");
-    outFile << format_utils::writeKeyValue("n_parallel", yaml_node_["n_parallel"]);
+    outFile << format_utils::writeKeyValue("n_parallel",
+                                           yaml_node_["n_parallel"]);
     outFile << format_utils::writeKeyValue("ngl", yaml_node_["ngl"],
                                            "Undefined = loaded from model");
     outFile << "# END OPTIONAL\n";

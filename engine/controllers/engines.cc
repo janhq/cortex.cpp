@@ -59,11 +59,24 @@ void Engines::ListEngine(
 void Engines::UninstallEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine, const std::optional<std::string> version,
-    const std::optional<std::string> variant) {
+    const std::string& engine) {
+  std::optional<std::string> norm_variant = std::nullopt;
+  std::optional<std::string> norm_version = std::nullopt;
+  if (req->getJsonObject() != nullptr) {
+    auto variant = (*(req->getJsonObject())).get("variant", "").asString();
+    auto version =
+        (*(req->getJsonObject())).get("version", "latest").asString();
 
-  auto result =
-      engine_service_->UninstallEngineVariant(engine, version, variant);
+    if (!variant.empty()) {
+      norm_variant = variant;
+    }
+    if (!version.empty()) {
+      norm_version = version;
+    }
+  }
+
+  auto result = engine_service_->UninstallEngineVariant(engine, norm_version,
+                                                        norm_variant);
 
   Json::Value ret;
   if (result.has_error()) {
@@ -81,7 +94,7 @@ void Engines::UninstallEngine(
   }
 }
 
-void Engines::GetEngineVersions(
+void Engines::GetEngineReleases(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {
@@ -146,15 +159,26 @@ void Engines::GetEngineVariants(
 void Engines::InstallEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine, const std::optional<std::string> version,
-    const std::optional<std::string> variant_name) {
-  auto normalized_version = version.value_or("latest");
-  if ((*(req->getJsonObject())).get("type", "").asString() == "remote") {
+    const std::string& engine) {
+  std::optional<std::string> norm_variant = std::nullopt;
+  std::string norm_version{"latest"};
 
+  if (req->getJsonObject() != nullptr) {
+    auto variant = (*(req->getJsonObject())).get("variant", "").asString();
+    auto version =
+        (*(req->getJsonObject())).get("version", "latest").asString();
+
+    if (!variant.empty()) {
+      norm_variant = variant;
+    }
+    norm_version = version;
+  }
+
+  if ((*(req->getJsonObject())).get("type", "").asString() == "remote") {
     auto type = (*(req->getJsonObject())).get("type", "").asString();
     auto api_key = (*(req->getJsonObject())).get("api_key", "").asString();
     auto url = (*(req->getJsonObject())).get("url", "").asString();
-    auto variant = variant_name.value_or("all-platforms");
+    auto variant = norm_variant.value_or("all-platforms");
     auto status = (*(req->getJsonObject())).get("status", "Default").asString();
     std::string metadata;
     if ((*(req->getJsonObject())).isMember("metadata") &&
@@ -201,9 +225,8 @@ void Engines::InstallEngine(
       return;
     }
 
-    auto result = engine_service_->UpsertEngine(engine, type, api_key, url,
-                                                normalized_version, variant,
-                                                status, metadata);
+    auto result = engine_service_->UpsertEngine(
+        engine, type, api_key, url, norm_version, variant, status, metadata);
     if (result.has_error()) {
       Json::Value res;
       if (get_models_url.empty()) {
@@ -230,8 +253,8 @@ void Engines::InstallEngine(
     return;
   }
 
-  auto result = engine_service_->InstallEngineAsyncV2(
-      engine, normalized_version, variant_name);
+  auto result =
+      engine_service_->InstallEngineAsync(engine, norm_version, norm_variant);
   if (result.has_error()) {
     Json::Value res;
     res["message"] = result.error();
@@ -310,8 +333,36 @@ void Engines::GetLatestEngineVersion(
 void Engines::SetDefaultEngineVariant(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine, const std::string& version,
-    const std::string& variant) {
+    const std::string& engine) {
+  auto json_obj = req->getJsonObject();
+  if (json_obj == nullptr) {
+    Json::Value res;
+    res["message"] = "Request body is required";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto variant = (*(req->getJsonObject())).get("variant", "").asString();
+  if (variant.empty()) {
+    Json::Value ret;
+    ret["message"] = "Variant is required";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+  auto version = (*(req->getJsonObject())).get("version", "").asString();
+  if (version.empty()) {
+    Json::Value ret;
+    ret["message"] = "Version is required";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
   auto result =
       engine_service_->SetDefaultEngineVariant(engine, version, variant);
   if (result.has_error()) {

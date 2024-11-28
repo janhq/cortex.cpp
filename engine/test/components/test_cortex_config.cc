@@ -2,6 +2,7 @@
 #include "utils/config_yaml_utils.h"
 
 namespace config_yaml_utils {
+namespace cyu = config_yaml_utils;
 class CortexConfigTest : public ::testing::Test {
  protected:
   const std::string test_file_path = "test_config.yaml";
@@ -43,7 +44,8 @@ TEST_F(CortexConfigTest, DumpYamlConfig_WritesCorrectly) {
                          123456789,
                          "v1.0.0"};
 
-  auto result = DumpYamlConfig(config, test_file_path);
+  auto result = cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
+      config, test_file_path);
   EXPECT_FALSE(result.has_error());
 
   // Verify that the file was created and contains the expected data
@@ -72,11 +74,13 @@ TEST_F(CortexConfigTest, FromYaml_ReadsCorrectly) {
                          123456789,
                          "v1.0.0"};
 
-  auto result = DumpYamlConfig(config, test_file_path);
+  auto result = cyu::CortexConfigMgr::GetInstance().DumpYamlConfig(
+      config, test_file_path);
   EXPECT_FALSE(result.has_error());
 
   // Now read from the YAML file
-  CortexConfig loaded_config = FromYaml(test_file_path, default_config);
+  CortexConfig loaded_config = cyu::CortexConfigMgr::GetInstance().FromYaml(
+      test_file_path, default_config);
 
   // Verify that the loaded configuration matches what was written
   EXPECT_EQ(loaded_config.logFolderPath, config.logFolderPath);
@@ -92,7 +96,10 @@ TEST_F(CortexConfigTest, FromYaml_FileNotFound) {
   std::filesystem::remove(test_file_path);  // Ensure the file does not exist
 
   EXPECT_THROW(
-      { FromYaml(test_file_path, default_config); },
+      {
+        cyu::CortexConfigMgr::GetInstance().FromYaml(test_file_path,
+                                                     default_config);
+      },
       std::runtime_error);  // Expect a runtime error due to missing file
 }
 
@@ -102,7 +109,8 @@ TEST_F(CortexConfigTest, FromYaml_IncompleteConfigUsesDefaults) {
   out_file << "logFolderPath: log_path\n";  // Missing other fields
   out_file.close();
 
-  CortexConfig loaded_config = FromYaml(test_file_path, default_config);
+  CortexConfig loaded_config = cyu::CortexConfigMgr::GetInstance().FromYaml(
+      test_file_path, default_config);
 
   // Verify that defaults are used where values are missing
   EXPECT_EQ(loaded_config.logFolderPath, "log_path");

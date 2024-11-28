@@ -8,11 +8,20 @@
 #include <unordered_set>
 #include "common/download_task_queue.h"
 #include "common/event.h"
+#include "services/config_service.h"
 #include "utils/result.hpp"
+
+struct ProcessDownloadFailed {
+  std::string message;
+  std::string task_id;
+  cortex::event::DownloadEventType type;
+};
 
 class DownloadService {
  private:
   static constexpr int MAX_CONCURRENT_TASKS = 4;
+
+  std::shared_ptr<ConfigService> config_service_;
 
   struct DownloadingData {
     std::string task_id;
@@ -48,7 +57,7 @@ class DownloadService {
 
   void ProcessTask(DownloadTask& task, int worker_id);
 
-  cpp::result<void, std::string> ProcessMultiDownload(
+  cpp::result<void, ProcessDownloadFailed> ProcessMultiDownload(
       DownloadTask& task, CURLM* multi_handle,
       const std::vector<std::pair<CURL*, FILE*>>& handles);
 
@@ -76,8 +85,9 @@ class DownloadService {
 
   explicit DownloadService() = default;
 
-  explicit DownloadService(std::shared_ptr<EventQueue> event_queue)
-      : event_queue_{event_queue} {
+  explicit DownloadService(std::shared_ptr<EventQueue> event_queue,
+                           std::shared_ptr<ConfigService> config_service)
+      : event_queue_{event_queue}, config_service_{config_service} {
     InitializeWorkers();
   };
 

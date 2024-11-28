@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/../../config/gguf_parser.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../cli/commands/cortex_upd_cmd.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../cli/commands/server_stop_cmd.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../services/config_service.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../services/download_service.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../database/models.cc
 )

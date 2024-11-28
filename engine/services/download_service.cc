@@ -10,6 +10,7 @@
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include "utils/string_utils.h"
 
 namespace {
 size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
@@ -52,6 +53,52 @@ cpp::result<void, std::string> ProcessCompletedTransfers(CURLM* multi_handle) {
   }
   return {};
 }
+
+void SetUpProxy(CURL* handle, std::shared_ptr<ConfigService> config_service) {
+  auto configuration = config_service->GetApiServerConfiguration();
+  if (configuration.has_value()) {
+    if (!configuration->proxy_url.empty()) {
+      auto proxy_url = configuration->proxy_url;
+      auto verify_proxy_ssl = configuration->verify_proxy_ssl;
+      auto verify_proxy_host_ssl = configuration->verify_proxy_host_ssl;
+
+      auto verify_ssl = configuration->verify_peer_ssl;
+      auto verify_host_ssl = configuration->verify_host_ssl;
+
+      auto proxy_username = configuration->proxy_username;
+      auto proxy_password = configuration->proxy_password;
+
+      CTL_INF("=== Proxy configuration ===");
+      CTL_INF("Proxy url: " << proxy_url);
+      CTL_INF("Verify proxy ssl: " << verify_proxy_ssl);
+      CTL_INF("Verify proxy host ssl: " << verify_proxy_host_ssl);
+      CTL_INF("Verify ssl: " << verify_ssl);
+      CTL_INF("Verify host ssl: " << verify_host_ssl);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY, proxy_url.c_str());
+      if (string_utils::StartsWith(proxy_url, "https")) {
+        curl_easy_setopt(handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTPS);
+      }
+
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, verify_ssl ? 1L : 0L);
+      curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST,
+                       verify_host_ssl ? 2L : 0L);
+
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYPEER,
+                       verify_proxy_ssl ? 1L : 0L);
+      curl_easy_setopt(handle, CURLOPT_PROXY_SSL_VERIFYHOST,
+                       verify_proxy_host_ssl ? 2L : 0L);
+
+      auto proxy_auth = proxy_username + ":" + proxy_password;
+      curl_easy_setopt(handle, CURLOPT_PROXYUSERPWD, proxy_auth.c_str());
+
+      curl_easy_setopt(handle, CURLOPT_NOPROXY,
+                       configuration->no_proxy.c_str());
+    }
+  } else {
+    CTL_ERR("Failed to get configuration");
+  }
+}
 }  // namespace
 
 cpp::result<bool, std::string> DownloadService::AddDownloadTask(
@@ -87,6 +134,7 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
     return cpp::fail(static_cast<std::string>("Failed to init CURL"));
   }
 
+  SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
   curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
@@ -189,6 +237,8 @@ cpp::result<bool, std::string> DownloadService::Download(
 
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
+
+  SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
   curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
@@ -222,7 +272,6 @@ cpp::result<std::string, std::string> DownloadService::StopTask(
   CTL_INF("Stopping task: " << task_id);
   auto cancelled = task_queue_.cancelTask(task_id);
   if (cancelled) {
-    EmitTaskStopped(task_id);
     return task_id;
   }
   CTL_INF("Not found in pending task, try to find task " + task_id +
@@ -236,7 +285,6 @@ cpp::result<std::string, std::string> DownloadService::StopTask(
       std::lock_guard<std::mutex> lock(stop_mutex_);
       tasks_to_stop_.insert(task_id);
     }
-    EmitTaskStopped(task_id);
     return task_id;
   }
 
@@ -356,7 +404,15 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
     fclose(file);
   }
 
-  if (!result.has_error()) {
+  if (result.has_error()) {
+    if (result.error().type == DownloadEventType::DownloadStopped) {
+      RemoveTaskFromStopList(task.id);
+      EmitTaskStopped(task.id);
+    } else {
+      EmitTaskError(task.id);
+    }
+  } else {
+    // success
     // if the download has error, we are not run the callback
     ExecuteCallback(task);
     EmitTaskCompleted(task.id);
@@ -369,7 +425,7 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
   worker_data->downloading_data_map.clear();
 }
 
-cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
+cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
     DownloadTask& task, CURLM* multi_handle,
     const std::vector<std::pair<CURL*, FILE*>>& handles) {
   auto still_running = 0;
@@ -379,25 +435,21 @@ cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
 
     auto result = ProcessCompletedTransfers(multi_handle);
     if (result.has_error()) {
-      EmitTaskError(task.id);
-      {
-        std::lock_guard<std::mutex> lock(event_emit_map_mutex);
-        event_emit_map_.erase(task.id);
-      }
-      return cpp::fail(result.error());
+      return cpp::fail(ProcessDownloadFailed{
+          .message = result.error(),
+          .task_id = task.id,
+          .type = DownloadEventType::DownloadError,
+      });
     }
 
     if (IsTaskTerminated(task.id) || stop_flag_) {
       CTL_INF("IsTaskTerminated " + std::to_string(IsTaskTerminated(task.id)));
       CTL_INF("stop_flag_ " + std::to_string(stop_flag_));
-      {
-        std::lock_guard<std::mutex> lock(event_emit_map_mutex);
-        event_emit_map_.erase(task.id);
-      }
-      CTL_INF("Emit task stopped: " << task.id);
-      EmitTaskStopped(task.id);
-      RemoveTaskFromStopList(task.id);
-      return cpp::fail("Task " + task.id + " cancelled");
+      return cpp::fail(ProcessDownloadFailed{
+          .message = result.error(),
+          .task_id = task.id,
+          .type = DownloadEventType::DownloadStopped,
+      });
     }
   } while (still_running);
   return {};
@@ -405,6 +457,7 @@ cpp::result<void, std::string> DownloadService::ProcessMultiDownload(
 
 void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
                                       FILE* file, DownloadingData* dl_data) {
+  SetUpProxy(handle, config_service_);
   curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
@@ -491,10 +544,16 @@ void DownloadService::EmitTaskCompleted(const std::string& task_id) {
 }
 
 void DownloadService::ExecuteCallback(const DownloadTask& task) {
-  std::lock_guard<std::mutex> lock(callbacks_mutex_);
-  auto it = callbacks_.find(task.id);
-  if (it != callbacks_.end()) {
-    it->second(task);
-    callbacks_.erase(it);
+  std::lock_guard<std::mutex> active_task_lock(active_tasks_mutex_);
+  if (auto it = active_tasks_.find(task.id); it != active_tasks_.end()) {
+    for (auto& item : it->second->items) {
+      item.downloadedBytes = item.bytes;
+    }
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    auto callback = callbacks_.find(task.id);
+    if (callback != callbacks_.end()) {
+      callback->second(*it->second);
+      callbacks_.erase(callback);
+    }
   }
 }
