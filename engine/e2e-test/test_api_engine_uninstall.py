@@ -21,26 +21,25 @@ class TestApiEngineUninstall:
 
         # Teardown
         stop_server()
-
-    def test_engines_uninstall_llamacpp_should_be_successful(self):
-        # install first, using cli for synchronously
-        run(
-            "Install Engine",
-            ["engines", "install", "llama-cpp"],
-            timeout=120,
-            capture=False,
-        )
+        
+    @pytest.mark.asyncio
+    async def test_engines_uninstall_llamacpp_should_be_successful(self):
+        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
+        assert response.status_code == 200
+        await wait_for_websocket_download_success_event(timeout=None)
+        
         response = requests.delete("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
 
-    def test_engines_uninstall_llamacpp_with_only_version_should_be_failed(self):
+    @pytest.mark.asyncio
+    async def test_engines_uninstall_llamacpp_with_only_version_should_be_failed(self):
         # install first
-        run(
-            "Install Engine",
-            ["engines", "install", "llama-cpp", "-v", "v0.1.35"],
-            timeout=None,
-            capture=False,
+        data = {"variant": "mac-arm64"}
+        install_response = requests.post(
+            "http://127.0.0.1:3928/v1/engines/llama-cpp/install", json=data
         )
+        await wait_for_websocket_download_success_event(timeout=120)
+        assert install_response.status_code == 200
 
         data = {"version": "v0.1.35"}
         response = requests.delete(
