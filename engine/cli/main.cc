@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
   // Check if server exists, if not notify to user to install server
   auto exe = commands::GetCortexServerBinary();
   auto server_binary_path =
-      std::filesystem::u8path(cortex_utils::GetCurrentPath()) / exe;
+      file_manager_utils::GetExecutableFolderContainerPath() / exe;
   if (!std::filesystem::exists(server_binary_path)) {
     std::cout << CORTEX_CPP_VERSION
               << " requires server binary, to install server, run: "

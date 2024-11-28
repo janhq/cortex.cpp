@@ -14,6 +14,8 @@
 #include <unistd.h>
 #elif defined(_WIN32)
 #include <windows.h>
+#include <codecvt>
+#include <locale>
 #endif
 
 namespace file_manager_utils {
@@ -55,8 +57,8 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
     return std::filesystem::current_path();
   }
 #elif defined(_WIN32)
-  char buffer[MAX_PATH];
-  GetModuleFileNameA(NULL, buffer, MAX_PATH);
+  wchar_t buffer[MAX_PATH];
+  GetModuleFileNameW(NULL, buffer, MAX_PATH);
   // CTL_DBG("Executable path: " << buffer);
   return std::filesystem::path{buffer}.parent_path();
 #else
@@ -156,6 +158,18 @@ inline cpp::result<void, std::string> UpdateCortexConfig(
       config, config_path.string());
 }
 
+#if defined(_WIN32)
+inline std::string WstringToUtf8(const std::wstring& wstr) {
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  return converter.to_bytes(wstr);
+}
+
+inline std::wstring Utf8ToWstring(const std::string& str) {
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  return converter.from_bytes(str);
+}
+#endif
+
 inline config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
@@ -166,11 +180,19 @@ inline config_yaml_utils::CortexConfig GetDefaultConfig() {
           : std::filesystem::path(cortex_data_folder_path);
 
   return config_yaml_utils::CortexConfig{
+#if defined(_WIN32)
+      .logFolderPath = WstringToUtf8(default_data_folder_path.wstring()),
+#else
       .logFolderPath = default_data_folder_path.string(),
+#endif
       .logLlamaCppPath = kLogsLlamacppBaseName,
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
       .logOnnxPath = kLogsOnnxBaseName,
+#if defined(_WIN32)
+      .dataFolderPath = WstringToUtf8(default_data_folder_path.wstring()),
+#else
       .dataFolderPath = default_data_folder_path.string(),
+#endif
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,

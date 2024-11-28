@@ -58,26 +58,31 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
   std::wstring params = L"--start-server";
-  params += L" --config_file_path " + cortex_utils::UTF8ToUTF16(get_config_file_path());
-  params += L" --data_folder_path " + file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --config_file_path " +
+            file_manager_utils::GetConfigurationPath().wstring();
+  params += L" --data_folder_path " +
+            file_manager_utils::GetCortexDataPath().wstring();
   params += L" --loglevel " + cortex_utils::UTF8ToUTF16(log_level_);
   std::wstring exe_w = cortex_utils::UTF8ToUTF16(exe);
-  std::wstring current_path_w = cortex_utils::UTF8ToUTF16(cortex_utils::GetCurrentPath());
+  std::wstring current_path_w =
+      file_manager_utils::GetExecutableFolderContainerPath().wstring();
   std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
+  CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          mutable_cmds.data(),  // Command line (replace with your actual executable)
-          NULL,            // Process handle not inheritable
-          NULL,            // Thread handle not inheritable
-          FALSE,           // Set handle inheritance
-          0,               // No creation flags
-          NULL,            // Use parent's environment block
-          NULL,            // Use parent's starting directory
-          &si,             // Pointer to STARTUPINFO structure
-          &pi))            // Pointer to PROCESS_INFORMATION structure
+          mutable_cmds
+              .data(),  // Command line (replace with your actual executable)
+          NULL,         // Process handle not inheritable
+          NULL,         // Thread handle not inheritable
+          FALSE,        // Set handle inheritance
+          0,            // No creation flags
+          NULL,         // Use parent's environment block
+          NULL,         // Use parent's starting directory
+          &si,          // Pointer to STARTUPINFO structure
+          &pi))         // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;
