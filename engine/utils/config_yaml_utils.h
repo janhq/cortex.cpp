@@ -86,6 +86,9 @@ class CortexConfigMgr {
       if (!out_file) {
         throw std::runtime_error("Failed to open output file.");
       }
+      // Workaround to save file as utf8 BOM
+      const unsigned char utf8_bom[] = {0xEF, 0xBB, 0xBF};
+      out_file.write(reinterpret_cast<const char*>(utf8_bom), sizeof(utf8_bom));
       YAML::Node node;
       node["logFolderPath"] = config.logFolderPath;
       node["logLlamaCppPath"] = config.logLlamaCppPath;

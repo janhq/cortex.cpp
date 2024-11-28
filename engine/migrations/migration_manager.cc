@@ -38,9 +38,9 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
     return true;
   // Back up all data before migrating
   if (std::filesystem::exists(fmu::GetCortexDataPath() / kCortexDb)) {
-    auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb).string();
-    auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup).string();
-    if (auto res = mgr_helper_.BackupDatabase(src_db_path, backup_db_path);
+    auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb);
+    auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup);
+    if (auto res = mgr_helper_.BackupDatabase(src_db_path, backup_db_path.string());
         res.has_error()) {
       CTL_INF("Error: backup database failed!");
       return res;
@@ -60,9 +60,9 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
   });
 
   auto restore_db = [this]() -> cpp::result<bool, std::string> {
-    auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb).string();
-    auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup).string();
-    return mgr_helper_.BackupDatabase(src_db_path, backup_db_path);
+    auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb);
+    auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup);
+    return mgr_helper_.BackupDatabase(src_db_path, backup_db_path.string());
   };
 
   // Backup folder structure
