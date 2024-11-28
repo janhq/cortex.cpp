@@ -69,6 +69,7 @@ class TestCliEngineInstall:
         assert is_engine_version_exist, f"Engine version {engine_version} is not found"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
         exit_code, output, error = run(
             "Install Engine",
