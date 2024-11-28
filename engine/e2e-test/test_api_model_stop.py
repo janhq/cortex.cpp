@@ -1,7 +1,9 @@
 import pytest
 import requests
 from test_runner import run, start_server, stop_server
-
+from test_runner import (
+    wait_for_websocket_download_success_event
+)
 
 class TestApiModelStop:
 
@@ -13,14 +15,18 @@ class TestApiModelStop:
         if not success:
             raise Exception("Failed to start server")
 
-        run("Install engine", ["engines", "install", "llama-cpp"], 5 * 60)
         yield
 
         run("Uninstall engine", ["engines", "uninstall", "llama-cpp"])
         # Teardown
         stop_server()
 
-    def test_models_stop_should_be_successful(self):
+    @pytest.mark.asyncio
+    async def test_models_stop_should_be_successful(self):
+        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
+        assert response.status_code == 200
+        await wait_for_websocket_download_success_event(timeout=None)
+        
         json_body = {"model": "tinyllama:gguf"}
         response = requests.post(
             "http://localhost:3928/v1/models/start", json=json_body
