@@ -668,8 +668,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
+#if defined(_WIN32)
         json_data["model_path"] = cortex_utils::WstringToUtf8(
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
+#else
+        json_data["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+#endif
       } else {
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};
