@@ -4,6 +4,7 @@
 #include <optional>
 #include "algorithm"
 #include "utils/archive_utils.h"
+#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -13,7 +14,6 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-#include "utils/cortex_utils.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -665,14 +665,17 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
   CTL_INF("Selected engine variant: "
           << json_helper::DumpJsonString(selected_engine_variant->ToJson()));
-
+#if defined(_WIN32)
+  auto user_defined_engine_path = _wgetenv(L"ENGINE_PATH");
+#else
   auto user_defined_engine_path = getenv("ENGINE_PATH");
+#endif
+
   CTL_DBG("user defined engine path: " << user_defined_engine_path);
   const std::filesystem::path engine_dir_path = [&] {
     if (user_defined_engine_path != nullptr) {
-      return std::filesystem::path(user_defined_engine_path +
-                                   GetEnginePath(ne)) /
-             selected_engine_variant->variant /
+      return std::filesystem::path(user_defined_engine_path) /
+             GetEnginePath(ne) / selected_engine_variant->variant /
              selected_engine_variant->version;
     } else {
       return file_manager_utils::GetEnginesContainerPath() / ne /
@@ -702,7 +705,8 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
     // 3. Add dll directory if met other conditions
 
-    auto add_dll = [this](const std::string& e_type, const std::filesystem::path& p) {
+    auto add_dll = [this](const std::string& e_type,
+                          const std::filesystem::path& p) {
       if (auto cookie = AddDllDirectory(p.c_str()); cookie != 0) {
         CTL_DBG("Added dll directory: " << p);
         engines_[e_type].cookie = cookie;
@@ -720,7 +724,11 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       }
     };
 
+#if defined(_WIN32)
+    if (bool should_use_dll_search_path = !(_wgetenv(L"ENGINE_PATH"));
+#else
     if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
+#endif
         should_use_dll_search_path) {
       if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo &&
           should_use_dll_search_path) {
