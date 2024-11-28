@@ -7,6 +7,7 @@
 #include "utils/config_yaml_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/result.hpp"
+#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -14,6 +15,8 @@
 #include <unistd.h>
 #elif defined(_WIN32)
 #include <windows.h>
+#include <codecvt>
+#include <locale>
 #endif
 
 namespace file_manager_utils {
@@ -55,8 +58,8 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
     return std::filesystem::current_path();
   }
 #elif defined(_WIN32)
-  char buffer[MAX_PATH];
-  GetModuleFileNameA(NULL, buffer, MAX_PATH);
+  wchar_t buffer[MAX_PATH];
+  GetModuleFileNameW(NULL, buffer, MAX_PATH);
   // CTL_DBG("Executable path: " << buffer);
   return std::filesystem::path{buffer}.parent_path();
 #else
@@ -166,11 +169,21 @@ inline config_yaml_utils::CortexConfig GetDefaultConfig() {
           : std::filesystem::path(cortex_data_folder_path);
 
   return config_yaml_utils::CortexConfig{
+#if defined(_WIN32)
+      .logFolderPath =
+          cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
+#else
       .logFolderPath = default_data_folder_path.string(),
+#endif
       .logLlamaCppPath = kLogsLlamacppBaseName,
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
       .logOnnxPath = kLogsOnnxBaseName,
+#if defined(_WIN32)
+      .dataFolderPath =
+          cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
+#else
       .dataFolderPath = default_data_folder_path.string(),
+#endif
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,

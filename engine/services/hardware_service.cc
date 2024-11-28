@@ -10,6 +10,7 @@
 #include "database/hardware.h"
 #include "services/engine_service.h"
 #include "utils/cortex_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace services {
 
@@ -115,26 +116,33 @@ bool HardwareService::Restart(const std::string& host, int port) {
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-  std::string params = "--ignore_cout";
-  params += " --config_file_path " + get_config_file_path();
-  params += " --data_folder_path " + get_data_folder_path();
-  params += " --loglevel " + luh::LogLevelStr(luh::global_log_level);
-  std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
-  std::wstring wcmds = cortex_utils::UTF8ToUTF16(cmds);
+  // TODO (sang) write a common function for this and server_start_cmd
+  std::wstring params = L"--ignore_cout";
+  params += L" --config_file_path " +
+            file_manager_utils::GetConfigurationPath().wstring();
+  params += L" --data_folder_path " +
+            file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --loglevel " +
+            cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
+  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
+  std::wstring current_path_w =
+      file_manager_utils::GetExecutableFolderContainerPath().wstring();
+  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
   if (!CreateProcess(
           NULL,  // No module name (use command line)
-          mutable_cmds.data(),  // Command line (replace with your actual executable)
-          NULL,               // Process handle not inheritable
-          NULL,               // Thread handle not inheritable
-          TRUE,               // Handle inheritance
-          0,                  // No creation flags
-          NULL,               // Use parent's environment block
-          NULL,               // Use parent's starting directory
-          &si,                // Pointer to STARTUPINFO structure
-          &pi))               // Pointer to PROCESS_INFORMATION structure
+          mutable_cmds
+              .data(),  // Command line (replace with your actual executable)
+          NULL,         // Process handle not inheritable
+          NULL,         // Thread handle not inheritable
+          TRUE,         // Handle inheritance
+          0,            // No creation flags
+          NULL,         // Use parent's environment block
+          NULL,         // Use parent's starting directory
+          &si,          // Pointer to STARTUPINFO structure
+          &pi))         // Pointer to PROCESS_INFORMATION structure
   {
     std::cout << "Could not start server: " << GetLastError() << std::endl;
     return false;

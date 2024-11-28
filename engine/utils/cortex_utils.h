@@ -84,35 +84,6 @@ inline drogon::HttpResponsePtr CreateCortexStreamResponse(
 
 
 #if defined(_WIN32)
-inline std::string WstringToUtf8(const std::wstring& wstr) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-  return converter.to_bytes(wstr);
-}
-
-inline std::wstring Utf8ToWstring(const std::string& str) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-  return converter.from_bytes(str);
-}
-
-inline std::wstring UTF8ToUTF16(const std::string& utf8) {
-  if (utf8.empty()) {
-    return std::wstring();
-  }
-
-  // First, get the size of the output buffer
-  int size_needed =
-      MultiByteToWideChar(CP_UTF8, 0, &utf8[0], (int)utf8.size(), NULL, 0);
-
-  // Allocate the output buffer
-  std::wstring utf16(size_needed, 0);
-
-  // Do the actual conversion
-  MultiByteToWideChar(CP_UTF8, 0, &utf8[0], (int)utf8.size(), &utf16[0],
-                      size_needed);
-
-  return utf16;
-}
-
 inline std::string GetCurrentPath() {
   char path[MAX_PATH];
   DWORD result = GetModuleFileNameA(NULL, path, MAX_PATH);
