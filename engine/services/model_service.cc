@@ -16,6 +16,7 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -669,7 +670,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
 #if defined(_WIN32)
-        json_data["model_path"] = cortex_utils::WstringToUtf8(
+        json_data["model_path"] = cortex::wc::WstringToUtf8(
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
 #else
         json_data["model_path"] =

@@ -7,6 +7,7 @@
 #include "utils/config_yaml_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/result.hpp"
+#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -158,18 +159,6 @@ inline cpp::result<void, std::string> UpdateCortexConfig(
       config, config_path.string());
 }
 
-#if defined(_WIN32)
-inline std::string WstringToUtf8(const std::wstring& wstr) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-  return converter.to_bytes(wstr);
-}
-
-inline std::wstring Utf8ToWstring(const std::string& str) {
-  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
-  return converter.from_bytes(str);
-}
-#endif
-
 inline config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
@@ -181,7 +170,8 @@ inline config_yaml_utils::CortexConfig GetDefaultConfig() {
 
   return config_yaml_utils::CortexConfig{
 #if defined(_WIN32)
-      .logFolderPath = WstringToUtf8(default_data_folder_path.wstring()),
+      .logFolderPath =
+          cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
 #else
       .logFolderPath = default_data_folder_path.string(),
 #endif
@@ -189,7 +179,8 @@ inline config_yaml_utils::CortexConfig GetDefaultConfig() {
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
       .logOnnxPath = kLogsOnnxBaseName,
 #if defined(_WIN32)
-      .dataFolderPath = WstringToUtf8(default_data_folder_path.wstring()),
+      .dataFolderPath =
+          cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
 #else
       .dataFolderPath = default_data_folder_path.string(),
 #endif

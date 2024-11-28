@@ -10,6 +10,7 @@
 #include "database/hardware.h"
 #include "services/engine_service.h"
 #include "utils/cortex_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace services {
 
@@ -122,8 +123,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
   params += L" --data_folder_path " +
             file_manager_utils::GetCortexDataPath().wstring();
   params += L" --loglevel " +
-            cortex_utils::UTF8ToUTF16(luh::LogLevelStr(luh::global_log_level));
-  std::wstring exe_w = cortex_utils::UTF8ToUTF16(exe);
+            cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
+  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
   std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;

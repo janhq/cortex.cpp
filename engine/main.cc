@@ -22,6 +22,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -238,18 +239,18 @@ int main(int argc, char* argv[]) {
     if (command == L"--config_file_path") {
       std::wstring v = argv[i + 1];
       file_manager_utils::cortex_config_file_path =
-          cortex_utils::WstringToUtf8(v);
+          cortex::wc::WstringToUtf8(v);
     } else if (command == L"--data_folder_path") {
       std::wstring v = argv[i + 1];
       file_manager_utils::cortex_data_folder_path =
-          cortex_utils::WstringToUtf8(v);
+          cortex::wc::WstringToUtf8(v);
     } else if (command == L"--port") {
       server_port = std::stoi(argv[i + 1]);
     } else if (command == L"--ignore_cout") {
       ignore_cout_log = true;
     } else if (command == L"--loglevel") {
       std::wstring v = argv[i + 1];
-      std::string log_level = cortex_utils::WstringToUtf8(v);
+      std::string log_level = cortex::wc::WstringToUtf8(v);
       logging_utils_helper::SetLogLevel(log_level, ignore_cout_log);
     }
   }

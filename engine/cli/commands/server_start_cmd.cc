@@ -2,6 +2,7 @@
 #include "commands/cortex_upd_cmd.h"
 #include "utils/cortex_utils.h"
 #include "utils/file_manager_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace commands {
 
@@ -62,8 +63,8 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
             file_manager_utils::GetConfigurationPath().wstring();
   params += L" --data_folder_path " +
             file_manager_utils::GetCortexDataPath().wstring();
-  params += L" --loglevel " + cortex_utils::UTF8ToUTF16(log_level_);
-  std::wstring exe_w = cortex_utils::UTF8ToUTF16(exe);
+  params += L" --loglevel " + cortex::wc::Utf8ToWstring(log_level_);
+  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
   std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
