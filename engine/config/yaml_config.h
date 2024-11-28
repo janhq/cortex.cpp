@@ -4,7 +4,6 @@
 #include <string>
 
 #include "model_config.h"
-#include "yaml-cpp/yaml.h"
 
 namespace config {
 class YamlHandler {

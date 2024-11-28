@@ -43,6 +43,17 @@ inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
   return res;
 }
 
+inline drogon::HttpResponsePtr CreateCortexHttpTextAsJsonResponse(
+    const std::string& data) {
+  auto res = drogon::HttpResponse::newHttpResponse();
+  res->setBody(data);
+  res->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
+};
+
 inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
     const Json::Value& data) {
   auto res = drogon::HttpResponse::newHttpJsonResponse(data);
