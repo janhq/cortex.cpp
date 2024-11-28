@@ -205,7 +205,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
 }
 
 #if defined(_WIN32)
-int main(int argc, wchar_t* argv[]) {
+int wmain(int argc, wchar_t* argv[]) {
 #else
 int main(int argc, char* argv[]) {
 #endif
