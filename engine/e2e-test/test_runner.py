@@ -6,6 +6,7 @@ import select
 import subprocess
 import threading
 import time
+import requests
 from typing import List
 
 import websockets
@@ -187,3 +188,36 @@ async def wait_for_websocket_download_success_event(timeout: float = 30):
 
         except asyncio.TimeoutError:
             raise TimeoutError("Timeout waiting for DownloadSuccess event")
+
+
+def get_latest_pre_release_tag(repo_owner, repo_name):
+    # URL for GitHub API to fetch all releases of the repository
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/releases"
+    
+    # Headers to specify the API version
+    headers = {
+        "Accept": "application/vnd.github.v3+json"
+    }
+    
+    # Send a GET request to the GitHub API
+    response = requests.get(url, headers=headers)
+    
+    # Check the response status; raise an error if the request failed
+    if response.status_code != 200:
+        raise Exception(f"Failed to fetch releases: {response.status_code}, {response.text}")
+    
+    # Parse the JSON response into a list of releases
+    releases = response.json()
+    
+    # Filter the releases to include only pre-releases
+    pre_releases = [release for release in releases if release.get("prerelease")]
+    
+    # If no pre-releases are found, raise an exception
+    if not pre_releases:
+        raise Exception("No pre-releases found")
+    
+    # Sort the pre-releases by creation date, newest first
+    pre_releases.sort(key=lambda x: x["created_at"], reverse=True)
+    
+    # Return the tag name of the latest pre-release
+    return pre_releases[0]["tag_name"]
