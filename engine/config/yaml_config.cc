@@ -18,6 +18,7 @@ void YamlHandler::Reset() {
 void YamlHandler::ReadYamlFile(const std::string& file_path) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
+
   try {
     yaml_node_ = YAML::LoadFile(file_path);
     // incase of model.yml file, we don't have files yet, create them
@@ -41,7 +42,6 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       yaml_node_["files"] = v;
     }
   } catch (const YAML::BadFile& e) {
-    std::cerr << "Failed to read file: " << e.what() << std::endl;
     throw;
   }
 }
