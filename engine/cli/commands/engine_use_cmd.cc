@@ -55,21 +55,29 @@ cpp::result<void, std::string> EngineUseCmd::Exec(const std::string& host,
     return cpp::fail("Invalid variant selection");
   }
 
-  auto selected_version = cli_selection_utils::PrintSelection(
-      variant_map[selected_variant.value()]);
-  if (!selected_variant.has_value()) {
+  std::optional<std::string> selected_version = std::nullopt;
+  if (variant_map[selected_variant.value()].size() == 1) {
+    selected_version = variant_map[selected_variant.value()][0];
+  } else {
+    selected_version = cli_selection_utils::PrintSelection(
+        variant_map[selected_variant.value()]);
+  }
+  if (!selected_version.has_value()) {
     CTL_ERR("Invalid version selection");
     return cpp::fail("Invalid version selection");
   }
 
+  Json::Value body;
+  body["variant"] = selected_variant.value();
+  body["version"] = selected_version.value();
   auto set_default_engine_variant = url_parser::Url{
       .protocol = "http",
       .host = host + ":" + std::to_string(port),
       .pathParams = {"v1", "engines", engine, "default"},
   };
 
-  auto response =
-      curl_utils::SimplePostJson(set_default_engine_variant.ToFullPath());
+  auto response = curl_utils::SimplePostJson(
+      set_default_engine_variant.ToFullPath(), body.toStyledString());
   if (response.has_error()) {
     CTL_ERR(response.error());
     return cpp::fail("Failed to set default engine variant");
