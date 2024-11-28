@@ -702,9 +702,8 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
     // 3. Add dll directory if met other conditions
 
-    auto add_dll = [this](const std::string& e_type, const std::string& p) {
-      auto ws = cortex_utils::UTF8ToUTF16(p);
-      if (auto cookie = AddDllDirectory(ws.c_str()); cookie != 0) {
+    auto add_dll = [this](const std::string& e_type, const std::filesystem::path& p) {
+      if (auto cookie = AddDllDirectory(p.c_str()); cookie != 0) {
         CTL_DBG("Added dll directory: " << p);
         engines_[e_type].cookie = cookie;
       } else {
@@ -737,11 +736,11 @@ cpp::result<void, std::string> EngineService::LoadEngine(
           CTL_DBG("Removed cuda dll directory: " << kLlamaRepo);
         }
 
-        add_dll(ne, engine_dir_path.string());
+        add_dll(ne, engine_dir_path);
       } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
         // Do nothing
       } else {
-        add_dll(ne, engine_dir_path.string());
+        add_dll(ne, engine_dir_path);
       }
     }
 #endif

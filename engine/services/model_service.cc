@@ -9,6 +9,7 @@
 #include "hardware_service.h"
 #include "httplib.h"
 #include "utils/cli_selection_utils.h"
+#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
@@ -458,7 +459,8 @@ ModelService::DownloadModelFromCortexsoAsync(
       return;
     }
     auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
-    CTL_INF("Adding model to modellist with branch: " << branch);
+    CTL_INF("Adding model to modellist with branch: "
+            << branch << ", path: " << model_yml_item->localPath.string());
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
@@ -666,9 +668,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
-        // TODO(sang) support multiple files
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+        json_data["model_path"] = cortex_utils::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
       } else {
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};

@@ -25,6 +25,9 @@
 #error "Unsupported platform!"
 #endif
 
+#include <codecvt>
+#include <locale>
+
 void RemoveBinaryTempFileIfExists() {
   auto temp =
       file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
@@ -40,11 +43,20 @@ void RemoveBinaryTempFileIfExists() {
 void SetupLogger(trantor::FileLogger& async_logger, bool verbose) {
   if (!verbose) {
     auto config = file_manager_utils::GetCortexConfig();
+
     std::filesystem::create_directories(
+#if defined(_WIN32)
+        std::filesystem::u8path(config.logFolderPath) /
+#else
         std::filesystem::path(config.logFolderPath) /
+#endif
         std::filesystem::path(cortex_utils::logs_folder));
-    async_logger.setFileName(config.logFolderPath + "/" +
-                             cortex_utils::logs_cli_base_name);
+
+    // Do not need to use u8path here because trantor handles itself
+    async_logger.setFileName(
+        (std::filesystem::path(config.logFolderPath) /
+         std::filesystem::path(cortex_utils::logs_cli_base_name))
+            .string());
     async_logger.setMaxLines(config.maxLogLines);  // Keep last 100000 lines
     async_logger.startLogging();
     trantor::Logger::setOutputFunction(
@@ -192,8 +204,7 @@ int main(int argc, char* argv[]) {
   // Check if server exists, if not notify to user to install server
   auto exe = commands::GetCortexServerBinary();
   auto server_binary_path =
-      std::filesystem::path(cortex_utils::GetCurrentPath()) /
-      std::filesystem::path(exe);
+      std::filesystem::u8path(cortex_utils::GetCurrentPath()) / exe;
   if (!std::filesystem::exists(server_binary_path)) {
     std::cout << CORTEX_CPP_VERSION
               << " requires server binary, to install server, run: "

@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <algorithm>
 #include <ctime>
+#include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -23,6 +24,8 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <codecvt>
+#include <locale>
 #endif
 
 namespace cortex_utils {
@@ -67,7 +70,18 @@ inline drogon::HttpResponsePtr CreateCortexStreamResponse(
   return res;
 }
 
+
+
 #if defined(_WIN32)
+inline std::string WstringToUtf8(const std::wstring& wstr) {
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  return converter.to_bytes(wstr);
+}
+
+inline std::wstring Utf8ToWstring(const std::string& str) {
+  std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+  return converter.from_bytes(str);
+}
 
 inline std::wstring UTF8ToUTF16(const std::string& utf8) {
   if (utf8.empty()) {
