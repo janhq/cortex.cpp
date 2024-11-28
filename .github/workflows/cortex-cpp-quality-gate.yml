@@ -6,7 +6,7 @@ on:
     paths: ["engine/**", ".github/workflows/cortex-cpp-quality-gate.yml"]
   workflow_dispatch:
   schedule:
-    - cron: '0 18 * * *'
+    - cron: '0 22 * * *'
 
 env:
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
@@ -159,7 +159,7 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/cortex.llamacpp-e2e-nightly.py
+          python e2e-test/cortex-llamacpp-e2e-nightly.py
           rm build/cortex-nightly
           rm build/cortex-beta
         env:
@@ -173,7 +173,7 @@ jobs:
           cp build/cortex.exe build/cortex-beta.exe
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/cortex.llamacpp-e2e-nightly.py
+          python e2e-test/cortex-llamacpp-e2e-nightly.py
           rm build/cortex-nightly.exe
           rm build/cortex-beta.exe
         env:
@@ -242,7 +242,7 @@ jobs:
         if: github.event_name == 'schedule'
         run: |
           latest_prerelease=$(curl -s https://api.github.com/repos/cortexcpp/cortex.cpp/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
-
+          echo "cortex.llamacpp latest release: $latest_prerelease"
           docker build \
             --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
             --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
