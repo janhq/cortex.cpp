@@ -325,7 +325,7 @@ inline std::filesystem::path GetEnginesContainerPath() {
   if (!std::filesystem::exists(engines_container_path)) {
     CTL_INF("Engine container folder not found. Create one: "
             << engines_container_path.string());
-    std::filesystem::create_directory(engines_container_path.string());
+    std::filesystem::create_directory(engines_container_path);
   }
 
   return engines_container_path;
