@@ -57,12 +57,13 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
-  std::string params = "--start-server";
-  params += " --config_file_path " + get_config_file_path();
-  params += " --data_folder_path " + get_data_folder_path();
-  params += " --loglevel " + log_level_;
-  std::string cmds = cortex_utils::GetCurrentPath() + "/" + exe + " " + params;
-  std::wstring wcmds = cortex_utils::UTF8ToUTF16(cmds);
+  std::wstring params = L"--start-server";
+  params += L" --config_file_path " + cortex_utils::UTF8ToUTF16(get_config_file_path());
+  params += L" --data_folder_path " + file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --loglevel " + cortex_utils::UTF8ToUTF16(log_level_);
+  std::wstring exe_w = cortex_utils::UTF8ToUTF16(exe);
+  std::wstring current_path_w = cortex_utils::UTF8ToUTF16(cortex_utils::GetCurrentPath());
+  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
