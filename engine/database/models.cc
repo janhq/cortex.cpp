@@ -1,6 +1,5 @@
 #include "models.h"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 #include "database.h"
 #include "utils/result.hpp"
@@ -37,8 +36,7 @@ std::string Models::StatusToString(ModelStatus status) const {
 
 }
 
-Models::Models(SQLite::Database& db) : db_(db) {
-}
+Models::Models(SQLite::Database& db) : db_(db) {}
 
 ModelStatus Models::StringToStatus(const std::string& status_str) const {
   if (status_str == "remote") {

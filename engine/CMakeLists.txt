@@ -28,6 +28,10 @@ if(MSVC)
       $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
       $<$<CONFIG:Release>:/MT> #--|
   )
+
+  add_compile_options(/utf-8)
+  add_definitions(-DUNICODE -D_UNICODE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DUNICODE /D_UNICODE")
 endif()
 
 if(NOT DEFINED CORTEX_VARIANT)

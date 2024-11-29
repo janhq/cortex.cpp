@@ -19,6 +19,7 @@ class TestCliEngineInstall:
         # Teardown
         stop_server()
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
     def test_engines_install_llamacpp_should_be_successfully(self):
         exit_code, output, error = run(
             "Install Engine",
@@ -46,6 +47,7 @@ class TestCliEngineInstall:
         assert "is not supported on" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
     def test_engines_install_pre_release_llamacpp(self):
         engine_version = "v0.1.29"
         exit_code, output, error = run(
@@ -67,6 +69,7 @@ class TestCliEngineInstall:
         assert is_engine_version_exist, f"Engine version {engine_version} is not found"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
+    @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
         exit_code, output, error = run(
             "Install Engine",

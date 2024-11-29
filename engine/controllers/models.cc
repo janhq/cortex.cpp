@@ -244,11 +244,10 @@ void Models::GetModel(const HttpRequestPtr& req,
     if (model_config.engine == kOnnxEngine ||
         model_config.engine == kLlamaEngine ||
         model_config.engine == kTrtLlmEngine) {
-      ret = model_config.ToJson();
-
-      ret["id"] = model_config.model;
-      ret["object"] = "model";
-      ret["result"] = "OK";
+      auto ret = model_config.ToJsonString();
+      auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
+      resp->setStatusCode(drogon::k200OK);
+      callback(resp);
     } else {
       config::RemoteModelConfig remote_model_config;
       remote_model_config.LoadFromYamlFile(
@@ -259,10 +258,11 @@ void Models::GetModel(const HttpRequestPtr& req,
       ret["id"] = remote_model_config.model;
       ret["object"] = "model";
       ret["result"] = "OK";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
     }
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k200OK);
-    callback(resp);
+
   } catch (const std::exception& e) {
     std::string message =
         "Fail to get model information with ID '" + model_id + "': " + e.what();

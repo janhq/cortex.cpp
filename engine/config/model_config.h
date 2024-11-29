@@ -13,6 +13,7 @@
 #include "utils/format_utils.h"
 #include "utils/remote_models_utils.h"
 #include "yaml-cpp/yaml.h"
+
 namespace config {
 
 struct RemoteModelConfig {
@@ -288,6 +289,15 @@ struct ModelConfig {
         tp = json["tp"].asInt();
     }
   }
+
+  std::string ToJsonString() const {
+    auto obj = ToJson();
+    obj["id"] = obj["model"].asString();
+    Json::StreamWriterBuilder wbuilder;
+    wbuilder.settings_["precision"] = 2;
+    return Json::writeString(wbuilder, obj);
+  }
+
   Json::Value ToJson() const {
     Json::Value obj;
 

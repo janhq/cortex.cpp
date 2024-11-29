@@ -1,6 +1,10 @@
 import pytest
+import requests
 from test_runner import popen, run
 from test_runner import start_server, stop_server
+from test_runner import (
+    wait_for_websocket_download_success_event
+)
 
 class TestCliModelDelete:
 
@@ -11,10 +15,6 @@ class TestCliModelDelete:
         if not success:
             raise Exception("Failed to start server")
 
-        # Pull model
-
-        run("Pull model", ["pull", "tinyllama:gguf"], timeout=None,)
-
         yield
 
         # Teardown
@@ -22,7 +22,15 @@ class TestCliModelDelete:
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
         stop_server()
 
-    def test_models_delete_should_be_successful(self):
+    @pytest.mark.asyncio    
+    async def test_models_delete_should_be_successful(self):
+        json_body = {
+            "model": "tinyllama:gguf"
+        }
+        response = requests.post("http://localhost:3928/v1/models/pull", json=json_body)
+        assert response.status_code == 200, f"Failed to pull model: tinyllama:gguf"
+        await wait_for_websocket_download_success_event(timeout=None)
+        
         exit_code, output, error = run(
             "Delete model", ["models", "delete", "tinyllama:gguf"]
         )
