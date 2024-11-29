@@ -21,16 +21,16 @@ class TemplateRenderer {
   ~TemplateRenderer() = default;
 
   // Convert Json::Value to nlohmann::json
-  static nlohmann::json convertJsonValue(const Json::Value& input);
+  static nlohmann::json ConvertJsonValue(const Json::Value& input);
 
   // Convert nlohmann::json to Json::Value
-  static Json::Value convertNlohmannJson(const nlohmann::json& input);
+  static Json::Value ConvertNlohmannJson(const nlohmann::json& input);
 
   // Render template with data
-  std::string render(const std::string& tmpl, const Json::Value& data);
+  std::string Render(const std::string& tmpl, const Json::Value& data);
 
   // Load template from file and render
-  std::string renderFile(const std::string& template_path,
+  std::string RenderFile(const std::string& template_path,
                          const Json::Value& data);
 
  private:

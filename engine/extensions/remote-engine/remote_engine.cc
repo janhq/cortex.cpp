@@ -589,7 +589,7 @@ void RemoteEngine::HandleChatCompletion(
 
     // Render with error handling
     try {
-      result = renderer_.render(template_str, *json_body);
+      result = renderer_.Render(template_str, *json_body);
     } catch (const std::exception& e) {
       throw std::runtime_error("Template rendering error: " +
                                std::string(e.what()));
@@ -663,7 +663,7 @@ void RemoteEngine::HandleChatCompletion(
 
       // Render with error handling
       try {
-        response_str = renderer_.render(template_str, response_json);
+        response_str = renderer_.Render(template_str, response_json);
       } catch (const std::exception& e) {
         throw std::runtime_error("Template rendering error: " +
                                  std::string(e.what()));

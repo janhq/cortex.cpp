@@ -3,7 +3,7 @@
 #undef min
 #undef max
 #endif
-#include "TemplateRenderer.h"
+#include "template_renderer.h"
 #include <regex>
 #include <stdexcept>
 #include "utils/logging_utils.h"
@@ -28,11 +28,11 @@ TemplateRenderer::TemplateRenderer() {
   });
 }
 
-std::string TemplateRenderer::render(const std::string& tmpl,
+std::string TemplateRenderer::Render(const std::string& tmpl,
                                      const Json::Value& data) {
   try {
     // Convert Json::Value to nlohmann::json
-    auto json_data = convertJsonValue(data);
+    auto json_data = ConvertJsonValue(data);
 
     // Create the input data structure expected by the template
     nlohmann::json template_data;
@@ -62,7 +62,7 @@ std::string TemplateRenderer::render(const std::string& tmpl,
   }
 }
 
-nlohmann::json TemplateRenderer::convertJsonValue(const Json::Value& input) {
+nlohmann::json TemplateRenderer::ConvertJsonValue(const Json::Value& input) {
   if (input.isNull()) {
     return nullptr;
   } else if (input.isBool()) {
@@ -78,20 +78,20 @@ nlohmann::json TemplateRenderer::convertJsonValue(const Json::Value& input) {
   } else if (input.isArray()) {
     nlohmann::json arr = nlohmann::json::array();
     for (const auto& element : input) {
-      arr.push_back(convertJsonValue(element));
+      arr.push_back(ConvertJsonValue(element));
     }
     return arr;
   } else if (input.isObject()) {
     nlohmann::json obj = nlohmann::json::object();
     for (const auto& key : input.getMemberNames()) {
-      obj[key] = convertJsonValue(input[key]);
+      obj[key] = ConvertJsonValue(input[key]);
     }
     return obj;
   }
   return nullptr;
 }
 
-Json::Value TemplateRenderer::convertNlohmannJson(const nlohmann::json& input) {
+Json::Value TemplateRenderer::ConvertNlohmannJson(const nlohmann::json& input) {
   if (input.is_null()) {
     return Json::Value();
   } else if (input.is_boolean()) {
@@ -107,24 +107,24 @@ Json::Value TemplateRenderer::convertNlohmannJson(const nlohmann::json& input) {
   } else if (input.is_array()) {
     Json::Value arr(Json::arrayValue);
     for (const auto& element : input) {
-      arr.append(convertNlohmannJson(element));
+      arr.append(ConvertNlohmannJson(element));
     }
     return arr;
   } else if (input.is_object()) {
     Json::Value obj(Json::objectValue);
     for (auto it = input.begin(); it != input.end(); ++it) {
-      obj[it.key()] = convertNlohmannJson(it.value());
+      obj[it.key()] = ConvertNlohmannJson(it.value());
     }
     return obj;
   }
   return Json::Value();
 }
 
-std::string TemplateRenderer::renderFile(const std::string& template_path,
+std::string TemplateRenderer::RenderFile(const std::string& template_path,
                                          const Json::Value& data) {
   try {
     // Convert Json::Value to nlohmann::json
-    auto json_data = convertJsonValue(data);
+    auto json_data = ConvertJsonValue(data);
 
     // Load and render template
     return env_.render_file(template_path, json_data);

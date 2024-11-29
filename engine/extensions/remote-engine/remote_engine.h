@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include "cortex-common/EngineI.h"
-#include "extensions/remote-engine/TemplateRenderer.h"
+#include "extensions/remote-engine/template_renderer.h"
 #include "utils/file_logger.h"
 // Helper for CURL response
 
