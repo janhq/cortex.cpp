@@ -1,5 +1,7 @@
 #pragma once
+
 #include <string>
+#include <vector>
 #include "services/download_service.h"
 #if !defined(_WIN32)
 #include <sys/stat.h>
@@ -67,19 +69,19 @@ inline std::string GetCortexServerBinary() {
 
 inline std::string GetHostName() {
   if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
-    return "https://delta.jan.ai";
+    return "delta.jan.ai";
   } else {
-    return "https://api.github.com";
+    return "api.github.com";
   }
 }
 
-inline std::string GetReleasePath() {
+inline std::vector<std::string> GetReleasePath() {
   if (CORTEX_VARIANT == file_manager_utils::kNightlyVariant) {
-    return "/cortex/latest/version.json";
+    return {"cortex", "latest", "version.json"};
   } else if (CORTEX_VARIANT == file_manager_utils::kBetaVariant) {
-    return "/repos/janhq/cortex.cpp/releases";
+    return {"repos", "janhq", "cortex.cpp", "releases"};
   } else {
-    return "/repos/janhq/cortex.cpp/releases/latest";
+    return {"repos", "janhq", "cortex.cpp", "releases", "latest"};
   }
 }
 

@@ -73,8 +73,6 @@ inline std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
 
 inline cpp::result<std::string, std::string> SimpleGet(const std::string& url,
                                                        const int timeout = -1) {
-  // Initialize libcurl
-  curl_global_init(CURL_GLOBAL_DEFAULT);
   auto curl = curl_easy_init();
 
   if (!curl) {

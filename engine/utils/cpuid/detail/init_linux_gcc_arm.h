@@ -21,7 +21,7 @@ void init_cpuinfo(CpuInfo::Impl& info) {
   // The Advanced SIMD (NEON) instruction set is required on AArch64
   // (64-bit ARM). Note that /proc/cpuinfo will display "asimd" instead of
   // "neon" in the Features list on a 64-bit ARM CPU.
-  info.m_has_neon = true;
+  info.has_neon = true;
 #else
   // Runtime detection of NEON is necessary on 32-bit ARM CPUs
   //
