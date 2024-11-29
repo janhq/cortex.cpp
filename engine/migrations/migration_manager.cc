@@ -4,6 +4,7 @@
 #include "schema_version.h"
 #include "utils/file_manager_utils.h"
 #include "utils/scope_exit.h"
+#include "utils/widechar_conv.h"
 
 namespace cortex::migr {
 
@@ -40,7 +41,13 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
   if (std::filesystem::exists(fmu::GetCortexDataPath() / kCortexDb)) {
     auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb);
     auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup);
-    if (auto res = mgr_helper_.BackupDatabase(src_db_path, backup_db_path.string());
+#if defined(_WIN32)
+    if (auto res = mgr_helper_.BackupDatabase(
+            src_db_path, cortex::wc::WstringToUtf8(backup_db_path.wstring()));
+#else
+    if (auto res =
+            mgr_helper_.BackupDatabase(src_db_path, backup_db_path.string());
+#endif
         res.has_error()) {
       CTL_INF("Error: backup database failed!");
       return res;
