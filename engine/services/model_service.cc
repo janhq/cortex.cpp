@@ -8,14 +8,15 @@
 #include "database/models.h"
 #include "hardware_service.h"
 #include "httplib.h"
-#include "services/engine_service.h"
 #include "utils/cli_selection_utils.h"
+#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -113,6 +114,40 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
                       .items = download_items};
 }
 }  // namespace
+
+void ModelService::ForceIndexingModelList() {
+  CTL_INF("Force indexing model list");
+
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  auto list_entry = modellist_handler.LoadModelList();
+  if (list_entry.has_error()) {
+    CTL_ERR("Failed to load model list: " << list_entry.error());
+    return;
+  }
+
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+
+  CTL_DBG("Database model size: " + std::to_string(list_entry.value().size()));
+  for (const auto& model_entry : list_entry.value()) {
+    try {
+      yaml_handler.ModelConfigFromFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.path_to_model_yaml))
+              .string());
+      auto model_config = yaml_handler.GetModelConfig();
+      Json::Value obj = model_config.ToJson();
+      yaml_handler.Reset();
+    } catch (const std::exception& e) {
+      // remove in db
+      auto remove_result =
+          modellist_handler.DeleteModelEntry(model_entry.model);
+      // silently ignore result
+    }
+  }
+}
 
 cpp::result<std::string, std::string> ModelService::DownloadModel(
     const std::string& input) {
@@ -425,11 +460,18 @@ ModelService::DownloadModelFromCortexsoAsync(
       return;
     }
     auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
-    CTL_INF("Adding model to modellist with branch: " << branch);
+    CTL_INF("Adding model to modellist with branch: "
+            << branch << ", path: " << model_yml_item->localPath.string());
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
     mc.model = unique_model_id;
+
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
+    mc.size = model_size;
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
@@ -627,9 +669,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
-        // TODO(sang) support multiple files
+#if defined(_WIN32)
+        json_data["model_path"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
+#else
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+#endif
       } else {
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};

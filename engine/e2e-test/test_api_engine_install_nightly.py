@@ -1,7 +1,8 @@
 import pytest
 import requests
-from test_runner import start_server, stop_server
+from test_runner import start_server, stop_server, get_latest_pre_release_tag
 
+latest_pre_release_tag = get_latest_pre_release_tag("janhq", "cortex.llamacpp")
 
 class TestApiEngineInstall:
 
@@ -22,14 +23,14 @@ class TestApiEngineInstall:
         assert response.status_code == 200
 
     def test_engines_install_llamacpp_specific_version_and_variant(self):
-        data = {"version": "v0.1.35-27.10.24", "variant": "linux-amd64-avx-cuda-11-7"}
+        data = {"version": latest_pre_release_tag, "variant": "linux-amd64-avx-cuda-11-7"}
         response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )
         assert response.status_code == 200
 
     def test_engines_install_llamacpp_specific_version_and_null_variant(self):
-        data = {"version": "v0.1.35-27.10.24"}
+        data = {"version": latest_pre_release_tag}
         response = requests.post(
             "http://localhost:3928/v1/engines/llama-cpp/install", json=data
         )

@@ -45,28 +45,28 @@ bool EngineInstallCmd::Exec(const std::string& engine,
       }
     });
 
-    auto versions_url = url_parser::Url{
+    auto releases_url = url_parser::Url{
         .protocol = "http",
         .host = host_ + ":" + std::to_string(port_),
-        .pathParams = {"v1", "engines", engine, "versions"},
+        .pathParams = {"v1", "engines", engine, "releases"},
     };
-    auto versions_result = curl_utils::SimpleGetJson(versions_url.ToFullPath());
-    if (versions_result.has_error()) {
-      CTL_ERR(versions_result.error());
+    auto releases_result = curl_utils::SimpleGetJson(releases_url.ToFullPath());
+    if (releases_result.has_error()) {
+      CTL_ERR(releases_result.error());
       return false;
     }
     std::vector<std::string> version_selections;
-    for (const auto& release_version : versions_result.value()) {
+    for (const auto& release_version : releases_result.value()) {
       version_selections.push_back(release_version["name"].asString());
     }
 
-    auto selected_version =
+    auto selected_release =
         cli_selection_utils::PrintSelection(version_selections);
-    if (selected_version == std::nullopt) {
+    if (selected_release == std::nullopt) {
       CTL_ERR("Invalid version selection");
       return false;
     }
-    std::cout << "Selected version: " << selected_version.value() << std::endl;
+    std::cout << "Selected version: " << selected_release.value() << std::endl;
 
     auto variant_url = url_parser::Url{
         .protocol = "http",
@@ -76,8 +76,8 @@ bool EngineInstallCmd::Exec(const std::string& engine,
                 "v1",
                 "engines",
                 engine,
-                "versions",
-                selected_version.value(),
+                "releases",
+                selected_release.value(),
             },
     };
     auto variant_result = curl_utils::SimpleGetJson(variant_url.ToFullPath());
@@ -113,23 +113,25 @@ bool EngineInstallCmd::Exec(const std::string& engine,
       return false;
     }
     std::cout << "Selected " << selected_variant.value() << " - "
-              << selected_version.value() << std::endl;
+              << selected_release.value() << std::endl;
 
-    auto install_url =
-        url_parser::Url{.protocol = "http",
-                        .host = host_ + ":" + std::to_string(port_),
-                        .pathParams =
-                            {
-                                "v1",
-                                "engines",
-                                engine,
-                            },
-                        .queries = {
-                            {"version", selected_version.value()},
-                            {"variant", selected_variant.value()},
-                        }};
+    auto install_url = url_parser::Url{
+        .protocol = "http",
+        .host = host_ + ":" + std::to_string(port_),
+        .pathParams =
+            {
+                "v1",
+                "engines",
+                engine,
+                "install",
+            },
+    };
+    Json::Value body;
+    body["version"] = selected_release.value();
+    body["variant"] = selected_variant.value();
 
-    auto response = curl_utils::SimplePostJson(install_url.ToFullPath());
+    auto response = curl_utils::SimplePostJson(install_url.ToFullPath(),
+                                               body.toStyledString());
     if (response.has_error()) {
       CTL_ERR(response.error());
       return false;
@@ -163,14 +165,17 @@ bool EngineInstallCmd::Exec(const std::string& engine,
               "v1",
               "engines",
               engine,
+              "install",
           },
   };
 
+  Json::Value body;
   if (!version.empty()) {
-    install_url.queries = {{"version", version}};
+    body["version"] = version;
   }
 
-  auto response = curl_utils::SimplePostJson(install_url.ToFullPath());
+  auto response = curl_utils::SimplePostJson(install_url.ToFullPath(),
+                                             body.toStyledString());
   if (response.has_error()) {
     // TODO: namh refactor later
     Json::Value root;
@@ -182,8 +187,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
     CLI_LOG(root["message"].asString());
     return false;
   }
-
-  CLI_LOG("Validating download items, please wait..")
 
   if (!dp_res.get())
     return false;

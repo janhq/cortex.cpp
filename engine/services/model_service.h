@@ -39,6 +39,8 @@ struct StartModelResult {
 
 class ModelService {
  public:
+  void ForceIndexingModelList();
+
   explicit ModelService(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service} {};
 

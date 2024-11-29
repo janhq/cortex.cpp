@@ -1,6 +1,5 @@
 #include "models.h"
 #include <algorithm>
-#include <iostream>
 #include <sstream>
 #include "database.h"
 #include "utils/result.hpp"
@@ -8,25 +7,9 @@
 
 namespace cortex::db {
 
-Models::Models() : db_(cortex::db::Database::GetInstance().db()) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT);");
-}
+Models::Models() : db_(cortex::db::Database::GetInstance().db()) {}
 
-Models::Models(SQLite::Database& db) : db_(db) {
-  db_.exec(
-      "CREATE TABLE IF NOT EXISTS models ("
-      "model_id TEXT PRIMARY KEY,"
-      "author_repo_id TEXT,"
-      "branch_name TEXT,"
-      "path_to_model_yaml TEXT,"
-      "model_alias TEXT UNIQUE);");
-}
+Models::Models(SQLite::Database& db) : db_(db) {}
 
 Models::~Models() {}
 
@@ -262,6 +245,11 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
 cpp::result<bool, std::string> Models::DeleteModelEntry(
     const std::string& identifier) {
   try {
+    // delete only if its there
+    if (!HasModel(identifier)) {
+      return true;
+    }
+
     SQLite::Statement del(
         db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
     del.bind(1, identifier);

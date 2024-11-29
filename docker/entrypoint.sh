@@ -5,10 +5,11 @@
 echo "apiServerHost: 0.0.0.0" > /root/.cortexrc
 echo "enableCors: true" >> /root/.cortexrc
 
+# Install the engine
 cortex engines install llama-cpp -s /opt/cortex.llamacpp
+cortex engines list
 
 # Start the cortex server
-
 cortex start
 
 # Keep the container running by tailing the log files

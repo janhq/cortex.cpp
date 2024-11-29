@@ -1,13 +1,12 @@
 #pragma once
 
 #include <json/json.h>
-#include <cmath>
-#include <iomanip>
 #include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
 #include "utils/format_utils.h"
+
 namespace config {
 struct ModelConfig {
   std::string name;
@@ -173,6 +172,15 @@ struct ModelConfig {
         tp = json["tp"].asInt();
     }
   }
+
+  std::string ToJsonString() const {
+    auto obj = ToJson();
+    obj["id"] = obj["model"].asString();
+    Json::StreamWriterBuilder wbuilder;
+    wbuilder.settings_["precision"] = 2;
+    return Json::writeString(wbuilder, obj);
+  }
+
   Json::Value ToJson() const {
     Json::Value obj;
 

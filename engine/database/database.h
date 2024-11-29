@@ -20,7 +20,7 @@ class Database {
 
  private:
   Database()
-      : db_(file_manager_utils::GetCortexDataPath().string() + "/cortex.db",
+      : db_(file_manager_utils::GetCortexDataPath() / "cortex.db",
             SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE) {}
   SQLite::Database db_;
 };

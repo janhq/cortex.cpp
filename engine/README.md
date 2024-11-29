@@ -173,4 +173,4 @@ Manual build is a process in which the developers build the software manually. T
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=janhq/cortex-cpp&type=Date)](https://star-history.com/#janhq/cortex-cpp&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=janhq/cortex.cpp&type=Date)](https://star-history.com/#janhq/cortex.cpp&Date)

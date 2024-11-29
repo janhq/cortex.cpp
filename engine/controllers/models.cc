@@ -153,7 +153,7 @@ void Models::ListModel(
   Json::Value ret;
   ret["object"] = "list";
   Json::Value data(Json::arrayValue);
-
+  model_service_->ForceIndexingModelList();
   // Iterate through directory
 
   cortex::db::Models modellist_handler;
@@ -224,13 +224,9 @@ void Models::GetModel(const HttpRequestPtr& req,
             .string());
     auto model_config = yaml_handler.GetModelConfig();
 
-    ret = model_config.ToJson();
-
-    ret["id"] = model_config.model;
-    ret["object"] = "model";
-    ret["result"] = "OK";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(k200OK);
+    auto ret = model_config.ToJsonString();
+    auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
+    resp->setStatusCode(drogon::k200OK);
     callback(resp);
   } catch (const std::exception& e) {
     std::string message =

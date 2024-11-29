@@ -544,10 +544,16 @@ void DownloadService::EmitTaskCompleted(const std::string& task_id) {
 }
 
 void DownloadService::ExecuteCallback(const DownloadTask& task) {
-  std::lock_guard<std::mutex> lock(callbacks_mutex_);
-  auto it = callbacks_.find(task.id);
-  if (it != callbacks_.end()) {
-    it->second(task);
-    callbacks_.erase(it);
+  std::lock_guard<std::mutex> active_task_lock(active_tasks_mutex_);
+  if (auto it = active_tasks_.find(task.id); it != active_tasks_.end()) {
+    for (auto& item : it->second->items) {
+      item.downloadedBytes = item.bytes;
+    }
+    std::lock_guard<std::mutex> lock(callbacks_mutex_);
+    auto callback = callbacks_.find(task.id);
+    if (callback != callbacks_.end()) {
+      callback->second(*it->second);
+      callbacks_.erase(callback);
+    }
   }
 }
