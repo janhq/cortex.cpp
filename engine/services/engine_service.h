@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -51,6 +52,7 @@ class EngineService : public EngineServiceI {
 #endif
   };
 
+  std::mutex engines_mutex_;
   std::unordered_map<std::string, EngineInfo> engines_{};
 
  public:
@@ -99,7 +101,7 @@ class EngineService : public EngineServiceI {
   cpp::result<std::vector<EngineVariantResponse>, std::string>
   GetInstalledEngineVariants(const std::string& engine) const;
 
-  bool IsEngineLoaded(const std::string& engine) const;
+  bool IsEngineLoaded(const std::string& engine);
 
   cpp::result<EngineV, std::string> GetLoadedEngine(
       const std::string& engine_name);
