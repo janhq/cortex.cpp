@@ -2,6 +2,7 @@
 #include <SQLiteCpp/Database.h>
 #include <filesystem>
 #include <string>
+#include "migrations/db_helper.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
@@ -59,10 +60,10 @@ inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
 
       if (table_exists) {
         // Alter existing table
-        db.exec("ALTER TABLE models ADD COLUMN model_format TEXT");
-        db.exec("ALTER TABLE models ADD COLUMN model_source TEXT");
-        db.exec("ALTER TABLE models ADD COLUMN status TEXT");
-        db.exec("ALTER TABLE models ADD COLUMN engine TEXT");
+        cortex::mgr::AddColumnIfNotExists(db, "models", "model_format", "TEXT");
+        cortex::mgr::AddColumnIfNotExists(db, "models", "model_source", "TEXT");
+        cortex::mgr::AddColumnIfNotExists(db, "models", "status", "TEXT");
+        cortex::mgr::AddColumnIfNotExists(db, "models", "engine", "TEXT");
       } else {
         // Create new table
         db.exec(
@@ -152,7 +153,7 @@ inline cpp::result<bool, std::string> MigrateDBDown(SQLite::Database& db) {
     }
 
     // engines
-    db.exec("DROP TABLE IF EXISTS engines;"); 
+    db.exec("DROP TABLE IF EXISTS engines;");
     // CTL_INF("Migration down completed successfully.");
     return true;
   } catch (const std::exception& e) {

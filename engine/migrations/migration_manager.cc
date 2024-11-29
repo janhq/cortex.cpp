@@ -4,6 +4,9 @@
 #include "schema_version.h"
 #include "utils/file_manager_utils.h"
 #include "utils/scope_exit.h"
+#include "utils/widechar_conv.h"
+#include "v0/migration.h"
+#include "v1/migration.h"
 
 namespace cortex::migr {
 
@@ -40,7 +43,15 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
   if (std::filesystem::exists(fmu::GetCortexDataPath() / kCortexDb)) {
     auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb);
     auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup);
-    if (auto res = mgr_helper_.BackupDatabase(src_db_path, backup_db_path.string());
+    std::cout << src_db_path.string() << std::endl;
+    std::cout << backup_db_path.string() << std::endl;
+#if defined(_WIN32)
+    if (auto res = mgr_helper_.BackupDatabase(
+            src_db_path, cortex::wc::WstringToUtf8(backup_db_path.wstring()));
+#else
+    if (auto res =
+            mgr_helper_.BackupDatabase(src_db_path, backup_db_path.string());
+#endif
         res.has_error()) {
       CTL_INF("Error: backup database failed!");
       return res;
@@ -133,6 +144,9 @@ cpp::result<bool, std::string> MigrationManager::DoUpFolderStructure(
     case 0:
       return v0::MigrateFolderStructureUp();
       break;
+    case 1:
+      return v1::MigrateFolderStructureUp();
+      break;
 
     default:
       return true;
@@ -143,6 +157,9 @@ cpp::result<bool, std::string> MigrationManager::DoDownFolderStructure(
   switch (version) {
     case 0:
       return v0::MigrateFolderStructureDown();
+      break;
+    case 1:
+      return v1::MigrateFolderStructureDown();
       break;
 
     default:
@@ -177,6 +194,9 @@ cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
     case 0:
       return v0::MigrateDBUp(db_);
       break;
+    case 1:
+      return v1::MigrateDBUp(db_);
+      break;
 
     default:
       return true;
@@ -187,6 +207,9 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
   switch (version) {
     case 0:
       return v0::MigrateDBDown(db_);
+      break;
+    case 1:
+      return v1::MigrateDBDown(db_);
       break;
 
     default:
