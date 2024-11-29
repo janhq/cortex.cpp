@@ -570,6 +570,23 @@ void RemoteEngine::HandleChatCompletion(
                                std::string(e.what()));
     }
 
+    // Parse system for anthropic
+    if (is_anthropic(model)) {
+      bool has_system = false;
+      Json::Value msgs(Json::arrayValue);
+      for (auto& kv : (*json_body)["messages"]) {
+        if (kv["role"].asString() == "system") {
+          (*json_body)["system"] = kv["content"].asString();
+          has_system = true;
+        } else {
+          msgs.append(kv);
+        }
+      }
+      if (has_system) {
+        (*json_body)["messages"] = msgs;
+      }
+    }
+
     // Render with error handling
     try {
       result = renderer_.render(template_str, *json_body);

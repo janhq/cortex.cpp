@@ -16,6 +16,47 @@
 
 namespace config {
 
+namespace {
+const std::string kOpenAITransformReqTemplate =
+    R"({ {% set first = true %} {% for key, value in input_request %} {% if key == \"messages\" or key == \"model\" or key == \"temperature\" or key == \"store\" or key == \"max_tokens\" or key == \"stream\" or key == \"presence_penalty\" or key == \"metadata\" or key == \"frequency_penalty\" or key == \"tools\" or key == \"tool_choice\" or key == \"logprobs\" or key == \"top_logprobs\" or key == \"logit_bias\" or key == \"n\" or key == \"modalities\" or key == \"prediction\" or key == \"response_format\" or key == \"service_tier\" or key == \"seed\" or key == \"stop\" or key == \"stream_options\" or key == \"top_p\" or key == \"parallel_tool_calls\" or key == \"user\" %} {% if not first %},{% endif %} \"{{ key }}\": {{ tojson(value) }} {% set first = false %} {% endif %} {% endfor %} })";
+const std::string kOpenAITransformRespTemplate =
+    R"({ {%- set first = true -%} {%- for key, value in input_request -%} {%- if key == \"id\" or key == \"choices\" or key == \"created\" or key == \"model\" or key == \"service_tier\" or key == \"system_fingerprint\" or key == \"object\" or key == \"usage\" -%} {%- if not first -%},{%- endif -%} \"{{ key }}\": {{ tojson(value) }} {%- set first = false -%} {%- endif -%} {%- endfor -%} })";
+const std::string kAnthropicTransformReqTemplate =
+    R"({ {% set first = true %} {% for key, value in input_request %} {% if key == \"system\" or key == \"messages\" or key == \"model\" or key == \"temperature\" or key == \"store\" or key == \"max_tokens\" or key == \"stream\" or key == \"presence_penalty\" or key == \"metadata\" or key == \"frequency_penalty\" or key == \"tools\" or key == \"tool_choice\" or key == \"logprobs\" or key == \"top_logprobs\" or key == \"logit_bias\" or key == \"n\" or key == \"modalities\" or key == \"prediction\" or key == \"response_format\" or key == \"service_tier\" or key == \"seed\" or key == \"stop\" or key == \"stream_options\" or key == \"top_p\" or key == \"parallel_tool_calls\" or key == \"user\" %} {% if not first %},{% endif %} \"{{ key }}\": {{ tojson(value) }} {% set first = false %} {% endif %} {% endfor %} })";
+const std::string kAnthropicTransformRespTemplate = R"({
+        "id": "{{ input_request.id }}",
+        "created": null,
+        "object": "chat.completion",
+        "model": "{{ input_request.model }}",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "{{ input_request.role }}",
+              "content": "{% if input_request.content and input_request.content.0.type == "text" %}  {{input_request.content.0.text}} {% endif %}",
+              "refusal": null
+            },
+            "logprobs": null,
+            "finish_reason": "{{ input_request.stop_reason }}"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": {{ input_request.usage.input_tokens }},
+          "completion_tokens": {{ input_request.usage.output_tokens }},
+          "total_tokens": {{ input_request.usage.input_tokens + input_request.usage.output_tokens }},
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "system_fingerprint": "fp_6b68a8204b"
+      })";
+}  // namespace
+
 struct RemoteModelConfig {
   std::string model;
   std::string api_key_template;
@@ -39,14 +80,37 @@ struct RemoteModelConfig {
         json.get("api_key_template", api_key_template).asString();
     engine = json.get("engine", engine).asString();
     version = json.get("version", version).asString();
-    created = json.get("created", static_cast<Json::UInt64>(created)).asUInt64();
+    created =
+        json.get("created", static_cast<Json::UInt64>(created)).asUInt64();
     object = json.get("object", object).asString();
     owned_by = json.get("owned_by", owned_by).asString();
 
     // Load JSON object fields directly
     inference_params = json.get("inference_params", inference_params);
     TransformReq = json.get("TransformReq", TransformReq);
+    // Use default template if it is empty, currently we only support 2 remote engines
+    auto is_anthropic = [](const std::string& model) {
+      return model.find("claude") != std::string::npos;
+    };
+    if (TransformReq["chat_completions"]["template"].isNull()) {
+      if (is_anthropic(model)) {
+        TransformReq["chat_completions"]["template"] =
+            kAnthropicTransformReqTemplate;
+      } else {
+        TransformReq["chat_completions"]["template"] =
+            kOpenAITransformReqTemplate;
+      }
+    }
     TransformResp = json.get("TransformResp", TransformResp);
+    if (TransformResp["chat_completions"]["template"].isNull()) {
+      if (is_anthropic(model)) {
+        TransformResp["chat_completions"]["template"] =
+            kAnthropicTransformRespTemplate;
+      } else {
+        TransformResp["chat_completions"]["template"] =
+            kOpenAITransformRespTemplate;
+      }
+    }
     metadata = json.get("metadata", metadata);
   }
 
