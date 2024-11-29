@@ -9,6 +9,8 @@
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
 #include "cortex-common/cortexpythoni.h"
+#include "database/database.h"
+#include "migrations/migration_manager.h"
 #include "services/config_service.h"
 #include "services/file_watcher_service.h"
 #include "services/model_service.h"
@@ -20,6 +22,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -64,7 +67,11 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   }
   // Create logs/ folder and setup log to file
   std::filesystem::create_directories(
+#if defined(_WIN32)
+      std::filesystem::u8path(config.logFolderPath) /
+#else
       std::filesystem::path(config.logFolderPath) /
+#endif
       std::filesystem::path(cortex_utils::logs_folder));
   static trantor::FileLogger asyncFileLogger;
   asyncFileLogger.setFileName(
@@ -148,6 +155,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   LOG_INFO << "Please load your model";
 #ifndef _WIN32
   drogon::app().enableReusePort();
+#else
+  drogon::app().enableDateHeader(false);
 #endif
   drogon::app().addListener(config.apiServerHost,
                             std::stoi(config.apiServerPort));
@@ -196,7 +205,11 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   }
 }
 
+#if defined(_WIN32)
+int wmain(int argc, wchar_t* argv[]) {
+#else
 int main(int argc, char* argv[]) {
+#endif
   // Stop the program if the system is not supported
   auto system_info = system_info_utils::GetSystemInfo();
   if (system_info->arch == system_info_utils::kUnsupported ||
@@ -211,6 +224,28 @@ int main(int argc, char* argv[]) {
 
   std::optional<int> server_port;
   bool ignore_cout_log = false;
+#if defined(_WIN32)
+  for (int i = 0; i < argc; i++) {
+    std::wstring command = argv[i];
+    if (command == L"--config_file_path") {
+      std::wstring v = argv[i + 1];
+      file_manager_utils::cortex_config_file_path =
+          cortex::wc::WstringToUtf8(v);
+    } else if (command == L"--data_folder_path") {
+      std::wstring v = argv[i + 1];
+      file_manager_utils::cortex_data_folder_path =
+          cortex::wc::WstringToUtf8(v);
+    } else if (command == L"--port") {
+      server_port = std::stoi(argv[i + 1]);
+    } else if (command == L"--ignore_cout") {
+      ignore_cout_log = true;
+    } else if (command == L"--loglevel") {
+      std::wstring v = argv[i + 1];
+      std::string log_level = cortex::wc::WstringToUtf8(v);
+      logging_utils_helper::SetLogLevel(log_level, ignore_cout_log);
+    }
+  }
+#else
   for (int i = 0; i < argc; i++) {
     if (strcmp(argv[i], "--config_file_path") == 0) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
@@ -225,6 +260,7 @@ int main(int argc, char* argv[]) {
       logging_utils_helper::SetLogLevel(log_level, ignore_cout_log);
     }
   }
+#endif
 
   {
     auto result = file_manager_utils::CreateConfigFileIfNotExist();
@@ -250,6 +286,15 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // check if migration is needed
+  if (auto res = cortex::migr::MigrationManager(
+                     cortex::db::Database::GetInstance().db())
+                     .Migrate();
+      res.has_error()) {
+    CLI_LOG("Error: " << res.error());
+    return 1;
+  }
+
   // Delete temporary file if it exists
   auto temp =
       file_manager_utils::GetExecutableFolderContainerPath() / "cortex_temp";
@@ -261,26 +306,26 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // Check if this process is for python execution
-  if (argc > 1) {
-    if (strcmp(argv[1], "--run_python_file") == 0) {
-      std::string py_home_path = (argc > 3) ? argv[3] : "";
-      std::unique_ptr<cortex_cpp::dylib> dl;
-      try {
-        std::string abs_path =
-            cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
-        dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
-      } catch (const cortex_cpp::dylib::load_error& e) {
-        LOG_ERROR << "Could not load engine: " << e.what();
-        return 1;
-      }
+  // // Check if this process is for python execution
+  // if (argc > 1) {
+  //   if (strcmp(argv[1], "--run_python_file") == 0) {
+  //     std::string py_home_path = (argc > 3) ? argv[3] : "";
+  //     std::unique_ptr<cortex_cpp::dylib> dl;
+  //     try {
+  //       std::string abs_path =
+  //           cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
+  //       dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
+  //     } catch (const cortex_cpp::dylib::load_error& e) {
+  //       LOG_ERROR << "Could not load engine: " << e.what();
+  //       return 1;
+  //     }
 
-      auto func = dl->get_function<CortexPythonEngineI*()>("get_engine");
-      auto e = func();
-      e->ExecutePythonFile(argv[0], argv[2], py_home_path);
-      return 0;
-    }
-  }
+  //     auto func = dl->get_function<CortexPythonEngineI*()>("get_engine");
+  //     auto e = func();
+  //     e->ExecutePythonFile(argv[0], argv[2], py_home_path);
+  //     return 0;
+  //   }
+  // }
 
   RunServer(server_port, ignore_cout_log);
   return 0;

@@ -9,12 +9,14 @@
 #include "hardware_service.h"
 #include "httplib.h"
 #include "utils/cli_selection_utils.h"
+#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -458,11 +460,18 @@ ModelService::DownloadModelFromCortexsoAsync(
       return;
     }
     auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
-    CTL_INF("Adding model to modellist with branch: " << branch);
+    CTL_INF("Adding model to modellist with branch: "
+            << branch << ", path: " << model_yml_item->localPath.string());
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
     mc.model = unique_model_id;
+
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
+    mc.size = model_size;
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
@@ -660,9 +669,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
-        // TODO(sang) support multiple files
+#if defined(_WIN32)
+        json_data["model_path"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
+#else
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+#endif
       } else {
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};

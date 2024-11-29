@@ -80,14 +80,13 @@ All model files are stored in the `~/cortex/models` folder.
 curl http://localhost:39281/v1/chat/completions \
 -H "Content-Type: application/json" \
 -d '{
-  "model": "",
+  "model": "llama3.1:8b-gguf",
   "messages": [
     {
       "role": "user",
       "content": "Hello"
     },
   ],
-  "model": "mistral",
   "stream": true,
   "max_tokens": 1,
   "stop": [

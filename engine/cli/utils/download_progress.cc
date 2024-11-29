@@ -8,6 +8,10 @@
 #include "utils/format_utils.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
+#if !defined(WIN32) && !defined(WIN64)
+#include <sys/ioctl.h>
+#include <unistd.h>
+#endif
 
 namespace {
 std::string Repo2Engine(const std::string& r) {
@@ -20,6 +24,20 @@ std::string Repo2Engine(const std::string& r) {
   }
   return r;
 };
+
+int GetColumns() {
+#if defined(WIN32) || defined(WIN64)
+  CONSOLE_SCREEN_BUFFER_INFO csbi;
+  int columns;
+  GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+  columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+  return columns;
+#else
+  struct winsize w;
+  ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+  return w.ws_col;
+#endif
+}
 }  // namespace
 bool DownloadProgress::Connect(const std::string& host, int port) {
   if (ws_) {
@@ -97,7 +115,7 @@ bool DownloadProgress::Handle(
         items[i.id] = std::pair(
             idx,
             std::make_unique<indicators::ProgressBar>(
-                indicators::option::BarWidth{50},
+                indicators::option::BarWidth{GetColumns() / 6},
                 indicators::option::Start{"["}, indicators::option::Fill{"="},
                 indicators::option::Lead{">"}, indicators::option::End{"]"},
                 indicators::option::PrefixText{pad_string(Repo2Engine(i.id))},
