@@ -5,6 +5,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
     paths: ["engine/**", ".github/workflows/cortex-cpp-quality-gate.yml"]
   workflow_dispatch:
+  schedule:
+    - cron: '0 22 * * *'
 
 env:
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
@@ -149,6 +151,34 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
+      - name: Run e2e tests
+        if: github.event_name == 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false
+        run: |
+          cd engine
+          cp build/cortex build/cortex-nightly
+          cp build/cortex build/cortex-beta
+          python -m pip install --upgrade pip
+          python -m pip install -r e2e-test/requirements.txt
+          python e2e-test/cortex-llamacpp-e2e-nightly.py
+          rm build/cortex-nightly
+          rm build/cortex-beta
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
+
+      - name: Run e2e tests
+        if: github.event_name == 'schedule' &&  runner.os == 'Windows' && github.event.pull_request.draft == false
+        run: |
+          cd engine
+          cp build/cortex.exe build/cortex-nightly.exe
+          cp build/cortex.exe build/cortex-beta.exe
+          python -m pip install --upgrade pip
+          python -m pip install -r e2e-test/requirements.txt
+          python e2e-test/cortex-llamacpp-e2e-nightly.py
+          rm build/cortex-nightly.exe
+          rm build/cortex-beta.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
+
       - name: Pre-package
         run: |
           cd engine
@@ -197,12 +227,28 @@ jobs:
           submodules: 'recursive'
       
       - name: Run Docker
+        if: github.event_name != 'schedule'
         run: |
           docker build \
             --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
             --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
             --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
             --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
+            -t menloltd/cortex:test -f docker/Dockerfile.cache .
+          docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
+          sleep 20
+
+      - name: Run Docker
+        if: github.event_name == 'schedule'
+        run: |
+          latest_prerelease=$(curl -s https://api.github.com/repos/cortexcpp/cortex.cpp/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+          echo "cortex.llamacpp latest release: $latest_prerelease"
+          docker build \
+            --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
+            --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
+            --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
+            --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
+            --build-arg CORTEX_CPP_VERSION="${latest_prerelease}" \
             -t menloltd/cortex:test -f docker/Dockerfile.cache .
           docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
           sleep 20
