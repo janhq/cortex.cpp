@@ -15,12 +15,17 @@ class ModelsTestSuite : public ::testing::Test {
   void SetUp() {
     try {
       db_.exec(
-          "CREATE TABLE IF NOT EXISTS models ("
+          "CREATE TABLE models ("
           "model_id TEXT PRIMARY KEY,"
           "author_repo_id TEXT,"
           "branch_name TEXT,"
           "path_to_model_yaml TEXT,"
-          "model_alias TEXT);");
+          "model_alias TEXT,"
+          "model_format TEXT,"
+          "model_source TEXT,"
+          "status TEXT,"
+          "engine TEXT"
+          ")");
     } catch (const std::exception& e) {}
   }
 
@@ -35,15 +40,18 @@ class ModelsTestSuite : public ::testing::Test {
   cortex::db::Models model_list_;
 
   const cortex::db::ModelEntry kTestModel{
-      "test_model_id", "test_format", "test_source", cortex::db::ModelStatus::Downloaded, "test_engine",
-      "test_author", "main", "/path/to/model.yaml", "test_alias"};
+      "test_model_id", "test_author",
+      "main",          "/path/to/model.yaml",
+      "test_alias",    "test_format",
+      "test_source",   cortex::db::ModelStatus::Downloaded,
+      "test_engine"};
 };
 
 TEST_F(ModelsTestSuite, TestAddModelEntry) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model);
-  EXPECT_TRUE(retrieved_model);
+  EXPECT_TRUE(retrieved_model.has_value());
   EXPECT_EQ(retrieved_model.value().model, kTestModel.model);
   EXPECT_EQ(retrieved_model.value().author_repo_id, kTestModel.author_repo_id);
   EXPECT_EQ(retrieved_model.value().model_format, kTestModel.model_format);
@@ -59,7 +67,7 @@ TEST_F(ModelsTestSuite, TestGetModelInfo) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   auto model_by_id = model_list_.GetModelInfo(kTestModel.model);
-  EXPECT_TRUE(model_by_id);
+  EXPECT_TRUE(model_by_id.has_value());
   EXPECT_EQ(model_by_id.value().model, kTestModel.model);
 
   auto model_by_alias = model_list_.GetModelInfo("test_alias");
@@ -82,7 +90,7 @@ TEST_F(ModelsTestSuite, TestUpdateModelEntry) {
       model_list_.UpdateModelEntry(kTestModel.model, updated_model).value());
 
   auto retrieved_model = model_list_.GetModelInfo(kTestModel.model);
-  EXPECT_TRUE(retrieved_model);
+  EXPECT_TRUE(retrieved_model.has_value());
   EXPECT_EQ(retrieved_model.value().status, updated_model.status);
 
   // Clean up
@@ -122,7 +130,7 @@ TEST_F(ModelsTestSuite, TestPersistence) {
   // Create a new ModelListUtils instance to test if it loads from file
   cortex::db::Models new_model_list(db_);
   auto retrieved_model = new_model_list.GetModelInfo(kTestModel.model);
-  EXPECT_TRUE(retrieved_model);
+  EXPECT_TRUE(retrieved_model.has_value());
   EXPECT_EQ(retrieved_model.value().model, kTestModel.model);
   EXPECT_EQ(retrieved_model.value().author_repo_id, kTestModel.author_repo_id);
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
@@ -141,7 +149,7 @@ TEST_F(ModelsTestSuite, TestUpdateModelAlias) {
   EXPECT_TRUE(
       model_list_.UpdateModelAlias(kTestModel.model, kNewTestAlias).value());
   auto updated_model = model_list_.GetModelInfo(kNewTestAlias);
-  EXPECT_TRUE(updated_model);
+  EXPECT_TRUE(updated_model.has_value());
   EXPECT_EQ(updated_model.value().model_alias, kNewTestAlias);
   EXPECT_EQ(updated_model.value().model, kTestModel.model);
 

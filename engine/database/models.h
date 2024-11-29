@@ -15,15 +15,15 @@ enum class ModelStatus {
 };
 
 struct ModelEntry {
-  std::string model;
-  std::string model_format;
-  std::string model_source;
-  ModelStatus status;
-  std::string engine;
+  std::string model;  
   std::string author_repo_id;
   std::string branch_name;
   std::string path_to_model_yaml;
   std::string model_alias;
+  std::string model_format;
+  std::string model_source;
+  ModelStatus status;
+  std::string engine;
 };
 
 class Models {

@@ -378,9 +378,9 @@ void Models::ImportModel(
     auto yaml_rel_path =
         fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
     cortex::db::ModelEntry model_entry{
+        modelHandle, "",      "",         yaml_rel_path.string(),
         modelHandle, "local", "imported", cortex::db::ModelStatus::Downloaded,
-        "",          "",      "",         yaml_rel_path.string(),
-        modelHandle};
+        ""};
 
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -639,9 +639,9 @@ void Models::AddRemoteModel(
         fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
     // TODO: remove hardcode "openai" when engine is finish
     cortex::db::ModelEntry model_entry{
+        model_handle, "",       "",         yaml_rel_path.string(),
         model_handle, "remote", "imported", cortex::db::ModelStatus::Remote,
-        "openai",     "",       "",         yaml_rel_path.string(),
-        model_handle};
+        "openai"};
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
