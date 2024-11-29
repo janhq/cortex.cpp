@@ -7,10 +7,15 @@ cpp::result<bool, std::string> MigrationHelper::BackupDatabase(
   try {
     SQLite::Database src_db(src_db_path, SQLite::OPEN_READONLY);
     sqlite3* backup_db;
-
+#if defined(_WIN32)
     if (sqlite3_open16(backup_db_path.c_str(), &backup_db) != SQLITE_OK) {
       throw std::runtime_error("Failed to open backup database");
     }
+#else
+    if (sqlite3_open(backup_db_path.c_str(), &backup_db) != SQLITE_OK) {
+      throw std::runtime_error("Failed to open backup database");
+    }
+#endif
 
     sqlite3_backup* backup =
         sqlite3_backup_init(backup_db, "main", src_db.getHandle(), "main");
