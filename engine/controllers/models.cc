@@ -594,6 +594,34 @@ void Models::GetModelStatus(
   }
 }
 
+void Models::GetRemoteModels(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& engine_id) {
+  if (!remote_engine::IsRemoteEngine(engine_id)) {
+    Json::Value ret;
+    ret["message"] = "Not a remote engine: " + engine_id;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto result = engine_service_->GetRemoteModels(engine_id);
+
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+  } else {
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(result.value());
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
 void Models::AddRemoteModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {

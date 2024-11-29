@@ -144,6 +144,9 @@ class EngineService : public EngineServiceI {
 
   std::string DeleteEngine(int id);
 
+  cpp::result<Json::Value, std::string> GetRemoteModels(
+      const std::string& engine_name);
+
  private:
   cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",

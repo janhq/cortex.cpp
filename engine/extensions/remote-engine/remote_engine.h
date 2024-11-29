@@ -9,10 +9,15 @@
 #include <unordered_map>
 #include "cortex-common/EngineI.h"
 #include "extensions/remote-engine/template_renderer.h"
+#include "utils/engine_constants.h"
 #include "utils/file_logger.h"
 // Helper for CURL response
 
 namespace remote_engine {
+inline bool IsRemoteEngine(std::string_view e) {
+  return e == kAnthropicEngine || e == kOpenAiEngine;
+}
+
 struct StreamContext {
   std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
   std::string buffer;
@@ -27,7 +32,7 @@ struct CurlResponse {
 };
 
 class RemoteEngine : public EngineI {
- private:
+ protected:
   // Model configuration
   struct ModelConfig {
     std::string model;
@@ -40,7 +45,7 @@ class RemoteEngine : public EngineI {
   };
 
   // Thread-safe model config storage
-  mutable std::shared_mutex models_mutex_;
+  mutable std::shared_mutex models_mtx_;
   std::unordered_map<std::string, ModelConfig> models_;
   TemplateRenderer renderer_;
   Json::Value metadata_;
@@ -63,7 +68,7 @@ class RemoteEngine : public EngineI {
 
  public:
   RemoteEngine();
-  ~RemoteEngine();
+  virtual ~RemoteEngine();
 
   // Main interface implementations
   void GetModels(
@@ -93,6 +98,7 @@ class RemoteEngine : public EngineI {
   bool IsSupported(const std::string& feature) override;
   bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
   void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
+  Json::Value GetRemoteModels() override;
 };
 
 }  // namespace remote_engine

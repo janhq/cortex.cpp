@@ -242,7 +242,7 @@ RemoteEngine::~RemoteEngine() {
 
 RemoteEngine::ModelConfig* RemoteEngine::GetModelConfig(
     const std::string& model) {
-  std::shared_lock lock(models_mutex_);
+  std::shared_lock lock(models_mtx_);
   auto it = models_.find(model);
   if (it != models_.end()) {
     return &it->second;
@@ -382,7 +382,7 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
 
     // Thread-safe update of models map
     {
-      std::unique_lock lock(models_mutex_);
+      std::unique_lock lock(models_mtx_);
       models_[model] = std::move(model_config);
     }
     CTL_DBG("LoadModelConfig successfully: " << model << ", " << yaml_path);
@@ -398,39 +398,7 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
 void RemoteEngine::GetModels(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-
-  auto response = MakeGetModelsRequest();
-  if (response.error) {
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k400BadRequest;
-    Json::Value error;
-    error["error"] = response.error_message;
-    callback(std::move(status), std::move(error));
-    return;
-  }
-  Json::Value response_json;
-  Json::Reader reader;
-  if (!reader.parse(response.body, response_json)) {
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k500InternalServerError;
-    Json::Value error;
-    error["error"] = "Failed to parse response";
-    callback(std::move(status), std::move(error));
-    return;
-  }
-  Json::Value status;
-  status["is_done"] = true;
-  status["has_error"] = false;
-  status["is_stream"] = false;
-  status["status_code"] = k200OK;
-
-  callback(std::move(status), std::move(response_json));
+  CTL_WRN("Not implemented yet!");
 }
 
 void RemoteEngine::LoadModel(
@@ -497,7 +465,7 @@ void RemoteEngine::UnloadModel(
   const std::string& model = (*json_body)["model"].asString();
 
   {
-    std::unique_lock lock(models_mutex_);
+    std::unique_lock lock(models_mtx_);
     models_.erase(model);
   }
 
@@ -773,6 +741,11 @@ bool RemoteEngine::SetFileLogger(int max_log_lines,
 
 void RemoteEngine::SetLogLevel(trantor::Logger::LogLevel log_level) {
   trantor::Logger::setLogLevel(log_level);
+}
+
+Json::Value RemoteEngine::GetRemoteModels() {
+  CTL_WRN("Not implemented yet!");
+  return {};
 }
 
 extern "C" {

@@ -5,7 +5,8 @@
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
-#include "extensions/remote-engine/remote_engine.h"
+#include "extensions/remote-engine/anthropic_engine.h"
+#include "extensions/remote-engine/openai_engine.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
@@ -680,14 +681,18 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   }
 
   // Check for remote engine
-  if (engine_name != kLlamaEngine && engine_name != kOnnxEngine &&
-      engine_name != kTrtLlmEngine) {
+  if (remote_engine::IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
 
-    engines_[engine_name].engine = new remote_engine::RemoteEngine();
+    if (engine_name == kOpenAiEngine) {
+      engines_[engine_name].engine = new remote_engine::OpenAiEngine();
+    } else {
+      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
+    }
+
     auto& en = std::get<EngineI*>(engines_[ne].engine);
     auto config = file_manager_utils::GetCortexConfig();
     if (en->IsSupported("SetFileLogger")) {
@@ -904,7 +909,7 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   auto ne = NormalizeEngine(engine);
 
   // Check for remote engine
-  if (engine != kLlamaRepo && engine != kTrtLlmRepo && engine != kOnnxRepo) {
+  if (remote_engine::IsRemoteEngine(engine)) {
     auto exist_engine = GetEngineByNameAndVariant(engine);
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine + "' is not installed");
@@ -1065,5 +1070,20 @@ std::string EngineService::DeleteEngine(int id) {
     return delete_res.value();
   } else {
     return "";
+  }
+}
+
+cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
+    const std::string& engine_name) {
+  if (auto r = IsEngineReady(engine_name); r.has_error()) {
+    return cpp::fail(r.error());
+  }
+
+  auto& e = std::get<EngineI*>(engines_[engine_name].engine);
+  auto res = e->GetRemoteModels();
+  if (!res["error"].isNull()) {
+    return cpp::fail(res["error"].asString());
+  } else {
+    return res;
   }
 }

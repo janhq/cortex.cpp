@@ -668,8 +668,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       auto mc = yaml_handler.GetModelConfig();
 
       // Running remote model
-      if (mc.engine != kLlamaEngine && mc.engine != kOnnxEngine &&
-          mc.engine != kTrtLlmEngine) {
+      if (remote_engine::IsRemoteEngine(mc.engine)) {
 
         config::RemoteModelConfig remote_mc;
         remote_mc.LoadFromYamlFile(
