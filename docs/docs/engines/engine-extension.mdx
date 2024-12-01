@@ -1,89 +1,126 @@
 ---
-title: Building Engine Extensions
+title: Adding a Third-Party Engine to Cortex
 description: Cortex supports Engine Extensions to integrate both :ocal inference engines, and Remote APIs.
 ---
-
-:::info
-🚧 Cortex is currently under development, and this page is a stub for future development. 
-:::
-
-<!-- 
-import Tabs from "@theme/Tabs";
-import TabItem from "@theme/TabItem";
 
 :::warning
 🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
 
+# Guide to Adding a Third-Party Engine to Cortex
 
-This document provides a step-by-step guide to adding a new engine to the Cortex codebase, similar to the `OpenAIEngineExtension`.
+## Introduction
 
+This guide outlines the steps to integrate a custom engine with Cortex. We hope this helps developers understand the integration process.
 
-## Integrate a New Remote Engine
+## Implementation Steps
 
-### Step 1: Create the New Engine Extension
+### 1. Implement the Engine Interface
 
-1. Navigate to the `cortex-js/src/extensions` directory.
-2. Create a new file named `<new-engine>.engine.ts` (replace `<new-engine>` with the name of your engine).
-3. Implement your new engine extension class using the following template:
+First, create an engine that implements the `EngineI.h` interface. Here's the interface definition:
 
-```typescript
-class <NewEngine>EngineExtension extends OAIEngineExtension {
-  apiUrl = 'https://api.<new-engine>.com/v1/chat/completions';
-  name = '<new-engine>';
-  productName = '<New Engine> Inference Engine';
-  description = 'This extension enables <New Engine> chat completion API calls';
-  version = '0.0.1';
-  apiKey?: string;
-}
+```cpp
+class EngineI {
+ public:
+  struct EngineLoadOption{};
+  struct EngineUnloadOption{};
+
+  virtual ~EngineI() {}
+
+  virtual void Load(EngineLoadOption opts) = 0;
+  virtual void Unload(EngineUnloadOption opts) = 0;
+
+  // Cortex.llamacpp interface methods
+  virtual void HandleChatCompletion(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  virtual void HandleEmbedding(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  virtual void LoadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  virtual void UnloadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  virtual void GetModelStatus(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  // Compatibility and model management
+  virtual bool IsSupported(const std::string& f) = 0;
+
+  virtual void GetModels(
+      std::shared_ptr<Json::Value> jsonBody,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  // Logging configuration
+  virtual bool SetFileLogger(int max_log_lines,
+                           const std::string& log_path) = 0;
+  virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
+};
 ```
 
-:::info
-Be sure to replace all placeholders with the appropriate values for your engine.
-:::
+Note that Cortex will call `Load` before loading any models and `Unload` when stopping the engine.
 
-### Step 2: Register the New Engine
+### 2. Create a Dynamic Library
 
-1. Open the `extensions.module.ts` located at `cortex-js/src/extensions/`.
+We recommend using the [dylib library](https://github.com/martin-olivier/dylib) to build your dynamic library. This library provides helpful tools for creating cross-platform dynamic libraries.
 
-2. Register your new engine in the provider array using the following code:
+### 3. Package Dependencies
 
-```typescript
-[
-    new OpenAIEngineExtension(httpService, configUsecases, eventEmitter),
-    //... other remote engines
-    new <NewEngine>EngineExtension(httpService, configUsecases, eventEmitter),
-]
+Please ensure all dependencies are included with your dynamic library. This allows us to create a single, self-contained package for distribution.
+
+### 4. Publication and Integration
+
+#### 4.1 Publishing Your Engine (Optional)
+
+If you wish to make your engine publicly available, you can publish it through GitHub. For reference, examine the [cortex.llamacpp releases](https://github.com/janhq/cortex.llamacpp/releases) structure:
+
+- Each release tag should represent your version
+- Include all variants within the same release
+- Cortex will automatically select the most suitable variant or allow users to specify their preferred variant
+
+#### 4.2 Integration with Cortex
+
+Once your engine is ready, we encourage you to:
+
+1. Notify the Cortex team about your engine for potential inclusion in our default supported engines list
+2. Allow us to help test and validate your implementation
+
+### 5. Local Testing Guide
+
+To test your engine locally:
+
+1. Create a directory structure following this hierarchy:
+
+```
+engines/
+└── cortex.llamacpp/
+    └── mac-arm64/
+        └── v0.1.40/
+            ├── libengine.dylib
+            └── version.txt
 ```
 
-## Explanation of Key Properties and Methods
-| **Value**                   | **Description**                                                                                  |
-|------------------------------------|--------------------------------------------------------------------------------------------------|
-| `apiUrl`                           | This is the URL endpoint for the new engine's API. It is used to make chat completion requests.   |
-| `name`                             | This is a unique identifier for the engine. It is used internally to reference the engine.        |
-| `productName`                      | This is a human-readable name for the engine. It is used for display purposes.                    |
-| `description`                      | This provides a brief description of what the engine does. It is used for documentation and display purposes. |
-| `version`                          | This indicates the version of the engine extension. It is used for version control and display purposes. |
-| `eventEmmitter.on('config.updated')` | This is an event listener that listens for configuration updates. When the configuration for the engine is updated, this listener updates the `apiKey` and the engine's status. |
-| `onLoad`                           | This method is called when the engine extension is loaded. It retrieves the engine's configuration (such as the `apiKey`) and sets the engine's status based on whether the `apiKey` is available. |
+2. Configure your engine:
 
-## Advanced: Transforming Payloads and Responses
+   - Edit the `~/.cortexrc` file to register your engine name
+   - Add your model with the appropriate engine field in `model.yaml`
 
-Some engines require custom transformations for the payload sent to the API and the response received from the API. This is achieved using the `transformPayload` and `transformResponse` methods. These methods allow you to modify the data structure to match the specific requirements of the engine.
+3. Testing:
+   - Start the engine
+   - Load your model
+   - Verify functionality
 
-### `transformPayload`
+## Future Development
 
-The `transformPayload` method is used to transform the data before sending it to the engine's API. This method takes the original payload and modifies it as needed.
+We're currently working on expanding support for additional release sources to make distribution more flexible.
 
-**Example: Anthropic Engine**
+## Contributing
 
-In the Anthropic Engine, the `transformPayload` method extracts the system message and other messages, and includes additional parameters like `model`, `stream`, and `max_tokens`.
-
-### `transformResponse`
-
-The `transformResponse` method is used to transform the data received from the engine's API. This method processes the response and converts it into a format that the application can use.
-
-**Example: Anthropic Engine**
-
-In the Anthropic Engine, the `transformResponse` method handles both stream and non-stream responses. It processes the response data and converts it into a standardized format.
- -->
+We welcome suggestions and contributions to improve this integration process. Please feel free to submit issues or pull requests through our repository.
