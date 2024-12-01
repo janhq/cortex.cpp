@@ -219,6 +219,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+
   // avoid printing logs to terminal
   is_server = true;
 

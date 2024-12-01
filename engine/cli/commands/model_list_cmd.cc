@@ -2,12 +2,13 @@
 #include <json/reader.h>
 #include <json/value.h>
 #include <iostream>
-
 #include <vector>
-#include "httplib.h"
 #include "server_start_cmd.h"
+#include "utils/curl_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
+#include "utils/url_parser.h"
 // clang-format off
 #include <tabulate/table.hpp>
 // clang-format on
@@ -44,43 +45,40 @@ void ModelListCmd::Exec(const std::string& host, int port,
   int count = 0;
   // Iterate through directory
 
-  httplib::Client cli(host + ":" + std::to_string(port));
-  auto res = cli.Get("/v1/models");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      Json::Value body;
-      Json::Reader reader;
-      reader.parse(res->body, body);
-      if (!body["data"].isNull()) {
-        for (auto const& v : body["data"]) {
-          auto model_id = v["model"].asString();
-          if (!filter.empty() &&
-              !string_utils::StringContainsIgnoreCase(model_id, filter)) {
-            continue;
-          }
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "models"},
+  };
 
-          count += 1;
-
-          std::vector<std::string> row = {std::to_string(count),
-                                          v["model"].asString()};
-          if (display_engine) {
-            row.push_back(v["engine"].asString());
-          }
-          if (display_version) {
-            row.push_back(v["version"].asString());
-          }
-
-          table.add_row({row.begin(), row.end()});
-        }
-      }
-    } else {
-      CTL_ERR("Failed to get model list with status code: " << res->status);
-      return;
-    }
-  } else {
-    auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+  auto res = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (res.has_error()) {
+    auto root = json_helper::ParseJsonString(res.error());
+    CLI_LOG(root["message"].asString());
     return;
+  }
+
+  if (!res.value()["data"].isNull()) {
+    for (auto const& v : res.value()["data"]) {
+      auto model_id = v["model"].asString();
+      if (!filter.empty() &&
+          !string_utils::StringContainsIgnoreCase(model_id, filter)) {
+        continue;
+      }
+
+      count += 1;
+
+      std::vector<std::string> row = {std::to_string(count),
+                                      v["model"].asString()};
+      if (display_engine) {
+        row.push_back(v["engine"].asString());
+      }
+      if (display_version) {
+        row.push_back(v["version"].asString());
+      }
+
+      table.add_row({row.begin(), row.end()});
+    }
   }
 
   std::cout << table << std::endl;

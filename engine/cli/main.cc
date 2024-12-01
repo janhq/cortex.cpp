@@ -88,6 +88,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+
   bool should_install_server = false;
   bool verbose = false;
   for (int i = 0; i < argc; i++) {

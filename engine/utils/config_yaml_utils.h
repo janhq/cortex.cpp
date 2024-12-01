@@ -3,8 +3,8 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <string>
 #include <mutex>
+#include <string>
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "yaml-cpp/yaml.h"

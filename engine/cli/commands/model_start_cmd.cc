@@ -1,7 +1,6 @@
 #include "model_start_cmd.h"
 #include "cortex_upd_cmd.h"
 #include "hardware_activate_cmd.h"
-#include "httplib.h"
 #include "run_cmd.h"
 #include "server_start_cmd.h"
 #include "utils/cli_selection_utils.h"
@@ -14,7 +13,7 @@ bool ModelStartCmd::Exec(
     const std::unordered_map<std::string, std::string>& options,
     bool print_success_log) {
   std::optional<std::string> model_id =
-      SelectLocalModel(host, port, model_service_, model_handle);
+      SelectLocalModel(host, port, model_handle);
 
   if (!model_id.has_value()) {
     return false;
@@ -46,41 +45,34 @@ bool ModelStartCmd::Exec(
     while (count--) {
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
       if (commands::IsServerAlive(host, port))
-        break;      
+        break;
     }
   }
 
-  // Call API to start model
-  httplib::Client cli(host + ":" + std::to_string(port));
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "models", "start"},
+  };
+
   Json::Value json_data;
   json_data["model"] = model_id.value();
   auto data_str = json_data.toStyledString();
-  cli.set_read_timeout(std::chrono::seconds(60));
-  auto res = cli.Post("/v1/models/start", httplib::Headers(), data_str.data(),
-                      data_str.size(), "application/json");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      if (print_success_log) {
-        CLI_LOG(model_id.value()
-                << " model started successfully. Use `"
-                << commands::GetCortexBinary() << " run " << *model_id
-                << "` for interactive chat shell");
-      }
-      auto root = json_helper::ParseJsonString(res->body);
-      if (!root["warning"].isNull()) {
-        CLI_LOG(root["warning"].asString());
-      }
-      return true;
-    } else {
-      auto root = json_helper::ParseJsonString(res->body);
-      CLI_LOG(root["message"].asString());
-      return false;
-    }
-  } else {
-    auto err = res.error();
-    CLI_LOG("HTTP error: " << httplib::to_string(err));
+  auto res = curl_utils::SimplePostJson(url.ToFullPath(), data_str);
+  if (res.has_error()) {
+    auto root = json_helper::ParseJsonString(res.error());
+    CLI_LOG(root["message"].asString());
     return false;
   }
-}
 
+  if (print_success_log) {
+    CLI_LOG(model_id.value() << " model started successfully. Use `"
+                             << commands::GetCortexBinary() << " run "
+                             << *model_id << "` for interactive chat shell");
+  }
+  if (!res.value()["warning"].isNull()) {
+    CLI_LOG(res.value()["warning"].asString());
+  }
+  return true;
+}
 };  // namespace commands

@@ -43,8 +43,6 @@ cpp::result<bool, std::string> MigrationManager::Migrate() {
   if (std::filesystem::exists(fmu::GetCortexDataPath() / kCortexDb)) {
     auto src_db_path = (fmu::GetCortexDataPath() / kCortexDb);
     auto backup_db_path = (fmu::GetCortexDataPath() / kCortexDbBackup);
-    std::cout << src_db_path.string() << std::endl;
-    std::cout << backup_db_path.string() << std::endl;
 #if defined(_WIN32)
     if (auto res = mgr_helper_.BackupDatabase(
             src_db_path, cortex::wc::WstringToUtf8(backup_db_path.wstring()));
