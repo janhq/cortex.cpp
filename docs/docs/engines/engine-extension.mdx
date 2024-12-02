@@ -22,12 +22,32 @@ First, create an engine that implements the `EngineI.h` interface. Here's the in
 ```cpp
 class EngineI {
  public:
-  struct EngineLoadOption{};
-  struct EngineUnloadOption{};
+  struct RegisterLibraryOption {
+    std::vector<std::filesystem::path> paths;
+  };
+
+  struct EngineLoadOption {
+    // engine
+    std::filesystem::path engine_path;
+    std::filesystem::path cuda_path;
+    bool custom_engine_path;
+
+    // logging
+    std::filesystem::path log_path;
+    int max_log_lines;
+    trantor::Logger::LogLevel log_level;
+  };
+
+  struct EngineUnloadOption {
+    bool unload_dll;
+  };
 
   virtual ~EngineI() {}
 
+  virtual void RegisterLibraryPath(RegisterLibraryOption opts) = 0;
+
   virtual void Load(EngineLoadOption opts) = 0;
+
   virtual void Unload(EngineUnloadOption opts) = 0;
 
   // Cortex.llamacpp interface methods
@@ -65,7 +85,71 @@ class EngineI {
 };
 ```
 
-Note that Cortex will call `Load` before loading any models and `Unload` when stopping the engine.
+#### Lifecycle Management
+
+##### RegisterLibraryPath
+
+```cpp
+virtual void RegisterLibraryPath(RegisterLibraryOption opts) = 0;
+```
+
+This method is called during engine initialization to set up dynamic library search paths. For example, in Linux, we still have to use `LD_LIBRARY_PATH` to add CUDA dependencies to the search path.
+
+**Parameters:**
+
+- `opts.paths`: Vector of filesystem paths that the engine should register
+
+**Implementation Requirements:**
+
+- Register provided paths for dynamic library loading
+- Handle invalid paths gracefully
+- Thread-safe implementation
+- No exceptions should escape the method
+
+##### Load
+
+```cpp
+virtual void Load(EngineLoadOption opts) = 0;
+```
+
+Initializes the engine with the provided configuration options.
+
+**Parameters:**
+
+- `engine_path`: Base path for engine files
+- `cuda_path`: Path to CUDA installation
+- `custom_engine_path`: Flag for using custom engine location
+- `log_path`: Location for log files
+- `max_log_lines`: Maximum number of lines per log file
+- `log_level`: Logging verbosity level
+
+**Implementation Requirements:**
+
+- Validate all paths before use
+- Initialize engine components
+- Set up logging configuration
+- Handle missing dependencies gracefully
+- Clean initialization state in case of failures
+
+##### Unload
+
+```cpp
+virtual void Unload(EngineUnloadOption opts) = 0;
+```
+
+Performs cleanup and shutdown of the engine.
+
+**Parameters:**
+
+- `unload_dll`: Boolean flag indicating whether to unload dynamic libraries
+
+**Implementation Requirements:**
+
+- Clean up all allocated resources
+- Close file handles and connections
+- Release memory
+- Ensure proper shutdown of running models
+- Handle cleanup in a thread-safe manner
 
 ### 2. Create a Dynamic Library
 
@@ -98,7 +182,7 @@ To test your engine locally:
 
 1. Create a directory structure following this hierarchy:
 
-```
+```bash
 engines/
 └── cortex.llamacpp/
     └── mac-arm64/
@@ -107,12 +191,12 @@ engines/
             └── version.txt
 ```
 
-2. Configure your engine:
+1. Configure your engine:
 
    - Edit the `~/.cortexrc` file to register your engine name
    - Add your model with the appropriate engine field in `model.yaml`
 
-3. Testing:
+2. Testing:
    - Start the engine
    - Load your model
    - Verify functionality

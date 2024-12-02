@@ -5,11 +5,11 @@
 #if defined(_WIN32) || defined(_WIN64)
 #include <minwindef.h>
 #include <processenv.h>
+#include "utils/widechar_conv.h"
 #endif
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
 #include "utils/cortex_utils.h"
-#include "utils/widechar_conv.h"
 
 namespace services {
 
