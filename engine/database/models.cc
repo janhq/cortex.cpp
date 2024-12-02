@@ -28,7 +28,7 @@ Models::Models(SQLite::Database& db) : db_(db) {}
 ModelStatus Models::StringToStatus(const std::string& status_str) const {
   if (status_str == "remote") {
     return ModelStatus::Remote;
-  } else if (status_str == "downloaded") {
+  } else if (status_str == "downloaded" || status_str.empty()) {
     return ModelStatus::Downloaded;
   } else if (status_str == "undownloaded") {
     return ModelStatus::Undownloaded;
