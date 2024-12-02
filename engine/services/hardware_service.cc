@@ -16,7 +16,7 @@ namespace services {
 
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
-  constexpr const auto kMaxRetry = 3u;
+  constexpr const auto kMaxRetry = 4u;
   auto count = 0u;
   // Check if server is started
   while (true) {
@@ -292,7 +292,7 @@ void HardwareService::UpdateHardwareInfos() {
   }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  if (system_info_utils::IsNvidiaSmiAvailable()) {
+  if (!gpus.empty()) {
     const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
     if (value) {
       LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
