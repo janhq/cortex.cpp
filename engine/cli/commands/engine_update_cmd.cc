@@ -25,7 +25,8 @@ bool EngineUpdateCmd::Exec(const std::string& host, int port,
   dp.Connect(host, port);
   // engine can be small, so need to start ws first
   auto dp_res = std::async(std::launch::deferred, [&dp] {
-    bool need_cuda_download = !system_info_utils::GetCudaVersion().empty();
+    bool need_cuda_download =
+        !system_info_utils::GetDriverAndCudaVersion().second.empty();
     if (need_cuda_download) {
       return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
     } else {
