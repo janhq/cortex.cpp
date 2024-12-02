@@ -3940,6 +3940,55 @@
         },
         "required": ["description", "name", "productName", "status"]
       },
+      "CpuModeDto": {
+        "type": "object",
+        "properties": {
+          "ram": {
+            "type": "number",
+            "example": 1024
+          }
+        }
+      },
+      "GpuModeDto": {
+        "type": "object",
+        "properties": {
+          "ram": {
+            "type": "number",
+            "example": 1024
+          },
+          "vram": {
+            "type": "number",
+            "example": 1024
+          },
+          "ngl": {
+            "type": "number",
+            "example": 30
+          },
+          "context_length": {
+            "type": "number",
+            "example": 4096
+          },
+          "recommend_ngl": {
+            "type": "number",
+            "example": 33
+          }
+        }
+      },
+      "RecommendDto": {
+        "type": "object",
+        "properties": {
+          "cpu_mode": {
+            "type": "object",
+            "$ref": "#/components/schemas/CpuModeDto"
+          },
+          "gpu_mode": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GPUDto"
+            }
+          }
+        }
+      },
       "ModelDto": {
         "type": "object",
         "properties": {
@@ -4064,6 +4113,10 @@
             "type": "string",
             "description": "The engine to use.",
             "example": "llamacpp"
+          },
+          "recommendation": {
+            "type": "object",
+            "$ref": "#/components/schemas/RecommendDto"
           }
         },
         "required": ["id"]
