@@ -174,7 +174,8 @@ void Engines::InstallEngine(
     norm_version = version;
   }
 
-  if ((*(req->getJsonObject())).get("type", "").asString() == "remote") {
+  if ((req->getJsonObject()) &&
+      (*(req->getJsonObject())).get("type", "").asString() == "remote") {
     auto type = (*(req->getJsonObject())).get("type", "").asString();
     auto api_key = (*(req->getJsonObject())).get("api_key", "").asString();
     auto url = (*(req->getJsonObject())).get("url", "").asString();
@@ -260,12 +261,14 @@ void Engines::InstallEngine(
     res["message"] = result.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k400BadRequest);
+    CTL_INF("Error: " << result.error());
     callback(resp);
   } else {
     Json::Value res;
     res["message"] = "Engine starts installing!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k200OK);
+    CTL_INF("Engine starts installing!");
     callback(resp);
   }
 }

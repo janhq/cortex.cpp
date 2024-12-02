@@ -64,11 +64,13 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
-  cortex::db::ModelEntry model_entry{.model = ggufDownloadItem.id,
-                                     .author_repo_id = author_id,
-                                     .branch_name = branch,
-                                     .path_to_model_yaml = rel.string(),
-                                     .model_alias = ggufDownloadItem.id};
+  cortex::db::ModelEntry model_entry{
+      .model = ggufDownloadItem.id,
+      .author_repo_id = author_id,
+      .branch_name = branch,
+      .path_to_model_yaml = rel.string(),
+      .model_alias = ggufDownloadItem.id,
+      .status = cortex::db::ModelStatus::Downloaded};
   auto result = modellist_utils_obj.AddModelEntry(model_entry, true);
   if (result.has_error()) {
     CTL_WRN("Error adding model to modellist: " + result.error());
