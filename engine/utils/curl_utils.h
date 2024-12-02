@@ -7,6 +7,7 @@
 #include <yaml-cpp/node/parse.h>
 #include <optional>
 #include <string>
+#include <unordered_map>
 
 #include "utils/result.hpp"
 
