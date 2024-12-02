@@ -339,6 +339,53 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
+cpp::result<hardware::Estimation, std::string> ModelService::GetEstimation(
+    const std::string& model_handle, const std::string& kv_cache, int n_batch,
+    int n_ubatch) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    auto file_path = fmu::ToAbsoluteCortexDataPath(
+                         fs::path(model_entry.value().path_to_model_yaml))
+                         .parent_path() /
+                     "model.gguf";
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
+    auto mc = yaml_handler.GetModelConfig();
+    services::HardwareService hw_svc;
+    auto hw_info = hw_svc.GetHardwareInfo();
+    auto free_vram_MiB = 0u;
+    for (const auto& gpu : hw_info.gpus) {
+      free_vram_MiB += gpu.free_vram;
+    }
+
+#if defined(__APPLE__) && defined(__MACH__)
+    free_vram_MiB = hw_info.ram.available_MiB;
+#endif
+
+    return hardware::EstimateLLaMACppRun(file_path.string(),
+                                         {.ngl = mc.ngl,
+                                          .ctx_len = mc.ctx_len,
+                                          .n_batch = n_batch,
+                                          .n_ubatch = n_ubatch,
+                                          .kv_cache_type = kv_cache,
+                                          .free_vram_MiB = free_vram_MiB});
+  } catch (const std::exception& e) {
+    return cpp::fail("Fail to get model status with ID '" + model_handle +
+                     "': " + e.what());
+  }
+}
+
 cpp::result<std::string, std::string> ModelService::HandleUrl(
     const std::string& url) {
   auto url_obj = url_parser::FromUrlString(url);
@@ -756,100 +803,11 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 #undef ASSIGN_IF_PRESENT
 
     CTL_INF(json_data.toStyledString());
-    // TODO(sang) move this into another function
-    // Calculate ram/vram needed to load model
-    services::HardwareService hw_svc;
-    auto hw_info = hw_svc.GetHardwareInfo();
-    assert(!!engine_svc_);
-    auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
-    bool is_cuda = false;
-    if (default_engine.has_error()) {
-      CTL_INF("Could not get default engine");
-    } else {
-      auto& de = default_engine.value();
-      is_cuda = de.variant.find("cuda") != std::string::npos;
-      CTL_INF("is_cuda: " << is_cuda);
-    }
-
-    std::optional<std::string> warning;
-    if (is_cuda && !system_info_utils::IsNvidiaSmiAvailable()) {
-      CTL_INF(
-          "Running cuda variant but nvidia-driver is not installed yet, "
-          "fallback to CPU mode");
-      auto res = engine_svc_->GetInstalledEngineVariants(kLlamaEngine);
-      if (res.has_error()) {
-        CTL_WRN("Could not get engine variants");
-        return cpp::fail("Nvidia-driver is not installed!");
-      } else {
-        auto& es = res.value();
-        std::sort(
-            es.begin(), es.end(),
-            [](const EngineVariantResponse& e1,
-               const EngineVariantResponse& e2) { return e1.name > e2.name; });
-        for (auto& e : es) {
-          CTL_INF(e.name << " " << e.version << " " << e.engine);
-          // Select the first CPU candidate
-          if (e.name.find("cuda") == std::string::npos) {
-            auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine,
-                                                          e.version, e.name);
-            if (r.has_error()) {
-              CTL_WRN("Could not set default engine variant");
-              return cpp::fail("Nvidia-driver is not installed!");
-            } else {
-              CTL_INF("Change default engine to: " << e.name);
-              auto rl = engine_svc_->LoadEngine(kLlamaEngine);
-              if (rl.has_error()) {
-                return cpp::fail("Nvidia-driver is not installed!");
-              } else {
-                CTL_INF("Engine started");
-                is_cuda = false;
-                warning = "Nvidia-driver is not installed, use CPU variant: " +
-                          e.version + "-" + e.name;
-                break;
-              }
-            }
-          }
-        }
-        // If we reach here, means that no CPU variant to fallback
-        if (!warning) {
-          return cpp::fail(
-              "Nvidia-driver is not installed, no available CPU version to "
-              "fallback");
-        }
-      }
-    }
-    // If in GPU acceleration mode:
-    // We use all visible GPUs, so only need to sum all free vram
-    auto free_vram_MiB = 0u;
-    for (const auto& gpu : hw_info.gpus) {
-      free_vram_MiB += gpu.free_vram;
-    }
-
-    auto free_ram_MiB = hw_info.ram.available_MiB;
-
-    auto const& mp = json_data["model_path"].asString();
-    auto ngl = json_data["ngl"].asInt();
-    // Bypass for now
-    auto vram_needed_MiB = 0u;
-    auto ram_needed_MiB = 0u;
-
-    if (vram_needed_MiB > free_vram_MiB && is_cuda) {
-      CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
-                                   << ", available: " << free_vram_MiB);
-
-      return cpp::fail(
-          "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
-          " MiB, available: " + std::to_string(free_vram_MiB) +
-          " MiB - Should adjust ngl to " +
-          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
-    }
-
-    if (ram_needed_MiB > free_ram_MiB) {
-      CTL_WRN("Not enough RAM - " << "required: " << ram_needed_MiB
-                                  << ", available: " << free_ram_MiB);
-      return cpp::fail(
-          "Not enough RAM - required: " + std::to_string(ram_needed_MiB) +
-          " MiB,, available: " + std::to_string(free_ram_MiB) + " MiB");
+    auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
+                                             json_data["ngl"].asInt(),
+                                             json_data["ctx_len"].asInt());
+    if (may_fallback_res.has_error()) {
+      return cpp::fail(may_fallback_res.error());
     }
 
     assert(!!inference_svc_);
@@ -857,11 +815,14 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
+
     if (status == drogon::k200OK) {
-      return StartModelResult{.success = true, .warning = warning};
+      return StartModelResult{.success = true,
+                              .warning = may_fallback_res.value()};
     } else if (status == drogon::k409Conflict) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
-      return StartModelResult{.success = true, .warning = warning};
+      return StartModelResult{
+          .success = true, .warning = may_fallback_res.value_or(std::nullopt)};
     } else {
       // only report to user the error
       CTL_ERR("Model failed to start with status code: " << status);
@@ -1089,4 +1050,103 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(
     const std::string& task_id) {
   return download_service_->StopTask(task_id);
+}
+
+cpp::result<std::optional<std::string>, std::string>
+ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
+                               int ctx_len, int n_batch, int n_ubatch,
+                               const std::string& kv_cache_type) {
+  services::HardwareService hw_svc;
+  auto hw_info = hw_svc.GetHardwareInfo();
+  assert(!!engine_svc_);
+  auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
+  bool is_cuda = false;
+  if (default_engine.has_error()) {
+    CTL_INF("Could not get default engine");
+  } else {
+    auto& de = default_engine.value();
+    is_cuda = de.variant.find("cuda") != std::string::npos;
+    CTL_INF("is_cuda: " << is_cuda);
+  }
+
+  std::optional<std::string> warning;
+  if (is_cuda && !system_info_utils::IsNvidiaSmiAvailable()) {
+    CTL_INF(
+        "Running cuda variant but nvidia-driver is not installed yet, "
+        "fallback to CPU mode");
+    auto res = engine_svc_->GetInstalledEngineVariants(kLlamaEngine);
+    if (res.has_error()) {
+      CTL_WRN("Could not get engine variants");
+      return cpp::fail("Nvidia-driver is not installed!");
+    } else {
+      auto& es = res.value();
+      std::sort(
+          es.begin(), es.end(),
+          [](const EngineVariantResponse& e1, const EngineVariantResponse& e2) {
+            return e1.name > e2.name;
+          });
+      for (auto& e : es) {
+        CTL_INF(e.name << " " << e.version << " " << e.engine);
+        // Select the first CPU candidate
+        if (e.name.find("cuda") == std::string::npos) {
+          auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine, e.version,
+                                                        e.name);
+          if (r.has_error()) {
+            CTL_WRN("Could not set default engine variant");
+            return cpp::fail("Nvidia-driver is not installed!");
+          } else {
+            CTL_INF("Change default engine to: " << e.name);
+            auto rl = engine_svc_->LoadEngine(kLlamaEngine);
+            if (rl.has_error()) {
+              return cpp::fail("Nvidia-driver is not installed!");
+            } else {
+              CTL_INF("Engine started");
+              is_cuda = false;
+              warning = "Nvidia-driver is not installed, use CPU variant: " +
+                        e.version + "-" + e.name;
+              break;
+            }
+          }
+        }
+      }
+      // If we reach here, means that no CPU variant to fallback
+      if (!warning) {
+        return cpp::fail(
+            "Nvidia-driver is not installed, no available CPU version to "
+            "fallback");
+      }
+    }
+  }
+  // If in GPU acceleration mode:
+  // We use all visible GPUs, so only need to sum all free vram
+  auto free_vram_MiB = 0u;
+  for (const auto& gpu : hw_info.gpus) {
+    free_vram_MiB += gpu.free_vram;
+  }
+
+  auto free_ram_MiB = hw_info.ram.available_MiB;
+
+#if defined(__APPLE__) && defined(__MACH__)
+  free_vram_MiB = free_ram_MiB;
+#endif
+
+  hardware::RunConfig rc = {.ngl = ngl,
+                            .ctx_len = ctx_len,
+                            .n_batch = n_batch,
+                            .n_ubatch = n_ubatch,
+                            .kv_cache_type = kv_cache_type,
+                            .free_vram_MiB = free_vram_MiB};
+  auto es = hardware::EstimateLLaMACppRun(model_path, rc);
+
+  if (es.gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
+    CTL_WRN("Not enough VRAM - " << "required: " << es.gpu_mode.vram_MiB
+                                 << ", available: " << free_vram_MiB);
+  }
+
+  if (es.cpu_mode.ram_MiB > free_ram_MiB) {
+    CTL_WRN("Not enough RAM - " << "required: " << es.cpu_mode.ram_MiB
+                                << ", available: " << free_ram_MiB);
+  }
+
+  return warning;
 }

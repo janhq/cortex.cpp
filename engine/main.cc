@@ -20,6 +20,7 @@
 #include "utils/event_processor.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
+#include "utils/hardware/gguf/gguf_file_estimate.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/widechar_conv.h"

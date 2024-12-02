@@ -245,14 +245,19 @@ void CommandLineParser::SetupModelCommands() {
                             "Display engine");
   list_models_cmd->add_flag("-v,--version", cml_data_.display_version,
                             "Display version");
+  list_models_cmd->add_flag("--cpu_mode", cml_data_.display_cpu_mode,
+                            "Display cpu mode");
+  list_models_cmd->add_flag("--gpu_mode", cml_data_.display_gpu_mode,
+                            "Display gpu mode");
   list_models_cmd->group(kSubcommands);
   list_models_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::ModelListCmd().Exec(cml_data_.config.apiServerHost,
-                                  std::stoi(cml_data_.config.apiServerPort),
-                                  cml_data_.filter, cml_data_.display_engine,
-                                  cml_data_.display_version);
+    commands::ModelListCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.filter,
+        cml_data_.display_engine, cml_data_.display_version,
+        cml_data_.display_cpu_mode, cml_data_.display_gpu_mode);
   });
 
   auto get_models_cmd =

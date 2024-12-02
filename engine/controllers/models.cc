@@ -170,12 +170,15 @@ void Models::ListModel(
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
 
-        if (model_config.engine == kOnnxEngine ||
-            model_config.engine == kLlamaEngine ||
-            model_config.engine == kTrtLlmEngine) {
+        if (!remote_engine::IsRemoteEngine(model_config.engine)) {
           Json::Value obj = model_config.ToJson();
           obj["id"] = model_entry.model;
           obj["model"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          auto es = model_service_->GetEstimation(model_entry.model);
+          if (es.has_value()) {
+            obj["recommendation"] = hardware::ToJson(es.value());
+          }
           data.append(std::move(obj));
           yaml_handler.Reset();
         } else {
@@ -189,7 +192,6 @@ void Models::ListModel(
           obj["model"] = model_entry.model;
           data.append(std::move(obj));
         }
-
       } catch (const std::exception& e) {
         LOG_ERROR << "Failed to load yaml file for model: "
                   << model_entry.path_to_model_yaml << ", error: " << e.what();
