@@ -84,6 +84,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/hardware_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_progress.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/config_yaml_utils.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
