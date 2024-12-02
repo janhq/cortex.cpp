@@ -11,12 +11,11 @@ inline std::vector<GPU> GetGPUInfo() {
   // Only support for nvidia for now
   // auto gpus = hwinfo::getAllGPUs();
   auto nvidia_gpus = system_info_utils::GetGpuInfoList();
-  auto cuda_version = system_info_utils::GetCudaVersion();
   for (auto& n : nvidia_gpus) {
     res.emplace_back(
         GPU{.id = n.id,
             .name = n.name,
-            .version = cuda_version,
+            .version = nvidia_gpus[0].cuda_driver_version.value_or("unknown"),
             .add_info =
                 NvidiaAddInfo{
                     .driver_version = n.driver_version.value_or("unknown"),
