@@ -42,6 +42,7 @@ cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(
     node["noProxy"] = config.noProxy;
     node["verifyPeerSsl"] = config.verifyPeerSsl;
     node["verifyHostSsl"] = config.verifyHostSsl;
+    node["supportedEngines"] = config.supportedEngines;
 
     out_file << node;
     out_file.close();

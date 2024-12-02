@@ -5,6 +5,7 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "yaml-cpp/yaml.h"
@@ -22,6 +23,8 @@ constexpr const auto kDefaultCorsEnabled = true;
 const std::vector<std::string> kDefaultEnabledOrigins{
     "http://localhost:39281", "http://127.0.0.1:39281", "http://0.0.0.0:39281"};
 constexpr const auto kDefaultNoProxy = "example.com,::1,localhost,127.0.0.1";
+const std::vector<std::string> kDefaultSupportedEngines{
+    kLlamaEngine, kOnnxEngine, kTrtLlmEngine};
 
 struct CortexConfig {
   std::string logFolderPath;
@@ -59,6 +62,7 @@ struct CortexConfig {
 
   bool verifyPeerSsl;
   bool verifyHostSsl;
+  std::vector<std::string> supportedEngines;
 };
 
 class CortexConfigMgr {
@@ -82,5 +86,4 @@ class CortexConfigMgr {
   CortexConfig FromYaml(const std::string& path,
                         const CortexConfig& default_cfg);
 };
-
 }  // namespace config_yaml_utils
