@@ -7,6 +7,7 @@
 #include "utils/config_yaml_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/result.hpp"
+#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <mach-o/dyld.h>
@@ -14,6 +15,8 @@
 #include <unistd.h>
 #elif defined(_WIN32)
 #include <windows.h>
+#include <codecvt>
+#include <locale>
 #endif
 
 namespace file_manager_utils {
@@ -55,8 +58,8 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
     return std::filesystem::current_path();
   }
 #elif defined(_WIN32)
-  char buffer[MAX_PATH];
-  GetModuleFileNameA(NULL, buffer, MAX_PATH);
+  wchar_t buffer[MAX_PATH];
+  GetModuleFileNameW(NULL, buffer, MAX_PATH);
   // CTL_DBG("Executable path: " << buffer);
   return std::filesystem::path{buffer}.parent_path();
 #else
@@ -67,11 +70,11 @@ inline std::filesystem::path GetExecutableFolderContainerPath() {
 
 inline std::filesystem::path GetHomeDirectoryPath() {
 #ifdef _WIN32
-  const char* homeDir = std::getenv("USERPROFILE");
+  const wchar_t* homeDir = _wgetenv(L"USERPROFILE");
   if (!homeDir) {
     // Fallback if USERPROFILE is not set
-    const char* homeDrive = std::getenv("HOMEDRIVE");
-    const char* homePath = std::getenv("HOMEPATH");
+    const wchar_t* homeDrive = _wgetenv(L"HOMEDRIVE");
+    const wchar_t* homePath = _wgetenv(L"HOMEPATH");
     if (homeDrive && homePath) {
       return std::filesystem::path(homeDrive) / std::filesystem::path(homePath);
     } else {
@@ -103,8 +106,12 @@ inline std::filesystem::path GetConfigurationPath() {
   }
 
   if (config_file_path != kDefaultConfigurationPath) {
-    // CTL_INF("Config file path: " + config_file_path);
+// CTL_INF("Config file path: " + config_file_path);
+#if defined(_WIN32)
+    return std::filesystem::u8path(config_file_path);
+#else
     return std::filesystem::path(config_file_path);
+#endif
   }
 
   std::string variant{CORTEX_VARIANT};
@@ -162,11 +169,21 @@ inline config_yaml_utils::CortexConfig GetDefaultConfig() {
           : std::filesystem::path(cortex_data_folder_path);
 
   return config_yaml_utils::CortexConfig{
+#if defined(_WIN32)
+      .logFolderPath =
+          cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
+#else
       .logFolderPath = default_data_folder_path.string(),
+#endif
       .logLlamaCppPath = kLogsLlamacppBaseName,
       .logTensorrtLLMPath = kLogsTensorrtllmBaseName,
       .logOnnxPath = kLogsOnnxBaseName,
+#if defined(_WIN32)
+      .dataFolderPath =
+          cortex::wc::WstringToUtf8(default_data_folder_path.wstring()),
+#else
       .dataFolderPath = default_data_folder_path.string(),
+#endif
       .maxLogLines = config_yaml_utils::kDefaultMaxLines,
       .apiServerHost = config_yaml_utils::kDefaultHost,
       .apiServerPort = config_yaml_utils::kDefaultPort,
@@ -220,7 +237,11 @@ inline std::filesystem::path GetCortexDataPath() {
   auto config = GetCortexConfig();
   std::filesystem::path data_folder_path;
   if (!config.dataFolderPath.empty()) {
+#if defined(_WIN32)
+    data_folder_path = std::filesystem::u8path(config.dataFolderPath);
+#else
     data_folder_path = std::filesystem::path(config.dataFolderPath);
+#endif
   } else {
     auto home_path = GetHomeDirectoryPath();
     data_folder_path = home_path / kCortexFolderName;

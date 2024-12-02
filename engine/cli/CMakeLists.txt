@@ -26,6 +26,10 @@ if(MSVC)
       $<$<CONFIG:Debug>:/MTd> #---|-- Statically link the runtime libraries
       $<$<CONFIG:Release>:/MT> #--|
   )
+
+  add_compile_options(/utf-8)
+  add_definitions(-DUNICODE -D_UNICODE)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DUNICODE /D_UNICODE")
 endif()
 
 if(NOT DEFINED CORTEX_VARIANT)
@@ -57,7 +61,6 @@ add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(httplib CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
@@ -83,7 +86,6 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_progress.cc
   )
 
-target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)

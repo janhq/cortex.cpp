@@ -87,8 +87,8 @@ inline std::unique_ptr<SystemInfo> GetSystemInfo() {
 inline bool IsNvidiaSmiAvailable() {
 #ifdef _WIN32
   // Check if nvidia-smi.exe exists in the PATH on Windows
-  char buffer[MAX_PATH];
-  if (SearchPath(NULL, "nvidia-smi.exe", NULL, MAX_PATH, buffer, NULL) != 0) {
+  wchar_t buffer[MAX_PATH];
+  if (SearchPath(NULL, L"nvidia-smi.exe", NULL, MAX_PATH, buffer, NULL) != 0) {
     return true;
   } else {
     return false;

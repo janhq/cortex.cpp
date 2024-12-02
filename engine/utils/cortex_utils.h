@@ -3,20 +3,28 @@
 #include <drogon/HttpResponse.h>
 #include <sys/stat.h>
 #include <algorithm>
+#include <ctime>
+#include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <random>
 #include <regex>
 #include <string>
-#include <vector>
 #if defined(__linux__)
 #include <limits.h>
 #include <unistd.h>
 #endif
 
-#if __APPLE__
+#if defined(__APPLE__)
 #include <mach-o/dyld.h>
+#endif
+
+#if defined(_WIN32)
+#include <windows.h>
+#include <codecvt>
+#include <locale>
 #endif
 
 namespace cortex_utils {
@@ -24,36 +32,67 @@ inline std::string logs_folder = "./logs";
 inline std::string logs_base_name = "./logs/cortex.log";
 inline std::string logs_cli_base_name = "./logs/cortex-cli.log";
 
-inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
-  return drogon::HttpResponse::newHttpResponse();
+// example: Mon, 25 Nov 2024 09:57:03 GMT
+inline std::string GetDateRFC1123() {
+  std::time_t now = std::time(nullptr);
+  std::tm* gmt_time = std::gmtime(&now);
+  std::ostringstream oss;
+  oss << std::put_time(gmt_time, "%a, %d %b %Y %H:%M:%S GMT");
+  return oss.str();
 }
+
+inline drogon::HttpResponsePtr CreateCortexHttpResponse() {
+  auto res = drogon::HttpResponse::newHttpResponse();
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
+}
+
+inline drogon::HttpResponsePtr CreateCortexHttpTextAsJsonResponse(
+    const std::string& data) {
+  auto res = drogon::HttpResponse::newHttpResponse();
+  res->setBody(data);
+  res->setContentTypeCode(drogon::CT_APPLICATION_JSON);
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
+};
 
 inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
     const Json::Value& data) {
-  return drogon::HttpResponse::newHttpJsonResponse(data);
+  auto res = drogon::HttpResponse::newHttpJsonResponse(data);
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
 };
 
 inline drogon::HttpResponsePtr CreateCortexStreamResponse(
     const std::function<std::size_t(char*, std::size_t)>& callback,
     const std::string& attachmentFileName = "") {
-  return drogon::HttpResponse::newStreamResponse(
+  auto res = drogon::HttpResponse::newStreamResponse(
       callback, attachmentFileName, drogon::CT_NONE, "text/event-stream");
+#if defined(_WIN32)
+  res->addHeader("date", GetDateRFC1123());
+#endif
+  return res;
 }
+
+
 
 #if defined(_WIN32)
 inline std::string GetCurrentPath() {
-  wchar_t path[MAX_PATH];
-  DWORD result = GetModuleFileNameW(NULL, path, MAX_PATH);
+  char path[MAX_PATH];
+  DWORD result = GetModuleFileNameA(NULL, path, MAX_PATH);
   if (result == 0) {
-    std::wcerr << L"Error getting module file name." << std::endl;
+    std::cerr << "Error getting module file name." << std::endl;
     return "";
   }
-  std::wstring::size_type pos = std::wstring(path).find_last_of(L"\\/");
-  auto ws = std::wstring(path).substr(0, pos);
-  std::string res;
-  std::transform(ws.begin(), ws.end(), std::back_inserter(res),
-                 [](wchar_t c) { return (char)c; });
-  return res;
+
+  std::string::size_type pos = std::string(path).find_last_of("\\/");
+  return std::string(path).substr(0, pos);
 }
 #else
 inline std::string GetCurrentPath() {
@@ -80,5 +119,4 @@ inline std::string GetCurrentPath() {
 #endif
 }
 #endif
-
 }  // namespace cortex_utils

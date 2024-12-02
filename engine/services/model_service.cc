@@ -1,4 +1,6 @@
 #include "model_service.h"
+#include <curl/multi.h>
+#include <drogon/HttpTypes.h>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -7,14 +9,15 @@
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "hardware_service.h"
-#include "httplib.h"
 #include "utils/cli_selection_utils.h"
+#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "utils/widechar_conv.h"
 
 namespace {
 void ParseGguf(const DownloadItem& ggufDownloadItem,
@@ -77,7 +80,8 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   url_parser::Url url = {
       .protocol = "https",
       .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
+      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch},
+  };
 
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {
@@ -505,11 +509,18 @@ ModelService::DownloadModelFromCortexsoAsync(
       return;
     }
     auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
-    CTL_INF("Adding model to modellist with branch: " << branch);
+    CTL_INF("Adding model to modellist with branch: "
+            << branch << ", path: " << model_yml_item->localPath.string());
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
     mc.model = unique_model_id;
+
+    uint64_t model_size = 0;
+    for (const auto& item : finishedTask.items) {
+      model_size = model_size + item.bytes.value_or(0);
+    }
+    mc.size = model_size;
     yaml_handler.UpdateModelConfig(mc);
     yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
@@ -707,9 +718,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
-        // TODO(sang) support multiple files
+#if defined(_WIN32)
+        json_data["model_path"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).wstring());
+#else
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string();
+#endif
       } else {
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};
@@ -757,10 +772,11 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
-      return StartModelResult{
-          .success = true, .warning = may_fallback_res.value_or(std::nullopt)};
-    } else if (status == httplib::StatusCode::Conflict_409) {
+
+    if (status == drogon::k200OK) {
+      return StartModelResult{.success = true,
+                              .warning = may_fallback_res.value()};
+    } else if (status == drogon::k409Conflict) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
       return StartModelResult{
           .success = true, .warning = may_fallback_res.value_or(std::nullopt)};
@@ -806,7 +822,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
     auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       if (bypass_check) {
         bypass_stop_check_set_.erase(model_handle);
       }
@@ -848,7 +864,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
         inference_svc_->GetModelStatus(std::make_shared<Json::Value>(root));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       return true;
     } else {
       CTL_ERR("Model failed to get model status with status code: " << status);
