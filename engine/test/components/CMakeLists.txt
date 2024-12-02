@@ -15,6 +15,7 @@ add_executable(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/config_yaml_utils.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/file_manager_utils.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/curl_utils.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/system_info_utils.cc
 )
 
 find_package(Drogon CONFIG REQUIRED)
