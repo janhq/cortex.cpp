@@ -19,7 +19,8 @@ constexpr static auto kUnsupported{"Unsupported"};
 constexpr static auto kCudaVersionRegex{R"(CUDA Version:\s*([\d\.]+))"};
 constexpr static auto kDriverVersionRegex{R"(Driver Version:\s*(\d+\.\d+))"};
 constexpr static auto kGpuQueryCommand{
-    "nvidia-smi --query-gpu=index,memory.total,memory.free,name,compute_cap,uuid "
+    "nvidia-smi "
+    "--query-gpu=index,memory.total,memory.free,name,compute_cap,uuid "
     "--format=csv,noheader,nounits"};
 constexpr static auto kGpuInfoRegex{
     R"((\d+),\s*(\d+),\s*(\d+),\s*([^,]+),\s*([\d\.]+),\s*([^\n,]+))"};
@@ -100,53 +101,42 @@ inline bool IsNvidiaSmiAvailable() {
 #endif
 }
 
-inline std::string GetDriverVersion() {
+inline std::pair<std::string, std::string> GetDriverAndCudaVersion() {
   if (!IsNvidiaSmiAvailable()) {
     CTL_INF("nvidia-smi is not available!");
-    return "";
+    return {};
   }
   try {
+    std::string driver_version;
+    std::string cuda_version;
     CommandExecutor cmd("nvidia-smi");
     auto output = cmd.execute();
 
     const std::regex driver_version_reg(kDriverVersionRegex);
-    std::smatch match;
+    std::smatch driver_match;
 
-    if (std::regex_search(output, match, driver_version_reg)) {
-      LOG_INFO << "Gpu Driver Version: " << match[1].str();
-      return match[1].str();
+    if (std::regex_search(output, driver_match, driver_version_reg)) {
+      LOG_INFO << "Gpu Driver Version: " << driver_match[1].str();
+      driver_version = driver_match[1].str();
     } else {
       LOG_ERROR << "Gpu Driver not found!";
-      return "";
+      return {};
     }
-  } catch (const std::exception& e) {
-    LOG_ERROR << "Error: " << e.what();
-    return "";
-  }
-}
-
-inline std::string GetCudaVersion() {
-  if (!IsNvidiaSmiAvailable()) {
-    CTL_INF("nvidia-smi is not available!");
-    return "";
-  }
-  try {
-    CommandExecutor cmd("nvidia-smi");
-    auto output = cmd.execute();
 
     const std::regex cuda_version_reg(kCudaVersionRegex);
-    std::smatch match;
+    std::smatch cuda_match;
 
-    if (std::regex_search(output, match, cuda_version_reg)) {
-      LOG_INFO << "CUDA Version: " << match[1].str();
-      return match[1].str();
+    if (std::regex_search(output, cuda_match, cuda_version_reg)) {
+      LOG_INFO << "CUDA Version: " << cuda_match[1].str();
+      cuda_version = cuda_match[1].str();
     } else {
       LOG_ERROR << "CUDA Version not found!";
-      return "";
+      return {};
     }
+    return std::pair(driver_version, cuda_version);
   } catch (const std::exception& e) {
     LOG_ERROR << "Error: " << e.what();
-    return "";
+    return {};
   }
 }
 
@@ -227,9 +217,9 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
   if (!IsNvidiaSmiAvailable())
     return gpuInfoList;
   try {
-    // TODO: improve by parsing both in one command execution
-    auto driver_version = GetDriverVersion();
-    auto cuda_version = GetCudaVersion();
+    auto [driver_version, cuda_version] = GetDriverAndCudaVersion();
+    if (driver_version.empty() || cuda_version.empty())
+      return gpuInfoList;
 
     CommandExecutor cmd(kGpuQueryCommand);
     auto output = cmd.execute();
@@ -249,7 +239,7 @@ inline std::vector<GpuInfo> GetGpuInfoList() {
           driver_version,              // driver_version
           cuda_version,                // cuda_driver_version
           match[5].str(),              // compute_cap
-          match[6].str()               // uuid  
+          match[6].str()               // uuid
       };
       gpuInfoList.push_back(gpuInfo);
       search_start = match.suffix().first;

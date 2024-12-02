@@ -8,7 +8,7 @@ namespace commands {
 
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
-  constexpr const auto kMaxRetry = 3u;
+  constexpr const auto kMaxRetry = 4u;
   auto count = 0u;
   // Check if server is started
   while (true) {
