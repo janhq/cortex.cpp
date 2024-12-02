@@ -12,6 +12,14 @@
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 
+namespace {
+std::string ToJsonStringWithPrecision(Json::Value& input, int precision = 2) {
+  Json::StreamWriterBuilder wbuilder;
+  wbuilder.settings_["precision"] = 2;
+  return Json::writeString(wbuilder, input);
+}
+}  // namespace
+
 void Models::PullModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   if (!http_util::HasFieldInReq(req, callback, "model")) {
@@ -182,9 +190,11 @@ void Models::ListModel(
                   << model_entry.path_to_model_yaml << ", error: " << e.what();
       }
     }
+
     ret["data"] = data;
     ret["result"] = "OK";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    auto ret_str = ToJsonStringWithPrecision(ret);
+    auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret_str);
     resp->setStatusCode(k200OK);
     callback(resp);
   } else {
