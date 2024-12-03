@@ -28,6 +28,10 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 bool ServerStartCmd::Exec(const std::string& host, int port,
                           const std::optional<std::string>& log_level) {
+  if (IsServerAlive(host, port)) {
+    CLI_LOG("The server has already started");
+    return true;
+  }
   std::string log_level_;
   if (!log_level.has_value()) {
     log_level_ = "INFO";
