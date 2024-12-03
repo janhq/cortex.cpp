@@ -3,7 +3,7 @@
 #include <string>
 #include "utils/string_utils.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 // The entity that produced the message. One of user or assistant.
 enum class Role { USER, ASSISTANT };
 
@@ -27,4 +27,4 @@ inline Role RoleFromString(const std::string& input) {
     return Role::ASSISTANT;
   }
 }
-};  // namespace ThreadMessage
+};  // namespace OpenAi

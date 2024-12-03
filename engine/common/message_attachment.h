@@ -3,7 +3,7 @@
 #include <json/reader.h>
 #include "common/json_serializable.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 
 // The tools to add this file to.
 struct Tool {
@@ -47,4 +47,4 @@ struct Attachment : JsonSerializable {
     }
   }
 };
-};  // namespace ThreadMessage
+};  // namespace OpenAi

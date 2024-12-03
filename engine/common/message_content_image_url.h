@@ -2,7 +2,7 @@
 
 #include "common/message_content.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 
 struct ImageUrl {
   // The external URL of the image, must be a supported image types: jpeg, jpg, png, gif, webp.
@@ -68,4 +68,4 @@ struct ImageUrlContent : Content {
     }
   }
 };
-}  // namespace ThreadMessage
+}  // namespace OpenAi
