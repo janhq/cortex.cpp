@@ -233,6 +233,23 @@ InferResult InferenceService::FineTuning(
   return std::make_pair(stt, r);
 }
 
+bool InferenceService::StopInferencing(const std::string& engine_name,
+                                       const std::string& model_id) {
+  CTL_DBG("Stop inferencing");
+  auto engine_result = engine_service_->GetLoadedEngine(engine_name);
+  if (engine_result.has_error()) {
+    LOG_WARN << "Engine is not loaded yet";
+    return false;
+  }
+
+  auto engine = std::get<EngineI*>(engine_result.value());
+  if (engine->IsSupported("StopInferencing")) {
+    engine->StopInferencing(model_id);
+    CTL_INF("Stopped inferencing");
+  }
+  return true;
+}
+
 bool InferenceService::HasFieldInReq(std::shared_ptr<Json::Value> json_body,
                                      const std::string& field) {
   if (!json_body || (*json_body)[field].isNull()) {

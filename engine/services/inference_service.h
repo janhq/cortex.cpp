@@ -52,10 +52,13 @@ class InferenceService {
 
   InferResult FineTuning(std::shared_ptr<Json::Value> json_body);
 
- private:
+  bool StopInferencing(const std::string& engine_name,
+                       const std::string& model_id);
+
   bool HasFieldInReq(std::shared_ptr<Json::Value> json_body,
                      const std::string& field);
 
+ private:
   std::shared_ptr<EngineService> engine_service_;
 };
 }  // namespace services
