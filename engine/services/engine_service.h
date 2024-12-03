@@ -71,7 +71,8 @@ class EngineService : public EngineServiceI {
   explicit EngineService(std::shared_ptr<DownloadService> download_service)
       : download_service_{download_service},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
-                .cuda_driver_version = system_info_utils::GetCudaVersion()} {}
+                .cuda_driver_version =
+                    system_info_utils::GetDriverAndCudaVersion().second} {}
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 

@@ -14,7 +14,8 @@ class EngineInstallCmd {
         port_(port),
         show_menu_(show_menu),
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
-                .cuda_driver_version = system_info_utils::GetCudaVersion()} {};
+                .cuda_driver_version =
+                    system_info_utils::GetDriverAndCudaVersion().second} {};
 
   bool Exec(const std::string& engine, const std::string& version = "latest",
             const std::string& src = "");
