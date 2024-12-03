@@ -2,6 +2,7 @@
 #include <string>
 #include <tabulate/table.hpp>
 #include "utils/curl_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/format_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
