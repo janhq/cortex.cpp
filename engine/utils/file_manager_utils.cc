@@ -299,6 +299,11 @@ std::filesystem::path GetCudaToolkitPath(const std::string& engine) {
   return cuda_path;
 }
 
+std::filesystem::path GetThreadsContainerPath() {
+  auto cortex_path = GetCortexDataPath();
+  return cortex_path / "threads";
+}
+
 std::filesystem::path GetEnginesContainerPath() {
   auto cortex_path = getenv("ENGINE_PATH")
                          ? std::filesystem::path(getenv("ENGINE_PATH"))
