@@ -20,11 +20,6 @@ class TestApiEngine:
 
         # Teardown
         stop_server()
-
-    # engines list
-    def test_engines_list_api_run_successfully(self):
-        response = requests.get("http://localhost:3928/engines")
-        assert response.status_code == 200
     
     # engines get
     def test_engines_get_llamacpp_should_be_successful(self):

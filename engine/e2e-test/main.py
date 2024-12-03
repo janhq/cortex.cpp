@@ -2,6 +2,7 @@ import pytest
 import sys
 
 ### e2e tests are expensive, have to keep engines tests in order
+from test_api_engine_list import TestApiEngineList
 from test_api_engine import TestApiEngine
 from test_api_model import TestApiModel
 from test_api_model_import import TestApiModelImport
