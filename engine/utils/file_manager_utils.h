@@ -49,6 +49,8 @@ std::filesystem::path GetCudaToolkitPath(const std::string& engine);
 
 std::filesystem::path GetEnginesContainerPath();
 
+std::filesystem::path GetThreadsContainerPath();
+
 std::filesystem::path GetContainerFolderPath(const std::string_view type);
 
 std::string DownloadTypeToString(DownloadType type);
