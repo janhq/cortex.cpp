@@ -1,4 +1,4 @@
 #pragma once
 
 //Track the current schema version
-#define SCHEMA_VERSION 0
+#define SCHEMA_VERSION 2
