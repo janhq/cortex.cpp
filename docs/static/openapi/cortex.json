@@ -2224,8 +2224,18 @@
             "default": [],
             "type": "array",
             "items": {
-              "type": "object"
-            }
+              "type": "array",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["function"]
+                },
+                "function": {
+                  "$ref": "#/components/schemas/Function"
+                }
+              },
+              "required": ["type", "function"]
+            },
           },
           "metadata": {
             "type": "object",
@@ -2286,7 +2296,7 @@
             "nullable": true
           },
           "tools": {
-            "type": "object"
+            "type": "array"
           },
           "metadata": {
             "type": "object",
@@ -2869,17 +2879,20 @@
             }
           },
           "tools": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "enum": ["function"]
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "enum": ["function"]
+                },
+                "function": {
+                  "$ref": "#/components/schemas/Function"
+                }
               },
-              "function": {
-                "$ref": "#/components/schemas/Function"
-              }
-            },
-            "required": ["type", "function"]
+              "required": ["type", "function"]
+            }
           },
           "tool_choice": {
             "anyOf": [
