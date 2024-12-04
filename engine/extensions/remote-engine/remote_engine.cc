@@ -263,9 +263,7 @@ CurlResponse RemoteEngine::MakeGetModelsRequest() {
   std::string full_url = metadata_["get_models_url"].asString();
 
   struct curl_slist* headers = nullptr;
-
   headers = curl_slist_append(headers, api_key_template_.c_str());
-
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
@@ -304,7 +302,6 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
-
     headers = curl_slist_append(headers, api_key_template_.c_str());
   }
 
@@ -707,50 +704,9 @@ void RemoteEngine::HandleEmbedding(
   callback(Json::Value(), Json::Value());
 }
 
-bool RemoteEngine::IsSupported(const std::string& f) {
-  if (f == "HandleChatCompletion" || f == "LoadModel" || f == "UnloadModel" ||
-      f == "GetModelStatus" || f == "GetModels" || f == "SetFileLogger" ||
-      f == "SetLogLevel") {
-    return true;
-  }
-  return false;
-}
-
-bool RemoteEngine::SetFileLogger(int max_log_lines,
-                                 const std::string& log_path) {
-  if (!async_file_logger_) {
-    async_file_logger_ = std::make_unique<trantor::FileLogger>();
-  }
-
-  async_file_logger_->setFileName(log_path);
-  async_file_logger_->setMaxLines(max_log_lines);  // Keep last 100000 lines
-  async_file_logger_->startLogging();
-  trantor::Logger::setOutputFunction(
-      [&](const char* msg, const uint64_t len) {
-        if (async_file_logger_)
-          async_file_logger_->output_(msg, len);
-      },
-      [&]() {
-        if (async_file_logger_)
-          async_file_logger_->flush();
-      });
-  freopen(log_path.c_str(), "w", stderr);
-  freopen(log_path.c_str(), "w", stdout);
-  return true;
-}
-
-void RemoteEngine::SetLogLevel(trantor::Logger::LogLevel log_level) {
-  trantor::Logger::setLogLevel(log_level);
-}
-
 Json::Value RemoteEngine::GetRemoteModels() {
   CTL_WRN("Not implemented yet!");
   return {};
 }
 
-extern "C" {
-EngineI* get_engine() {
-  return new RemoteEngine();
-}
-}
 }  // namespace remote_engine

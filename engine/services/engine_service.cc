@@ -694,21 +694,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       engines_[engine_name].engine = new remote_engine::AnthropicEngine();
     }
 
-    auto& en = std::get<EngineI*>(engines_[ne].engine);
-    auto config = file_manager_utils::GetCortexConfig();
-    if (en->IsSupported("SetFileLogger")) {
-      en->SetFileLogger(config.maxLogLines,
-                        (std::filesystem::path(config.logFolderPath) /
-                         std::filesystem::path(config.logLlamaCppPath))
-                            .string());
-    } else {
-      CTL_WRN("Method SetFileLogger is not supported yet");
-    }
-    if (en->IsSupported("SetLogLevel")) {
-      en->SetLogLevel(trantor::Logger::logLevel());
-    } else {
-      CTL_WRN("Method SetLogLevel is not supported yet");
-    }
     CTL_INF("Loaded engine: " << engine_name);
     return {};
   }
@@ -883,8 +868,11 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     if (!IsEngineLoaded(ne)) {
       return cpp::fail("Engine " + ne + " is not loaded yet!");
     }
-    EngineI* e = std::get<EngineI*>(engines_[ne].engine);
-    delete e;
+    if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
+      delete std::get<EngineI*>(engines_[ne].engine);
+    } else {
+      delete std::get<RemoteEngineI*>(engines_[ne].engine);
+    }
 
 #if defined(_WIN32)
     if (!RemoveDllDirectory(engines_[ne].cookie)) {
@@ -1100,7 +1088,22 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     return cpp::fail(r.error());
   }
 
-  auto& e = std::get<EngineI*>(engines_[engine_name].engine);
+  if (!IsEngineLoaded(engine_name)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine_name);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+    }
+
+    if (engine_name == kOpenAiEngine) {
+      engines_[engine_name].engine = new remote_engine::OpenAiEngine();
+    } else {
+      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
+    }
+
+    CTL_INF("Loaded engine: " << engine_name);
+  }
+
+  auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
   auto res = e->GetRemoteModels();
   if (!res["error"].isNull()) {
     return cpp::fail(res["error"].asString());

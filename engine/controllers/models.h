@@ -35,7 +35,7 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::StopModel, "/v1/models/stop", Options, Post);
   ADD_METHOD_TO(Models::GetModelStatus, "/v1/models/status/{1}", Get);
   ADD_METHOD_TO(Models::AddRemoteModel, "/v1/models/add", Options, Post);
-  ADD_METHOD_TO(Models::GetRemoteModels, "/v1/remote/{1}", Get);
+  ADD_METHOD_TO(Models::GetRemoteModels, "/v1/models/remote/{1}", Get);
   METHOD_LIST_END
 
   explicit Models(std::shared_ptr<ModelService> model_service,

@@ -515,8 +515,8 @@
     "/v1/models/add": {
       "post": {
         "operationId": "ModelsController_addModel",
-        "summary": "Add a model",
-        "description": "Add a new model configuration to the system.",
+        "summary": "Add a remote model",
+        "description": "Add a new remote model configuration to the system.",
         "requestBody": {
           "required": true,
           "content": {
@@ -1509,17 +1509,17 @@
                   },
                   "type": {
                     "type": "string",
-                    "description": "The type of connection",
+                    "description": "The type of connection, remote or local",
                     "example": "remote"
                   },
                   "url": {
                     "type": "string",
-                    "description": "The URL for the API endpoint",
+                    "description": "The URL for the API endpoint for remote engine",
                     "example": "https://api.openai.com"
                   },
                   "api_key": {
                     "type": "string",
-                    "description": "The API key for authentication",
+                    "description": "The API key for authentication for remote engine",
                     "example": ""
                   },
                   "metadata": {

@@ -7,7 +7,7 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
-#include "cortex-common/EngineI.h"
+#include "cortex-common/remote_enginei.h"
 #include "extensions/remote-engine/template_renderer.h"
 #include "utils/engine_constants.h"
 #include "utils/file_logger.h"
@@ -31,7 +31,7 @@ struct CurlResponse {
   std::string error_message;
 };
 
-class RemoteEngine : public EngineI {
+class RemoteEngine : public RemoteEngineI {
  protected:
   // Model configuration
   struct ModelConfig {
@@ -95,9 +95,7 @@ class RemoteEngine : public EngineI {
   void HandleEmbedding(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  bool IsSupported(const std::string& feature) override;
-  bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
-  void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
+  
   Json::Value GetRemoteModels() override;
 };
 
