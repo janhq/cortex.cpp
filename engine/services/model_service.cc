@@ -732,6 +732,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
+      json_data["ctx_len"] = std::min(8192, mc.ctx_len);
     } else {
       bypass_stop_check_set_.insert(model_handle);
     }
