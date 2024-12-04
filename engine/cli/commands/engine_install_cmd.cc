@@ -179,7 +179,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   auto response = curl_utils::SimplePostJson(install_url.ToFullPath(),
                                              body.toStyledString());
   if (response.has_error()) {
-    // TODO: namh refactor later
     Json::Value root;
     Json::Reader reader;
     if (!reader.parse(response.error(), root)) {

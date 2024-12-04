@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include "utils/curl_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/json_parser_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"

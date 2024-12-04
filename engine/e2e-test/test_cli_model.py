@@ -1,5 +1,7 @@
 import pytest
 import requests
+import os
+from pathlib import Path
 from test_runner import (
     run,
     start_server,
@@ -7,8 +9,7 @@ from test_runner import (
     wait_for_websocket_download_success_event,
 )
 
-
-class TestCliModelDelete:
+class TestCliModel:
 
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
@@ -23,7 +24,20 @@ class TestCliModelDelete:
         # Clean up
         run("Delete model", ["models", "delete", "tinyllama:gguf"])
         stop_server()
-
+        
+    def test_model_pull_with_direct_url_should_be_success(self):
+        exit_code, output, error = run(
+            "Pull model",
+            [
+                "pull",
+                "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/blob/main/tinyllama-1.1b-chat-v0.3.Q2_K.gguf",
+            ],
+            timeout=None, capture=False
+        )
+        root = Path.home()
+        assert os.path.exists(root / "cortexcpp" / "models" / "huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v0.3-GGUF/tinyllama-1.1b-chat-v0.3.Q2_K.gguf")
+        assert exit_code == 0, f"Model pull failed with error: {error}"
+        
     @pytest.mark.asyncio
     async def test_models_delete_should_be_successful(self):
         json_body = {"model": "tinyllama:gguf"}
