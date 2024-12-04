@@ -65,7 +65,7 @@ void Threads::CreateThread(
     }
   }
 
-  auto res = thread_service_->CreateThread(std::nullopt, metadata);
+  auto res = thread_service_->CreateThread(nullptr, metadata);
 
   if (res.has_error()) {
     Json::Value ret;
@@ -170,7 +170,7 @@ void Threads::ModifyThread(
 
   // TODO: namh handle tools
   auto res =
-      thread_service_->ModifyThread(thread_id, std::nullopt, metadata.value());
+      thread_service_->ModifyThread(thread_id, nullptr, metadata.value());
   if (res.has_error()) {
     Json::Value ret;
     ret["message"] = res.error();

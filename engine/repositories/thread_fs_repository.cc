@@ -1,5 +1,6 @@
 #include "thread_fs_repository.h"
 #include <fstream>
+#include <mutex>
 
 cpp::result<std::vector<OpenAi::Thread>, std::string>
 ThreadFsRepository::ListThreads(uint8_t limit, const std::string& order,

@@ -1,5 +1,6 @@
 #include "message_fs_repository.h"
 #include <fstream>
+#include <mutex>
 #include "utils/result.hpp"
 
 std::filesystem::path MessageFsRepository::GetMessagePath(

@@ -34,7 +34,7 @@ class ThreadFsRepository : public ThreadRepository {
   cpp::result<void, std::string> SaveThread(OpenAi::Thread& thread);
 
  public:
-  explicit ThreadFsRepository(std::filesystem::path data_folder_path)
+  explicit ThreadFsRepository(const std::filesystem::path& data_folder_path)
       : data_folder_path_{data_folder_path} {
     CTL_INF("Constructing ThreadFsRepository..");
     auto thread_container_path = data_folder_path_ / kThreadContainerFolderName;

@@ -3,7 +3,7 @@
 #include "utils/ulid/ulid.hh"
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
-    std::optional<std::unique_ptr<OpenAi::ThreadToolResources>> tool_resources,
+    std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "CreateThread";
 
@@ -20,8 +20,8 @@ cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
   thread.object = "thread";
   thread.created_at = seconds_since_epoch;
 
-  if (tool_resources.has_value()) {
-    thread.tool_resources = std::move(tool_resources.value());
+  if (tool_resources) {
+    thread.tool_resources = std::move(tool_resources);
   }
   thread.metadata = metadata.value_or(Cortex::VariantMap{});
 
@@ -42,13 +42,13 @@ ThreadService::ListThreads(uint8_t limit, const std::string& order,
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::RetrieveThread(
     const std::string& thread_id) const {
-  LOG_TRACE << "RetriveThread: " << thread_id;
+  CTL_INF("RetrieveThread: " + thread_id);
   return thread_repository_->RetrieveThread(thread_id);
 }
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::ModifyThread(
     const std::string& thread_id,
-    std::optional<std::unique_ptr<OpenAi::ThreadToolResources>> tool_resources,
+    std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "ModifyThread " << thread_id;
   auto retrieve_res = RetrieveThread(thread_id);
@@ -56,7 +56,9 @@ cpp::result<OpenAi::Thread, std::string> ThreadService::ModifyThread(
     return cpp::fail("Failed to retrieve thread: " + retrieve_res.error());
   }
 
-  retrieve_res->tool_resources = std::move(tool_resources.value());
+  if (tool_resources) {
+    retrieve_res->tool_resources = std::move(tool_resources);
+  }
   retrieve_res->metadata = std::move(metadata.value());
 
   auto res = thread_repository_->ModifyThread(retrieve_res.value());
