@@ -191,13 +191,30 @@ bool HardwareService::Restart(const std::string& host, int port) {
   return true;
 }
 
+// GPU identifiers are given as integer indices or as UUID strings. GPU UUID strings
+// should follow the same format as given by nvidia-smi, such as GPU-8932f937-d72c-4106-c12f-20bd9faed9f6.
+// However, for convenience, abbreviated forms are allowed; simply specify enough digits
+// from the beginning of the GPU UUID to uniquely identify that GPU in the target system.
+// For example, CUDA_VISIBLE_DEVICES=GPU-8932f937 may be a valid way to refer to the above GPU UUID,
+// assuming no other GPU in the system shares this prefix. Only the devices whose index
+// is present in the sequence are visible to CUDA applications and they are enumerated
+// in the order of the sequence. If one of the indices is invalid, only the devices whose
+// index precedes the invalid index are visible to CUDA applications. For example, setting
+// CUDA_VISIBLE_DEVICES to 2,1 causes device 0 to be invisible and device 2 to be enumerated
+// before device 1. Setting CUDA_VISIBLE_DEVICES to 0,2,-1,1 causes devices 0 and 2 to be
+// visible and device 1 to be invisible. MIG format starts with MIG keyword and GPU UUID
+// should follow the same format as given by nvidia-smi.
+// For example, MIG-GPU-8932f937-d72c-4106-c12f-20bd9faed9f6/1/2.
+// Only single MIG instance enumeration is supported.
 bool HardwareService::SetActivateHardwareConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
   // Note: need to map software_id and hardware_id
   // Update to db
   cortex::db::Hardwares hw_db;
-  auto activate = [&ahc](int software_id) {
-    return std::count(ahc.gpus.begin(), ahc.gpus.end(), software_id) > 0;
+  // copy all gpu information to new vector
+  auto ahc_gpus = ahc.gpus;
+  auto activate = [&ahc_gpus](int software_id) {
+    return std::count(ahc_gpus.begin(), ahc_gpus.end(), software_id) > 0;
   };
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
@@ -210,11 +227,12 @@ bool HardwareService::SetActivateHardwareConfig(
       }
     }
     std::sort(activated_ids.begin(), activated_ids.end());
-    if (ahc.gpus.size() != activated_ids.size()) {
+    std::sort(ahc_gpus.begin(), ahc_gpus.end());
+    if (ahc_gpus.size() != activated_ids.size()) {
       need_update = true;
     } else {
-      for (size_t i = 0; i < ahc.gpus.size(); i++) {
-        if (ahc.gpus[i] != activated_ids[i])
+      for (size_t i = 0; i < ahc_gpus.size(); i++) {
+        if (ahc_gpus[i] != activated_ids[i])
           need_update = true;
       }
     }
@@ -291,7 +309,8 @@ void HardwareService::UpdateHardwareInfos() {
   }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  if (!gpus.empty()) {
+  bool has_deactivated_gpu = a.value().size() != activated_gpu_af.size();
+  if (!gpus.empty() && has_deactivated_gpu) {
     const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
     if (value) {
       LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
