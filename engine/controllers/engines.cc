@@ -23,10 +23,9 @@ std::string NormalizeEngine(const std::string& engine) {
 void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
-  std::vector<std::string> supported_engines{kLlamaEngine, kOnnxEngine,
-                                             kTrtLlmEngine};
   Json::Value ret;
-  for (const auto& engine : supported_engines) {
+  auto engine_names = engine_service_->GetSupportedEngineNames().value();
+  for (const auto& engine : engine_names) {
     auto installed_engines =
         engine_service_->GetInstalledEngineVariants(engine);
     if (installed_engines.has_error()) {

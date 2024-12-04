@@ -185,6 +185,7 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
       .noProxy = config_yaml_utils::kDefaultNoProxy,
       .verifyPeerSsl = true,
       .verifyHostSsl = true,
+      .supportedEngines = config_yaml_utils::kDefaultSupportedEngines,
   };
 }
 

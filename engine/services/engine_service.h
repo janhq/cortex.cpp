@@ -65,6 +65,9 @@ class EngineService : public EngineServiceI {
                 .cuda_driver_version =
                     system_info_utils::GetDriverAndCudaVersion().second} {}
 
+  // just for initialize supported engines
+  EngineService() {};
+
   std::vector<EngineInfo> GetEngineInfoList() const;
 
   /**
@@ -123,6 +126,10 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
+  cpp::result<std::vector<std::string>, std::string> GetSupportedEngineNames();
+
+  void RegisterEngineLibPath();
+
  private:
   cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
@@ -133,6 +140,9 @@ class EngineService : public EngineServiceI {
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);
+
+  cpp::result<std::pair<std::filesystem::path, bool>, std::string>
+  GetEngineDirPath(const std::string& engine_name);
 
   cpp::result<bool, std::string> IsEngineVariantReady(
       const std::string& engine, const std::string& version,

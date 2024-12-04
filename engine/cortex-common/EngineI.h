@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 
@@ -7,7 +8,36 @@
 #include "trantor/utils/Logger.h"
 class EngineI {
  public:
+  struct RegisterLibraryOption {
+    std::vector<std::filesystem::path> paths;
+  };
+
+  struct EngineLoadOption {
+    // engine
+    std::filesystem::path engine_path;
+    std::filesystem::path cuda_path;
+    bool custom_engine_path;
+
+    // logging
+    std::filesystem::path log_path;
+    int max_log_lines;
+    trantor::Logger::LogLevel log_level;
+  };
+
+  struct EngineUnloadOption {
+    bool unload_dll;
+  };
+
   virtual ~EngineI() {}
+
+  /**
+   * Being called before starting process to register dependencies search paths.
+   */
+  virtual void RegisterLibraryPath(RegisterLibraryOption opts) = 0;
+
+  virtual void Load(EngineLoadOption opts) = 0;
+
+  virtual void Unload(EngineUnloadOption opts) = 0;
 
   // cortex.llamacpp interface
   virtual void HandleChatCompletion(
