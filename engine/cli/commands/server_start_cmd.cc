@@ -1,6 +1,7 @@
 #include "server_start_cmd.h"
 #include "commands/cortex_upd_cmd.h"
 #include "utils/cortex_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/widechar_conv.h"
 
@@ -27,6 +28,10 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 bool ServerStartCmd::Exec(const std::string& host, int port,
                           const std::optional<std::string>& log_level) {
+  if (IsServerAlive(host, port)) {
+    CLI_LOG("The server has already started");
+    return true;
+  }
   std::string log_level_;
   if (!log_level.has_value()) {
     log_level_ = "INFO";

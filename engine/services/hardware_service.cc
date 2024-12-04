@@ -8,7 +8,6 @@
 #endif
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
-#include "services/engine_service.h"
 #include "utils/cortex_utils.h"
 #include "utils/widechar_conv.h"
 
