@@ -163,8 +163,10 @@ void CommandLineParser::SetupCommonCommands() {
   run_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                  " run [options] [model_id]");
   run_cmd->add_option("model_id", cml_data_.model_id, "");
-  run_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+  run_cmd->add_option("--gpus", run_settings_["gpus"],
                       "List of GPU to activate, for example [0, 1]");
+  run_cmd->add_option("--ctx_len", run_settings_["ctx_len"],
+                      "Maximum context length for inference");
   run_cmd->add_flag("-d,--detach", cml_data_.run_detach, "Detached mode");
   run_cmd->callback([this, run_cmd] {
     if (std::exchange(executed_, true))
@@ -172,7 +174,7 @@ void CommandLineParser::SetupCommonCommands() {
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
                         cml_data_.model_id, download_service_);
-    rc.Exec(cml_data_.run_detach, hw_activate_opts_);
+    rc.Exec(cml_data_.run_detach, run_settings_);
   });
 }
 
@@ -203,8 +205,10 @@ void CommandLineParser::SetupModelCommands() {
   model_start_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " models start [model_id]");
   model_start_cmd->add_option("model_id", cml_data_.model_id, "");
-  model_start_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+  model_start_cmd->add_option("--gpus", run_settings_["gpus"],
                               "List of GPU to activate, for example [0, 1]");
+  model_start_cmd->add_option("--ctx_len", run_settings_["ctx_len"],
+                              "Maximum context length for inference");
   model_start_cmd->group(kSubcommands);
   model_start_cmd->callback([this, model_start_cmd]() {
     if (std::exchange(executed_, true))
@@ -216,7 +220,7 @@ void CommandLineParser::SetupModelCommands() {
     };
     commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
                                    std::stoi(cml_data_.config.apiServerPort),
-                                   cml_data_.model_id, hw_activate_opts_);
+                                   cml_data_.model_id, run_settings_);
   });
 
   auto stop_model_cmd =
@@ -562,7 +566,7 @@ void CommandLineParser::SetupHardwareCommands() {
   hw_activate_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
                          " hardware activate --gpus [list_gpu]");
   hw_activate_cmd->group(kSubcommands);
-  hw_activate_cmd->add_option("--gpus", hw_activate_opts_["gpus"],
+  hw_activate_cmd->add_option("--gpus", run_settings_["gpus"],
                               "List of GPU to activate, for example [0, 1]");
   hw_activate_cmd->callback([this, hw_activate_cmd]() {
     if (std::exchange(executed_, true))
@@ -572,14 +576,14 @@ void CommandLineParser::SetupHardwareCommands() {
       return;
     }
 
-    if (hw_activate_opts_["gpus"].empty()) {
+    if (run_settings_["gpus"].empty()) {
       CLI_LOG("[list_gpu] is required\n");
       CLI_LOG(hw_activate_cmd->help());
       return;
     }
     commands::HardwareActivateCmd().Exec(
         cml_data_.config.apiServerHost,
-        std::stoi(cml_data_.config.apiServerPort), hw_activate_opts_);
+        std::stoi(cml_data_.config.apiServerPort), run_settings_);
   });
 }
 
