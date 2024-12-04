@@ -4,16 +4,14 @@
 
 namespace cortex::db {
 
-Hardwares::Hardwares() : db_(cortex::db::Database::GetInstance().db()) {
-}
+Hardware::Hardware() : db_(cortex::db::Database::GetInstance().db()) {}
 
-Hardwares::Hardwares(SQLite::Database& db) : db_(db) {
-}
+Hardware::Hardware(SQLite::Database& db) : db_(db) {}
 
-Hardwares::~Hardwares() {}
+Hardware::~Hardware() {}
 
 cpp::result<std::vector<HardwareEntry>, std::string>
-Hardwares::LoadHardwareList() const {
+Hardware::LoadHardwareList() const {
   try {
     db_.exec("BEGIN TRANSACTION;");
     cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
@@ -21,7 +19,7 @@ Hardwares::LoadHardwareList() const {
     SQLite::Statement query(
         db_,
         "SELECT uuid, type, "
-        "hardware_id, software_id, activated FROM hardware");
+        "hardware_id, software_id, activated, priority FROM hardware");
 
     while (query.executeStep()) {
       HardwareEntry entry;
@@ -30,6 +28,7 @@ Hardwares::LoadHardwareList() const {
       entry.hardware_id = query.getColumn(2).getInt();
       entry.software_id = query.getColumn(3).getInt();
       entry.activated = query.getColumn(4).getInt();
+      entry.priority = query.getColumn(5).getInt();
       entries.push_back(entry);
     }
     return entries;
@@ -38,19 +37,20 @@ Hardwares::LoadHardwareList() const {
     return cpp::fail(e.what());
   }
 }
-cpp::result<bool, std::string> Hardwares::AddHardwareEntry(
+cpp::result<bool, std::string> Hardware::AddHardwareEntry(
     const HardwareEntry& new_entry) {
   try {
     SQLite::Statement insert(
         db_,
         "INSERT INTO hardware (uuid, type, "
-        "hardware_id, software_id, activated) VALUES (?, ?, "
-        "?, ?, ?)");
+        "hardware_id, software_id, activated, priority) VALUES (?, ?, "
+        "?, ?, ?, ?)");
     insert.bind(1, new_entry.uuid);
     insert.bind(2, new_entry.type);
     insert.bind(3, new_entry.hardware_id);
     insert.bind(4, new_entry.software_id);
     insert.bind(5, new_entry.activated);
+    insert.bind(6, new_entry.priority);
     insert.exec();
     CTL_INF("Inserted: " << new_entry.ToJsonString());
     return true;
@@ -59,17 +59,19 @@ cpp::result<bool, std::string> Hardwares::AddHardwareEntry(
     return cpp::fail(e.what());
   }
 }
-cpp::result<bool, std::string> Hardwares::UpdateHardwareEntry(
+cpp::result<bool, std::string> Hardware::UpdateHardwareEntry(
     const std::string& id, const HardwareEntry& updated_entry) {
   try {
-    SQLite::Statement upd(db_,
-                          "UPDATE hardware "
-                          "SET hardware_id = ?, software_id = ?, activated = ? "
-                          "WHERE uuid = ?");
+    SQLite::Statement upd(
+        db_,
+        "UPDATE hardware "
+        "SET hardware_id = ?, software_id = ?, activated = ?, priority = ? "
+        "WHERE uuid = ?");
     upd.bind(1, updated_entry.hardware_id);
     upd.bind(2, updated_entry.software_id);
     upd.bind(3, updated_entry.activated);
-    upd.bind(4, id);
+    upd.bind(4, updated_entry.priority);
+    upd.bind(5, id);
     if (upd.exec() == 1) {
       CTL_INF("Updated: " << updated_entry.ToJsonString());
       return true;
@@ -80,7 +82,7 @@ cpp::result<bool, std::string> Hardwares::UpdateHardwareEntry(
   }
 }
 
-cpp::result<bool, std::string> Hardwares::DeleteHardwareEntry(
+cpp::result<bool, std::string> Hardware::DeleteHardwareEntry(
     const std::string& id) {
   try {
     SQLite::Statement del(db_, "DELETE from hardware WHERE uuid = ?");
