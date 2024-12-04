@@ -702,6 +702,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
   config::YamlHandler yaml_handler;
 
   try {
+    constexpr const int kDefautlContextLength = 8192;
+    int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
     // Currently we don't support download vision models, so we need to bypass check
     if (!params_override.bypass_model_check()) {
@@ -732,7 +734,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
-      json_data["ctx_len"] = std::min(8192, mc.ctx_len);
+      json_data["ctx_len"] = std::min(kDefautlContextLength, mc.ctx_len);
+      max_model_context_length = mc.ctx_len;
     } else {
       bypass_stop_check_set_.insert(model_handle);
     }
@@ -754,12 +757,14 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     ASSIGN_IF_PRESENT(json_data, params_override, cache_enabled);
     ASSIGN_IF_PRESENT(json_data, params_override, ngl);
     ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
-    ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
     ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
     ASSIGN_IF_PRESENT(json_data, params_override, mmproj);
     ASSIGN_IF_PRESENT(json_data, params_override, model_path);
 #undef ASSIGN_IF_PRESENT
-
+    if (params_override.ctx_len) {
+      json_data["ctx_len"] =
+          std::min(params_override.ctx_len.value(), max_model_context_length);
+    }
     CTL_INF(json_data.toStyledString());
     auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
                                              json_data["ngl"].asInt(),
