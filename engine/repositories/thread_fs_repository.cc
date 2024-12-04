@@ -155,7 +155,7 @@ cpp::result<void, std::string> ThreadFsRepository::DeleteThread(
     try {
       std::filesystem::remove_all(path);
     } catch (const std::exception& e) {
-      return cpp::failure(std::string("Failed to delete thread: ") + e.what());
+      return cpp::fail(std::string("Failed to delete thread: ") + e.what());
     }
   }
 

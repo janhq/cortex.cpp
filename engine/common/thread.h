@@ -3,6 +3,7 @@
 #include <json/reader.h>
 #include <json/value.h>
 #include <json/writer.h>
+#include <optional>
 #include "common/thread_tool_resources.h"
 #include "common/variant_map.h"
 #include "json_serializable.h"
