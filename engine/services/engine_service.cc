@@ -656,7 +656,6 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
 }
 
 bool EngineService::IsEngineLoaded(const std::string& engine) {
-  std::lock_guard<std::mutex> lock(engines_mutex_);
   auto ne = NormalizeEngine(engine);
   return engines_.find(ne) != engines_.end();
 }
@@ -675,7 +674,7 @@ cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
 cpp::result<void, std::string> EngineService::LoadEngine(
     const std::string& engine_name) {
   auto ne = NormalizeEngine(engine_name);
-
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded");
     return {};
@@ -779,7 +778,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
           should_use_dll_search_path) {
 
         {
-          std::lock_guard<std::mutex> lock(engines_mutex_);
+
           // Remove llamacpp dll directory
           if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
             CTL_WRN("Could not remove dll directory: " << kLlamaRepo);
@@ -801,11 +800,8 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       }
     }
 #endif
-    {
-      std::lock_guard<std::mutex> lock(engines_mutex_);
-      engines_[ne].dl = std::make_unique<cortex_cpp::dylib>(
-          engine_dir_path.string(), "engine");
-    }
+    engines_[ne].dl =
+        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
 #if defined(__linux__)
     const char* name = "LD_LIBRARY_PATH";
     auto data = getenv(name);
@@ -826,48 +822,42 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
   } catch (const cortex_cpp::dylib::load_error& e) {
     CTL_ERR("Could not load engine: " << e.what());
-    {
-      std::lock_guard<std::mutex> lock(engines_mutex_);
-      engines_.erase(ne);
-    }
+    engines_.erase(ne);
     return cpp::fail("Could not load engine " + ne + ": " + e.what());
   }
 
-  {
-    std::lock_guard<std::mutex> lock(engines_mutex_);
-    auto func = engines_[ne].dl->get_function<EngineI*()>("get_engine");
-    engines_[ne].engine = func();
+  auto func = engines_[ne].dl->get_function<EngineI*()>("get_engine");
+  engines_[ne].engine = func();
 
-    auto& en = std::get<EngineI*>(engines_[ne].engine);
-    if (ne == kLlamaRepo) {  //fix for llamacpp engine first
-      auto config = file_manager_utils::GetCortexConfig();
-      if (en->IsSupported("SetFileLogger")) {
-        en->SetFileLogger(config.maxLogLines,
-                          (std::filesystem::path(config.logFolderPath) /
-                           std::filesystem::path(config.logLlamaCppPath))
-                              .string());
-      } else {
-        CTL_WRN("Method SetFileLogger is not supported yet");
-      }
-      if (en->IsSupported("SetLogLevel")) {
-        en->SetLogLevel(logging_utils_helper::global_log_level);
-      } else {
-        CTL_WRN("Method SetLogLevel is not supported yet");
-      }
+  auto& en = std::get<EngineI*>(engines_[ne].engine);
+  if (ne == kLlamaRepo) {  //fix for llamacpp engine first
+    auto config = file_manager_utils::GetCortexConfig();
+    if (en->IsSupported("SetFileLogger")) {
+      en->SetFileLogger(config.maxLogLines,
+                        (std::filesystem::path(config.logFolderPath) /
+                         std::filesystem::path(config.logLlamaCppPath))
+                            .string());
+    } else {
+      CTL_WRN("Method SetFileLogger is not supported yet");
     }
-    CTL_DBG("loaded engine: " << ne);
+    if (en->IsSupported("SetLogLevel")) {
+      en->SetLogLevel(logging_utils_helper::global_log_level);
+    } else {
+      CTL_WRN("Method SetLogLevel is not supported yet");
+    }
   }
+  CTL_DBG("loaded engine: " << ne);
   return {};
 }
 
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   {
     if (!IsEngineLoaded(ne)) {
       return cpp::fail("Engine " + ne + " is not loaded yet!");
     }
-    std::lock_guard<std::mutex> lock(engines_mutex_);
     if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
       delete std::get<EngineI*>(engines_[ne].engine);
     } else {
@@ -893,14 +883,12 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
 }
 
 std::vector<EngineV> EngineService::GetLoadedEngines() {
-  {
-    std::lock_guard<std::mutex> lock(engines_mutex_);
-    std::vector<EngineV> loaded_engines;
-    for (const auto& [key, value] : engines_) {
-      loaded_engines.push_back(value.engine);
-    }
-    return loaded_engines;
+  std::lock_guard<std::mutex> lock(engines_mutex_);
+  std::vector<EngineV> loaded_engines;
+  for (const auto& [key, value] : engines_) {
+    loaded_engines.push_back(value.engine);
   }
+  return loaded_engines;
 }
 
 cpp::result<github_release_utils::GitHubRelease, std::string>
@@ -1084,6 +1072,7 @@ std::string EngineService::DeleteEngine(int id) {
 
 cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     const std::string& engine_name) {
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (auto r = IsEngineReady(engine_name); r.has_error()) {
     return cpp::fail(r.error());
   }
@@ -1093,7 +1082,6 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
-    std::lock_guard<std::mutex> lock(engines_mutex_);
     if (engine_name == kOpenAiEngine) {
       engines_[engine_name].engine = new remote_engine::OpenAiEngine();
     } else {
@@ -1102,7 +1090,6 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
 
     CTL_INF("Loaded engine: " << engine_name);
   }
-  std::lock_guard<std::mutex> lock(engines_mutex_);
   auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
   auto res = e->GetRemoteModels();
   if (!res["error"].isNull()) {
