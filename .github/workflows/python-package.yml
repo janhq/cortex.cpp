@@ -1,0 +1,67 @@
+name: Build and Package Python Library
+
+on:
+  push:
+    branches: [ feat/python-package-ci ]
+  workflow_dispatch:
+    inputs:
+      model_dir:
+        description: "Path to model directory in janhq/models repo"
+        required: true
+
+
+env:
+  MODEL_DIR: models/whispervq # ${{ inputs.model_dir }}
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-selfhosted-12"
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-silicon"
+          - os: "windows"
+            name: "amd64"
+            runs-on: "windows-cuda-12-0"
+    steps:
+      - name: Clone
+        id: checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          repository: janhq/models
+          ref: "feat/ci-python-models"
+
+      - name: use python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: prepare python package windows
+        if : runner.os == 'windows'
+        run: |
+            where python
+
+      - name: Install dependencies Windows and Linux
+        if: runner.os == 'windows' || runner.os == 'linux'
+        run: |
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -r ${{MODEL_DIR}}/requirements.cuda.txt
+    
+      - name: Install dependencies Mac
+        if: runner.os == 'mac'
+        run: |
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -r ${{MODEL_DIR}}/requirements.txt
+
+      
