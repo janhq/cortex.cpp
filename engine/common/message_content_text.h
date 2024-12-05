@@ -3,7 +3,7 @@
 #include "common/message_content.h"
 #include "utils/logging_utils.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 
 struct Annotation : JsonSerializable {
   std::string type;
@@ -239,4 +239,4 @@ struct TextContent : Content {
     }
   }
 };
-}  // namespace ThreadMessage
+}  // namespace OpenAi

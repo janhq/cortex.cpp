@@ -3,7 +3,7 @@
 #include "common/json_serializable.h"
 
 namespace api_response {
-struct DeleteMessageResponse : JsonSerializable {
+struct DeleteSuccessResponse : JsonSerializable {
   std::string id;
   std::string object;
   bool deleted;
