@@ -7,6 +7,7 @@
 #include "models.h"
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/http_util.h"
 #include "utils/logging_utils.h"
@@ -176,15 +177,29 @@ void Models::ListModel(
                 fs::path(model_entry.path_to_model_yaml))
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
-        Json::Value obj = model_config.ToJson();
-        obj["id"] = model_entry.model;
-        obj["model"] = model_entry.model;
-        auto es = model_service_->GetEstimation(model_entry.model);
-        if (es.has_value()) {
-          obj["recommendation"] = hardware::ToJson(es.value());
+
+        if (!remote_engine::IsRemoteEngine(model_config.engine)) {
+          Json::Value obj = model_config.ToJson();
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          auto es = model_service_->GetEstimation(model_entry.model);
+          if (es.has_value()) {
+            obj["recommendation"] = hardware::ToJson(es.value());
+          }
+          data.append(std::move(obj));
+          yaml_handler.Reset();
+        } else {
+          config::RemoteModelConfig remote_model_config;
+          remote_model_config.LoadFromYamlFile(
+              fmu::ToAbsoluteCortexDataPath(
+                  fs::path(model_entry.path_to_model_yaml))
+                  .string());
+          Json::Value obj = remote_model_config.ToJson();
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          data.append(std::move(obj));
         }
-        data.append(std::move(obj));
-        yaml_handler.Reset();
       } catch (const std::exception& e) {
         LOG_ERROR << "Failed to load yaml file for model: "
                   << model_entry.path_to_model_yaml << ", error: " << e.what();
@@ -232,16 +247,34 @@ void Models::GetModel(const HttpRequestPtr& req,
       callback(resp);
       return;
     }
+
     yaml_handler.ModelConfigFromFile(
         fmu::ToAbsoluteCortexDataPath(
             fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto model_config = yaml_handler.GetModelConfig();
+    if (model_config.engine == kOnnxEngine ||
+        model_config.engine == kLlamaEngine ||
+        model_config.engine == kTrtLlmEngine) {
+      auto ret = model_config.ToJsonString();
+      auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
+      resp->setStatusCode(drogon::k200OK);
+      callback(resp);
+    } else {
+      config::RemoteModelConfig remote_model_config;
+      remote_model_config.LoadFromYamlFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      ret = remote_model_config.ToJson();
+      ret["id"] = remote_model_config.model;
+      ret["object"] = "model";
+      ret["result"] = "OK";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+    }
 
-    auto ret = model_config.ToJsonString();
-    auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
-    resp->setStatusCode(drogon::k200OK);
-    callback(resp);
   } catch (const std::exception& e) {
     std::string message =
         "Fail to get model information with ID '" + model_id + "': " + e.what();
@@ -289,11 +322,23 @@ void Models::UpdateModel(const HttpRequestPtr& req,
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     config::ModelConfig model_config = yaml_handler.GetModelConfig();
-    model_config.FromJson(json_body);
-    yaml_handler.UpdateModelConfig(model_config);
-    yaml_handler.WriteYamlFile(yaml_fp.string());
-    std::string message = "Successfully update model ID '" + model_id +
-                          "': " + json_body.toStyledString();
+    std::string message;
+    if (model_config.engine == kOnnxEngine ||
+        model_config.engine == kLlamaEngine ||
+        model_config.engine == kTrtLlmEngine) {
+      model_config.FromJson(json_body);
+      yaml_handler.UpdateModelConfig(model_config);
+      yaml_handler.WriteYamlFile(yaml_fp.string());
+      message = "Successfully update model ID '" + model_id +
+                "': " + json_body.toStyledString();
+    } else {
+      config::RemoteModelConfig remote_model_config;
+      remote_model_config.LoadFromYamlFile(yaml_fp.string());
+      remote_model_config.LoadFromJson(json_body);
+      remote_model_config.SaveToYamlFile(yaml_fp.string());
+      message = "Successfully update model ID '" + model_id +
+                "': " + json_body.toStyledString();
+    }
     LOG_INFO << message;
     Json::Value ret;
     ret["result"] = "Updated successfully!";
@@ -344,8 +389,10 @@ void Models::ImportModel(
     // Use relative path for model_yaml_path. In case of import, we use absolute path for model
     auto yaml_rel_path =
         fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
-    cortex::db::ModelEntry model_entry{modelHandle, "local", "imported",
-                                       yaml_rel_path.string(), modelHandle};
+    cortex::db::ModelEntry model_entry{
+        modelHandle, "",      "",         yaml_rel_path.string(),
+        modelHandle, "local", "imported", cortex::db::ModelStatus::Downloaded,
+        ""};
 
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
@@ -555,6 +602,125 @@ void Models::GetModelStatus(
     ret["message"] = "Model is running";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::GetRemoteModels(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& engine_id) {
+  if (!remote_engine::IsRemoteEngine(engine_id)) {
+    Json::Value ret;
+    ret["message"] = "Not a remote engine: " + engine_id;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto result = engine_service_->GetRemoteModels(engine_id);
+
+  if (result.has_error()) {
+    Json::Value ret;
+    ret["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+  } else {
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(result.value());
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::AddRemoteModel(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+  if (!http_util::HasFieldInReq(req, callback, "model") ||
+      !http_util::HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto engine_name = (*(req->getJsonObject())).get("engine", "").asString();
+  /* To do: uncomment when remote engine is ready
+  
+  auto engine_validate = engine_service_->IsEngineReady(engine_name);
+  if (engine_validate.has_error()) {
+    Json::Value ret;
+    ret["message"] = engine_validate.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  if (!engine_validate.value()) {
+    Json::Value ret;
+    ret["message"] = "Engine is not ready! Please install first!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(drogon::k400BadRequest);
+    callback(resp);
+    return;
+  }
+  */
+  config::RemoteModelConfig model_config;
+  model_config.LoadFromJson(*(req->getJsonObject()));
+  cortex::db::Models modellist_utils_obj;
+  std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
+                                 std::filesystem::path("remote") /
+                                 std::filesystem::path(model_handle + ".yml"))
+                                    .string();
+  try {
+    // Use relative path for model_yaml_path. In case of import, we use absolute path for model
+    auto yaml_rel_path =
+        fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
+    // TODO: remove hardcode "openai" when engine is finish
+    cortex::db::ModelEntry model_entry{
+        model_handle, "",       "",         yaml_rel_path.string(),
+        model_handle, "remote", "imported", cortex::db::ModelStatus::Remote,
+        "openai"};
+    std::filesystem::create_directories(
+        std::filesystem::path(model_yaml_path).parent_path());
+    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
+      model_config.SaveToYamlFile(model_yaml_path);
+      std::string success_message = "Model is imported successfully!";
+      LOG_INFO << success_message;
+      Json::Value ret;
+      ret["result"] = "OK";
+      ret["modelHandle"] = model_handle;
+      ret["message"] = success_message;
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+
+    } else {
+      std::string error_message = "Fail to import model, model_id '" +
+                                  model_handle + "' already exists!";
+      LOG_ERROR << error_message;
+      Json::Value ret;
+      ret["result"] = "Import failed!";
+      ret["modelHandle"] = model_handle;
+      ret["message"] = error_message;
+
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+    }
+  } catch (const std::exception& e) {
+    std::string error_message =
+        "Error while adding Remote model with model_id '" + model_handle +
+        "': " + e.what();
+    LOG_ERROR << error_message;
+    Json::Value ret;
+    ret["result"] = "Add failed!";
+    ret["modelHandle"] = model_handle;
+    ret["message"] = error_message;
+
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
     callback(resp);
   }
 }
