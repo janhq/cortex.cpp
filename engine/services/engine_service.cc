@@ -864,10 +864,10 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
   {
-    std::lock_guard<std::mutex> lock(engines_mutex_);
     if (!IsEngineLoaded(ne)) {
       return cpp::fail("Engine " + ne + " is not loaded yet!");
     }
+    std::lock_guard<std::mutex> lock(engines_mutex_);
     if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
       delete std::get<EngineI*>(engines_[ne].engine);
     } else {
@@ -1093,7 +1093,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
-
+    std::lock_guard<std::mutex> lock(engines_mutex_);
     if (engine_name == kOpenAiEngine) {
       engines_[engine_name].engine = new remote_engine::OpenAiEngine();
     } else {
@@ -1102,7 +1102,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
 
     CTL_INF("Loaded engine: " << engine_name);
   }
-
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
   auto res = e->GetRemoteModels();
   if (!res["error"].isNull()) {
