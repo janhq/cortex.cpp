@@ -224,15 +224,15 @@ bool HardwareService::SetActivateHardwareConfig(
     }
     return INT_MAX;
   };
-  
+
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
     bool need_update = false;
-    std::vector<int> activated_ids;
+    std::vector<std::pair<int, int>> activated_ids;
     // Check if need to update
     for (auto const& e : res.value()) {
       if (e.activated) {
-        activated_ids.push_back(e.software_id);
+        activated_ids.push_back(std::pair(e.software_id, e.priority));
       }
     }
     std::sort(activated_ids.begin(), activated_ids.end());
@@ -241,8 +241,11 @@ bool HardwareService::SetActivateHardwareConfig(
       need_update = true;
     } else {
       for (size_t i = 0; i < ahc_gpus.size(); i++) {
-        if (ahc_gpus[i] != activated_ids[i])
+        // if activated id or priority changes
+        if (ahc_gpus[i] != activated_ids[i].first ||
+            i != activated_ids[i].second)
           need_update = true;
+        break;
       }
     }
 
