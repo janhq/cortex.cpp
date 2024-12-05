@@ -3,11 +3,26 @@
 #include <filesystem>
 #include <shared_mutex>
 #include <unordered_map>
+#include "common/assistant.h"
 #include "common/repository/thread_repository.h"
 #include "common/thread.h"
 #include "utils/logging_utils.h"
 
-class ThreadFsRepository : public ThreadRepository {
+// this interface is for backward supporting Jan
+class AssistantBackwardCompatibleSupport {
+ public:
+  virtual cpp::result<OpenAi::JanAssistant, std::string> LoadAssistant(
+      const std::string& thread_id) const = 0;
+
+  virtual cpp::result<OpenAi::JanAssistant, std::string> ModifyAssistant(
+      const std::string& thread_id, const OpenAi::JanAssistant& assistant) = 0;
+
+  virtual cpp::result<void, std::string> CreateAssistant(
+      const std::string& thread_id, const OpenAi::JanAssistant& assistant) = 0;
+};
+
+class ThreadFsRepository : public ThreadRepository,
+                           public AssistantBackwardCompatibleSupport {
  private:
   constexpr static auto kThreadFileName = "thread.json";
   constexpr static auto kThreadContainerFolderName = "threads";
@@ -57,6 +72,18 @@ class ThreadFsRepository : public ThreadRepository {
 
   cpp::result<void, std::string> DeleteThread(
       const std::string& thread_id) override;
+
+  // for supporting Jan
+  cpp::result<OpenAi::JanAssistant, std::string> LoadAssistant(
+      const std::string& thread_id) const override;
+
+  cpp::result<OpenAi::JanAssistant, std::string> ModifyAssistant(
+      const std::string& thread_id,
+      const OpenAi::JanAssistant& assistant) override;
+
+  cpp::result<void, std::string> CreateAssistant(
+      const std::string& thread_id,
+      const OpenAi::JanAssistant& assistant) override;
 
   ~ThreadFsRepository() = default;
 };

@@ -1,6 +1,8 @@
 #include "thread_fs_repository.h"
 #include <fstream>
 #include <mutex>
+#include "common/assistant.h"
+#include "utils/result.hpp"
 
 cpp::result<std::vector<OpenAi::Thread>, std::string>
 ThreadFsRepository::ListThreads(uint8_t limit, const std::string& order,
@@ -21,7 +23,6 @@ ThreadFsRepository::ListThreads(uint8_t limit, const std::string& order,
         continue;
 
       auto current_thread_id = entry.path().filename().string();
-      CTL_INF("ListThreads: Found thread: " + current_thread_id);
       std::shared_lock thread_lock(GrabThreadMutex(current_thread_id));
 
       auto thread_result = LoadThread(current_thread_id);
@@ -163,4 +164,86 @@ cpp::result<void, std::string> ThreadFsRepository::DeleteThread(
   std::unique_lock map_lock(map_mutex_);
   thread_mutexes_.erase(thread_id);
   return {};
+}
+
+cpp::result<OpenAi::JanAssistant, std::string>
+ThreadFsRepository::LoadAssistant(const std::string& thread_id) const {
+  auto path = GetThreadPath(thread_id) / kThreadFileName;
+  if (!std::filesystem::exists(path)) {
+    return cpp::fail("Path does not exist: " + path.string());
+  }
+
+  std::shared_lock thread_lock(GrabThreadMutex(thread_id));
+  try {
+    std::ifstream file(path);
+    if (!file.is_open()) {
+      return cpp::fail("Failed to open file: " + path.string());
+    }
+
+    Json::Value root;
+    Json::CharReaderBuilder builder;
+    JSONCPP_STRING errs;
+
+    if (!parseFromStream(builder, file, &root, &errs)) {
+      return cpp::fail("Failed to parse JSON: " + errs);
+    }
+
+    Json::Value assistants = root["assistants"];
+    if (!assistants.isArray()) {
+      return cpp::fail("Assistants field is not an array");
+    }
+
+    if (assistants.empty()) {
+      return cpp::fail("Assistant not found in thread: " + thread_id);
+    }
+
+    return OpenAi::JanAssistant::FromJson(std::move(assistants[0]));
+  } catch (const std::exception& e) {
+    return cpp::fail("Failed to load assistant: " + std::string(e.what()));
+  }
+}
+
+cpp::result<OpenAi::JanAssistant, std::string>
+ThreadFsRepository::ModifyAssistant(const std::string& thread_id,
+                                    const OpenAi::JanAssistant& assistant) {
+  std::unique_lock lock(GrabThreadMutex(thread_id));
+
+  // Load the existing thread
+  auto thread_result = LoadThread(thread_id);
+  if (!thread_result.has_value()) {
+    return cpp::fail("Failed to load thread: " + thread_result.error());
+  }
+
+  auto& thread = thread_result.value();
+  if (thread.ToJson()
+          ->get("assistants", Json::Value(Json::arrayValue))
+          .empty()) {
+    return cpp::fail("No assistants found in thread: " + thread_id);
+  }
+
+  thread.assistants = {assistant};
+
+  auto save_result = SaveThread(thread);
+  if (!save_result.has_value()) {
+    return cpp::fail("Failed to save thread: " + save_result.error());
+  }
+
+  return assistant;
+}
+
+cpp::result<void, std::string> ThreadFsRepository::CreateAssistant(
+    const std::string& thread_id, const OpenAi::JanAssistant& assistant) {
+  std::unique_lock lock(GrabThreadMutex(thread_id));
+
+  // Load the existing thread
+  auto thread_result = LoadThread(thread_id);
+  if (!thread_result.has_value()) {
+    return cpp::fail("Failed to load thread: " + thread_result.error());
+  }
+
+  auto& thread = thread_result.value();
+  thread.assistants = {assistant};
+
+  // Save the modified thread
+  return SaveThread(thread);
 }
