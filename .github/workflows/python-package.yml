@@ -51,8 +51,8 @@ jobs:
         if : runner.os == 'windows'
         shell: cmd
         run: |
-            where python
-            for /f %a in ('where python') do set PYTHON_PATH=%a
+            where python3
+            for /f %a in ('where python3') do set PYTHON_PATH=%a
             echo %PYTHON_PATH%
             
       - name: prepare python package windows
