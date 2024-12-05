@@ -34,9 +34,9 @@ jobs:
           - os: "mac"
             name: "arm64"
             runs-on: "macos-silicon"
-          - os: "windows"
-            name: "amd64"
-            runs-on: "windows-cuda-12-0"
+        #   - os: "windows"
+        #     name: "amd64"
+        #     runs-on: "windows-cuda-12-0"
     steps:
       - name: Clone
         id: checkout
@@ -46,35 +46,36 @@ jobs:
           repository: janhq/models
           ref: "feat/ci-python-models"
 
-      - name: Install Miniconda on Linux
-        if: runner.os == 'Linux'
-        run: |
-            wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-            bash miniconda.sh -b -p $HOME/miniconda
-            echo "$HOME/miniconda/bin" >> $GITHUB_PATH
+    #   - name: Install Miniconda on Linux
+    #     if: runner.os == 'Linux'
+    #     run: |
+    #         wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    #         bash miniconda.sh -b -p $HOME/miniconda
+    #         echo "$HOME/miniconda/bin" >> $GITHUB_PATH
     
-      - name: Install Miniconda on macOS
-        if: runner.os == 'macOS'
-        run: |
-            if [ "$(uname -m)" = "arm64" ]; then
-              echo "Running on macOS ARM"
-              MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
-            else
-              echo "Running on macOS Intel"
-              MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
-            fi
-            echo "Downloading Miniconda from $MINICONDA_URL"
-            curl -L $MINICONDA_URL -o miniconda.sh
-            bash miniconda.sh -b -p $HOME/miniconda
-            echo "$HOME/miniconda/bin" >> $GITHUB_PATH
+    #   - name: Install Miniconda on macOS
+    #     if: runner.os == 'macOS'
+    #     run: |
+    #         if [ "$(uname -m)" = "arm64" ]; then
+    #           echo "Running on macOS ARM"
+    #           MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
+    #         else
+    #           echo "Running on macOS Intel"
+    #           MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+    #         fi
+    #         echo "Downloading Miniconda from $MINICONDA_URL"
+    #         curl -L $MINICONDA_URL -o miniconda.sh
+    #         bash miniconda.sh -b -p $HOME/miniconda
+    #         echo "$HOME/miniconda/bin" >> $GITHUB_PATH
     
-      - name: Install Miniconda on Windows
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: |
-            curl -o miniconda.exe https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
-            start /wait "" miniconda.exe /InstallationType=JustMe /AddToPath=1 /RegisterPython=0 /S /D=Miniconda
-            echo Miniconda >> %GITHUB_PATH%
+    #   - name: Install Miniconda on Windows
+    #     if: runner.os == 'Windows'
+    #     shell: pwsh
+    #     run: |
+    #         $minicondaUrl = 'https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe'
+    #         Invoke-WebRequest -Uri $minicondaUrl -OutFile miniconda.exe
+    #         Start-Process -FilePath miniconda.exe -ArgumentList '/InstallationType=JustMe', '/AddToPath=1', '/RegisterPython=0', '/S', ('/D=Miniconda3') -Wait
+    #         echo "$env:USERPROFILE\\Miniconda3" >> $GITHUB_PATH
       - name: Install dependencies Windows
         if: runner.os == 'windows'
         run: |
