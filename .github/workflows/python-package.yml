@@ -128,9 +128,9 @@ jobs:
             echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
 
-    #   - name: Upload Artifact
-    #     if : runner.os == 'macOS'
-    #     uses: actions/upload-artifact@v4
-    #     with:
-    #         name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
-    #         path: /Library/Frameworks/Python.framework/Versions/3.11
+      - name: Upload Artifact
+        if : runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+            name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
+            path: ${{env.PYTHON_FOLDER}}
