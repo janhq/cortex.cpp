@@ -192,7 +192,9 @@ inline cpp::result<bool, std::string> MigrateDBDown(SQLite::Database& db) {
     }
 
     // engines
-    db.exec("DROP TABLE IF EXISTS engines;");
+    {
+      // do nothing
+    }
     // CTL_INF("Migration down completed successfully.");
     return true;
   } catch (const std::exception& e) {
