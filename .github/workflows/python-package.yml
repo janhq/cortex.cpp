@@ -89,6 +89,7 @@ jobs:
       - name: Install dependencies Linux
         if: runner.os == 'linux'
         run: |
+            export PATH=$PATH:$HOME/miniconda/condabin/ 
             conda create -y -n ${{env.MODEL_NAME}} python=3.11
             conda init
             conda activate ${{env.MODEL_NAME}}
@@ -98,6 +99,7 @@ jobs:
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
         run: |
+            export PATH=$PATH:$HOME/miniconda/condabin/ 
             conda create -y -n ${{env.MODEL_NAME}} python=3.11
             conda init
             conda activate ${{env.MODEL_NAME}}
