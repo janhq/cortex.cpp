@@ -56,12 +56,12 @@ jobs:
         if: runner.os == 'windows' || runner.os == 'linux'
         run: |
             python3 -m pip install --upgrade pip
-            python3 -m pip install -r ${{MODEL_DIR}}/requirements.cuda.txt
+            python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
     
       - name: Install dependencies Mac
         if: runner.os == 'mac'
         run: |
             python3 -m pip install --upgrade pip
-            python3 -m pip install -r ${{MODEL_DIR}}/requirements.txt
+            python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
 
       
