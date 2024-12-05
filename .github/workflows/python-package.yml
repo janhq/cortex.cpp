@@ -51,17 +51,18 @@ jobs:
         with:
           python-version: "3.11"
 
-    #   - name: Install dependencies Windows and Linux
-    #     if: runner.os == 'windows' || runner.os == 'linux'
-    #     run: |
-    #         python3 -m pip install --upgrade pip
-    #         python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
+      - name: Install dependencies Windows and Linux
+        if: runner.os == 'windows' || runner.os == 'linux'
+        run: |
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
     
-    #   - name: Install dependencies Mac
-    #     if: runner.os == 'macOS'
-    #     run: |
-    #         python3 -m pip install --upgrade pip
-    #         python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
+      - name: Install dependencies Mac
+        if: runner.os == 'macOS'
+        run: |
+            python3 -m pip install --upgrade pip
+            python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
+
       - name: prepare python package windows
         if : runner.os == 'windows'
         shell: cmd
@@ -79,7 +80,8 @@ jobs:
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
 
       - name: Upload Artifact
+        if : runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
-            path: ${{env.PYTHON_FOLDER}}
+            path: /Library/Frameworks/Python.framework/Versions/3.11
