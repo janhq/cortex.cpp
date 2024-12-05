@@ -24,14 +24,26 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     return cpp::fail(std::make_pair(stt, res));
   }
 
-  auto engine = std::get<EngineI*>(engine_result.value());
-  engine->HandleChatCompletion(
-      json_body, [q, tool_choice](Json::Value status, Json::Value res) {
-        if (!tool_choice.isNull()) {
-          res["tool_choice"] = tool_choice;
-        }
-        q->push(std::make_pair(status, res));
-      });
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->HandleChatCompletion(
+            json_body, [q, tool_choice](Json::Value status, Json::Value res) {
+              if (!tool_choice.isNull()) {
+                res["tool_choice"] = tool_choice;
+              }
+              q->push(std::make_pair(status, res));
+            });
+  } else {
+    std::get<RemoteEngineI*>(engine_result.value())
+        ->HandleChatCompletion(
+            json_body, [q, tool_choice](Json::Value status, Json::Value res) {
+              if (!tool_choice.isNull()) {
+                res["tool_choice"] = tool_choice;
+              }
+              q->push(std::make_pair(status, res));
+            });
+  }
+
   return {};
 }
 
@@ -53,10 +65,18 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
-  auto engine = std::get<EngineI*>(engine_result.value());
-  engine->HandleEmbedding(json_body, [q](Json::Value status, Json::Value res) {
-    q->push(std::make_pair(status, res));
-  });
+
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->HandleEmbedding(json_body, [q](Json::Value status, Json::Value res) {
+          q->push(std::make_pair(status, res));
+        });
+  } else {
+    std::get<RemoteEngineI*>(engine_result.value())
+        ->HandleEmbedding(json_body, [q](Json::Value status, Json::Value res) {
+          q->push(std::make_pair(status, res));
+        });
+  }
   return {};
 }
 
@@ -83,11 +103,20 @@ InferResult InferenceService::LoadModel(
 
   // might need mutex here
   auto engine_result = engine_service_->GetLoadedEngine(engine_type);
-  auto engine = std::get<EngineI*>(engine_result.value());
-  engine->LoadModel(json_body, [&stt, &r](Json::Value status, Json::Value res) {
-    stt = status;
-    r = res;
-  });
+
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->LoadModel(json_body, [&stt, &r](Json::Value status, Json::Value res) {
+          stt = status;
+          r = res;
+        });
+  } else {
+    std::get<RemoteEngineI*>(engine_result.value())
+        ->LoadModel(json_body, [&stt, &r](Json::Value status, Json::Value res) {
+          stt = status;
+          r = res;
+        });
+  }
   return std::make_pair(stt, r);
 }
 
@@ -110,12 +139,22 @@ InferResult InferenceService::UnloadModel(const std::string& engine_name,
   json_body["model"] = model_id;
 
   LOG_TRACE << "Start unload model";
-  auto engine = std::get<EngineI*>(engine_result.value());
-  engine->UnloadModel(std::make_shared<Json::Value>(json_body),
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->UnloadModel(std::make_shared<Json::Value>(json_body),
                       [&r, &stt](Json::Value status, Json::Value res) {
                         stt = status;
                         r = res;
                       });
+  } else {
+    std::get<RemoteEngineI*>(engine_result.value())
+        ->UnloadModel(std::make_shared<Json::Value>(json_body),
+                      [&r, &stt](Json::Value status, Json::Value res) {
+                        stt = status;
+                        r = res;
+                      });
+  }
+
   return std::make_pair(stt, r);
 }
 
@@ -141,12 +180,23 @@ InferResult InferenceService::GetModelStatus(
   }
 
   LOG_TRACE << "Start to get model status";
-  auto engine = std::get<EngineI*>(engine_result.value());
-  engine->GetModelStatus(json_body,
+
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->GetModelStatus(json_body,
                          [&stt, &r](Json::Value status, Json::Value res) {
                            stt = status;
                            r = res;
                          });
+  } else {
+    std::get<RemoteEngineI*>(engine_result.value())
+        ->GetModelStatus(json_body,
+                         [&stt, &r](Json::Value status, Json::Value res) {
+                           stt = status;
+                           r = res;
+                         });
+  }
+
   return std::make_pair(stt, r);
 }
 

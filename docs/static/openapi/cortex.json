@@ -512,6 +512,73 @@
         }
       }
     },
+    "/v1/models/add": {
+      "post": {
+        "operationId": "ModelsController_addModel",
+        "summary": "Add a remote model",
+        "description": "Add a new remote model configuration to the system.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddModelRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "model": {
+                      "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "string"
+                        },
+                        "engine": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "message": "Model added successfully!",
+                  "model": {
+                    "model": "claude-3-5-sonnet-20241022",
+                    "engine": "anthropic",
+                    "version": "2023-06-01"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Pulling Models"]
+      }
+    },
     "/v1/models": {
       "get": {
         "operationId": "ModelsController_findAll",
@@ -1417,7 +1484,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -1439,6 +1506,31 @@
                     "type": "string",
                     "description": "The variant of the engine to install (optional)",
                     "example": "mac-arm64"
+                  },
+                  "type": {
+                    "type": "string",
+                    "description": "The type of connection, remote or local",
+                    "example": "remote"
+                  },
+                  "url": {
+                    "type": "string",
+                    "description": "The URL for the API endpoint for remote engine",
+                    "example": "https://api.openai.com"
+                  },
+                  "api_key": {
+                    "type": "string",
+                    "description": "The API key for authentication for remote engine",
+                    "example": ""
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "get_models_url": {
+                      "type": "string",
+                      "description": "The URL to get models",
+                      "example": "https://api.openai.com/v1/models"
+                      }
+                    }
                   }
                 }
               }
@@ -1475,7 +1567,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -1690,7 +1782,7 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
               "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
@@ -3636,6 +3728,109 @@
           }
         }
       },
+      "AddModelRequest": {
+        "type": "object",
+        "required": ["model", "engine", "version", "inference_params", "TransformReq", "TransformResp", "metadata"],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "The identifier of the model."
+          },
+          "api_key_template": {
+            "type": "string",
+            "description": "Template for the API key header."
+          },
+          "engine": {
+            "type": "string",
+            "description": "The engine used for the model."
+          },
+          "version": {
+            "type": "string",
+            "description": "The version of the model."
+          },
+          "inference_params": {
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number"
+              },
+              "top_p": {
+                "type": "number"
+              },
+              "frequency_penalty": {
+                "type": "number"
+              },
+              "presence_penalty": {
+                "type": "number"
+              },
+              "max_tokens": {
+                "type": "integer"
+              },
+              "stream": {
+                "type": "boolean"
+              }
+            }
+          },
+          "TransformReq": {
+            "type": "object",
+            "properties": {
+              "get_models": {
+                "type": "object"
+              },
+              "chat_completions": {
+                "type": "object",
+                  "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "template": {
+                    "type": "string"
+                  }
+                }
+              },
+              "embeddings": {
+                "type": "object"
+              }
+            }
+          },
+          "TransformResp": {
+            "type": "object",
+            "properties": {
+              "chat_completions": {
+                "type": "object",
+                "properties": {
+                  "template": {
+                    "type": "string"
+                  }
+                }
+              },
+              "embeddings": {
+                "type": "object"
+              }
+            }
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "author": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "end_point": {
+                "type": "string"
+              },
+              "logo": {
+                "type": "string"
+              },
+              "api_key_url": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
       "CreateModelDto": {
         "type": "object",
         "properties": {
@@ -4305,6 +4500,37 @@
             "type": "integer",
             "description": "Number of GPU layers.",
             "example": 33
+          },
+          "api_key_template": {
+            "type": "string",
+            "description": "Template for the API key header."
+          },
+          "version": {
+            "type": "string",
+            "description": "The version of the model."
+          },
+          "inference_params": {
+            "type": "object",
+            "properties": {
+              "temperature": {
+                "type": "number"
+              },
+              "top_p": {
+                "type": "number"
+              },
+              "frequency_penalty": {
+                "type": "number"
+              },
+              "presence_penalty": {
+                "type": "number"
+              },
+              "max_tokens": {
+                "type": "integer"
+              },
+              "stream": {
+                "type": "boolean"
+              }
+            }
           }
         }
       },

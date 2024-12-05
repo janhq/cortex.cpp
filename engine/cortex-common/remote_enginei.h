@@ -1,15 +1,16 @@
 #pragma once
 
+#pragma once
+
 #include <functional>
 #include <memory>
 
 #include "json/value.h"
 #include "trantor/utils/Logger.h"
-class EngineI {
+class RemoteEngineI {
  public:
-  virtual ~EngineI() {}
+  virtual ~RemoteEngineI() {}
 
-  // cortex.llamacpp interface
   virtual void HandleChatCompletion(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
@@ -26,17 +27,11 @@ class EngineI {
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
-  // For backward compatible checking
-  virtual bool IsSupported(const std::string& f) = 0;
-
   // Get list of running models
   virtual void GetModels(
       std::shared_ptr<Json::Value> jsonBody,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
-  virtual bool SetFileLogger(int max_log_lines,
-                             const std::string& log_path) = 0;
-  virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
-
+  // Get available remote models
   virtual Json::Value GetRemoteModels() = 0;
 };
