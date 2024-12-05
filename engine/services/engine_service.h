@@ -112,8 +112,6 @@ class EngineService : public EngineServiceI {
   cpp::result<std::vector<EngineVariantResponse>, std::string>
   GetInstalledEngineVariants(const std::string& engine) const;
 
-  bool IsEngineLoaded(const std::string& engine);
-
   cpp::result<EngineV, std::string> GetLoadedEngine(
       const std::string& engine_name);
 
@@ -152,6 +150,8 @@ class EngineService : public EngineServiceI {
       const std::string& engine_name);
 
  private:
+  bool IsEngineLoaded(const std::string& engine);
+
   cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
