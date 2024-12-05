@@ -212,39 +212,88 @@ void Messages::ModifyMessage(
   }
 
   std::optional<Cortex::VariantMap> metadata = std::nullopt;
-  if (auto it = json_body->get("metadata", ""); it) {
-    if (it.empty()) {
-      Json::Value ret;
-      ret["message"] = "Metadata can't be empty";
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-      return;
+  if (json_body->isMember("metadata")) {
+    if (auto it = json_body->get("metadata", ""); it) {
+      if (it.empty()) {
+        Json::Value ret;
+        ret["message"] = "Metadata can't be empty";
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+      auto convert_res = Cortex::ConvertJsonValueToMap(it);
+      if (convert_res.has_error()) {
+        Json::Value ret;
+        ret["message"] =
+            "Failed to convert metadata to map: " + convert_res.error();
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+      metadata = convert_res.value();
     }
-    auto convert_res = Cortex::ConvertJsonValueToMap(it);
-    if (convert_res.has_error()) {
-      Json::Value ret;
-      ret["message"] =
-          "Failed to convert metadata to map: " + convert_res.error();
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-      return;
-    }
-    metadata = convert_res.value();
   }
 
-  if (!metadata.has_value()) {
+  std::optional<
+      std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>>
+      content = std::nullopt;
+
+  if (json_body->get("content", "").isArray()) {
+    auto result = OpenAi::ParseContents(json_body->get("content", ""));
+    if (result.has_error()) {
+      Json::Value ret;
+      ret["message"] = "Failed to parse content array: " + result.error();
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    if (result.value().empty()) {
+      Json::Value ret;
+      ret["message"] = "Content array cannot be empty";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    content = std::move(result.value());
+  } else if (json_body->get("content", "").isString()) {
+    auto content_str = json_body->get("content", "").asString();
+    string_utils::Trim(content_str);
+    if (content_str.empty()) {
+      Json::Value ret;
+      ret["message"] = "Content can't be empty";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    content = content_str;
+  } else if (!json_body->get("content", "").empty()) {
     Json::Value ret;
-    ret["message"] = "Metadata is mandatory";
+    ret["message"] = "Content must be either a string or an array";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k400BadRequest);
     callback(resp);
     return;
   }
 
-  auto res =
-      message_service_->ModifyMessage(thread_id, message_id, metadata.value());
+  if (!metadata.has_value() && !content.has_value()) {
+    Json::Value ret;
+    ret["message"] = "Nothing to update";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto res = message_service_->ModifyMessage(thread_id, message_id, metadata,
+                                             std::move(content));
   if (res.has_error()) {
     Json::Value ret;
     ret["message"] = "Failed to modify message: " + res.error();

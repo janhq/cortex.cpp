@@ -8,29 +8,58 @@ cpp::result<std::vector<OpenAi::Thread>, std::string>
 ThreadFsRepository::ListThreads(uint8_t limit, const std::string& order,
                                 const std::string& after,
                                 const std::string& before) const {
-  CTL_INF("ListThreads: limit=" + std::to_string(limit) + ", order=" + order +
-          ", after=" + after + ", before=" + before);
   std::vector<OpenAi::Thread> threads;
 
   try {
     auto thread_container_path = data_folder_path_ / kThreadContainerFolderName;
+    std::vector<OpenAi::Thread> all_threads;
+
+    // First load all valid threads
     for (const auto& entry :
          std::filesystem::directory_iterator(thread_container_path)) {
       if (!entry.is_directory())
         continue;
 
-      if (!std::filesystem::exists(entry.path() / kThreadFileName))
+      auto thread_file = entry.path() / kThreadFileName;
+      if (!std::filesystem::exists(thread_file))
         continue;
 
       auto current_thread_id = entry.path().filename().string();
-      std::shared_lock thread_lock(GrabThreadMutex(current_thread_id));
 
+      // Apply pagination filters
+      if (!after.empty() && current_thread_id <= after)
+        continue;
+      if (!before.empty() && current_thread_id >= before)
+        continue;
+
+      std::shared_lock thread_lock(GrabThreadMutex(current_thread_id));
       auto thread_result = LoadThread(current_thread_id);
+
       if (thread_result.has_value()) {
-        threads.push_back(std::move(thread_result.value()));
+        all_threads.push_back(std::move(thread_result.value()));
       }
 
       thread_lock.unlock();
+    }
+
+    // Sort threads based on order parameter using created_at
+    if (order == "desc") {
+      std::sort(all_threads.begin(), all_threads.end(),
+                [](const OpenAi::Thread& a, const OpenAi::Thread& b) {
+                  return a.created_at > b.created_at;  // Descending order
+                });
+    } else {
+      std::sort(all_threads.begin(), all_threads.end(),
+                [](const OpenAi::Thread& a, const OpenAi::Thread& b) {
+                  return a.created_at < b.created_at;  // Ascending order
+                });
+    }
+
+    // Apply limit
+    size_t thread_count =
+        std::min(static_cast<size_t>(limit), all_threads.size());
+    for (size_t i = 0; i < thread_count; i++) {
+      threads.push_back(std::move(all_threads[i]));
     }
 
     return threads;

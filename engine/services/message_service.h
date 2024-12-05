@@ -30,7 +30,10 @@ class MessageService {
 
   cpp::result<OpenAi::Message, std::string> ModifyMessage(
       const std::string& thread_id, const std::string& message_id,
-      std::optional<Cortex::VariantMap> metadata);
+      std::optional<Cortex::VariantMap> metadata,
+      std::optional<std::variant<std::string,
+                                 std::vector<std::unique_ptr<OpenAi::Content>>>>
+          content);
 
   cpp::result<std::string, std::string> DeleteMessage(
       const std::string& thread_id, const std::string& message_id);
