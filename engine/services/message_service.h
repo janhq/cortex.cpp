@@ -21,9 +21,9 @@ class MessageService {
       std::optional<std::vector<OpenAi::Message>> messages);
 
   cpp::result<std::vector<OpenAi::Message>, std::string> ListMessages(
-      const std::string& thread_id, uint8_t limit = 20,
-      const std::string& order = "desc", const std::string& after = "",
-      const std::string& before = "", const std::string& run_id = "") const;
+      const std::string& thread_id, uint8_t limit, const std::string& order,
+      const std::string& after, const std::string& before,
+      const std::string& run_id) const;
 
   cpp::result<OpenAi::Message, std::string> RetrieveMessage(
       const std::string& thread_id, const std::string& message_id) const;

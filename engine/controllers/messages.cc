@@ -10,13 +10,13 @@
 void Messages::ListMessages(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& thread_id, std::optional<uint8_t> limit,
+    const std::string& thread_id, std::optional<std::string> limit,
     std::optional<std::string> order, std::optional<std::string> after,
     std::optional<std::string> before,
     std::optional<std::string> run_id) const {
   auto res = message_service_->ListMessages(
-      thread_id, limit.value_or(20), order.value_or("desc"), after.value_or(""),
-      before.value_or(""), run_id.value_or(""));
+      thread_id, std::stoi(limit.value_or("20")), order.value_or("desc"),
+      after.value_or(""), before.value_or(""), run_id.value_or(""));
 
   Json::Value root;
   if (res.has_error()) {
