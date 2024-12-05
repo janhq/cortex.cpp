@@ -119,6 +119,8 @@ jobs:
       - name: prepare python package unix
         if : runner.os != 'windows'
         run: |
+            export PATH=$PATH:$HOME/miniconda/bin/ 
+            source $HOME/miniconda/bin/activate base
             conda activate ${{env.MODEL_NAME}}
             PYTHON_PATH=$(which python)
             echo $PYTHON_PATH
