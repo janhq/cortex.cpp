@@ -8,10 +8,14 @@ on:
       model_dir:
         description: "Path to model directory in janhq/models repo"
         required: true
+      model_name:
+        description: "name of model to be release"
+        required: true
 
 
 env:
   MODEL_DIR: models/whispervq # ${{ inputs.model_dir }}
+  MODEL_NAME: whispervq # ${{ inputs.model_name }}
 
 jobs:
   build-and-test:
@@ -47,21 +51,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: prepare python package windows
-        if : runner.os == 'windows'
-        shell: cmd
-        run: |
-            where python3
-            for /f "delims=" %%a in ('where python') do set "PYTHON_PATH=%%a"
-            echo %PYTHON_PATH%
-            
-      - name: prepare python package windows
-        if : runner.os != 'windows'
-        run: |
-            PYTHON_PATH=$(which python)
-            echo $PYTHON_PATH
-
-
     #   - name: Install dependencies Windows and Linux
     #     if: runner.os == 'windows' || runner.os == 'linux'
     #     run: |
@@ -73,5 +62,24 @@ jobs:
     #     run: |
     #         python3 -m pip install --upgrade pip
     #         python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
+      - name: prepare python package windows
+        if : runner.os == 'windows'
+        shell: cmd
+        run: |
+            for /f "delims=" %%a in ('where python') do set "PYTHON_PATH=%%a"
+            echo %PYTHON_PATH%
+            
+      - name: prepare python package unix
+        if : runner.os != 'windows'
+        run: |
+            PYTHON_PATH=$(which python)
+            echo $PYTHON_PATH
+            PYTHON_FOLDER=$(dirname $(dirname "$PYTHON_PATH"))
+            echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
+            echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
 
-      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
+            path: ${{env.PYTHON_FOLDER}}
