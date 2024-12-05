@@ -5,8 +5,9 @@
 #include "utils/file_manager_utils.h"
 #include "utils/scope_exit.h"
 #include "utils/widechar_conv.h"
+#include "v0/migration.h"
+#include "v1/migration.h"
 #include "v2/migration.h"
-
 namespace cortex::migr {
 
 namespace {
@@ -141,8 +142,11 @@ cpp::result<bool, std::string> MigrationManager::DoUpFolderStructure(
     case 0:
       return v0::MigrateFolderStructureUp();
       break;
+    case 1:
+      return v1::MigrateFolderStructureUp();
     case 2:
       return v2::MigrateFolderStructureUp();
+
       break;
 
     default:
@@ -155,6 +159,8 @@ cpp::result<bool, std::string> MigrationManager::DoDownFolderStructure(
     case 0:
       return v0::MigrateFolderStructureDown();
       break;
+    case 1:
+      return v1::MigrateFolderStructureDown();
     case 2:
       return v2::MigrateFolderStructureDown();
       break;
@@ -191,6 +197,8 @@ cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
     case 0:
       return v0::MigrateDBUp(db_);
       break;
+    case 1:
+      return v1::MigrateDBUp(db_);
     case 2:
       return v2::MigrateDBUp(db_);
       break;
@@ -205,6 +213,8 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
     case 0:
       return v0::MigrateDBDown(db_);
       break;
+    case 1:
+      return v1::MigrateDBDown(db_);
     case 2:
       return v2::MigrateDBDown(db_);
       break;

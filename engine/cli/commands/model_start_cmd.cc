@@ -30,8 +30,8 @@ bool ModelStartCmd::Exec(
 
   //
   bool should_activate_hw = false;
-  for (auto const& [_, v] : options) {
-    if (!v.empty()) {
+  for (auto const& [k, v] : options) {
+    if (k == "gpus" && !v.empty()) {
       should_activate_hw = true;
       break;
     }
@@ -57,6 +57,9 @@ bool ModelStartCmd::Exec(
 
   Json::Value json_data;
   json_data["model"] = model_id.value();
+  for (auto const& [k, v] : options) {
+    UpdateConfig(json_data, k, v);
+  }
   auto data_str = json_data.toStyledString();
   auto res = curl_utils::SimplePostJson(url.ToFullPath(), data_str);
   if (res.has_error()) {
@@ -72,6 +75,18 @@ bool ModelStartCmd::Exec(
   }
   if (!res.value()["warning"].isNull()) {
     CLI_LOG(res.value()["warning"].asString());
+  }
+  return true;
+}
+
+bool ModelStartCmd::UpdateConfig(Json::Value& data, const std::string& key,
+                                 const std::string& value) {
+  if (key == "ctx_len" && !value.empty()) {
+    try {
+      data["ctx_len"] = std::stoi(value);
+    } catch (const std::exception& e) {
+      CLI_LOG("Failed to parse numeric value for " << key << ": " << e.what());
+    }
   }
   return true;
 }

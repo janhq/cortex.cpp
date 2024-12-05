@@ -5,7 +5,7 @@
 #include <queue>
 #include "services/engine_service.h"
 #include "utils/result.hpp"
-
+#include "extensions/remote-engine/remote_engine.h"
 namespace services {
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;

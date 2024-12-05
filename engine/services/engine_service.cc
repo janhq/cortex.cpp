@@ -2,7 +2,11 @@
 #include <cstdlib>
 #include <filesystem>
 #include <optional>
+#include <vector>
 #include "algorithm"
+#include "database/engines.h"
+#include "extensions/remote-engine/anthropic_engine.h"
+#include "extensions/remote-engine/openai_engine.h"
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
@@ -13,7 +17,6 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
-
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
                                    const std::string& cuda_driver_version) {
@@ -179,6 +182,18 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+  // TODO: handle uninstall remote engine
+  // only delete a remote engine if no model are using it
+  auto exist_engine = GetEngineByNameAndVariant(engine);
+  if (exist_engine.has_value() && exist_engine.value().type == "remote") {
+    auto result = DeleteEngine(exist_engine.value().id);
+    if (!result.empty()) {  // This mean no error when delete model
+      CTL_ERR("Failed to delete engine: " << result);
+      return cpp::fail(result);
+    }
+    return cpp::result<bool, std::string>(true);
+  }
+
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);
@@ -226,21 +241,19 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
 cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
+
   auto normalized_version = version == "latest"
                                 ? "latest"
                                 : string_utils::RemoveSubstring(version, "v");
-
   auto res = GetEngineVariants(engine, version);
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine releases: " + res.error());
   }
-
   if (res.value().empty()) {
     return cpp::fail("No release found for " + version);
   }
 
   std::optional<EngineVariant> selected_variant = std::nullopt;
-
   if (variant_name.has_value()) {
     auto latest_version_semantic = normalized_version == "latest"
                                        ? res.value()[0].version
@@ -269,9 +282,10 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     }
   }
 
-  if (selected_variant == std::nullopt) {
+  if (!selected_variant) {
     return cpp::fail("Failed to find a suitable variant for " + engine);
   }
+
   if (IsEngineLoaded(engine)) {
     CTL_INF("Engine " << engine << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(engine);
@@ -282,17 +296,17 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
       CTL_INF("Engine " << engine << " unloaded successfully");
     }
   }
-  auto normalize_version = "v" + selected_variant->version;
 
+  auto normalize_version = "v" + selected_variant->version;
   auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
       selected_variant->name, engine, selected_variant->version);
-
   auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() /
                              engine / variant_folder_name.value() /
                              normalize_version;
-
   auto variant_path = variant_folder_path / selected_variant->name;
+
   std::filesystem::create_directories(variant_folder_path);
+
   CTL_INF("variant_folder_path: " + variant_folder_path.string());
   auto on_finished = [this, engine, selected_variant, variant_folder_path,
                       normalize_version](const DownloadTask& finishedTask) {
@@ -301,14 +315,15 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("Version: " + normalize_version);
 
     auto extract_path = finishedTask.items[0].localPath.parent_path();
-
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   extract_path.string(), true);
 
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
         selected_variant->name, engine, normalize_version);
+
     CTL_INF("Extracted variant: " + variant.value());
     // set as default
+
     auto res =
         SetDefaultEngineVariant(engine, normalize_version, variant.value());
     if (res.has_error()) {
@@ -316,10 +331,21 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
+    auto create_res =
+        EngineService::UpsertEngine(engine,   // engine_name
+                                    "local",  // todo - luke
+                                    "",       // todo - luke
+                                    "",       // todo - luke
+                                    normalize_version, variant.value(),
+                                    "Default",  // todo - luke
+                                    ""          // todo - luke
+        );
 
-    // remove other engines
-    auto engine_directories = file_manager_utils::GetEnginesContainerPath() /
-                              engine / selected_variant->name;
+    if (create_res.has_value()) {
+      CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
+    } else {
+      CTL_INF("Engine entry created successfully");
+    }
 
     for (const auto& entry : std::filesystem::directory_iterator(
              variant_folder_path.parent_path())) {
@@ -333,7 +359,6 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
       }
     }
 
-    // remove the downloaded file
     try {
       std::filesystem::remove(finishedTask.items[0].localPath);
     } catch (const std::exception& e) {
@@ -342,18 +367,18 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("Finished!");
   };
 
-  auto downloadTask{
+  auto downloadTask =
       DownloadTask{.id = engine,
                    .type = DownloadType::Engine,
                    .items = {DownloadItem{
                        .id = engine,
                        .downloadUrl = selected_variant->browser_download_url,
                        .localPath = variant_path,
-                   }}}};
+                   }}};
 
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
-  if (res.has_error()) {
-    return cpp::fail(res.error());
+  if (add_task_result.has_error()) {
+    return cpp::fail(add_task_result.error());
   }
   return {};
 }
@@ -656,6 +681,25 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // Check for remote engine
+  if (remote_engine::IsRemoteEngine(engine_name)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine_name);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+    }
+
+    if (engine_name == kOpenAiEngine) {
+      engines_[engine_name].engine = new remote_engine::OpenAiEngine();
+    } else {
+      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
+    }
+
+    CTL_INF("Loaded engine: " << engine_name);
+    return {};
+  }
+
+  // End hard code
+
   CTL_INF("Loading engine: " << ne);
 
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
@@ -824,8 +868,11 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     if (!IsEngineLoaded(ne)) {
       return cpp::fail("Engine " + ne + " is not loaded yet!");
     }
-    EngineI* e = std::get<EngineI*>(engines_[ne].engine);
-    delete e;
+    if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
+      delete std::get<EngineI*>(engines_[ne].engine);
+    } else {
+      delete std::get<RemoteEngineI*>(engines_[ne].engine);
+    }
 
 #if defined(_WIN32)
     if (!RemoveDllDirectory(engines_[ne].cookie)) {
@@ -867,8 +914,19 @@ EngineService::GetLatestEngineVersion(const std::string& engine) const {
 }
 
 cpp::result<bool, std::string> EngineService::IsEngineReady(
-    const std::string& engine) const {
+    const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+
+  // Check for remote engine
+  if (remote_engine::IsRemoteEngine(engine)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine + "' is not installed");
+    }
+    return true;
+  }
+
+  // End hard code
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
@@ -954,4 +1012,102 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
                             .variant = default_variant->variant,
                             .from = default_variant->version,
                             .to = latest_version->tag_name};
+}
+
+cpp::result<std::vector<cortex::db::EngineEntry>, std::string>
+EngineService::GetEngines() {
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngines();
+
+  if (!get_res.has_value()) {
+    return cpp::fail("Failed to get engine entries");
+  }
+
+  return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
+    int id) {
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngineById(id);
+
+  if (!get_res.has_value()) {
+    return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
+  }
+
+  return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string>
+EngineService::GetEngineByNameAndVariant(
+    const std::string& engine_name, const std::optional<std::string> variant) {
+
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+
+  if (!get_res.has_value()) {
+    if (variant.has_value()) {
+      return cpp::fail("Variant " + variant.value() + " not found for engine " +
+                       engine_name);
+    } else {
+      return cpp::fail("Engine " + engine_name + " not found");
+    }
+  }
+
+  return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
+    const std::string& engine_name, const std::string& type,
+    const std::string& api_key, const std::string& url,
+    const std::string& version, const std::string& variant,
+    const std::string& status, const std::string& metadata) {
+  cortex::db::Engines engines;
+  auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url,
+                                         version, variant, status, metadata);
+  if (upsert_res.has_value()) {
+    return upsert_res.value();
+  } else {
+    return cpp::fail("Failed to upsert engine entry");
+  }
+}
+
+std::string EngineService::DeleteEngine(int id) {
+  cortex::db::Engines engines;
+  auto delete_res = engines.DeleteEngineById(id);
+  if (delete_res.has_value()) {
+    return delete_res.value();
+  } else {
+    return "";
+  }
+}
+
+cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
+    const std::string& engine_name) {
+  if (auto r = IsEngineReady(engine_name); r.has_error()) {
+    return cpp::fail(r.error());
+  }
+
+  if (!IsEngineLoaded(engine_name)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine_name);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+    }
+
+    if (engine_name == kOpenAiEngine) {
+      engines_[engine_name].engine = new remote_engine::OpenAiEngine();
+    } else {
+      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
+    }
+
+    CTL_INF("Loaded engine: " << engine_name);
+  }
+
+  auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
+  auto res = e->GetRemoteModels();
+  if (!res["error"].isNull()) {
+    return cpp::fail(res["error"].asString());
+  } else {
+    return res;
+  }
 }

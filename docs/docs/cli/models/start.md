@@ -33,6 +33,7 @@ cortex models start [model_id]:[engine] [options]
 |---------------------------|----------------------------------------------------------|----------|----------------------------------------------|-------------------|
 | `model_id`                | The identifier of the model you want to start.           | No       | `Prompt to select from the available models` | `mistral`         |
 | `--gpus`                  | List of GPUs to use.                                     | No       | -                                            | `[0,1]`           |
+| `--ctx_len`               | Maximum context length for inference.                    | No       | `min(8192, max_model_context_length)`        | `1024`            |
 | `-h`, `--help`            | Display help information for the command.                | No       | -                                            | `-h`              |
 
 

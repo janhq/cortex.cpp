@@ -34,7 +34,6 @@
 
 #include <cstddef>      // std::size_t
 #include <type_traits>  // std::enable_if, std::is_constructible, etc
-#include <new>          // placement-new
 #include <memory>       // std::address_of
 #include <functional>   // std::reference_wrapper, std::invoke
 #include <utility>      // std::in_place_t, std::forward

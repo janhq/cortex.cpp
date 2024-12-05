@@ -2,12 +2,18 @@
 
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
+
 #include "common/engine_servicei.h"
 #include "cortex-common/EngineI.h"
 #include "cortex-common/cortexpythoni.h"
+#include "cortex-common/remote_enginei.h"
+#include "database/engines.h"
+#include "extensions/remote-engine/remote_engine.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
@@ -32,11 +38,7 @@ struct EngineUpdateResult {
   }
 };
 
-namespace system_info_utils {
-struct SystemInfo;
-}
-
-using EngineV = std::variant<EngineI*, CortexPythonEngineI*>;
+using EngineV = std::variant<EngineI*, CortexPythonEngineI*, RemoteEngineI*>;
 
 class EngineService : public EngineServiceI {
  private:
@@ -54,6 +56,14 @@ class EngineService : public EngineServiceI {
 
   std::mutex engines_mutex_;
   std::unordered_map<std::string, EngineInfo> engines_{};
+  std::shared_ptr<DownloadService> download_service_;
+
+  struct HardwareInfo {
+    std::unique_ptr<system_info_utils::SystemInfo> sys_inf;
+    cortex::cpuid::CpuInfo cpu_inf;
+    std::string cuda_driver_version;
+  };
+  HardwareInfo hw_inf_;
 
  public:
   const std::vector<std::string_view> kSupportEngines = {
@@ -70,7 +80,7 @@ class EngineService : public EngineServiceI {
   /**
    * Check if an engines is ready (have at least one variant installed)
    */
-  cpp::result<bool, std::string> IsEngineReady(const std::string& engine) const;
+  cpp::result<bool, std::string> IsEngineReady(const std::string& engine);
 
   /**
    * Handling install engine variant.
@@ -110,7 +120,6 @@ class EngineService : public EngineServiceI {
   std::vector<EngineV> GetLoadedEngines();
 
   cpp::result<void, std::string> LoadEngine(const std::string& engine_name);
-
   cpp::result<void, std::string> UnloadEngine(const std::string& engine_name);
 
   cpp::result<github_release_utils::GitHubRelease, std::string>
@@ -122,6 +131,25 @@ class EngineService : public EngineServiceI {
 
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
+
+  cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
+
+  cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);
+
+  cpp::result<cortex::db::EngineEntry, std::string> GetEngineByNameAndVariant(
+      const std::string& engine_name,
+      const std::optional<std::string> variant = std::nullopt);
+
+  cpp::result<cortex::db::EngineEntry, std::string> UpsertEngine(
+      const std::string& engine_name, const std::string& type,
+      const std::string& api_key, const std::string& url,
+      const std::string& version, const std::string& variant,
+      const std::string& status, const std::string& metadata);
+
+  std::string DeleteEngine(int id);
+
+  cpp::result<Json::Value, std::string> GetRemoteModels(
+      const std::string& engine_name);
 
  private:
   cpp::result<void, std::string> DownloadEngine(
@@ -137,13 +165,4 @@ class EngineService : public EngineServiceI {
   cpp::result<bool, std::string> IsEngineVariantReady(
       const std::string& engine, const std::string& version,
       const std::string& variant);
-
-  std::shared_ptr<DownloadService> download_service_;
-
-  struct HardwareInfo {
-    std::unique_ptr<system_info_utils::SystemInfo> sys_inf;
-    cortex::cpuid::CpuInfo cpu_inf;
-    std::string cuda_driver_version;
-  };
-  HardwareInfo hw_inf_;
 };
