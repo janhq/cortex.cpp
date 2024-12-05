@@ -49,6 +49,7 @@ jobs:
 
       - name: prepare python package windows
         if : runner.os == 'windows'
+        shell: cmd
         run: |
             for /f "delims=" %a in ('where python') do set "PYTHON_PATH=%a"
             echo %PYTHON_PATH%
