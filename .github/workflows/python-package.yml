@@ -73,13 +73,23 @@ jobs:
         shell: cmd
         run: |
             curl -o miniconda.exe https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
-            start /wait "" miniconda.exe /InstallationType=JustMe /AddToPath=1 /RegisterPython=0 /S /D=%UserProfile%\Miniconda
-            echo %UserProfile%\Miniconda >> %GITHUB_PATH%
+            start /wait "" miniconda.exe /InstallationType=JustMe /AddToPath=1 /RegisterPython=0 /S /D=Miniconda
+            echo Miniconda >> %GITHUB_PATH%
+      - name: Install dependencies Windows
+        if: runner.os == 'windows'
+        run: |
+                Miniconda\_conda.exe init
+                conda create -y -n ${{env.MODEL_NAME}} python=3.11
+                
+                conda activate ${{env.MODEL_NAME}}
+                python -m pip install --upgrade pip
+                python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
 
-      - name: Install dependencies Windows and Linux
-        if: runner.os == 'windows' || runner.os == 'linux'
+      - name: Install dependencies Linux
+        if: runner.os == 'linux'
         run: |
             conda create -y -n ${{env.MODEL_NAME}} python=3.11
+            conda init
             conda activate ${{env.MODEL_NAME}}
             python -m pip install --upgrade pip
             python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
@@ -88,6 +98,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
             conda create -y -n ${{env.MODEL_NAME}} python=3.11
+            conda init
             conda activate ${{env.MODEL_NAME}}
             python -m pip install --upgrade pip
             python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
