@@ -2,7 +2,7 @@
 
 #include "common/json_serializable.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 
 // On an incomplete message, details about why the message is incomplete.
 struct IncompleteDetail : JsonSerializable {
@@ -29,4 +29,4 @@ struct IncompleteDetail : JsonSerializable {
     }
   }
 };
-}  // namespace ThreadMessage
+}  // namespace OpenAi

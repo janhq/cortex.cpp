@@ -2,7 +2,7 @@
 
 #include "common/message_content.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 struct ImageFile {
   // The File ID of the image in the message content. Set purpose="vision" when uploading the File if you need to later display the file content.
   std::string file_id;
@@ -66,4 +66,4 @@ struct ImageFileContent : Content {
     }
   }
 };
-}  // namespace ThreadMessage
+}  // namespace OpenAi
