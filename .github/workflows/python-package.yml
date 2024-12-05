@@ -90,9 +90,8 @@ jobs:
         if: runner.os == 'linux'
         run: |
             export PATH=$PATH:$HOME/miniconda/condabin/ 
-            conda init
+            conda init && source ~/.bashrc
             conda create -y -n ${{env.MODEL_NAME}} python=3.11
-            source activate base
             conda activate ${{env.MODEL_NAME}}
             python -m pip install --upgrade pip
             python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
@@ -101,9 +100,8 @@ jobs:
         if: runner.os == 'macOS'
         run: |
             export PATH=$PATH:$HOME/miniconda/condabin/ 
-            conda init
+            conda init && source ~/.zshrc
             conda create -y -n ${{env.MODEL_NAME}} python=3.11
-            source activate base
             conda activate ${{env.MODEL_NAME}}
             python -m pip install --upgrade pip
             python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
