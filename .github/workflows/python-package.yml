@@ -51,7 +51,7 @@ jobs:
         if : runner.os == 'windows'
         shell: powershell
         run: |
-            Env:PYTHON_PATH = $(where python)
+            $Env:PYTHON_PATH = $(where python)
             $Env:PYTHON_PATH
             
       - name: prepare python package windows
