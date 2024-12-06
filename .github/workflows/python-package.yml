@@ -129,7 +129,7 @@ jobs:
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
 
       - name: Upload Artifact
-        if : runner.os == 'macOS'
+        if : runner.os == 'macOS' || runner.os == 'linux'
         uses: actions/upload-artifact@v4
         with:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
