@@ -113,15 +113,17 @@ jobs:
 
       - name: prepare python package windows
         if : runner.os == 'windows'
-        shell: cmd
+        shell: pwsh
         run: |
             conda activate ${{env.MODEL_NAME}}
-            for /f "delims=" %%a in ('where python') do set "PYTHON_PATH=%%a"
-            echo %PYTHON_PATH%
-            for %%i in ("%PYTHON_PATH%") do set "PYTHON_FOLDER=%%~dpi"
-            set "PYTHON_FOLDER=%PYTHON_FOLDER:~0,-1%"
-            echo PYTHON_FOLDER=%PYTHON_FOLDER% >> %GITHUB_ENV%
-            move "%PYTHON_FOLDER%\python*.*" "%PYTHON_FOLDER%\Scripts\"
+            $pythonPath = where.exe python
+            echo "Python path (where.exe): $pythonPath"
+
+
+            $pythonFolder = Split-Path -Path "$pythonPath" -Parent
+            echo "PYTHON_FOLDER=$pythonFolder" >> $env:GITHUB_ENV
+            
+            Move-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force
             
       # - name: prepare python package unix
       #   if : runner.os != 'windows'
