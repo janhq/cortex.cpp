@@ -156,6 +156,19 @@ struct Thread : JsonSerializable {
       }
       json["metadata"] = metadata_json;
 
+      if (assistants.has_value()) {
+        Json::Value assistants_json(Json::arrayValue);
+        for (auto& assistant : assistants.value()) {
+          auto assistant_result = assistant.ToJson();
+          if (assistant_result.has_error()) {
+            return cpp::fail("Failed to serialize assistant: " +
+                             assistant_result.error());
+          }
+          assistants_json.append(assistant_result.value());
+        }
+        json["assistants"] = assistants_json;
+      }
+
       return json;
     } catch (const std::exception& e) {
       return cpp::fail(std::string("ToJson failed: ") + e.what());

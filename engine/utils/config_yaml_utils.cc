@@ -1,4 +1,9 @@
 #include "config_yaml_utils.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include "utils/logging_utils.h"
+#include "yaml-cpp/yaml.h"
 
 namespace config_yaml_utils {
 cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(

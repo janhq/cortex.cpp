@@ -25,6 +25,7 @@ void Threads::ListThreads(
   Json::Value msg_arr(Json::arrayValue);
   for (auto& msg : res.value()) {
     if (auto it = msg.ToJson(); it.has_value()) {
+      it->removeMember("assistants");
       msg_arr.append(it.value());
     } else {
       CTL_WRN("Failed to convert message to json: " + it.error());
@@ -114,8 +115,9 @@ void Threads::RetrieveThread(
       resp->setStatusCode(k400BadRequest);
       callback(resp);
     } else {
+      thread_to_json->removeMember("assistants");
       auto resp =
-          cortex_utils::CreateCortexHttpJsonResponse(res->ToJson().value());
+          cortex_utils::CreateCortexHttpJsonResponse(thread_to_json.value());
       resp->setStatusCode(k200OK);
       callback(resp);
     }
