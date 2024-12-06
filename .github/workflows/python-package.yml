@@ -146,4 +146,4 @@ jobs:
         with:
           name: ${{env.MODEL_NAME}}-mac-arm64-signed
           path: ${{env.MODEL_NAME}}-mac-arm64
-          include-hidden-files: true
+          include-hidden-files: true 
