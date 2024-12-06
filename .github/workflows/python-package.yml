@@ -3,7 +3,7 @@ name: Build and Package Python Library
 
 on:
   push:
-    branches: [ feat/codesign-python-package ]
+    branches: [ feat/python-package-ci ]
   workflow_dispatch:
     inputs:
       model_dir:
@@ -146,4 +146,4 @@ jobs:
         with:
           name: ${{env.MODEL_NAME}}-mac-arm64-signed
           path: ${{env.MODEL_NAME}}-mac-arm64
-          include-hidden-files: true 
+          include-hidden-files: true
