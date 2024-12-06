@@ -123,36 +123,36 @@ jobs:
           # ./build/cortex
           cat ~/.cortexrc
 
-      - name: Run e2e tests
-        if: github.event_name != 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false
-        run: |
-          cd engine
-          cp build/cortex build/cortex-nightly
-          cp build/cortex build/cortex-beta
-          python -m pip install --upgrade pip
-          python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
-          rm build/cortex-nightly
-          rm build/cortex-beta
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
+      # - name: Run e2e tests
+      #   if: github.event_name != 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false
+      #   run: |
+      #     cd engine
+      #     cp build/cortex build/cortex-nightly
+      #     cp build/cortex build/cortex-beta
+      #     python -m pip install --upgrade pip
+      #     python -m pip install -r e2e-test/requirements.txt
+      #     python e2e-test/main.py
+      #     rm build/cortex-nightly
+      #     rm build/cortex-beta
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
+
+      # - name: Run e2e tests
+      #   if: github.event_name != 'schedule' && runner.os == 'Windows' && github.event.pull_request.draft == false
+      #   run: |
+      #     cd engine
+      #     cp build/cortex.exe build/cortex-nightly.exe
+      #     cp build/cortex.exe build/cortex-beta.exe
+      #     python -m pip install --upgrade pip
+      #     python -m pip install -r e2e-test/requirements.txt
+      #     python e2e-test/main.py
+      #     rm build/cortex-nightly.exe
+      #     rm build/cortex-beta.exe
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
       - name: Run e2e tests
-        if: github.event_name != 'schedule' && runner.os == 'Windows' && github.event.pull_request.draft == false
-        run: |
-          cd engine
-          cp build/cortex.exe build/cortex-nightly.exe
-          cp build/cortex.exe build/cortex-beta.exe
-          python -m pip install --upgrade pip
-          python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
-          rm build/cortex-nightly.exe
-          rm build/cortex-beta.exe
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
-
-      - name: Run e2e tests
-        if: github.event_name == 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false
+        if: runner.os != 'Windows' && github.event.pull_request.draft == false
         run: |
           cd engine
           cp build/cortex build/cortex-nightly
@@ -166,7 +166,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
       - name: Run e2e tests
-        if: github.event_name == 'schedule' &&  runner.os == 'Windows' && github.event.pull_request.draft == false
+        if: runner.os == 'Windows' && github.event.pull_request.draft == false
         run: |
           cd engine
           cp build/cortex.exe build/cortex-nightly.exe
