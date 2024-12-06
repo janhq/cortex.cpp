@@ -148,3 +148,38 @@ jobs:
         with:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
             path: ${{env.PYTHON_FOLDER}}
+
+  codesign:
+    runs-on: macos-latest
+    needs: build-and-test
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.MODEL_NAME}}-mac-amd64
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{env.MODEL_NAME}}-mac-amd64
+
+      - run: |
+          find "${{env.MODEL_NAME}}-mac-amd64" \( -type f -perm +111 -o -name "*.node" \) -exec codesign --force --entitlements="./engine/templates/macos/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime {} \;
+          find "${{env.MODEL_NAME}}-mac-arm64" \( -type f -perm +111 -o -name "*.node" \) -exec codesign --force --entitlements="./engine/templates/macos/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime {} \;
+      
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.MODEL_NAME}}-mac-amd64
+          path: ${{env.MODEL_NAME}}-mac-amd64
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.MODEL_NAME}}-mac-arm64
+          path: ${{env.MODEL_NAME}}-mac-arm64
