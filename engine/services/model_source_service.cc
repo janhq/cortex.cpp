@@ -140,6 +140,16 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
 
 cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
     const std::string& model_source) {
+  cortex::db::Models model_db;
+  auto srcs = model_db.GetModelSources();
+  if (srcs.has_error()) {
+    return cpp::fail(srcs.error());
+  } else {
+    auto& v = srcs.value();
+    if (std::find(v.begin(), v.end(), model_source) == v.end()) {
+      return cpp::fail("Model source does not exist: " + model_source);
+    }
+  }
   CTL_INF("Remove model source: " << model_source);
   auto res = url_parser::FromUrlString(model_source);
   if (res.has_error()) {
@@ -149,7 +159,7 @@ cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
     if (r.pathParams.empty() || r.pathParams.size() > 2) {
       return cpp::fail("Invalid model source url: " + model_source);
     }
-    cortex::db::Models model_db;
+
     if (r.pathParams.size() == 1) {
       if (auto del_res = model_db.DeleteModelEntryWithOrg(model_source);
           del_res.has_error()) {
@@ -185,7 +195,6 @@ cpp::result<bool, std::string> ModelSourceService::AddRepo(
         "Not a GGUF model. Currently, only GGUF single file is "
         "supported.");
   }
-
 
   for (const auto& sibling : repo_info->siblings) {
     if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
