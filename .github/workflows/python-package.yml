@@ -49,7 +49,7 @@ jobs:
         if : runner.os == 'Windows'
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
 
     #   - name: Install Miniconda on Linux
     #     if: runner.os == 'Linux'
