@@ -45,6 +45,11 @@ jobs:
           submodules: recursive
           repository: janhq/models
           ref: "feat/ci-python-models"
+      - name: use python
+        if : runner.os == 'Windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
     #   - name: Install Miniconda on Linux
     #     if: runner.os == 'Linux'
@@ -83,11 +88,8 @@ jobs:
         shell: pwsh
         run: |
                 
-                conda create -y -n ${{env.MODEL_NAME}} python=3.11
-                
-                conda activate ${{env.MODEL_NAME}}
-                python -m pip install --upgrade pip
-                python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
+                python3 -m pip install --upgrade pip
+                python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
 
       # - name: Install dependencies Linux
       #   if: runner.os == 'linux'
@@ -115,7 +117,6 @@ jobs:
         if : runner.os == 'windows'
         shell: pwsh
         run: |
-            conda activate ${{env.MODEL_NAME}}
             $pythonPath = where.exe python
             echo "Python path (where.exe): $pythonPath"
 
