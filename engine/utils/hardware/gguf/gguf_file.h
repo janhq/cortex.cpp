@@ -11,6 +11,7 @@
 #include <unordered_set>
 #include <variant>
 #include <vector>
+#include <optional>
 
 #ifdef _WIN32
 #include <io.h>
@@ -23,13 +24,14 @@
 
 #include "ggml.h"
 #include "utils/string_utils.h"
+#include "utils/logging_utils.h"
 
 // #define GGUF_LOG(msg)                                                  \
 //   do {                                                                 \
 //     std::cout << __FILE__ << "(@" << __LINE__ << "): " << msg << '\n'; \
 //   } while (false)
 
-#define GGUF_LOG(msg)  
+#define GGUF_LOG(msg)
 namespace hardware {
 #undef min
 #undef max
@@ -169,8 +171,6 @@ inline std::string to_string(const GGUFMetadataKV& kv) {
   return "Invalid type ";
 }
 
-
-
 struct GGUFTensorInfo {
   /* Basic */
   std::string name;
@@ -208,14 +208,14 @@ struct GGUFHelper {
         CreateFileA(file_path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
                     OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file_handle == INVALID_HANDLE_VALUE) {
-      std::cout << "Failed to open file" << std::endl;
+      CTL_INF("Failed to open file: " << file_path);
       return false;
     }
     // Get the file size
     LARGE_INTEGER file_size_struct;
     if (!GetFileSizeEx(file_handle, &file_size_struct)) {
       CloseHandle(file_handle);
-      std::cout << "Failed to open file" << std::endl;
+      CTL_INF("Failed to get file size: " << file_path);
       return false;
     }
     file_size = static_cast<size_t>(file_size_struct.QuadPart);
@@ -225,7 +225,7 @@ struct GGUFHelper {
         CreateFileMappingA(file_handle, nullptr, PAGE_READONLY, 0, 0, nullptr);
     if (file_mapping == nullptr) {
       CloseHandle(file_handle);
-      std::cout << "Failed to create file mapping" << std::endl;
+      CTL_INF("Failed to create file mapping: " << file_path);
       return false;
     }
 
@@ -235,7 +235,7 @@ struct GGUFHelper {
     if (data == nullptr) {
       CloseHandle(file_mapping);
       CloseHandle(file_handle);
-      std::cout << "Failed to map file" << std::endl;
+      CTL_INF("Failed to map file:: " << file_path);
       return false;
     }
 
@@ -479,10 +479,12 @@ struct GGUFFile {
   double model_bits_per_weight;
 };
 
-inline GGUFFile ParseGgufFile(const std::string& path) {
+inline std::optional<GGUFFile> ParseGgufFile(const std::string& path) {
   GGUFFile gf;
   GGUFHelper h;
-  h.OpenAndMMap(path);
+  if(!h.OpenAndMMap(path)) {
+    return std::nullopt;
+  }
 
   GGUFMagic magic = h.Read<GGUFMagic>();
   // GGUF_LOG("magic: " << magic);
