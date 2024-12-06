@@ -151,6 +151,7 @@ jobs:
         with:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
             path: ${{env.PYTHON_FOLDER}}
+            include-hidden-files: true
 
   # codesign:
   #   runs-on: macos-latest
