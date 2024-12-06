@@ -26,6 +26,7 @@ class Models : public drogon::HttpController<Models, false> {
   METHOD_ADD(Models::GetRemoteModels, "/remote/{1}", Get);
   METHOD_ADD(Models::AddModelSource, "/sources", Post);
   METHOD_ADD(Models::DeleteModelSource, "/sources", Delete);
+  METHOD_ADD(Models::GetModelSources, "/sources", Get);
 
   ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Options, Post);
   ADD_METHOD_TO(Models::AbortPullModel, "/v1/models/pull", Options, Delete);
@@ -41,6 +42,7 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::GetRemoteModels, "/v1/models/remote/{1}", Get);
   ADD_METHOD_TO(Models::AddModelSource, "/v1/models/sources", Post);
   ADD_METHOD_TO(Models::DeleteModelSource, "/v1/models/sources", Delete);
+  ADD_METHOD_TO(Models::GetModelSources, "/v1/models/sources", Get);
   METHOD_LIST_END
 
   explicit Models(std::shared_ptr<ModelService> model_service,
@@ -98,6 +100,9 @@ class Models : public drogon::HttpController<Models, false> {
   void DeleteModelSource(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback);
+
+  void GetModelSources(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
   std::shared_ptr<ModelService> model_service_;

@@ -22,6 +22,7 @@
 #include "commands/model_pull_cmd.h"
 #include "commands/model_source_add_cmd.h"
 #include "commands/model_source_del_cmd.h"
+#include "commands/model_source_list_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/model_upd_cmd.h"
@@ -387,6 +388,20 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelSourceDelCmd().Exec(
         cml_data_.config.apiServerHost,
         std::stoi(cml_data_.config.apiServerPort), cml_data_.model_src);
+  });
+
+  auto model_src_list_cmd =
+      model_source_cmd->add_subcommand("list", "List all model sources");
+  model_src_list_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                            " models sources list");
+  model_src_list_cmd->group(kSubcommands);
+  model_src_list_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+
+    commands::ModelSourceListCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort));
   });
 }
 

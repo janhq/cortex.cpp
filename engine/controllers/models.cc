@@ -794,3 +794,27 @@ void Models::DeleteModelSource(
     callback(resp);
   }
 }
+
+void Models::GetModelSources(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  auto res = model_src_svc_->GetModelSources();
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto const& info = res.value();
+    Json::Value ret;
+    Json::Value data(Json::arrayValue);
+    for (auto const& i : info) {
+      data.append(i);
+    }
+    ret["data"] = data;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}

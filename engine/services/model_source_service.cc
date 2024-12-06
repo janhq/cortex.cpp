@@ -177,6 +177,12 @@ cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
   return true;
 }
 
+cpp::result<std::vector<std::string>, std::string>
+ModelSourceService::GetModelSources() {
+  cortex::db::Models model_db;
+  return model_db.GetModelSources();
+}
+
 cpp::result<bool, std::string> ModelSourceService::AddOrg(
     const std::string& org) {
   return true;

@@ -25,6 +25,8 @@ class ModelSourceService {
   cpp::result<bool, std::string> RemoveModelSource(
       const std::string& model_source);
 
+  cpp::result<std::vector<std::string>, std::string> GetModelSources();
+
  private:
   // models database
   cpp::result<bool, std::string> AddOrg(const std::string& org);
