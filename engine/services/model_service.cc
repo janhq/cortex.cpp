@@ -71,7 +71,7 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
       .path_to_model_yaml = rel.string(),
       .model_alias = ggufDownloadItem.id,
       .status = cortex::db::ModelStatus::Downloaded};
-  auto result = modellist_utils_obj.AddModelEntry(model_entry, true);
+  auto result = modellist_utils_obj.AddModelEntry(model_entry);
   if (result.has_error()) {
     CTL_WRN("Error adding model to modellist: " + result.error());
   }
@@ -136,6 +136,9 @@ void ModelService::ForceIndexingModelList() {
 
   CTL_DBG("Database model size: " + std::to_string(list_entry.value().size()));
   for (const auto& model_entry : list_entry.value()) {
+    if(model_entry.status != cortex::db::ModelStatus::Downloaded) {
+      continue;
+    }
     try {
       yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(

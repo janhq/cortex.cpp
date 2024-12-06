@@ -31,8 +31,12 @@ class ModelSourceService {
   cpp::result<bool, std::string> AddRepo(const std::string& model_source,
                                          const std::string& author,
                                          const std::string& model_name);
+  cpp::result<bool, std::string> AddCortexsoRepoBranch(
+      const std::string& model_source, const std::string& author,
+      const std::string& model_name, const std::string& branch);
 
   cpp::result<bool, std::string> RemoveOrg(const std::string& org);
   cpp::result<bool, std::string> RemoveRepo(const std::string& repo);
+  void SyncModelSource();
 };
 }  // namespace services

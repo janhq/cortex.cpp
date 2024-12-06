@@ -1,4 +1,5 @@
 #include "model_source_service.h"
+#include <unordered_set>
 #include "database/models.h"
 #include "utils/curl_utils.h"
 #include "utils/huggingface_utils.h"
@@ -70,13 +71,32 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
       return cpp::fail("Invalid model source url: " + model_source);
     }
 
-    // Org
-    if (r.pathParams.size() == 1) {
-      // Get model id
-      // for loop, add
+    if (auto is_org = r.pathParams.size() == 1; is_org) {
       auto& author = r.pathParams[0];
       if (author == "cortexso") {
-
+        if (auto res = curl_utils::SimpleGet(
+                "https://huggingface.co/api/models?author=" + author);
+            res.has_value()) {
+          auto models = ParseJsonString(res.value());
+          for (auto const& m : models) {
+            CTL_INF(m.id);
+            auto author_model = string_utils::SplitBy(m.id, "/");
+            if (author_model.size() == 2) {
+              auto const& author = author_model[0];
+              auto const& model_name = author_model[1];
+              auto branches = huggingface_utils::GetModelRepositoryBranches(
+                  "cortexso", model_name);
+              if (branches.has_error()) {
+                CTL_INF(branches.error());
+                continue;
+              }
+              for (auto const& [branch, _] : branches.value()) {
+                CTL_INF(branch);
+                AddCortexsoRepoBranch(model_source, author, model_name, branch);
+              }
+            }
+          }
+        }
       } else {
         if (auto res = curl_utils::SimpleGet(
                 "https://huggingface.co/api/models?author=" + author);
@@ -95,11 +115,19 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
       }
 
     } else {  // Repo
+      auto const& author = r.pathParams[0];
+      auto const& model_name = r.pathParams[1];
       if (r.pathParams[0] == "cortexso") {
-
+        auto branches = huggingface_utils::GetModelRepositoryBranches(
+            "cortexso", model_name);
+        if (branches.has_error()) {
+          return cpp::fail(branches.error());
+        }
+        for (auto const& [branch, _] : branches.value()) {
+          CTL_INF(branch);
+          AddCortexsoRepoBranch(model_source, author, model_name, branch);
+        }
       } else {
-        auto const& author = r.pathParams[0];
-        auto const& model_name = r.pathParams[1];
         if (auto res = AddRepo(model_source, author, model_name);
             res.has_error()) {
           return cpp::fail(res.error());
@@ -112,6 +140,30 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
 
 cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
     const std::string& model_source) {
+  CTL_INF("Remove model source: " << model_source);
+  auto res = url_parser::FromUrlString(model_source);
+  if (res.has_error()) {
+    return cpp::fail(res.error());
+  } else {
+    auto& r = res.value();
+    if (r.pathParams.empty() || r.pathParams.size() > 2) {
+      return cpp::fail("Invalid model source url: " + model_source);
+    }
+    cortex::db::Models model_db;
+    if (r.pathParams.size() == 1) {
+      if (auto del_res = model_db.DeleteModelEntryWithOrg(model_source);
+          del_res.has_error()) {
+        CTL_INF(del_res.error());
+        return cpp::fail(del_res.error());
+      }
+    } else {
+      if (auto del_res = model_db.DeleteModelEntryWithRepo(model_source);
+          del_res.has_error()) {
+        CTL_INF(del_res.error());
+        return cpp::fail(del_res.error());
+      }
+    }
+  }
   return true;
 }
 
@@ -134,6 +186,7 @@ cpp::result<bool, std::string> ModelSourceService::AddRepo(
         "supported.");
   }
 
+
   for (const auto& sibling : repo_info->siblings) {
     if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
       cortex::db::Models model_db;
@@ -151,7 +204,61 @@ cpp::result<bool, std::string> ModelSourceService::AddRepo(
             .status = cortex::db::ModelStatus::Undownloaded,
             .engine = "llama-cpp"};
         model_db.AddModelEntry(e);
+      } else {
+        // update
       }
+    }
+  }
+  // delete old data
+  return true;
+}
+
+cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepoBranch(
+    const std::string& model_source, const std::string& author,
+    const std::string& model_name, const std::string& branch) {
+
+  url_parser::Url url = {
+      .protocol = "https",
+      .host = kHuggingFaceHost,
+      .pathParams = {"api", "models", "cortexso", model_name, "tree", branch},
+  };
+
+  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (result.has_error()) {
+    return cpp::fail("Model " + model_name + " not found");
+  }
+
+  bool has_gguf = false;
+  for (const auto& value : result.value()) {
+    auto path = value["path"].asString();
+    if (path.find(".gguf") != std::string::npos) {
+      has_gguf = true;
+    }
+  }
+  if (!has_gguf) {
+    CTL_INF("Only support gguf file format! - branch: " << branch);
+    return false;
+  } else {
+    cortex::db::Models model_db;
+    std::string model_id = model_name + ":" + branch;
+    if (!model_db.HasModel(model_id)) {
+      CTL_INF("Adding model to db: " << model_name << ":" << branch);
+      cortex::db::ModelEntry e = {
+          .model = model_id,
+          .author_repo_id = author,
+          .branch_name = branch,
+          .path_to_model_yaml = "",
+          .model_alias = "",
+          .model_format = "cortexso",
+          .model_source = model_source,
+          .status = cortex::db::ModelStatus::Undownloaded,
+          .engine = "llama-cpp"};
+      if (auto res = model_db.AddModelEntry(e);
+          res.has_error() || !res.value()) {
+        CTL_DBG("Cannot add model to db: " << model_id);
+      }
+    } else {
+      CTL_DBG("Model exists: " << model_id);
     }
   }
   return true;
@@ -165,4 +272,49 @@ cpp::result<bool, std::string> ModelSourceService::RemoveRepo(
     const std::string& repo) {
   return true;
 }
+
+void ModelSourceService::SyncModelSource() {
+  cortex::db::Models model_db;
+  auto res = model_db.GetModelSources();
+  if (res.has_error()) {
+    CTL_INF(res.error());
+  } else {
+    for (auto const& src : res.value()) {
+      CTL_INF(src);
+    }
+
+    std::unordered_set<std::string> orgs;
+    std::vector<std::string> repos;
+    for (auto const& src : res.value()) {
+      auto url_res = url_parser::FromUrlString(src);
+      if (url_res.has_value()) {
+        if (url_res->pathParams.size() == 1) {
+          orgs.insert(src);
+        } else if (url_res->pathParams.size() == 2) {
+          repos.push_back(src);
+        }
+      }
+    }
+
+    // Get list to update
+    std::vector<std::string> update_cand(orgs.begin(), orgs.end());
+    auto get_org = [](const std::string& rp) {
+      return rp.substr(0, rp.find_last_of("/"));
+    };
+    for (auto const& repo : repos) {
+      if (orgs.find(get_org(repo)) != orgs.end()) {
+        update_cand.push_back(repo);
+      }
+    }
+
+    // Sync cortex.db with the upstream data
+    // add new model if it does not exist
+    // update model if it does exist
+    // delete model if remote has removed model
+    for (auto const& c : update_cand) {
+      AddModelSource(c);
+    }
+  }
+}
+
 }  // namespace services

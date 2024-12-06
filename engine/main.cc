@@ -18,6 +18,7 @@
 #include "services/file_watcher_service.h"
 #include "services/message_service.h"
 #include "services/model_service.h"
+#include "services/model_source_service.h"
 #include "services/thread_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -134,6 +135,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto engine_service = std::make_shared<EngineService>(download_service);
   auto inference_svc =
       std::make_shared<services::InferenceService>(engine_service);
+  auto model_src_svc = std::make_shared<services::ModelSourceService>();
   auto model_service = std::make_shared<ModelService>(
       download_service, inference_svc, engine_service);
 
@@ -145,7 +147,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
   auto message_ctl = std::make_shared<Messages>(message_srv);
   auto engine_ctl = std::make_shared<Engines>(engine_service);
-  auto model_ctl = std::make_shared<Models>(model_service, engine_service);
+  auto model_ctl =
+      std::make_shared<Models>(model_service, engine_service, model_src_svc);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
   auto hw_ctl = std::make_shared<Hardware>(engine_service, hw_service);

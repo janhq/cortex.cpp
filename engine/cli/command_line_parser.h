@@ -66,6 +66,7 @@ class CommandLineParser {
     bool display_version = false;
     bool display_cpu_mode = false;
     bool display_gpu_mode = false;
+    bool display_available_model = false;
     std::string filter = "";
     std::string log_level = "INFO";
 

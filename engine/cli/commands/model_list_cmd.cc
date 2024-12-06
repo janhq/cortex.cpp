@@ -21,7 +21,7 @@ using Row_t =
 void ModelListCmd::Exec(const std::string& host, int port,
                         const std::string& filter, bool display_engine,
                         bool display_version, bool display_cpu_mode,
-                        bool display_gpu_mode) {
+                        bool display_gpu_mode, bool is_remote) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
@@ -73,40 +73,62 @@ void ModelListCmd::Exec(const std::string& host, int port,
         continue;
       }
 
-      count += 1;
+      if (is_remote) {
+        if (v["status"].asString() != "undownloaded") {
+          continue;
+        }
 
-      std::vector<std::string> row = {std::to_string(count),
-                                      v["model"].asString()};
-      if (display_engine) {
-        row.push_back(v["engine"].asString());
-      }
-      if (display_version) {
-        row.push_back(v["version"].asString());
-      }
+        count += 1;
 
-      if (auto& r = v["recommendation"]; !r.isNull()) {
-        if (display_cpu_mode) {
-          if (!r["cpu_mode"].isNull()) {
-            row.push_back("RAM: " + r["cpu_mode"]["ram"].asString() + " MiB");
+        std::vector<std::string> row = {std::to_string(count),
+                                        v["model"].asString()};
+        if (display_engine) {
+          row.push_back(v["engine"].asString());
+        }
+        if (display_version) {
+          row.push_back(v["version"].asString());
+        }
+        table.add_row({row.begin(), row.end()});
+      } else {
+        if (v["status"].asString() == "undownloaded") {
+          continue;
+        }
+
+        count += 1;
+
+        std::vector<std::string> row = {std::to_string(count),
+                                        v["model"].asString()};
+        if (display_engine) {
+          row.push_back(v["engine"].asString());
+        }
+        if (display_version) {
+          row.push_back(v["version"].asString());
+        }
+
+        if (auto& r = v["recommendation"]; !r.isNull()) {
+          if (display_cpu_mode) {
+            if (!r["cpu_mode"].isNull()) {
+              row.push_back("RAM: " + r["cpu_mode"]["ram"].asString() + " MiB");
+            }
+          }
+
+          if (display_gpu_mode) {
+            if (!r["gpu_mode"].isNull()) {
+              std::string s;
+              s += "ngl: " + r["gpu_mode"][0]["ngl"].asString() + " - ";
+              s += "context: " + r["gpu_mode"][0]["context_length"].asString() +
+                   " - ";
+              s += "RAM: " + r["gpu_mode"][0]["ram"].asString() + " MiB - ";
+              s += "VRAM: " + r["gpu_mode"][0]["vram"].asString() + " MiB - ";
+              s += "recommended ngl: " +
+                   r["gpu_mode"][0]["recommend_ngl"].asString();
+              row.push_back(s);
+            }
           }
         }
 
-        if (display_gpu_mode) {
-          if (!r["gpu_mode"].isNull()) {
-            std::string s;
-            s += "ngl: " + r["gpu_mode"][0]["ngl"].asString() + " - ";
-            s += "context: " + r["gpu_mode"][0]["context_length"].asString() +
-                 " - ";
-            s += "RAM: " + r["gpu_mode"][0]["ram"].asString() + " MiB - ";
-            s += "VRAM: " + r["gpu_mode"][0]["vram"].asString() + " MiB - ";
-            s += "recommended ngl: " +
-                 r["gpu_mode"][0]["recommend_ngl"].asString();
-            row.push_back(s);
-          }
-        }
+        table.add_row({row.begin(), row.end()});
       }
-
-      table.add_row({row.begin(), row.end()});
     }
   }
 

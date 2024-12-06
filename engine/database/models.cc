@@ -49,13 +49,10 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelList()
 }
 
 bool Models::IsUnique(const std::vector<ModelEntry>& entries,
-                      const std::string& model_id,
-                      const std::string& model_alias) const {
+                      const std::string& model_id) const {
   return std::none_of(
-      entries.begin(), entries.end(), [&](const ModelEntry& entry) {
-        return entry.model == model_id || entry.model_alias == model_id ||
-               entry.model == model_alias || entry.model_alias == model_alias;
-      });
+      entries.begin(), entries.end(),
+      [&](const ModelEntry& entry) { return entry.model == model_id; });
 }
 
 cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
@@ -85,66 +82,6 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
     CTL_WRN(e.what());
     return cpp::fail(e.what());
   }
-}
-
-std::string Models::GenerateShortenedAlias(
-    const std::string& model_id, const std::vector<ModelEntry>& entries) const {
-  std::vector<std::string> parts;
-  std::istringstream iss(model_id);
-  std::string part;
-  while (std::getline(iss, part, ':')) {
-    parts.push_back(part);
-  }
-
-  if (parts.empty()) {
-    return model_id;  // Return original if no parts
-  }
-
-  // Extract the filename without extension
-  std::string filename = parts.back();
-  size_t last_dot_pos = filename.find_last_of('.');
-  if (last_dot_pos != std::string::npos) {
-    filename = filename.substr(0, last_dot_pos);
-  }
-
-  // Convert to lowercase
-  std::transform(filename.begin(), filename.end(), filename.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-
-  // Generate alias candidates
-  std::vector<std::string> candidates;
-  candidates.push_back(filename);
-
-  if (parts.size() >= 2) {
-    candidates.push_back(parts[parts.size() - 2] + ":" + filename);
-  }
-
-  if (parts.size() >= 3) {
-    candidates.push_back(parts[parts.size() - 3] + ":" +
-                         parts[parts.size() - 2] + ":" + filename);
-  }
-
-  if (parts.size() >= 4) {
-    candidates.push_back(parts[0] + ":" + parts[1] + ":" +
-                         parts[parts.size() - 2] + ":" + filename);
-  }
-
-  // Find the first unique candidate
-  for (const auto& candidate : candidates) {
-    if (IsUnique(entries, model_id, candidate)) {
-      return candidate;
-    }
-  }
-
-  // If all candidates are taken, append a number to the last candidate
-  std::string base_candidate = candidates.back();
-  int suffix = 1;
-  std::string unique_candidate = base_candidate;
-  while (!IsUnique(entries, model_id, unique_candidate)) {
-    unique_candidate = base_candidate + "-" + std::to_string(suffix++);
-  }
-
-  return unique_candidate;
 }
 
 cpp::result<ModelEntry, std::string> Models::GetModelInfo(
@@ -190,8 +127,7 @@ void Models::PrintModelInfo(const ModelEntry& entry) const {
   LOG_INFO << "Engine: " << entry.engine;
 }
 
-cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
-                                                     bool use_short_alias) {
+cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry) {
   try {
     db_.exec("BEGIN TRANSACTION;");
     cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
@@ -200,11 +136,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry,
       CTL_WRN(model_list.error());
       return cpp::fail(model_list.error());
     }
-    if (IsUnique(model_list.value(), new_entry.model, new_entry.model_alias)) {
-      if (use_short_alias) {
-        new_entry.model_alias =
-            GenerateShortenedAlias(new_entry.model, model_list.value());
-      }
+    if (IsUnique(model_list.value(), new_entry.model)) {
 
       SQLite::Statement insert(
           db_,
@@ -271,7 +203,7 @@ cpp::result<bool, std::string> Models::UpdateModelAlias(
       return cpp::fail(model_list.error());
     }
     // Check new_model_alias is unique
-    if (IsUnique(model_list.value(), new_model_alias, new_model_alias)) {
+    if (IsUnique(model_list.value(), new_model_alias)) {
       SQLite::Statement upd(db_,
                             "UPDATE models "
                             "SET model_alias = ? "
@@ -299,6 +231,32 @@ cpp::result<bool, std::string> Models::DeleteModelEntry(
         db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
     del.bind(1, identifier);
     del.bind(2, identifier);
+    return del.exec() == 1;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
+  }
+}
+
+cpp::result<bool, std::string> Models::DeleteModelEntryWithOrg(
+    const std::string& src) {
+  try {
+    SQLite::Statement del(db_,
+                          "DELETE from models WHERE model_source LIKE ? AND "
+                          "status = \"undownloaded\"");
+    del.bind(1, src + "%");
+    return del.exec() == 1;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
+  }
+}
+
+cpp::result<bool, std::string> Models::DeleteModelEntryWithRepo(
+    const std::string& src) {
+  try {
+    SQLite::Statement del(db_,
+                          "DELETE from models WHERE model_source = ? AND "
+                          "status = \"undownloaded\"");
+    del.bind(1, src);
     return del.exec() == 1;
   } catch (const std::exception& e) {
     return cpp::fail(e.what());
@@ -336,6 +294,23 @@ bool Models::HasModel(const std::string& identifier) const {
   } catch (const std::exception& e) {
     CTL_WRN(e.what());
     return false;
+  }
+}
+
+cpp::result<std::vector<std::string>, std::string> Models::GetModelSources()
+    const {
+  try {
+    std::vector<std::string> sources;
+    SQLite::Statement query(db_,
+                            "SELECT DISTINCT model_source FROM models WHERE "
+                            "status = \"undownloaded\"");
+
+    while (query.executeStep()) {
+      sources.push_back(query.getColumn(0).getString());
+    }
+    return sources;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
   }
 }
 

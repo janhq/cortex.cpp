@@ -104,26 +104,6 @@ TEST_F(ModelsTestSuite, TestDeleteModelEntry) {
   EXPECT_TRUE(model_list_.GetModelInfo(kTestModel.model).has_error());
 }
 
-TEST_F(ModelsTestSuite, TestGenerateShortenedAlias) {
-  EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
-  auto models1 = model_list_.LoadModelList();
-  auto alias = model_list_.GenerateShortenedAlias(
-      "huggingface.co:bartowski:llama3.1-7b-gguf:Model_ID_Xxx.gguf",
-      models1.value());
-  EXPECT_EQ(alias, "model_id_xxx");
-  EXPECT_TRUE(model_list_.UpdateModelAlias(kTestModel.model, alias).value());
-
-  // Test with existing entries to force longer alias
-  auto models2 = model_list_.LoadModelList();
-  alias = model_list_.GenerateShortenedAlias(
-      "huggingface.co:bartowski:llama3.1-7b-gguf:Model_ID_Xxx.gguf",
-      models2.value());
-  EXPECT_EQ(alias, "llama3.1-7b-gguf:model_id_xxx");
-
-  // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
-}
-
 TEST_F(ModelsTestSuite, TestPersistence) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
