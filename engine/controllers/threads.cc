@@ -7,12 +7,12 @@
 void Threads::ListThreads(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    std::optional<uint8_t> limit, std::optional<std::string> order,
+    std::optional<std::string> limit, std::optional<std::string> order,
     std::optional<std::string> after, std::optional<std::string> before) const {
   CTL_INF("ListThreads");
-  auto res =
-      thread_service_->ListThreads(limit.value_or(20), order.value_or("desc"),
-                                   after.value_or(""), before.value_or(""));
+  auto res = thread_service_->ListThreads(
+      std::stoi(limit.value_or("20")), order.value_or("desc"),
+      after.value_or(""), before.value_or(""));
 
   if (res.has_error()) {
     Json::Value root;

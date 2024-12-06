@@ -71,7 +71,10 @@ cpp::result<OpenAi::Message, std::string> MessageService::RetrieveMessage(
 
 cpp::result<OpenAi::Message, std::string> MessageService::ModifyMessage(
     const std::string& thread_id, const std::string& message_id,
-    std::optional<Cortex::VariantMap> metadata) {
+    std::optional<Cortex::VariantMap> metadata,
+    std::optional<std::variant<std::string,
+                               std::vector<std::unique_ptr<OpenAi::Content>>>>
+        content) {
   LOG_TRACE << "ModifyMessage for thread " << thread_id << ", message "
             << message_id;
   auto msg = RetrieveMessage(thread_id, message_id);
@@ -79,7 +82,24 @@ cpp::result<OpenAi::Message, std::string> MessageService::ModifyMessage(
     return cpp::fail("Failed to retrieve message: " + msg.error());
   }
 
-  msg->metadata = metadata.value();
+  if (metadata.has_value()) {
+    msg->metadata = metadata.value();
+  }
+  if (content.has_value()) {
+    std::vector<std::unique_ptr<OpenAi::Content>> content_list{};
+
+    // If content is string
+    if (std::holds_alternative<std::string>(*content)) {
+      auto text_content = std::make_unique<OpenAi::TextContent>();
+      text_content->text.value = std::get<std::string>(*content);
+      content_list.push_back(std::move(text_content));
+    } else {
+      content_list = std::move(
+          std::get<std::vector<std::unique_ptr<OpenAi::Content>>>(*content));
+    }
+
+    msg->content = std::move(content_list);
+  }
   auto ptr = &msg.value();
 
   auto res = message_repository_->ModifyMessage(msg.value());

@@ -3,6 +3,7 @@
 #include <json/reader.h>
 #include <json/value.h>
 #include <json/writer.h>
+#include "common/assistant.h"
 #include "common/thread_tool_resources.h"
 #include "common/variant_map.h"
 #include "json_serializable.h"
@@ -47,6 +48,9 @@ struct Thread : JsonSerializable {
    */
   Cortex::VariantMap metadata;
 
+  // For supporting Jan
+  std::optional<std::vector<JanAssistant>> assistants;
+
   static cpp::result<Thread, std::string> FromJson(const Json::Value& json) {
     Thread thread;
 
@@ -88,6 +92,25 @@ struct Thread : JsonSerializable {
       } else {
         thread.metadata = res.value();
       }
+    }
+
+    if (json.isMember("title") && !json["title"].isNull()) {
+      thread.metadata["title"] = json["title"].asString();
+    }
+
+    if (json.isMember("assistants") && json["assistants"].isArray()) {
+      std::vector<JanAssistant> assistants;
+      for (Json::ArrayIndex i = 0; i < json["assistants"].size(); ++i) {
+        Json::Value assistant_json = json["assistants"][i];
+        auto assistant_result =
+            JanAssistant::FromJson(std::move(assistant_json));
+        if (assistant_result.has_error()) {
+          return cpp::fail("Failed to parse assistant: " +
+                           assistant_result.error());
+        }
+        assistants.push_back(std::move(assistant_result.value()));
+      }
+      thread.assistants = std::move(assistants);
     }
 
     return thread;
