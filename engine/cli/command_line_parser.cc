@@ -20,6 +20,7 @@
 #include "commands/model_import_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
+#include "commands/model_source_add_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/model_upd_cmd.h"
@@ -331,6 +332,40 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelImportCmd().Exec(cml_data_.config.apiServerHost,
                                     std::stoi(cml_data_.config.apiServerPort),
                                     cml_data_.model_id, cml_data_.model_path);
+  });
+
+  auto model_source_cmd = models_cmd->add_subcommand(
+      "sources", "Subcommands for managing model sources");
+  model_source_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                          " models sources [options] [subcommand]");
+  model_source_cmd->group(kSubcommands);
+
+  model_source_cmd->callback([this, model_source_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (model_source_cmd->get_subcommands().empty()) {
+      CLI_LOG(model_source_cmd->help());
+    }
+  });
+
+  auto model_src_add_cmd =
+      model_source_cmd->add_subcommand("add", "Add a model source");
+  model_src_add_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " models sources add [model_source]");
+  model_src_add_cmd->group(kSubcommands);
+  model_src_add_cmd->add_option("source", cml_data_.model_src, "");
+  model_src_add_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (cml_data_.model_src.empty()) {
+      CLI_LOG("[model_source] is required\n");
+      CLI_LOG(model_src_add_cmd->help());
+      return;
+    };
+
+    commands::ModelSourceAddCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.model_src);
   });
 }
 

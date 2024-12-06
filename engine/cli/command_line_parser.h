@@ -75,6 +75,7 @@ class CommandLineParser {
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
+    std::string model_src;
   };
   CmlData cml_data_;
   std::unordered_map<std::string, std::string> config_update_opts_;
