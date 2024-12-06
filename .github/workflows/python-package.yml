@@ -82,7 +82,7 @@ jobs:
         if: runner.os == 'windows'
         shell: pwsh
         run: |
-                $env:USERPROFILE\\Miniconda3\\Scripts\\conda.exe init
+                
                 conda create -y -n ${{env.MODEL_NAME}} python=3.11
                 
                 conda activate ${{env.MODEL_NAME}}
