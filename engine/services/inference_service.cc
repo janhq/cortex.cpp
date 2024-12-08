@@ -215,14 +215,24 @@ InferResult InferenceService::GetModels(
   LOG_TRACE << "Start to get models";
   Json::Value resp_data(Json::arrayValue);
   for (const auto& loaded_engine : loaded_engines) {
-    auto e = std::get<EngineI*>(loaded_engine);
-    if (e->IsSupported("GetModels")) {
-      e->GetModels(json_body,
-                   [&resp_data](Json::Value status, Json::Value res) {
-                     for (auto r : res["data"]) {
-                       resp_data.append(r);
-                     }
-                   });
+    if (std::holds_alternative<EngineI*>(loaded_engine)) {
+      auto e = std::get<EngineI*>(loaded_engine);
+      if (e->IsSupported("GetModels")) {
+        e->GetModels(json_body,
+                     [&resp_data](Json::Value status, Json::Value res) {
+                       for (auto r : res["data"]) {
+                         resp_data.append(r);
+                       }
+                     });
+      }
+    } else {
+      std::get<RemoteEngineI*>(loaded_engine)
+          ->GetModels(json_body,
+                      [&resp_data](Json::Value status, Json::Value res) {
+                        for (auto r : res["data"]) {
+                          resp_data.append(r);
+                        }
+                      });
     }
   }
 
@@ -281,6 +291,25 @@ InferResult InferenceService::FineTuning(
   // }
   // LOG_TRACE << "Done fine-tuning";
   return std::make_pair(stt, r);
+}
+
+bool InferenceService::StopInferencing(const std::string& engine_name,
+                                       const std::string& model_id) {
+  CTL_DBG("Stop inferencing");
+  auto engine_result = engine_service_->GetLoadedEngine(engine_name);
+  if (engine_result.has_error()) {
+    LOG_WARN << "Engine is not loaded yet";
+    return false;
+  }
+
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    auto engine = std::get<EngineI*>(engine_result.value());
+    if (engine->IsSupported("StopInferencing")) {
+      engine->StopInferencing(model_id);
+      CTL_INF("Stopped inferencing");
+    }
+  }
+  return true;
 }
 
 bool InferenceService::HasFieldInReq(std::shared_ptr<Json::Value> json_body,

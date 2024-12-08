@@ -3,6 +3,7 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/function_calling/common.h"
+#include "utils/http_util.h"
 
 using namespace inferences;
 
@@ -27,6 +28,13 @@ void server::ChatCompletion(
   LOG_DEBUG << "Start chat completion";
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
+  std::string model_id = (*json_body).get("model", "invalid_model").asString();
+  std::string engine_type;
+  if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
+    engine_type = kLlamaRepo;
+  } else {
+    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
+  }
   LOG_DEBUG << "request body: " << json_body->toStyledString();
   auto q = std::make_shared<services::SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
@@ -40,7 +48,7 @@ void server::ChatCompletion(
   }
   LOG_DEBUG << "Wait to chat completion responses";
   if (is_stream) {
-    ProcessStreamRes(std::move(callback), q);
+    ProcessStreamRes(std::move(callback), q, engine_type, model_id);
   } else {
     ProcessNonStreamRes(std::move(callback), *q);
   }
@@ -121,12 +129,16 @@ void server::LoadModel(const HttpRequestPtr& req,
 }
 
 void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                              std::shared_ptr<services::SyncQueue> q) {
+                              std::shared_ptr<services::SyncQueue> q,
+                              const std::string& engine_type,
+                              const std::string& model_id) {
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
-  auto chunked_content_provider =
-      [q, err_or_done](char* buf, std::size_t buf_size) -> std::size_t {
+  auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
+                                      char* buf,
+                                      std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
+      inference_svc_->StopInferencing(engine_type, model_id);
       return 0;
     }
 
