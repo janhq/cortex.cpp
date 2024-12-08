@@ -11,7 +11,7 @@ cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "CreateMessage for thread " << thread_id;
 
-  auto seconds_since_epoch =
+  uint32_t seconds_since_epoch =
       std::chrono::duration_cast<std::chrono::seconds>(
           std::chrono::system_clock::now().time_since_epoch())
           .count();
@@ -33,7 +33,7 @@ cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
   OpenAi::Message msg;
   msg.id = msg_id;
   msg.object = "thread.message";
-  msg.created_at = 0;
+  msg.created_at = seconds_since_epoch;
   msg.thread_id = thread_id;
   msg.status = OpenAi::Status::COMPLETED;
   msg.completed_at = seconds_since_epoch;
