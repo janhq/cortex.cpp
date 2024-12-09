@@ -2,6 +2,7 @@
 #include <chrono>
 #include <unordered_set>
 #include "database/models.h"
+#include "json/json.h"
 #include "utils/curl_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
@@ -21,6 +22,27 @@ struct ModelInfo {
   std::vector<std::string> tags;
   std::string created_at;
   std::string model_id;
+
+  std::string ToJsonString() {
+    Json::Value root;
+    root["id"] = id;
+    root["likes"] = likes;
+    root["trendingScore"] = trending_score;
+    root["isPrivate"] = is_private;
+    root["downloads"] = downloads;
+
+    Json::Value tags_array(Json::arrayValue);
+    for (const auto& tag : tags) {
+      tags_array.append(tag);
+    }
+    root["tags"] = tags_array;
+
+    root["createdAt"] = created_at;
+    root["modelId"] = model_id;
+
+    Json::StreamWriterBuilder builder;
+    return Json::writeString(builder, root);
+  }
 };
 
 std::vector<ModelInfo> ParseJsonString(const std::string& json_str) {
@@ -178,7 +200,7 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
     // Clean up
     for (auto const& mid : model_list_before) {
       if (updated_model_list.find(mid) == updated_model_list.end()) {
-        (void) model_db.DeleteModelEntry(mid);
+        (void)model_db.DeleteModelEntry(mid);
       }
     }
   } else {
@@ -204,7 +226,7 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
   }
   for (auto const& mid : model_list_before) {
     if (updated_model_list.find(mid) == updated_model_list.end()) {
-      (void) model_db.DeleteModelEntry(mid);
+      (void)model_db.DeleteModelEntry(mid);
     }
   }
   return true;
@@ -212,8 +234,8 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
 
 cpp::result<std::unordered_set<std::string>, std::string>
 ModelSourceService::AddRepoSiblings(const std::string& model_source,
-                            const std::string& author,
-                            const std::string& model_name) {
+                                    const std::string& author,
+                                    const std::string& model_name) {
   std::unordered_set<std::string> res;
   auto repo_info = hu::GetHuggingFaceModelRepoInfo(author, model_name);
   if (repo_info.has_error()) {
@@ -242,9 +264,9 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
             .model_source = model_source,
             .status = cortex::db::ModelStatus::Undownloaded,
             .engine = "llama-cpp"};
-        (void) model_db.AddModelEntry(e);
+        (void)model_db.AddModelEntry(e);
       } else {
-        // update metadata
+        // TODO(sang) update metadata
       }
       res.insert(model_id);
     }
@@ -291,7 +313,7 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
     // Clean up
     for (auto const& mid : model_list_before) {
       if (updated_model_list.find(mid) == updated_model_list.end()) {
-        (void) model_db.DeleteModelEntry(mid);
+        (void)model_db.DeleteModelEntry(mid);
       }
     }
   } else {
@@ -329,7 +351,7 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   // Clean up
   for (auto const& mid : model_list_before) {
     if (updated_model_list.find(mid) == updated_model_list.end()) {
-      (void) model_db.DeleteModelEntry(mid);
+      (void)model_db.DeleteModelEntry(mid);
     }
   }
   return true;

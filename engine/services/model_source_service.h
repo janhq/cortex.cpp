@@ -9,10 +9,7 @@ class ModelSourceService {
  public:
   explicit ModelSourceService();
   ~ModelSourceService();
-  // model source can be HF organization, repo or others (for example Modelscope,..)
-  // default is HF, need to check if it is organization or repo
-  // if repo:
-  // if org: api/models?author=cortexso
+  
   cpp::result<bool, std::string> AddModelSource(
       const std::string& model_source);
 

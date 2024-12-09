@@ -190,6 +190,7 @@ void Models::ListModel(
           obj["modelSource"] = model_entry.model_source;
           obj["status"] = status_to_string(model_entry.status);
           obj["engine"] = model_entry.engine;
+          obj["metadata"] = model_entry.metadata;
           data.append(std::move(obj));
           continue;
         }

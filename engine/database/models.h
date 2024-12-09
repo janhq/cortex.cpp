@@ -20,6 +20,7 @@ struct ModelEntry {
   std::string model_source;
   ModelStatus status;
   std::string engine;
+  std::string metadata;
 };
 
 class Models {
