@@ -105,7 +105,7 @@ jobs:
             $pythonFolder = Split-Path -Path "$pythonPath" -Parent
             echo "PYTHON_FOLDER=$pythonFolder" >> $env:GITHUB_ENV
             
-            Move-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force
+            Copy-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force -Recurse
             
       - name: prepare python package unix
         if : runner.os != 'windows'
@@ -126,7 +126,7 @@ jobs:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
             path: ${{env.PYTHON_FOLDER}}
             include-hidden-files: true
-            compression-level: 0
+            compression-level: 9
 
   codesign:
     runs-on: macos-latest
