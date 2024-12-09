@@ -38,7 +38,7 @@ void Hardware::Activate(
       ahc.gpus.push_back(g.asInt());
     }
   }
-  std::sort(ahc.gpus.begin(), ahc.gpus.end());
+  
   if (!hw_svc_->IsValidConfig(ahc)) {
     Json::Value ret;
     ret["message"] = "Invalid GPU index provided.";
