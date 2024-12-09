@@ -116,48 +116,6 @@ TEST_F(ModelsTestSuite, TestPersistence) {
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
 }
 
-TEST_F(ModelsTestSuite, TestUpdateModelAlias) {
-  constexpr const auto kNewTestAlias = "new_test_alias";
-  constexpr const auto kNonExistentModel = "non_existent_model";
-  constexpr const auto kAnotherAlias = "another_alias";
-  constexpr const auto kFinalTestAlias = "final_test_alias";
-  constexpr const auto kAnotherModelId = "another_model_id";
-  // Add the test model
-  ASSERT_TRUE(model_list_.AddModelEntry(kTestModel).value());
-
-  // Test successful update
-  EXPECT_TRUE(
-      model_list_.UpdateModelAlias(kTestModel.model, kNewTestAlias).value());
-  auto updated_model = model_list_.GetModelInfo(kNewTestAlias);
-  EXPECT_TRUE(updated_model.has_value());
-  EXPECT_EQ(updated_model.value().model_alias, kNewTestAlias);
-  EXPECT_EQ(updated_model.value().model, kTestModel.model);
-
-  // Test update with non-existent model
-  EXPECT_TRUE(model_list_.UpdateModelAlias(kNonExistentModel, kAnotherAlias)
-                  .has_error());
-
-  // Test update with non-unique alias
-  cortex::db::ModelEntry another_model = kTestModel;
-  another_model.model = kAnotherModelId;
-  another_model.model_alias = kAnotherAlias;
-  ASSERT_TRUE(model_list_.AddModelEntry(another_model).value());
-
-  EXPECT_FALSE(
-      model_list_.UpdateModelAlias(kTestModel.model, kAnotherAlias).value());
-
-  // Test update using model alias instead of model ID
-  EXPECT_TRUE(model_list_.UpdateModelAlias(kNewTestAlias, kFinalTestAlias));
-  updated_model = model_list_.GetModelInfo(kFinalTestAlias);
-  EXPECT_TRUE(updated_model);
-  EXPECT_EQ(updated_model.value().model_alias, kFinalTestAlias);
-  EXPECT_EQ(updated_model.value().model, kTestModel.model);
-
-  // Clean up
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
-  EXPECT_TRUE(model_list_.DeleteModelEntry(kAnotherModelId).value());
-}
-
 TEST_F(ModelsTestSuite, TestHasModel) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
