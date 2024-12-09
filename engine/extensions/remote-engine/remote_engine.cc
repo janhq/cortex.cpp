@@ -16,6 +16,10 @@ bool is_anthropic(const std::string& model) {
   return model.find("claude") != std::string::npos;
 }
 
+bool is_openai(const std::string& model) {
+  return model.find("gpt") != std::string::npos;
+}
+
 struct AnthropicChunk {
   std::string type;
   std::string id;
@@ -78,6 +82,35 @@ struct AnthropicChunk {
   }
 };
 
+const std::string kOpenaiChatStreamTemplate = R"(
+{
+    "object": "chat.completion.chunk",
+    "model": "{{ model  }}",
+    "choices": [
+        {
+            "index": 0,
+            "delta": {
+                {% if type == "message_start" %}
+                "role": "assistant",
+                "content": ""
+                {% else if type == "content_block_delta" %}
+                "role": "assistant",
+                "content": "{{ delta.text }}"
+                {% else if type == "content_block_stop" %}
+                "role": "assistant",
+                "content": ""
+                {% endif %}
+            },
+            {% if type == "content_block_stop" %}
+            "finish_reason": "stop"
+            {% else %}
+            "finish_reason": null
+            {% endif %}
+        }
+    ]
+}
+)";
+
 }  // namespace
 
 size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
@@ -120,17 +153,18 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
 
     // Parse the JSON
     Json::Value chunk_json;
-    if (is_anthropic(context->model)) {
-      AnthropicChunk ac(line);
-      if (ac.should_ignore)
+    if (!is_openai(context->model)) {
+      std::string s = line.substr(6);
+      try {
+        auto root = json_helper::ParseJsonString(s);
+        root["model"] = context->model;
+        root["id"] = context->id;
+        auto result = context->renderer.Render(context->stream_template, root);
+        chunk_json["data"] = "data: " + result + "\n\n";
+      } catch (const std::exception& e) {
+        CTL_WRN("JSON parse error: " << e.what());
         continue;
-      ac.model = context->model;
-      if (ac.type == "message_start") {
-        context->id = ac.id;
-      } else {
-        ac.id = context->id;
       }
-      chunk_json["data"] = ac.ToOpenAiFormatString() + "\n\n";
     } else {
       chunk_json["data"] = line + "\n\n";
     }
@@ -178,10 +212,23 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   headers = curl_slist_append(headers, "Cache-Control: no-cache");
   headers = curl_slist_append(headers, "Connection: keep-alive");
 
+  std::string stream_template = kOpenaiChatStreamTemplate;
+  if (config.transform_resp["chat_completions"]["stream_template"]) {
+    stream_template =
+        config.transform_resp["chat_completions"]["stream_template"]
+            .as<std::string>();
+  } else {
+    CTL_WRN("stream_template does not exist");
+  }
+
   StreamContext context{
       std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
           callback),
-      "", "", config.model};
+      "",
+      "",
+      config.model,
+      renderer_,
+      stream_template};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
