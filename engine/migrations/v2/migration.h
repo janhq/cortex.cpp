@@ -60,10 +60,7 @@ inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
 
       if (table_exists) {
         // Alter existing table
-        cortex::mgr::AddColumnIfNotExists(db, "models", "model_format", "TEXT");
-        cortex::mgr::AddColumnIfNotExists(db, "models", "model_source", "TEXT");
-        cortex::mgr::AddColumnIfNotExists(db, "models", "status", "TEXT");
-        cortex::mgr::AddColumnIfNotExists(db, "models", "engine", "TEXT");
+        cortex::mgr::AddColumnIfNotExists(db, "models", "metadata", "TEXT");
       } else {
         // Create new table
         db.exec(
@@ -76,7 +73,8 @@ inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
             "model_format TEXT,"
             "model_source TEXT,"
             "status TEXT,"
-            "engine TEXT"
+            "engine TEXT,"
+            "metadata TEXT"
             ")");
       }
     }
@@ -141,15 +139,21 @@ inline cpp::result<bool, std::string> MigrateDBDown(SQLite::Database& db) {
             "author_repo_id TEXT,"
             "branch_name TEXT,"
             "path_to_model_yaml TEXT,"
-            "model_alias TEXT"
+            "model_alias TEXT,"
+            "model_format TEXT,"
+            "model_source TEXT,"
+            "status TEXT,"
+            "engine TEXT"
             ")");
 
         // Copy data from the current table to the new table
         db.exec(
             "INSERT INTO models_old (model_id, author_repo_id, branch_name, "
-            "path_to_model_yaml, model_alias) "
+            "path_to_model_yaml, model_alias, model_format, model_source, "
+            "status, engine) "
             "SELECT model_id, author_repo_id, branch_name, path_to_model_yaml, "
-            "model_alias FROM models");
+            "model_alias, model_format, model_source, status, engine FROM "
+            "models");
 
         // Drop the current table
         db.exec("DROP TABLE models");

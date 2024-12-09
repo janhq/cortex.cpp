@@ -141,7 +141,6 @@ cpp::result<bool, std::string> MigrationManager::DoUpFolderStructure(
   switch (version) {
     case 0:
       return v0::MigrateFolderStructureUp();
-      break;
     case 1:
       return v1::MigrateFolderStructureUp();
     case 2:
@@ -158,7 +157,6 @@ cpp::result<bool, std::string> MigrationManager::DoDownFolderStructure(
   switch (version) {
     case 0:
       return v0::MigrateFolderStructureDown();
-      break;
     case 1:
       return v1::MigrateFolderStructureDown();
     case 2:
@@ -196,7 +194,6 @@ cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
   switch (version) {
     case 0:
       return v0::MigrateDBUp(db_);
-      break;
     case 1:
       return v1::MigrateDBUp(db_);
     case 2:
@@ -212,7 +209,6 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
   switch (version) {
     case 0:
       return v0::MigrateDBDown(db_);
-      break;
     case 1:
       return v1::MigrateDBDown(db_);
     case 2:
