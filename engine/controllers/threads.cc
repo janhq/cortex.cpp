@@ -7,12 +7,12 @@
 void Threads::ListThreads(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    std::optional<uint8_t> limit, std::optional<std::string> order,
+    std::optional<std::string> limit, std::optional<std::string> order,
     std::optional<std::string> after, std::optional<std::string> before) const {
   CTL_INF("ListThreads");
-  auto res =
-      thread_service_->ListThreads(limit.value_or(20), order.value_or("desc"),
-                                   after.value_or(""), before.value_or(""));
+  auto res = thread_service_->ListThreads(
+      std::stoi(limit.value_or("20")), order.value_or("desc"),
+      after.value_or(""), before.value_or(""));
 
   if (res.has_error()) {
     Json::Value root;
@@ -25,6 +25,7 @@ void Threads::ListThreads(
   Json::Value msg_arr(Json::arrayValue);
   for (auto& msg : res.value()) {
     if (auto it = msg.ToJson(); it.has_value()) {
+      it->removeMember("assistants");
       msg_arr.append(it.value());
     } else {
       CTL_WRN("Failed to convert message to json: " + it.error());
@@ -114,8 +115,9 @@ void Threads::RetrieveThread(
       resp->setStatusCode(k400BadRequest);
       callback(resp);
     } else {
+      thread_to_json->removeMember("assistants");
       auto resp =
-          cortex_utils::CreateCortexHttpJsonResponse(res->ToJson().value());
+          cortex_utils::CreateCortexHttpJsonResponse(thread_to_json.value());
       resp->setStatusCode(k200OK);
       callback(resp);
     }

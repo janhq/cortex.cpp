@@ -1,13 +1,9 @@
 #pragma once
 
-#include <filesystem>
-#include <fstream>
-#include <iostream>
 #include <mutex>
 #include <string>
-#include "utils/logging_utils.h"
+#include <vector>
 #include "utils/result.hpp"
-#include "yaml-cpp/yaml.h"
 
 namespace config_yaml_utils {
 
@@ -59,6 +55,8 @@ struct CortexConfig {
 
   bool verifyPeerSsl;
   bool verifyHostSsl;
+  std::string sslCertPath;
+  std::string sslKeyPath;
 };
 
 class CortexConfigMgr {

@@ -206,8 +206,8 @@ void Models::ListModel(
           obj["model"] = model_entry.model;
           obj["status"] = "downloaded";
           auto es = model_service_->GetEstimation(model_entry.model);
-          if (es.has_value()) {
-            obj["recommendation"] = hardware::ToJson(es.value());
+          if (es.has_value() && !!es.value()) {
+            obj["recommendation"] = hardware::ToJson(*(es.value()));
           }
           data.append(std::move(obj));
           yaml_handler.Reset();

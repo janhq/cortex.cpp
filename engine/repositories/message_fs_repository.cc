@@ -1,4 +1,5 @@
 #include "message_fs_repository.h"
+#include <algorithm>
 #include <fstream>
 #include <mutex>
 #include "utils/result.hpp"
@@ -52,7 +53,61 @@ MessageFsRepository::ListMessages(const std::string& thread_id, uint8_t limit,
   auto mutex = GrabMutex(thread_id);
   std::shared_lock<std::shared_mutex> lock(*mutex);
 
-  return ReadMessageFromFile(thread_id);
+  auto read_result = ReadMessageFromFile(thread_id);
+  if (read_result.has_error()) {
+    return cpp::fail(read_result.error());
+  }
+
+  std::vector<OpenAi::Message> messages = std::move(read_result.value());
+
+  if (!run_id.empty()) {
+    messages.erase(std::remove_if(messages.begin(), messages.end(),
+                                  [&run_id](const OpenAi::Message& msg) {
+                                    return msg.run_id != run_id;
+                                  }),
+                   messages.end());
+  }
+
+  std::sort(messages.begin(), messages.end(),
+            [&order](const OpenAi::Message& a, const OpenAi::Message& b) {
+              if (order == "desc") {
+                return a.created_at > b.created_at;
+              }
+              return a.created_at < b.created_at;
+            });
+
+  auto start_it = messages.begin();
+  auto end_it = messages.end();
+
+  if (!after.empty()) {
+    start_it = std::find_if(
+        messages.begin(), messages.end(),
+        [&after](const OpenAi::Message& msg) { return msg.id == after; });
+    if (start_it != messages.end()) {
+      ++start_it;  // Start from the message after the 'after' message
+    } else {
+      start_it = messages.begin();
+    }
+  }
+
+  if (!before.empty()) {
+    end_it = std::find_if(
+        messages.begin(), messages.end(),
+        [&before](const OpenAi::Message& msg) { return msg.id == before; });
+  }
+
+  std::vector<OpenAi::Message> result;
+  size_t distance = std::distance(start_it, end_it);
+  size_t limit_size = static_cast<size_t>(limit);
+  CTL_INF("Distance: " + std::to_string(distance) +
+          ", limit_size: " + std::to_string(limit_size));
+  result.reserve(distance < limit_size ? distance : limit_size);
+
+  for (auto it = start_it; it != end_it && result.size() < limit_size; ++it) {
+    result.push_back(std::move(*it));
+  }
+
+  return result;
 }
 
 cpp::result<OpenAi::Message, std::string> MessageFsRepository::RetrieveMessage(

@@ -34,7 +34,7 @@ class Threads : public drogon::HttpController<Threads, false> {
 
   void ListThreads(const HttpRequestPtr& req,
                    std::function<void(const HttpResponsePtr&)>&& callback,
-                   std::optional<uint8_t> limit,
+                   std::optional<std::string> limit,
                    std::optional<std::string> order,
                    std::optional<std::string> after,
                    std::optional<std::string> before) const;

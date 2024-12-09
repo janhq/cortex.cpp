@@ -344,9 +344,10 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
-cpp::result<hardware::Estimation, std::string> ModelService::GetEstimation(
-    const std::string& model_handle, const std::string& kv_cache, int n_batch,
-    int n_ubatch) {
+cpp::result<std::optional<hardware::Estimation>, std::string>
+ModelService::GetEstimation(const std::string& model_handle,
+                            const std::string& kv_cache, int n_batch,
+                            int n_ubatch) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -921,7 +922,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
     if (status == drogon::k200OK) {
       return true;
     } else {
-      CTL_ERR("Model failed to get model status with status code: " << status);
+      CTL_WRN("Model failed to get model status with status code: " << status);
       return cpp::fail("Model failed to get model status: " +
                        data["message"].asString());
     }
@@ -1149,13 +1150,13 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
                             .free_vram_MiB = free_vram_MiB};
   auto es = hardware::EstimateLLaMACppRun(model_path, rc);
 
-  if (es.gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
-    CTL_WRN("Not enough VRAM - " << "required: " << es.gpu_mode.vram_MiB
+  if (!!es && (*es).gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
+    CTL_WRN("Not enough VRAM - " << "required: " << (*es).gpu_mode.vram_MiB
                                  << ", available: " << free_vram_MiB);
   }
 
-  if (es.cpu_mode.ram_MiB > free_ram_MiB) {
-    CTL_WRN("Not enough RAM - " << "required: " << es.cpu_mode.ram_MiB
+  if (!!es && (*es).cpu_mode.ram_MiB > free_ram_MiB) {
+    CTL_WRN("Not enough RAM - " << "required: " << (*es).cpu_mode.ram_MiB
                                 << ", available: " << free_ram_MiB);
   }
 

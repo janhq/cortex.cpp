@@ -1,14 +1,13 @@
 #include "hardware.h"
 #include "database.h"
+#include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
 
 namespace cortex::db {
 
-Hardwares::Hardwares() : db_(cortex::db::Database::GetInstance().db()) {
-}
+Hardwares::Hardwares() : db_(cortex::db::Database::GetInstance().db()) {}
 
-Hardwares::Hardwares(SQLite::Database& db) : db_(db) {
-}
+Hardwares::Hardwares(SQLite::Database& db) : db_(db) {}
 
 Hardwares::~Hardwares() {}
 
