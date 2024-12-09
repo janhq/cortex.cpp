@@ -1,4 +1,3 @@
-
 name: Build and Package Python Library
 
 on:
@@ -12,11 +11,21 @@ on:
       model_name:
         description: "name of model to be release"
         required: true
+      repo_name:
+        description: "name of repo to be checked out"
+        required: true
+      branch_name:
+        description: "name of branch to be checked out"
+        required: true
+        default: main
+
 
 
 env:
   MODEL_DIR: models/whispervq # ${{ inputs.model_dir }}
   MODEL_NAME: whispervq # ${{ inputs.model_name }}
+  REPO_NAME: janhq/models # ${{ inputs.model_name }}
+  BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
 
 jobs:
   build-and-test:
@@ -26,41 +35,45 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - os: "linux"
-          #   name: "amd64"
-          #   runs-on: "ubuntu-20-04-cuda-12-0"
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-20-04-cuda-12-0"
           - os: "mac"
             name: "amd64"
             runs-on: "macos-selfhosted-12"
           - os: "mac"
             name: "arm64"
             runs-on: "macos-silicon"
-        #   - os: "windows"
-        #     name: "amd64"
-        #     runs-on: "windows-cuda-12-0"
+          - os: "windows"
+            name: "amd64"
+            runs-on: "windows-cuda-12-0"
     steps:
       - name: Clone
         id: checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
-          repository: janhq/models
-          ref: "feat/ci-python-models"
-
+          repository: ${{env.REPO_NAME}}
+          ref: ${{env.BRANCH_NAME}}
       - uses: conda-incubator/setup-miniconda@v3
+        if: runner.os != 'windows'
         with:
           auto-update-conda: true
           python-version: 3.11
+      - name: use python
+        if : runner.os == 'windows'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Install dependencies Windows
         if: runner.os == 'windows'
+        shell: pwsh
         run: |
-          conda create -y -n ${{env.MODEL_NAME}} python=3.11
-          source $HOME/miniconda/bin/activate base
-          conda init
-          conda activate ${{env.MODEL_NAME}}
-          python -m pip install --upgrade pip
-          python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
+                
+                python3 -m pip install --upgrade pip
+                python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
+
       - name: Install dependencies Linux
         if: runner.os == 'linux'
         run: |
@@ -70,7 +83,7 @@ jobs:
           conda activate ${{env.MODEL_NAME}}
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
-    
+  
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
         run: |
@@ -80,15 +93,19 @@ jobs:
           conda activate ${{env.MODEL_NAME}}
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
+
       - name: prepare python package windows
         if : runner.os == 'windows'
-        shell: cmd
+        shell: pwsh
         run: |
-            source $HOME/miniconda/bin/activate base
-            conda init
-            conda activate ${{env.MODEL_NAME}}
-            for /f "delims=" %%a in ('where python') do set "PYTHON_PATH=%%a"
-            echo %PYTHON_PATH%
+            $pythonPath = where.exe python
+            echo "Python path (where.exe): $pythonPath"
+
+
+            $pythonFolder = Split-Path -Path "$pythonPath" -Parent
+            echo "PYTHON_FOLDER=$pythonFolder" >> $env:GITHUB_ENV
+            
+            Move-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force
             
       - name: prepare python package unix
         if : runner.os != 'windows'
@@ -101,13 +118,15 @@ jobs:
             PYTHON_FOLDER=$(dirname $(dirname "$PYTHON_PATH"))
             echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
+      
       - name: Upload Artifact
-        if : runner.os == 'macOS' || runner.os == 'linux'
+        #if : runner.os == 'windows' || runner.os == 'linux'
         uses: actions/upload-artifact@v4
         with:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
             path: ${{env.PYTHON_FOLDER}}
             include-hidden-files: true
+            compression-level: 0
 
   codesign:
     runs-on: macos-latest
@@ -141,9 +160,11 @@ jobs:
           name: ${{env.MODEL_NAME}}-mac-amd64-signed
           path: ${{env.MODEL_NAME}}-mac-amd64
           include-hidden-files: true
+          compression-level: 0
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{env.MODEL_NAME}}-mac-arm64-signed
           path: ${{env.MODEL_NAME}}-mac-arm64
           include-hidden-files: true
+          compression-level: 0
