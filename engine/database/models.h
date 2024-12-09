@@ -58,6 +58,8 @@ class Models {
       const std::string& identifier) const;
   bool HasModel(const std::string& identifier) const;
   cpp::result<std::vector<std::string>, std::string> GetModelSources() const;
+  cpp::result<std::vector<std::string>, std::string> GetModels(
+      const std::string& model_src) const;
 };
 
 }  // namespace cortex::db

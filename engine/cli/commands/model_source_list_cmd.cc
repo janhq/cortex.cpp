@@ -38,6 +38,7 @@ bool ModelSourceListCmd::Exec(const std::string& host, int port) {
     CTL_ERR(result.error());
     return false;
   }
+  table.format().font_color(tabulate::Color::green);
   int count = 0;
 
   if (!result.value()["data"].isNull()) {

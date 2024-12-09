@@ -314,4 +314,21 @@ cpp::result<std::vector<std::string>, std::string> Models::GetModelSources()
   }
 }
 
+cpp::result<std::vector<std::string>, std::string> Models::GetModels(
+    const std::string& model_src) const {
+  try {
+    std::vector<std::string> ids;
+    SQLite::Statement query(db_,
+                            "SELECT model_id FROM models WHERE model_source = "
+                            "? AND status = \"undownloaded\"");
+    query.bind(1, model_src);
+    while (query.executeStep()) {
+      ids.push_back(query.getColumn(0).getString());
+    }
+    return ids;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
+  }
+}
+
 }  // namespace cortex::db

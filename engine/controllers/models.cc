@@ -187,6 +187,7 @@ void Models::ListModel(
             }
             return "unknown";
           };
+          obj["modelSource"] = model_entry.model_source;
           obj["status"] = status_to_string(model_entry.status);
           obj["engine"] = model_entry.engine;
           data.append(std::move(obj));
