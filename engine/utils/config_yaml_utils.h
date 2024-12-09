@@ -55,6 +55,8 @@ struct CortexConfig {
 
   bool verifyPeerSsl;
   bool verifyHostSsl;
+  std::string sslCertPath;
+  std::string sslKeyPath;
 };
 
 class CortexConfigMgr {

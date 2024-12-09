@@ -219,6 +219,24 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
         resp->addHeader("Access-Control-Allow-Methods", "*");
       });
 
+  // ssl
+  auto ssl_cert_path = config.sslCertPath;
+  auto ssl_key_path = config.sslKeyPath;
+
+  if (!ssl_cert_path.empty() && !ssl_key_path.empty()) {
+    CTL_INF("SSL cert path: " << ssl_cert_path);
+    CTL_INF("SSL key path: " << ssl_key_path);
+
+    if (!std::filesystem::exists(ssl_cert_path) ||
+        !std::filesystem::exists(ssl_key_path)) {
+      CTL_ERR("SSL cert or key file not exist at specified path! Ignore..");
+      return;
+    }
+
+    drogon::app().setSSLFiles(ssl_cert_path, ssl_key_path);
+    drogon::app().addListener(config.apiServerHost, 443, true);
+  }
+
   drogon::app().run();
   if (hw_service->ShouldRestart()) {
     CTL_INF("Restart to update hardware configuration");
