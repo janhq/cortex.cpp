@@ -1,8 +1,7 @@
 #pragma once
+#include <atomic>
 #include <thread>
 #include <unordered_set>
-#include <thread>
-#include <atomic>
 #include "utils/result.hpp"
 
 namespace services {
@@ -23,7 +22,21 @@ class ModelSourceService {
   cpp::result<std::vector<std::string>, std::string> GetModelSources();
 
  private:
-  cpp::result<std::unordered_set<std::string>, std::string> AddRepo(
+  cpp::result<bool, std::string> AddHfOrg(const std::string& model_source,
+                                          const std::string& author);
+
+  cpp::result<bool, std::string> AddHfRepo(
+      const std::string& model_source, const std::string& author,
+      const std::string& model_name);
+
+  cpp::result<std::unordered_set<std::string>, std::string> AddRepoSiblings(
+      const std::string& model_source, const std::string& author,
+      const std::string& model_name);
+
+  cpp::result<bool, std::string> AddCortexsoOrg(
+      const std::string& model_source);
+
+  cpp::result<bool, std::string> AddCortexsoRepo(
       const std::string& model_source, const std::string& author,
       const std::string& model_name);
 
@@ -36,7 +49,7 @@ class ModelSourceService {
   void SyncModelSource();
 
  private:
- std::thread sync_db_thread_;
- std::atomic<bool> running_;
+  std::thread sync_db_thread_;
+  std::atomic<bool> running_;
 };
 }  // namespace services

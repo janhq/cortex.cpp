@@ -21,7 +21,7 @@ using Row_t =
 void ModelListCmd::Exec(const std::string& host, int port,
                         const std::string& filter, bool display_engine,
                         bool display_version, bool display_cpu_mode,
-                        bool display_gpu_mode, bool is_remote) {
+                        bool display_gpu_mode, bool available) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
     CLI_LOG("Starting server ...");
@@ -73,7 +73,7 @@ void ModelListCmd::Exec(const std::string& host, int port,
         continue;
       }
 
-      if (is_remote) {
+      if (available) {
         if (v["status"].asString() != "undownloaded") {
           continue;
         }

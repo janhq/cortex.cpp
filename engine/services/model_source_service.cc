@@ -74,8 +74,6 @@ ModelSourceService::~ModelSourceService() {
 
 cpp::result<bool, std::string> ModelSourceService::AddModelSource(
     const std::string& model_source) {
-  // https://huggingface.co/Orenguteng
-  // https://huggingface.co/Orenguteng/Llama-3.1-8B-Lexi-Uncensored-V2-GGUF
   auto res = url_parser::FromUrlString(model_source);
   if (res.has_error()) {
     return cpp::fail(res.error());
@@ -88,131 +86,17 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
     if (auto is_org = r.pathParams.size() == 1; is_org) {
       auto& author = r.pathParams[0];
       if (author == "cortexso") {
-        if (auto res = curl_utils::SimpleGet(
-                "https://huggingface.co/api/models?author=" + author);
-            res.has_value()) {
-          auto models = ParseJsonString(res.value());
-          // Get models from db
-          cortex::db::Models model_db;
-
-          auto model_list_before = model_db.GetModels(model_source)
-                                       .value_or(std::vector<std::string>{});
-          std::unordered_set<std::string> updated_model_list;
-          for (auto const& m : models) {
-            CTL_INF(m.id);
-            auto author_model = string_utils::SplitBy(m.id, "/");
-            if (author_model.size() == 2) {
-              auto const& author = author_model[0];
-              auto const& model_name = author_model[1];
-              auto branches = huggingface_utils::GetModelRepositoryBranches(
-                  "cortexso", model_name);
-              if (branches.has_error()) {
-                CTL_INF(branches.error());
-                continue;
-              }
-              for (auto const& [branch, _] : branches.value()) {
-                CTL_INF(branch);
-                auto add_res = AddCortexsoRepoBranch(model_source, author,
-                                                     model_name, branch)
-                                   .value_or(std::unordered_set<std::string>{});
-                for (auto const& a : add_res) {
-                  updated_model_list.insert(a);
-                }
-              }
-            }
-          }
-          // Clean up
-          for (auto const& mid : model_list_before) {
-            if (updated_model_list.find(mid) == updated_model_list.end()) {
-              model_db.DeleteModelEntry(mid);
-            }
-          }
-        }
+        return AddCortexsoOrg(model_source);
       } else {
-        if (auto res = curl_utils::SimpleGet(
-                "https://huggingface.co/api/models?author=" + author);
-            res.has_value()) {
-          auto models = ParseJsonString(res.value());
-          // Get models from db
-          cortex::db::Models model_db;
-
-          auto model_list_before = model_db.GetModels(model_source)
-                                       .value_or(std::vector<std::string>{});
-          std::unordered_set<std::string> updated_model_list;
-          // Add new models
-          for (auto const& m : models) {
-            CTL_INF(m.id);
-            auto author_model = string_utils::SplitBy(m.id, "/");
-            if (author_model.size() == 2) {
-              auto const& author = author_model[0];
-              auto const& model_name = author_model[1];
-              auto add_res = AddRepo(model_source, author, model_name)
-                                 .value_or(std::unordered_set<std::string>{});
-              for (auto const& a : add_res) {
-                updated_model_list.insert(a);
-              }
-            }
-          }
-
-          // Clean up
-          for (auto const& mid : model_list_before) {
-            if (updated_model_list.find(mid) == updated_model_list.end()) {
-              model_db.DeleteModelEntry(mid);
-            }
-          }
-        }
+        return AddHfOrg(model_source, author);
       }
-
     } else {  // Repo
       auto const& author = r.pathParams[0];
       auto const& model_name = r.pathParams[1];
       if (r.pathParams[0] == "cortexso") {
-        auto branches = huggingface_utils::GetModelRepositoryBranches(
-            "cortexso", model_name);
-        if (branches.has_error()) {
-          return cpp::fail(branches.error());
-        }
-        // Get models from db
-        cortex::db::Models model_db;
-
-        auto model_list_before = model_db.GetModels(model_source)
-                                     .value_or(std::vector<std::string>{});
-        std::unordered_set<std::string> updated_model_list;
-
-        for (auto const& [branch, _] : branches.value()) {
-          CTL_INF(branch);
-          auto add_res =
-              AddCortexsoRepoBranch(model_source, author, model_name, branch)
-                  .value_or(std::unordered_set<std::string>{});
-          for (auto const& a : add_res) {
-            updated_model_list.insert(a);
-          }
-        }
-
-        // Clean up
-        for (auto const& mid : model_list_before) {
-          if (updated_model_list.find(mid) == updated_model_list.end()) {
-            model_db.DeleteModelEntry(mid);
-          }
-        }
+        return AddCortexsoRepo(model_source, author, model_name);
       } else {
-        // Get models from db
-        cortex::db::Models model_db;
-
-        auto model_list_before = model_db.GetModels(model_source)
-                                     .value_or(std::vector<std::string>{});
-        std::unordered_set<std::string> updated_model_list;
-        auto add_res = AddRepo(model_source, author, model_name);
-        if (res.has_error()) {
-          return cpp::fail(res.error());
-        } else {
-          updated_model_list = add_res.value();
-        }
-        for (auto const& mid : model_list_before) {
-          if (updated_model_list.find(mid) == updated_model_list.end()) {
-            model_db.DeleteModelEntry(mid);
-          }
-        }
+        return AddHfRepo(model_source, author, model_name);
       }
     }
   }
@@ -264,8 +148,70 @@ ModelSourceService::GetModelSources() {
   return model_db.GetModelSources();
 }
 
+cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
+    const std::string& model_source, const std::string& author) {
+  auto res = curl_utils::SimpleGet("https://huggingface.co/api/models?author=" +
+                                   author);
+  if (res.has_value()) {
+    auto models = ParseJsonString(res.value());
+    // Get models from db
+    cortex::db::Models model_db;
+
+    auto model_list_before =
+        model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+    std::unordered_set<std::string> updated_model_list;
+    // Add new models
+    for (auto const& m : models) {
+      CTL_INF(m.id);
+      auto author_model = string_utils::SplitBy(m.id, "/");
+      if (author_model.size() == 2) {
+        auto const& author = author_model[0];
+        auto const& model_name = author_model[1];
+        auto add_res = AddRepoSiblings(model_source, author, model_name)
+                           .value_or(std::unordered_set<std::string>{});
+        for (auto const& a : add_res) {
+          updated_model_list.insert(a);
+        }
+      }
+    }
+
+    // Clean up
+    for (auto const& mid : model_list_before) {
+      if (updated_model_list.find(mid) == updated_model_list.end()) {
+        (void) model_db.DeleteModelEntry(mid);
+      }
+    }
+  } else {
+    return cpp::fail(res.error());
+  }
+  return true;
+}
+
+cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
+    const std::string& model_source, const std::string& author,
+    const std::string& model_name) {
+  // Get models from db
+  cortex::db::Models model_db;
+
+  auto model_list_before =
+      model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+  std::unordered_set<std::string> updated_model_list;
+  auto add_res = AddRepoSiblings(model_source, author, model_name);
+  if (add_res.has_error()) {
+    return cpp::fail(add_res.error());
+  } else {
+    updated_model_list = add_res.value();
+  }
+  for (auto const& mid : model_list_before) {
+    if (updated_model_list.find(mid) == updated_model_list.end()) {
+      (void) model_db.DeleteModelEntry(mid);
+    }
+  }
+  return true;
+}
+
 cpp::result<std::unordered_set<std::string>, std::string>
-ModelSourceService::AddRepo(const std::string& model_source,
+ModelSourceService::AddRepoSiblings(const std::string& model_source,
                             const std::string& author,
                             const std::string& model_name) {
   std::unordered_set<std::string> res;
@@ -296,15 +242,97 @@ ModelSourceService::AddRepo(const std::string& model_source,
             .model_source = model_source,
             .status = cortex::db::ModelStatus::Undownloaded,
             .engine = "llama-cpp"};
-        model_db.AddModelEntry(e);
+        (void) model_db.AddModelEntry(e);
       } else {
-        // update
+        // update metadata
       }
       res.insert(model_id);
     }
   }
 
   return res;
+}
+
+cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
+    const std::string& model_source) {
+  auto res = curl_utils::SimpleGet(
+      "https://huggingface.co/api/models?author=cortexso");
+  if (res.has_value()) {
+    auto models = ParseJsonString(res.value());
+    // Get models from db
+    cortex::db::Models model_db;
+
+    auto model_list_before =
+        model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+    std::unordered_set<std::string> updated_model_list;
+    for (auto const& m : models) {
+      CTL_INF(m.id);
+      auto author_model = string_utils::SplitBy(m.id, "/");
+      if (author_model.size() == 2) {
+        auto const& author = author_model[0];
+        auto const& model_name = author_model[1];
+        auto branches = huggingface_utils::GetModelRepositoryBranches(
+            "cortexso", model_name);
+        if (branches.has_error()) {
+          CTL_INF(branches.error());
+          continue;
+        }
+        for (auto const& [branch, _] : branches.value()) {
+          CTL_INF(branch);
+          auto add_res =
+              AddCortexsoRepoBranch(model_source, author, model_name, branch)
+                  .value_or(std::unordered_set<std::string>{});
+          for (auto const& a : add_res) {
+            updated_model_list.insert(a);
+          }
+        }
+      }
+    }
+    // Clean up
+    for (auto const& mid : model_list_before) {
+      if (updated_model_list.find(mid) == updated_model_list.end()) {
+        (void) model_db.DeleteModelEntry(mid);
+      }
+    }
+  } else {
+    return cpp::fail(res.error());
+  }
+
+  return true;
+}
+
+cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
+    const std::string& model_source, const std::string& author,
+    const std::string& model_name) {
+  auto branches =
+      huggingface_utils::GetModelRepositoryBranches("cortexso", model_name);
+  if (branches.has_error()) {
+    return cpp::fail(branches.error());
+  }
+  // Get models from db
+  cortex::db::Models model_db;
+
+  auto model_list_before =
+      model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+  std::unordered_set<std::string> updated_model_list;
+
+  for (auto const& [branch, _] : branches.value()) {
+    CTL_INF(branch);
+    auto add_res =
+        AddCortexsoRepoBranch(model_source, author, model_name, branch)
+            .value_or(std::unordered_set<std::string>{});
+    for (auto const& a : add_res) {
+      updated_model_list.insert(a);
+    }
+  }
+
+  // Clean up
+  for (auto const& mid : model_list_before) {
+    if (updated_model_list.find(mid) == updated_model_list.end()) {
+      (void) model_db.DeleteModelEntry(mid);
+    }
+  }
+  return true;
 }
 
 cpp::result<std::unordered_set<std::string>, std::string>
@@ -355,6 +383,7 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
         CTL_DBG("Cannot add model to db: " << model_id);
       }
     } else {
+      // Update metadata?
       CTL_DBG("Model exists: " << model_id);
     }
     res.insert(model_id);
@@ -412,7 +441,7 @@ void ModelSourceService::SyncModelSource() {
 
         // Sync cortex.db with the upstream data
         for (auto const& c : update_cand) {
-          if(auto res = AddModelSource(c); res.has_error()) {
+          if (auto res = AddModelSource(c); res.has_error()) {
             CTL_INF(res.error();)
           }
         }

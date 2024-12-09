@@ -256,7 +256,7 @@ void CommandLineParser::SetupModelCommands() {
                             "Display cpu mode");
   list_models_cmd->add_flag("--gpu_mode", cml_data_.display_gpu_mode,
                             "Display gpu mode");
-  list_models_cmd->add_flag("--remote", cml_data_.display_available_model,
+  list_models_cmd->add_flag("--available", cml_data_.display_available_model,
                             "Display available models to download");
   list_models_cmd->group(kSubcommands);
   list_models_cmd->callback([this]() {
