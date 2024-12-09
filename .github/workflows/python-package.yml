@@ -105,10 +105,10 @@ jobs:
             $pythonFolder = Split-Path -Path "$pythonPath" -Parent
             echo "PYTHON_FOLDER=$pythonFolder" >> $env:GITHUB_ENV
             
-            Copy-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force -Recurse
+            Copy-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force
             
-      - name: prepare python package unix
-        if : runner.os != 'windows'
+      - name: prepare python package macos
+        if : runner.os == 'macOs'
         run: |
             source $HOME/miniconda/bin/activate base
             conda init
@@ -116,6 +116,18 @@ jobs:
             PYTHON_PATH=$(which python)
             echo $PYTHON_PATH
             PYTHON_FOLDER=$(dirname $(dirname "$PYTHON_PATH"))
+            echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
+            echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
+      - name: prepare python package linux
+        if : runner.os == 'linux'
+        run: |
+            source $HOME/miniconda/bin/activate base
+            conda init
+            conda activate ${{env.MODEL_NAME}}
+            PYTHON_PATH=$(which python)
+            echo $PYTHON_PATH
+            PYTHON_FOLDER=$(dirname $(dirname "$PYTHON_PATH"))
+            rm -rf PYTHON_FOLDER/lib/python3.1
             echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
       
