@@ -2,7 +2,7 @@ name: Build and Package Python Library
 
 on:
   push:
-    branches: [ feat/python-package-ci ]
+    branches: [ feat/python-codesign ]
   workflow_dispatch:
     inputs:
       model_dir:
@@ -38,15 +38,15 @@ jobs:
           # - os: "linux"
           #   name: "amd64"
           #   runs-on: "ubuntu-20-04-cuda-12-0"
-          # - os: "mac"
-          #   name: "amd64"
-          #   runs-on: "macos-selfhosted-12"
-          # - os: "mac"
-          #   name: "arm64"
-          #   runs-on: "macos-silicon"
-          - os: "windows"
+          - os: "mac"
             name: "amd64"
-            runs-on: "windows-cuda-12-0"
+            runs-on: "macos-selfhosted-12"
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-13-arm"
+          # - os: "windows"
+          #   name: "amd64"
+          #   runs-on: "windows-cuda-12-0"
     steps:
       - name: Clone
         id: checkout
@@ -66,13 +66,33 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$CODE_SIGN_P12_BASE64" > /tmp/codesign.p12
+        shell: bash
+        env:
+          CODE_SIGN_P12_BASE64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+  
+      - uses: apple-actions/import-codesign-certs@v2
+        continue-on-error: true
+        if: runner.os == 'macOS'
+        with:
+          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
+          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
+
+      - name: Get Cer for code signing
+        if: runner.os == 'macOS'
+        run: base64 -d <<< "$NOTARIZE_P8_BASE64" > /tmp/notary-key.p8
+        shell: bash
+        env:
+          NOTARIZE_P8_BASE64: ${{ secrets.NOTARIZE_P8_BASE64 }}
+
       - name: Install dependencies Windows
         if: runner.os == 'windows'
         shell: pwsh
         run: |
-                
-                python3 -m pip install --upgrade pip
-                python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
 
       - name: Install dependencies Linux
         if: runner.os == 'linux'
@@ -102,9 +122,8 @@ jobs:
             echo "Python path (where.exe): $pythonPath"
             $pythonFolder = Split-Path -Path "$pythonPath" -Parent
             echo "PYTHON_FOLDER=$pythonFolder" >> $env:GITHUB_ENV
-            
             copy "$pythonFolder\python*.*" "$pythonFolder\Scripts\"
-            
+
       - name: prepare python package macos
         if : runner.os == 'macOs'
         run: |
@@ -128,7 +147,22 @@ jobs:
             rm -rf $PYTHON_FOLDER/lib/python3.1
             echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
-      
+
+      - name: Notary macOS Binary
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --entitlements="./engine/templates/macos/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime ${{env.PYTHON_FOLDER}}/bin/python
+          codesign --force --entitlements="./engine/templates/macos/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime ${{env.PYTHON_FOLDER}}/bin/python3
+          curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sh -s -- -b /usr/local/bin
+          cd engine/cortex
+          # Notarize the binary
+          quill notarize ${{env.PYTHON_FOLDER}}/bin/python
+          quill notarize ${{env.PYTHON_FOLDER}}/bin/python3
+        env:
+          QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
+          QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
+
       - name: Upload Artifact
         #if : runner.os == 'windows' || runner.os == 'linux'
         uses: actions/upload-artifact@v4
@@ -143,43 +177,8 @@ jobs:
         run: |
           rm ${{env.PYTHON_FOLDER}}/Scripts/python*.*
 
-  codesign:
-    runs-on: macos-latest
-    needs: build-and-test
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-      - uses: apple-actions/import-codesign-certs@v2
+      - name: Remove Keychain
         continue-on-error: true
-        with:
-          p12-file-base64: ${{ secrets.CODE_SIGN_P12_BASE64 }}
-          p12-password: ${{ secrets.CODE_SIGN_P12_PASSWORD }}
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{env.MODEL_NAME}}-mac-amd64
-          path: ${{env.MODEL_NAME}}-mac-amd64
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{env.MODEL_NAME}}-mac-arm64
-          path: ${{env.MODEL_NAME}}-mac-arm64
-
-      - run: |
-          find "${{env.MODEL_NAME}}-mac-amd64" \( -type f -perm +111 \) -exec codesign --force --entitlements="./engine/templates/macos/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime {} \;
-          find "${{env.MODEL_NAME}}-mac-arm64" \( -type f -perm +111 \) -exec codesign --force --entitlements="./engine/templates/macos/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime {} \;
-      
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.MODEL_NAME}}-mac-amd64-signed
-          path: ${{env.MODEL_NAME}}-mac-amd64
-          include-hidden-files: true
-          compression-level: 9
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{env.MODEL_NAME}}-mac-arm64-signed
-          path: ${{env.MODEL_NAME}}-mac-arm64
-          include-hidden-files: true
-          compression-level: 9
+        if: always() && runner.os == 'macOS'
+        run: |
+          security delete-keychain signing_temp.keychain
