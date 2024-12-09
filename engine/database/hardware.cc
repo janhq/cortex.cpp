@@ -1,5 +1,6 @@
 #include "hardware.h"
 #include "database.h"
+#include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
 
 namespace cortex::db {
@@ -7,6 +8,7 @@ namespace cortex::db {
 Hardware::Hardware() : db_(cortex::db::Database::GetInstance().db()) {}
 
 Hardware::Hardware(SQLite::Database& db) : db_(db) {}
+
 
 Hardware::~Hardware() {}
 

@@ -34,7 +34,8 @@ class Messages : public drogon::HttpController<Messages, false> {
 
   void ListMessages(const HttpRequestPtr& req,
                     std::function<void(const HttpResponsePtr&)>&& callback,
-                    const std::string& thread_id, std::optional<uint8_t> limit,
+                    const std::string& thread_id,
+                    std::optional<std::string> limit,
                     std::optional<std::string> order,
                     std::optional<std::string> after,
                     std::optional<std::string> before,

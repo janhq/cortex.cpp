@@ -1,6 +1,7 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <memory>
+#include "controllers/assistants.h"
 #include "controllers/configs.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
@@ -14,6 +15,7 @@
 #include "migrations/migration_manager.h"
 #include "repositories/message_fs_repository.h"
 #include "repositories/thread_fs_repository.h"
+#include "services/assistant_service.h"
 #include "services/config_service.h"
 #include "services/file_watcher_service.h"
 #include "services/message_service.h"
@@ -124,6 +126,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto thread_repo = std::make_shared<ThreadFsRepository>(
       file_manager_utils::GetCortexDataPath());
 
+  auto assistant_srv = std::make_shared<AssistantService>(thread_repo);
   auto thread_srv = std::make_shared<ThreadService>(thread_repo);
   auto message_srv = std::make_shared<MessageService>(msg_repo);
 
@@ -142,6 +145,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
+  auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
   auto message_ctl = std::make_shared<Messages>(message_srv);
   auto engine_ctl = std::make_shared<Engines>(engine_service);
@@ -153,6 +157,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
 
+  drogon::app().registerController(assistant_ctl);
   drogon::app().registerController(thread_ctl);
   drogon::app().registerController(message_ctl);
   drogon::app().registerController(engine_ctl);
@@ -213,6 +218,24 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
         }
         resp->addHeader("Access-Control-Allow-Methods", "*");
       });
+
+  // ssl
+  auto ssl_cert_path = config.sslCertPath;
+  auto ssl_key_path = config.sslKeyPath;
+
+  if (!ssl_cert_path.empty() && !ssl_key_path.empty()) {
+    CTL_INF("SSL cert path: " << ssl_cert_path);
+    CTL_INF("SSL key path: " << ssl_key_path);
+
+    if (!std::filesystem::exists(ssl_cert_path) ||
+        !std::filesystem::exists(ssl_key_path)) {
+      CTL_ERR("SSL cert or key file not exist at specified path! Ignore..");
+      return;
+    }
+
+    drogon::app().setSSLFiles(ssl_cert_path, ssl_key_path);
+    drogon::app().addListener(config.apiServerHost, 443, true);
+  }
 
   drogon::app().run();
   if (hw_service->ShouldRestart()) {

@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <sstream>
 #include "database.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/scope_exit.h"
 
