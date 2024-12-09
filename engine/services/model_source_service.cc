@@ -22,27 +22,6 @@ struct ModelInfo {
   std::vector<std::string> tags;
   std::string created_at;
   std::string model_id;
-
-  std::string ToJsonString() {
-    Json::Value root;
-    root["id"] = id;
-    root["likes"] = likes;
-    root["trendingScore"] = trending_score;
-    root["isPrivate"] = is_private;
-    root["downloads"] = downloads;
-
-    Json::Value tags_array(Json::arrayValue);
-    for (const auto& tag : tags) {
-      tags_array.append(tag);
-    }
-    root["tags"] = tags_array;
-
-    root["createdAt"] = created_at;
-    root["modelId"] = model_id;
-
-    Json::StreamWriterBuilder builder;
-    return Json::writeString(builder, root);
-  }
 };
 
 std::vector<ModelInfo> ParseJsonString(const std::string& json_str) {
@@ -184,7 +163,7 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
     std::unordered_set<std::string> updated_model_list;
     // Add new models
     for (auto const& m : models) {
-      CTL_INF(m.id);
+      CTL_DBG(m.id);
       auto author_model = string_utils::SplitBy(m.id, "/");
       if (author_model.size() == 2) {
         auto const& author = author_model[0];
@@ -253,20 +232,21 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
       cortex::db::Models model_db;
       std::string model_id =
           author + ":" + model_name + ":" + sibling.rfilename;
+      cortex::db::ModelEntry e = {
+          .model = model_id,
+          .author_repo_id = author,
+          .branch_name = "main",
+          .path_to_model_yaml = "",
+          .model_alias = "",
+          .model_format = "hf-gguf",
+          .model_source = model_source,
+          .status = cortex::db::ModelStatus::Undownloaded,
+          .engine = "llama-cpp",
+          .metadata = repo_info->metadata};
       if (!model_db.HasModel(model_id)) {
-        cortex::db::ModelEntry e = {
-            .model = model_id,
-            .author_repo_id = author,
-            .branch_name = "main",
-            .path_to_model_yaml = "",
-            .model_alias = "",
-            .model_format = "hf-gguf",
-            .model_source = model_source,
-            .status = cortex::db::ModelStatus::Undownloaded,
-            .engine = "llama-cpp"};
         (void)model_db.AddModelEntry(e);
       } else {
-        // TODO(sang) update metadata
+        (void)model_db.UpdateModelEntry(model_id, e);
       }
       res.insert(model_id);
     }
@@ -299,11 +279,17 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
           CTL_INF(branches.error());
           continue;
         }
+
+        auto repo_info = hu::GetHuggingFaceModelRepoInfo(author, model_name);
+        if (repo_info.has_error()) {
+          CTL_INF(repo_info.error());
+          continue;
+        }
         for (auto const& [branch, _] : branches.value()) {
           CTL_INF(branch);
-          auto add_res =
-              AddCortexsoRepoBranch(model_source, author, model_name, branch)
-                  .value_or(std::unordered_set<std::string>{});
+          auto add_res = AddCortexsoRepoBranch(model_source, author, model_name,
+                                               branch, repo_info->metadata)
+                             .value_or(std::unordered_set<std::string>{});
           for (auto const& a : add_res) {
             updated_model_list.insert(a);
           }
@@ -331,6 +317,11 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   if (branches.has_error()) {
     return cpp::fail(branches.error());
   }
+
+  auto repo_info = hu::GetHuggingFaceModelRepoInfo(author, model_name);
+  if (repo_info.has_error()) {
+    return cpp::fail(repo_info.error());
+  }
   // Get models from db
   cortex::db::Models model_db;
 
@@ -340,9 +331,9 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
 
   for (auto const& [branch, _] : branches.value()) {
     CTL_INF(branch);
-    auto add_res =
-        AddCortexsoRepoBranch(model_source, author, model_name, branch)
-            .value_or(std::unordered_set<std::string>{});
+    auto add_res = AddCortexsoRepoBranch(model_source, author, model_name,
+                                         branch, repo_info->metadata)
+                       .value_or(std::unordered_set<std::string>{});
     for (auto const& a : add_res) {
       updated_model_list.insert(a);
     }
@@ -361,7 +352,8 @@ cpp::result<std::unordered_set<std::string>, std::string>
 ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
                                           const std::string& author,
                                           const std::string& model_name,
-                                          const std::string& branch) {
+                                          const std::string& branch,
+                                          const std::string& metadata) {
   std::unordered_set<std::string> res;
 
   url_parser::Url url = {
@@ -388,25 +380,25 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
   } else {
     cortex::db::Models model_db;
     std::string model_id = model_name + ":" + branch;
+    cortex::db::ModelEntry e = {.model = model_id,
+                                .author_repo_id = author,
+                                .branch_name = branch,
+                                .path_to_model_yaml = "",
+                                .model_alias = "",
+                                .model_format = "cortexso",
+                                .model_source = model_source,
+                                .status = cortex::db::ModelStatus::Undownloaded,
+                                .engine = "llama-cpp",
+                                .metadata = metadata};
     if (!model_db.HasModel(model_id)) {
       CTL_INF("Adding model to db: " << model_name << ":" << branch);
-      cortex::db::ModelEntry e = {
-          .model = model_id,
-          .author_repo_id = author,
-          .branch_name = branch,
-          .path_to_model_yaml = "",
-          .model_alias = "",
-          .model_format = "cortexso",
-          .model_source = model_source,
-          .status = cortex::db::ModelStatus::Undownloaded,
-          .engine = "llama-cpp"};
       if (auto res = model_db.AddModelEntry(e);
           res.has_error() || !res.value()) {
         CTL_DBG("Cannot add model to db: " << model_id);
       }
     } else {
-      // Update metadata?
-      CTL_DBG("Model exists: " << model_id);
+      (void)model_db.UpdateModelEntry(model_id, e);
+      CTL_DBG("Updated model: " << model_id);
     }
     res.insert(model_id);
   }

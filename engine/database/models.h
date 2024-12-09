@@ -53,8 +53,6 @@ class Models {
       const std::string& src);
   cpp::result<bool, std::string> DeleteModelEntryWithRepo(
       const std::string& src);
-  cpp::result<bool, std::string> UpdateModelAlias(
-      const std::string& model_id, const std::string& model_alias);
   cpp::result<std::vector<std::string>, std::string> FindRelatedModel(
       const std::string& identifier) const;
   bool HasModel(const std::string& identifier) const;

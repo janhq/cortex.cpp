@@ -63,7 +63,7 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
     SQLite::Statement query(db_,
                             "SELECT model_id, author_repo_id, branch_name, "
                             "path_to_model_yaml, model_alias, model_format, "
-                            "model_source, status, engine FROM models");
+                            "model_source, status, engine, metadata FROM models");
 
     while (query.executeStep()) {
       ModelEntry entry;
@@ -76,6 +76,7 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
       entry.model_source = query.getColumn(6).getString();
       entry.status = StringToStatus(query.getColumn(7).getString());
       entry.engine = query.getColumn(8).getString();
+      entry.metadata = query.getColumn(9).getString();
       entries.push_back(entry);
     }
     return entries;
@@ -91,11 +92,10 @@ cpp::result<ModelEntry, std::string> Models::GetModelInfo(
     SQLite::Statement query(db_,
                             "SELECT model_id, author_repo_id, branch_name, "
                             "path_to_model_yaml, model_alias, model_format, "
-                            "model_source, status, engine FROM models "
-                            "WHERE model_id = ? OR model_alias = ?");
+                            "model_source, status, engine, metadata FROM models "
+                            "WHERE model_id = ?");
 
     query.bind(1, identifier);
-    query.bind(2, identifier);
     if (query.executeStep()) {
       ModelEntry entry;
       entry.model = query.getColumn(0).getString();
@@ -107,6 +107,7 @@ cpp::result<ModelEntry, std::string> Models::GetModelInfo(
       entry.model_source = query.getColumn(6).getString();
       entry.status = StringToStatus(query.getColumn(7).getString());
       entry.engine = query.getColumn(8).getString();
+      entry.metadata = query.getColumn(9).getString();
       return entry;
     } else {
       return cpp::fail("Model not found: " + identifier);
@@ -126,6 +127,7 @@ void Models::PrintModelInfo(const ModelEntry& entry) const {
   LOG_INFO << "Model Source: " << entry.model_source;
   LOG_INFO << "Status: " << StatusToString(entry.status);
   LOG_INFO << "Engine: " << entry.engine;
+  LOG_INFO << "Metadata: " << entry.metadata;
 }
 
 cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry) {
@@ -143,7 +145,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry) {
           db_,
           "INSERT INTO models (model_id, author_repo_id, branch_name, "
           "path_to_model_yaml, model_alias, model_format, model_source, "
-          "status, engine) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          "status, engine, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
       insert.bind(1, new_entry.model);
       insert.bind(2, new_entry.author_repo_id);
       insert.bind(3, new_entry.branch_name);
@@ -153,6 +155,7 @@ cpp::result<bool, std::string> Models::AddModelEntry(ModelEntry new_entry) {
       insert.bind(7, new_entry.model_source);
       insert.bind(8, StatusToString(new_entry.status));
       insert.bind(9, new_entry.engine);
+      insert.bind(10, new_entry.metadata);
       insert.exec();
 
       return true;
@@ -174,7 +177,7 @@ cpp::result<bool, std::string> Models::UpdateModelEntry(
         db_,
         "UPDATE models SET author_repo_id = ?, branch_name = ?, "
         "path_to_model_yaml = ?, model_format = ?, model_source = ?, status = "
-        "?, engine = ? WHERE model_id = ? OR model_alias = ?");
+        "?, engine = ?, metadata = ? WHERE model_id = ?");
     upd.bind(1, updated_entry.author_repo_id);
     upd.bind(2, updated_entry.branch_name);
     upd.bind(3, updated_entry.path_to_model_yaml);
@@ -182,39 +185,9 @@ cpp::result<bool, std::string> Models::UpdateModelEntry(
     upd.bind(5, updated_entry.model_source);
     upd.bind(6, StatusToString(updated_entry.status));
     upd.bind(7, updated_entry.engine);
-    upd.bind(8, identifier);
+    upd.bind(8, updated_entry.metadata);
     upd.bind(9, identifier);
     return upd.exec() == 1;
-  } catch (const std::exception& e) {
-    return cpp::fail(e.what());
-  }
-}
-
-cpp::result<bool, std::string> Models::UpdateModelAlias(
-    const std::string& model_id, const std::string& new_model_alias) {
-  if (!HasModel(model_id)) {
-    return cpp::fail("Model not found: " + model_id);
-  }
-  try {
-    db_.exec("BEGIN TRANSACTION;");
-    cortex::utils::ScopeExit se([this] { db_.exec("COMMIT;"); });
-    auto model_list = LoadModelListNoLock();
-    if (model_list.has_error()) {
-      CTL_WRN(model_list.error());
-      return cpp::fail(model_list.error());
-    }
-    // Check new_model_alias is unique
-    if (IsUnique(model_list.value(), new_model_alias)) {
-      SQLite::Statement upd(db_,
-                            "UPDATE models "
-                            "SET model_alias = ? "
-                            "WHERE model_id = ? OR model_alias = ?");
-      upd.bind(1, new_model_alias);
-      upd.bind(2, model_id);
-      upd.bind(3, model_id);
-      return upd.exec() == 1;
-    }
-    return false;
   } catch (const std::exception& e) {
     return cpp::fail(e.what());
   }
@@ -229,9 +202,8 @@ cpp::result<bool, std::string> Models::DeleteModelEntry(
     }
 
     SQLite::Statement del(
-        db_, "DELETE from models WHERE model_id = ? OR model_alias = ?");
+        db_, "DELETE from models WHERE model_id = ?");
     del.bind(1, identifier);
-    del.bind(2, identifier);
     return del.exec() == 1;
   } catch (const std::exception& e) {
     return cpp::fail(e.what());
@@ -285,9 +257,8 @@ bool Models::HasModel(const std::string& identifier) const {
   try {
     SQLite::Statement query(
         db_,
-        "SELECT COUNT(*) FROM models WHERE model_id = ? OR model_alias = ?");
+        "SELECT COUNT(*) FROM models WHERE model_id = ?");
     query.bind(1, identifier);
-    query.bind(2, identifier);
     if (query.executeStep()) {
       return query.getColumn(0).getInt() > 0;
     }

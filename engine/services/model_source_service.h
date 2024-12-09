@@ -41,7 +41,8 @@ class ModelSourceService {
   AddCortexsoRepoBranch(const std::string& model_source,
                         const std::string& author,
                         const std::string& model_name,
-                        const std::string& branch);
+                        const std::string& branch,
+                        const std::string& metadata);
 
   void SyncModelSource();
 
