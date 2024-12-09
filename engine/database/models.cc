@@ -60,10 +60,11 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
     const {
   try {
     std::vector<ModelEntry> entries;
-    SQLite::Statement query(db_,
-                            "SELECT model_id, author_repo_id, branch_name, "
-                            "path_to_model_yaml, model_alias, model_format, "
-                            "model_source, status, engine, metadata FROM models");
+    SQLite::Statement query(
+        db_,
+        "SELECT model_id, author_repo_id, branch_name, "
+        "path_to_model_yaml, model_alias, model_format, "
+        "model_source, status, engine, metadata FROM models");
 
     while (query.executeStep()) {
       ModelEntry entry;
@@ -89,11 +90,12 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::LoadModelListNoLock()
 cpp::result<ModelEntry, std::string> Models::GetModelInfo(
     const std::string& identifier) const {
   try {
-    SQLite::Statement query(db_,
-                            "SELECT model_id, author_repo_id, branch_name, "
-                            "path_to_model_yaml, model_alias, model_format, "
-                            "model_source, status, engine, metadata FROM models "
-                            "WHERE model_id = ?");
+    SQLite::Statement query(
+        db_,
+        "SELECT model_id, author_repo_id, branch_name, "
+        "path_to_model_yaml, model_alias, model_format, "
+        "model_source, status, engine, metadata FROM models "
+        "WHERE model_id = ?");
 
     query.bind(1, identifier);
     if (query.executeStep()) {
@@ -201,8 +203,7 @@ cpp::result<bool, std::string> Models::DeleteModelEntry(
       return true;
     }
 
-    SQLite::Statement del(
-        db_, "DELETE from models WHERE model_id = ?");
+    SQLite::Statement del(db_, "DELETE from models WHERE model_id = ?");
     del.bind(1, identifier);
     return del.exec() == 1;
   } catch (const std::exception& e) {
@@ -240,8 +241,9 @@ cpp::result<std::vector<std::string>, std::string> Models::FindRelatedModel(
     const std::string& identifier) const {
   try {
     std::vector<std::string> related_models;
-    SQLite::Statement query(
-        db_, "SELECT model_id FROM models WHERE model_id LIKE ?");
+    SQLite::Statement query(db_,
+                            "SELECT model_id FROM models WHERE model_id LIKE ? "
+                            "AND status = \"downloaded\"");
     query.bind(1, "%" + identifier + "%");
 
     while (query.executeStep()) {
@@ -255,9 +257,8 @@ cpp::result<std::vector<std::string>, std::string> Models::FindRelatedModel(
 
 bool Models::HasModel(const std::string& identifier) const {
   try {
-    SQLite::Statement query(
-        db_,
-        "SELECT COUNT(*) FROM models WHERE model_id = ?");
+    SQLite::Statement query(db_,
+                            "SELECT COUNT(*) FROM models WHERE model_id = ?");
     query.bind(1, identifier);
     if (query.executeStep()) {
       return query.getColumn(0).getInt() > 0;

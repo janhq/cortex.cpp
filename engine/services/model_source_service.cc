@@ -179,7 +179,10 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
     // Clean up
     for (auto const& mid : model_list_before) {
       if (updated_model_list.find(mid) == updated_model_list.end()) {
-        (void)model_db.DeleteModelEntry(mid);
+        if (auto del_res = model_db.DeleteModelEntry(mid);
+            del_res.has_error()) {
+          CTL_INF(del_res.error());
+        }
       }
     }
   } else {
@@ -205,7 +208,9 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
   }
   for (auto const& mid : model_list_before) {
     if (updated_model_list.find(mid) == updated_model_list.end()) {
-      (void)model_db.DeleteModelEntry(mid);
+      if (auto del_res = model_db.DeleteModelEntry(mid); del_res.has_error()) {
+        CTL_INF(del_res.error());
+      }
     }
   }
   return true;
@@ -244,9 +249,18 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
           .engine = "llama-cpp",
           .metadata = repo_info->metadata};
       if (!model_db.HasModel(model_id)) {
-        (void)model_db.AddModelEntry(e);
+        if (auto add_res = model_db.AddModelEntry(e); add_res.has_error()) {
+          CTL_INF(add_res.error());
+        }
       } else {
-        (void)model_db.UpdateModelEntry(model_id, e);
+        if (auto m = model_db.GetModelInfo(model_id);
+            m.has_value() &&
+            m->status == cortex::db::ModelStatus::Undownloaded) {
+          if (auto upd_res = model_db.UpdateModelEntry(model_id, e);
+              upd_res.has_error()) {
+            CTL_INF(upd_res.error());
+          }
+        }
       }
       res.insert(model_id);
     }
@@ -299,7 +313,10 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
     // Clean up
     for (auto const& mid : model_list_before) {
       if (updated_model_list.find(mid) == updated_model_list.end()) {
-        (void)model_db.DeleteModelEntry(mid);
+        if (auto del_res = model_db.DeleteModelEntry(mid);
+            del_res.has_error()) {
+          CTL_INF(del_res.error());
+        }
       }
     }
   } else {
@@ -342,7 +359,9 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   // Clean up
   for (auto const& mid : model_list_before) {
     if (updated_model_list.find(mid) == updated_model_list.end()) {
-      (void)model_db.DeleteModelEntry(mid);
+      if (auto del_res = model_db.DeleteModelEntry(mid); del_res.has_error()) {
+        CTL_INF(del_res.error());
+      }
     }
   }
   return true;
@@ -397,8 +416,13 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
         CTL_DBG("Cannot add model to db: " << model_id);
       }
     } else {
-      (void)model_db.UpdateModelEntry(model_id, e);
-      CTL_DBG("Updated model: " << model_id);
+      if (auto m = model_db.GetModelInfo(model_id);
+          m.has_value() && m->status == cortex::db::ModelStatus::Undownloaded) {
+        if (auto upd_res = model_db.UpdateModelEntry(model_id, e);
+            upd_res.has_error()) {
+          CTL_INF(upd_res.error());
+        }
+      }
     }
     res.insert(model_id);
   }
