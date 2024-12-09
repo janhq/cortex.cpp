@@ -38,12 +38,12 @@ jobs:
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
-          - os: "mac"
-            name: "amd64"
-            runs-on: "macos-selfhosted-12"
-          - os: "mac"
-            name: "arm64"
-            runs-on: "macos-silicon"
+          # - os: "mac"
+          #   name: "amd64"
+          #   runs-on: "macos-selfhosted-12"
+          # - os: "mac"
+          #   name: "arm64"
+          #   runs-on: "macos-silicon"
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
@@ -98,14 +98,12 @@ jobs:
         if : runner.os == 'windows'
         shell: pwsh
         run: |
-            $pythonPath = where.exe python
+            $pythonPath = where.exe python | 
             echo "Python path (where.exe): $pythonPath"
-
-
             $pythonFolder = Split-Path -Path "$pythonPath" -Parent
             echo "PYTHON_FOLDER=$pythonFolder" >> $env:GITHUB_ENV
             
-            Copy-Item -Path "$pythonFolder\python*.*" -Destination "$pythonFolder\Scripts\" -Force
+            copy "$pythonFolder\python*.*" "$pythonFolder\Scripts\"
             
       - name: prepare python package macos
         if : runner.os == 'macOs'
@@ -127,7 +125,7 @@ jobs:
             PYTHON_PATH=$(which python)
             echo $PYTHON_PATH
             PYTHON_FOLDER=$(dirname $(dirname "$PYTHON_PATH"))
-            rm -rf PYTHON_FOLDER/lib/python3.1
+            rm -rf $PYTHON_FOLDER/lib/python3.1
             echo "PYTHON_FOLDER=$PYTHON_FOLDER" >> $GITHUB_ENV
             echo "github end PYTHON_FOLDER: ${{env.PYTHON_FOLDER}}"
       
@@ -139,6 +137,11 @@ jobs:
             path: ${{env.PYTHON_FOLDER}}
             include-hidden-files: true
             compression-level: 9
+
+      - name: Post Upload windows
+        if : runner.os == 'windows'
+        run: |
+          rm ${{env.PYTHON_FOLDER}}/Scripts/python*.*
 
   codesign:
     runs-on: macos-latest
@@ -172,11 +175,11 @@ jobs:
           name: ${{env.MODEL_NAME}}-mac-amd64-signed
           path: ${{env.MODEL_NAME}}-mac-amd64
           include-hidden-files: true
-          compression-level: 0
+          compression-level: 9
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{env.MODEL_NAME}}-mac-arm64-signed
           path: ${{env.MODEL_NAME}}-mac-arm64
           include-hidden-files: true
-          compression-level: 0
+          compression-level: 9
