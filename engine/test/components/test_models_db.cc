@@ -24,7 +24,8 @@ class ModelsTestSuite : public ::testing::Test {
           "model_format TEXT,"
           "model_source TEXT,"
           "status TEXT,"
-          "engine TEXT"
+          "engine TEXT,"
+          "metadata TEXT"
           ")");
     } catch (const std::exception& e) {}
   }
@@ -69,10 +70,6 @@ TEST_F(ModelsTestSuite, TestGetModelInfo) {
   auto model_by_id = model_list_.GetModelInfo(kTestModel.model);
   EXPECT_TRUE(model_by_id.has_value());
   EXPECT_EQ(model_by_id.value().model, kTestModel.model);
-
-  auto model_by_alias = model_list_.GetModelInfo("test_alias");
-  EXPECT_TRUE(model_by_alias);
-  EXPECT_EQ(model_by_alias.value().model, kTestModel.model);
 
   EXPECT_TRUE(model_list_.GetModelInfo("non_existent_model").has_error());
 
@@ -120,7 +117,6 @@ TEST_F(ModelsTestSuite, TestHasModel) {
   EXPECT_TRUE(model_list_.AddModelEntry(kTestModel).value());
 
   EXPECT_TRUE(model_list_.HasModel(kTestModel.model));
-  EXPECT_TRUE(model_list_.HasModel("test_alias"));
   EXPECT_FALSE(model_list_.HasModel("non_existent_model"));
   // Clean up
   EXPECT_TRUE(model_list_.DeleteModelEntry(kTestModel.model).value());
