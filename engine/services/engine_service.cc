@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <optional>
+#include <utility>
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
@@ -17,6 +18,7 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
+
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
                                    const std::string& cuda_driver_version) {
@@ -701,6 +703,87 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
   CTL_INF("Loading engine: " << ne);
 
+  auto engine_dir_path_res = GetEngineDirPath(ne);
+  if (engine_dir_path_res.has_error()) {
+    return cpp::fail(engine_dir_path_res.error());
+  }
+  auto engine_dir_path = engine_dir_path_res.value().first;
+  auto custom_engine_path = engine_dir_path_res.value().second;
+
+  try {
+    auto dylib =
+        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
+
+    auto config = file_manager_utils::GetCortexConfig();
+
+    auto log_path =
+        std::filesystem::path(config.logFolderPath) /
+        std::filesystem::path(
+            config.logLlamaCppPath);  // for now seems like we use same log path
+
+    // init
+    auto func = dylib->get_function<EngineI*()>("get_engine");
+    auto engine_obj = func();
+    auto load_opts = EngineI::EngineLoadOption{
+        .engine_path = engine_dir_path,
+        .cuda_path = file_manager_utils::GetCudaToolkitPath(ne),
+        .custom_engine_path = custom_engine_path,
+        .log_path = log_path,
+        .max_log_lines = config.maxLogLines,
+        .log_level = logging_utils_helper::global_log_level,
+    };
+    engine_obj->Load(load_opts);
+
+    engines_[ne].engine = engine_obj;
+    engines_[ne].dl = std::move(dylib);
+
+    CTL_DBG("Engine loaded: " << ne);
+    return {};
+  } catch (const cortex_cpp::dylib::load_error& e) {
+    CTL_ERR("Could not load engine: " << e.what());
+    engines_.erase(ne);
+    return cpp::fail("Could not load engine " + ne + ": " + e.what());
+  }
+}
+
+void EngineService::RegisterEngineLibPath() {
+  auto engine_names = GetSupportedEngineNames().value();
+  for (const auto& engine : engine_names) {
+    auto ne = NormalizeEngine(engine);
+    try {
+      auto engine_dir_path_res = GetEngineDirPath(engine);
+      if (engine_dir_path_res.has_error()) {
+        CTL_ERR(
+            "Could not get engine dir path: " << engine_dir_path_res.error());
+        continue;
+      }
+      auto engine_dir_path = engine_dir_path_res.value().first;
+      auto custom_engine_path = engine_dir_path_res.value().second;
+
+      auto dylib = std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(),
+                                                       "engine");
+
+      auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
+      // init
+      auto func = dylib->get_function<EngineI*()>("get_engine");
+      auto engine = func();
+      std::vector<std::filesystem::path> paths{};
+      auto register_opts = EngineI::RegisterLibraryOption{
+          .paths = paths,
+      };
+      engine->RegisterLibraryPath(register_opts);
+      delete engine;
+      CTL_DBG("Register lib path for: " << engine);
+    } catch (const std::exception& e) {
+      CTL_WRN("Failed to registering engine lib path: " << e.what());
+    }
+  }
+}
+
+cpp::result<std::pair<std::filesystem::path, bool>, std::string>
+EngineService::GetEngineDirPath(const std::string& engine_name) {
+  auto ne = NormalizeEngine(engine_name);
+
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
 
   if (selected_engine_variant.has_error()) {
@@ -715,6 +798,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   auto user_defined_engine_path = getenv("ENGINE_PATH");
 #endif
 
+  auto custom_engine_path = user_defined_engine_path != nullptr;
   CTL_DBG("user defined engine path: " << user_defined_engine_path);
   const std::filesystem::path engine_dir_path = [&] {
     if (user_defined_engine_path != nullptr) {
@@ -728,157 +812,38 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     }
   }();
 
-  CTL_DBG("Engine path: " << engine_dir_path.string());
-
   if (!std::filesystem::exists(engine_dir_path)) {
     CTL_ERR("Directory " + engine_dir_path.string() + " is not exist!");
     return cpp::fail("Directory " + engine_dir_path.string() +
                      " is not exist!");
   }
 
-  CTL_INF("Engine path: " << engine_dir_path.string());
-
-  try {
-#if defined(_WIN32)
-    // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
-    // We would like to support running multiple engines at the same time. Therefore,
-    // the adding/removing dll directory logic is quite complicated:
-    // 1. If llamacpp is loaded and new requested engine is tensorrt-llm:
-    // Unload the llamacpp dll directory then load the tensorrt-llm
-    // 2. If tensorrt-llm is loaded and new requested engine is llamacpp:
-    // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
-    // 3. Add dll directory if met other conditions
-
-    auto add_dll = [this](const std::string& e_type,
-                          const std::filesystem::path& p) {
-      if (auto cookie = AddDllDirectory(p.c_str()); cookie != 0) {
-        CTL_DBG("Added dll directory: " << p.string());
-        engines_[e_type].cookie = cookie;
-      } else {
-        CTL_WRN("Could not add dll directory: " << p.string());
-      }
-
-      auto cuda_path = file_manager_utils::GetCudaToolkitPath(e_type);
-      if (auto cuda_cookie = AddDllDirectory(cuda_path.c_str());
-          cuda_cookie != 0) {
-        CTL_DBG("Added cuda dll directory: " << p.string());
-        engines_[e_type].cuda_cookie = cuda_cookie;
-      } else {
-        CTL_WRN("Could not add cuda dll directory: " << p.string());
-      }
-    };
-
-#if defined(_WIN32)
-    if (bool should_use_dll_search_path = !(_wgetenv(L"ENGINE_PATH"));
-#else
-    if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
-#endif
-        should_use_dll_search_path) {
-      if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo &&
-          should_use_dll_search_path) {
-
-        {
-
-          // Remove llamacpp dll directory
-          if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
-            CTL_WRN("Could not remove dll directory: " << kLlamaRepo);
-          } else {
-            CTL_DBG("Removed dll directory: " << kLlamaRepo);
-          }
-          if (!RemoveDllDirectory(engines_[kLlamaRepo].cuda_cookie)) {
-            CTL_WRN("Could not remove cuda dll directory: " << kLlamaRepo);
-          } else {
-            CTL_DBG("Removed cuda dll directory: " << kLlamaRepo);
-          }
-        }
-
-        add_dll(ne, engine_dir_path);
-      } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
-        // Do nothing
-      } else {
-        add_dll(ne, engine_dir_path);
-      }
-    }
-#endif
-    engines_[ne].dl =
-        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
-#if defined(__linux__)
-    const char* name = "LD_LIBRARY_PATH";
-    auto data = getenv(name);
-    std::string v;
-    if (auto g = getenv(name); g) {
-      v += g;
-    }
-    CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
-    CTL_INF("llamacpp_path: " << llamacpp_path);
-    // tensorrt is not supported for now
-    // auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
-
-    auto new_v = llamacpp_path.string() + ":" + v;
-    setenv(name, new_v.c_str(), true);
-    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
-#endif
-
-  } catch (const cortex_cpp::dylib::load_error& e) {
-    CTL_ERR("Could not load engine: " << e.what());
-    engines_.erase(ne);
-    return cpp::fail("Could not load engine " + ne + ": " + e.what());
-  }
-
-  auto func = engines_[ne].dl->get_function<EngineI*()>("get_engine");
-  engines_[ne].engine = func();
-
-  auto& en = std::get<EngineI*>(engines_[ne].engine);
-  if (ne == kLlamaRepo) {  //fix for llamacpp engine first
-    auto config = file_manager_utils::GetCortexConfig();
-    if (en->IsSupported("SetFileLogger")) {
-      en->SetFileLogger(config.maxLogLines,
-                        (std::filesystem::path(config.logFolderPath) /
-                         std::filesystem::path(config.logLlamaCppPath))
-                            .string());
-    } else {
-      CTL_WRN("Method SetFileLogger is not supported yet");
-    }
-    if (en->IsSupported("SetLogLevel")) {
-      en->SetLogLevel(logging_utils_helper::global_log_level);
-    } else {
-      CTL_WRN("Method SetLogLevel is not supported yet");
-    }
-  }
-  CTL_DBG("loaded engine: " << ne);
-  return {};
+  CTL_INF("Engine path: " << engine_dir_path.string()
+                          << ", custom_engine_path: " << custom_engine_path);
+  return std::make_pair(engine_dir_path, custom_engine_path);
 }
 
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
   std::lock_guard<std::mutex> lock(engines_mutex_);
-  {
-    if (!IsEngineLoaded(ne)) {
-      return cpp::fail("Engine " + ne + " is not loaded yet!");
-    }
-    if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
-      delete std::get<EngineI*>(engines_[ne].engine);
-    } else {
-      delete std::get<RemoteEngineI*>(engines_[ne].engine);
-    }
-
-#if defined(_WIN32)
-    if (!RemoveDllDirectory(engines_[ne].cookie)) {
-      CTL_WRN("Could not remove dll directory: " << ne);
-    } else {
-      CTL_DBG("Removed dll directory: " << ne);
-    }
-    if (!RemoveDllDirectory(engines_[ne].cuda_cookie)) {
-      CTL_WRN("Could not remove cuda dll directory: " << ne);
-    } else {
-      CTL_DBG("Removed cuda dll directory: " << ne);
-    }
-#endif
-    engines_.erase(ne);
+  if (!IsEngineLoaded(ne)) {
+    return cpp::fail("Engine " + ne + " is not loaded yet!");
   }
-  CTL_DBG("Unloaded engine " + ne);
+  if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
+    LOG_INFO << "Unloading engine " << ne;
+    auto* e = std::get<EngineI*>(engines_[ne].engine);
+    auto unload_opts = EngineI::EngineUnloadOption{
+        .unload_dll = true,
+    };
+    e->Unload(unload_opts);
+    delete e;
+    engines_.erase(ne);
+  } else {
+    delete std::get<RemoteEngineI*>(engines_[ne].engine);
+  }
+
+  CTL_DBG("Engine unloaded: " + ne);
   return {};
 }
 
@@ -1097,4 +1062,9 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   } else {
     return res;
   }
+}
+
+cpp::result<std::vector<std::string>, std::string>
+EngineService::GetSupportedEngineNames() {
+  return file_manager_utils::GetCortexConfig().supportedEngines;
 }

@@ -49,6 +49,7 @@ cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(
     node["verifyHostSsl"] = config.verifyHostSsl;
     node["sslCertPath"] = config.sslCertPath;
     node["sslKeyPath"] = config.sslKeyPath;
+    node["supportedEngines"] = config.supportedEngines;
 
     out_file << node;
     out_file.close();
