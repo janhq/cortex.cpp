@@ -67,6 +67,7 @@ struct HuggingFaceModelRepoInfo {
   std::vector<HuggingFaceFileSibling> siblings;
   std::vector<std::string> spaces;
   std::string createdAt;
+  std::string metadata;
 
   static cpp::result<HuggingFaceModelRepoInfo, std::string> FromJson(
       const Json::Value& body) {
@@ -104,6 +105,7 @@ struct HuggingFaceModelRepoInfo {
         .spaces =
             json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
         .createdAt = body["createdAt"].asString(),
+        .metadata = body.toStyledString(),
     };
   }
 

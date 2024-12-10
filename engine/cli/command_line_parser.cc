@@ -20,6 +20,9 @@
 #include "commands/model_import_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
+#include "commands/model_source_add_cmd.h"
+#include "commands/model_source_del_cmd.h"
+#include "commands/model_source_list_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/model_upd_cmd.h"
@@ -253,6 +256,8 @@ void CommandLineParser::SetupModelCommands() {
                             "Display cpu mode");
   list_models_cmd->add_flag("--gpu_mode", cml_data_.display_gpu_mode,
                             "Display gpu mode");
+  list_models_cmd->add_flag("--available", cml_data_.display_available_model,
+                            "Display available models to download");
   list_models_cmd->group(kSubcommands);
   list_models_cmd->callback([this]() {
     if (std::exchange(executed_, true))
@@ -261,7 +266,8 @@ void CommandLineParser::SetupModelCommands() {
         cml_data_.config.apiServerHost,
         std::stoi(cml_data_.config.apiServerPort), cml_data_.filter,
         cml_data_.display_engine, cml_data_.display_version,
-        cml_data_.display_cpu_mode, cml_data_.display_gpu_mode);
+        cml_data_.display_cpu_mode, cml_data_.display_gpu_mode,
+        cml_data_.display_available_model);
   });
 
   auto get_models_cmd =
@@ -328,6 +334,74 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelImportCmd().Exec(cml_data_.config.apiServerHost,
                                     std::stoi(cml_data_.config.apiServerPort),
                                     cml_data_.model_id, cml_data_.model_path);
+  });
+
+  auto model_source_cmd = models_cmd->add_subcommand(
+      "sources", "Subcommands for managing model sources");
+  model_source_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                          " models sources [options] [subcommand]");
+  model_source_cmd->group(kSubcommands);
+
+  model_source_cmd->callback([this, model_source_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (model_source_cmd->get_subcommands().empty()) {
+      CLI_LOG(model_source_cmd->help());
+    }
+  });
+
+  auto model_src_add_cmd =
+      model_source_cmd->add_subcommand("add", "Add a model source");
+  model_src_add_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " models sources add [model_source]");
+  model_src_add_cmd->group(kSubcommands);
+  model_src_add_cmd->add_option("source", cml_data_.model_src, "");
+  model_src_add_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (cml_data_.model_src.empty()) {
+      CLI_LOG("[model_source] is required\n");
+      CLI_LOG(model_src_add_cmd->help());
+      return;
+    };
+
+    commands::ModelSourceAddCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.model_src);
+  });
+
+  auto model_src_del_cmd =
+      model_source_cmd->add_subcommand("remove", "Remove a model source");
+  model_src_del_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " models sources remove [model_source]");
+  model_src_del_cmd->group(kSubcommands);
+  model_src_del_cmd->add_option("source", cml_data_.model_src, "");
+  model_src_del_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (cml_data_.model_src.empty()) {
+      CLI_LOG("[model_source] is required\n");
+      CLI_LOG(model_src_del_cmd->help());
+      return;
+    };
+
+    commands::ModelSourceDelCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.model_src);
+  });
+
+  auto model_src_list_cmd =
+      model_source_cmd->add_subcommand("list", "List all model sources");
+  model_src_list_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                            " models sources list");
+  model_src_list_cmd->group(kSubcommands);
+  model_src_list_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+
+    commands::ModelSourceListCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort));
   });
 }
 

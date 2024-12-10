@@ -130,3 +130,16 @@ class TestApiModel:
         print("Delete model")
         response = requests.delete("http://localhost:3928/v1/models/tinyllama:gguf")
         assert response.status_code == 200
+        
+    def test_models_sources_api(self):
+        json_body = {"source": "https://huggingface.co/cortexso/tinyllama"}
+        response = requests.post(
+            "http://localhost:3928/v1/models/sources", json=json_body
+        )
+        assert response.status_code == 200, f"status_code: {response.status_code}"
+        
+        json_body = {"source": "https://huggingface.co/cortexso/tinyllama"}
+        response = requests.delete(
+            "http://localhost:3928/v1/models/sources", json=json_body
+        )
+        assert response.status_code == 200, f"status_code: {response.status_code}"
