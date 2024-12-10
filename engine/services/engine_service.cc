@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <optional>
 #include <utility>
+
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
@@ -184,6 +185,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+
   // TODO: handle uninstall remote engine
   // only delete a remote engine if no model are using it
   auto exist_engine = GetEngineByNameAndVariant(engine);
@@ -195,6 +197,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     }
     return cpp::result<bool, std::string>(true);
   }
+
 
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
@@ -530,6 +533,7 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
                      " is not installed yet!");
   }
 
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);
@@ -673,6 +677,7 @@ cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
   return engines_[ne].engine;
 }
 
+
 cpp::result<void, std::string> EngineService::LoadEngine(
     const std::string& engine_name) {
   auto ne = NormalizeEngine(engine_name);
@@ -681,6 +686,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     CTL_INF("Engine " << ne << " is already loaded");
     return {};
   }
+
 
   // Check for remote engine
   if (remote_engine::IsRemoteEngine(engine_name)) {
@@ -702,6 +708,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // End hard code
 
   CTL_INF("Loading engine: " << ne);
+
 
   auto engine_dir_path_res = GetEngineDirPath(ne);
   if (engine_dir_path_res.has_error()) {
@@ -826,6 +833,7 @@ EngineService::GetEngineDirPath(const std::string& engine_name) {
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+
   std::lock_guard<std::mutex> lock(engines_mutex_);
   if (!IsEngineLoaded(ne)) {
     return cpp::fail("Engine " + ne + " is not loaded yet!");
@@ -842,7 +850,6 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
-
   CTL_DBG("Engine unloaded: " + ne);
   return {};
 }
@@ -910,6 +917,7 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   CTL_INF("Default variant: " << default_variant->variant
                               << ", version: " + default_variant->version);
 
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);
@@ -1063,7 +1071,6 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     return res;
   }
 }
-
 cpp::result<std::vector<std::string>, std::string>
 EngineService::GetSupportedEngineNames() {
   return file_manager_utils::GetCortexConfig().supportedEngines;
