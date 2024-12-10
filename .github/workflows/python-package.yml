@@ -2,7 +2,7 @@ name: Build and Package Python Library
 
 on:
   push:
-    branches: [ feat/python-codesign ]
+    branches: [ feat/python-package-ci ]
   workflow_dispatch:
     inputs:
       model_dir:
@@ -30,7 +30,7 @@ env:
 jobs:
   build-and-test:
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 60
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
@@ -193,14 +193,14 @@ jobs:
           codesign --force --entitlements="/tmp/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime ${{env.PYTHON_FOLDER}}/bin/python
           codesign --force --entitlements="/tmp/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime ${{env.PYTHON_FOLDER}}/bin/python3
           # Code sign all .so files and .dylib files
-
-          find ${{env.PYTHON_FOLDER}} -type f \( -name "*.so" \) -exec codesign --deep --force --entitlements="/tmp/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" {} \;
-          find ${{env.PYTHON_FOLDER}} -type f \( -name "*.dylib" \) -exec codesign --deep --force -s "${{ secrets.DEVELOPER_ID }}" {} \;
+          
+          find ${{env.PYTHON_FOLDER}} -type f \( -name "*.so" -o -name "*.dylib" \) -exec codesign --force --entitlements="/tmp/entitlements.plist" -s "${{ secrets.DEVELOPER_ID }}" --options=runtime {} \;
 
           curl -sSfL https://raw.githubusercontent.com/anchore/quill/main/install.sh | sudo sh -s -- -b /usr/local/bin
           # Notarize the binary
           quill notarize ${{env.PYTHON_FOLDER}}/bin/python
           quill notarize ${{env.PYTHON_FOLDER}}/bin/python3
+          find ${{env.PYTHON_FOLDER}} -type f \( -name "*.so" -o -name "*.dylib" \) -exec quill notarize {} \;
         env:
           QUILL_NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
           QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
