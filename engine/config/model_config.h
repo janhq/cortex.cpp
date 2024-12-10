@@ -1,6 +1,9 @@
 #pragma once
 
 #include <json/json.h>
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+#include <iostream>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -340,6 +343,319 @@ struct ModelConfig {
     oss << format_utils::print_comment("END MODEL LOAD PARAMETERS");
 
     return oss.str();
+  }
+};
+
+struct Endpoint {
+  std::string method;
+  std::string path;
+  std::string transform_request;
+  std::string transform_response;
+};
+
+struct PythonModelConfig {
+  // General Metadata
+  std::string id;
+  std::string model;
+  std::string name;
+  int version;
+
+  // Inference Parameters
+  Endpoint load_model;
+  Endpoint destroy;
+  Endpoint inference;
+  Endpoint heath_check;
+  std::vector<Endpoint> extra_endpoints;
+
+  // Model Load Parameters
+  int port;
+  std::string log_path;
+  std::string log_level;
+  std::string environments;
+  std::vector<std::string> command;  // New command field
+  std::string engine;
+  Json::Value extra_params;  // Accept dynamic extra parameters
+
+  // Method to convert C++ struct to YAML
+  std::string ToYaml() const {
+    YAML::Emitter out;
+    out << YAML::BeginMap;
+
+    out << YAML::Key << "id" << YAML::Value << id;
+    out << YAML::Key << "model" << YAML::Value << model;
+    out << YAML::Key << "name" << YAML::Value << name;
+    out << YAML::Key << "version" << YAML::Value << version;
+
+    // Inference Parameters
+    out << YAML::Key << "load_model" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "method" << YAML::Value << load_model.method;
+    out << YAML::Key << "path" << YAML::Value << load_model.path;
+    out << YAML::Key << "transform_request" << YAML::Value
+        << load_model.transform_request;
+    out << YAML::Key << "transform_response" << YAML::Value
+        << load_model.transform_response;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "destroy" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "method" << YAML::Value << destroy.method;
+    out << YAML::Key << "path" << YAML::Value << destroy.path;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "inference" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "method" << YAML::Value << inference.method;
+    out << YAML::Key << "path" << YAML::Value << inference.path;
+    out << YAML::EndMap;
+
+    out << YAML::Key << "extra_endpoints" << YAML::Value << YAML::BeginSeq;
+    for (const auto& endpoint : extra_endpoints) {
+      out << YAML::BeginMap;
+      out << YAML::Key << "method" << YAML::Value << endpoint.method;
+      out << YAML::Key << "path" << YAML::Value << endpoint.path;
+      out << YAML::EndMap;
+    }
+    out << YAML::EndSeq;
+
+    // Model Load Parameters
+    out << YAML::Key << "port" << YAML::Value << port;
+    out << YAML::Key << "log_path" << YAML::Value << log_path;
+    out << YAML::Key << "log_level" << YAML::Value
+        << log_level;
+    out << YAML::Key << "environments" << YAML::Value
+        << environments;
+
+    // Serialize command as YAML list
+    out << YAML::Key << "command" << YAML::Value << YAML::BeginSeq;
+    for (const auto& cmd : command) {
+      out << cmd;
+    }
+    out << YAML::EndSeq;
+
+    out << YAML::Key << "engine" << YAML::Value << engine;
+
+    // Serialize extra_params as YAML
+    out << YAML::Key << "extra_params" << YAML::Value << YAML::BeginMap;
+    for (Json::ValueConstIterator iter = extra_params.begin();
+         iter != extra_params.end(); ++iter) {
+      out << YAML::Key << iter.key().asString() << YAML::Value
+          << iter->asString();
+    }
+    out << YAML::EndMap;
+    return out.c_str();
+  }
+
+  // Method to populate struct from YAML file
+  void ReadFromYaml(const std::string& filePath) {
+    YAML::Node config = YAML::LoadFile(filePath);
+
+    if (config["id"])
+      id = config["id"].as<std::string>();
+    if (config["model"])
+      model = config["model"].as<std::string>();
+    if (config["name"])
+      name = config["name"].as<std::string>();
+    if (config["version"])
+      version = config["version"].as<int>();
+
+    // Inference Parameters
+
+      auto ip = config;
+      if (ip["load_model"]) {
+        load_model.method =
+            ip["load_model"]["method"].as<std::string>();
+        load_model.path =
+            ip["load_model"]["path"].as<std::string>();
+        load_model.transform_request =
+            ip["load_model"]["transform_request"].as<std::string>();
+        load_model.transform_response =
+            ip["load_model"]["transform_response"].as<std::string>();
+      }
+      if (ip["destroy"]) {
+        destroy.method =
+            ip["destroy"]["method"].as<std::string>();
+        destroy.path =
+            ip["destroy"]["path"].as<std::string>();
+      }
+      if (ip["inference"]) {
+        inference.method =
+            ip["inference"]["method"].as<std::string>();
+        inference.path =
+            ip["inference"]["path"].as<std::string>();
+      }
+      if (ip["extra_endpoints"] && ip["extra_endpoints"].IsSequence()) {
+        for (const auto& endpoint : ip["extra_endpoints"]) {
+          Endpoint e;
+          e.method = endpoint["method"].as<std::string>();
+          e.path = endpoint["path"].as<std::string>();
+          extra_endpoints.push_back(e);
+        }
+      }
+    
+
+    // Model Load Parameters
+
+      auto mlp = config;
+      if (mlp["port"])
+        port = mlp["port"].as<int>();
+      if (mlp["log_path"])
+        log_path = mlp["log_path"].as<std::string>();
+      if (mlp["log_level"])
+        log_level = mlp["log_level"].as<std::string>();
+      if (mlp["environments"])
+        environments = mlp["environments"].as<std::string>();
+      if (mlp["engine"])
+        engine = mlp["engine"].as<std::string>();
+
+      if (mlp["command"] && mlp["command"].IsSequence()) {
+        for (const auto& cmd : mlp["command"]) {
+          command.push_back(cmd.as<std::string>());
+        }
+      }
+
+      if (mlp["extra_params"]) {
+        for (YAML::const_iterator it = mlp["extra_params"].begin();
+             it != mlp["extra_params"].end(); ++it) {
+          extra_params[it->first.as<std::string>()] =
+              it->second.as<std::string>();
+        }
+      }
+    
+  }
+
+  // Method to convert the struct to JSON
+  std::string ToJson() const {
+    Json::Value root;
+
+    root["id"] = id;
+    root["model"] = model;
+    root["name"] = name;
+    root["version"] = version;
+
+    // Inference Parameters
+    root["inference_parameters"]["load_model"]["method"] =
+        load_model.method;
+    root["inference_parameters"]["load_model"]["path"] =
+        load_model.path;
+    root["inference_parameters"]["load_model"]["transform_request"] =
+        load_model.transform_request;
+    root["inference_parameters"]["load_model"]["transform_response"] =
+        load_model.transform_response;
+
+    root["inference_parameters"]["destroy"]["method"] =
+        destroy.method;
+    root["inference_parameters"]["destroy"]["path"] =
+        destroy.path;
+
+    root["inference_parameters"]["inference"]["method"] =
+        inference.method;
+    root["inference_parameters"]["inference"]["path"] =
+        inference.path;
+
+    for (const auto& endpoint : extra_endpoints) {
+      Json::Value e;
+      e["method"] = endpoint.method;
+      e["path"] = endpoint.path;
+      root["inference_parameters"]["extra_endpoints"].append(e);
+    }
+
+    // Model Load Parameters
+    root["model_load_params"]["port"] = port;
+    root["model_load_params"]["log_path"] = log_path;
+    root["model_load_params"]["log_level"] = log_level;
+    root["model_load_params"]["environments"] = environments;
+
+    // Serialize command as JSON array
+    for (const auto& cmd : command) {
+      root["model_load_params"]["command"].append(cmd);
+    }
+
+    root["model_load_params"]["engine"] = engine;
+    root["model_load_params"]["extra_params"] =
+        extra_params;  // Serialize the JSON value directly
+
+    Json::StreamWriterBuilder writer;
+    return Json::writeString(writer, root);
+  }
+
+  // Method to populate struct from JSON
+  void FromJson(const std::string& jsonString) {
+    Json::CharReaderBuilder reader;
+    Json::Value root;
+    std::string errs;
+    std::istringstream s(jsonString);
+
+    if (!Json::parseFromStream(reader, s, &root, &errs)) {
+      std::cerr << "Error parsing JSON: " << errs << std::endl;
+      return;
+    }
+
+    if (root.isMember("id"))
+      id = root["id"].asString();
+    if (root.isMember("model"))
+      model = root["model"].asString();
+    if (root.isMember("name"))
+      name = root["name"].asString();
+    if (root.isMember("version"))
+      version = root["version"].asInt();
+
+    // Inference Parameters
+    if (root.isMember("inference_parameters")) {
+      const Json::Value& ip = root["inference_parameters"];
+      if (ip.isMember("load_model")) {
+        load_model.method =
+            ip["load_model"]["method"].asString();
+        load_model.path =
+            ip["load_model"]["path"].asString();
+        load_model.transform_request =
+            ip["load_model"]["transform_request"].asString();
+        load_model.transform_response =
+            ip["load_model"]["transform_response"].asString();
+      }
+      if (ip.isMember("destroy")) {
+        destroy.method =
+            ip["destroy"]["method"].asString();
+        destroy.path = ip["destroy"]["path"].asString();
+      }
+      if (ip.isMember("inference")) {
+        inference.method =
+            ip["inference"]["method"].asString();
+        inference.path =
+            ip["inference"]["path"].asString();
+      }
+      if (ip.isMember("extra_endpoints")) {
+        for (const auto& endpoint : ip["extra_endpoints"]) {
+          Endpoint e;
+          e.method = endpoint["method"].asString();
+          e.path = endpoint["path"].asString();
+          extra_endpoints.push_back(e);
+        }
+      }
+    }
+
+    // Model Load Parameters
+    if (root.isMember("model_load_params")) {
+      const Json::Value& mlp = root["model_load_params"];
+      if (mlp.isMember("port"))
+        port = mlp["port"].asInt();
+      if (mlp.isMember("log_path"))
+        log_path = mlp["log_path"].asString();
+      if (mlp.isMember("log_level"))
+        log_level = mlp["log_level"].asString();
+      if (mlp.isMember("environments"))
+        environments = mlp["environments"].asString();
+      if (mlp.isMember("engine"))
+        engine = mlp["engine"].asString();
+
+      if (mlp.isMember("command")) {
+        for (const auto& cmd : mlp["command"]) {
+          command.push_back(cmd.asString());
+        }
+      }
+
+      if (mlp.isMember("extra_params")) {
+        extra_params =
+            mlp["extra_params"];  // Directly assign the JSON value
+      }
+    }
   }
 };
 

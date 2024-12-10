@@ -13,6 +13,7 @@
     "sqlitecpp",
     "trantor",
     "indicators",
-    "lfreist-hwinfo"
+    "lfreist-hwinfo",
+    "inja"
   ]
 }
