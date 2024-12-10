@@ -68,5 +68,6 @@ class EngineI {
                              const std::string& log_path) = 0;
   virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
 
-  virtual Json::Value GetRemoteModels() = 0;
+  // Stop inflight chat completion in stream mode
+  virtual void StopInferencing(const std::string& model_id) = 0;
 };
