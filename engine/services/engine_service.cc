@@ -686,7 +686,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     CTL_INF("Engine " << ne << " is already loaded");
     return {};
   }
-}
+
 
   // Check for remote engine
   if (remote_engine::IsRemoteEngine(engine_name)) {
