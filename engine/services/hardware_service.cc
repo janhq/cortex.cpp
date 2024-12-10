@@ -34,7 +34,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
-  cortex::db::Hardwares hw_db;
+  cortex::db::Hardware hw_db;
   auto gpus = cortex::hw::GetGPUInfo();
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
@@ -191,31 +191,61 @@ bool HardwareService::Restart(const std::string& host, int port) {
   return true;
 }
 
+// GPU identifiers are given as integer indices or as UUID strings. GPU UUID strings
+// should follow the same format as given by nvidia-smi, such as GPU-8932f937-d72c-4106-c12f-20bd9faed9f6.
+// However, for convenience, abbreviated forms are allowed; simply specify enough digits
+// from the beginning of the GPU UUID to uniquely identify that GPU in the target system.
+// For example, CUDA_VISIBLE_DEVICES=GPU-8932f937 may be a valid way to refer to the above GPU UUID,
+// assuming no other GPU in the system shares this prefix. Only the devices whose index
+// is present in the sequence are visible to CUDA applications and they are enumerated
+// in the order of the sequence. If one of the indices is invalid, only the devices whose
+// index precedes the invalid index are visible to CUDA applications. For example, setting
+// CUDA_VISIBLE_DEVICES to 2,1 causes device 0 to be invisible and device 2 to be enumerated
+// before device 1. Setting CUDA_VISIBLE_DEVICES to 0,2,-1,1 causes devices 0 and 2 to be
+// visible and device 1 to be invisible. MIG format starts with MIG keyword and GPU UUID
+// should follow the same format as given by nvidia-smi.
+// For example, MIG-GPU-8932f937-d72c-4106-c12f-20bd9faed9f6/1/2.
+// Only single MIG instance enumeration is supported.
 bool HardwareService::SetActivateHardwareConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
   // Note: need to map software_id and hardware_id
   // Update to db
-  cortex::db::Hardwares hw_db;
+  cortex::db::Hardware hw_db;
+  // copy all gpu information to new vector
+  auto ahc_gpus = ahc.gpus;
   auto activate = [&ahc](int software_id) {
     return std::count(ahc.gpus.begin(), ahc.gpus.end(), software_id) > 0;
   };
+  auto priority = [&ahc](int software_id) -> int {
+    for (size_t i = 0; i < ahc.gpus.size(); i++) {
+      if (ahc.gpus[i] == software_id)
+        return i;
+      break;
+    }
+    return INT_MAX;
+  };
+
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
     bool need_update = false;
-    std::vector<int> activated_ids;
+    std::vector<std::pair<int, int>> activated_ids;
     // Check if need to update
     for (auto const& e : res.value()) {
       if (e.activated) {
-        activated_ids.push_back(e.software_id);
+        activated_ids.push_back(std::pair(e.software_id, e.priority));
       }
     }
     std::sort(activated_ids.begin(), activated_ids.end());
-    if (ahc.gpus.size() != activated_ids.size()) {
+    std::sort(ahc_gpus.begin(), ahc_gpus.end());
+    if (ahc_gpus.size() != activated_ids.size()) {
       need_update = true;
     } else {
-      for (size_t i = 0; i < ahc.gpus.size(); i++) {
-        if (ahc.gpus[i] != activated_ids[i])
+      for (size_t i = 0; i < ahc_gpus.size(); i++) {
+        // if activated id or priority changes
+        if (ahc_gpus[i] != activated_ids[i].first ||
+            i != activated_ids[i].second)
           need_update = true;
+        break;
       }
     }
 
@@ -227,6 +257,7 @@ bool HardwareService::SetActivateHardwareConfig(
     // Need to update, proceed
     for (auto& e : res.value()) {
       e.activated = activate(e.software_id);
+      e.priority = priority(e.software_id);
       auto res = hw_db.UpdateHardwareEntry(e.uuid, e);
       if (res.has_error()) {
         CTL_WRN(res.error());
@@ -240,14 +271,14 @@ bool HardwareService::SetActivateHardwareConfig(
 void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
   auto gpus = cortex::hw::GetGPUInfo();
-  cortex::db::Hardwares hw_db;
+  cortex::db::Hardware hw_db;
   auto b = hw_db.LoadHardwareList();
-  std::vector<int> activated_gpu_bf;
+  std::vector<std::pair<int, int>> activated_gpu_bf;
   std::string debug_b;
   for (auto const& he : b.value()) {
     if (he.type == "gpu" && he.activated) {
       debug_b += std::to_string(he.software_id) + " ";
-      activated_gpu_bf.push_back(he.software_id);
+      activated_gpu_bf.push_back(std::pair(he.software_id, he.priority));
     }
   }
   CTL_INF("Activated GPUs before: " << debug_b);
@@ -258,7 +289,8 @@ void HardwareService::UpdateHardwareInfos() {
                                               .type = "gpu",
                                               .hardware_id = std::stoi(gpu.id),
                                               .software_id = std::stoi(gpu.id),
-                                              .activated = true});
+                                              .activated = true,
+                                              .priority = INT_MAX});
     if (res.has_error()) {
       CTL_WRN(res.error());
     }
@@ -266,24 +298,26 @@ void HardwareService::UpdateHardwareInfos() {
 
   auto a = hw_db.LoadHardwareList();
   std::vector<HwEntry> a_gpu;
-  std::vector<int> activated_gpu_af;
+  std::vector<std::pair<int, int>> activated_gpu_af;
   std::string debug_a;
   for (auto const& he : a.value()) {
     if (he.type == "gpu" && he.activated) {
       debug_a += std::to_string(he.software_id) + " ";
-      activated_gpu_af.push_back(he.software_id);
+      activated_gpu_af.push_back(std::pair(he.software_id, he.priority));
     }
   }
   CTL_INF("Activated GPUs after: " << debug_a);
   // if hardware list changes, need to restart
-  std::sort(activated_gpu_bf.begin(), activated_gpu_bf.end());
-  std::sort(activated_gpu_af.begin(), activated_gpu_af.end());
+  std::sort(activated_gpu_bf.begin(), activated_gpu_bf.end(),
+            [](auto& p1, auto& p2) { return p1.second < p2.second; });
+  std::sort(activated_gpu_af.begin(), activated_gpu_af.end(),
+            [](auto& p1, auto& p2) { return p1.second < p2.second; });
   bool need_restart = false;
   if (activated_gpu_bf.size() != activated_gpu_af.size()) {
     need_restart = true;
   } else {
     for (size_t i = 0; i < activated_gpu_bf.size(); i++) {
-      if (activated_gpu_bf[i] != activated_gpu_af[i]) {
+      if (activated_gpu_bf[i].first != activated_gpu_af[i].first) {
         need_restart = true;
         break;
       }
@@ -291,7 +325,8 @@ void HardwareService::UpdateHardwareInfos() {
   }
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  if (!gpus.empty()) {
+  bool has_deactivated_gpu = a.value().size() != activated_gpu_af.size();
+  if (!gpus.empty() && has_deactivated_gpu) {
     const char* value = std::getenv("CUDA_VISIBLE_DEVICES");
     if (value) {
       LOG_INFO << "CUDA_VISIBLE_DEVICES: " << value;
@@ -303,7 +338,11 @@ void HardwareService::UpdateHardwareInfos() {
 
   if (need_restart) {
     CTL_INF("Need restart");
-    ahc_ = {.gpus = activated_gpu_af};
+    std::vector<int> gpus;
+    for (auto const& p : activated_gpu_af) {
+      gpus.push_back(p.first);
+    }
+    ahc_ = {.gpus = gpus};
   }
 }
 
@@ -311,7 +350,7 @@ bool HardwareService::IsValidConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
   if (ahc.gpus.empty())
     return true;
-  cortex::db::Hardwares hw_db;
+  cortex::db::Hardware hw_db;
   auto is_valid = [&ahc](int software_id) {
     return std::count(ahc.gpus.begin(), ahc.gpus.end(), software_id) > 0;
   };
