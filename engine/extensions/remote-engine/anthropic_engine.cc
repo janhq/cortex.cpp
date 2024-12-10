@@ -10,6 +10,7 @@ constexpr const std::array<std::string_view, 5> kAnthropicModels = {
     "claude-3-opus-20240229", "claude-3-sonnet-20240229",
     "claude-3-haiku-20240307"};
 }
+
 void AnthropicEngine::GetModels(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {

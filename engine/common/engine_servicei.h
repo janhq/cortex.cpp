@@ -58,4 +58,6 @@ class EngineServiceI {
   GetEngineByNameAndVariant(
       const std::string& engine_name,
       const std::optional<std::string> variant = std::nullopt) = 0;
+  
+  virtual bool IsRemoteEngine(const std::string& engine_name) = 0;
 };

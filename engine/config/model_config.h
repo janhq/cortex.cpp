@@ -52,6 +52,7 @@ const std::string kAnthropicTransformRespTemplate = R"({
         },
         "system_fingerprint": "fp_6b68a8204b"
       })";
+
 }  // namespace
 
 struct RemoteModelConfig {
@@ -108,6 +109,7 @@ struct RemoteModelConfig {
             kOpenAITransformRespTemplate;
       }
     }
+
     metadata = json.get("metadata", metadata);
   }
 

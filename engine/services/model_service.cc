@@ -722,7 +722,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       auto mc = yaml_handler.GetModelConfig();
 
       // Running remote model
-      if (remote_engine::IsRemoteEngine(mc.engine)) {
+      if (engine_svc_->IsRemoteEngine(mc.engine)) {
 
         config::RemoteModelConfig remote_mc;
         remote_mc.LoadFromYamlFile(
