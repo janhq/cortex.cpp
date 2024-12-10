@@ -24,24 +24,18 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     return cpp::fail(std::make_pair(stt, res));
   }
 
+  auto cb = [q, tool_choice](Json::Value status, Json::Value res) {
+    if (!tool_choice.isNull()) {
+      res["tool_choice"] = tool_choice;
+    }
+    q->push(std::make_pair(status, res));
+  };
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
-        ->HandleChatCompletion(
-            json_body, [q, tool_choice](Json::Value status, Json::Value res) {
-              if (!tool_choice.isNull()) {
-                res["tool_choice"] = tool_choice;
-              }
-              q->push(std::make_pair(status, res));
-            });
+        ->HandleChatCompletion(json_body, std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
-        ->HandleChatCompletion(
-            json_body, [q, tool_choice](Json::Value status, Json::Value res) {
-              if (!tool_choice.isNull()) {
-                res["tool_choice"] = tool_choice;
-              }
-              q->push(std::make_pair(status, res));
-            });
+        ->HandleChatCompletion(json_body, std::move(cb));
   }
 
   return {};
@@ -66,16 +60,15 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
     return cpp::fail(std::make_pair(stt, res));
   }
 
+  auto cb = [q](Json::Value status, Json::Value res) {
+    q->push(std::make_pair(status, res));
+  };
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
-        ->HandleEmbedding(json_body, [q](Json::Value status, Json::Value res) {
-          q->push(std::make_pair(status, res));
-        });
+        ->HandleEmbedding(json_body, std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
-        ->HandleEmbedding(json_body, [q](Json::Value status, Json::Value res) {
-          q->push(std::make_pair(status, res));
-        });
+        ->HandleEmbedding(json_body, std::move(cb));
   }
   return {};
 }
@@ -104,18 +97,16 @@ InferResult InferenceService::LoadModel(
   // might need mutex here
   auto engine_result = engine_service_->GetLoadedEngine(engine_type);
 
+  auto cb = [&stt, &r](Json::Value status, Json::Value res) {
+    stt = status;
+    r = res;
+  };
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
-        ->LoadModel(json_body, [&stt, &r](Json::Value status, Json::Value res) {
-          stt = status;
-          r = res;
-        });
+        ->LoadModel(json_body, std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
-        ->LoadModel(json_body, [&stt, &r](Json::Value status, Json::Value res) {
-          stt = status;
-          r = res;
-        });
+        ->LoadModel(json_body, std::move(cb));
   }
   return std::make_pair(stt, r);
 }
@@ -139,20 +130,16 @@ InferResult InferenceService::UnloadModel(const std::string& engine_name,
   json_body["model"] = model_id;
 
   LOG_TRACE << "Start unload model";
+  auto cb = [&r, &stt](Json::Value status, Json::Value res) {
+    stt = status;
+    r = res;
+  };
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body),
-                      [&r, &stt](Json::Value status, Json::Value res) {
-                        stt = status;
-                        r = res;
-                      });
+        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
-        ->UnloadModel(std::make_shared<Json::Value>(json_body),
-                      [&r, &stt](Json::Value status, Json::Value res) {
-                        stt = status;
-                        r = res;
-                      });
+        ->UnloadModel(std::make_shared<Json::Value>(json_body), std::move(cb));
   }
 
   return std::make_pair(stt, r);
@@ -181,20 +168,16 @@ InferResult InferenceService::GetModelStatus(
 
   LOG_TRACE << "Start to get model status";
 
+  auto cb = [&stt, &r](Json::Value status, Json::Value res) {
+    stt = status;
+    r = res;
+  };
   if (std::holds_alternative<EngineI*>(engine_result.value())) {
     std::get<EngineI*>(engine_result.value())
-        ->GetModelStatus(json_body,
-                         [&stt, &r](Json::Value status, Json::Value res) {
-                           stt = status;
-                           r = res;
-                         });
+        ->GetModelStatus(json_body, std::move(cb));
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
-        ->GetModelStatus(json_body,
-                         [&stt, &r](Json::Value status, Json::Value res) {
-                           stt = status;
-                           r = res;
-                         });
+        ->GetModelStatus(json_body, std::move(cb));
   }
 
   return std::make_pair(stt, r);
@@ -214,15 +197,20 @@ InferResult InferenceService::GetModels(
 
   LOG_TRACE << "Start to get models";
   Json::Value resp_data(Json::arrayValue);
+  auto cb = [&resp_data](Json::Value status, Json::Value res) {
+    for (auto r : res["data"]) {
+      resp_data.append(r);
+    }
+  };
   for (const auto& loaded_engine : loaded_engines) {
-    auto e = std::get<EngineI*>(loaded_engine);
-    if (e->IsSupported("GetModels")) {
-      e->GetModels(json_body,
-                   [&resp_data](Json::Value status, Json::Value res) {
-                     for (auto r : res["data"]) {
-                       resp_data.append(r);
-                     }
-                   });
+    if (std::holds_alternative<EngineI*>(loaded_engine)) {
+      auto e = std::get<EngineI*>(loaded_engine);
+      if (e->IsSupported("GetModels")) {
+        e->GetModels(json_body, std::move(cb));
+      }
+    } else {
+      std::get<RemoteEngineI*>(loaded_engine)
+          ->GetModels(json_body, std::move(cb));
     }
   }
 
@@ -281,6 +269,25 @@ InferResult InferenceService::FineTuning(
   // }
   // LOG_TRACE << "Done fine-tuning";
   return std::make_pair(stt, r);
+}
+
+bool InferenceService::StopInferencing(const std::string& engine_name,
+                                       const std::string& model_id) {
+  CTL_DBG("Stop inferencing");
+  auto engine_result = engine_service_->GetLoadedEngine(engine_name);
+  if (engine_result.has_error()) {
+    LOG_WARN << "Engine is not loaded yet";
+    return false;
+  }
+
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    auto engine = std::get<EngineI*>(engine_result.value());
+    if (engine->IsSupported("StopInferencing")) {
+      engine->StopInferencing(model_id);
+      CTL_INF("Stopped inferencing");
+    }
+  }
+  return true;
 }
 
 bool InferenceService::HasFieldInReq(std::shared_ptr<Json::Value> json_body,

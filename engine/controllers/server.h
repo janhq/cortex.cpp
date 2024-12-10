@@ -72,7 +72,9 @@ class server : public drogon::HttpController<server, false>,
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                        std::shared_ptr<services::SyncQueue> q);
+                        std::shared_ptr<services::SyncQueue> q,
+                        const std::string& engine_type,
+                        const std::string& model_id);
   void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                            services::SyncQueue& q);
 
