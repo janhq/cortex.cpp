@@ -28,13 +28,15 @@ void server::ChatCompletion(
   LOG_DEBUG << "Start chat completion";
   auto json_body = req->getJsonObject();
   bool is_stream = (*json_body).get("stream", false).asBool();
-  std::string model_id = (*json_body).get("model", "invalid_model").asString();
-  std::string engine_type;
-  if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
-    engine_type = kLlamaRepo;
-  } else {
-    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
-  }
+  auto model_id = (*json_body).get("model", "invalid_model").asString();
+  auto engine_type = [this, &json_body]() -> std::string {
+    if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
+      return kLlamaRepo;
+    } else {
+      return (*(json_body)).get("engine", kLlamaRepo).asString();
+    }
+  }();
+
   LOG_DEBUG << "request body: " << json_body->toStyledString();
   auto q = std::make_shared<services::SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
