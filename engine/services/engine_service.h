@@ -149,6 +149,8 @@ class EngineService : public EngineServiceI {
   cpp::result<Json::Value, std::string> GetRemoteModels(
       const std::string& engine_name);
 
+  bool IsRemoteEngine(const std::string& engine_name) override;
+
  private:
   bool IsEngineLoaded(const std::string& engine);
 

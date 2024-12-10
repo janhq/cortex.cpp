@@ -178,7 +178,7 @@ void Models::ListModel(
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
 
-        if (!remote_engine::IsRemoteEngine(model_config.engine)) {
+        if (!engine_service_->IsRemoteEngine(model_config.engine)) {
           Json::Value obj = model_config.ToJson();
           obj["id"] = model_entry.model;
           obj["model"] = model_entry.model;
@@ -610,7 +610,7 @@ void Models::GetRemoteModels(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine_id) {
-  if (!remote_engine::IsRemoteEngine(engine_id)) {
+  if (!engine_service_->IsRemoteEngine(engine_id)) {
     Json::Value ret;
     ret["message"] = "Not a remote engine: " + engine_id;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -646,8 +646,7 @@ void Models::AddRemoteModel(
 
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   auto engine_name = (*(req->getJsonObject())).get("engine", "").asString();
-  /* To do: uncomment when remote engine is ready
-  
+ 
   auto engine_validate = engine_service_->IsEngineReady(engine_name);
   if (engine_validate.has_error()) {
     Json::Value ret;
@@ -657,6 +656,7 @@ void Models::AddRemoteModel(
     callback(resp);
     return;
   }
+
   if (!engine_validate.value()) {
     Json::Value ret;
     ret["message"] = "Engine is not ready! Please install first!";
@@ -665,7 +665,7 @@ void Models::AddRemoteModel(
     callback(resp);
     return;
   }
-  */
+  
   config::RemoteModelConfig model_config;
   model_config.LoadFromJson(*(req->getJsonObject()));
   cortex::db::Models modellist_utils_obj;

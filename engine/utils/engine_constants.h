@@ -6,6 +6,9 @@ constexpr const auto kTrtLlmEngine = "tensorrt-llm";
 constexpr const auto kOpenAiEngine = "openai";
 constexpr const auto kAnthropicEngine = "anthropic";
 
+constexpr const auto kRemote = "remote";
+constexpr const auto kLocal = "local";
+
 constexpr const auto kOnnxRepo = "cortex.onnx";
 constexpr const auto kLlamaRepo = "cortex.llamacpp";
 constexpr const auto kTrtLlmRepo = "cortex.tensorrt-llm";

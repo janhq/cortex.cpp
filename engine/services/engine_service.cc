@@ -185,7 +185,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   // TODO: handle uninstall remote engine
   // only delete a remote engine if no model are using it
   auto exist_engine = GetEngineByNameAndVariant(engine);
-  if (exist_engine.has_value() && exist_engine.value().type == "remote") {
+  if (exist_engine.has_value() && exist_engine.value().type == kRemote) {
     auto result = DeleteEngine(exist_engine.value().id);
     if (!result.empty()) {  // This mean no error when delete model
       CTL_ERR("Failed to delete engine: " << result);
@@ -331,15 +331,9 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
-    auto create_res =
-        EngineService::UpsertEngine(engine,   // engine_name
-                                    "local",  // todo - luke
-                                    "",       // todo - luke
-                                    "",       // todo - luke
-                                    normalize_version, variant.value(),
-                                    "Default",  // todo - luke
-                                    ""          // todo - luke
-        );
+    auto create_res = EngineService::UpsertEngine(
+        engine,  // engine_name
+        kLocal, "", "", normalize_version, variant.value(), "Default", "");
 
     if (create_res.has_value()) {
       CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
@@ -681,7 +675,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   }
 
   // Check for remote engine
-  if (remote_engine::IsRemoteEngine(engine_name)) {
+  if (IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
@@ -1097,4 +1091,17 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   } else {
     return res;
   }
+}
+
+bool EngineService::IsRemoteEngine(const std::string& engine_name) {
+  cortex::db::Engines e_db;
+  auto res = e_db.GetEngines();
+  if (res) {
+    for (auto const& e : *res) {
+      if (e.engine_name == engine_name && e.type == kRemote) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
