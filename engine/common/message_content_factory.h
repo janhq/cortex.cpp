@@ -8,7 +8,7 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
-namespace ThreadMessage {
+namespace OpenAi {
 inline cpp::result<std::unique_ptr<Content>, std::string> ParseContent(
     Json::Value&& json) {
   if (json.empty()) {
@@ -74,4 +74,4 @@ ParseContents(Json::Value&& json) {
   }
   return contents;
 }
-}  // namespace ThreadMessage
+}  // namespace OpenAi

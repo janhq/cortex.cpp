@@ -1,5 +1,5 @@
 #include "messages.h"
-#include "common/api-dto/messages/delete_message_response.h"
+#include "common/api-dto/delete_success_response.h"
 #include "common/message_content.h"
 #include "common/message_role.h"
 #include "common/variant_map.h"
@@ -10,13 +10,13 @@
 void Messages::ListMessages(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& thread_id, std::optional<uint8_t> limit,
+    const std::string& thread_id, std::optional<std::string> limit,
     std::optional<std::string> order, std::optional<std::string> after,
     std::optional<std::string> before,
     std::optional<std::string> run_id) const {
   auto res = message_service_->ListMessages(
-      thread_id, limit.value_or(20), order.value_or("desc"), after.value_or(""),
-      before.value_or(""), run_id.value_or(""));
+      thread_id, std::stoi(limit.value_or("20")), order.value_or("desc"),
+      after.value_or(""), before.value_or(""), run_id.value_or(""));
 
   Json::Value root;
   if (res.has_error()) {
@@ -75,16 +75,13 @@ void Messages::CreateMessage(
     return;
   }
 
-  ThreadMessage::Role role = role_str == "user"
-                                 ? ThreadMessage::Role::USER
-                                 : ThreadMessage::Role::ASSISTANT;
+  auto role = role_str == "user" ? OpenAi::Role::USER : OpenAi::Role::ASSISTANT;
 
-  std::variant<std::string,
-               std::vector<std::unique_ptr<ThreadMessage::Content>>>
+  std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>
       content;
 
   if (json_body->get("content", "").isArray()) {
-    auto result = ThreadMessage::ParseContents(json_body->get("content", ""));
+    auto result = OpenAi::ParseContents(json_body->get("content", ""));
     if (result.has_error()) {
       Json::Value ret;
       ret["message"] = "Failed to parse content array: " + result.error();
@@ -128,12 +125,11 @@ void Messages::CreateMessage(
   }
 
   // attachments
-  std::optional<std::vector<ThreadMessage::Attachment>> attachments =
-      std::nullopt;
+  std::optional<std::vector<OpenAi::Attachment>> attachments = std::nullopt;
   if (json_body->get("attachments", "").isArray()) {
-    attachments = ThreadMessage::ParseAttachments(
-                      std::move(json_body->get("attachments", "")))
-                      .value();
+    attachments =
+        OpenAi::ParseAttachments(std::move(json_body->get("attachments", "")))
+            .value();
   }
 
   std::optional<Cortex::VariantMap> metadata = std::nullopt;
@@ -216,39 +212,88 @@ void Messages::ModifyMessage(
   }
 
   std::optional<Cortex::VariantMap> metadata = std::nullopt;
-  if (auto it = json_body->get("metadata", ""); it) {
-    if (it.empty()) {
-      Json::Value ret;
-      ret["message"] = "Metadata can't be empty";
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-      return;
+  if (json_body->isMember("metadata")) {
+    if (auto it = json_body->get("metadata", ""); it) {
+      if (it.empty()) {
+        Json::Value ret;
+        ret["message"] = "Metadata can't be empty";
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+      auto convert_res = Cortex::ConvertJsonValueToMap(it);
+      if (convert_res.has_error()) {
+        Json::Value ret;
+        ret["message"] =
+            "Failed to convert metadata to map: " + convert_res.error();
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+      metadata = convert_res.value();
     }
-    auto convert_res = Cortex::ConvertJsonValueToMap(it);
-    if (convert_res.has_error()) {
-      Json::Value ret;
-      ret["message"] =
-          "Failed to convert metadata to map: " + convert_res.error();
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k400BadRequest);
-      callback(resp);
-      return;
-    }
-    metadata = convert_res.value();
   }
 
-  if (!metadata.has_value()) {
+  std::optional<
+      std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>>
+      content = std::nullopt;
+
+  if (json_body->get("content", "").isArray()) {
+    auto result = OpenAi::ParseContents(json_body->get("content", ""));
+    if (result.has_error()) {
+      Json::Value ret;
+      ret["message"] = "Failed to parse content array: " + result.error();
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    if (result.value().empty()) {
+      Json::Value ret;
+      ret["message"] = "Content array cannot be empty";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    content = std::move(result.value());
+  } else if (json_body->get("content", "").isString()) {
+    auto content_str = json_body->get("content", "").asString();
+    string_utils::Trim(content_str);
+    if (content_str.empty()) {
+      Json::Value ret;
+      ret["message"] = "Content can't be empty";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    content = content_str;
+  } else if (!json_body->get("content", "").empty()) {
     Json::Value ret;
-    ret["message"] = "Metadata is mandatory";
+    ret["message"] = "Content must be either a string or an array";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k400BadRequest);
     callback(resp);
     return;
   }
 
-  auto res =
-      message_service_->ModifyMessage(thread_id, message_id, metadata.value());
+  if (!metadata.has_value() && !content.has_value()) {
+    Json::Value ret;
+    ret["message"] = "Nothing to update";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto res = message_service_->ModifyMessage(thread_id, message_id, metadata,
+                                             std::move(content));
   if (res.has_error()) {
     Json::Value ret;
     ret["message"] = "Failed to modify message: " + res.error();
@@ -287,7 +332,7 @@ void Messages::DeleteMessage(
     return;
   }
 
-  api_response::DeleteMessageResponse response;
+  api_response::DeleteSuccessResponse response;
   response.id = message_id;
   response.object = "thread.message.deleted";
   response.deleted = true;

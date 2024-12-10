@@ -67,4 +67,6 @@ class EngineI {
   virtual bool SetFileLogger(int max_log_lines,
                              const std::string& log_path) = 0;
   virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
+
+  virtual Json::Value GetRemoteModels() = 0;
 };

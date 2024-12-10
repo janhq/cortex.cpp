@@ -4,13 +4,191 @@
 #include <yaml-cpp/yaml.h>
 #include <fstream>
 #include <iostream>
+
+#include <ctime>
 #include <limits>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include "utils/format_utils.h"
+#include "utils/remote_models_utils.h"
 
 namespace config {
+
+namespace {
+const std::string kOpenAITransformReqTemplate =
+    R"({ {% set first = true %} {% for key, value in input_request %} {% if key == \"messages\" or key == \"model\" or key == \"temperature\" or key == \"store\" or key == \"max_tokens\" or key == \"stream\" or key == \"presence_penalty\" or key == \"metadata\" or key == \"frequency_penalty\" or key == \"tools\" or key == \"tool_choice\" or key == \"logprobs\" or key == \"top_logprobs\" or key == \"logit_bias\" or key == \"n\" or key == \"modalities\" or key == \"prediction\" or key == \"response_format\" or key == \"service_tier\" or key == \"seed\" or key == \"stop\" or key == \"stream_options\" or key == \"top_p\" or key == \"parallel_tool_calls\" or key == \"user\" %} {% if not first %},{% endif %} \"{{ key }}\": {{ tojson(value) }} {% set first = false %} {% endif %} {% endfor %} })";
+const std::string kOpenAITransformRespTemplate =
+    R"({ {%- set first = true -%} {%- for key, value in input_request -%} {%- if key == \"id\" or key == \"choices\" or key == \"created\" or key == \"model\" or key == \"service_tier\" or key == \"system_fingerprint\" or key == \"object\" or key == \"usage\" -%} {%- if not first -%},{%- endif -%} \"{{ key }}\": {{ tojson(value) }} {%- set first = false -%} {%- endif -%} {%- endfor -%} })";
+const std::string kAnthropicTransformReqTemplate =
+    R"({ {% set first = true %} {% for key, value in input_request %} {% if key == \"system\" or key == \"messages\" or key == \"model\" or key == \"temperature\" or key == \"store\" or key == \"max_tokens\" or key == \"stream\" or key == \"presence_penalty\" or key == \"metadata\" or key == \"frequency_penalty\" or key == \"tools\" or key == \"tool_choice\" or key == \"logprobs\" or key == \"top_logprobs\" or key == \"logit_bias\" or key == \"n\" or key == \"modalities\" or key == \"prediction\" or key == \"response_format\" or key == \"service_tier\" or key == \"seed\" or key == \"stop\" or key == \"stream_options\" or key == \"top_p\" or key == \"parallel_tool_calls\" or key == \"user\" %} {% if not first %},{% endif %} \"{{ key }}\": {{ tojson(value) }} {% set first = false %} {% endif %} {% endfor %} })";
+const std::string kAnthropicTransformRespTemplate = R"({
+        "id": "{{ input_request.id }}",
+        "created": null,
+        "object": "chat.completion",
+        "model": "{{ input_request.model }}",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "{{ input_request.role }}",
+              "content": "{% if input_request.content and input_request.content.0.type == "text" %}  {{input_request.content.0.text}} {% endif %}",
+              "refusal": null
+            },
+            "logprobs": null,
+            "finish_reason": "{{ input_request.stop_reason }}"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": {{ input_request.usage.input_tokens }},
+          "completion_tokens": {{ input_request.usage.output_tokens }},
+          "total_tokens": {{ input_request.usage.input_tokens + input_request.usage.output_tokens }},
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          },
+          "completion_tokens_details": {
+            "reasoning_tokens": 0,
+            "accepted_prediction_tokens": 0,
+            "rejected_prediction_tokens": 0
+          }
+        },
+        "system_fingerprint": "fp_6b68a8204b"
+      })";
+}  // namespace
+
+struct RemoteModelConfig {
+  std::string model;
+  std::string api_key_template;
+  std::string engine;
+  std::string version;
+  std::size_t created;
+  std::string object = "model";
+  std::string owned_by = "";
+  Json::Value inference_params;
+  Json::Value TransformReq;
+  Json::Value TransformResp;
+  Json::Value metadata;
+  void LoadFromJson(const Json::Value& json) {
+    if (!json.isObject()) {
+      throw std::runtime_error("Input JSON must be an object");
+    }
+
+    // Load basic string fields
+    model = json.get("model", model).asString();
+    api_key_template =
+        json.get("api_key_template", api_key_template).asString();
+    engine = json.get("engine", engine).asString();
+    version = json.get("version", version).asString();
+    created =
+        json.get("created", static_cast<Json::UInt64>(created)).asUInt64();
+    object = json.get("object", object).asString();
+    owned_by = json.get("owned_by", owned_by).asString();
+
+    // Load JSON object fields directly
+    inference_params = json.get("inference_params", inference_params);
+    TransformReq = json.get("TransformReq", TransformReq);
+    // Use default template if it is empty, currently we only support 2 remote engines
+    auto is_anthropic = [](const std::string& model) {
+      return model.find("claude") != std::string::npos;
+    };
+    if (TransformReq["chat_completions"]["template"].isNull()) {
+      if (is_anthropic(model)) {
+        TransformReq["chat_completions"]["template"] =
+            kAnthropicTransformReqTemplate;
+      } else {
+        TransformReq["chat_completions"]["template"] =
+            kOpenAITransformReqTemplate;
+      }
+    }
+    TransformResp = json.get("TransformResp", TransformResp);
+    if (TransformResp["chat_completions"]["template"].isNull()) {
+      if (is_anthropic(model)) {
+        TransformResp["chat_completions"]["template"] =
+            kAnthropicTransformRespTemplate;
+      } else {
+        TransformResp["chat_completions"]["template"] =
+            kOpenAITransformRespTemplate;
+      }
+    }
+    metadata = json.get("metadata", metadata);
+  }
+
+  Json::Value ToJson() const {
+    Json::Value json;
+
+    // Add basic string fields
+    json["model"] = model;
+    json["api_key_template"] = api_key_template;
+    json["engine"] = engine;
+    json["version"] = version;
+    json["created"] = static_cast<Json::UInt64>(created);
+    json["object"] = object;
+    json["owned_by"] = owned_by;
+
+    // Add JSON object fields directly
+    json["inference_params"] = inference_params;
+    json["TransformReq"] = TransformReq;
+    json["TransformResp"] = TransformResp;
+    json["metadata"] = metadata;
+
+    return json;
+  };
+
+  void SaveToYamlFile(const std::string& filepath) const {
+    YAML::Node root;
+
+    // Convert basic fields
+    root["model"] = model;
+    root["api_key_template"] = api_key_template;
+    root["engine"] = engine;
+    root["version"] = version;
+    root["object"] = object;
+    root["owned_by"] = owned_by;
+    root["created"] = std::time(nullptr);
+
+    // Convert Json::Value to YAML::Node using utility function
+    root["inference_params"] =
+        remote_models_utils::jsonToYaml(inference_params);
+    root["TransformReq"] = remote_models_utils::jsonToYaml(TransformReq);
+    root["TransformResp"] = remote_models_utils::jsonToYaml(TransformResp);
+    root["metadata"] = remote_models_utils::jsonToYaml(metadata);
+
+    // Save to file
+    std::ofstream fout(filepath);
+    if (!fout.is_open()) {
+      throw std::runtime_error("Failed to open file for writing: " + filepath);
+    }
+    fout << root;
+  }
+
+  void LoadFromYamlFile(const std::string& filepath) {
+    YAML::Node root;
+    try {
+      root = YAML::LoadFile(filepath);
+    } catch (const YAML::Exception& e) {
+      throw std::runtime_error("Failed to parse YAML file: " +
+                               std::string(e.what()));
+    }
+
+    // Load basic fields
+    model = root["model"].as<std::string>("");
+    api_key_template = root["api_key_template"].as<std::string>("");
+    engine = root["engine"].as<std::string>("");
+    version = root["version"] ? root["version"].as<std::string>() : "";
+    created = root["created"] ? root["created"].as<std::size_t>() : 0;
+    object = root["object"] ? root["object"].as<std::string>() : "model";
+    owned_by = root["owned_by"] ? root["owned_by"].as<std::string>() : "";
+
+    // Load complex fields using utility function
+    inference_params =
+        remote_models_utils::yamlToJson(root["inference_params"]);
+    TransformReq = remote_models_utils::yamlToJson(root["TransformReq"]);
+    TransformResp = remote_models_utils::yamlToJson(root["TransformResp"]);
+    metadata = remote_models_utils::yamlToJson(root["metadata"]);
+  }
+};
+
 struct ModelConfig {
   std::string name;
   std::string model;

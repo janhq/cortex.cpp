@@ -64,11 +64,13 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
-  cortex::db::ModelEntry model_entry{.model = ggufDownloadItem.id,
-                                     .author_repo_id = author_id,
-                                     .branch_name = branch,
-                                     .path_to_model_yaml = rel.string(),
-                                     .model_alias = ggufDownloadItem.id};
+  cortex::db::ModelEntry model_entry{
+      .model = ggufDownloadItem.id,
+      .author_repo_id = author_id,
+      .branch_name = branch,
+      .path_to_model_yaml = rel.string(),
+      .model_alias = ggufDownloadItem.id,
+      .status = cortex::db::ModelStatus::Downloaded};
   auto result = modellist_utils_obj.AddModelEntry(model_entry, true);
   if (result.has_error()) {
     CTL_WRN("Error adding model to modellist: " + result.error());
@@ -339,9 +341,10 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
-cpp::result<hardware::Estimation, std::string> ModelService::GetEstimation(
-    const std::string& model_handle, const std::string& kv_cache, int n_batch,
-    int n_ubatch) {
+cpp::result<std::optional<hardware::Estimation>, std::string>
+ModelService::GetEstimation(const std::string& model_handle,
+                            const std::string& kv_cache, int n_batch,
+                            int n_ubatch) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
@@ -702,6 +705,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
   config::YamlHandler yaml_handler;
 
   try {
+    constexpr const int kDefautlContextLength = 8192;
+    int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
     // Currently we don't support download vision models, so we need to bypass check
     if (!params_override.bypass_model_check()) {
@@ -715,6 +720,49 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
               fs::path(model_entry.value().path_to_model_yaml))
               .string());
       auto mc = yaml_handler.GetModelConfig();
+
+      // Running remote model
+      if (remote_engine::IsRemoteEngine(mc.engine)) {
+
+        config::RemoteModelConfig remote_mc;
+        remote_mc.LoadFromYamlFile(
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string());
+        auto remote_engine_entry =
+            engine_svc_->GetEngineByNameAndVariant(mc.engine);
+        if (remote_engine_entry.has_error()) {
+          CTL_WRN("Remote engine error: " + model_entry.error());
+          return cpp::fail(remote_engine_entry.error());
+        }
+        auto remote_engine_json = remote_engine_entry.value().ToJson();
+        json_data = remote_mc.ToJson();
+
+        json_data["api_key"] = std::move(remote_engine_json["api_key"]);
+        json_data["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string();
+        json_data["metadata"] = std::move(remote_engine_json["metadata"]);
+
+        auto ir =
+            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+        auto status = std::get<0>(ir)["status_code"].asInt();
+        auto data = std::get<1>(ir);
+        if (status == drogon::k200OK) {
+          return StartModelResult{.success = true, .warning = ""};
+        } else if (status == drogon::k409Conflict) {
+          CTL_INF("Model '" + model_handle + "' is already loaded");
+          return StartModelResult{.success = true, .warning = ""};
+        } else {
+          // only report to user the error
+          CTL_ERR("Model failed to start with status code: " << status);
+          return cpp::fail("Model failed to start: " +
+                           data["message"].asString());
+        }
+      }
+
+      // end hard code
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
@@ -732,6 +780,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
+      json_data["ctx_len"] = std::min(kDefautlContextLength, mc.ctx_len);
+      max_model_context_length = mc.ctx_len;
     } else {
       bypass_stop_check_set_.insert(model_handle);
     }
@@ -753,12 +803,14 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     ASSIGN_IF_PRESENT(json_data, params_override, cache_enabled);
     ASSIGN_IF_PRESENT(json_data, params_override, ngl);
     ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
-    ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
     ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
     ASSIGN_IF_PRESENT(json_data, params_override, mmproj);
     ASSIGN_IF_PRESENT(json_data, params_override, model_path);
 #undef ASSIGN_IF_PRESENT
-
+    if (params_override.ctx_len) {
+      json_data["ctx_len"] =
+          std::min(params_override.ctx_len.value(), max_model_context_length);
+    }
     CTL_INF(json_data.toStyledString());
     auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
                                              json_data["ngl"].asInt(),
@@ -867,7 +919,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
     if (status == drogon::k200OK) {
       return true;
     } else {
-      CTL_ERR("Model failed to get model status with status code: " << status);
+      CTL_WRN("Model failed to get model status with status code: " << status);
       return cpp::fail("Model failed to get model status: " +
                        data["message"].asString());
     }
@@ -1095,13 +1147,13 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
                             .free_vram_MiB = free_vram_MiB};
   auto es = hardware::EstimateLLaMACppRun(model_path, rc);
 
-  if (es.gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
-    CTL_WRN("Not enough VRAM - " << "required: " << es.gpu_mode.vram_MiB
+  if (!!es && (*es).gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
+    CTL_WRN("Not enough VRAM - " << "required: " << (*es).gpu_mode.vram_MiB
                                  << ", available: " << free_vram_MiB);
   }
 
-  if (es.cpu_mode.ram_MiB > free_ram_MiB) {
-    CTL_WRN("Not enough RAM - " << "required: " << es.cpu_mode.ram_MiB
+  if (!!es && (*es).cpu_mode.ram_MiB > free_ram_MiB) {
+    CTL_WRN("Not enough RAM - " << "required: " << (*es).cpu_mode.ram_MiB
                                 << ", available: " << free_ram_MiB);
   }
 

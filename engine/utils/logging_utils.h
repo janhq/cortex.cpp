@@ -9,6 +9,8 @@ inline bool log_verbose = false;
 inline bool is_server = false;
 
 // Only use trantor log
+#define CTL_TRC(msg) LOG_TRACE << msg;
+
 #define CTL_DBG(msg) LOG_DEBUG << msg;
 
 #define CTL_INF(msg) LOG_INFO << msg;

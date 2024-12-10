@@ -62,20 +62,22 @@ inline float GetQuantBit(const std::string& kv_cache_t) {
   return 16.0;
 }
 
-inline Estimation EstimateLLaMACppRun(const std::string& file_path,
-                                      const RunConfig& rc) {
+inline std::optional<Estimation> EstimateLLaMACppRun(
+    const std::string& file_path, const RunConfig& rc) {
   Estimation res;
   // token_embeddings_size = n_vocab * embedding_length * 2 * quant_bit/16 bytes
   //RAM = token_embeddings_size + ((total_ngl-ngl) >=1 ? Output_layer_size +  (total_ngl - ngl - 1 ) / (total_ngl-1) * (total_file_size - token_embeddings_size - Output_layer_size) : 0  )  (bytes)
 
   // VRAM = total_file_size - RAM (bytes)
   auto gf = ParseGgufFile(file_path);
+  if (!gf)
+    return std::nullopt;
   int32_t embedding_length = 0;
   int64_t n_vocab = 0;
   int32_t num_block = 0;
   int32_t total_ngl = 0;
   auto file_size = std::filesystem::file_size(file_path);
-  for (auto const& kv : gf.header.metadata_kv) {
+  for (auto const& kv : (*gf).header.metadata_kv) {
     if (kv.key.find("embedding_length") != std::string::npos) {
       embedding_length = std::any_cast<uint32_t>(kv.value);
     } else if (kv.key == "tokenizer.ggml.tokens") {
@@ -92,7 +94,7 @@ inline Estimation EstimateLLaMACppRun(const std::string& file_path,
   int32_t quant_bit_in = 0;
   int32_t quant_bit_out = 0;
 
-  for (auto const& ti : gf.tensor_infos) {
+  for (auto const& ti : (*gf).tensor_infos) {
     if (ti->name == "output.weight") {
       quant_bit_out = GetQuantBit(ti->type);
       // std::cout << ti->type << std::endl;

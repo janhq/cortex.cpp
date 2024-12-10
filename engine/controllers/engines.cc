@@ -3,9 +3,9 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
+#include "utils/http_util.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
-
 namespace {
 // Need to change this after we rename repositories
 std::string NormalizeEngine(const std::string& engine) {
@@ -36,6 +36,18 @@ void Engines::ListEngine(
       variants.append(variant.ToJson());
     }
     ret[engine] = variants;
+  }
+  // Add remote engine
+  auto remote_engines = engine_service_->GetEngines();
+  if (remote_engines.has_value()) {
+    for (auto engine : remote_engines.value()) {
+      if (engine.type == "remote") {
+        auto engine_json = engine.ToJson();
+        Json::Value list_engine(Json::arrayValue);
+        list_engine.append(engine_json);
+        ret[engine.engine_name] = list_engine;
+      }
+    }
   }
 
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -161,6 +173,86 @@ void Engines::InstallEngine(
     norm_version = version;
   }
 
+  if ((req->getJsonObject()) &&
+      (*(req->getJsonObject())).get("type", "").asString() == "remote") {
+    auto type = (*(req->getJsonObject())).get("type", "").asString();
+    auto api_key = (*(req->getJsonObject())).get("api_key", "").asString();
+    auto url = (*(req->getJsonObject())).get("url", "").asString();
+    auto variant = norm_variant.value_or("all-platforms");
+    auto status = (*(req->getJsonObject())).get("status", "Default").asString();
+    std::string metadata;
+    if ((*(req->getJsonObject())).isMember("metadata") &&
+        (*(req->getJsonObject()))["metadata"].isObject()) {
+      metadata = (*(req->getJsonObject()))
+                     .get("metadata", Json::Value(Json::objectValue))
+                     .toStyledString();
+    } else if ((*(req->getJsonObject())).isMember("metadata") &&
+               !(*(req->getJsonObject()))["metadata"].isObject()) {
+      Json::Value res;
+      res["message"] = "metadata must be object";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    auto get_models_url = (*(req->getJsonObject()))
+                              .get("metadata", Json::Value(Json::objectValue))
+                              .get("get_models_url", "")
+                              .asString();
+
+    if (engine.empty() || type.empty() || url.empty()) {
+      Json::Value res;
+      res["message"] = "Engine name, type, url are required";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+    auto exist_engine = engine_service_->GetEngineByNameAndVariant(engine);
+    // only allow 1 variant 1 version of a remote engine name
+    if (exist_engine.has_value()) {
+      Json::Value res;
+      if (get_models_url.empty()) {
+        res["warning"] =
+            "'get_models_url' not found in metadata, You'll not able to search "
+            "remote models with this engine";
+      }
+      res["message"] = "Engine '" + engine + "' already exists";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    auto result = engine_service_->UpsertEngine(
+        engine, type, api_key, url, norm_version, variant, status, metadata);
+    if (result.has_error()) {
+      Json::Value res;
+      if (get_models_url.empty()) {
+        res["warning"] =
+            "'get_models_url' not found in metadata, You'll not able to search "
+            "remote models with this engine";
+      }
+      res["message"] = result.error();
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+    } else {
+      Json::Value res;
+      if (get_models_url.empty()) {
+        res["warning"] =
+            "'get_models_url' not found in metadata, You'll not able to search "
+            "remote models with this engine";
+      }
+      res["message"] = "Remote Engine install successfully!";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+    }
+    return;
+  }
+
   auto result =
       engine_service_->InstallEngineAsync(engine, norm_version, norm_variant);
   if (result.has_error()) {
@@ -168,12 +260,14 @@ void Engines::InstallEngine(
     res["message"] = result.error();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k400BadRequest);
+    CTL_INF("Error: " << result.error());
     callback(resp);
   } else {
     Json::Value res;
     res["message"] = "Engine starts installing!";
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
     resp->setStatusCode(k200OK);
+    CTL_INF("Engine starts installing!");
     callback(resp);
   }
 }

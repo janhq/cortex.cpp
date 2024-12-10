@@ -1,8 +1,10 @@
+#pragma once
+
 #include <optional>
 #include "common/message_attachment.h"
 #include "utils/result.hpp"
 
-namespace ThreadMessage {
+namespace OpenAi {
 inline cpp::result<Attachment, std::string> ParseAttachment(
     Json::Value&& json) {
   if (json.empty()) {
@@ -45,4 +47,4 @@ ParseAttachments(Json::Value&& json) {
 
   return attachments;
 }
-};  // namespace ThreadMessage
+};  // namespace OpenAi

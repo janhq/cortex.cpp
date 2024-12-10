@@ -3,7 +3,7 @@
 #include <string>
 #include "utils/string_utils.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 // The status of the message, which can be either in_progress, incomplete, or completed.
 enum class Status { IN_PROGRESS, INCOMPLETE, COMPLETED };
 
@@ -31,4 +31,4 @@ inline Status StatusFromString(const std::string& input) {
     return Status::COMPLETED;
   }
 }
-};  // namespace ThreadMessage
+};  // namespace OpenAi

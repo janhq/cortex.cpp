@@ -3,7 +3,12 @@
 constexpr const auto kOnnxEngine = "onnxruntime";
 constexpr const auto kLlamaEngine = "llama-cpp";
 constexpr const auto kTrtLlmEngine = "tensorrt-llm";
+
 constexpr const auto kPythonEngine = "python-engine";
+
+constexpr const auto kOpenAiEngine = "openai";
+constexpr const auto kAnthropicEngine = "anthropic";
+
 
 constexpr const auto kOnnxRepo = "cortex.onnx";
 constexpr const auto kLlamaRepo = "cortex.llamacpp";

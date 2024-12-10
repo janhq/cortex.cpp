@@ -1,4 +1,9 @@
 #include "config_yaml_utils.h"
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include "utils/logging_utils.h"
+#include "yaml-cpp/yaml.h"
 
 namespace config_yaml_utils {
 cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(
@@ -42,6 +47,8 @@ cpp::result<void, std::string> CortexConfigMgr::DumpYamlConfig(
     node["noProxy"] = config.noProxy;
     node["verifyPeerSsl"] = config.verifyPeerSsl;
     node["verifyHostSsl"] = config.verifyHostSsl;
+    node["sslCertPath"] = config.sslCertPath;
+    node["sslKeyPath"] = config.sslKeyPath;
     node["supportedEngines"] = config.supportedEngines;
 
     out_file << node;
@@ -77,7 +84,7 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
          !node["proxyUsername"] || !node["proxyPassword"] ||
          !node["verifyPeerSsl"] || !node["verifyHostSsl"] ||
          !node["verifyProxySsl"] || !node["verifyProxyHostSsl"] ||
-         !node["noProxy"]);
+         !node["sslCertPath"] || !node["sslKeyPath"] || !node["noProxy"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -160,6 +167,11 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
         .verifyHostSsl = node["verifyHostSsl"]
                              ? node["verifyHostSsl"].as<bool>()
                              : default_cfg.verifyHostSsl,
+        .sslCertPath = node["sslCertPath"]
+                           ? node["sslCertPath"].as<std::string>()
+                           : default_cfg.sslCertPath,
+        .sslKeyPath = node["sslKeyPath"] ? node["sslKeyPath"].as<std::string>()
+                                         : default_cfg.sslKeyPath,
     };
     if (should_update_config) {
       l.unlock();
@@ -174,5 +186,4 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
     throw;
   }
 }
-
 }  // namespace config_yaml_utils
