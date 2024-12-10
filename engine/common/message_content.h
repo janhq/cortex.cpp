@@ -3,7 +3,7 @@
 #include <string>
 #include "common/json_serializable.h"
 
-namespace ThreadMessage {
+namespace OpenAi {
 
 struct Content : JsonSerializable {
   std::string type;
@@ -20,4 +20,4 @@ struct Content : JsonSerializable {
 
   virtual ~Content() = default;
 };
-};  // namespace ThreadMessage
+};  // namespace OpenAi

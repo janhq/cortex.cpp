@@ -13,7 +13,6 @@
 #include "cortex-common/cortexpythoni.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
-#include "extensions/remote-engine/remote_engine.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
@@ -75,6 +74,9 @@ class EngineService : public EngineServiceI {
                 .cuda_driver_version =
                     system_info_utils::GetDriverAndCudaVersion().second} {}
 
+  // just for initialize supported engines
+  EngineService() {};
+
   std::vector<EngineInfo> GetEngineInfoList() const;
 
   /**
@@ -112,8 +114,6 @@ class EngineService : public EngineServiceI {
   cpp::result<std::vector<EngineVariantResponse>, std::string>
   GetInstalledEngineVariants(const std::string& engine) const;
 
-  bool IsEngineLoaded(const std::string& engine);
-
   cpp::result<EngineV, std::string> GetLoadedEngine(
       const std::string& engine_name);
 
@@ -150,8 +150,13 @@ class EngineService : public EngineServiceI {
 
   cpp::result<Json::Value, std::string> GetRemoteModels(
       const std::string& engine_name);
+  cpp::result<std::vector<std::string>, std::string> GetSupportedEngineNames();
+
+  void RegisterEngineLibPath();
 
  private:
+  bool IsEngineLoaded(const std::string& engine);
+
   cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
@@ -161,6 +166,9 @@ class EngineService : public EngineServiceI {
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);
+
+  cpp::result<std::pair<std::filesystem::path, bool>, std::string>
+  GetEngineDirPath(const std::string& engine_name);
 
   cpp::result<bool, std::string> IsEngineVariantReady(
       const std::string& engine, const std::string& version,

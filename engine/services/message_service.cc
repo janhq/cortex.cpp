@@ -3,40 +3,39 @@
 #include "utils/result.hpp"
 #include "utils/ulid/ulid.hh"
 
-cpp::result<ThreadMessage::Message, std::string> MessageService::CreateMessage(
-    const std::string& thread_id, const ThreadMessage::Role& role,
-    std::variant<std::string,
-                 std::vector<std::unique_ptr<ThreadMessage::Content>>>&&
+cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
+    const std::string& thread_id, const OpenAi::Role& role,
+    std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>&&
         content,
-    std::optional<std::vector<ThreadMessage::Attachment>> attachments,
+    std::optional<std::vector<OpenAi::Attachment>> attachments,
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "CreateMessage for thread " << thread_id;
-  auto now = std::chrono::system_clock::now();
-  auto seconds_since_epoch =
-      std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch())
+
+  uint32_t seconds_since_epoch =
+      std::chrono::duration_cast<std::chrono::seconds>(
+          std::chrono::system_clock::now().time_since_epoch())
           .count();
-  std::vector<std::unique_ptr<ThreadMessage::Content>> content_list{};
+  std::vector<std::unique_ptr<OpenAi::Content>> content_list{};
+
   // if content is string
   if (std::holds_alternative<std::string>(content)) {
-    auto text_content = std::make_unique<ThreadMessage::TextContent>();
+    auto text_content = std::make_unique<OpenAi::TextContent>();
     text_content->text.value = std::get<std::string>(content);
     content_list.push_back(std::move(text_content));
   } else {
     content_list = std::move(
-        std::get<std::vector<std::unique_ptr<ThreadMessage::Content>>>(
-            content));
+        std::get<std::vector<std::unique_ptr<OpenAi::Content>>>(content));
   }
 
-  ulid::ULID ulid = ulid::Create(seconds_since_epoch, []() { return 4; });
-  std::string str = ulid::Marshal(ulid);
-  LOG_TRACE << "Generated message ID: " << str;
+  auto ulid = ulid::CreateNowRand();
+  auto msg_id = ulid::Marshal(ulid);
 
-  ThreadMessage::Message msg;
-  msg.id = str;
+  OpenAi::Message msg;
+  msg.id = msg_id;
   msg.object = "thread.message";
-  msg.created_at = 0;
+  msg.created_at = seconds_since_epoch;
   msg.thread_id = thread_id;
-  msg.status = ThreadMessage::Status::COMPLETED;
+  msg.status = OpenAi::Status::COMPLETED;
   msg.completed_at = seconds_since_epoch;
   msg.incomplete_at = std::nullopt;
   msg.incomplete_details = std::nullopt;
@@ -54,25 +53,28 @@ cpp::result<ThreadMessage::Message, std::string> MessageService::CreateMessage(
   }
 }
 
-cpp::result<std::vector<ThreadMessage::Message>, std::string>
+cpp::result<std::vector<OpenAi::Message>, std::string>
 MessageService::ListMessages(const std::string& thread_id, uint8_t limit,
                              const std::string& order, const std::string& after,
                              const std::string& before,
                              const std::string& run_id) const {
   CTL_INF("ListMessages for thread " + thread_id);
-  return message_repository_->ListMessages(thread_id);
+  return message_repository_->ListMessages(thread_id, limit, order, after,
+                                           before, run_id);
 }
 
-cpp::result<ThreadMessage::Message, std::string>
-MessageService::RetrieveMessage(const std::string& thread_id,
-                                const std::string& message_id) const {
+cpp::result<OpenAi::Message, std::string> MessageService::RetrieveMessage(
+    const std::string& thread_id, const std::string& message_id) const {
   CTL_INF("RetrieveMessage for thread " + thread_id);
   return message_repository_->RetrieveMessage(thread_id, message_id);
 }
 
-cpp::result<ThreadMessage::Message, std::string> MessageService::ModifyMessage(
+cpp::result<OpenAi::Message, std::string> MessageService::ModifyMessage(
     const std::string& thread_id, const std::string& message_id,
-    std::optional<Cortex::VariantMap> metadata) {
+    std::optional<Cortex::VariantMap> metadata,
+    std::optional<std::variant<std::string,
+                               std::vector<std::unique_ptr<OpenAi::Content>>>>
+        content) {
   LOG_TRACE << "ModifyMessage for thread " << thread_id << ", message "
             << message_id;
   auto msg = RetrieveMessage(thread_id, message_id);
@@ -80,7 +82,24 @@ cpp::result<ThreadMessage::Message, std::string> MessageService::ModifyMessage(
     return cpp::fail("Failed to retrieve message: " + msg.error());
   }
 
-  msg->metadata = metadata.value();
+  if (metadata.has_value()) {
+    msg->metadata = metadata.value();
+  }
+  if (content.has_value()) {
+    std::vector<std::unique_ptr<OpenAi::Content>> content_list{};
+
+    // If content is string
+    if (std::holds_alternative<std::string>(*content)) {
+      auto text_content = std::make_unique<OpenAi::TextContent>();
+      text_content->text.value = std::get<std::string>(*content);
+      content_list.push_back(std::move(text_content));
+    } else {
+      content_list = std::move(
+          std::get<std::vector<std::unique_ptr<OpenAi::Content>>>(*content));
+    }
+
+    msg->content = std::move(content_list);
+  }
   auto ptr = &msg.value();
 
   auto res = message_repository_->ModifyMessage(msg.value());
@@ -102,4 +121,21 @@ cpp::result<std::string, std::string> MessageService::DeleteMessage(
   } else {
     return message_id;
   }
+}
+
+cpp::result<void, std::string> MessageService::InitializeMessages(
+    const std::string& thread_id,
+    std::optional<std::vector<OpenAi::Message>> messages) {
+  CTL_INF("InitializeMessages for thread " + thread_id);
+
+  if (messages.has_value()) {
+    CTL_INF("Prepopulated messages length: " +
+            std::to_string(messages->size()));
+  } else {
+
+    CTL_INF("Prepopulated with empty messages");
+  }
+
+  return message_repository_->InitializeMessages(thread_id,
+                                                 std::move(messages));
 }

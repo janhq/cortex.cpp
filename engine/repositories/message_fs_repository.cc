@@ -1,32 +1,23 @@
 #include "message_fs_repository.h"
-#include "utils/file_manager_utils.h"
+#include <algorithm>
+#include <fstream>
+#include <mutex>
 #include "utils/result.hpp"
 
-namespace {
-constexpr static const std::string_view kMessageFile = "messages.jsonl";
-
-inline cpp::result<std::filesystem::path, std::string> GetMessageFileAbsPath(
-    const std::string& thread_id) {
-  auto path =
-      file_manager_utils::GetThreadsContainerPath() / thread_id / kMessageFile;
-  if (!std::filesystem::exists(path)) {
-    return cpp::fail("Message file not exist at path: " + path.string());
-  }
-  return path;
+std::filesystem::path MessageFsRepository::GetMessagePath(
+    const std::string& thread_id) const {
+  return data_folder_path_ / kThreadContainerFolderName / thread_id /
+         kMessageFile;
 }
-}  // namespace
 
 cpp::result<void, std::string> MessageFsRepository::CreateMessage(
-    ThreadMessage::Message& message) {
+    OpenAi::Message& message) {
   CTL_INF("CreateMessage for thread " + message.thread_id);
-  auto path = GetMessageFileAbsPath(message.thread_id);
-  if (path.has_error()) {
-    return cpp::fail(path.error());
-  }
+  auto path = GetMessagePath(message.thread_id);
 
-  std::ofstream file(path->string(), std::ios::app);
+  std::ofstream file(path, std::ios::app);
   if (!file) {
-    return cpp::fail("Failed to open file for writing: " + path->string());
+    return cpp::fail("Failed to open file for writing: " + path.string());
   }
 
   auto mutex = GrabMutex(message.thread_id);
@@ -40,42 +31,101 @@ cpp::result<void, std::string> MessageFsRepository::CreateMessage(
 
   file.flush();
   if (file.fail()) {
-    return cpp::fail("Failed to write to file: " + path->string());
+    return cpp::fail("Failed to write to file: " + path.string());
   }
   file.close();
   if (file.fail()) {
-    return cpp::fail("Failed to close file after writing: " + path->string());
+    return cpp::fail("Failed to close file after writing: " + path.string());
   }
 
   return {};
 }
 
-cpp::result<std::vector<ThreadMessage::Message>, std::string>
+cpp::result<std::vector<OpenAi::Message>, std::string>
 MessageFsRepository::ListMessages(const std::string& thread_id, uint8_t limit,
                                   const std::string& order,
                                   const std::string& after,
                                   const std::string& before,
                                   const std::string& run_id) const {
   CTL_INF("Listing messages for thread " + thread_id);
-  auto path = GetMessageFileAbsPath(thread_id);
-  if (path.has_error()) {
-    return cpp::fail(path.error());
+
+  // Early validation
+  if (limit == 0) {
+    return std::vector<OpenAi::Message>();
+  }
+  if (!after.empty() && !before.empty() && after >= before) {
+    return cpp::fail("Invalid range: 'after' must be less than 'before'");
   }
 
   auto mutex = GrabMutex(thread_id);
   std::shared_lock<std::shared_mutex> lock(*mutex);
 
-  return ReadMessageFromFile(thread_id);
-}
-
-cpp::result<ThreadMessage::Message, std::string>
-MessageFsRepository::RetrieveMessage(const std::string& thread_id,
-                                     const std::string& message_id) const {
-  auto path = GetMessageFileAbsPath(thread_id);
-  if (path.has_error()) {
-    return cpp::fail(path.error());
+  auto read_result = ReadMessageFromFile(thread_id);
+  if (read_result.has_error()) {
+    return cpp::fail(read_result.error());
   }
 
+  std::vector<OpenAi::Message> messages = std::move(read_result.value());
+
+  if (messages.empty()) {
+    return messages;
+  }
+
+  // Filter by run_id
+  if (!run_id.empty()) {
+    messages.erase(std::remove_if(messages.begin(), messages.end(),
+                                  [&run_id](const OpenAi::Message& msg) {
+                                    return msg.run_id != run_id;
+                                  }),
+                   messages.end());
+  }
+
+  const bool is_descending = (order == "desc");
+  std::sort(
+      messages.begin(), messages.end(),
+      [is_descending](const OpenAi::Message& a, const OpenAi::Message& b) {
+        return is_descending ? (a.id > b.id) : (a.id < b.id);
+      });
+
+  auto start_it = messages.begin();
+  auto end_it = messages.end();
+
+  if (!after.empty()) {
+    start_it = std::lower_bound(
+        messages.begin(), messages.end(), after,
+        [is_descending](const OpenAi::Message& msg, const std::string& value) {
+          return is_descending ? (msg.id > value) : (msg.id < value);
+        });
+
+    if (start_it != messages.end() && start_it->id == after) {
+      ++start_it;
+    }
+  }
+
+  if (!before.empty()) {
+    end_it = std::upper_bound(
+        start_it, messages.end(), before,
+        [is_descending](const std::string& value, const OpenAi::Message& msg) {
+          return is_descending ? (value > msg.id) : (value < msg.id);
+        });
+  }
+
+  const size_t available_messages = std::distance(start_it, end_it);
+  const size_t result_size =
+      std::min(static_cast<size_t>(limit), available_messages);
+
+  CTL_INF("Available messages: " + std::to_string(available_messages) +
+          ", result size: " + std::to_string(result_size));
+
+  std::vector<OpenAi::Message> result;
+  result.reserve(result_size);
+  std::move(start_it, start_it + result_size, std::back_inserter(result));
+
+  return result;
+}
+
+cpp::result<OpenAi::Message, std::string> MessageFsRepository::RetrieveMessage(
+    const std::string& thread_id, const std::string& message_id) const {
   auto mutex = GrabMutex(thread_id);
   std::unique_lock<std::shared_mutex> lock(*mutex);
 
@@ -94,12 +144,7 @@ MessageFsRepository::RetrieveMessage(const std::string& thread_id,
 }
 
 cpp::result<void, std::string> MessageFsRepository::ModifyMessage(
-    ThreadMessage::Message& message) {
-  auto path = GetMessageFileAbsPath(message.thread_id);
-  if (path.has_error()) {
-    return cpp::fail(path.error());
-  }
-
+    OpenAi::Message& message) {
   auto mutex = GrabMutex(message.thread_id);
   std::unique_lock<std::shared_mutex> lock(*mutex);
 
@@ -108,10 +153,10 @@ cpp::result<void, std::string> MessageFsRepository::ModifyMessage(
     return cpp::fail(messages.error());
   }
 
-  std::ofstream file(path.value().string(), std::ios::trunc);
+  auto path = GetMessagePath(message.thread_id);
+  std::ofstream file(path, std::ios::trunc);
   if (!file) {
-    return cpp::fail("Failed to open file for writing: " +
-                     path.value().string());
+    return cpp::fail("Failed to open file for writing: " + path.string());
   }
 
   bool found = false;
@@ -126,11 +171,11 @@ cpp::result<void, std::string> MessageFsRepository::ModifyMessage(
 
   file.flush();
   if (file.fail()) {
-    return cpp::fail("Failed to write to file: " + path->string());
+    return cpp::fail("Failed to write to file: " + path.string());
   }
   file.close();
   if (file.fail()) {
-    return cpp::fail("Failed to close file after writing: " + path->string());
+    return cpp::fail("Failed to close file after writing: " + path.string());
   }
 
   if (!found) {
@@ -141,10 +186,7 @@ cpp::result<void, std::string> MessageFsRepository::ModifyMessage(
 
 cpp::result<void, std::string> MessageFsRepository::DeleteMessage(
     const std::string& thread_id, const std::string& message_id) {
-  auto path = GetMessageFileAbsPath(thread_id);
-  if (path.has_error()) {
-    return cpp::fail(path.error());
-  }
+  auto path = GetMessagePath(thread_id);
 
   auto mutex = GrabMutex(thread_id);
   std::unique_lock<std::shared_mutex> lock(*mutex);
@@ -153,10 +195,9 @@ cpp::result<void, std::string> MessageFsRepository::DeleteMessage(
     return cpp::fail(messages.error());
   }
 
-  std::ofstream file(path.value().string(), std::ios::trunc);
+  std::ofstream file(path, std::ios::trunc);
   if (!file) {
-    return cpp::fail("Failed to open file for writing: " +
-                     path.value().string());
+    return cpp::fail("Failed to open file for writing: " + path.string());
   }
 
   bool found = false;
@@ -170,11 +211,11 @@ cpp::result<void, std::string> MessageFsRepository::DeleteMessage(
 
   file.flush();
   if (file.fail()) {
-    return cpp::fail("Failed to write to file: " + path->string());
+    return cpp::fail("Failed to write to file: " + path.string());
   }
   file.close();
   if (file.fail()) {
-    return cpp::fail("Failed to close file after writing: " + path->string());
+    return cpp::fail("Failed to close file after writing: " + path.string());
   }
 
   if (!found) {
@@ -184,26 +225,22 @@ cpp::result<void, std::string> MessageFsRepository::DeleteMessage(
   return {};
 }
 
-cpp::result<std::vector<ThreadMessage::Message>, std::string>
+cpp::result<std::vector<OpenAi::Message>, std::string>
 MessageFsRepository::ReadMessageFromFile(const std::string& thread_id) const {
   LOG_TRACE << "Reading messages from file for thread " << thread_id;
-  auto path = GetMessageFileAbsPath(thread_id);
-  if (path.has_error()) {
-    return cpp::fail(path.error());
-  }
+  auto path = GetMessagePath(thread_id);
 
-  std::ifstream file(path.value());
+  std::ifstream file(path);
   if (!file) {
-    return cpp::fail("Failed to open file: " + path->string());
+    return cpp::fail("Failed to open file: " + path.string());
   }
 
-  std::vector<ThreadMessage::Message> messages;
+  std::vector<OpenAi::Message> messages;
   std::string line;
   while (std::getline(file, line)) {
     if (line.empty())
       continue;
-    auto msg_parse_result =
-        ThreadMessage::Message::FromJsonString(std::move(line));
+    auto msg_parse_result = OpenAi::Message::FromJsonString(std::move(line));
     if (msg_parse_result.has_error()) {
       CTL_WRN("Failed to parse message: " + msg_parse_result.error());
       continue;
@@ -223,4 +260,50 @@ std::shared_mutex* MessageFsRepository::GrabMutex(
     thread_mutex = std::make_unique<std::shared_mutex>();
   }
   return thread_mutex.get();
+}
+
+cpp::result<void, std::string> MessageFsRepository::InitializeMessages(
+    const std::string& thread_id,
+    std::optional<std::vector<OpenAi::Message>> messages) {
+  CTL_INF("Initializing messages for thread " + thread_id);
+
+  auto path = GetMessagePath(thread_id);
+
+  if (!std::filesystem::exists(path.parent_path())) {
+    return cpp::fail(
+        "Failed to initialize messages, thread is not created yet! Path does "
+        "not exist: " +
+        path.parent_path().string());
+  }
+
+  auto mutex = GrabMutex(thread_id);
+  std::unique_lock<std::shared_mutex> lock(*mutex);
+
+  std::ofstream file(path, std::ios::trunc);
+  if (!file) {
+    return cpp::fail("Failed to create message file: " + path.string());
+  }
+
+  if (messages.has_value()) {
+    for (auto& message : messages.value()) {
+      auto json_str = message.ToSingleLineJsonString();
+      if (json_str.has_error()) {
+        CTL_WRN("Failed to serialize message: " + json_str.error());
+        continue;
+      }
+      file << json_str.value();
+    }
+  }
+
+  file.flush();
+  if (file.fail()) {
+    return cpp::fail("Failed to write to file: " + path.string());
+  }
+
+  file.close();
+  if (file.fail()) {
+    return cpp::fail("Failed to close file after writing: " + path.string());
+  }
+
+  return {};
 }

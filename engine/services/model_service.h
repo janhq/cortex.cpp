@@ -97,7 +97,7 @@ class ModelService {
 
   bool HasModel(const std::string& id) const;
 
-  cpp::result<hardware::Estimation, std::string> GetEstimation(
+  cpp::result<std::optional<hardware::Estimation>, std::string> GetEstimation(
       const std::string& model_handle, const std::string& kv_cache = "f16",
       int n_batch = 2048, int n_ubatch = 2048);
 
