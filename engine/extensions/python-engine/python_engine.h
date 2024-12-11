@@ -109,7 +109,7 @@ class PythonEngine : public EngineI {
   // Process manager functions
   pid_t SpawnProcess(const std::string& model,
                      const std::vector<std::string>& command);
-  bool TerminateProcess(const std::string& model);
+  bool TerminateModelProcess(const std::string& model);
 
   // Internal model management
   bool LoadModelConfig(const std::string& model, const std::string& yaml_path);

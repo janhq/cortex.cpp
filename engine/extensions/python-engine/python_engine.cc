@@ -135,7 +135,7 @@ pid_t PythonEngine::SpawnProcess(const std::string& model,
     return -1;
   }
 }
-bool PythonEngine::TerminateProcess(const std::string& model) {
+bool PythonEngine::TerminateModelProcess(const std::string& model) {
   auto it = processMap.find(model);
   if (it == processMap.end()) {
     LOG_ERROR << "No process found for model: " << model
@@ -479,7 +479,7 @@ void PythonEngine::UnloadModel(
 
   {
     std::unique_lock lock(models_mutex_);
-    if (TerminateProcess(model)) {
+    if (TerminateModelProcess(model)) {
       models_.erase(model);
     } else {
       Json::Value error;
