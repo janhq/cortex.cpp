@@ -864,7 +864,7 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   auto ne = NormalizeEngine(engine);
 
   // Check for remote engine
-  if (remote_engine::IsRemoteEngine(engine)) {
+  if (IsRemoteEngine(engine)) {
     auto exist_engine = GetEngineByNameAndVariant(engine);
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine + "' is not installed");
@@ -1058,16 +1058,13 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
 }
 
 bool EngineService::IsRemoteEngine(const std::string& engine_name) {
-  cortex::db::Engines e_db;
-  auto res = e_db.GetEngines();
-  if (res) {
-    for (auto const& e : *res) {
-      if (e.engine_name == engine_name && e.type == kRemote) {
-        return true;
-      }
-    }
+  auto ne = Repo2Engine(engine_name);
+  auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
+  for (auto const& le : local_engines) {
+    if (le == ne)
+      return false;
   }
-  return false;
+  return true;
 }
 
 cpp::result<std::vector<std::string>, std::string>

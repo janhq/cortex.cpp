@@ -14,10 +14,6 @@
 // Helper for CURL response
 
 namespace remote_engine {
-// TODO(sang) remove this after we have all engine saved in DB
-inline bool IsRemoteEngine(std::string_view e) {
-  return e == kAnthropicEngine || e == kOpenAiEngine;
-}
 
 struct StreamContext {
   std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
