@@ -172,6 +172,28 @@ void Models::ListModel(
   if (list_entry) {
     for (const auto& model_entry : list_entry.value()) {
       try {
+        if (model_entry.status == cortex::db::ModelStatus::Downloadable) {
+          Json::Value obj;
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          auto status_to_string = [](cortex::db::ModelStatus status) {
+            switch (status) {
+              case cortex::db::ModelStatus::Remote:
+                return "remote";
+              case cortex::db::ModelStatus::Downloaded:
+                return "downloaded";
+              case cortex::db::ModelStatus::Downloadable:
+                return "downloadable";
+            }
+            return "unknown";
+          };
+          obj["modelSource"] = model_entry.model_source;
+          obj["status"] = status_to_string(model_entry.status);
+          obj["engine"] = model_entry.engine;
+          obj["metadata"] = model_entry.metadata;
+          data.append(std::move(obj));
+          continue;
+        }
         yaml_handler.ModelConfigFromFile(
             fmu::ToAbsoluteCortexDataPath(
                 fs::path(model_entry.path_to_model_yaml))
@@ -182,7 +204,7 @@ void Models::ListModel(
           Json::Value obj = model_config.ToJson();
           obj["id"] = model_entry.model;
           obj["model"] = model_entry.model;
-          obj["model"] = model_entry.model;
+          obj["status"] = "downloaded";
           auto es = model_service_->GetEstimation(model_entry.model);
           if (es.has_value() && !!es.value()) {
             obj["recommendation"] = hardware::ToJson(*(es.value()));
@@ -721,6 +743,80 @@ void Models::AddRemoteModel(
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  }
+}
+
+void Models::AddModelSource(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!http_util::HasFieldInReq(req, callback, "source")) {
+    return;
+  }
+
+  auto model_source = (*(req->getJsonObject())).get("source", "").asString();
+  auto res = model_src_svc_->AddModelSource(model_source);
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto const& info = res.value();
+    Json::Value ret;
+    ret["message"] = "Model source is added successfully!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::DeleteModelSource(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!http_util::HasFieldInReq(req, callback, "source")) {
+    return;
+  }
+
+  auto model_source = (*(req->getJsonObject())).get("source", "").asString();
+  auto res = model_src_svc_->RemoveModelSource(model_source);
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto const& info = res.value();
+    Json::Value ret;
+    ret["message"] = "Model source is deleted successfully!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
+
+void Models::GetModelSources(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  auto res = model_src_svc_->GetModelSources();
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto const& info = res.value();
+    Json::Value ret;
+    Json::Value data(Json::arrayValue);
+    for (auto const& i : info) {
+      data.append(i);
+    }
+    ret["data"] = data;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
     callback(resp);
   }
 }
