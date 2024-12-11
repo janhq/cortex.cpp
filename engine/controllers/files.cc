@@ -95,7 +95,62 @@ void Files::ListFiles(const HttpRequestPtr& req,
 
 void Files::RetrieveFile(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
-                         const std::string& file_id) const {
+                         const std::string& file_id,
+                         std::optional<std::string> thread_id) const {
+  // this code part is for backward compatible. remove it later on
+  if (thread_id.has_value()) {
+    auto msg_res =
+        message_service_->RetrieveMessage(thread_id.value(), file_id);
+    if (msg_res.has_error()) {
+      Json::Value ret;
+      ret["message"] = msg_res.error();
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    if (msg_res->attachments->empty()) {
+      auto res = file_service_->RetrieveFile(file_id);
+      if (res.has_error()) {
+        Json::Value ret;
+        ret["message"] = res.error();
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+
+      auto resp =
+          cortex_utils::CreateCortexHttpJsonResponse(res->ToJson().value());
+      resp->setStatusCode(k200OK);
+      callback(resp);
+      return;
+    } else {
+      if (!msg_res->attach_filename.has_value() || !msg_res->size.has_value()) {
+        Json::Value ret;
+        ret["message"] = "File not found or had been removed!";
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k404NotFound);
+        callback(resp);
+        return;
+      }
+
+      Json::Value ret;
+      ret["object"] = "file";
+      ret["created_at"] = msg_res->created_at;
+      ret["filename"] = msg_res->attach_filename.value();
+      ret["bytes"] = msg_res->size.value();
+      ret["id"] = msg_res->id;
+      ret["purpose"] = "assistants";
+
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+      return;
+    }
+  }
+
   auto res = file_service_->RetrieveFile(file_id);
   if (res.has_error()) {
     Json::Value ret;
@@ -137,7 +192,65 @@ void Files::DeleteFile(const HttpRequestPtr& req,
 void Files::RetrieveFileContent(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& file_id) {
+    const std::string& file_id, std::optional<std::string> thread_id) {
+  if (thread_id.has_value()) {
+    auto msg_res =
+        message_service_->RetrieveMessage(thread_id.value(), file_id);
+    if (msg_res.has_error()) {
+      Json::Value ret;
+      ret["message"] = msg_res.error();
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+      return;
+    }
+
+    if (msg_res->attachments->empty()) {
+      auto res = file_service_->RetrieveFileContent(file_id);
+      if (res.has_error()) {
+        Json::Value ret;
+        ret["message"] = res.error();
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+
+      auto [buffer, size] = std::move(res.value());
+      auto resp = HttpResponse::newHttpResponse();
+      resp->setBody(std::string(buffer.get(), size));
+      resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+      callback(resp);
+    } else {
+      if (!msg_res->rel_path.has_value()) {
+        Json::Value ret;
+        ret["message"] = "File not found or had been removed";
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+
+      auto content_res =
+          file_service_->RetrieveFileContentByPath(msg_res->rel_path.value());
+
+      if (content_res.has_error()) {
+        Json::Value ret;
+        ret["message"] = content_res.error();
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+        return;
+      }
+
+      auto [buffer, size] = std::move(content_res.value());
+      auto resp = HttpResponse::newHttpResponse();
+      resp->setBody(std::string(buffer.get(), size));
+      resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+      callback(resp);
+    }
+  }
+
   auto res = file_service_->RetrieveFileContent(file_id);
   if (res.has_error()) {
     Json::Value ret;

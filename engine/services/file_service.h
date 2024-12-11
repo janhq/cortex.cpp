@@ -26,6 +26,12 @@ class FileService {
   cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
   RetrieveFileContent(const std::string& file_id) const;
 
+  /**
+   * For getting file content by **relative** path.
+   */
+  cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
+  RetrieveFileContentByPath(const std::string& path) const;
+
   explicit FileService(std::shared_ptr<FileRepository> file_repository)
       : file_repository_{file_repository} {}
 

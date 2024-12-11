@@ -48,3 +48,8 @@ cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
 FileService::RetrieveFileContent(const std::string& file_id) const {
   return file_repository_->RetrieveFileContent(file_id);
 }
+
+cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
+FileService::RetrieveFileContentByPath(const std::string& path) const {
+  return file_repository_->RetrieveFileContentByPath(path);
+}

@@ -176,6 +176,30 @@ FileFsRepository::RetrieveFileContent(const std::string& file_id) const {
   }
 }
 
+cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
+FileFsRepository::RetrieveFileContentByPath(const std::string& path) const {
+  auto file_path = data_folder_path_ / path;
+  std::lock_guard<std::mutex> lock(fs_mutex_);
+  if (!std::filesystem::exists(file_path)) {
+    return cpp::fail("File content not found: " + path);
+  }
+
+  try {
+    size_t size = std::filesystem::file_size(file_path);
+    auto buffer = std::make_unique<char[]>(size);
+
+    std::ifstream file(file_path, std::ios::binary);
+    if (!file.read(buffer.get(), size)) {
+      return cpp::fail("Failed to read file: " + file_path.string());
+    }
+
+    return std::make_pair(std::move(buffer), size);
+  } catch (const std::exception& e) {
+    CTL_ERR("Failed to retrieve file content: " << e.what());
+    return cpp::fail("Failed to retrieve file content");
+  }
+}
+
 cpp::result<void, std::string> FileFsRepository::DeleteFile(
     const std::string& file_id) {
   CTL_INF("Deleting file: " + file_id);

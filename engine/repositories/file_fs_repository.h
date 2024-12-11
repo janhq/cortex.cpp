@@ -24,6 +24,9 @@ class FileFsRepository : public FileRepository {
   cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
   RetrieveFileContent(const std::string& file_id) const override;
 
+  cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
+  RetrieveFileContentByPath(const std::string& path) const override;
+
   cpp::result<void, std::string> DeleteFile(
       const std::string& file_id) override;
 

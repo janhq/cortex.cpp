@@ -4,6 +4,7 @@
 #include <trantor/utils/Logger.h>
 #include <optional>
 #include "services/file_service.h"
+#include "services/message_service.h"
 
 using namespace drogon;
 
@@ -12,7 +13,8 @@ class Files : public drogon::HttpController<Files, false> {
   METHOD_LIST_BEGIN
   ADD_METHOD_TO(Files::UploadFile, "/v1/files", Options, Post);
 
-  ADD_METHOD_TO(Files::RetrieveFile, "/v1/files/{file_id}", Get);
+  ADD_METHOD_TO(Files::RetrieveFile, "/v1/files/{file_id}?thread={thread_id}",
+                Get);
 
   ADD_METHOD_TO(
       Files::ListFiles,
@@ -21,12 +23,14 @@ class Files : public drogon::HttpController<Files, false> {
 
   ADD_METHOD_TO(Files::DeleteFile, "/v1/files/{file_id}", Options, Delete);
 
-  ADD_METHOD_TO(Files::RetrieveFileContent, "/v1/files/{file_id}/content", Get);
+  ADD_METHOD_TO(Files::RetrieveFileContent,
+                "/v1/files/{file_id}/content?thread={thread_id}", Get);
 
   METHOD_LIST_END
 
-  explicit Files(std::shared_ptr<FileService> file_service)
-      : file_service_{file_service} {}
+  explicit Files(std::shared_ptr<FileService> file_service,
+                 std::shared_ptr<MessageService> msg_service)
+      : file_service_{file_service}, message_service_{msg_service} {}
 
   void UploadFile(const HttpRequestPtr& req,
                   std::function<void(const HttpResponsePtr&)>&& callback);
@@ -40,7 +44,8 @@ class Files : public drogon::HttpController<Files, false> {
 
   void RetrieveFile(const HttpRequestPtr& req,
                     std::function<void(const HttpResponsePtr&)>&& callback,
-                    const std::string& file_id) const;
+                    const std::string& file_id,
+                    std::optional<std::string> thread_id) const;
 
   void DeleteFile(const HttpRequestPtr& req,
                   std::function<void(const HttpResponsePtr&)>&& callback,
@@ -49,8 +54,9 @@ class Files : public drogon::HttpController<Files, false> {
   void RetrieveFileContent(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback,
-      const std::string& file_id);
+      const std::string& file_id, std::optional<std::string> thread_id);
 
  private:
   std::shared_ptr<FileService> file_service_;
+  std::shared_ptr<MessageService> message_service_;
 };

@@ -149,7 +149,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
-  auto file_ctl = std::make_shared<Files>(file_srv);
+  auto file_ctl = std::make_shared<Files>(file_srv, message_srv);
   auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
   auto message_ctl = std::make_shared<Messages>(message_srv);

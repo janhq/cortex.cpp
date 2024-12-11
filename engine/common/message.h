@@ -19,6 +19,20 @@
 
 namespace OpenAi {
 
+inline std::string ExtractFileId(const std::string& path) {
+  // Handle both forward and backward slashes
+  size_t lastSlash = path.find_last_of("/\\");
+  if (lastSlash == std::string::npos)
+    return "";
+
+  std::string filename = path.substr(lastSlash + 1);
+  size_t dotPosition = filename.find('.');
+  if (dotPosition == std::string::npos)
+    return "";
+
+  return filename.substr(0, dotPosition);
+}
+
 // Represents a message within a thread.
 struct Message : JsonSerializable {
   Message() = default;
@@ -70,6 +84,12 @@ struct Message : JsonSerializable {
   // Set of 16 key-value pairs that can be attached to an object. This can be useful for storing additional information about the object in a structured format. Keys can be a maximum of 64 characters long and values can be a maximum of 512 characters long.
   Cortex::VariantMap metadata;
 
+  // deprecated. remove in the future
+  std::optional<std::string> attach_filename;
+  std::optional<uint64_t> size;
+  std::optional<std::string> rel_path;
+  // end deprecated
+
   static cpp::result<Message, std::string> FromJsonString(
       std::string&& json_str) {
     Json::Value root;
@@ -98,7 +118,6 @@ struct Message : JsonSerializable {
       message.completed_at = root["completed_at"].asUInt();
       message.incomplete_at = root["incomplete_at"].asUInt();
       message.role = RoleFromString(std::move(root["role"].asString()));
-      message.content = ParseContents(std::move(root["content"])).value();
 
       message.assistant_id = std::move(root["assistant_id"].asString());
       message.run_id = std::move(root["run_id"].asString());
@@ -111,6 +130,54 @@ struct Message : JsonSerializable {
           CTL_WRN("Failed to convert metadata to map: " + res.error());
         } else {
           message.metadata = res.value();
+        }
+      }
+
+      if (root.isMember("content")) {
+        if (root["content"].isArray() && !root["content"].empty()) {
+          if (root["content"][0]["type"].asString() == "text") {
+            message.content = ParseContents(std::move(root["content"])).value();
+          } else {
+            // deprecated, for supporting jan and should be removed in the future
+            // check if annotations is empty
+            if (!root["content"][0]["text"]["annotations"].empty()) {
+              // parse attachment
+              Json::Value attachments_json_array{Json::arrayValue};
+              Json::Value attachment;
+              attachment["file_id"] = ExtractFileId(
+                  root["content"][0]["text"]["annotations"][0].asString());
+
+              Json::Value tools_json_array{Json::arrayValue};
+              Json::Value tool;
+              tool["type"] = "file_search";
+              tools_json_array.append(tool);
+
+              attachment["tools"] = tools_json_array;
+              attachment["file_id"] = attachments_json_array.append(attachment);
+
+              message.attachments =
+                  ParseAttachments(std::move(attachments_json_array)).value();
+
+              message.attach_filename =
+                  root["content"][0]["text"]["name"].asString();
+              message.size = root["content"][0]["text"]["size"].asUInt64();
+              message.rel_path =
+                  root["content"][0]["text"]["annotations"][0].asString();
+            }
+
+            // parse content
+            Json::Value contents_json_array{Json::arrayValue};
+            Json::Value content;
+            Json::Value content_text;
+            Json::Value empty_annotations{Json::arrayValue};
+            content["type"] = "text";
+            content_text["value"] = root["content"][0]["text"]["value"];
+            content_text["annotations"] = empty_annotations;
+            content["text"] = content_text;
+            contents_json_array.append(content);
+            message.content =
+                ParseContents(std::move(contents_json_array)).value();
+          }
         }
       }
 
