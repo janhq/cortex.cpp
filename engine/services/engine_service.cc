@@ -759,15 +759,17 @@ void EngineService::RegisterEngineLibPath() {
       }
       auto engine_dir_path = engine_dir_path_res.value().first;
       auto custom_engine_path = engine_dir_path_res.value().second;
+      auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
 
       auto dylib = std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(),
                                                        "engine");
 
-      auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
       // init
       auto func = dylib->get_function<EngineI*()>("get_engine");
       auto engine = func();
       std::vector<std::filesystem::path> paths{};
+      paths.push_back(std::move(cuda_path));
+      paths.push_back(std::move(engine_dir_path));
       auto register_opts = EngineI::RegisterLibraryOption{
           .paths = paths,
       };
@@ -1066,5 +1068,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
 
 cpp::result<std::vector<std::string>, std::string>
 EngineService::GetSupportedEngineNames() {
-  return file_manager_utils::GetCortexConfig().supportedEngines;
+  std::vector<std::string> test{"llama-cpp"};
+  return test;
+  // return file_manager_utils::GetCortexConfig().supportedEngines;
 }
