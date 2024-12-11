@@ -3,9 +3,9 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
-#include "utils/http_util.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
+
 namespace {
 // Need to change this after we rename repositories
 std::string NormalizeEngine(const std::string& engine) {
@@ -24,8 +24,8 @@ void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
   Json::Value ret;
-  auto engine_names = engine_service_->GetSupportedEngineNames().value();
-  for (const auto& engine : engine_names) {
+  for (const auto& engine :
+       engine_service_->GetSupportedEngineNames().value()) {
     auto installed_engines =
         engine_service_->GetInstalledEngineVariants(engine);
     if (installed_engines.has_error()) {
