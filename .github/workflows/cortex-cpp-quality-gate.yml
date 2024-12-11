@@ -34,7 +34,7 @@ jobs:
             ccache-dir: ""
           - os: "mac"
             name: "arm64"
-            runs-on: "macos-silicon"
+            runs-on: "macos-selfhosted-12-arm64"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ""
