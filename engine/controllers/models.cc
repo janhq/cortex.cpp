@@ -172,7 +172,7 @@ void Models::ListModel(
   if (list_entry) {
     for (const auto& model_entry : list_entry.value()) {
       try {
-        if (model_entry.status == cortex::db::ModelStatus::Undownloaded) {
+        if (model_entry.status == cortex::db::ModelStatus::Downloadable) {
           Json::Value obj;
           obj["id"] = model_entry.model;
           obj["model"] = model_entry.model;
@@ -182,8 +182,8 @@ void Models::ListModel(
                 return "remote";
               case cortex::db::ModelStatus::Downloaded:
                 return "downloaded";
-              case cortex::db::ModelStatus::Undownloaded:
-                return "undownloaded";
+              case cortex::db::ModelStatus::Downloadable:
+                return "downloadable";
             }
             return "unknown";
           };

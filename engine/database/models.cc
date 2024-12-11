@@ -18,8 +18,8 @@ std::string Models::StatusToString(ModelStatus status) const {
       return "remote";
     case ModelStatus::Downloaded:
       return "downloaded";
-    case ModelStatus::Undownloaded:
-      return "undownloaded";
+    case ModelStatus::Downloadable:
+      return "downloadable";
   }
   return "unknown";
 }
@@ -31,8 +31,8 @@ ModelStatus Models::StringToStatus(const std::string& status_str) const {
     return ModelStatus::Remote;
   } else if (status_str == "downloaded" || status_str.empty()) {
     return ModelStatus::Downloaded;
-  } else if (status_str == "undownloaded") {
-    return ModelStatus::Undownloaded;
+  } else if (status_str == "downloadable") {
+    return ModelStatus::Downloadable;
   }
   throw std::invalid_argument("Invalid status string");
 }
@@ -216,7 +216,7 @@ cpp::result<bool, std::string> Models::DeleteModelEntryWithOrg(
   try {
     SQLite::Statement del(db_,
                           "DELETE from models WHERE model_source LIKE ? AND "
-                          "status = \"undownloaded\"");
+                          "status = \"downloadable\"");
     del.bind(1, src + "%");
     return del.exec() == 1;
   } catch (const std::exception& e) {
@@ -229,7 +229,7 @@ cpp::result<bool, std::string> Models::DeleteModelEntryWithRepo(
   try {
     SQLite::Statement del(db_,
                           "DELETE from models WHERE model_source = ? AND "
-                          "status = \"undownloaded\"");
+                          "status = \"downloadable\"");
     del.bind(1, src);
     return del.exec() == 1;
   } catch (const std::exception& e) {
@@ -276,7 +276,7 @@ cpp::result<std::vector<std::string>, std::string> Models::GetModelSources()
     std::vector<std::string> sources;
     SQLite::Statement query(db_,
                             "SELECT DISTINCT model_source FROM models WHERE "
-                            "status = \"undownloaded\"");
+                            "status = \"downloadable\"");
 
     while (query.executeStep()) {
       sources.push_back(query.getColumn(0).getString());
@@ -293,7 +293,7 @@ cpp::result<std::vector<std::string>, std::string> Models::GetModels(
     std::vector<std::string> ids;
     SQLite::Statement query(db_,
                             "SELECT model_id FROM models WHERE model_source = "
-                            "? AND status = \"undownloaded\"");
+                            "? AND status = \"downloadable\"");
     query.bind(1, model_src);
     while (query.executeStep()) {
       ids.push_back(query.getColumn(0).getString());

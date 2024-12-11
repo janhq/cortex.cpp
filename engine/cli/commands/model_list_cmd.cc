@@ -74,7 +74,7 @@ void ModelListCmd::Exec(const std::string& host, int port,
       }
 
       if (available) {
-        if (v["status"].asString() != "undownloaded") {
+        if (v["status"].asString() != "downloadable") {
           continue;
         }
 
@@ -90,7 +90,7 @@ void ModelListCmd::Exec(const std::string& host, int port,
         }
         table.add_row({row.begin(), row.end()});
       } else {
-        if (v["status"].asString() == "undownloaded") {
+        if (v["status"].asString() == "downloadable") {
           continue;
         }
 

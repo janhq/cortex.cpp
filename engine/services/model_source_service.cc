@@ -245,7 +245,7 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
           .model_alias = "",
           .model_format = "hf-gguf",
           .model_source = model_source,
-          .status = cortex::db::ModelStatus::Undownloaded,
+          .status = cortex::db::ModelStatus::Downloadable,
           .engine = "llama-cpp",
           .metadata = repo_info->metadata};
       if (!model_db.HasModel(model_id)) {
@@ -255,7 +255,7 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
       } else {
         if (auto m = model_db.GetModelInfo(model_id);
             m.has_value() &&
-            m->status == cortex::db::ModelStatus::Undownloaded) {
+            m->status == cortex::db::ModelStatus::Downloadable) {
           if (auto upd_res = model_db.UpdateModelEntry(model_id, e);
               upd_res.has_error()) {
             CTL_INF(upd_res.error());
@@ -406,7 +406,7 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
                                 .model_alias = "",
                                 .model_format = "cortexso",
                                 .model_source = model_source,
-                                .status = cortex::db::ModelStatus::Undownloaded,
+                                .status = cortex::db::ModelStatus::Downloadable,
                                 .engine = "llama-cpp",
                                 .metadata = metadata};
     if (!model_db.HasModel(model_id)) {
@@ -417,7 +417,7 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
       }
     } else {
       if (auto m = model_db.GetModelInfo(model_id);
-          m.has_value() && m->status == cortex::db::ModelStatus::Undownloaded) {
+          m.has_value() && m->status == cortex::db::ModelStatus::Downloadable) {
         if (auto upd_res = model_db.UpdateModelEntry(model_id, e);
             upd_res.has_error()) {
           CTL_INF(upd_res.error());

@@ -8,7 +8,7 @@
 
 namespace cortex::db {
 
-enum class ModelStatus { Remote, Downloaded, Undownloaded };
+enum class ModelStatus { Remote, Downloaded, Downloadable };
 
 struct ModelEntry {
   std::string model;
