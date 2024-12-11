@@ -72,4 +72,8 @@ class EngineI {
   virtual void HandleRequest(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+
+  // Stop inflight chat completion in stream mode
+  virtual void StopInferencing(const std::string& model_id) = 0;
+
 };

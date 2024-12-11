@@ -850,6 +850,7 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
+
   CTL_DBG("Engine unloaded: " + ne);
   return {};
 }
@@ -1071,6 +1072,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     return res;
   }
 }
+
 cpp::result<std::vector<std::string>, std::string>
 EngineService::GetSupportedEngineNames() {
   return file_manager_utils::GetCortexConfig().supportedEngines;
