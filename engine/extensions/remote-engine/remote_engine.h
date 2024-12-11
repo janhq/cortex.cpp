@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include "cortex-common/remote_enginei.h"
-#include "extensions/remote-engine/template_renderer.h"
+#include "extensions/template_renderer.h"
 #include "utils/engine_constants.h"
 #include "utils/file_logger.h"
 // Helper for CURL response
@@ -47,7 +47,7 @@ class RemoteEngine : public RemoteEngineI {
   // Thread-safe model config storage
   mutable std::shared_mutex models_mtx_;
   std::unordered_map<std::string, ModelConfig> models_;
-  TemplateRenderer renderer_;
+  extensions::TemplateRenderer renderer_;
   Json::Value metadata_;
   std::string api_key_template_;
   std::unique_ptr<trantor::FileLogger> async_file_logger_;

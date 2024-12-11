@@ -69,4 +69,7 @@ class EngineI {
   virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
 
   virtual Json::Value GetRemoteModels() = 0;
+  virtual void HandleRequest(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };
