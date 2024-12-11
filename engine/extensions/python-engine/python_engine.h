@@ -7,154 +7,153 @@
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
+#include "config/model_config.h"
 #include "cortex-common/EngineI.h"
 #include "extensions/template_renderer.h"
 #include "utils/file_logger.h"
-#include "config/model_config.h"
 #ifdef _WIN32
-    #include <windows.h>
-    #include <process.h>
+#include <process.h>
+#include <windows.h>
+using pid_t = DWORD;
 #elif __APPLE__ || __linux__
-    #include <unistd.h>
-    #include <sys/types.h>
-    #include <sys/wait.h>
-    #include <spawn.h>
-    #include <signal.h>
+#include <signal.h>
+#include <spawn.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #endif
 // Helper for CURL response
-namespace python_engine{
-struct StreamContext
-{
-    std::shared_ptr<std::function<void(Json::Value &&, Json::Value &&)>> callback;
-    std::string buffer;
+namespace python_engine {
+struct StreamContext {
+  std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
+  std::string buffer;
 };
 
-static size_t StreamWriteCallback(char *ptr, size_t size, size_t nmemb,
-                                  void *userdata)
-{
-    auto *context = static_cast<StreamContext *>(userdata);
-    std::string chunk(ptr, size * nmemb);
+static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
+                                  void* userdata) {
+  auto* context = static_cast<StreamContext*>(userdata);
+  std::string chunk(ptr, size * nmemb);
 
-    context->buffer += chunk;
+  context->buffer += chunk;
 
-    // Process complete lines
-    size_t pos;
-    while ((pos = context->buffer.find('\n')) != std::string::npos)
-    {
-        std::string line = context->buffer.substr(0, pos);
-        context->buffer = context->buffer.substr(pos + 1);
+  // Process complete lines
+  size_t pos;
+  while ((pos = context->buffer.find('\n')) != std::string::npos) {
+    std::string line = context->buffer.substr(0, pos);
+    context->buffer = context->buffer.substr(pos + 1);
 
-        // Skip empty lines
-        if (line.empty() || line == "\r")
-            continue;
+    // Skip empty lines
+    if (line.empty() || line == "\r")
+      continue;
 
-        // Remove "data: " prefix if present
-        // if (line.substr(0, 6) == "data: ")
-        // {
-        //     line = line.substr(6);
-        // }
+    // Remove "data: " prefix if present
+    // if (line.substr(0, 6) == "data: ")
+    // {
+    //     line = line.substr(6);
+    // }
 
-        // Skip [DONE] message
-        std::cout << line << std::endl;
-        if (line == "data: [DONE]")
-        {
-            Json::Value status;
-            status["is_done"] = true;
-            status["has_error"] = false;
-            status["is_stream"] = true;
-            status["status_code"] = 200;
-            (*context->callback)(std::move(status), Json::Value());
-            break;
-        }
-
-        // Parse the JSON
-        Json::Value chunk_json;
-        chunk_json["data"] = line + "\n\n";
-        Json::Reader reader;
-
-        Json::Value status;
-        status["is_done"] = false;
-        status["has_error"] = false;
-        status["is_stream"] = true;
-        status["status_code"] = 200;
-        (*context->callback)(std::move(status), std::move(chunk_json));
+    // Skip [DONE] message
+    std::cout << line << std::endl;
+    if (line == "data: [DONE]") {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = false;
+      status["is_stream"] = true;
+      status["status_code"] = 200;
+      (*context->callback)(std::move(status), Json::Value());
+      break;
     }
 
-    return size * nmemb;
+    // Parse the JSON
+    Json::Value chunk_json;
+    chunk_json["data"] = line + "\n\n";
+    Json::Reader reader;
+
+    Json::Value status;
+    status["is_done"] = false;
+    status["has_error"] = false;
+    status["is_stream"] = true;
+    status["status_code"] = 200;
+    (*context->callback)(std::move(status), std::move(chunk_json));
+  }
+
+  return size * nmemb;
 }
 
-struct CurlResponse
-{
-    std::string body;
-    bool error{false};
-    std::string error_message;
+struct CurlResponse {
+  std::string body;
+  bool error{false};
+  std::string error_message;
 };
 
-class PythonEngine : public EngineI
-{
-private:
-    // Model configuration
+class PythonEngine : public EngineI {
+ private:
+  // Model configuration
 
-    // Thread-safe model config storage
-    mutable std::shared_mutex models_mutex_;
-    std::unordered_map<std::string, config::PythonModelConfig> models_;
-    extensions::TemplateRenderer renderer_;
-    std::unique_ptr<trantor::FileLogger> async_file_logger_;
-    std::unordered_map<std::string, pid_t> processMap;
+  // Thread-safe model config storage
+  mutable std::shared_mutex models_mutex_;
+  std::unordered_map<std::string, config::PythonModelConfig> models_;
+  extensions::TemplateRenderer renderer_;
+  std::unique_ptr<trantor::FileLogger> async_file_logger_;
+  std::unordered_map<std::string, pid_t> processMap;
 
-    // Helper functions
-    CurlResponse MakePostRequest(const std::string &model, const std::string &path,
-                                 const std::string &body);
-    CurlResponse MakeGetRequest(const std::string &model, const std::string &path);
-    CurlResponse MakeDeleteRequest(const std::string &model, const std::string &path);
+  // Helper functions
+  CurlResponse MakePostRequest(const std::string& model,
+                               const std::string& path,
+                               const std::string& body);
+  CurlResponse MakeGetRequest(const std::string& model,
+                              const std::string& path);
+  CurlResponse MakeDeleteRequest(const std::string& model,
+                                 const std::string& path);
 
-    // Process manager functions
-    pid_t SpawnProcess(const std::string& model, const std::vector<std::string>& command) ;
-    bool TerminateProcess(const std::string& model);
+  // Process manager functions
+  pid_t SpawnProcess(const std::string& model,
+                     const std::vector<std::string>& command);
+  bool TerminateProcess(const std::string& model);
 
-    // Internal model management
-    bool LoadModelConfig(const std::string &model, const std::string &yaml_path);
-    config::PythonModelConfig *GetModelConfig(const std::string &model);
+  // Internal model management
+  bool LoadModelConfig(const std::string& model, const std::string& yaml_path);
+  config::PythonModelConfig* GetModelConfig(const std::string& model);
 
-public:
-    PythonEngine();
-    ~PythonEngine();
-    void RegisterLibraryPath(RegisterLibraryOption opts) override;
+ public:
+  PythonEngine();
+  ~PythonEngine();
+  void RegisterLibraryPath(RegisterLibraryOption opts) override;
 
-    void Load(EngineLoadOption opts) override;
+  void Load(EngineLoadOption opts) override;
 
-    void Unload(EngineUnloadOption opts) override;
+  void Unload(EngineUnloadOption opts) override;
 
-    // Main interface implementations
-    void GetModels(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
+  // Main interface implementations
+  void GetModels(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-    void HandleChatCompletion(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
+  void HandleChatCompletion(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-    void LoadModel(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
+  void LoadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-    void UnloadModel(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
+  void UnloadModel(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-    void GetModelStatus(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
+  void GetModelStatus(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-    // Other required virtual functions
-    void HandleEmbedding(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
-    bool IsSupported(const std::string &feature) override;
-    bool SetFileLogger(int max_log_lines, const std::string &log_path) override;
-    void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
-    void HandleRequest(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) override;
+  // Other required virtual functions
+  void HandleEmbedding(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  bool IsSupported(const std::string& feature) override;
+  bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
+  void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
+  void HandleRequest(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 };
-} // namespace python_engine
+}  // namespace python_engine
