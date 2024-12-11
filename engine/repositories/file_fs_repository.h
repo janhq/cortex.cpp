@@ -1,14 +1,12 @@
 #pragma once
 
 #include <filesystem>
-#include <mutex>
 #include "common/repository/file_repository.h"
 #include "utils/logging_utils.h"
 
 class FileFsRepository : public FileRepository {
  public:
   constexpr static auto kFileContainerFolderName = "files";
-  constexpr static auto kFileMetadataFileName = "metadata.json";
 
   cpp::result<void, std::string> StoreFile(OpenAi::File& file_metadata,
                                            const char* content,
@@ -43,15 +41,10 @@ class FileFsRepository : public FileRepository {
   ~FileFsRepository() = default;
 
  private:
-  std::filesystem::path GetFilePath(const std::string& file_id) const;
-
-  cpp::result<OpenAi::File, std::string> ReadFileMetadata(
-      const std::filesystem::path& file_path) const;
+  std::filesystem::path GetFilePath() const;
 
   /**
    * The path to the data folder.
    */
   std::filesystem::path data_folder_path_;
-
-  mutable std::mutex fs_mutex_;
 };

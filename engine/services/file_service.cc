@@ -11,7 +11,7 @@ cpp::result<OpenAi::File, std::string> FileService::UploadFile(
           std::chrono::system_clock::now().time_since_epoch())
           .count();
 
-  auto file_id = ulid::Marshal(ulid::CreateNowRand());
+  auto file_id{"file-" + ulid::Marshal(ulid::CreateNowRand())};
   OpenAi::File file;
   file.id = file_id;
   file.object = "file";

@@ -1,6 +1,6 @@
 #pragma once
+
 #include "migration_helper.h"
-#include "v0/migration.h"
 
 namespace cortex::migr {
 class MigrationManager {
