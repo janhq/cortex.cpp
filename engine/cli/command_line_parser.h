@@ -66,6 +66,7 @@ class CommandLineParser {
     bool display_version = false;
     bool display_cpu_mode = false;
     bool display_gpu_mode = false;
+    bool display_available_model = false;
     std::string filter = "";
     std::string log_level = "INFO";
 
@@ -74,6 +75,7 @@ class CommandLineParser {
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
+    std::string model_src;
   };
   CmlData cml_data_;
   std::unordered_map<std::string, std::string> config_update_opts_;

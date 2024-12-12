@@ -64,16 +64,30 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
-  cortex::db::ModelEntry model_entry{
-      .model = ggufDownloadItem.id,
-      .author_repo_id = author_id,
-      .branch_name = branch,
-      .path_to_model_yaml = rel.string(),
-      .model_alias = ggufDownloadItem.id,
-      .status = cortex::db::ModelStatus::Downloaded};
-  auto result = modellist_utils_obj.AddModelEntry(model_entry, true);
-  if (result.has_error()) {
-    CTL_WRN("Error adding model to modellist: " + result.error());
+  if (!modellist_utils_obj.HasModel(ggufDownloadItem.id)) {
+    cortex::db::ModelEntry model_entry{
+        .model = ggufDownloadItem.id,
+        .author_repo_id = author_id,
+        .branch_name = branch,
+        .path_to_model_yaml = rel.string(),
+        .model_alias = ggufDownloadItem.id,
+        .status = cortex::db::ModelStatus::Downloaded};
+    auto result = modellist_utils_obj.AddModelEntry(model_entry);
+
+    if (result.has_error()) {
+      CTL_ERR("Error adding model to modellist: " + result.error());
+    }
+  } else {
+    if (auto m = modellist_utils_obj.GetModelInfo(ggufDownloadItem.id);
+        m.has_value()) {
+      auto upd_m = m.value();
+      upd_m.status = cortex::db::ModelStatus::Downloaded;
+      if (auto r =
+              modellist_utils_obj.UpdateModelEntry(ggufDownloadItem.id, upd_m);
+          r.has_error()) {
+        CTL_ERR(r.error());
+      }
+    }
   }
 }
 
@@ -137,6 +151,9 @@ void ModelService::ForceIndexingModelList() {
 
   CTL_DBG("Database model size: " + std::to_string(list_entry.value().size()));
   for (const auto& model_entry : list_entry.value()) {
+    if (model_entry.status != cortex::db::ModelStatus::Downloaded) {
+      continue;
+    }
     try {
       yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(
@@ -302,7 +319,8 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   }
 
   auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
-  if (model_entry.has_value()) {
+  if (model_entry.has_value() &&
+      model_entry->status == cortex::db::ModelStatus::Downloaded) {
     CLI_LOG("Model already downloaded: " << unique_model_id);
     return cpp::fail("Please delete the model before downloading again");
   }
@@ -492,7 +510,8 @@ ModelService::DownloadModelFromCortexsoAsync(
   }
 
   auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
-  if (model_entry.has_value()) {
+  if (model_entry.has_value() &&
+      model_entry->status == cortex::db::ModelStatus::Downloaded) {
     return cpp::fail("Please delete the model before downloading again");
   }
 
@@ -542,14 +561,32 @@ ModelService::DownloadModelFromCortexsoAsync(
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{.model = unique_model_id,
-                                       .author_repo_id = "cortexso",
-                                       .branch_name = branch,
-                                       .path_to_model_yaml = rel.string(),
-                                       .model_alias = unique_model_id};
-    auto result = modellist_utils_obj.AddModelEntry(model_entry);
-    if (result.has_error()) {
-      CTL_ERR("Error adding model to modellist: " + result.error());
+    if (!modellist_utils_obj.HasModel(unique_model_id)) {
+      cortex::db::ModelEntry model_entry{
+          .model = unique_model_id,
+          .author_repo_id = "cortexso",
+          .branch_name = branch,
+          .path_to_model_yaml = rel.string(),
+          .model_alias = unique_model_id,
+          .status = cortex::db::ModelStatus::Downloaded};
+      auto result = modellist_utils_obj.AddModelEntry(model_entry);
+
+      if (result.has_error()) {
+        CTL_ERR("Error adding model to modellist: " + result.error());
+      }
+    } else {
+      if (auto m = modellist_utils_obj.GetModelInfo(unique_model_id);
+          m.has_value()) {
+        auto upd_m = m.value();
+        upd_m.status = cortex::db::ModelStatus::Downloaded;
+        if (auto r =
+                modellist_utils_obj.UpdateModelEntry(unique_model_id, upd_m);
+            r.has_error()) {
+          CTL_ERR(r.error());
+        }
+      } else {
+        CTL_WRN("Could not get model entry with model id: " << unique_model_id);
+      }
     }
   };
 
@@ -595,14 +632,28 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{.model = model_id,
-                                       .author_repo_id = "cortexso",
-                                       .branch_name = branch,
-                                       .path_to_model_yaml = rel.string(),
-                                       .model_alias = model_id};
-    auto result = modellist_utils_obj.AddModelEntry(model_entry);
-    if (result.has_error()) {
-      CTL_ERR("Error adding model to modellist: " + result.error());
+    if (!modellist_utils_obj.HasModel(model_id)) {
+      cortex::db::ModelEntry model_entry{
+          .model = model_id,
+          .author_repo_id = "cortexso",
+          .branch_name = branch,
+          .path_to_model_yaml = rel.string(),
+          .model_alias = model_id,
+          .status = cortex::db::ModelStatus::Downloaded};
+      auto result = modellist_utils_obj.AddModelEntry(model_entry);
+
+      if (result.has_error()) {
+        CTL_ERR("Error adding model to modellist: " + result.error());
+      }
+    } else {
+      if (auto m = modellist_utils_obj.GetModelInfo(model_id); m.has_value()) {
+        auto upd_m = m.value();
+        upd_m.status = cortex::db::ModelStatus::Downloaded;
+        if (auto r = modellist_utils_obj.UpdateModelEntry(model_id, upd_m);
+            r.has_error()) {
+          CTL_ERR(r.error());
+        }
+      }
     }
   };
 
