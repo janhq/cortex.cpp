@@ -24,8 +24,8 @@ void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
   Json::Value ret;
-  for (const auto& engine :
-       engine_service_->GetSupportedEngineNames().value()) {
+  auto engines = engine_service_->GetSupportedEngineNames().value();
+  for (const auto& engine : engines) {
     auto installed_engines =
         engine_service_->GetInstalledEngineVariants(engine);
     if (installed_engines.has_error()) {
@@ -37,6 +37,7 @@ void Engines::ListEngine(
     }
     ret[engine] = variants;
   }
+
   // Add remote engine
   auto remote_engines = engine_service_->GetEngines();
   if (remote_engines.has_value()) {
@@ -49,7 +50,6 @@ void Engines::ListEngine(
       }
     }
   }
-
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);

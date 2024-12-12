@@ -49,6 +49,7 @@ cpp::result<void, std::string> DylibPathManager::RegisterPath(
   // Get current LD_LIBRARY_PATH
   const char* current_path = getenv(kLdLibraryPath);
   std::string current_paths = current_path ? current_path : "";
+  CTL_DBG("Current paths: " << current_paths);
 
   // Add new paths
   for (const auto& path : paths) {
@@ -64,11 +65,14 @@ cpp::result<void, std::string> DylibPathManager::RegisterPath(
   if (!current_paths.empty()) {
     new_path << ":" << current_paths;
   }
-
+  CTL_DBG("New paths: " << new_path.str());
   // Set the new LD_LIBRARY_PATH
   if (setenv(kLdLibraryPath, new_path.str().c_str(), 1) != 0) {
+    CTL_ERR("Failed to set path!!!");
     return cpp::fail("Failed to set " + std::string(kLdLibraryPath));
   }
+
+  CTL_DBG("After set path: " << getenv(kLdLibraryPath));
 
   dylib_map_[key] = std::move(dylib_paths);
 #endif
@@ -92,7 +96,7 @@ cpp::result<void, std::string> DylibPathManager::Unregister(
     }
   }
 
-#else
+#elif defined(__linux__)
   // For Linux, we need to rebuild LD_LIBRARY_PATH without the removed paths
   const char* current_path = getenv(kLdLibraryPath);
   if (current_path) {

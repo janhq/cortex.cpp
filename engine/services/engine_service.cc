@@ -713,6 +713,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   try {
     auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
 
+#if defined(_WIN32) || defined(_WIN64)
     // register deps
     std::vector<std::filesystem::path> paths{};
     paths.push_back(std::move(cuda_path));
@@ -730,24 +731,22 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     } else {
       CTL_DBG("Registered lib paths for: " << ne);
     }
+#endif
 
     auto dylib =
         std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
 
     auto config = file_manager_utils::GetCortexConfig();
-
-    auto log_path =
-        std::filesystem::path(config.logFolderPath) /
-        std::filesystem::path(
-            config.logLlamaCppPath);  // for now seems like we use same log path
+    auto log_path = std::filesystem::path(config.logFolderPath) /
+                    std::filesystem::path(config.logLlamaCppPath);
 
     // init
     auto func = dylib->get_function<EngineI*()>("get_engine");
     auto engine_obj = func();
     auto load_opts = EngineI::EngineLoadOption{
         .engine_path = engine_dir_path,
-        .cuda_path = file_manager_utils::GetCudaToolkitPath(ne),
-        .custom_engine_path = custom_engine_path,
+        .deps_path = cuda_path,
+        .is_custom_engine_path = custom_engine_path,
         .log_path = log_path,
         .max_log_lines = config.maxLogLines,
         .log_level = logging_utils_helper::global_log_level,
@@ -773,7 +772,7 @@ void EngineService::RegisterEngineLibPath() {
     try {
       auto engine_dir_path_res = GetEngineDirPath(engine);
       if (engine_dir_path_res.has_error()) {
-        CTL_ERR(
+        CTL_WRN(
             "Could not get engine dir path: " << engine_dir_path_res.error());
         continue;
       }
@@ -794,8 +793,9 @@ void EngineService::RegisterEngineLibPath() {
 
       auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
       if (reg_result.has_error()) {
+        CTL_WRN("Failed register lib path for " << engine);
       } else {
-        CTL_DBG("Register lib path for: " << engine);
+        CTL_DBG("Registered lib path for " << engine);
       }
 
     } catch (const std::exception& e) {
@@ -863,9 +863,7 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
       CTL_DBG("Unregistered lib paths for: " << ne);
     }
     auto* e = std::get<EngineI*>(engines_[ne].engine);
-    auto unload_opts = EngineI::EngineUnloadOption{
-        .unload_dll = true,
-    };
+    auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
     engines_.erase(ne);

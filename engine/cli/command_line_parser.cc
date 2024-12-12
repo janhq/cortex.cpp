@@ -471,7 +471,7 @@ void CommandLineParser::SetupEngineCommands() {
   list_engines_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::EngineListCmd command;
+    auto command = commands::EngineListCmd(engine_service_);
     command.Exec(cml_data_.config.apiServerHost,
                  std::stoi(cml_data_.config.apiServerPort));
   });
