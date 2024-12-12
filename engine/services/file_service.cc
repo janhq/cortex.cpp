@@ -39,9 +39,9 @@ cpp::result<OpenAi::File, std::string> FileService::RetrieveFile(
   return file_repository_->RetrieveFile(file_id);
 }
 
-cpp::result<void, std::string> FileService::DeleteFile(
+cpp::result<void, std::string> FileService::DeleteFileLocal(
     const std::string& file_id) {
-  return file_repository_->DeleteFile(file_id);
+  return file_repository_->DeleteFileLocal(file_id);
 }
 
 cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>

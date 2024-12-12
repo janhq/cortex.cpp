@@ -135,7 +135,7 @@ FileFsRepository::RetrieveFileContentByPath(const std::string& path) const {
   }
 }
 
-cpp::result<void, std::string> FileFsRepository::DeleteFile(
+cpp::result<void, std::string> FileFsRepository::DeleteFileLocal(
     const std::string& file_id) {
   CTL_INF("Deleting file: " + file_id);
   auto file_container_path = GetFilePath();

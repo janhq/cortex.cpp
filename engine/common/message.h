@@ -21,16 +21,16 @@ namespace OpenAi {
 
 inline std::string ExtractFileId(const std::string& path) {
   // Handle both forward and backward slashes
-  size_t lastSlash = path.find_last_of("/\\");
-  if (lastSlash == std::string::npos)
+  auto last_slash = path.find_last_of("/\\");
+  if (last_slash == std::string::npos)
     return "";
 
-  std::string filename = path.substr(lastSlash + 1);
-  size_t dotPosition = filename.find('.');
-  if (dotPosition == std::string::npos)
+  auto filename = path.substr(last_slash + 1);
+  auto dot_pos = filename.find('.');
+  if (dot_pos == std::string::npos)
     return "";
 
-  return filename.substr(0, dotPosition);
+  return filename.substr(0, dot_pos);
 }
 
 // Represents a message within a thread.

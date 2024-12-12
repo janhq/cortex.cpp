@@ -169,7 +169,7 @@ void Files::RetrieveFile(const HttpRequestPtr& req,
 void Files::DeleteFile(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback,
                        const std::string& file_id) {
-  auto res = file_service_->DeleteFile(file_id);
+  auto res = file_service_->DeleteFileLocal(file_id);
   if (res.has_error()) {
     Json::Value ret;
     ret["message"] = res.error();

@@ -22,7 +22,7 @@ class FileRepository {
   virtual cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
   RetrieveFileContentByPath(const std::string& path) const = 0;
 
-  virtual cpp::result<void, std::string> DeleteFile(
+  virtual cpp::result<void, std::string> DeleteFileLocal(
       const std::string& file_id) = 0;
 
   virtual ~FileRepository() = default;

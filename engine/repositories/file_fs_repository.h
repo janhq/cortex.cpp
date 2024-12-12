@@ -25,7 +25,7 @@ class FileFsRepository : public FileRepository {
   cpp::result<std::pair<std::unique_ptr<char[]>, size_t>, std::string>
   RetrieveFileContentByPath(const std::string& path) const override;
 
-  cpp::result<void, std::string> DeleteFile(
+  cpp::result<void, std::string> DeleteFileLocal(
       const std::string& file_id) override;
 
   explicit FileFsRepository(std::filesystem::path data_folder_path)
