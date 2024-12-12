@@ -5,6 +5,7 @@
 #include "controllers/configs.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
+#include "controllers/files.h"
 #include "controllers/hardware.h"
 #include "controllers/messages.h"
 #include "controllers/models.h"
@@ -13,6 +14,7 @@
 #include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
+#include "repositories/file_fs_repository.h"
 #include "repositories/message_fs_repository.h"
 #include "repositories/thread_fs_repository.h"
 #include "services/assistant_service.h"
@@ -122,11 +124,13 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
 
-  auto msg_repo = std::make_shared<MessageFsRepository>(
-      file_manager_utils::GetCortexDataPath());
-  auto thread_repo = std::make_shared<ThreadFsRepository>(
-      file_manager_utils::GetCortexDataPath());
+  auto data_folder_path = file_manager_utils::GetCortexDataPath();
 
+  auto file_repo = std::make_shared<FileFsRepository>(data_folder_path);
+  auto msg_repo = std::make_shared<MessageFsRepository>(data_folder_path);
+  auto thread_repo = std::make_shared<ThreadFsRepository>(data_folder_path);
+
+  auto file_srv = std::make_shared<FileService>(file_repo);
   auto assistant_srv = std::make_shared<AssistantService>(thread_repo);
   auto thread_srv = std::make_shared<ThreadService>(thread_repo);
   auto message_srv = std::make_shared<MessageService>(msg_repo);
@@ -147,6 +151,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
+  auto file_ctl = std::make_shared<Files>(file_srv, message_srv);
   auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
   auto message_ctl = std::make_shared<Messages>(message_srv);
@@ -160,6 +165,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
 
+  drogon::app().registerController(file_ctl);
   drogon::app().registerController(assistant_ctl);
   drogon::app().registerController(thread_ctl);
   drogon::app().registerController(message_ctl);
@@ -170,9 +176,6 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   drogon::app().registerController(server_ctl);
   drogon::app().registerController(hw_ctl);
   drogon::app().registerController(config_ctl);
-
-  auto upload_path = std::filesystem::temp_directory_path() / "cortex-uploads";
-  drogon::app().setUploadPath(upload_path.string());
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
@@ -187,6 +190,12 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
   drogon::app().disableSigtermHandling();
+
+  // file upload
+  drogon::app()
+      .enableCompressedRequest(true)
+      .setClientMaxBodySize(256 * 1024 * 1024)   // Max 256MiB body size
+      .setClientMaxMemoryBodySize(1024 * 1024);  // 1MiB before writing to disk
 
   // CORS
   drogon::app().registerPostHandlingAdvice(

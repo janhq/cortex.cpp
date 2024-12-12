@@ -10,6 +10,7 @@ namespace cortex::db {
 
 enum class ModelStatus { Remote, Downloaded, Downloadable };
 
+
 struct ModelEntry {
   std::string model;
   std::string author_repo_id;
