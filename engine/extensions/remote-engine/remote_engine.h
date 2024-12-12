@@ -14,10 +14,6 @@
 // Helper for CURL response
 
 namespace remote_engine {
-inline bool IsRemoteEngine(std::string_view e) {
-  return e == kAnthropicEngine || e == kOpenAiEngine;
-}
-
 
 struct StreamContext {
   std::shared_ptr<std::function<void(Json::Value&&, Json::Value&&)>> callback;
@@ -52,6 +48,8 @@ class RemoteEngine : public RemoteEngineI {
   std::unordered_map<std::string, ModelConfig> models_;
   TemplateRenderer renderer_;
   Json::Value metadata_;
+  std::string chat_req_template_;
+  std::string chat_res_template_;
   std::string api_key_template_;
 
   // Helper functions
@@ -97,7 +95,7 @@ class RemoteEngine : public RemoteEngineI {
   void HandleEmbedding(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  
+
   Json::Value GetRemoteModels() override;
 };
 

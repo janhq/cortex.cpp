@@ -53,36 +53,6 @@ const std::string kAnthropicTransformRespTemplate = R"({
         "system_fingerprint": "fp_6b68a8204b"
       })";
 
-const std::string kAnthropicTransformStreamRespTemplate = R"(
-{
-    "object": "chat.completion.chunk",
-    {% if type == "message_start" %}
-    "model": "{{  message.model  }}",
-    {% endif %}
-    "choices": [
-        {
-            "index": 0,
-            "delta": {
-                {% if type == "message_start" %}
-                "role": "assistant",
-                "content": ""
-                {% else if type == "content_block_delta" %}
-                "role": "assistant",
-                "content": "{{ delta.text }}"
-                {% else if type == "content_block_stop" %}
-                "role": "assistant",
-                "content": ""
-                {% endif %}
-            },
-            {% if type == "content_block_stop" %}
-            "finish_reason": "stop"
-            {% else %}
-            "finish_reason": null
-            {% endif %}
-        }
-    ]
-}
-)";
 }  // namespace
 
 struct RemoteModelConfig {
@@ -140,15 +110,6 @@ struct RemoteModelConfig {
       }
     }
 
-    if (TransformResp["chat_completions"]["stream_template"].isNull()) {
-      if (is_anthropic(model)) {
-        TransformResp["chat_completions"]["stream_template"] =
-            kAnthropicTransformStreamRespTemplate;
-      } else {
-        TransformResp["chat_completions"]["stream_template"] =
-            kOpenAITransformRespTemplate;
-      }
-    }
     metadata = json.get("metadata", metadata);
   }
 

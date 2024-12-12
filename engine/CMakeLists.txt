@@ -143,7 +143,6 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/openai_engine.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/anthropic_engine.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/template_renderer.cc
 )
