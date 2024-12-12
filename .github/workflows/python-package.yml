@@ -98,7 +98,7 @@ jobs:
         if: runner.os == 'linux'
         run: |
           conda create -y -n ${{env.MODEL_NAME}} python=3.11
-          source $HOME/miniconda/bin/activate base
+          source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
           python -m pip install --upgrade pip
@@ -108,7 +108,7 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           conda create -y -n ${{env.MODEL_NAME}} python=3.11
-          source $HOME/miniconda/bin/activate base
+          source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
           python -m pip install --upgrade pip
@@ -127,7 +127,7 @@ jobs:
       - name: prepare python package macos
         if : runner.os == 'macOs'
         run: |
-            source $HOME/miniconda/bin/activate base
+            source $HOME/miniconda3/bin/activate base
             conda init
             conda activate ${{env.MODEL_NAME}}
             PYTHON_PATH=$(which python)
@@ -138,7 +138,7 @@ jobs:
       - name: prepare python package linux
         if : runner.os == 'linux'
         run: |
-            source $HOME/miniconda/bin/activate base
+            source $HOME/miniconda3/bin/activate base
             conda init
             conda activate ${{env.MODEL_NAME}}
             PYTHON_PATH=$(which python)
