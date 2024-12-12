@@ -807,6 +807,105 @@
         "tags": ["Pulling Models"]
       }
     },
+    "/v1/models/sources": {
+      "post": {
+        "summary": "Add a model source",
+        "description": "User can add a Huggingface Organization or Repository",        
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "The url of model source to add",
+                    "example": "https://huggingface.co/cortexso/tinyllama"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Added model source"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Pulling Models"]
+      },
+      "delete": {
+        "summary": "Remove a model source",
+        "description": "User can remove a Huggingface Organization or Repository",        
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                     "description": "The url of model source to remove",
+                    "example": "https://huggingface.co/cortexso/tinyllama"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful uninstallation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Removed model source successfully!",
+                      "example": "Removed model source successfully!"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the issue with the request"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Pulling Models"]
+      }
+    },
     "/v1/threads": {
       "post": {
         "operationId": "ThreadsController_create",
