@@ -20,6 +20,11 @@ bool is_openai(const std::string& model) {
   return model.find("gpt") != std::string::npos;
 }
 
+constexpr const std::array<std::string_view, 5> kAnthropicModels = {
+    "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
+    "claude-3-opus-20240229", "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307"};
+
 }  // namespace
 
 size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
@@ -34,15 +39,12 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
     std::string line = context->buffer.substr(0, pos);
     context->buffer = context->buffer.substr(pos + 1);
-    // CTL_INF(line);
 
     // Skip empty lines
     if (line.empty() || line == "\r" ||
         line.find("event:") != std::string::npos)
       continue;
 
-    // Skip [DONE] message
-    // std::cout << line << std::endl;
     CTL_DBG(line);
     if (line == "data: [DONE]" ||
         line.find("message_stop") != std::string::npos) {
@@ -178,7 +180,8 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-RemoteEngine::RemoteEngine() {
+RemoteEngine::RemoteEngine(const std::string& engine_name)
+    : engine_name_(engine_name) {
   curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -522,23 +525,6 @@ void RemoteEngine::HandleChatCompletion(
                                std::string(e.what()));
     }
 
-    // Parse system for anthropic
-    if (is_anthropic(model)) {
-      bool has_system = false;
-      Json::Value msgs(Json::arrayValue);
-      for (auto& kv : (*json_body)["messages"]) {
-        if (kv["role"].asString() == "system") {
-          (*json_body)["system"] = kv["content"].asString();
-          has_system = true;
-        } else {
-          msgs.append(kv);
-        }
-      }
-      if (has_system) {
-        (*json_body)["messages"] = msgs;
-      }
-    }
-
     // Render with error handling
     try {
       result = renderer_.Render(template_str, *json_body);
@@ -701,20 +687,43 @@ void RemoteEngine::HandleEmbedding(
 }
 
 Json::Value RemoteEngine::GetRemoteModels() {
-  auto response = MakeGetModelsRequest();
-  if (response.error) {
-    Json::Value error;
-    error["error"] = response.error_message;
-    return error;
+  if (metadata_["get_models_url"].isNull() ||
+      metadata_["get_models_url"].asString().empty()) {
+    if (engine_name_ == kAnthropicEngine) {
+      Json::Value json_resp;
+      Json::Value model_array(Json::arrayValue);
+      for (const auto& m : kAnthropicModels) {
+        Json::Value val;
+        val["id"] = std::string(m);
+        val["engine"] = "anthropic";
+        val["created"] = "_";
+        val["object"] = "model";
+        model_array.append(val);
+      }
+
+      json_resp["object"] = "list";
+      json_resp["data"] = model_array;
+      CTL_INF("Remote models responded");
+      return json_resp;
+    } else {
+      return Json::Value();
+    }
+  } else {
+    auto response = MakeGetModelsRequest();
+    if (response.error) {
+      Json::Value error;
+      error["error"] = response.error_message;
+      return error;
+    }
+    Json::Value response_json;
+    Json::Reader reader;
+    if (!reader.parse(response.body, response_json)) {
+      Json::Value error;
+      error["error"] = "Failed to parse response";
+      return error;
+    }
+    return response_json;
   }
-  Json::Value response_json;
-  Json::Reader reader;
-  if (!reader.parse(response.body, response_json)) {
-    Json::Value error;
-    error["error"] = "Failed to parse response";
-    return error;
-  }
-  return response_json;
 }
 
 }  // namespace remote_engine

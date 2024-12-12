@@ -6,7 +6,7 @@
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
-#include "extensions/remote-engine/anthropic_engine.h"
+#include "extensions/remote-engine/remote_engine.h"
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
@@ -682,11 +682,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
 
-    if (engine_name != kAnthropicEngine) {
-      engines_[engine_name].engine = new remote_engine::RemoteEngine();
-    } else {
-      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
-    }
+    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
 
     CTL_INF("Loaded engine: " << engine_name);
     return {};
@@ -1040,11 +1036,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
-    if (engine_name != kAnthropicEngine) {
-      engines_[engine_name].engine = new remote_engine::RemoteEngine();
-    } else {
-      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
-    }
+    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
 
     CTL_INF("Loaded engine: " << engine_name);
   }

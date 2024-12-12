@@ -51,6 +51,7 @@ class RemoteEngine : public RemoteEngineI {
   std::string chat_req_template_;
   std::string chat_res_template_;
   std::string api_key_template_;
+  std::string engine_name_;
 
   // Helper functions
   CurlResponse MakeChatCompletionRequest(const ModelConfig& config,
@@ -67,7 +68,7 @@ class RemoteEngine : public RemoteEngineI {
   ModelConfig* GetModelConfig(const std::string& model);
 
  public:
-  RemoteEngine();
+  explicit RemoteEngine(const std::string& engine_name);
   virtual ~RemoteEngine();
 
   // Main interface implementations
