@@ -124,6 +124,21 @@ struct Thread : JsonSerializable {
       json["object"] = object;
       json["created_at"] = created_at;
 
+      // Deprecated: This is for backward compatibility. Please remove it later. (2-3 releases) to be sure
+      try {
+        auto it = metadata.find("title");
+        if (it == metadata.end()) {
+          json["title"] = "";
+        } else {
+          json["title"] = std::get<std::string>(metadata["title"]);
+        }
+
+      } catch (const std::bad_variant_access& ex) {
+        // std::cerr << "Error: value is not a string" << std::endl;
+        CTL_WRN("Error: value of title is not a string: " << ex.what());
+      }
+      // End deprecated
+
       if (tool_resources) {
         auto tool_result = tool_resources->ToJson();
         if (tool_result.has_error()) {
