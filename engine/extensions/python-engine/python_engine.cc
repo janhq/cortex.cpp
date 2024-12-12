@@ -509,6 +509,157 @@ void PythonEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {}
 
+void PythonEngine::HandleInference(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+  if (!json_body->isMember("model")) {
+    Json::Value error;
+    error["error"] = "Missing required field: model is required!";
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    callback(std::move(status), std::move(error));
+    return;
+  }
+  std::string method = "post";
+  std::string path = "/inference";
+  std::string transform_request =
+      (*json_body).get("transform_request", "").asString();
+  std::string transform_response =
+      (*json_body).get("transform_response", "").asString();
+  std::string model = (*json_body)["model"].asString();
+  Json::Value body = (*json_body)["body"];
+
+  // Transform Request
+  std::string transformed_request;
+  if (!transform_request.empty()) {
+
+    try {
+      // Validate JSON body
+      if (!body || body.isNull()) {
+        throw std::runtime_error("Invalid or null JSON body");
+      }
+
+      // Render with error handling
+      try {
+        transformed_request = renderer_.Render(transform_request, *json_body);
+      } catch (const std::exception& e) {
+        throw std::runtime_error("Template rendering error: " +
+                                 std::string(e.what()));
+      }
+    } catch (const std::exception& e) {
+      // Log error and potentially rethrow or handle accordingly
+      LOG_WARN << "Error in TransformRequest: " << e.what();
+      LOG_WARN << "Using original request body";
+      transformed_request = body.toStyledString();
+    }
+  } else {
+    transformed_request = body.toStyledString();
+  }
+
+  // End Transform request
+
+  CurlResponse response;
+  if (method == "post") {
+    response = MakePostRequest(model, path, transformed_request);
+  } else if (method == "get") {
+    response = MakeGetRequest(model, path);
+  } else if (method == "delete") {
+    response = MakeDeleteRequest(model, path);
+  } else {
+    Json::Value error;
+    error["error"] =
+        "method not supported! Supported methods are: post, get, delete";
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  if (response.error) {
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    Json::Value error;
+    error["error"] = response.error_message;
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  Json::Value response_json;
+  Json::Reader reader;
+  if (!reader.parse(response.body, response_json)) {
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k500InternalServerError;
+    Json::Value error;
+    error["error"] = "Failed to parse response";
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  if (!transform_response.empty()) {
+    // Transform Response
+    std::string response_str;
+    try {
+      // Validate JSON body
+      if (!response_json || response_json.isNull()) {
+        throw std::runtime_error("Invalid or null JSON body");
+      }
+      // Render with error handling
+      try {
+        response_str = renderer_.Render(transform_response, response_json);
+      } catch (const std::exception& e) {
+        throw std::runtime_error("Template rendering error: " +
+                                 std::string(e.what()));
+      }
+    } catch (const std::exception& e) {
+      // Log error and potentially rethrow or handle accordingly
+      LOG_WARN << "Error in TransformRequest: " << e.what();
+      LOG_WARN << "Using original request body";
+      response_str = response_json.toStyledString();
+    }
+
+    Json::Reader reader_final;
+    Json::Value response_json_final;
+    if (!reader_final.parse(response_str, response_json_final)) {
+      Json::Value status;
+      status["is_done"] = true;
+      status["has_error"] = true;
+      status["is_stream"] = false;
+      status["status_code"] = k500InternalServerError;
+      Json::Value error;
+      error["error"] = "Failed to parse response";
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = false;
+    status["is_stream"] = false;
+    status["status_code"] = k200OK;
+
+    callback(std::move(status), std::move(response_json_final));
+  } else {
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = false;
+    status["is_stream"] = false;
+    status["status_code"] = k200OK;
+
+    callback(std::move(status), std::move(response_json));
+  }
+}
 void PythonEngine::HandleRequest(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {

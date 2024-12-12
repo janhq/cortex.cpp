@@ -155,5 +155,8 @@ class PythonEngine : public EngineI {
   void HandleRequest(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  virtual void HandleInference(
+        std::shared_ptr<Json::Value> json_body,
+        std::function<void(Json::Value &&, Json::Value &&)> &&callback) = 0;
 };
 }  // namespace python_engine
