@@ -908,76 +908,174 @@
     },
     "/v1/threads": {
       "post": {
-        "operationId": "ThreadsController_create",
-        "summary": "Create thread",
-        "tags": ["Threads"],
-        "description": "Creates a new thread.",
-        "parameters": [],
+        "summary": "Create Thread",
+        "description": "Creates a new thread with optional metadata.",
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateThreadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "operationId": "ThreadsController_findAll",
-        "summary": "List threads",
-        "tags": ["Threads"],
-        "description": "Lists all the available threads along with its configurations.",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
+                "type": "object",
+                "properties": {
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "Title of the thread"
+                      }
+                    },
+                    "description": "Optional metadata for the thread"
                   }
                 }
+              },
+              "example": {
+                "metadata": {
+                  "title": "New Thread"
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Thread created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the thread was created"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the thread"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Title of the thread"
+                        }
+                      },
+                      "description": "Metadata associated with the thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread'"
+                    }
+                  },
+                  "required": ["created_at", "id", "object"]
+                },
+                "example": {
+                  "created_at": 1734020845,
+                  "id": "0001KNP3QDX314435VAEGW1Z2X",
+                  "metadata": {
+                    "title": "New Thread"
+                  },
+                  "object": "thread"
+                }
               }
             }
           }
-        }
+        },
+        "tags": ["Threads"]
+      },
+      "get": {
+        "summary": "List Threads",
+        "description": "Returns a list of threads with their metadata.",
+        "responses": {
+          "200": {
+            "description": "List of threads retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "description": "Type of the list response, always 'list'"
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "Array of thread objects",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "created_at": {
+                            "type": "integer",
+                            "description": "Unix timestamp of when the thread was created"
+                          },
+                          "id": {
+                            "type": "string",
+                            "description": "Unique identifier for the thread"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "description": "Title of the thread"
+                              },
+                              "lastMessage": {
+                                "type": "string",
+                                "description": "Content of the last message in the thread"
+                              }
+                            },
+                            "description": "Metadata associated with the thread"
+                          },
+                          "object": {
+                            "type": "string",
+                            "description": "Type of object, always 'thread'"
+                          }
+                        },
+                        "required": ["created_at", "id", "object"]
+                      }
+                    }
+                  },
+                  "required": ["object", "data"]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "created_at": 1734020845,
+                      "id": "0001KNP3QDX314435VAEGW1Z2X",
+                      "metadata": {
+                        "title": "New Thread"
+                      },
+                      "object": "thread"
+                    },
+                    {
+                      "created_at": 1734020803,
+                      "id": "0001KNP3P3DAQSDVEQGRBTCTNJ",
+                      "metadata": {
+                        "title": ""
+                      },
+                      "object": "thread"
+                    }
+                  ],
+                  "object": "list"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Threads"]
       }
     },
-    "/v1/threads/{thread_id}/messages/{message_id}": {
+    "/v1/threads/{id}": {
       "get": {
-        "operationId": "ThreadsController_retrieveMessage",
-        "summary": "Retrieve message",
-        "tags": ["Messages"],
-        "description": "Retrieves a message.",
+        "summary": "Retrieve Thread",
+        "description": "Retrieves a specific thread by its ID.",
         "parameters": [
           {
-            "name": "thread_id",
-            "required": true,
+            "name": "id",
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "message_id",
             "required": true,
-            "in": "path",
+            "description": "The ID of the thread to retrieve",
             "schema": {
               "type": "string"
             }
@@ -985,47 +1083,65 @@
         ],
         "responses": {
           "200": {
-            "description": "The message object matching the specified ID.",
+            "description": "Thread retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMessageResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "ThreadsController_updateMessage",
-        "summary": "Modify message",
-        "tags": ["Messages"],
-        "description": "Modifies a message.",
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the thread was created"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the thread"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "lastMessage": {
+                          "type": "string",
+                          "description": "Content of the last message in the thread"
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "Title of the thread"
+                        }
+                      },
+                      "description": "Metadata associated with the thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread'"
+                    }
+                  },
+                  "required": ["created_at", "id", "object"]
+                },
+                "example": {
+                  "created_at": 1732370026,
+                  "id": "jan_1732370027",
+                  "metadata": {
+                    "lastMessage": "Based on the context, I'm not sure how to build a unique experience quickly and easily. The text mentions that there are some concerns about Android apps providing consistent experiences for different users, which makes me skeptical about building one.\n\nSpecifically, it says:\n\n* \"Might not pass CTS\" (Computer Science Technology standards)\n* \"Might not comply with CDD\" (Consumer Development Division standards)\n\nThis suggests that building a unique experience for all users could be challenging or impossible. Therefore, I don't know how to build a unique experience quickly and easily.\n\nWould you like me to try again?",
+                    "title": "hello"
+                  },
+                  "object": "thread"
                 }
               }
             }
           }
         },
+        "tags": ["Threads"]
+      },
+      "patch": {
+        "summary": "Modify Thread",
+        "description": "Updates a specific thread's metadata.",
         "parameters": [
           {
-            "name": "thread_id",
-            "required": true,
+            "name": "id",
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "message_id",
             "required": true,
-            "in": "path",
+            "description": "The ID of the thread to modify",
             "schema": {
               "type": "string"
             }
@@ -1036,30 +1152,84 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateMessageDto"
+                "type": "object",
+                "properties": {
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "New title for the thread"
+                      }
+                    },
+                    "description": "Metadata to update"
+                  }
+                }
+              },
+              "example": {
+                "metadata": {
+                  "title": "my title"
+                }
               }
             }
           }
-        }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread modified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the thread was created"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the thread"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Updated title of the thread"
+                        }
+                      },
+                      "description": "Updated metadata for the thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread'"
+                    }
+                  },
+                  "required": ["created_at", "id", "object"]
+                },
+                "example": {
+                  "created_at": 1733301054,
+                  "id": "0001KN04SY7D75K0MPTXMXCH39",
+                  "metadata": {
+                    "title": "my title"
+                  },
+                  "object": "thread"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Threads"]
       },
       "delete": {
-        "operationId": "ThreadsController_deleteMessage",
-        "summary": "Delete message",
-        "description": "Deletes a message.",
-        "tags": ["Messages"],
+        "summary": "Delete Thread",
+        "description": "Deletes a specific thread by its ID.",
         "parameters": [
           {
-            "name": "thread_id",
-            "required": true,
+            "name": "id",
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "message_id",
             "required": true,
-            "in": "path",
+            "description": "The ID of the thread to delete",
             "schema": {
               "type": "string"
             }
@@ -1067,246 +1237,37 @@
         ],
         "responses": {
           "200": {
-            "description": "Deletion status.",
+            "description": "Thread deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteMessageDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/threads/{thread_id}/messages": {
-      "get": {
-        "operationId": "ThreadsController_getMessagesOfThread",
-        "summary": "List messages",
-        "tags": ["Messages"],
-        "description": "Returns a list of messages for a given thread.",
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "number"
-            }
-          },
-          {
-            "name": "order",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "after",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "before",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "run_id",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "A list of message objects.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListMessagesResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "ThreadsController_createMessageInThread",
-        "summary": "Create message",
-        "tags": ["Messages"],
-        "description": "Create a message.",
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "Indicates if the thread was successfully deleted"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the deleted thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread.deleted'"
+                    }
+                  },
+                  "required": ["deleted", "id", "object"]
+                },
+                "example": {
+                  "deleted": true,
+                  "id": "jan_1732370027",
+                  "object": "thread.deleted"
                 }
               }
             }
           }
         },
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMessageDto"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/threads/{thread_id}/clean": {
-      "post": {
-        "operationId": "ThreadsController_cleanThread",
-        "summary": "Clean thread",
-        "description": "Deletes all messages in a thread.",
-        "tags": ["Threads"],
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/v1/threads/{thread_id}": {
-      "get": {
-        "operationId": "ThreadsController_retrieveThread",
-        "summary": "Retrieve thread",
-        "tags": ["Threads"],
-        "description": "Retrieves a thread.",
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieves a thread.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetThreadResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "ThreadsController_modifyThread",
-        "summary": "Modify thread",
-        "tags": ["Threads"],
-        "description": "Modifies a thread.",
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateThreadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The thread has been successfully updated.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateThreadDto"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": ""
-          }
-        }
-      },
-      "delete": {
-        "operationId": "ThreadsController_remove",
-        "summary": "Delete thread",
-        "tags": ["Threads"],
-        "description": "Deletes a specific thread defined by a thread `id` .",
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The thread has been successfully deleted.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DeleteThreadResponseDto"
-                }
-              }
-            }
-          }
-        }
+        "tags": ["Threads"]
       }
     },
     "/v1/system": {
@@ -2692,6 +2653,7 @@
         "Files",
         "Hardware",
         "Events",
+        "Threads",
         "Pulling Models",
         "Running Models",
         "Processes",
