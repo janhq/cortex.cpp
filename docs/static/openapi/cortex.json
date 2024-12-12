@@ -810,7 +810,7 @@
     "/v1/models/sources": {
       "post": {
         "summary": "Add a model source",
-        "description": "User can add a Huggingface Organization or Repository",        
+        "description": "User can add a Huggingface Organization or Repository",
         "requestBody": {
           "required": false,
           "content": {
@@ -850,7 +850,7 @@
       },
       "delete": {
         "summary": "Remove a model source",
-        "description": "User can remove a Huggingface Organization or Repository",        
+        "description": "User can remove a Huggingface Organization or Repository",
         "requestBody": {
           "required": false,
           "content": {
@@ -860,7 +860,7 @@
                 "properties": {
                   "source": {
                     "type": "string",
-                     "description": "The url of model source to remove",
+                    "description": "The url of model source to remove",
                     "example": "https://huggingface.co/cortexso/tinyllama"
                   }
                 }
@@ -1583,7 +1583,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm",
+                "openai",
+                "anthropic"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -1625,9 +1631,9 @@
                     "type": "object",
                     "properties": {
                       "get_models_url": {
-                      "type": "string",
-                      "description": "The URL to get models",
-                      "example": "https://api.openai.com/v1/models"
+                        "type": "string",
+                        "description": "The URL to get models",
+                        "example": "https://api.openai.com/v1/models"
                       }
                     }
                   }
@@ -1666,7 +1672,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm",
+                "openai",
+                "anthropic"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -1881,7 +1893,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm",
+                "openai",
+                "anthropic"
+              ],
               "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
@@ -2056,6 +2074,319 @@
           }
         },
         "tags": ["Hardware"]
+      }
+    },
+    "/v1/files": {
+      "post": {
+        "summary": "Upload a File",
+        "description": "Uploads a file to the Cortex server.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": ["assistants"],
+                    "description": "The intended purpose of the uploaded file"
+                  }
+                },
+                "required": ["file", "purpose"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bytes": {
+                      "type": "integer",
+                      "example": 3211109
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "example": 1733942093
+                    },
+                    "filename": {
+                      "type": "string",
+                      "example": "Enterprise_Application_Infrastructure_v2_20140903_toCTC_v1.0.pdf"
+                    },
+                    "id": {
+                      "type": "string",
+                      "example": "file-0001KNKPTDDAQSDVEQGRBTCTNJ"
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "file"
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "example": "assistants"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      },
+      "get": {
+        "summary": "List files",
+        "description": "Lists all the files in the current directory.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bytes": {
+                            "type": "integer",
+                            "example": 3211109
+                          },
+                          "created_at": {
+                            "type": "integer",
+                            "example": 1733942093
+                          },
+                          "filename": {
+                            "type": "string",
+                            "example": "Enterprise_Application_Infrastructure_v2_20140903_toCTC_v1.0.pdf"
+                          },
+                          "id": {
+                            "type": "string",
+                            "example": "file-0001KNKPTDDAQSDVEQGRBTCTNJ"
+                          },
+                          "object": {
+                            "type": "string",
+                            "example": "file"
+                          },
+                          "purpose": {
+                            "type": "string",
+                            "example": "assistants"
+                          }
+                        }
+                      }
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "list"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      }
+    },
+    "/v1/files/{id}": {
+      "get": {
+        "summary": "Retrieve File",
+        "description": "Retrieves a file by its ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the file to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thread",
+            "in": "query",
+            "required": false,
+            "description": "Optional thread identifier",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bytes": {
+                      "type": "integer",
+                      "example": 3211109
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "example": 1733942093
+                    },
+                    "filename": {
+                      "type": "string",
+                      "example": "Enterprise_Application_Infrastructure_v2_20140903_toCTC_v1.0.pdf"
+                    },
+                    "id": {
+                      "type": "string",
+                      "example": "file-0001KNKPTDDAQSDVEQGRBTCTNJ"
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "file"
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "example": "assistants"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      },
+      "delete": {
+        "summary": "Delete File",
+        "description": "Deletes a file by its ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the file to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "Indicates if the file was successfully deleted"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "The ID of the deleted file"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'file'"
+                    }
+                  },
+                  "required": ["deleted", "id", "object"]
+                },
+                "example": {
+                  "deleted": true,
+                  "id": "file-0001KNP26FC62D620DGYNG2R8H",
+                  "object": "file"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File not found or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  },
+                  "required": ["message"]
+                },
+                "example": {
+                  "message": "File not found: file-0001KNP26FC62D620DGYNG2R8H"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      }
+    },
+    "/v1/files/{id}/content": {
+      "get": {
+        "summary": "Get File Content",
+        "description": "Retrieves the content of a file by its ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the file to retrieve content from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thread",
+            "in": "query",
+            "required": false,
+            "description": "Optional thread identifier",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "The raw content of the file"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File not found or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  },
+                  "required": ["message"]
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
       }
     },
     "/v1/configs": {
@@ -2339,6 +2670,10 @@
       "description": "Endpoints for managing the available engines within Cortex."
     },
     {
+      "name": "Files",
+      "description": "Endpoints for managing the files within Cortex."
+    },
+    {
       "name": "Hardware",
       "description": "Endpoints for managing the available hardware within Cortex."
     },
@@ -2354,6 +2689,7 @@
         "Chat",
         "Embeddings",
         "Engines",
+        "Files",
         "Hardware",
         "Events",
         "Pulling Models",
@@ -2426,7 +2762,7 @@
                 }
               },
               "required": ["type", "function"]
-            },
+            }
           },
           "metadata": {
             "type": "object",
@@ -3829,7 +4165,15 @@
       },
       "AddModelRequest": {
         "type": "object",
-        "required": ["model", "engine", "version", "inference_params", "TransformReq", "TransformResp", "metadata"],
+        "required": [
+          "model",
+          "engine",
+          "version",
+          "inference_params",
+          "TransformReq",
+          "TransformResp",
+          "metadata"
+        ],
         "properties": {
           "model": {
             "type": "string",
@@ -3878,7 +4222,7 @@
               },
               "chat_completions": {
                 "type": "object",
-                  "properties": {
+                "properties": {
                   "url": {
                     "type": "string"
                   },
