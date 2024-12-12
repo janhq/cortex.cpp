@@ -257,6 +257,31 @@ cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
                      " parsing error: " + reader.getFormattedErrorMessages());
   }
 
+  if (root.isArray()) {
+    for (const auto& value : root) {
+      if (value["type"].asString() == "directory") {
+        auto temp =
+            SimpleGetJson(url + "/" + value["path"].asString(), timeout);
+        if (!temp.has_error()) {
+          if (temp.value().isArray()) {
+            for (const auto& item : temp.value()) {
+              root.append(item);
+            }
+          } else {
+            root.append(temp.value());
+          }
+        }
+      }
+    }
+   for (Json::ArrayIndex i = 0; i < root.size();) {
+        if (root[i].isMember("type") && root[i]["type"] == "directory") {
+            root.removeIndex(i, nullptr);
+        } else {
+            ++i;
+        }
+    }
+   
+  }
   return root;
 }
 

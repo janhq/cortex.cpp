@@ -374,6 +374,9 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
       CTL_ERR("Failed to init curl!");
       return;
     }
+    if (!std::filesystem::exists(item.localPath.parent_path())) {
+      std::filesystem::create_directories(item.localPath.parent_path());
+    }
     auto file = fopen(item.localPath.string().c_str(), "wb");
     if (!file) {
       CTL_ERR("Failed to open output file " + item.localPath.string());

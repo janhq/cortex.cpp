@@ -547,7 +547,7 @@ struct PythonModelConfig {
 
   // Model Load Parameters
   std::string port;
-  std::string files;
+  std::string model_location;
   std::string script;
   std::string log_path;
   std::string log_level;
@@ -557,7 +557,7 @@ struct PythonModelConfig {
   Json::Value extra_params;  // Accept dynamic extra parameters
 
   // Method to convert C++ struct to YAML
-  std::string ToYaml() const {
+  void ToYaml(const std::string & filepath) const {
     YAML::Emitter out;
     out << YAML::BeginMap;
 
@@ -597,7 +597,7 @@ struct PythonModelConfig {
 
     // Model Load Parameters
     out << YAML::Key << "port" << YAML::Value << port;
-    out << YAML::Key << "files" << YAML::Value << files;
+    out << YAML::Key << "model_location" << YAML::Value << model_location;
     out << YAML::Key << "script" << YAML::Value << script;
     out << YAML::Key << "log_path" << YAML::Value << log_path;
     out << YAML::Key << "log_level" << YAML::Value << log_level;
@@ -620,7 +620,12 @@ struct PythonModelConfig {
           << iter->asString();
     }
     out << YAML::EndMap;
-    return out.c_str();
+
+    std::ofstream fout(filepath);
+    if (!fout.is_open()) {
+      throw std::runtime_error("Failed to open file for writing: " + filepath);
+    }
+    fout << out.c_str();
   }
 
   // Method to populate struct from YAML file
@@ -669,8 +674,8 @@ struct PythonModelConfig {
     auto mlp = config;
     if (mlp["port"])
       port = mlp["port"].as<std::string>();
-    if (mlp["files"])
-      files = mlp["files"].as<std::string>();
+    if (mlp["model_location"])
+      model_location = mlp["model_location"].as<std::string>();
     if (mlp["script"])
       script = mlp["script"].as<std::string>();
     if (mlp["log_path"])
@@ -730,7 +735,7 @@ struct PythonModelConfig {
     root["log_path"] = log_path;
     root["log_level"] = log_level;
     root["environment"] = environment;
-    root["files"] = files;
+    root["model_location"] = model_location;
     root["script"] = script;
 
     // Serialize command as JSON array
@@ -806,8 +811,8 @@ struct PythonModelConfig {
       environment = mlp["environment"].asString();
     if (mlp.isMember("engine"))
       engine = mlp["engine"].asString();
-    if (mlp.isMember("files"))
-      files = mlp["files"].asString();
+    if (mlp.isMember("model_location"))
+      model_location = mlp["model_location"].asString();
     if (mlp.isMember("script"))
       script = mlp["script"].asString();
 

@@ -96,6 +96,7 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   file_manager_utils::CreateDirectoryRecursively(model_container_path.string());
 
   for (const auto& value : result.value()) {
+    // std::cout << "value object: " << value.toStyledString() << std::endl;
     auto path = value["path"].asString();
     if (path == ".gitattributes" || path == ".gitignore" ||
         path == "README.md") {
@@ -517,15 +518,24 @@ ModelService::DownloadModelFromCortexsoAsync(
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
-    mc.model = unique_model_id;
+    if (mc.engine == kPythonEngine) {  // process for Python engine
+      config::PythonModelConfig python_model_config;
+      python_model_config.ReadFromYaml(model_yml_item->localPath.string());
+      python_model_config.model_location =
+          model_yml_item->localPath.parent_path().string();
+      python_model_config.ToYaml(model_yml_item->localPath.string());
 
-    uint64_t model_size = 0;
-    for (const auto& item : finishedTask.items) {
-      model_size = model_size + item.bytes.value_or(0);
+    } else {
+      mc.model = unique_model_id;
+
+      uint64_t model_size = 0;
+      for (const auto& item : finishedTask.items) {
+        model_size = model_size + item.bytes.value_or(0);
+      }
+      mc.size = model_size;
+      yaml_handler.UpdateModelConfig(mc);
+      yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
     }
-    mc.size = model_size;
-    yaml_handler.UpdateModelConfig(mc);
-    yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
     auto rel =
         file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
