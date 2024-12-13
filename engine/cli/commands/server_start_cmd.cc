@@ -112,7 +112,9 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
     return false;
   } else if (pid == 0) {
     // Some engines requires to add lib search path before process being created
-    EngineService().RegisterEngineLibPath();
+    auto download_srv = std::make_shared<DownloadService>();
+    auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
+    EngineService(download_srv, dylib_path_mng).RegisterEngineLibPath();
 
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
@@ -131,5 +133,4 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
 #endif
   return true;
 }
-
 };  // namespace commands

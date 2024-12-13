@@ -94,7 +94,7 @@ void RunCmd::Exec(bool run_detach,
 
     // Check if engine existed. If not, download it
     {
-      auto is_engine_ready = engine_service_.IsEngineReady(mc.engine);
+      auto is_engine_ready = engine_service_->IsEngineReady(mc.engine);
       if (is_engine_ready.has_error()) {
         throw std::runtime_error(is_engine_ready.error());
       }
@@ -102,7 +102,7 @@ void RunCmd::Exec(bool run_detach,
       if (!is_engine_ready.value()) {
         CTL_INF("Engine " << mc.engine
                           << " is not ready. Proceed to install..");
-        if (!EngineInstallCmd(download_service_, host_, port_, false)
+        if (!EngineInstallCmd(engine_service_, host_, port_, false)
                  .Exec(mc.engine)) {
           return;
         } else {
