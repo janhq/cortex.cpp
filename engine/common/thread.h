@@ -3,6 +3,7 @@
 #include <json/reader.h>
 #include <json/value.h>
 #include <json/writer.h>
+#include "common/assistant.h"
 #include "common/thread_tool_resources.h"
 #include "common/variant_map.h"
 #include "json_serializable.h"
@@ -47,6 +48,9 @@ struct Thread : JsonSerializable {
    */
   Cortex::VariantMap metadata;
 
+  // For supporting Jan
+  std::optional<std::vector<JanAssistant>> assistants;
+
   static cpp::result<Thread, std::string> FromJson(const Json::Value& json) {
     Thread thread;
 
@@ -90,6 +94,25 @@ struct Thread : JsonSerializable {
       }
     }
 
+    if (json.isMember("title") && !json["title"].isNull()) {
+      thread.metadata["title"] = json["title"].asString();
+    }
+
+    if (json.isMember("assistants") && json["assistants"].isArray()) {
+      std::vector<JanAssistant> assistants;
+      for (Json::ArrayIndex i = 0; i < json["assistants"].size(); ++i) {
+        Json::Value assistant_json = json["assistants"][i];
+        auto assistant_result =
+            JanAssistant::FromJson(std::move(assistant_json));
+        if (assistant_result.has_error()) {
+          return cpp::fail("Failed to parse assistant: " +
+                           assistant_result.error());
+        }
+        assistants.push_back(std::move(assistant_result.value()));
+      }
+      thread.assistants = std::move(assistants);
+    }
+
     return thread;
   }
 
@@ -100,6 +123,21 @@ struct Thread : JsonSerializable {
       json["id"] = id;
       json["object"] = object;
       json["created_at"] = created_at;
+
+      // Deprecated: This is for backward compatibility. Please remove it later. (2-3 releases) to be sure
+      try {
+        auto it = metadata.find("title");
+        if (it == metadata.end()) {
+          json["title"] = "";
+        } else {
+          json["title"] = std::get<std::string>(metadata["title"]);
+        }
+
+      } catch (const std::bad_variant_access& ex) {
+        // std::cerr << "Error: value is not a string" << std::endl;
+        CTL_WRN("Error: value of title is not a string: " << ex.what());
+      }
+      // End deprecated
 
       if (tool_resources) {
         auto tool_result = tool_resources->ToJson();
@@ -132,6 +170,19 @@ struct Thread : JsonSerializable {
         }
       }
       json["metadata"] = metadata_json;
+
+      if (assistants.has_value()) {
+        Json::Value assistants_json(Json::arrayValue);
+        for (auto& assistant : assistants.value()) {
+          auto assistant_result = assistant.ToJson();
+          if (assistant_result.has_error()) {
+            return cpp::fail("Failed to serialize assistant: " +
+                             assistant_result.error());
+          }
+          assistants_json.append(assistant_result.value());
+        }
+        json["assistants"] = assistants_json;
+      }
 
       return json;
     } catch (const std::exception& e) {

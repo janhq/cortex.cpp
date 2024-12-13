@@ -13,10 +13,10 @@
 #include "cortex-common/cortexpythoni.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
-#include "extensions/remote-engine/remote_engine.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
+#include "utils/dylib_path_manager.h"
 #include "utils/engine_constants.h"
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
@@ -57,6 +57,7 @@ class EngineService : public EngineServiceI {
   std::mutex engines_mutex_;
   std::unordered_map<std::string, EngineInfo> engines_{};
   std::shared_ptr<DownloadService> download_service_;
+  std::shared_ptr<cortex::DylibPathManager> dylib_path_manager_;
 
   struct HardwareInfo {
     std::unique_ptr<system_info_utils::SystemInfo> sys_inf;
@@ -66,11 +67,11 @@ class EngineService : public EngineServiceI {
   HardwareInfo hw_inf_;
 
  public:
-  const std::vector<std::string_view> kSupportEngines = {
-      kLlamaEngine, kOnnxEngine, kTrtLlmEngine};
-
-  explicit EngineService(std::shared_ptr<DownloadService> download_service)
+  explicit EngineService(
+      std::shared_ptr<DownloadService> download_service,
+      std::shared_ptr<cortex::DylibPathManager> dylib_path_manager)
       : download_service_{download_service},
+        dylib_path_manager_{dylib_path_manager},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
                 .cuda_driver_version =
                     system_info_utils::GetDriverAndCudaVersion().second} {}
@@ -112,8 +113,6 @@ class EngineService : public EngineServiceI {
   cpp::result<std::vector<EngineVariantResponse>, std::string>
   GetInstalledEngineVariants(const std::string& engine) const;
 
-  bool IsEngineLoaded(const std::string& engine);
-
   cpp::result<EngineV, std::string> GetLoadedEngine(
       const std::string& engine_name);
 
@@ -150,8 +149,13 @@ class EngineService : public EngineServiceI {
 
   cpp::result<Json::Value, std::string> GetRemoteModels(
       const std::string& engine_name);
+  cpp::result<std::vector<std::string>, std::string> GetSupportedEngineNames();
+
+  void RegisterEngineLibPath();
 
  private:
+  bool IsEngineLoaded(const std::string& engine);
+
   cpp::result<void, std::string> DownloadEngine(
       const std::string& engine, const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
@@ -161,6 +165,9 @@ class EngineService : public EngineServiceI {
 
   std::string GetMatchedVariant(const std::string& engine,
                                 const std::vector<std::string>& variants);
+
+  cpp::result<std::pair<std::filesystem::path, bool>, std::string>
+  GetEngineDirPath(const std::string& engine_name);
 
   cpp::result<bool, std::string> IsEngineVariantReady(
       const std::string& engine, const std::string& version,

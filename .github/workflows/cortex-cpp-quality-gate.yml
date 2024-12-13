@@ -34,7 +34,7 @@ jobs:
             ccache-dir: ""
           - os: "mac"
             name: "arm64"
-            runs-on: "macos-silicon"
+            runs-on: "macos-selfhosted-12-arm64"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DMAC_ARM64=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
             build-deps-cmake-flags: ""
             ccache-dir: ""
@@ -124,7 +124,7 @@ jobs:
           cat ~/.cortexrc
 
       - name: Run e2e tests
-        if: runner.os != 'Windows' && github.event.pull_request.draft == false
+        if: github.event_name != 'schedule' && runner.os != 'Windows' && github.event.pull_request.draft == false
         run: |
           cd engine
           cp build/cortex build/cortex-nightly
@@ -138,7 +138,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_SERVICE_ACCOUNT }}
 
       - name: Run e2e tests
-        if: runner.os == 'Windows' && github.event.pull_request.draft == false
+        if: github.event_name != 'schedule' && runner.os == 'Windows' && github.event.pull_request.draft == false
         run: |
           cd engine
           cp build/cortex.exe build/cortex-nightly.exe

@@ -1,9 +1,12 @@
 #include "server_start_cmd.h"
 #include "commands/cortex_upd_cmd.h"
+#include "services/engine_service.h"
 #include "utils/cortex_utils.h"
-#include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
+
+#if defined(_WIN32) || defined(_WIN64)
 #include "utils/widechar_conv.h"
+#endif
 
 namespace commands {
 
@@ -108,22 +111,11 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
     std::cerr << "Could not start server: " << std::endl;
     return false;
   } else if (pid == 0) {
-    // No need to configure LD_LIBRARY_PATH for macOS
-#if !defined(__APPLE__) || !defined(__MACH__)
-    const char* name = "LD_LIBRARY_PATH";
-    auto data = getenv(name);
-    std::string v;
-    if (auto g = getenv(name); g) {
-      v += g;
-    }
-    CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
-    auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
+    // Some engines requires to add lib search path before process being created
+    auto download_srv = std::make_shared<DownloadService>();
+    auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
+    EngineService(download_srv, dylib_path_mng).RegisterEngineLibPath();
 
-    auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
-    setenv(name, new_v.c_str(), true);
-    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
-#endif
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",
           get_config_file_path().c_str(), "--data_folder_path",
@@ -141,5 +133,4 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
 #endif
   return true;
 }
-
 };  // namespace commands

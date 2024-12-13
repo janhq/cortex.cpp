@@ -7,6 +7,8 @@
 #include "utils/widechar_conv.h"
 #include "v0/migration.h"
 #include "v1/migration.h"
+#include "v2/migration.h"
+#include "v3/migration.h"
 
 namespace cortex::migr {
 
@@ -141,10 +143,12 @@ cpp::result<bool, std::string> MigrationManager::DoUpFolderStructure(
   switch (version) {
     case 0:
       return v0::MigrateFolderStructureUp();
-      break;
     case 1:
       return v1::MigrateFolderStructureUp();
-      break;
+    case 2:
+      return v2::MigrateFolderStructureUp();
+    case 3:
+      return v3::MigrateFolderStructureUp();
 
     default:
       return true;
@@ -155,10 +159,12 @@ cpp::result<bool, std::string> MigrationManager::DoDownFolderStructure(
   switch (version) {
     case 0:
       return v0::MigrateFolderStructureDown();
-      break;
     case 1:
       return v1::MigrateFolderStructureDown();
-      break;
+    case 2:
+      return v2::MigrateFolderStructureDown();
+    case 3:
+      return v3::MigrateFolderStructureDown();
 
     default:
       return true;
@@ -191,10 +197,12 @@ cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
   switch (version) {
     case 0:
       return v0::MigrateDBUp(db_);
-      break;
     case 1:
       return v1::MigrateDBUp(db_);
-      break;
+    case 2:
+      return v2::MigrateDBUp(db_);
+    case 3:
+      return v3::MigrateDBUp(db_);
 
     default:
       return true;
@@ -205,10 +213,12 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
   switch (version) {
     case 0:
       return v0::MigrateDBDown(db_);
-      break;
     case 1:
       return v1::MigrateDBDown(db_);
-      break;
+    case 2:
+      return v2::MigrateDBDown(db_);
+    case 3:
+      return v3::MigrateDBDown(db_);
 
     default:
       return true;

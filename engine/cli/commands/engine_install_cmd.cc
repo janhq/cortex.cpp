@@ -12,7 +12,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& src) {
   // Handle local install, if fails, fallback to remote install
   if (!src.empty()) {
-    auto res = engine_service_.UnzipEngine(engine, version, src);
+    auto res = engine_service_->UnzipEngine(engine, version, src);
     if (res.has_error()) {
       CLI_LOG(res.error());
       return false;

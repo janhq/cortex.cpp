@@ -7,9 +7,9 @@ namespace commands {
 
 class EngineInstallCmd {
  public:
-  explicit EngineInstallCmd(std::shared_ptr<DownloadService> download_service,
+  explicit EngineInstallCmd(std::shared_ptr<EngineService> engine_service,
                             const std::string& host, int port, bool show_menu)
-      : engine_service_{EngineService(download_service)},
+      : engine_service_{engine_service},
         host_(host),
         port_(port),
         show_menu_(show_menu),
@@ -21,7 +21,7 @@ class EngineInstallCmd {
             const std::string& src = "");
 
  private:
-  EngineService engine_service_;
+  std::shared_ptr<EngineService> engine_service_;
   std::string host_;
   int port_;
   bool show_menu_;

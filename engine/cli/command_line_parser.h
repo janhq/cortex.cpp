@@ -5,7 +5,6 @@
 #include "CLI/CLI.hpp"
 #include "commands/hardware_list_cmd.h"
 #include "services/engine_service.h"
-#include "services/model_service.h"
 #include "utils/config_yaml_utils.h"
 
 class CommandLineParser {
@@ -15,8 +14,6 @@ class CommandLineParser {
 
  private:
   void SetupCommonCommands();
-
-  void SetupInferenceCommands();
 
   void SetupModelCommands();
 
@@ -47,8 +44,9 @@ class CommandLineParser {
 
   CLI::App app_;
   std::shared_ptr<DownloadService> download_service_;
-  EngineService engine_service_;
-  ModelService model_service_;
+  std::shared_ptr<cortex::DylibPathManager> dylib_path_manager_;
+  std::shared_ptr<EngineService> engine_service_;
+  std::vector<std::string> supported_engines_;
 
   struct CmlData {
     std::string model_id;
@@ -66,6 +64,7 @@ class CommandLineParser {
     bool display_version = false;
     bool display_cpu_mode = false;
     bool display_gpu_mode = false;
+    bool display_available_model = false;
     std::string filter = "";
     std::string log_level = "INFO";
 
@@ -74,6 +73,7 @@ class CommandLineParser {
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
+    std::string model_src;
   };
   CmlData cml_data_;
   std::unordered_map<std::string, std::string> config_update_opts_;

@@ -3,9 +3,9 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
-#include "utils/http_util.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
+
 namespace {
 // Need to change this after we rename repositories
 std::string NormalizeEngine(const std::string& engine) {
@@ -23,10 +23,9 @@ std::string NormalizeEngine(const std::string& engine) {
 void Engines::ListEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) const {
-  std::vector<std::string> supported_engines{kLlamaEngine, kOnnxEngine,
-                                             kTrtLlmEngine};
   Json::Value ret;
-  for (const auto& engine : supported_engines) {
+  auto engines = engine_service_->GetSupportedEngineNames().value();
+  for (const auto& engine : engines) {
     auto installed_engines =
         engine_service_->GetInstalledEngineVariants(engine);
     if (installed_engines.has_error()) {
@@ -38,6 +37,7 @@ void Engines::ListEngine(
     }
     ret[engine] = variants;
   }
+
   // Add remote engine
   auto remote_engines = engine_service_->GetEngines();
   if (remote_engines.has_value()) {
@@ -50,7 +50,6 @@ void Engines::ListEngine(
       }
     }
   }
-
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
   resp->setStatusCode(k200OK);
   callback(resp);

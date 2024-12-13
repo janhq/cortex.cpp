@@ -10,7 +10,7 @@ template <typename T>
 T jsonToValue(const Json::Value& value);
 
 template <>
-std::string jsonToValue(const Json::Value& value) {
+inline std::string jsonToValue(const Json::Value& value) {
   return value.asString();
 }
 
