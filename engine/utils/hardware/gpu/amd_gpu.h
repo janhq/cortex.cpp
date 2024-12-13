@@ -1,5 +1,6 @@
 #pragma once
 #include <stdio.h>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <unordered_map>
@@ -27,13 +28,13 @@ typedef int (*ADL_GET_VRAM_USAGE)(ADL_CONTEXT_HANDLE context, int iAdapterIndex,
                                   int* vram_usage_in_MB);
 
 // Memory allocation function
-void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
+inline void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
   void* lpBuffer = malloc(iSize);
   return lpBuffer;
 }
 
 // Optional Memory de-allocation function
-void __stdcall ADL_Main_Memory_Free(void** lpBuffer) {
+inline void __stdcall ADL_Main_Memory_Free(void** lpBuffer) {
   if (NULL != *lpBuffer) {
     free(*lpBuffer);
     *lpBuffer = NULL;
@@ -131,8 +132,9 @@ GetGpuUsage() {
     int vram_usage_in_MB = 0;
     if (ADL_Get_Vram_Usage) {
       ADL_Get_Vram_Usage(nullptr, i, &vram_usage_in_MB);
-      vram_usages[adapter_info.strAdapterName] = vram_usage_in_MB;
+      vram_usages[adapter_info.strAdapterName] = vram_usage_in_MB - 94;
     }
+    std::cout << vram_usage_in_MB << std::endl;
   }
 
   for (auto const& [k, v] : vram_usages) {
@@ -165,10 +167,9 @@ typedef VkResult(VKAPI_PTR* PFN_vkEnumerateInstanceExtensionProperties)(
     const char* pLayerName, uint32_t* pPropertyCount,
     VkExtensionProperties* pProperties);
 
-inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuListInfo() {
+inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   // Load the Vulkan library
   HMODULE vulkanLibrary = LoadLibraryW(L"vulkan-1.dll");
-  std::cout << "1" << std::endl;
   if (!vulkanLibrary) {
     std::cerr << "Failed to load the Vulkan library." << std::endl;
     return cpp::fail("Failed to load the Vulkan library.");
@@ -179,7 +180,6 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuListInfo() {
       reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
           GetProcAddress(vulkanLibrary,
                          "vkEnumerateInstanceExtensionProperties"));
-
   auto vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(
       GetProcAddress(vulkanLibrary, "vkCreateInstance"));
   auto vkEnumeratePhysicalDevices =
@@ -304,13 +304,14 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuListInfo() {
 
     std::cout << "GPU Memory Size: " << gpu_avail_MiB << " MiB" << std::endl;
     int64_t usage_vram_MiB = gpus_usages[deviceProperties.deviceName];
+    int free_vram_MiB = gpu_avail_MiB > usage_vram_MiB ? gpu_avail_MiB - usage_vram_MiB : 0;
     gpus.emplace_back(
         cortex::hw::GPU{.id = std::to_string(id),
                         .device_id = deviceProperties.deviceID,
                         .name = deviceProperties.deviceName,
-                        .version = "",
+                        .version = std::to_string(deviceProperties.driverVersion),
                         .add_info = cortex::hw::AmdAddInfo{},
-                        .free_vram = gpu_avail_MiB - usage_vram_MiB,
+                        .free_vram = free_vram_MiB,
                         .total_vram = gpu_avail_MiB,
                         .uuid = uuid_to_string(deviceIDProperties.deviceUUID)});
     std::cout << gpus.back().uuid << " " << gpus.back().free_vram << std::endl;
