@@ -807,78 +807,275 @@
         "tags": ["Pulling Models"]
       }
     },
-    "/v1/threads": {
+    "/v1/models/sources": {
       "post": {
-        "operationId": "ThreadsController_create",
-        "summary": "Create thread",
-        "tags": ["Threads"],
-        "description": "Creates a new thread.",
-        "parameters": [],
+        "summary": "Add a model source",
+        "description": "User can add a Huggingface Organization or Repository",
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateThreadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          }
-        }
-      },
-      "get": {
-        "operationId": "ThreadsController_findAll",
-        "summary": "List threads",
-        "tags": ["Threads"],
-        "description": "Lists all the available threads along with its configurations.",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object"
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "The url of model source to add",
+                    "example": "https://huggingface.co/cortexso/tinyllama"
                   }
                 }
               }
             }
           }
-        }
-      }
-    },
-    "/v1/threads/{thread_id}/messages/{message_id}": {
-      "get": {
-        "operationId": "ThreadsController_retrieveMessage",
-        "summary": "Retrieve message",
-        "tags": ["Messages"],
-        "description": "Retrieves a message.",
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
+        },
+        "responses": {
+          "200": {
+            "description": "Successful installation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Added model source"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Pulling Models"]
+      },
+      "delete": {
+        "summary": "Remove a model source",
+        "description": "User can remove a Huggingface Organization or Repository",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "The url of model source to remove",
+                    "example": "https://huggingface.co/cortexso/tinyllama"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful uninstallation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Removed model source successfully!",
+                      "example": "Removed model source successfully!"
+                    }
+                  }
+                }
+              }
             }
           },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "description": "Error message describing the issue with the request"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Pulling Models"]
+      }
+    },
+    "/v1/threads": {
+      "post": {
+        "summary": "Create Thread",
+        "description": "Creates a new thread with optional metadata.",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "Title of the thread"
+                      }
+                    },
+                    "description": "Optional metadata for the thread"
+                  }
+                }
+              },
+              "example": {
+                "metadata": {
+                  "title": "New Thread"
+                }
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "description": "Thread created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the thread was created"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the thread"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Title of the thread"
+                        }
+                      },
+                      "description": "Metadata associated with the thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread'"
+                    }
+                  },
+                  "required": ["created_at", "id", "object"]
+                },
+                "example": {
+                  "created_at": 1734020845,
+                  "id": "0001KNP3QDX314435VAEGW1Z2X",
+                  "metadata": {
+                    "title": "New Thread"
+                  },
+                  "object": "thread"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Threads"]
+      },
+      "get": {
+        "summary": "List Threads",
+        "description": "Returns a list of threads with their metadata.",
+        "responses": {
+          "200": {
+            "description": "List of threads retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "description": "Type of the list response, always 'list'"
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "Array of thread objects",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "created_at": {
+                            "type": "integer",
+                            "description": "Unix timestamp of when the thread was created"
+                          },
+                          "id": {
+                            "type": "string",
+                            "description": "Unique identifier for the thread"
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "properties": {
+                              "title": {
+                                "type": "string",
+                                "description": "Title of the thread"
+                              },
+                              "lastMessage": {
+                                "type": "string",
+                                "description": "Content of the last message in the thread"
+                              }
+                            },
+                            "description": "Metadata associated with the thread"
+                          },
+                          "object": {
+                            "type": "string",
+                            "description": "Type of object, always 'thread'"
+                          }
+                        },
+                        "required": ["created_at", "id", "object"]
+                      }
+                    }
+                  },
+                  "required": ["object", "data"]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "created_at": 1734020845,
+                      "id": "0001KNP3QDX314435VAEGW1Z2X",
+                      "metadata": {
+                        "title": "New Thread"
+                      },
+                      "object": "thread"
+                    },
+                    {
+                      "created_at": 1734020803,
+                      "id": "0001KNP3P3DAQSDVEQGRBTCTNJ",
+                      "metadata": {
+                        "title": ""
+                      },
+                      "object": "thread"
+                    }
+                  ],
+                  "object": "list"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Threads"]
+      }
+    },
+    "/v1/threads/{id}": {
+      "get": {
+        "summary": "Retrieve Thread",
+        "description": "Retrieves a specific thread by its ID.",
+        "parameters": [
           {
-            "name": "message_id",
-            "required": true,
+            "name": "id",
             "in": "path",
+            "required": true,
+            "description": "The ID of the thread to retrieve",
             "schema": {
               "type": "string"
             }
@@ -886,47 +1083,65 @@
         ],
         "responses": {
           "200": {
-            "description": "The message object matching the specified ID.",
+            "description": "Thread retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GetMessageResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "ThreadsController_updateMessage",
-        "summary": "Modify message",
-        "tags": ["Messages"],
-        "description": "Modifies a message.",
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the thread was created"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the thread"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "lastMessage": {
+                          "type": "string",
+                          "description": "Content of the last message in the thread"
+                        },
+                        "title": {
+                          "type": "string",
+                          "description": "Title of the thread"
+                        }
+                      },
+                      "description": "Metadata associated with the thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread'"
+                    }
+                  },
+                  "required": ["created_at", "id", "object"]
+                },
+                "example": {
+                  "created_at": 1732370026,
+                  "id": "jan_1732370027",
+                  "metadata": {
+                    "lastMessage": "Based on the context, I'm not sure how to build a unique experience quickly and easily. The text mentions that there are some concerns about Android apps providing consistent experiences for different users, which makes me skeptical about building one.\n\nSpecifically, it says:\n\n* \"Might not pass CTS\" (Computer Science Technology standards)\n* \"Might not comply with CDD\" (Consumer Development Division standards)\n\nThis suggests that building a unique experience for all users could be challenging or impossible. Therefore, I don't know how to build a unique experience quickly and easily.\n\nWould you like me to try again?",
+                    "title": "hello"
+                  },
+                  "object": "thread"
                 }
               }
             }
           }
         },
+        "tags": ["Threads"]
+      },
+      "patch": {
+        "summary": "Modify Thread",
+        "description": "Updates a specific thread's metadata.",
         "parameters": [
           {
-            "name": "thread_id",
-            "required": true,
+            "name": "id",
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "message_id",
             "required": true,
-            "in": "path",
+            "description": "The ID of the thread to modify",
             "schema": {
               "type": "string"
             }
@@ -937,30 +1152,84 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateMessageDto"
+                "type": "object",
+                "properties": {
+                  "metadata": {
+                    "type": "object",
+                    "properties": {
+                      "title": {
+                        "type": "string",
+                        "description": "New title for the thread"
+                      }
+                    },
+                    "description": "Metadata to update"
+                  }
+                }
+              },
+              "example": {
+                "metadata": {
+                  "title": "my title"
+                }
               }
             }
           }
-        }
+        },
+        "responses": {
+          "200": {
+            "description": "Thread modified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the thread was created"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the thread"
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "properties": {
+                        "title": {
+                          "type": "string",
+                          "description": "Updated title of the thread"
+                        }
+                      },
+                      "description": "Updated metadata for the thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread'"
+                    }
+                  },
+                  "required": ["created_at", "id", "object"]
+                },
+                "example": {
+                  "created_at": 1733301054,
+                  "id": "0001KN04SY7D75K0MPTXMXCH39",
+                  "metadata": {
+                    "title": "my title"
+                  },
+                  "object": "thread"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Threads"]
       },
       "delete": {
-        "operationId": "ThreadsController_deleteMessage",
-        "summary": "Delete message",
-        "description": "Deletes a message.",
-        "tags": ["Messages"],
+        "summary": "Delete Thread",
+        "description": "Deletes a specific thread by its ID.",
         "parameters": [
           {
-            "name": "thread_id",
-            "required": true,
+            "name": "id",
             "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "message_id",
             "required": true,
-            "in": "path",
+            "description": "The ID of the thread to delete",
             "schema": {
               "type": "string"
             }
@@ -968,69 +1237,240 @@
         ],
         "responses": {
           "200": {
-            "description": "Deletion status.",
+            "description": "Thread deleted successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteMessageDto"
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "Indicates if the thread was successfully deleted"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the deleted thread"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread.deleted'"
+                    }
+                  },
+                  "required": ["deleted", "id", "object"]
+                },
+                "example": {
+                  "deleted": true,
+                  "id": "jan_1732370027",
+                  "object": "thread.deleted"
                 }
               }
             }
           }
-        }
+        },
+        "tags": ["Threads"]
       }
     },
     "/v1/threads/{thread_id}/messages": {
-      "get": {
-        "operationId": "ThreadsController_getMessagesOfThread",
-        "summary": "List messages",
-        "tags": ["Messages"],
-        "description": "Returns a list of messages for a given thread.",
+      "post": {
+        "summary": "Create Message",
+        "description": "Creates a new message in a thread.",
         "parameters": [
           {
             "name": "thread_id",
-            "required": true,
             "in": "path",
+            "required": true,
+            "description": "The ID of the thread to create the message in",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "description": "Role of the message sender",
+                    "enum": ["user", "assistant"]
+                  },
+                  "content": {
+                    "type": "string",
+                    "description": "The content of the message"
+                  }
+                },
+                "required": ["role", "content"]
+              },
+              "example": {
+                "role": "user",
+                "content": "Hello, world!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the message"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread.message'"
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the message was created"
+                    },
+                    "completed_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the message was completed"
+                    },
+                    "thread_id": {
+                      "type": "string",
+                      "description": "ID of the thread this message belongs to"
+                    },
+                    "role": {
+                      "type": "string",
+                      "description": "Role of the message sender",
+                      "enum": ["user", "assistant"]
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Status of the message",
+                      "enum": ["completed"]
+                    },
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "Type of content",
+                            "enum": ["text"]
+                          },
+                          "text": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "string",
+                                "description": "The message text"
+                              },
+                              "annotations": {
+                                "type": "array",
+                                "description": "Array of annotations for the text"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "description": "Additional metadata for the message"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "object",
+                    "created_at",
+                    "completed_at",
+                    "thread_id",
+                    "role",
+                    "status",
+                    "content"
+                  ]
+                },
+                "example": {
+                  "completed_at": 1734023130,
+                  "content": [
+                    {
+                      "text": {
+                        "annotations": [],
+                        "value": "Hello, world!"
+                      },
+                      "type": "text"
+                    }
+                  ],
+                  "created_at": 1734023130,
+                  "id": "0001KNP5YT00GW0X476W5TVBFE",
+                  "metadata": {},
+                  "object": "thread.message",
+                  "role": "user",
+                  "status": "completed",
+                  "thread_id": "jan_1732370027"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Messages"]
+      },
+      "get": {
+        "summary": "List Messages",
+        "description": "Retrieves a list of messages in a thread with optional pagination and filtering.",
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the thread to list messages from",
             "schema": {
               "type": "string"
             }
           },
           {
             "name": "limit",
-            "required": true,
             "in": "query",
+            "required": false,
+            "description": "Maximum number of messages to return",
             "schema": {
-              "type": "number"
+              "type": "integer"
             }
           },
           {
             "name": "order",
-            "required": true,
             "in": "query",
+            "required": false,
+            "description": "Sort order of messages",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "enum": ["asc", "desc"]
             }
           },
           {
             "name": "after",
-            "required": true,
             "in": "query",
+            "required": false,
+            "description": "Cursor for fetching messages after this message ID",
             "schema": {
               "type": "string"
             }
           },
           {
             "name": "before",
-            "required": true,
             "in": "query",
+            "required": false,
+            "description": "Cursor for fetching messages before this message ID",
             "schema": {
               "type": "string"
             }
           },
           {
             "name": "run_id",
-            "required": true,
             "in": "query",
+            "required": false,
+            "description": "Filter messages by run ID",
             "schema": {
               "type": "string"
             }
@@ -1038,159 +1478,165 @@
         ],
         "responses": {
           "200": {
-            "description": "A list of message objects.",
+            "description": "Messages retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ListMessagesResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "ThreadsController_createMessageInThread",
-        "summary": "Create message",
-        "tags": ["Messages"],
-        "description": "Create a message.",
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "description": "Type of the list response, always 'list'"
+                    },
+                    "data": {
+                      "type": "array",
+                      "description": "Array of message objects",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "description": "Unique identifier for the message"
+                          },
+                          "object": {
+                            "type": "string",
+                            "description": "Type of object, always 'thread.message'"
+                          },
+                          "created_at": {
+                            "type": "integer",
+                            "description": "Unix timestamp of when the message was created"
+                          },
+                          "thread_id": {
+                            "type": "string",
+                            "description": "ID of the thread this message belongs to"
+                          },
+                          "role": {
+                            "type": "string",
+                            "description": "Role of the message sender",
+                            "enum": ["assistant", "user"]
+                          },
+                          "status": {
+                            "type": "string",
+                            "description": "Status of the message",
+                            "enum": ["completed"]
+                          },
+                          "content": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "description": "Type of content",
+                                  "enum": ["text"]
+                                },
+                                "text": {
+                                  "type": "object",
+                                  "properties": {
+                                    "value": {
+                                      "type": "string",
+                                      "description": "The message text"
+                                    },
+                                    "annotations": {
+                                      "type": "array",
+                                      "description": "Array of annotations for the text"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "metadata": {
+                            "type": "object",
+                            "description": "Additional metadata for the message"
+                          },
+                          "attachments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "file_id": {
+                                  "type": "string",
+                                  "description": "ID of the attached file"
+                                },
+                                "tools": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "type": {
+                                        "type": "string",
+                                        "description": "Type of tool used"
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "object",
+                          "created_at",
+                          "thread_id",
+                          "role",
+                          "content"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["object", "data"]
+                },
+                "example": {
+                  "data": [
+                    {
+                      "content": [
+                        {
+                          "text": {
+                            "annotations": [],
+                            "value": "Based on the context, I'm not sure how to build a unique experience quickly and easily..."
+                          },
+                          "type": "text"
+                        }
+                      ],
+                      "created_at": 1732633637,
+                      "id": "01JDMG6CG6DD4B3RQN82QD8Q7P",
+                      "metadata": {},
+                      "object": "thread.message",
+                      "role": "assistant",
+                      "status": "completed",
+                      "thread_id": "jan_1732370027"
+                    }
+                  ],
+                  "object": "list"
                 }
               }
             }
           }
         },
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateMessageDto"
-              }
-            }
-          }
-        }
+        "tags": ["Messages"]
       }
     },
-    "/v1/threads/{thread_id}/clean": {
-      "post": {
-        "operationId": "ThreadsController_cleanThread",
-        "summary": "Clean thread",
-        "description": "Deletes all messages in a thread.",
-        "tags": ["Threads"],
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/v1/threads/{thread_id}": {
+    "/v1/threads/{thread_id}/messages/{message_id}": {
       "get": {
-        "operationId": "ThreadsController_retrieveThread",
-        "summary": "Retrieve thread",
-        "tags": ["Threads"],
-        "description": "Retrieves a thread.",
+        "summary": "Retrieve Message",
+        "description": "Retrieves a specific message from a thread by its ID.",
         "parameters": [
           {
             "name": "thread_id",
-            "required": true,
             "in": "path",
+            "required": true,
+            "description": "The ID of the thread containing the message",
             "schema": {
               "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Retrieves a thread.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetThreadResponseDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "operationId": "ThreadsController_modifyThread",
-        "summary": "Modify thread",
-        "tags": ["Threads"],
-        "description": "Modifies a thread.",
-        "parameters": [
-          {
-            "name": "thread_id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateThreadDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The thread has been successfully updated.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UpdateThreadDto"
-                }
-              }
             }
           },
-          "201": {
-            "description": ""
-          }
-        }
-      },
-      "delete": {
-        "operationId": "ThreadsController_remove",
-        "summary": "Delete thread",
-        "tags": ["Threads"],
-        "description": "Deletes a specific thread defined by a thread `id` .",
-        "parameters": [
           {
-            "name": "thread_id",
-            "required": true,
+            "name": "message_id",
             "in": "path",
+            "required": true,
+            "description": "The ID of the message to retrieve",
             "schema": {
               "type": "string"
             }
@@ -1198,16 +1644,350 @@
         ],
         "responses": {
           "200": {
-            "description": "The thread has been successfully deleted.",
+            "description": "Message retrieved successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DeleteThreadResponseDto"
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the message"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread.message'"
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the message was created"
+                    },
+                    "thread_id": {
+                      "type": "string",
+                      "description": "ID of the thread this message belongs to"
+                    },
+                    "role": {
+                      "type": "string",
+                      "description": "Role of the message sender",
+                      "enum": ["assistant", "user"]
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Status of the message",
+                      "enum": ["completed"]
+                    },
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "Type of content",
+                            "enum": ["text"]
+                          },
+                          "text": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "string",
+                                "description": "The message text"
+                              },
+                              "annotations": {
+                                "type": "array",
+                                "description": "Array of annotations for the text"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "description": "Additional metadata for the message"
+                    },
+                    "attachments": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "file_id": {
+                            "type": "string",
+                            "description": "ID of the attached file"
+                          },
+                          "tools": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "description": "Type of tool used"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "object",
+                    "created_at",
+                    "thread_id",
+                    "role",
+                    "content"
+                  ]
+                },
+                "example": {
+                  "attachments": [
+                    {
+                      "file_id": "01JDMG617BHMPW859VE18BPQ7Y",
+                      "tools": [
+                        {
+                          "type": "file_search"
+                        }
+                      ]
+                    }
+                  ],
+                  "content": [
+                    {
+                      "text": {
+                        "annotations": [],
+                        "value": "summary this"
+                      },
+                      "type": "text"
+                    }
+                  ],
+                  "created_at": 1732633625,
+                  "id": "01JDMG617BHMPW859VE18BPQ7Y",
+                  "metadata": {},
+                  "object": "thread.message",
+                  "role": "user",
+                  "status": "completed",
+                  "thread_id": "jan_1732370027"
                 }
               }
             }
           }
-        }
+        },
+        "tags": ["Messages"]
+      },
+      "patch": {
+        "summary": "Modify Message",
+        "description": "Modifies a specific message's content or metadata in a thread.",
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the thread containing the message",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the message to modify",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "object",
+                    "description": "New content for the message"
+                  },
+                  "metadata": {
+                    "type": "object",
+                    "description": "Updated metadata for the message",
+                    "additionalProperties": true
+                  }
+                }
+              },
+              "example": {
+                "content": {},
+                "metadata": {
+                  "test": 1
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Message modified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "description": "Unique identifier for the message"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread.message'"
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the message was created"
+                    },
+                    "completed_at": {
+                      "type": "integer",
+                      "description": "Unix timestamp of when the message was completed"
+                    },
+                    "thread_id": {
+                      "type": "string",
+                      "description": "ID of the thread this message belongs to"
+                    },
+                    "role": {
+                      "type": "string",
+                      "description": "Role of the message sender",
+                      "enum": ["user", "assistant"]
+                    },
+                    "status": {
+                      "type": "string",
+                      "description": "Status of the message",
+                      "enum": ["completed"]
+                    },
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "description": "Type of content",
+                            "enum": ["text"]
+                          },
+                          "text": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "string",
+                                "description": "The message text"
+                              },
+                              "annotations": {
+                                "type": "array",
+                                "description": "Array of annotations for the text"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "metadata": {
+                      "type": "object",
+                      "description": "Additional metadata for the message",
+                      "additionalProperties": true
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "object",
+                    "created_at",
+                    "completed_at",
+                    "thread_id",
+                    "role",
+                    "status",
+                    "content"
+                  ]
+                },
+                "example": {
+                  "completed_at": 1734023130,
+                  "content": [
+                    {
+                      "text": {
+                        "annotations": [],
+                        "value": "Hello, world!"
+                      },
+                      "type": "text"
+                    }
+                  ],
+                  "created_at": 1734023130,
+                  "id": "0001KNP5YT00GW0X476W5TVBFE",
+                  "metadata": {
+                    "test": 1
+                  },
+                  "object": "thread.message",
+                  "role": "user",
+                  "status": "completed",
+                  "thread_id": "jan_1732370027"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Messages"]
+      },
+      "delete": {
+        "summary": "Delete Message",
+        "description": "Deletes a specific message from a thread.",
+        "parameters": [
+          {
+            "name": "thread_id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the thread containing the message",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "message_id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the message to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "Indicates if the message was successfully deleted"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "ID of the deleted message"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'thread.message.deleted'"
+                    }
+                  },
+                  "required": ["deleted", "id", "object"]
+                },
+                "example": {
+                  "deleted": true,
+                  "id": "01JDCMZPBGDP276D6Z2QN2MJMX",
+                  "object": "thread.message.deleted"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Messages"]
       }
     },
     "/v1/system": {
@@ -1484,7 +2264,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm",
+                "openai",
+                "anthropic"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -1526,9 +2312,9 @@
                     "type": "object",
                     "properties": {
                       "get_models_url": {
-                      "type": "string",
-                      "description": "The URL to get models",
-                      "example": "https://api.openai.com/v1/models"
+                        "type": "string",
+                        "description": "The URL to get models",
+                        "example": "https://api.openai.com/v1/models"
                       }
                     }
                   }
@@ -1567,7 +2353,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm",
+                "openai",
+                "anthropic"
+              ],
               "default": "llama-cpp"
             },
             "description": "The type of engine"
@@ -1782,7 +2574,13 @@
             "required": true,
             "schema": {
               "type": "string",
-              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm", "openai", "anthropic"],
+              "enum": [
+                "llama-cpp",
+                "onnxruntime",
+                "tensorrt-llm",
+                "openai",
+                "anthropic"
+              ],
               "default": "llama-cpp"
             },
             "description": "The name of the engine to update"
@@ -1957,6 +2755,319 @@
           }
         },
         "tags": ["Hardware"]
+      }
+    },
+    "/v1/files": {
+      "post": {
+        "summary": "Upload a File",
+        "description": "Uploads a file to the Cortex server.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": ["assistants"],
+                    "description": "The intended purpose of the uploaded file"
+                  }
+                },
+                "required": ["file", "purpose"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bytes": {
+                      "type": "integer",
+                      "example": 3211109
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "example": 1733942093
+                    },
+                    "filename": {
+                      "type": "string",
+                      "example": "Enterprise_Application_Infrastructure_v2_20140903_toCTC_v1.0.pdf"
+                    },
+                    "id": {
+                      "type": "string",
+                      "example": "file-0001KNKPTDDAQSDVEQGRBTCTNJ"
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "file"
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "example": "assistants"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      },
+      "get": {
+        "summary": "List files",
+        "description": "Lists all the files in the current directory.",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "bytes": {
+                            "type": "integer",
+                            "example": 3211109
+                          },
+                          "created_at": {
+                            "type": "integer",
+                            "example": 1733942093
+                          },
+                          "filename": {
+                            "type": "string",
+                            "example": "Enterprise_Application_Infrastructure_v2_20140903_toCTC_v1.0.pdf"
+                          },
+                          "id": {
+                            "type": "string",
+                            "example": "file-0001KNKPTDDAQSDVEQGRBTCTNJ"
+                          },
+                          "object": {
+                            "type": "string",
+                            "example": "file"
+                          },
+                          "purpose": {
+                            "type": "string",
+                            "example": "assistants"
+                          }
+                        }
+                      }
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "list"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      }
+    },
+    "/v1/files/{id}": {
+      "get": {
+        "summary": "Retrieve File",
+        "description": "Retrieves a file by its ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the file to retrieve",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thread",
+            "in": "query",
+            "required": false,
+            "description": "Optional thread identifier",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bytes": {
+                      "type": "integer",
+                      "example": 3211109
+                    },
+                    "created_at": {
+                      "type": "integer",
+                      "example": 1733942093
+                    },
+                    "filename": {
+                      "type": "string",
+                      "example": "Enterprise_Application_Infrastructure_v2_20140903_toCTC_v1.0.pdf"
+                    },
+                    "id": {
+                      "type": "string",
+                      "example": "file-0001KNKPTDDAQSDVEQGRBTCTNJ"
+                    },
+                    "object": {
+                      "type": "string",
+                      "example": "file"
+                    },
+                    "purpose": {
+                      "type": "string",
+                      "example": "assistants"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      },
+      "delete": {
+        "summary": "Delete File",
+        "description": "Deletes a file by its ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the file to delete",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File successfully deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "description": "Indicates if the file was successfully deleted"
+                    },
+                    "id": {
+                      "type": "string",
+                      "description": "The ID of the deleted file"
+                    },
+                    "object": {
+                      "type": "string",
+                      "description": "Type of object, always 'file'"
+                    }
+                  },
+                  "required": ["deleted", "id", "object"]
+                },
+                "example": {
+                  "deleted": true,
+                  "id": "file-0001KNP26FC62D620DGYNG2R8H",
+                  "object": "file"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File not found or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  },
+                  "required": ["message"]
+                },
+                "example": {
+                  "message": "File not found: file-0001KNP26FC62D620DGYNG2R8H"
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
+      }
+    },
+    "/v1/files/{id}/content": {
+      "get": {
+        "summary": "Get File Content",
+        "description": "Retrieves the content of a file by its ID.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "The ID of the file to retrieve content from",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "thread",
+            "in": "query",
+            "required": false,
+            "description": "Optional thread identifier",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content retrieved successfully",
+            "content": {
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "The raw content of the file"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "File not found or invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "Error message describing the issue"
+                    }
+                  },
+                  "required": ["message"]
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Files"]
       }
     },
     "/v1/configs": {
@@ -2224,7 +3335,7 @@
       "description": "These endpoints manage the lifecycle of Server, including heath check and shutdown."
     },
     {
-      "name": "Configuration",
+      "name": "Configurations",
       "description": "These endpoints manage the configuration of the Cortex server."
     },
     {
@@ -2238,6 +3349,10 @@
     {
       "name": "Engines",
       "description": "Endpoints for managing the available engines within Cortex."
+    },
+    {
+      "name": "Files",
+      "description": "Endpoints for managing the files within Cortex."
     },
     {
       "name": "Hardware",
@@ -2255,8 +3370,11 @@
         "Chat",
         "Embeddings",
         "Engines",
+        "Files",
         "Hardware",
         "Events",
+        "Threads",
+        "Messages",
         "Pulling Models",
         "Running Models",
         "Processes",
@@ -2327,7 +3445,7 @@
                 }
               },
               "required": ["type", "function"]
-            },
+            }
           },
           "metadata": {
             "type": "object",
@@ -3730,7 +4848,15 @@
       },
       "AddModelRequest": {
         "type": "object",
-        "required": ["model", "engine", "version", "inference_params", "TransformReq", "TransformResp", "metadata"],
+        "required": [
+          "model",
+          "engine",
+          "version",
+          "inference_params",
+          "TransformReq",
+          "TransformResp",
+          "metadata"
+        ],
         "properties": {
           "model": {
             "type": "string",
@@ -3779,7 +4905,7 @@
               },
               "chat_completions": {
                 "type": "object",
-                  "properties": {
+                "properties": {
                   "url": {
                     "type": "string"
                   },

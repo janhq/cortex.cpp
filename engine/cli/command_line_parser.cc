@@ -20,6 +20,9 @@
 #include "commands/model_import_cmd.h"
 #include "commands/model_list_cmd.h"
 #include "commands/model_pull_cmd.h"
+#include "commands/model_source_add_cmd.h"
+#include "commands/model_source_del_cmd.h"
+#include "commands/model_source_list_cmd.h"
 #include "commands/model_start_cmd.h"
 #include "commands/model_stop_cmd.h"
 #include "commands/model_upd_cmd.h"
@@ -45,8 +48,11 @@ constexpr const auto kSubcommands = "Subcommands";
 CommandLineParser::CommandLineParser()
     : app_("\nCortex.cpp CLI\n"),
       download_service_{std::make_shared<DownloadService>()},
-      model_service_{ModelService(download_service_)},
-      engine_service_{EngineService(download_service_)} {}
+      dylib_path_manager_{std::make_shared<cortex::DylibPathManager>()},
+      engine_service_{std::make_shared<EngineService>(download_service_,
+                                                      dylib_path_manager_)} {
+  supported_engines_ = engine_service_->GetSupportedEngineNames().value();
+}
 
 bool CommandLineParser::SetupCommand(int argc, char** argv) {
   app_.usage("Usage:\n" + commands::GetCortexBinary() +
@@ -56,8 +62,6 @@ bool CommandLineParser::SetupCommand(int argc, char** argv) {
   std::string msg;
 
   SetupCommonCommands();
-
-  SetupInferenceCommands();
 
   SetupModelCommands();
 
@@ -173,15 +177,9 @@ void CommandLineParser::SetupCommonCommands() {
       return;
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
-                        cml_data_.model_id, download_service_);
+                        cml_data_.model_id, engine_service_);
     rc.Exec(cml_data_.run_detach, run_settings_);
   });
-}
-
-void CommandLineParser::SetupInferenceCommands() {
-  // auto embeddings_cmd = app_.add_subcommand(
-  //     "embeddings", "Creates an embedding vector representing the input text");
-  // embeddings_cmd->group(kInferenceGroup);
 }
 
 void CommandLineParser::SetupModelCommands() {
@@ -253,6 +251,8 @@ void CommandLineParser::SetupModelCommands() {
                             "Display cpu mode");
   list_models_cmd->add_flag("--gpu_mode", cml_data_.display_gpu_mode,
                             "Display gpu mode");
+  list_models_cmd->add_flag("--available", cml_data_.display_available_model,
+                            "Display available models to download");
   list_models_cmd->group(kSubcommands);
   list_models_cmd->callback([this]() {
     if (std::exchange(executed_, true))
@@ -261,7 +261,8 @@ void CommandLineParser::SetupModelCommands() {
         cml_data_.config.apiServerHost,
         std::stoi(cml_data_.config.apiServerPort), cml_data_.filter,
         cml_data_.display_engine, cml_data_.display_version,
-        cml_data_.display_cpu_mode, cml_data_.display_gpu_mode);
+        cml_data_.display_cpu_mode, cml_data_.display_gpu_mode,
+        cml_data_.display_available_model);
   });
 
   auto get_models_cmd =
@@ -328,6 +329,74 @@ void CommandLineParser::SetupModelCommands() {
     commands::ModelImportCmd().Exec(cml_data_.config.apiServerHost,
                                     std::stoi(cml_data_.config.apiServerPort),
                                     cml_data_.model_id, cml_data_.model_path);
+  });
+
+  auto model_source_cmd = models_cmd->add_subcommand(
+      "sources", "Subcommands for managing model sources");
+  model_source_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                          " models sources [options] [subcommand]");
+  model_source_cmd->group(kSubcommands);
+
+  model_source_cmd->callback([this, model_source_cmd] {
+    if (std::exchange(executed_, true))
+      return;
+    if (model_source_cmd->get_subcommands().empty()) {
+      CLI_LOG(model_source_cmd->help());
+    }
+  });
+
+  auto model_src_add_cmd =
+      model_source_cmd->add_subcommand("add", "Add a model source");
+  model_src_add_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " models sources add [model_source]");
+  model_src_add_cmd->group(kSubcommands);
+  model_src_add_cmd->add_option("source", cml_data_.model_src, "");
+  model_src_add_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (cml_data_.model_src.empty()) {
+      CLI_LOG("[model_source] is required\n");
+      CLI_LOG(model_src_add_cmd->help());
+      return;
+    };
+
+    commands::ModelSourceAddCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.model_src);
+  });
+
+  auto model_src_del_cmd =
+      model_source_cmd->add_subcommand("remove", "Remove a model source");
+  model_src_del_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                           " models sources remove [model_source]");
+  model_src_del_cmd->group(kSubcommands);
+  model_src_del_cmd->add_option("source", cml_data_.model_src, "");
+  model_src_del_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+    if (cml_data_.model_src.empty()) {
+      CLI_LOG("[model_source] is required\n");
+      CLI_LOG(model_src_del_cmd->help());
+      return;
+    };
+
+    commands::ModelSourceDelCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort), cml_data_.model_src);
+  });
+
+  auto model_src_list_cmd =
+      model_source_cmd->add_subcommand("list", "List all model sources");
+  model_src_list_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
+                            " models sources list");
+  model_src_list_cmd->group(kSubcommands);
+  model_src_list_cmd->callback([&]() {
+    if (std::exchange(executed_, true))
+      return;
+
+    commands::ModelSourceListCmd().Exec(
+        cml_data_.config.apiServerHost,
+        std::stoi(cml_data_.config.apiServerPort));
   });
 }
 
@@ -402,7 +471,7 @@ void CommandLineParser::SetupEngineCommands() {
   list_engines_cmd->callback([this]() {
     if (std::exchange(executed_, true))
       return;
-    commands::EngineListCmd command;
+    auto command = commands::EngineListCmd(engine_service_);
     command.Exec(cml_data_.config.apiServerHost,
                  std::stoi(cml_data_.config.apiServerPort));
   });
@@ -419,9 +488,9 @@ void CommandLineParser::SetupEngineCommands() {
       CLI_LOG(install_cmd->help());
     }
   });
-  for (const auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineInstall(install_cmd, engine_name, cml_data_.engine_version,
+
+  for (const auto& engine : supported_engines_) {
+    EngineInstall(install_cmd, engine, cml_data_.engine_version,
                   cml_data_.engine_src);
   }
 
@@ -438,9 +507,8 @@ void CommandLineParser::SetupEngineCommands() {
     }
   });
   uninstall_cmd->group(kSubcommands);
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineUninstall(uninstall_cmd, engine_name);
+  for (const auto& engine : supported_engines_) {
+    EngineUninstall(uninstall_cmd, engine);
   }
 
   auto engine_upd_cmd = engines_cmd->add_subcommand("update", "Update engine");
@@ -455,9 +523,8 @@ void CommandLineParser::SetupEngineCommands() {
     }
   });
   engine_upd_cmd->group(kSubcommands);
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineUpdate(engine_upd_cmd, engine_name);
+  for (const auto& engine : supported_engines_) {
+    EngineUpdate(engine_upd_cmd, engine);
   }
 
   auto engine_use_cmd =
@@ -473,9 +540,8 @@ void CommandLineParser::SetupEngineCommands() {
     }
   });
   engine_use_cmd->group(kSubcommands);
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineUse(engine_use_cmd, engine_name);
+  for (const auto& engine : supported_engines_) {
+    EngineUse(engine_use_cmd, engine);
   }
 
   auto engine_load_cmd = engines_cmd->add_subcommand("load", "Load engine");
@@ -490,9 +556,8 @@ void CommandLineParser::SetupEngineCommands() {
     }
   });
   engine_load_cmd->group(kSubcommands);
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineLoad(engine_load_cmd, engine_name);
+  for (const auto& engine : supported_engines_) {
+    EngineLoad(engine_load_cmd, engine);
   }
 
   auto engine_unload_cmd =
@@ -508,9 +573,8 @@ void CommandLineParser::SetupEngineCommands() {
     }
   });
   engine_unload_cmd->group(kSubcommands);
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    EngineUnload(engine_unload_cmd, engine_name);
+  for (const auto& engine : supported_engines_) {
+    EngineUnload(engine_unload_cmd, engine);
   }
 
   EngineGet(engines_cmd);
@@ -682,7 +746,7 @@ void CommandLineParser::EngineInstall(CLI::App* parent,
       return;
     try {
       commands::EngineInstallCmd(
-          download_service_, cml_data_.config.apiServerHost,
+          engine_service_, cml_data_.config.apiServerHost,
           std::stoi(cml_data_.config.apiServerPort), cml_data_.show_menu)
           .Exec(engine_name, version, src);
     } catch (const std::exception& e) {
@@ -804,20 +868,19 @@ void CommandLineParser::EngineGet(CLI::App* parent) {
     }
   });
 
-  for (auto& engine : engine_service_.kSupportEngines) {
-    std::string engine_name{engine};
-    std::string desc = "Get " + engine_name + " status";
+  for (const auto& engine : supported_engines_) {
+    std::string desc = "Get " + engine + " status";
 
-    auto engine_get_cmd = get_cmd->add_subcommand(engine_name, desc);
+    auto engine_get_cmd = get_cmd->add_subcommand(engine, desc);
     engine_get_cmd->usage("Usage:\n" + commands::GetCortexBinary() +
-                          " engines get " + engine_name + " [options]");
+                          " engines get " + engine + " [options]");
     engine_get_cmd->group(kEngineGroup);
-    engine_get_cmd->callback([this, engine_name] {
+    engine_get_cmd->callback([this, engine] {
       if (std::exchange(executed_, true))
         return;
       commands::EngineGetCmd().Exec(cml_data_.config.apiServerHost,
                                     std::stoi(cml_data_.config.apiServerPort),
-                                    engine_name);
+                                    engine);
     });
   }
 }

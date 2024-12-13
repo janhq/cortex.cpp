@@ -86,13 +86,20 @@ bool HardwareService::Restart(const std::string& host, int port) {
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   std::string cuda_visible_devices = "";
+  std::string vk_visible_devices = ""; 
   for (auto i : (*ahc_).gpus) {
     if (!cuda_visible_devices.empty())
       cuda_visible_devices += ",";
     cuda_visible_devices += std::to_string(i);
+
+    if(!vk_visible_devices.empty()) 
+      vk_visible_devices += ",";
+    vk_visible_devices += std::to_string(i);
   }
   if (cuda_visible_devices.empty())
     cuda_visible_devices += " ";
+  if (vk_visible_devices.empty())
+    vk_visible_devices += " ";
   // Set the CUDA_VISIBLE_DEVICES environment variable
   if (!set_env("CUDA_VISIBLE_DEVICES", cuda_visible_devices)) {
     LOG_WARN << "Error setting CUDA_VISIBLE_DEVICES";
@@ -104,6 +111,18 @@ bool HardwareService::Restart(const std::string& host, int port) {
     LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
   } else {
     LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
+  }
+
+   if (!set_env("GGML_VK_VISIBLE_DEVICES", vk_visible_devices)) {
+    LOG_WARN << "Error setting GGML_VK_VISIBLE_DEVICES";
+    return false;
+  }
+
+  const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+  if (vk_value) {
+    LOG_INFO << "GGML_VK_VISIBLE_DEVICES is set to: " << vk_value;
+  } else {
+    LOG_WARN << "GGML_VK_VISIBLE_DEVICES is not set.";
   }
 #endif
 
@@ -333,6 +352,13 @@ void HardwareService::UpdateHardwareInfos() {
     } else {
       need_restart = true;
     }
+
+    const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+      if (vk_value) {
+      LOG_INFO << "GGML_VK_VISIBLE_DEVICES: " << vk_value;
+    } else {
+      need_restart = true;
+    }
   }
 #endif
 
@@ -357,11 +383,11 @@ bool HardwareService::IsValidConfig(
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
     for (auto const& e : res.value()) {
-      if (!is_valid(e.software_id)) {
-        return false;
+      if (is_valid(e.software_id)) {
+        return true;
       }
     }
   }
-  return true;
+  return false;
 }
 }  // namespace services

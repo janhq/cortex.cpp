@@ -1,21 +1,19 @@
 #pragma once
+
+#if defined(_WIN32)
 #include <stdio.h>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "adl_sdk.h"
-#include "amd_ags.h"
+#include "../adl/adl_sdk.h"
+#include "../adl/amd_ags.h"
 #include "common/hardware_common.h"
 #include "utils/result.hpp"
-#include "vulkan/vulkan.h"
+#include "vulkan.h"
 
-namespace hardware {
-////////
-#define AMDVENDORID (1002)
-#define ADL_WARNING_NO_DATA -100
-
+namespace cortex::hw {
 // Definitions of the used function pointers. Add more if you use other ADL APIs
 typedef int (*ADL_MAIN_CONTROL_CREATE)(ADL_MAIN_MALLOC_CALLBACK, int);
 typedef int (*ADL_MAIN_CONTROL_DESTROY)();
@@ -24,8 +22,9 @@ typedef int (*ADL_ADAPTER_ADAPTERINFO_GET)(LPAdapterInfo, int);
 typedef int (*ADL_ADAPTER_ACTIVE_GET)(int, int*);
 typedef int (*ADL_OVERDRIVE_CAPS)(int iAdapterIndex, int* iSupported,
                                   int* iEnabled, int* iVersion);
-typedef int (*ADL_GET_VRAM_USAGE)(ADL_CONTEXT_HANDLE context, int iAdapterIndex,
-                                  int* vram_usage_in_MB);
+typedef int (*ADL_GET_DEDICATED_VRAM_USAGE)(ADL_CONTEXT_HANDLE context,
+                                            int iAdapterIndex,
+                                            int* vram_usage_in_MB);
 
 // Memory allocation function
 inline void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
@@ -35,9 +34,9 @@ inline void* __stdcall ADL_Main_Memory_Alloc(int iSize) {
 
 // Optional Memory de-allocation function
 inline void __stdcall ADL_Main_Memory_Free(void** lpBuffer) {
-  if (NULL != *lpBuffer) {
+  if (nullptr != *lpBuffer) {
     free(*lpBuffer);
-    *lpBuffer = NULL;
+    *lpBuffer = nullptr;
   }
 }
 
@@ -56,7 +55,7 @@ GetGpuUsage() {
   HINSTANCE hDLL;  // Handle to DLL
 #endif
 
-  LPAdapterInfo lpAdapterInfo = NULL;
+  LPAdapterInfo lpAdapterInfo = nullptr;
   int i;
   int num_adapters = 0;
 
@@ -64,14 +63,13 @@ GetGpuUsage() {
   hDLL = dlopen("libatiadlxx.so", RTLD_LAZY | RTLD_GLOBAL);
 #else
   hDLL = LoadLibrary(L"atiadlxx.dll");
-  if (hDLL == NULL)
+  if (hDLL == nullptr)
     // A 32 bit calling application on 64 bit OS will fail to LoadLIbrary.
     // Try to load the 32 bit library (atiadlxy.dll) instead
     hDLL = LoadLibrary(L"atiadlxy.dll");
 #endif
 
-  if (NULL == hDLL) {
-    printf("ADL library not found!\n");
+  if (nullptr == hDLL) {
     return cpp::fail("ADL library not found!");
   }
 
@@ -88,30 +86,30 @@ GetGpuUsage() {
   auto ADL_Adapter_Active_Get =
       (ADL_ADAPTER_ACTIVE_GET)GetProcAddress(hDLL, "ADL_Adapter_Active_Get");
 
-  auto ADL_Get_Vram_Usage =
-      (ADL_GET_VRAM_USAGE)GetProcAddress(hDLL, "ADL2_Adapter_VRAMUsage_Get");
+  auto ADL_Get_Dedicated_Vram_Usage =
+      (ADL_GET_DEDICATED_VRAM_USAGE)GetProcAddress(
+          hDLL, "ADL2_Adapter_DedicatedVRAMUsage_Get");
 
-  if (NULL == ADL_Main_Control_Create || NULL == ADL_Main_Control_Destroy ||
-      NULL == ADL_Adapter_NumberOfAdapters_Get ||
-      NULL == ADL_Adapter_AdapterInfo_Get || NULL == ADL_Adapter_Active_Get ||
-      nullptr == ADL_Get_Vram_Usage) {
-    printf("ADL's API is missing!\n");
+  if (nullptr == ADL_Main_Control_Create ||
+      nullptr == ADL_Main_Control_Destroy ||
+      nullptr == ADL_Adapter_NumberOfAdapters_Get ||
+      nullptr == ADL_Adapter_AdapterInfo_Get ||
+      nullptr == ADL_Adapter_Active_Get ||
+      nullptr == ADL_Get_Dedicated_Vram_Usage) {
     return cpp::fail("ADL's API is missing!");
   }
 
   // Initialize ADL. The second parameter is 1, which means:
   // retrieve adapter information only for adapters that are physically present and enabled in the system
   if (ADL_OK != ADL_Main_Control_Create(ADL_Main_Memory_Alloc, 1)) {
-    printf("ADL Initialization Error!\n");
     return cpp::fail("ADL Initialization Error!");
   }
 
   // Obtain the number of adapters for the system
   if (ADL_OK != ADL_Adapter_NumberOfAdapters_Get(&num_adapters)) {
-    printf("Cannot get the number of adapters!\n");
     return cpp::fail("Cannot get the number of adapters!");
   }
-  std::cout << "num_adapters: " << num_adapters << std::endl;
+  // std::cout << "num_adapters: " << num_adapters << std::endl;
 
   if (0 < num_adapters) {
     lpAdapterInfo = (LPAdapterInfo)malloc(sizeof(AdapterInfo) * num_adapters);
@@ -129,18 +127,15 @@ GetGpuUsage() {
     int adapter_active = 0;
     AdapterInfo adapter_info = lpAdapterInfo[i];
     ADL_Adapter_Active_Get(adapter_info.iAdapterIndex, &adapter_active);
-    int vram_usage_in_MB = 0;
-    if (ADL_Get_Vram_Usage) {
-      ADL_Get_Vram_Usage(nullptr, i, &vram_usage_in_MB);
-      vram_usages[adapter_info.strAdapterName] = vram_usage_in_MB - 94;
+
+    if (ADL_Get_Dedicated_Vram_Usage) {
+      int vram_usage_in_MB = 0;
+      ADL_Get_Dedicated_Vram_Usage(nullptr, i, &vram_usage_in_MB);
+      vram_usages[adapter_info.strAdapterName] = vram_usage_in_MB;
     }
-    std::cout << vram_usage_in_MB << std::endl;
   }
 
-  for (auto const& [k, v] : vram_usages) {
-    std::cout << k << ": " << v << std::endl;
-  }
-
+  ADL_Main_Control_Destroy();
   return vram_usages;
 }
 
@@ -224,13 +219,11 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
       vkDestroyInstance == nullptr ||
       vkGetPhysicalDeviceMemoryProperties == nullptr ||
       vkGetPhysicalDeviceProperties2 == nullptr) {
-    std::cout << "vulkan API is missing!" << std::endl;
     return cpp::fail("vulkan API is missing!");
   }
 
   VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
   if (result != VK_SUCCESS) {
-    std::cerr << "Failed to create a Vulkan instance." << std::endl;
     FreeLibrary(vulkanLibrary);
     return cpp::fail("Failed to create a Vulkan instance.");
   }
@@ -239,7 +232,6 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   uint32_t physicalDeviceCount = 0;
   result = vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr);
   if (result != VK_SUCCESS) {
-    std::cerr << "Failed to enumerate physical devices." << std::endl;
     vkDestroyInstance(instance, nullptr);
     FreeLibrary(vulkanLibrary);
     return cpp::fail("Failed to enumerate physical devices.");
@@ -270,14 +262,6 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
 
-    std::cout << "GPU Name: " << deviceProperties.deviceName << std::endl;
-    std::cout << "Vendor ID: " << deviceProperties.vendorID << std::endl;
-    std::cout << "Device ID: " << deviceProperties.deviceID << std::endl;
-    std::cout << "API Version: "
-              << VK_VERSION_MAJOR(deviceProperties.apiVersion) << "."
-              << VK_VERSION_MINOR(deviceProperties.apiVersion) << "."
-              << VK_VERSION_PATCH(deviceProperties.apiVersion) << std::endl;
-
     VkPhysicalDeviceIDProperties deviceIDProperties = {};
     VkPhysicalDeviceProperties2 deviceProperties2 = {};
     deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -285,11 +269,6 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
     deviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
 
     vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
-
-    // The Device UUID is stored in the deviceUUID member
-    // const uint8_t* deviceUUID = deviceIDProperties.deviceUUID;
-
-    std::cout << std::endl;
 
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
@@ -302,27 +281,31 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
       }
     }
 
-    std::cout << "GPU Memory Size: " << gpu_avail_MiB << " MiB" << std::endl;
     int64_t usage_vram_MiB = gpus_usages[deviceProperties.deviceName];
-    int free_vram_MiB = gpu_avail_MiB > usage_vram_MiB ? gpu_avail_MiB - usage_vram_MiB : 0;
-    gpus.emplace_back(
-        cortex::hw::GPU{.id = std::to_string(id),
-                        .device_id = deviceProperties.deviceID,
-                        .name = deviceProperties.deviceName,
-                        .version = std::to_string(deviceProperties.driverVersion),
-                        .add_info = cortex::hw::AmdAddInfo{},
-                        .free_vram = free_vram_MiB,
-                        .total_vram = gpu_avail_MiB,
-                        .uuid = uuid_to_string(deviceIDProperties.deviceUUID)});
-    std::cout << gpus.back().uuid << " " << gpus.back().free_vram << std::endl;
+    int free_vram_MiB =
+        gpu_avail_MiB > usage_vram_MiB ? gpu_avail_MiB - usage_vram_MiB : 0;
+    gpus.emplace_back(cortex::hw::GPU{
+        .id = std::to_string(id),
+        .device_id = deviceProperties.deviceID,
+        .name = deviceProperties.deviceName,
+        .version = std::to_string(deviceProperties.driverVersion),
+        .add_info = cortex::hw::AmdAddInfo{},
+        .free_vram = free_vram_MiB,
+        .total_vram = gpu_avail_MiB,
+        .uuid = uuid_to_string(deviceIDProperties.deviceUUID)});
     id++;
   }
 
   // Clean up
   vkDestroyInstance(instance, nullptr);
   FreeLibrary(vulkanLibrary);
-  std::cout << "Done" << std::endl;
   return gpus;
 }
 
-}  // namespace hardware
+}  // namespace cortex::hw
+
+#else
+inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
+  return std::vector<cortex::hw::GPU>{};
+}
+#endif

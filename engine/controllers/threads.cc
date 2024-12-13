@@ -193,10 +193,11 @@ void Threads::ModifyThread(
       resp->setStatusCode(k400BadRequest);
       callback(resp);
     } else {
-      res->ToJson()->removeMember("title");
-      res->ToJson()->removeMember("assistants");
+      auto json_res = res->ToJson();
+      json_res->removeMember("title");
+      json_res->removeMember("assistants");
       auto resp =
-          cortex_utils::CreateCortexHttpJsonResponse(res->ToJson().value());
+          cortex_utils::CreateCortexHttpJsonResponse(json_res.value());
       resp->setStatusCode(k200OK);
       callback(resp);
     }

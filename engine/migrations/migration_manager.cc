@@ -8,6 +8,8 @@
 #include "v0/migration.h"
 #include "v1/migration.h"
 #include "v2/migration.h"
+#include "v3/migration.h"
+
 namespace cortex::migr {
 
 namespace {
@@ -145,8 +147,8 @@ cpp::result<bool, std::string> MigrationManager::DoUpFolderStructure(
       return v1::MigrateFolderStructureUp();
     case 2:
       return v2::MigrateFolderStructureUp();
-
-      break;
+    case 3:
+      return v3::MigrateFolderStructureUp();
 
     default:
       return true;
@@ -161,7 +163,8 @@ cpp::result<bool, std::string> MigrationManager::DoDownFolderStructure(
       return v1::MigrateFolderStructureDown();
     case 2:
       return v2::MigrateFolderStructureDown();
-      break;
+    case 3:
+      return v3::MigrateFolderStructureDown();
 
     default:
       return true;
@@ -198,7 +201,8 @@ cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
       return v1::MigrateDBUp(db_);
     case 2:
       return v2::MigrateDBUp(db_);
-      break;
+    case 3:
+      return v3::MigrateDBUp(db_);
 
     default:
       return true;
@@ -213,7 +217,8 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
       return v1::MigrateDBDown(db_);
     case 2:
       return v2::MigrateDBDown(db_);
-      break;
+    case 3:
+      return v3::MigrateDBDown(db_);
 
     default:
       return true;
