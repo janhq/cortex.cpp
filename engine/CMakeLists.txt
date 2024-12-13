@@ -152,9 +152,6 @@ add_executable(${TARGET_NAME} main.cc
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-add_library(amd_ags SHARED IMPORTED GLOBAL)
-set_property(TARGET amd_ags PROPERTY IMPORTED_IMPLIB ${CMAKE_CURRENT_SOURCE_DIR}/utils/hardware/gpu/amd_ags_x64.lib)
-target_link_libraries(${TARGET_NAME} LINK_PUBLIC amd_ags)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)

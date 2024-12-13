@@ -64,6 +64,7 @@ struct AmdAddInfo {};
 using GPUAddInfo = std::variant<NvidiaAddInfo, AmdAddInfo>;
 struct GPU {
   std::string id;
+  uint32_t device_id;
   std::string name;
   std::string version;
   GPUAddInfo add_info;
