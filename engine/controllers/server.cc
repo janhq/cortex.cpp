@@ -120,6 +120,56 @@ void server::FineTuning(
   LOG_TRACE << "Done fine-tuning";
 }
 
+void server::Inference(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+  LOG_TRACE << "Start inference";
+  auto q = std::make_shared<services::SyncQueue>();
+  auto ir = inference_svc_->HandleInference(q, req->getJsonObject());
+  LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
+  if (ir.has_error()) {
+    auto err = ir.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
+    resp->setStatusCode(
+        static_cast<HttpStatusCode>(std::get<0>(err)["status_code"].asInt()));
+    callback(resp);
+    return;
+  }
+  LOG_TRACE << "Wait to inference";
+  auto [status, res] = q->wait_and_pop();
+  LOG_DEBUG << "response: " << res.toStyledString();
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+  resp->setStatusCode(
+      static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
+  callback(resp);
+  LOG_TRACE << "Done  inference";
+}
+
+void server::RouteRequest(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+
+  LOG_TRACE << "Start route request";
+  auto q = std::make_shared<services::SyncQueue>();
+  auto ir = inference_svc_->HandleRouteRequest(q, req->getJsonObject());
+  LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
+  if (ir.has_error()) {
+    auto err = ir.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
+    resp->setStatusCode(
+        static_cast<HttpStatusCode>(std::get<0>(err)["status_code"].asInt()));
+    callback(resp);
+    return;
+  }
+  LOG_TRACE << "Wait to route request";
+  auto [status, res] = q->wait_and_pop();
+  LOG_DEBUG << "response: " << res.toStyledString();
+  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+  resp->setStatusCode(
+      static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
+  callback(resp);
+  LOG_TRACE << "Done  route request";
+}
+
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto ir = inference_svc_->LoadModel(req->getJsonObject());

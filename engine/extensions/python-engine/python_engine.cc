@@ -660,7 +660,11 @@ void PythonEngine::HandleInference(
     callback(std::move(status), std::move(response_json));
   }
 }
-void PythonEngine::HandleRequest(
+Json::Value PythonEngine::GetRemoteModels() {
+  return Json::Value();
+}
+void PythonEngine::StopInferencing(const std::string& model_id) {}
+void PythonEngine::HandleRouteRequest(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
   if (!json_body->isMember("model") || !json_body->isMember("method") ||

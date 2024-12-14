@@ -750,17 +750,8 @@ struct PythonModelConfig {
   }
 
   // Method to populate struct from JSON
-  void FromJson(const std::string& jsonString) {
-    Json::CharReaderBuilder reader;
-    Json::Value root;
-    std::string errs;
-    std::istringstream s(jsonString);
-
-    if (!Json::parseFromStream(reader, s, &root, &errs)) {
-      std::cerr << "Error parsing JSON: " << errs << std::endl;
-      return;
-    }
-
+  void FromJson(const Json::Value& root) {
+   
     if (root.isMember("id"))
       id = root["id"].asString();
     if (root.isMember("model"))

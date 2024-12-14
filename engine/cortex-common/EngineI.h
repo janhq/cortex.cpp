@@ -69,14 +69,13 @@ class EngineI {
   virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
 
   virtual Json::Value GetRemoteModels() = 0;
-  virtual void HandleRequest(
+  virtual void HandleRouteRequest(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
   virtual void HandleInference(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) = 0;
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
   // Stop inflight chat completion in stream mode
   virtual void StopInferencing(const std::string& model_id) = 0;
-
 };

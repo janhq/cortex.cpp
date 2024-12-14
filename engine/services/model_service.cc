@@ -769,18 +769,48 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     constexpr const int kDefautlContextLength = 8192;
     int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
-    // Currently we don't support download vision models, so we need to bypass check
-    if (!params_override.bypass_model_check()) {
-      auto model_entry = modellist_handler.GetModelInfo(model_handle);
-      if (model_entry.has_error()) {
-        CTL_WRN("Error: " + model_entry.error());
-        return cpp::fail(model_entry.error());
-      }
-      yaml_handler.ModelConfigFromFile(
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
+    auto mc = yaml_handler.GetModelConfig();
+
+    // Check if Python model first
+    if (mc.engine == kPythonEngine) {
+      json_data["model"] = model_handle;
+      json_data["model_path"] =
           fmu::ToAbsoluteCortexDataPath(
               fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      auto mc = yaml_handler.GetModelConfig();
+              .string();
+      json_data["engine"] = mc.engine;
+      assert(!!inference_svc_);
+      // Check if python engine
+
+      auto ir =
+          inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+      auto status = std::get<0>(ir)["status_code"].asInt();
+      auto data = std::get<1>(ir);
+
+      if (status == drogon::k200OK) {
+        return StartModelResult{.success = true, .warning = ""};
+      } else if (status == drogon::k409Conflict) {
+        CTL_INF("Model '" + model_handle + "' is already loaded");
+        return StartModelResult{.success = true, .warning = ""};
+      } else {
+        // only report to user the error
+        CTL_ERR("Model failed to start with status code: " << status);
+        return cpp::fail("Model failed to start: " +
+                         data["message"].asString());
+      }
+    }
+
+    // Currently we don't support download vision models, so we need to bypass check
+    if (!params_override.bypass_model_check()) {
 
       // Running remote model
       if (remote_engine::IsRemoteEngine(mc.engine)) {
@@ -881,6 +911,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     assert(!!inference_svc_);
+    // Check if python engine
+
     auto ir =
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
     auto status = std::get<0>(ir)["status_code"].asInt();

@@ -7,6 +7,7 @@
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
+#include "extensions/python-engine/python_engine.h"
 #include "extensions/remote-engine/anthropic_engine.h"
 #include "extensions/remote-engine/openai_engine.h"
 #include "utils/archive_utils.h"
@@ -197,7 +198,6 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     }
     return cpp::result<bool, std::string>(true);
   }
-
 
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
@@ -533,7 +533,6 @@ EngineService::SetDefaultEngineVariant(const std::string& engine,
                      " is not installed yet!");
   }
 
-  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);
@@ -677,7 +676,6 @@ cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
   return engines_[ne].engine;
 }
 
-
 cpp::result<void, std::string> EngineService::LoadEngine(
     const std::string& engine_name) {
   auto ne = NormalizeEngine(engine_name);
@@ -687,6 +685,13 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // Check for python engine
+
+  if (engine_name == kPythonEngine) {
+    engines_[engine_name].engine = new python_engine::PythonEngine();
+    CTL_INF("Loaded engine: " << engine_name);
+    return {};
+  }
 
   // Check for remote engine
   if (remote_engine::IsRemoteEngine(engine_name)) {
@@ -708,7 +713,6 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // End hard code
 
   CTL_INF("Loading engine: " << ne);
-
 
   auto engine_dir_path_res = GetEngineDirPath(ne);
   if (engine_dir_path_res.has_error()) {
@@ -888,6 +892,10 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   }
 
   // End hard code
+  // Check for python engine
+  if (engine == kPythonEngine) {
+    return true;
+  }
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
@@ -918,7 +926,6 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
   CTL_INF("Default variant: " << default_variant->variant
                               << ", version: " + default_variant->version);
 
-  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);

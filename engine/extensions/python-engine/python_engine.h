@@ -152,11 +152,13 @@ class PythonEngine : public EngineI {
   bool IsSupported(const std::string& feature) override;
   bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
   void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
-  void HandleRequest(
+  void HandleRouteRequest(
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  virtual void HandleInference(
-        std::shared_ptr<Json::Value> json_body,
-        std::function<void(Json::Value &&, Json::Value &&)> &&callback) = 0;
+  void HandleInference(
+      std::shared_ptr<Json::Value> json_body,
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  Json::Value GetRemoteModels() override;
+  void StopInferencing(const std::string& model_id) override;
 };
 }  // namespace python_engine
