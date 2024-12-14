@@ -1012,9 +1012,7 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
     if (status == drogon::k200OK) {
       return true;
     } else {
-      CTL_WRN("Model failed to get model status with status code: " << status);
-      return cpp::fail("Model failed to get model status: " +
-                       data["message"].asString());
+      return cpp::fail(data["message"].asString());
     }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
