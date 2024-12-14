@@ -8,15 +8,11 @@
 #include "trantor/utils/Logger.h"
 class EngineI {
  public:
-  struct RegisterLibraryOption {
-    std::vector<std::filesystem::path> paths;
-  };
-
   struct EngineLoadOption {
     // engine
     std::filesystem::path engine_path;
-    std::filesystem::path cuda_path;
-    bool custom_engine_path;
+    std::filesystem::path deps_path;
+    bool is_custom_engine_path;
 
     // logging
     std::filesystem::path log_path;
@@ -25,15 +21,10 @@ class EngineI {
   };
 
   struct EngineUnloadOption {
-    bool unload_dll;
+    // place holder for now
   };
 
   virtual ~EngineI() {}
-
-  /**
-   * Being called before starting process to register dependencies search paths.
-   */
-  virtual void RegisterLibraryPath(RegisterLibraryOption opts) = 0;
 
   virtual void Load(EngineLoadOption opts) = 0;
 

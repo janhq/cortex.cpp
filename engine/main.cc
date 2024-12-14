@@ -26,6 +26,7 @@
 #include "services/thread_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
+#include "utils/dylib_path_manager.h"
 #include "utils/event_processor.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
@@ -125,6 +126,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   cortex::event::EventProcessor event_processor(event_queue_ptr);
 
   auto data_folder_path = file_manager_utils::GetCortexDataPath();
+  // utils
+  auto dylib_path_manager = std::make_shared<cortex::DylibPathManager>();
 
   auto file_repo = std::make_shared<FileFsRepository>(data_folder_path);
   auto msg_repo = std::make_shared<MessageFsRepository>(data_folder_path);
@@ -139,7 +142,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
       std::make_shared<DownloadService>(event_queue_ptr, config_service);
-  auto engine_service = std::make_shared<EngineService>(download_service);
+  auto engine_service =
+      std::make_shared<EngineService>(download_service, dylib_path_manager);
   auto inference_svc =
       std::make_shared<services::InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<services::ModelSourceService>();

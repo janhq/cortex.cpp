@@ -16,6 +16,7 @@
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
+#include "utils/dylib_path_manager.h"
 #include "utils/engine_constants.h"
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
@@ -56,6 +57,7 @@ class EngineService : public EngineServiceI {
   std::mutex engines_mutex_;
   std::unordered_map<std::string, EngineInfo> engines_{};
   std::shared_ptr<DownloadService> download_service_;
+  std::shared_ptr<cortex::DylibPathManager> dylib_path_manager_;
 
   struct HardwareInfo {
     std::unique_ptr<system_info_utils::SystemInfo> sys_inf;
@@ -65,17 +67,14 @@ class EngineService : public EngineServiceI {
   HardwareInfo hw_inf_;
 
  public:
-  const std::vector<std::string_view> kSupportEngines = {
-      kLlamaEngine, kOnnxEngine, kTrtLlmEngine};
-
-  explicit EngineService(std::shared_ptr<DownloadService> download_service)
+  explicit EngineService(
+      std::shared_ptr<DownloadService> download_service,
+      std::shared_ptr<cortex::DylibPathManager> dylib_path_manager)
       : download_service_{download_service},
+        dylib_path_manager_{dylib_path_manager},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
                 .cuda_driver_version =
                     system_info_utils::GetDriverAndCudaVersion().second} {}
-
-  // just for initialize supported engines
-  EngineService() {};
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
