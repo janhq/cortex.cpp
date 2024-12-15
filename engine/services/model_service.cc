@@ -773,45 +773,45 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       auto mc = yaml_handler.GetModelConfig();
 
       // Running remote model
-      if (remote_engine::IsRemoteEngine(mc.engine)) {
-
-        config::RemoteModelConfig remote_mc;
-        remote_mc.LoadFromYamlFile(
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string());
-        auto remote_engine_entry =
-            engine_svc_->GetEngineByNameAndVariant(mc.engine);
-        if (remote_engine_entry.has_error()) {
-          CTL_WRN("Remote engine error: " + model_entry.error());
-          return cpp::fail(remote_engine_entry.error());
-        }
-        auto remote_engine_json = remote_engine_entry.value().ToJson();
-        json_data = remote_mc.ToJson();
-
-        json_data["api_key"] = std::move(remote_engine_json["api_key"]);
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string();
-        json_data["metadata"] = std::move(remote_engine_json["metadata"]);
-
-        auto ir =
-            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
-        auto status = std::get<0>(ir)["status_code"].asInt();
-        auto data = std::get<1>(ir);
-        if (status == drogon::k200OK) {
-          return StartModelResult{.success = true, .warning = ""};
-        } else if (status == drogon::k409Conflict) {
-          CTL_INF("Model '" + model_handle + "' is already loaded");
-          return StartModelResult{.success = true, .warning = ""};
-        } else {
-          // only report to user the error
-          CTL_ERR("Model failed to start with status code: " << status);
-          return cpp::fail("Model failed to start: " +
-                           data["message"].asString());
-        }
-      }
+      // if (remote_engine::IsRemoteEngine(mc.engine)) {
+      //
+      //   config::RemoteModelConfig remote_mc;
+      //   remote_mc.LoadFromYamlFile(
+      //       fmu::ToAbsoluteCortexDataPath(
+      //           fs::path(model_entry.value().path_to_model_yaml))
+      //           .string());
+      //   auto remote_engine_entry =
+      //       engine_svc_->GetEngineByNameAndVariant(mc.engine);
+      //   if (remote_engine_entry.has_error()) {
+      //     CTL_WRN("Remote engine error: " + model_entry.error());
+      //     return cpp::fail(remote_engine_entry.error());
+      //   }
+      //   auto remote_engine_json = remote_engine_entry.value().ToJson();
+      //   json_data = remote_mc.ToJson();
+      //
+      //   json_data["api_key"] = std::move(remote_engine_json["api_key"]);
+      //   json_data["model_path"] =
+      //       fmu::ToAbsoluteCortexDataPath(
+      //           fs::path(model_entry.value().path_to_model_yaml))
+      //           .string();
+      //   json_data["metadata"] = std::move(remote_engine_json["metadata"]);
+      //
+      //   auto ir =
+      //       inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+      //   auto status = std::get<0>(ir)["status_code"].asInt();
+      //   auto data = std::get<1>(ir);
+      //   if (status == drogon::k200OK) {
+      //     return StartModelResult{.success = true, .warning = ""};
+      //   } else if (status == drogon::k409Conflict) {
+      //     CTL_INF("Model '" + model_handle + "' is already loaded");
+      //     return StartModelResult{.success = true, .warning = ""};
+      //   } else {
+      //     // only report to user the error
+      //     CTL_ERR("Model failed to start with status code: " << status);
+      //     return cpp::fail("Model failed to start: " +
+      //                      data["message"].asString());
+      //   }
+      // }
 
       // end hard code
 

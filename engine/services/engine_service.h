@@ -1,10 +1,10 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -13,13 +13,14 @@
 #include "cortex-common/cortexpythoni.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
+#include "services/document_retriever.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
 #include "utils/dylib_path_manager.h"
-#include "utils/engine_constants.h"
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
+#include "utils/sample_embedding.h"
 #include "utils/system_info_utils.h"
 
 struct EngineUpdateResult {
@@ -48,10 +49,6 @@ class EngineService : public EngineServiceI {
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
-#if defined(_WIN32)
-    DLL_DIRECTORY_COOKIE cookie;
-    DLL_DIRECTORY_COOKIE cuda_cookie;
-#endif
   };
 
   std::mutex engines_mutex_;
@@ -74,7 +71,24 @@ class EngineService : public EngineServiceI {
         dylib_path_manager_{dylib_path_manager},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
                 .cuda_driver_version =
-                    system_info_utils::GetDriverAndCudaVersion().second} {}
+                    system_info_utils::GetDriverAndCudaVersion().second} {
+
+    // test code
+    auto base_path = std::filesystem::path{
+        "/Users/jamesnguyen/cortexcpp/threads/jan_1732370027/memory"};
+    std::filesystem::path args_path{base_path / "args.json"};
+    std::filesystem::path docstore_path{base_path / "docstore.json"};
+    std::filesystem::path index_path{base_path / "hnswlib.index"};
+
+    doc_retriever_ = std::make_unique<DocumentRetriever>(
+        args_path, docstore_path, index_path);
+
+    auto result = doc_retriever_->query(cortex::GetEmbedding("What is AOSP?"));
+    for (const auto& [content, distance] : result) {
+      CLI_LOG("Distance: " << distance);
+      CLI_LOG("Content: " << content);
+    }
+  }
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
@@ -172,4 +186,6 @@ class EngineService : public EngineServiceI {
   cpp::result<bool, std::string> IsEngineVariantReady(
       const std::string& engine, const std::string& version,
       const std::string& variant);
+
+  std::unique_ptr<DocumentRetriever> doc_retriever_;
 };

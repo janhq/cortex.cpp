@@ -200,28 +200,28 @@ void Models::ListModel(
                 .string());
         auto model_config = yaml_handler.GetModelConfig();
 
-        if (!remote_engine::IsRemoteEngine(model_config.engine)) {
-          Json::Value obj = model_config.ToJson();
-          obj["id"] = model_entry.model;
-          obj["model"] = model_entry.model;
-          obj["status"] = "downloaded";
-          auto es = model_service_->GetEstimation(model_entry.model);
-          if (es.has_value() && !!es.value()) {
-            obj["recommendation"] = hardware::ToJson(*(es.value()));
-          }
-          data.append(std::move(obj));
-          yaml_handler.Reset();
-        } else {
-          config::RemoteModelConfig remote_model_config;
-          remote_model_config.LoadFromYamlFile(
-              fmu::ToAbsoluteCortexDataPath(
-                  fs::path(model_entry.path_to_model_yaml))
-                  .string());
-          Json::Value obj = remote_model_config.ToJson();
-          obj["id"] = model_entry.model;
-          obj["model"] = model_entry.model;
-          data.append(std::move(obj));
-        }
+        // if (!remote_engine::IsRemoteEngine(model_config.engine)) {
+        //   Json::Value obj = model_config.ToJson();
+        //   obj["id"] = model_entry.model;
+        //   obj["model"] = model_entry.model;
+        //   obj["status"] = "downloaded";
+        //   auto es = model_service_->GetEstimation(model_entry.model);
+        //   if (es.has_value() && !!es.value()) {
+        //     obj["recommendation"] = hardware::ToJson(*(es.value()));
+        //   }
+        //   data.append(std::move(obj));
+        //   yaml_handler.Reset();
+        // } else {
+        //   config::RemoteModelConfig remote_model_config;
+        //   remote_model_config.LoadFromYamlFile(
+        //       fmu::ToAbsoluteCortexDataPath(
+        //           fs::path(model_entry.path_to_model_yaml))
+        //           .string());
+        //   Json::Value obj = remote_model_config.ToJson();
+        //   obj["id"] = model_entry.model;
+        //   obj["model"] = model_entry.model;
+        //   data.append(std::move(obj));
+        // }
       } catch (const std::exception& e) {
         LOG_ERROR << "Failed to load yaml file for model: "
                   << model_entry.path_to_model_yaml << ", error: " << e.what();
@@ -632,14 +632,14 @@ void Models::GetRemoteModels(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine_id) {
-  if (!remote_engine::IsRemoteEngine(engine_id)) {
-    Json::Value ret;
-    ret["message"] = "Not a remote engine: " + engine_id;
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-    resp->setStatusCode(drogon::k400BadRequest);
-    callback(resp);
-    return;
-  }
+  // if (!remote_engine::IsRemoteEngine(engine_id)) {
+  //   Json::Value ret;
+  //   ret["message"] = "Not a remote engine: " + engine_id;
+  //   auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+  //   resp->setStatusCode(drogon::k400BadRequest);
+  //   callback(resp);
+  //   return;
+  // }
 
   auto result = engine_service_->GetRemoteModels(engine_id);
 
