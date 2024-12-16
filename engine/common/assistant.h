@@ -4,6 +4,7 @@
 #include "common/assistant_tool.h"
 #include "common/thread_tool_resources.h"
 #include "common/variant_map.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 namespace OpenAi {
@@ -75,7 +76,7 @@ struct JanAssistant : JsonSerializable {
   }
 };
 
-struct Assistant {
+struct Assistant : JsonSerializable {
   /**
    * The identifier, which can be referenced in API endpoints.
    */
@@ -153,5 +154,81 @@ struct Assistant {
    * We generally recommend altering this or temperature but not both.
    */
   std::optional<float> top_p;
+
+  cpp::result<Json::Value, std::string> ToJson() override {
+    try {
+      Json::Value root;
+
+      root["id"] = std::move(id);
+      root["object"] = "assistant";
+      root["created_at"] = created_at;
+      if (name.has_value()) {
+        root["name"] = name.value();
+      }
+      if (description.has_value()) {
+        root["description"] = description.value();
+      }
+      root["model"] = model;
+      if (instructions.has_value()) {
+        root["instructions"] = instructions.value();
+      }
+
+      Json::Value tools_jarr{Json::arrayValue};
+      for (auto& tool_ptr : tools) {
+        if (auto it = tool_ptr->ToJson(); it.has_value()) {
+          tools_jarr.append(it.value());
+        } else {
+          CTL_WRN("Failed to convert content to json: " + it.error());
+        }
+      }
+      if (tool_resources.has_value()) {
+        Json::Value tool_resources_json;
+
+        if (auto* code_interpreter =
+                std::get_if<ThreadCodeInterpreter>(&tool_resources.value())) {
+          if (auto result = code_interpreter->ToJson(); result.has_value()) {
+            tool_resources_json["code_interpreter"] = result.value();
+          } else {
+            CTL_WRN("Failed to convert code_interpreter to json: " +
+                    result.error());
+          }
+        } else if (auto* file_search =
+                       std::get_if<ThreadFileSearch>(&tool_resources.value())) {
+          if (auto result = file_search->ToJson(); result.has_value()) {
+            tool_resources_json["file_search"] = result.value();
+          } else {
+            CTL_WRN("Failed to convert file_search to json: " + result.error());
+          }
+        }
+
+        if (!tool_resources_json.empty()) {
+          root["tool_resources"] = tool_resources_json;
+        }
+      }
+      Json::Value metadata_json{Json::objectValue};
+      for (const auto& [key, value] : metadata) {
+        if (std::holds_alternative<bool>(value)) {
+          metadata_json[key] = std::get<bool>(value);
+        } else if (std::holds_alternative<uint64_t>(value)) {
+          metadata_json[key] = std::get<uint64_t>(value);
+        } else if (std::holds_alternative<double>(value)) {
+          metadata_json[key] = std::get<double>(value);
+        } else {
+          metadata_json[key] = std::get<std::string>(value);
+        }
+      }
+      root["metadata"] = metadata_json;
+
+      if (temperature.has_value()) {
+        root["temperature"] = temperature.value();
+      }
+      if (top_p.has_value()) {
+        root["top_p"] = top_p.value();
+      }
+      return root;
+    } catch (const std::exception& e) {
+      return cpp::fail("ToJson failed: " + std::string(e.what()));
+    }
+  }
 };
 }  // namespace OpenAi

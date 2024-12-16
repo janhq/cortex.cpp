@@ -7,8 +7,6 @@
 namespace OpenAi {
 
 struct ThreadToolResources : JsonSerializable {
-  ~ThreadToolResources() = default;
-
   virtual cpp::result<Json::Value, std::string> ToJson() override = 0;
 };
 
