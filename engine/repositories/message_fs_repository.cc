@@ -80,34 +80,23 @@ MessageFsRepository::ListMessages(const std::string& thread_id, uint8_t limit,
                    messages.end());
   }
 
-  const bool is_descending = (order == "desc");
-  std::sort(
-      messages.begin(), messages.end(),
-      [is_descending](const OpenAi::Message& a, const OpenAi::Message& b) {
-        return is_descending ? (a.id > b.id) : (a.id < b.id);
-      });
-
   auto start_it = messages.begin();
   auto end_it = messages.end();
 
   if (!after.empty()) {
-    start_it = std::lower_bound(
-        messages.begin(), messages.end(), after,
-        [is_descending](const OpenAi::Message& msg, const std::string& value) {
-          return is_descending ? (msg.id > value) : (msg.id < value);
-        });
-
-    if (start_it != messages.end() && start_it->id == after) {
-      ++start_it;
-    }
+    start_it = std::find_if(
+        messages.begin(), messages.end(),
+        [&after](const OpenAi::Message& msg) { return msg.id > after; });
   }
 
   if (!before.empty()) {
-    end_it = std::upper_bound(
-        start_it, messages.end(), before,
-        [is_descending](const std::string& value, const OpenAi::Message& msg) {
-          return is_descending ? (value > msg.id) : (value < msg.id);
-        });
+    end_it = std::find_if(
+        start_it, messages.end(),
+        [&before](const OpenAi::Message& msg) { return msg.id >= before; });
+  }
+
+  if (order == "desc") {
+    std::reverse(start_it, end_it);
   }
 
   const size_t available_messages = std::distance(start_it, end_it);
