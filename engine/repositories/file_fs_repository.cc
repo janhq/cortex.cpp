@@ -18,9 +18,28 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
   }
 
   cortex::db::File db;
-  auto file_full_path = file_container_path / file_metadata.filename;
-  if (std::filesystem::exists(file_full_path)) {
-    return cpp::fail("File already exists: " + file_full_path.string());
+  auto original_filename = file_metadata.filename;
+  auto file_full_path = file_container_path / original_filename;
+
+  // Handle duplicate filenames
+  int counter = 1;
+  while (std::filesystem::exists(file_full_path)) {
+    auto dot_pos = original_filename.find_last_of('.');
+    std::string name_part;
+    std::string ext_part;
+
+    if (dot_pos != std::string::npos) {
+      name_part = original_filename.substr(0, dot_pos);
+      ext_part = original_filename.substr(dot_pos);
+    } else {
+      name_part = original_filename;
+      ext_part = "";
+    }
+
+    auto new_filename = name_part + "_" + std::to_string(counter) + ext_part;
+    file_full_path = file_container_path / new_filename;
+    file_metadata.filename = new_filename;
+    counter++;
   }
 
   try {
