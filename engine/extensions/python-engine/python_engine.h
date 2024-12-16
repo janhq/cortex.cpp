@@ -118,7 +118,6 @@ class PythonEngine : public EngineI {
  public:
   PythonEngine();
   ~PythonEngine();
-  void RegisterLibraryPath(RegisterLibraryOption opts) override;
 
   void Load(EngineLoadOption opts) override;
 

@@ -905,10 +905,6 @@ void PythonEngine::SetLogLevel(trantor::Logger::LogLevel log_level) {
   trantor::Logger::setLogLevel(log_level);
 }
 
-void PythonEngine::RegisterLibraryPath(RegisterLibraryOption opts) {
-
-};
-
 void PythonEngine::Load(EngineLoadOption opts) {
   // Develop register model here on loading engine
 };
