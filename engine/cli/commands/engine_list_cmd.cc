@@ -13,7 +13,6 @@
 // clang-format on
 
 namespace commands {
-
 bool EngineListCmd::Exec(const std::string& host, int port) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
@@ -38,15 +37,10 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
     return false;
   }
 
-  std::vector<std::string> engines = {
-      kLlamaEngine,
-      kOnnxEngine,
-      kTrtLlmEngine,
-  };
-
   std::unordered_map<std::string, std::vector<EngineVariantResponse>>
       engine_map;
 
+  auto engines = engine_service_->GetSupportedEngineNames().value();
   for (const auto& engine : engines) {
     auto installed_variants = result.value()[engine];
     for (const auto& variant : installed_variants) {

@@ -140,7 +140,9 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                                       std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
-      inference_svc_->StopInferencing(engine_type, model_id);
+      if (!(*err_or_done)) {
+        inference_svc_->StopInferencing(engine_type, model_id);
+      }
       return 0;
     }
 

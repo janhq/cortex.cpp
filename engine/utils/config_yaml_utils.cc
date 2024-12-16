@@ -84,7 +84,8 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
          !node["proxyUsername"] || !node["proxyPassword"] ||
          !node["verifyPeerSsl"] || !node["verifyHostSsl"] ||
          !node["verifyProxySsl"] || !node["verifyProxyHostSsl"] ||
-         !node["sslCertPath"] || !node["sslKeyPath"] || !node["noProxy"]);
+         !node["supportedEngines"] || !node["sslCertPath"] ||
+         !node["sslKeyPath"] || !node["noProxy"]);
 
     CortexConfig config = {
         .logFolderPath = node["logFolderPath"]
@@ -172,6 +173,10 @@ CortexConfig CortexConfigMgr::FromYaml(const std::string& path,
                            : default_cfg.sslCertPath,
         .sslKeyPath = node["sslKeyPath"] ? node["sslKeyPath"].as<std::string>()
                                          : default_cfg.sslKeyPath,
+        .supportedEngines =
+            node["supportedEngines"]
+                ? node["supportedEngines"].as<std::vector<std::string>>()
+                : default_cfg.supportedEngines,
     };
     if (should_update_config) {
       l.unlock();
