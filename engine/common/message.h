@@ -137,6 +137,27 @@ struct Message : JsonSerializable {
         if (root["content"].isArray() && !root["content"].empty()) {
           if (root["content"][0]["type"].asString() == "text") {
             message.content = ParseContents(std::move(root["content"])).value();
+          } else if (root["content"][0]["type"].asString() == "image") {
+            // deprecated, for supporting jan and should be removed in the future
+            auto text_str = root["content"][0]["text"]["value"].asString();
+            auto img_url =
+                root["content"][0]["text"]["annotations"][0].asString();
+            auto text_content = std::make_unique<OpenAi::TextContent>();
+            {
+              auto text = OpenAi::Text();
+              auto empty_annotations =
+                  std::vector<std::unique_ptr<Annotation>>();
+              text.value = std::move(text_str);
+              text.annotations = std::move(empty_annotations);
+              text_content->text = std::move(text);
+            }
+
+            auto image_url_obj = OpenAi::ImageUrl(img_url, "auto");
+            auto image_url_content = std::make_unique<OpenAi::ImageUrlContent>(
+                "image_url", std::move(image_url_obj));
+
+            message.content.push_back(std::move(text_content));
+            message.content.push_back(std::move(image_url_content));
           } else {
             // deprecated, for supporting jan and should be removed in the future
             // check if annotations is empty

@@ -1,6 +1,5 @@
 #include "database/models.h"
 #include "gtest/gtest.h"
-#include "utils/file_manager_utils.h"
 
 namespace cortex::db {
 namespace {

@@ -122,7 +122,6 @@ struct FilePathWrapper : Annotation {
 
 struct Text : JsonSerializable {
   // The data that makes up the text.
-
   Text() = default;
 
   Text(Text&&) noexcept = default;
@@ -213,6 +212,8 @@ struct TextContent : Content {
   TextContent& operator=(const TextContent&) = delete;
 
   Text text;
+
+  ~TextContent() override = default;
 
   static cpp::result<TextContent, std::string> FromJson(Json::Value&& json) {
     if (json.empty()) {
