@@ -2522,26 +2522,31 @@
               "default": "llama-cpp"
             },
             "description": "The type of engine"
-          },
-          {
-            "name": "version",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The version of the engine variant"
-          },
-          {
-            "name": "variant",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "The variant of the engine"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["version", "variant"],
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "description": "The version of the engine variant",
+                    "example": "0.1.34"
+                  },
+                  "variant": {
+                    "type": "string",
+                    "description": "The variant of the engine",
+                    "example": "mac-arm64"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful response",
