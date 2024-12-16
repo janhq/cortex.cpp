@@ -4,22 +4,27 @@
 #include "common/json_serializable.h"
 
 namespace OpenAi {
-
 // The tools to add this file to.
 struct Tool {
   std::string type;
 
   Tool(const std::string& type) : type{type} {}
+
+  virtual ~Tool() = default;
 };
 
 // The type of tool being defined: code_interpreter
-struct CodeInterpreter : Tool {
-  CodeInterpreter() : Tool{"code_interpreter"} {}
+struct MessageCodeInterpreter : Tool {
+  MessageCodeInterpreter() : Tool{"code_interpreter"} {}
+
+  ~MessageCodeInterpreter() = default;
 };
 
 // The type of tool being defined: file_search
-struct FileSearch : Tool {
-  FileSearch() : Tool{"file_search"} {}
+struct MessageFileSearch : Tool {
+  MessageFileSearch() : Tool{"file_search"} {}
+
+  ~MessageFileSearch() = default;
 };
 
 // A list of files attached to the message, and the tools they were added to.
