@@ -242,8 +242,8 @@ cpp::result<YAML::Node, std::string> ReadRemoteYaml(const std::string& url) {
   }
 }
 
-cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
-                                                    const int timeout) {
+cpp::result<Json::Value, std::string> SimpleGetJson(
+    const std::string& url, const int timeout, std::optional<bool> recursive) {
   auto result = SimpleGet(url, timeout);
   if (result.has_error()) {
     CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
@@ -257,11 +257,11 @@ cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
                      " parsing error: " + reader.getFormattedErrorMessages());
   }
 
-  if (root.isArray()) {
+  if (root.isArray() && recursive) {
     for (const auto& value : root) {
       if (value["type"].asString() == "directory") {
         auto temp =
-            SimpleGetJson(url + "/" + value["path"].asString(), timeout);
+            SimpleGetJson(url + "/" + value["path"].asString(), timeout, recursive);
         if (!temp.has_error()) {
           if (temp.value().isArray()) {
             for (const auto& item : temp.value()) {
@@ -273,14 +273,13 @@ cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
         }
       }
     }
-   for (Json::ArrayIndex i = 0; i < root.size();) {
-        if (root[i].isMember("type") && root[i]["type"] == "directory") {
-            root.removeIndex(i, nullptr);
-        } else {
-            ++i;
-        }
+    for (Json::ArrayIndex i = 0; i < root.size();) {
+      if (root[i].isMember("type") && root[i]["type"] == "directory") {
+        root.removeIndex(i, nullptr);
+      } else {
+        ++i;
+      }
     }
-   
   }
   return root;
 }

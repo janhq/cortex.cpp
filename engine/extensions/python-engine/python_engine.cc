@@ -319,6 +319,7 @@ void PythonEngine::GetModels(
 void PythonEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+      // TODO: handle a case that can spawn process but the process spawn fail. 
   pid_t pid;
   if (!json_body->isMember("model") || !json_body->isMember("model_path")) {
     Json::Value error;
