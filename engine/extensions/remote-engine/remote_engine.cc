@@ -16,67 +16,14 @@ bool is_anthropic(const std::string& model) {
   return model.find("claude") != std::string::npos;
 }
 
-struct AnthropicChunk {
-  std::string type;
-  std::string id;
-  int index;
-  std::string msg;
-  std::string model;
-  std::string stop_reason;
-  bool should_ignore = false;
+bool is_openai(const std::string& model) {
+  return model.find("gpt") != std::string::npos;
+}
 
-  AnthropicChunk(const std::string& str) {
-    if (str.size() > 6) {
-      std::string s = str.substr(6);
-      try {
-        auto root = json_helper::ParseJsonString(s);
-        type = root["type"].asString();
-        if (type == "message_start") {
-          id = root["message"]["id"].asString();
-          model = root["message"]["model"].asString();
-        } else if (type == "content_block_delta") {
-          index = root["index"].asInt();
-          if (root["delta"]["type"].asString() == "text_delta") {
-            msg = root["delta"]["text"].asString();
-          }
-        } else if (type == "message_delta") {
-          stop_reason = root["delta"]["stop_reason"].asString();
-        } else {
-          // ignore other messages
-          should_ignore = true;
-        }
-      } catch (const std::exception& e) {
-        should_ignore = true;
-        CTL_WRN("JSON parse error: " << e.what());
-      }
-    } else {
-      should_ignore = true;
-    }
-  }
-
-  std::string ToOpenAiFormatString() {
-    Json::Value root;
-    root["id"] = id;
-    root["object"] = "chat.completion.chunk";
-    root["created"] = Json::Value();
-    root["model"] = model;
-    root["system_fingerprint"] = "fp_e76890f0c3";
-    Json::Value choices(Json::arrayValue);
-    Json::Value choice;
-    Json::Value content;
-    choice["index"] = 0;
-    content["content"] = msg;
-    if (type == "message_start") {
-      content["role"] = "assistant";
-      content["refusal"] = Json::Value();
-    }
-    choice["delta"] = content;
-    choice["finish_reason"] = stop_reason.empty() ? Json::Value() : stop_reason;
-    choices.append(choice);
-    root["choices"] = choices;
-    return "data: " + json_helper::DumpJsonString(root);
-  }
-};
+constexpr const std::array<std::string_view, 5> kAnthropicModels = {
+    "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
+    "claude-3-opus-20240229", "claude-3-sonnet-20240229",
+    "claude-3-haiku-20240307"};
 
 }  // namespace
 
@@ -92,21 +39,13 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
     std::string line = context->buffer.substr(0, pos);
     context->buffer = context->buffer.substr(pos + 1);
-    CTL_TRC(line);
 
     // Skip empty lines
     if (line.empty() || line == "\r" ||
         line.find("event:") != std::string::npos)
       continue;
 
-    // Remove "data: " prefix if present
-    // if (line.substr(0, 6) == "data: ")
-    // {
-    //     line = line.substr(6);
-    // }
-
-    // Skip [DONE] message
-    // std::cout << line << std::endl;
+    CTL_DBG(line);
     if (line == "data: [DONE]" ||
         line.find("message_stop") != std::string::npos) {
       Json::Value status;
@@ -120,17 +59,20 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
 
     // Parse the JSON
     Json::Value chunk_json;
-    if (is_anthropic(context->model)) {
-      AnthropicChunk ac(line);
-      if (ac.should_ignore)
+    if (!is_openai(context->model)) {
+      std::string s = line.substr(6);
+      try {
+        auto root = json_helper::ParseJsonString(s);
+        root["model"] = context->model;
+        root["id"] = context->id;
+        root["stream"] = true;
+        auto result = context->renderer.Render(context->stream_template, root);
+        CTL_DBG(result);
+        chunk_json["data"] = "data: " + result + "\n\n";
+      } catch (const std::exception& e) {
+        CTL_WRN("JSON parse error: " << e.what());
         continue;
-      ac.model = context->model;
-      if (ac.type == "message_start") {
-        context->id = ac.id;
-      } else {
-        ac.id = context->id;
       }
-      chunk_json["data"] = ac.ToOpenAiFormatString() + "\n\n";
     } else {
       chunk_json["data"] = line + "\n\n";
     }
@@ -178,10 +120,16 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   headers = curl_slist_append(headers, "Cache-Control: no-cache");
   headers = curl_slist_append(headers, "Connection: keep-alive");
 
+  std::string stream_template = chat_res_template_;
+
   StreamContext context{
       std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
           callback),
-      "", "", config.model};
+      "",
+      "",
+      config.model,
+      renderer_,
+      stream_template};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
@@ -232,7 +180,8 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-RemoteEngine::RemoteEngine() {
+RemoteEngine::RemoteEngine(const std::string& engine_name)
+    : engine_name_(engine_name) {
   curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -395,7 +344,33 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
 void RemoteEngine::GetModels(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  CTL_WRN("Not implemented yet!");
+  Json::Value json_resp;
+  Json::Value model_array(Json::arrayValue);
+  {
+    std::shared_lock l(models_mtx_);
+    for (const auto& [m, _] : models_) {
+      Json::Value val;
+      val["id"] = m;
+      val["engine"] = "openai";
+      val["start_time"] = "_";
+      val["model_size"] = "_";
+      val["vram"] = "_";
+      val["ram"] = "_";
+      val["object"] = "model";
+      model_array.append(val);
+    }
+  }
+
+  json_resp["object"] = "list";
+  json_resp["data"] = model_array;
+
+  Json::Value status;
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = 200;
+  callback(std::move(status), std::move(json_resp));
+  CTL_INF("Running models responded");
 }
 
 void RemoteEngine::LoadModel(
@@ -431,6 +406,21 @@ void RemoteEngine::LoadModel(
   }
   if (json_body->isMember("metadata")) {
     metadata_ = (*json_body)["metadata"];
+    if (!metadata_["TransformReq"].isNull() &&
+        !metadata_["TransformReq"]["chat_completions"].isNull() &&
+        !metadata_["TransformReq"]["chat_completions"]["template"].isNull()) {
+      chat_req_template_ =
+          metadata_["TransformReq"]["chat_completions"]["template"].asString();
+      CTL_INF(chat_req_template_);
+    }
+
+    if (!metadata_["TransformResp"].isNull() &&
+        !metadata_["TransformResp"]["chat_completions"].isNull() &&
+        !metadata_["TransformResp"]["chat_completions"]["template"].isNull()) {
+      chat_res_template_ =
+          metadata_["TransformResp"]["chat_completions"]["template"].asString();
+      CTL_INF(chat_res_template_);
+    }
   }
 
   Json::Value response;
@@ -535,23 +525,6 @@ void RemoteEngine::HandleChatCompletion(
                                std::string(e.what()));
     }
 
-    // Parse system for anthropic
-    if (is_anthropic(model)) {
-      bool has_system = false;
-      Json::Value msgs(Json::arrayValue);
-      for (auto& kv : (*json_body)["messages"]) {
-        if (kv["role"].asString() == "system") {
-          (*json_body)["system"] = kv["content"].asString();
-          has_system = true;
-        } else {
-          msgs.append(kv);
-        }
-      }
-      if (has_system) {
-        (*json_body)["messages"] = msgs;
-      }
-    }
-
     // Render with error handling
     try {
       result = renderer_.Render(template_str, *json_body);
@@ -601,33 +574,42 @@ void RemoteEngine::HandleChatCompletion(
     // Transform Response
     std::string response_str;
     try {
-      // Check if required YAML nodes exist
-      if (!model_config->transform_resp["chat_completions"]) {
-        throw std::runtime_error(
-            "Missing 'chat_completions' node in transform_resp");
-      }
-      if (!model_config->transform_resp["chat_completions"]["template"]) {
-        throw std::runtime_error("Missing 'template' node in chat_completions");
-      }
-
-      // Validate JSON body
-      if (!response_json || response_json.isNull()) {
-        throw std::runtime_error("Invalid or null JSON body");
-      }
-
-      // Get template string with error check
       std::string template_str;
-      try {
-        template_str =
-            model_config->transform_resp["chat_completions"]["template"]
-                .as<std::string>();
-      } catch (const YAML::BadConversion& e) {
-        throw std::runtime_error("Failed to convert template node to string: " +
-                                 std::string(e.what()));
+      if (!chat_res_template_.empty()) {
+        CTL_DBG(
+            "Use engine transform response template: " << chat_res_template_);
+        template_str = chat_res_template_;
+      } else {
+        // Check if required YAML nodes exist
+        if (!model_config->transform_resp["chat_completions"]) {
+          throw std::runtime_error(
+              "Missing 'chat_completions' node in transform_resp");
+        }
+        if (!model_config->transform_resp["chat_completions"]["template"]) {
+          throw std::runtime_error(
+              "Missing 'template' node in chat_completions");
+        }
+
+        // Validate JSON body
+        if (!response_json || response_json.isNull()) {
+          throw std::runtime_error("Invalid or null JSON body");
+        }
+
+        // Get template string with error check
+
+        try {
+          template_str =
+              model_config->transform_resp["chat_completions"]["template"]
+                  .as<std::string>();
+        } catch (const YAML::BadConversion& e) {
+          throw std::runtime_error(
+              "Failed to convert template node to string: " +
+              std::string(e.what()));
+        }
       }
 
-      // Render with error handling
       try {
+        response_json["stream"] = false;
         response_str = renderer_.Render(template_str, response_json);
       } catch (const std::exception& e) {
         throw std::runtime_error("Template rendering error: " +
@@ -705,8 +687,43 @@ void RemoteEngine::HandleEmbedding(
 }
 
 Json::Value RemoteEngine::GetRemoteModels() {
-  CTL_WRN("Not implemented yet!");
-  return {};
+  if (metadata_["get_models_url"].isNull() ||
+      metadata_["get_models_url"].asString().empty()) {
+    if (engine_name_ == kAnthropicEngine) {
+      Json::Value json_resp;
+      Json::Value model_array(Json::arrayValue);
+      for (const auto& m : kAnthropicModels) {
+        Json::Value val;
+        val["id"] = std::string(m);
+        val["engine"] = "anthropic";
+        val["created"] = "_";
+        val["object"] = "model";
+        model_array.append(val);
+      }
+
+      json_resp["object"] = "list";
+      json_resp["data"] = model_array;
+      CTL_INF("Remote models responded");
+      return json_resp;
+    } else {
+      return Json::Value();
+    }
+  } else {
+    auto response = MakeGetModelsRequest();
+    if (response.error) {
+      Json::Value error;
+      error["error"] = response.error_message;
+      return error;
+    }
+    Json::Value response_json;
+    Json::Reader reader;
+    if (!reader.parse(response.body, response_json)) {
+      Json::Value error;
+      error["error"] = "Failed to parse response";
+      return error;
+    }
+    return response_json;
+  }
 }
 
 }  // namespace remote_engine
