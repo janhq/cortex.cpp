@@ -12,7 +12,6 @@ inline std::vector<GPU> GetGPUInfo() {
   // Only support for nvidia for now
   // auto gpus = hwinfo::getAllGPUs();
   auto nvidia_gpus = system_info_utils::GetGpuInfoList();
-#if defined(_WIN32)
   auto vulkan_gpus = GetGpuInfoList().value_or(std::vector<cortex::hw::GPU>{});
   // add more information for GPUs
 
@@ -28,21 +27,5 @@ inline std::vector<GPU> GetGPUInfo() {
     }
   }
   return vulkan_gpus;
-#else
-  for (auto& n : nvidia_gpus) {
-    res.emplace_back(
-        GPU{.id = n.id,
-            .name = n.name,
-            .version = nvidia_gpus[0].cuda_driver_version.value_or("unknown"),
-            .add_info =
-                NvidiaAddInfo{
-                    .driver_version = n.driver_version.value_or("unknown"),
-                    .compute_cap = n.compute_cap.value_or("unknown")},
-            .free_vram = std::stoi(n.vram_free),
-            .total_vram = std::stoi(n.vram_total),
-            .uuid = n.uuid});
-  }
-  return res;
-#endif
 }
 }  // namespace cortex::hw
