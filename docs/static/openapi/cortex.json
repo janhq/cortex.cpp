@@ -3092,7 +3092,7 @@
                       "items": {
                         "type": "string"
                       },
-                      "example": ["http://localhost:39281", "https://cortex.so"]
+                      "example": ["http://127.0.0.1:39281", "https://cortex.so"]
                     },
                     "cors": {
                       "type": "boolean",
@@ -3139,7 +3139,7 @@
                 },
                 "example": {
                   "allowed_origins": [
-                    "http://localhost:39281",
+                    "http://127.0.0.1:39281",
                     "https://cortex.so"
                   ],
                   "cors": false,
@@ -3180,7 +3180,7 @@
                       "type": "string"
                     },
                     "description": "List of allowed origins.",
-                    "example": ["http://localhost:39281", "https://cortex.so"]
+                    "example": ["http://127.0.0.1:39281", "https://cortex.so"]
                   },
                   "proxy_username": {
                     "type": "string",
@@ -3249,7 +3249,7 @@
                             "type": "string"
                           },
                           "example": [
-                            "http://localhost:39281",
+                            "http://127.0.0.1:39281",
                             "https://cortex.so"
                           ]
                         },
