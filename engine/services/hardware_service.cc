@@ -357,11 +357,11 @@ bool HardwareService::IsValidConfig(
   auto res = hw_db.LoadHardwareList();
   if (res.has_value()) {
     for (auto const& e : res.value()) {
-      if (!is_valid(e.software_id)) {
-        return false;
+      if (is_valid(e.software_id)) {
+        return true;
       }
     }
   }
-  return true;
+  return false;
 }
 }  // namespace services
