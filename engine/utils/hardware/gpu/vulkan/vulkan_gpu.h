@@ -8,6 +8,8 @@
 #include <vector>
 
 #include "common/hardware_common.h"
+#include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "vulkan.h"
 
@@ -191,7 +193,7 @@ GetGpuUsage() {
       }
     }
   } catch (const std::exception& ex) {
-    std::cerr << "Error: " << ex.what() << std::endl;    
+    std::cerr << "Error: " << ex.what() << std::endl;
     return cpp::fail("Error: " + std::string(ex.what()));
   }
 
@@ -234,13 +236,37 @@ inline int FreeLibrary(void* pLibrary) {
 #endif
 
 inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
+  namespace fmu = file_manager_utils;
+  auto get_vulkan_path = [](const std::string& lib_vulkan)
+      -> cpp::result<std::filesystem::path, std::string> {
+    if (std::filesystem::exists(fmu::GetExecutableFolderContainerPath() /
+                                lib_vulkan)) {
+      return fmu::GetExecutableFolderContainerPath() / lib_vulkan;
+      // fallback to deps path
+    } else if (std::filesystem::exists(fmu::GetCortexDataPath() / "deps" /
+                                       lib_vulkan)) {
+      return fmu::GetCortexDataPath() / "deps" / lib_vulkan;
+    } else {
+      CTL_WRN("Could not found " << lib_vulkan);
+      return cpp::fail("Could not found " + lib_vulkan);
+    }
+  };
 // Load the Vulkan library
 #if defined(__APPLE__) && defined(__MACH__)
   void* vulkanLibrary = nullptr;
 #elif defined(__linux__)
-  void* vulkanLibrary = dlopen("libvulkan.so", RTLD_LAZY | RTLD_GLOBAL);
+  auto vulkan_path = get_vulkan_path("libvulkan.so");
+  if (vulkan_path.has_error()) {
+    return cpp::fail(vulkan_path.error());
+  }
+  void* vulkanLibrary =
+      dlopen(vulkan_path.value().string().c_str(), RTLD_LAZY | RTLD_GLOBAL);
 #else
-  HMODULE vulkanLibrary = LoadLibraryW(L"vulkan-1.dll");
+  auto vulkan_path = get_vulkan_path("vulkan-1.dll");
+  if (vulkan_path.has_error()) {
+    return cpp::fail(vulkan_path.error());
+  }
+  HMODULE vulkanLibrary = LoadLibraryW(vulkan_path.value().string());
 #endif
   if (!vulkanLibrary) {
     std::cerr << "Failed to load the Vulkan library." << std::endl;
