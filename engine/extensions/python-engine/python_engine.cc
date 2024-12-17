@@ -106,9 +106,9 @@ pid_t PythonEngine::SpawnProcess(const std::string& model,
 
     // Convert command vector to char*[]
     std::vector<char*> argv = convertToArgv(command);
-    for (auto c : command) {
-      std::cout << c << " " << std::endl;
-    }
+    // for (auto c : command) {
+    //   std::cout << c << " " << std::endl;
+    // }
 
     // Use posix_spawn for cross-platform compatibility
     int spawn_result = posix_spawn(&pid,                // pid output
@@ -319,7 +319,7 @@ void PythonEngine::GetModels(
 void PythonEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-      // TODO: handle a case that can spawn process but the process spawn fail. 
+  // TODO: handle a case that can spawn process but the process spawn fail.
   pid_t pid;
   if (!json_body->isMember("model") || !json_body->isMember("model_path")) {
     Json::Value error;
@@ -359,26 +359,19 @@ void PythonEngine::LoadModel(
     return;
   }
   auto model_config = models_[model];
+  auto model_folder_path = model_config.files[0];
+  auto data_folder_path = std::filesystem::path(model_folder_path) / std::filesystem::path("venv");
   try {
-    std::string data_folder_path =
-        "/home/thuan/cortexcpp/environments/";  // To do: will be removed with cortex data path
-    std::string model_folder_path =
-        "/home/thuan/cortexcpp/models/cortex.so/whispervq/fp16/";  // To do: will be removed with cortex model path
 #ifdef _WIN32
     auto executable = std::filesystem::path(data_folder_path) /
-                      std::filesystem::path(model_config.environment) /
                       std::filesystem::path("Scripts");
 #else
     auto executable = std::filesystem::path(data_folder_path) /
-                      std::filesystem::path(model_config.environment) /
                       std::filesystem::path("bin");
 #endif
-    std::cout << "executable string: " << executable.string()
-              << data_folder_path << " " << model_config.environment
-              << std::endl;
+
     auto executable_str =
         (executable / std::filesystem::path(model_config.command[0])).string();
-    std::cout << "executable string: " << executable_str << std::endl;
     auto command = model_config.command;
     command[0] = executable_str;
     command.push_back((std::filesystem::path(model_folder_path) /
