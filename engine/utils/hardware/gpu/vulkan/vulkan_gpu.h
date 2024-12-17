@@ -1,19 +1,29 @@
 #pragma once
 
-#if defined(_WIN32)
 #include <stdio.h>
 #include <iomanip>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "../adl/adl_sdk.h"
-#include "../adl/amd_ags.h"
+
 #include "common/hardware_common.h"
+#include "utils/file_manager_utils.h"
+#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "vulkan.h"
 
+#if defined(_WIN32)
+#include "../adl/adl_sdk.h"
+#include "../adl/amd_ags.h"
+#else
+#include <dlfcn.h>
+#include <filesystem>
+#include <fstream>
+#endif
+
 namespace cortex::hw {
+#if defined(_WIN32)
 // Definitions of the used function pointers. Add more if you use other ADL APIs
 typedef int (*ADL_MAIN_CONTROL_CREATE)(ADL_MAIN_MALLOC_CALLBACK, int);
 typedef int (*ADL_MAIN_CONTROL_DESTROY)();
@@ -40,34 +50,19 @@ inline void __stdcall ADL_Main_Memory_Free(void** lpBuffer) {
   }
 }
 
-#if defined(LINUX)
-// equivalent functions in linux
-void* GetProcAddress(void* pLibrary, const char* name) {
-  return dlsym(pLibrary, name);
-}
-#endif
-
 inline cpp::result<std::unordered_map<std::string, int>, std::string>
 GetGpuUsage() {
-#if defined(LINUX)
-  void* hDLL;  // Handle to .so library
-#else
   HINSTANCE hDLL;  // Handle to DLL
-#endif
 
   LPAdapterInfo lpAdapterInfo = nullptr;
   int i;
   int num_adapters = 0;
 
-#if defined(LINUX)
-  hDLL = dlopen("libatiadlxx.so", RTLD_LAZY | RTLD_GLOBAL);
-#else
   hDLL = LoadLibrary(L"atiadlxx.dll");
   if (hDLL == nullptr)
     // A 32 bit calling application on 64 bit OS will fail to LoadLIbrary.
     // Try to load the 32 bit library (atiadlxy.dll) instead
     hDLL = LoadLibrary(L"atiadlxy.dll");
-#endif
 
   if (nullptr == hDLL) {
     return cpp::fail("ADL library not found!");
@@ -139,6 +134,74 @@ GetGpuUsage() {
   return vram_usages;
 }
 
+#else
+
+struct AmdGpuUsage {
+  int64_t total_vram_MiB;
+  int64_t used_vram_MiB;
+};
+
+inline cpp::result<std::unordered_map<int, AmdGpuUsage>, std::string>
+GetGpuUsage() {
+  // list all devices
+  std::unordered_map<int, AmdGpuUsage> res;
+  std::string path = "/sys/class/drm/";
+  try {
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+      auto const& es = entry.path().stem().string();
+      if (entry.is_directory() && es.find("card") != std::string::npos &&
+          es.find("-") == std::string::npos) {
+        // std::cout << entry.path() << std::endl;
+        std::filesystem::path gpu_device_path = entry.path() / "device";
+        std::filesystem::path vendor_path = gpu_device_path / "vendor";
+        std::ifstream vendor_file(vendor_path.string());
+        if (vendor_file.is_open()) {
+          std::string vendor_str;
+          std::getline(vendor_file, vendor_str);
+          vendor_file.close();
+
+          // std::cout << "Vendor: " << vendor_str << std::endl;
+          if (vendor_str == "0x1002") {
+            std::filesystem::path vram_total_path =
+                gpu_device_path / "mem_info_vram_total";
+            std::filesystem::path vram_used_path =
+                gpu_device_path / "mem_info_vram_used";
+            std::filesystem::path device_id_path = gpu_device_path / "device";
+            auto get_vram = [](const std::filesystem::path& p,
+                               int base) -> int64_t {
+              std::ifstream f(p.string());
+              if (f.is_open()) {
+                std::string f_str;
+                std::getline(f, f_str);
+                f.close();
+                return std::stoll(f_str, nullptr, base);
+              } else {
+                std::cerr << "Error: Unable to open " << p.string()
+                          << std::endl;
+                return -1;
+              }
+            };
+            auto vram_total = get_vram(vram_total_path, 10) / 1024 / 1024;
+            auto vram_usage = get_vram(vram_used_path, 10) / 1024 / 1024;
+            auto device_id = get_vram(device_id_path, 16);
+            res[device_id] = AmdGpuUsage{.total_vram_MiB = vram_total,
+                                         .used_vram_MiB = vram_usage};
+          }
+        } else {
+          return cpp::fail("Error: Unable to open " + vendor_path.string());
+        }
+      }
+    }
+  } catch (const std::exception& ex) {
+    std::cerr << "Error: " << ex.what() << std::endl;
+    return cpp::fail("Error: " + std::string(ex.what()));
+  }
+
+  return res;
+}
+
+#endif
+
 // Function pointer typedefs
 typedef VkResult(VKAPI_PTR* PFN_vkCreateInstance)(const VkInstanceCreateInfo*,
                                                   const VkAllocationCallbacks*,
@@ -162,9 +225,49 @@ typedef VkResult(VKAPI_PTR* PFN_vkEnumerateInstanceExtensionProperties)(
     const char* pLayerName, uint32_t* pPropertyCount,
     VkExtensionProperties* pProperties);
 
+#if defined(__linux__)
+inline void* GetProcAddress(void* pLibrary, const char* name) {
+  return dlsym(pLibrary, name);
+}
+
+inline int FreeLibrary(void* pLibrary) {
+  return dlclose(pLibrary);
+}
+#endif
+
 inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
-  // Load the Vulkan library
-  HMODULE vulkanLibrary = LoadLibraryW(L"vulkan-1.dll");
+  namespace fmu = file_manager_utils;
+  auto get_vulkan_path = [](const std::string& lib_vulkan)
+      -> cpp::result<std::filesystem::path, std::string> {
+    if (std::filesystem::exists(fmu::GetExecutableFolderContainerPath() /
+                                lib_vulkan)) {
+      return fmu::GetExecutableFolderContainerPath() / lib_vulkan;
+      // fallback to deps path
+    } else if (std::filesystem::exists(fmu::GetCortexDataPath() / "deps" /
+                                       lib_vulkan)) {
+      return fmu::GetCortexDataPath() / "deps" / lib_vulkan;
+    } else {
+      CTL_WRN("Could not found " << lib_vulkan);
+      return cpp::fail("Could not found " + lib_vulkan);
+    }
+  };
+// Load the Vulkan library
+#if defined(__APPLE__) && defined(__MACH__)
+  void* vulkanLibrary = nullptr;
+#elif defined(__linux__)
+  auto vulkan_path = get_vulkan_path("libvulkan.so");
+  if (vulkan_path.has_error()) {
+    return cpp::fail(vulkan_path.error());
+  }
+  void* vulkanLibrary =
+      dlopen(vulkan_path.value().string().c_str(), RTLD_LAZY | RTLD_GLOBAL);
+#else
+  auto vulkan_path = get_vulkan_path("vulkan-1.dll");
+  if (vulkan_path.has_error()) {
+    return cpp::fail(vulkan_path.error());
+  }
+  HMODULE vulkanLibrary = LoadLibraryW(vulkan_path.value().string());
+#endif
   if (!vulkanLibrary) {
     std::cerr << "Failed to load the Vulkan library." << std::endl;
     return cpp::fail("Failed to load the Vulkan library.");
@@ -253,8 +356,13 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   };
 
   std::vector<cortex::hw::GPU> gpus;
+#if defined(__linux__)
+  auto gpus_usages =
+      GetGpuUsage().value_or(std::unordered_map<int, AmdGpuUsage>{});
+#elif defined(_WIN32)
   auto gpus_usages =
       GetGpuUsage().value_or(std::unordered_map<std::string, int>{});
+#endif
 
   // Get the device properties
   size_t id = 0;
@@ -281,9 +389,19 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
       }
     }
 
-    int64_t usage_vram_MiB = gpus_usages[deviceProperties.deviceName];
+    int64_t total_vram_MiB = 0;
+    int64_t used_vram_MiB = 0;
+
+#if defined(__linux__)
+    total_vram_MiB = gpus_usages[deviceProperties.deviceID].total_vram_MiB;
+    used_vram_MiB = gpus_usages[deviceProperties.deviceID].used_vram_MiB;
+#elif defined(_WIN32)
+    total_vram_MiB = gpu_avail_MiB;
+    used_vram_MiB = gpus_usages[deviceProperties.deviceName];
+
+#endif
     int free_vram_MiB =
-        gpu_avail_MiB > usage_vram_MiB ? gpu_avail_MiB - usage_vram_MiB : 0;
+        total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
     gpus.emplace_back(cortex::hw::GPU{
         .id = std::to_string(id),
         .device_id = deviceProperties.deviceID,
@@ -291,7 +409,7 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
         .version = std::to_string(deviceProperties.driverVersion),
         .add_info = cortex::hw::AmdAddInfo{},
         .free_vram = free_vram_MiB,
-        .total_vram = gpu_avail_MiB,
+        .total_vram = total_vram_MiB,
         .uuid = uuid_to_string(deviceIDProperties.deviceUUID)});
     id++;
   }
@@ -301,11 +419,4 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   FreeLibrary(vulkanLibrary);
   return gpus;
 }
-
 }  // namespace cortex::hw
-
-#else
-inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
-  return std::vector<cortex::hw::GPU>{};
-}
-#endif
