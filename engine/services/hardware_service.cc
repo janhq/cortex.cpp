@@ -235,8 +235,8 @@ bool HardwareService::SetActivateHardwareConfig(
         activated_ids.push_back(std::pair(e.software_id, e.priority));
       }
     }
-    std::sort(activated_ids.begin(), activated_ids.end());
-    std::sort(ahc_gpus.begin(), ahc_gpus.end());
+    std::sort(activated_ids.begin(), activated_ids.end(),
+              [](auto& p1, auto& p2) { return p1.second < p2.second; });
     if (ahc_gpus.size() != activated_ids.size()) {
       need_update = true;
     } else {
