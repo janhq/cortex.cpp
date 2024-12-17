@@ -11,6 +11,7 @@
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
+#include "controllers/swagger.h"
 #include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
@@ -155,6 +156,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
+  auto swagger_ctl = std::make_shared<SwaggerController>(config.apiServerHost,
+                                                         config.apiServerPort);
   auto file_ctl = std::make_shared<Files>(file_srv, message_srv);
   auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
@@ -169,6 +172,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
 
+  drogon::app().registerController(swagger_ctl);
   drogon::app().registerController(file_ctl);
   drogon::app().registerController(assistant_ctl);
   drogon::app().registerController(thread_ctl);
