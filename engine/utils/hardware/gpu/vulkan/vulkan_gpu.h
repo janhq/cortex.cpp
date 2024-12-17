@@ -11,6 +11,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include "utils/widechar_conv.h"
 #include "vulkan.h"
 
 #if defined(_WIN32)
@@ -253,7 +254,7 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   };
 // Load the Vulkan library
 #if defined(__APPLE__) && defined(__MACH__)
-  void* vulkanLibrary = nullptr;
+  return std::vector<cortex::hw::GPU>{};
 #elif defined(__linux__)
   auto vulkan_path = get_vulkan_path("libvulkan.so");
   if (vulkan_path.has_error()) {
@@ -266,7 +267,7 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   if (vulkan_path.has_error()) {
     return cpp::fail(vulkan_path.error());
   }
-  HMODULE vulkanLibrary = LoadLibraryW(vulkan_path.value().string());
+  HMODULE vulkanLibrary = LoadLibraryW(vulkan_path.value().wstring().c_str());
 #endif
   if (!vulkanLibrary) {
     std::cerr << "Failed to load the Vulkan library." << std::endl;
