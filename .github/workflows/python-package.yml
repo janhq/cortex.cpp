@@ -22,8 +22,8 @@ on:
 
 
 env:
-  MODEL_DIR: models/whispervq # ${{ inputs.model_dir }}
-  MODEL_NAME: whispervq # ${{ inputs.model_name }}
+  MODEL_DIR: models/fish-speech # ${{ inputs.model_dir }}
+  MODEL_NAME: fish-speech # ${{ inputs.model_name }}
   REPO_NAME: janhq/models # ${{ inputs.model_name }}
   BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
 
@@ -91,6 +91,7 @@ jobs:
         if: runner.os == 'windows'
         shell: pwsh
         run: |
+          python3 -m pip freeze | xargs python3 -m pip uninstall -y
           python3 -m pip install --upgrade pip
           python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
 
@@ -101,6 +102,7 @@ jobs:
           source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
+          python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
   
@@ -111,6 +113,7 @@ jobs:
           source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
+          python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
 
