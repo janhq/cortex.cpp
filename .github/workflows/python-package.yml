@@ -91,7 +91,6 @@ jobs:
         if: runner.os == 'windows'
         shell: pwsh
         run: |
-          python3 -m pip freeze | xargs python3 -m pip uninstall -y
           python3 -m pip install --upgrade pip
           python3 -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
 
@@ -102,7 +101,6 @@ jobs:
           source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
-          python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
   
@@ -113,7 +111,6 @@ jobs:
           source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
-          python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
 
