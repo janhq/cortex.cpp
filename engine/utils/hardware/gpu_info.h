@@ -23,6 +23,8 @@ inline std::vector<GPU> GetGPUInfo() {
         vulkan_gpus[j].add_info = NvidiaAddInfo{
             .driver_version = nvidia_gpus[i].driver_version.value_or("unknown"),
             .compute_cap = nvidia_gpus[i].compute_cap.value_or("unknown")};
+        vulkan_gpus[j].free_vram = std::stoll(nvidia_gpus[i].vram_free);
+        vulkan_gpus[j].total_vram = std::stoll(nvidia_gpus[i].vram_total);
       }
     }
   }

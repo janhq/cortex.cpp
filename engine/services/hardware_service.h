@@ -31,6 +31,8 @@ class HardwareService {
   void UpdateHardwareInfos();
   bool IsValidConfig(const cortex::hw::ActivateHardwareConfig& ahc);
 
+private:
+  std::vector<int> GetCudaConfig();
  private:
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
 };
