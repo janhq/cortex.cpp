@@ -153,6 +153,8 @@ class EngineService : public EngineServiceI {
 
   void RegisterEngineLibPath();
 
+  bool IsRemoteEngine(const std::string& engine_name) override;
+
  private:
   bool IsEngineLoaded(const std::string& engine);
 

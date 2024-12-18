@@ -6,8 +6,7 @@
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
-#include "extensions/remote-engine/anthropic_engine.h"
-#include "extensions/remote-engine/openai_engine.h"
+#include "extensions/remote-engine/remote_engine.h"
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
@@ -187,7 +186,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   // TODO: handle uninstall remote engine
   // only delete a remote engine if no model are using it
   auto exist_engine = GetEngineByNameAndVariant(engine);
-  if (exist_engine.has_value() && exist_engine.value().type == "remote") {
+  if (exist_engine.has_value() && exist_engine.value().type == kRemote) {
     auto result = DeleteEngine(exist_engine.value().id);
     if (!result.empty()) {  // This mean no error when delete model
       CTL_ERR("Failed to delete engine: " << result);
@@ -333,15 +332,9 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
-    auto create_res =
-        EngineService::UpsertEngine(engine,   // engine_name
-                                    "local",  // todo - luke
-                                    "",       // todo - luke
-                                    "",       // todo - luke
-                                    normalize_version, variant.value(),
-                                    "Default",  // todo - luke
-                                    ""          // todo - luke
-        );
+    auto create_res = EngineService::UpsertEngine(
+        engine,  // engine_name
+        kLocal, "", "", normalize_version, variant.value(), "Default", "");
 
     if (create_res.has_value()) {
       CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
@@ -683,17 +676,13 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   }
 
   // Check for remote engine
-  if (remote_engine::IsRemoteEngine(engine_name)) {
+  if (IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
 
-    if (engine_name == kOpenAiEngine) {
-      engines_[engine_name].engine = new remote_engine::OpenAiEngine();
-    } else {
-      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
-    }
+    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
 
     CTL_INF("Loaded engine: " << engine_name);
     return {};
@@ -715,21 +704,23 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
 #if defined(_WIN32) || defined(_WIN64)
     // register deps
-    std::vector<std::filesystem::path> paths{};
-    paths.push_back(std::move(cuda_path));
-    paths.push_back(std::move(engine_dir_path));
+    if (!(getenv("ENGINE_PATH"))) {
+      std::vector<std::filesystem::path> paths{};
+      paths.push_back(std::move(cuda_path));
+      paths.push_back(std::move(engine_dir_path));
 
-    CTL_DBG("Registering dylib for "
-            << ne << " with " << std::to_string(paths.size()) << " paths.");
-    for (const auto& path : paths) {
-      CTL_DBG("Registering path: " << path.string());
-    }
+      CTL_DBG("Registering dylib for "
+              << ne << " with " << std::to_string(paths.size()) << " paths.");
+      for (const auto& path : paths) {
+        CTL_DBG("Registering path: " << path.string());
+      }
 
-    auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
-    if (reg_result.has_error()) {
-      CTL_DBG("Failed register lib paths for: " << ne);
-    } else {
-      CTL_DBG("Registered lib paths for: " << ne);
+      auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
+      if (reg_result.has_error()) {
+        CTL_DBG("Failed register lib paths for: " << ne);
+      } else {
+        CTL_DBG("Registered lib paths for: " << ne);
+      }
     }
 #endif
 
@@ -899,7 +890,7 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   auto ne = NormalizeEngine(engine);
 
   // Check for remote engine
-  if (remote_engine::IsRemoteEngine(engine)) {
+  if (IsRemoteEngine(engine)) {
     auto exist_engine = GetEngineByNameAndVariant(engine);
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine + "' is not installed");
@@ -1075,11 +1066,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     if (exist_engine.has_error()) {
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
-    if (engine_name == kOpenAiEngine) {
-      engines_[engine_name].engine = new remote_engine::OpenAiEngine();
-    } else {
-      engines_[engine_name].engine = new remote_engine::AnthropicEngine();
-    }
+    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
 
     CTL_INF("Loaded engine: " << engine_name);
   }
@@ -1090,6 +1077,16 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   } else {
     return res;
   }
+}
+
+bool EngineService::IsRemoteEngine(const std::string& engine_name) {
+  auto ne = Repo2Engine(engine_name);
+  auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
+  for (auto const& le : local_engines) {
+    if (le == ne)
+      return false;
+  }
+  return true;
 }
 
 cpp::result<std::vector<std::string>, std::string>

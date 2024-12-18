@@ -4,14 +4,21 @@
 
 namespace OpenAi {
 
-struct ImageUrl {
-  // The external URL of the image, must be a supported image types: jpeg, jpg, png, gif, webp.
+struct ImageUrl : public JsonSerializable {
+  /**
+   * The external URL of the image, must be a supported image types:
+   * jpeg, jpg, png, gif, webp.
+   */
   std::string url;
 
-  // Specifies the detail level of the image. low uses fewer tokens, you can opt in to high resolution using high. Default value is auto
+  /**
+   * Specifies the detail level of the image. low uses fewer tokens, you
+   * can opt in to high resolution using high. Default value is auto
+   */
   std::string detail;
 
-  ImageUrl() = default;
+  ImageUrl(const std::string& url, const std::string& detail = "auto")
+      : url{url}, detail{detail} {}
 
   ImageUrl(ImageUrl&&) noexcept = default;
 
@@ -20,13 +27,25 @@ struct ImageUrl {
   ImageUrl(const ImageUrl&) = delete;
 
   ImageUrl& operator=(const ImageUrl&) = delete;
+
+  cpp::result<Json::Value, std::string> ToJson() override {
+    try {
+      Json::Value root;
+      root["url"] = url;
+      root["detail"] = detail;
+      return root;
+    } catch (const std::exception& e) {
+      return cpp::fail(std::string("ToJson failed: ") + e.what());
+    }
+  }
 };
 
 // References an image URL in the content of a message.
 struct ImageUrlContent : Content {
 
   // The type of the content part.
-  ImageUrlContent(const std::string& type) : Content(type) {}
+  explicit ImageUrlContent(const std::string& type, ImageUrl&& image_url)
+      : Content(type), image_url{std::move(image_url)} {}
 
   ImageUrlContent(ImageUrlContent&&) noexcept = default;
 
@@ -38,6 +57,8 @@ struct ImageUrlContent : Content {
 
   ImageUrl image_url;
 
+  ~ImageUrlContent() override = default;
+
   static cpp::result<ImageUrlContent, std::string> FromJson(
       Json::Value&& json) {
     if (json.empty()) {
@@ -45,11 +66,9 @@ struct ImageUrlContent : Content {
     }
 
     try {
-      ImageUrlContent content{"image_url"};
-      ImageUrl image_url;
-      image_url.url = std::move(json["image_url"]["url"].asString());
-      image_url.detail = std::move(json["image_url"]["detail"].asString());
-      content.image_url = std::move(image_url);
+      auto image_url = ImageUrl(json["image_url"]["url"].asString(),
+                                json["image_url"]["detail"].asString());
+      ImageUrlContent content{"image_url", std::move(image_url)};
       return content;
     } catch (const std::exception& e) {
       return cpp::fail(std::string("FromJson failed: ") + e.what());
@@ -60,8 +79,7 @@ struct ImageUrlContent : Content {
     try {
       Json::Value json;
       json["type"] = type;
-      json["image_url"]["url"] = image_url.url;
-      json["image_url"]["detail"] = image_url.detail;
+      json["image_url"] = image_url.ToJson().value();
       return json;
     } catch (const std::exception& e) {
       return cpp::fail(std::string("ToJson failed: ") + e.what());

@@ -11,6 +11,7 @@
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
+#include "controllers/swagger.h"
 #include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
@@ -50,7 +51,8 @@
 #error "Unsupported platform!"
 #endif
 
-void RunServer(std::optional<int> port, bool ignore_cout) {
+void RunServer(std::optional<std::string> host, std::optional<int> port,
+               bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   signal(SIGINT, SIG_IGN);
 #elif defined(_WIN32)
@@ -61,9 +63,16 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
-  if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
+  if (host.has_value() || port.has_value()) {
+    if (host.has_value() && *host != config.apiServerHost) {
+      config.apiServerHost = *host;
+    }
+
+    if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
+      config.apiServerPort = std::to_string(*port);
+    }
+
     auto config_path = file_manager_utils::GetConfigurationPath();
-    config.apiServerPort = std::to_string(*port);
     auto result =
         config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
             config, config_path.string());
@@ -71,6 +80,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       CTL_ERR("Error update " << config_path.string() << result.error());
     }
   }
+
   if (!ignore_cout) {
     std::cout << "Host: " << config.apiServerHost
               << " Port: " << config.apiServerPort << "\n";
@@ -155,6 +165,8 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
+  auto swagger_ctl = std::make_shared<SwaggerController>(config.apiServerHost,
+                                                         config.apiServerPort);
   auto file_ctl = std::make_shared<Files>(file_srv, message_srv);
   auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
@@ -169,6 +181,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
 
+  drogon::app().registerController(swagger_ctl);
   drogon::app().registerController(file_ctl);
   drogon::app().registerController(assistant_ctl);
   drogon::app().registerController(thread_ctl);
@@ -279,6 +292,7 @@ int main(int argc, char* argv[]) {
   // avoid printing logs to terminal
   is_server = true;
 
+  std::optional<std::string> server_host;
   std::optional<int> server_port;
   bool ignore_cout_log = false;
 #if defined(_WIN32)
@@ -292,6 +306,8 @@ int main(int argc, char* argv[]) {
       std::wstring v = argv[i + 1];
       file_manager_utils::cortex_data_folder_path =
           cortex::wc::WstringToUtf8(v);
+    } else if (command == L"--host") {
+      server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--port") {
       server_port = std::stoi(argv[i + 1]);
     } else if (command == L"--ignore_cout") {
@@ -308,6 +324,8 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    } else if (strcmp(argv[i], "--host") == 0) {
+      server_host = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
     } else if (strcmp(argv[i], "--ignore_cout") == 0) {
@@ -363,6 +381,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  RunServer(server_port, ignore_cout_log);
+  RunServer(server_host, server_port, ignore_cout_log);
   return 0;
 }
