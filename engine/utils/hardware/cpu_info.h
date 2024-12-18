@@ -10,7 +10,10 @@
 
 namespace cortex::hw {
 inline CPU GetCPUInfo() {
-  auto cpu = hwinfo::getAllCPUs()[0];
+  auto res = hwinfo::getAllCPUs();
+  if (res.empty())
+    return CPU{};
+  auto cpu = res[0];
   cortex::cpuid::CpuInfo inst;
   return CPU{.cores = cpu.numPhysicalCores(),
              .arch = std::string(GetArch()),
