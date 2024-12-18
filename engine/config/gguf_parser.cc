@@ -2,12 +2,13 @@
 #include <cstdint>
 #include <cstring>
 #include <ctime>
+#include <filesystem>
 #include <iostream>
 #include <regex>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <filesystem>
+#include "utils/logging_utils.h"
 
 #ifdef _WIN32
 #include <io.h>
@@ -70,7 +71,7 @@ void GGUFHandler::OpenFile(const std::string& file_path) {
 
 #else
   file_size_ = std::filesystem::file_size(file_path);
- 
+
   int file_descriptor = open(file_path.c_str(), O_RDONLY);
   // Memory-map the file
   data_ = static_cast<uint8_t*>(
@@ -350,11 +351,11 @@ void GGUFHandler::PrintMetadata() {
     if (key.compare("tokenizer.chat_template") == 0) {
       LOG_INFO << key << ": " << "\n" << value << "\n";
 
-      std::vector<llama_chat_msg> messages{
-          llama_chat_msg{"system", "{system_message}"},
-          llama_chat_msg{"user", "{prompt}"}};
-      std::string result = llama_chat_apply_template(value, messages, true);
-      LOG_INFO << "result jinja render: " << result << "\n";
+      // std::vector<llama_chat_msg> messages{
+      //     llama_chat_msg{"system", "{system_message}"},
+      //     llama_chat_msg{"user", "{prompt}"}};
+      // std::string result = llama_chat_apply_template(value, messages, true);
+      // LOG_INFO << "result jinja render: " << result << "\n";
     } else {
       LOG_INFO << key << ": " << value << "\n";
     }
@@ -378,6 +379,7 @@ void GGUFHandler::PrintMetadata() {
 
 void GGUFHandler::ModelConfigFromMetadata() {
   int eos_token, bos_token, max_tokens, version, ngl;
+  std::string default_chat_template{""};
   std::string chat_template, name, eos_string, bos_string;
   std::vector<std::string> tokens, stop;
   model_config_.top_p = 0.95;
@@ -519,6 +521,7 @@ void GGUFHandler::ModelConfigFromMetadata() {
     if (key.compare("general.name") == 0) {
       name = std::regex_replace(value, std::regex(" "), "-");
     } else if (key.find("chat_template") != std::string::npos) {
+      default_chat_template = value;
       if (value.compare(ZEPHYR_JINJA) == 0) {
         chat_template =
             "<|system|>\n{system_message}</s>\n<|user|>\n{prompt}</"
@@ -551,23 +554,33 @@ void GGUFHandler::ModelConfigFromMetadata() {
     }
   }
 
+  std::string all_tokens{""};
+  for (const auto& token : tokens) {
+    all_tokens += token + " ";
+  }
+
   try {
-    if (tokens.size() > eos_token) {
-      eos_string = tokens[eos_token];
-      stop.push_back(std::move(eos_string));
-    } else {
-      LOG_ERROR << "Can't find stop token";
-    }
+    bos_string = tokens[bos_token];
+    eos_string = tokens[eos_token];
+
+    CTL_INF("NamH bos string: " + bos_string);
+    CTL_INF("NamH eos string: " + eos_string);
+
+    stop.push_back(eos_string);
   } catch (const std::exception& e) {
     LOG_ERROR << "Can't find stop token";
   }
 
   model_config_.stop = std::move(stop);
-  if (chat_template.empty())
+  if (chat_template.empty()) {
     chat_template =
         "[INST] <<SYS>>\n{system_message}\n<</SYS>>\n{prompt}[/INST]";
+  }
   model_config_.prompt_template = std::move(chat_template);
+  model_config_.chat_template = default_chat_template;
   model_config_.name = name;
+  model_config_.bos_token = std::move(bos_string);
+  model_config_.eos_token = std::move(eos_string);
   model_config_.model = name;
   model_config_.id = name;
   model_config_.version = std::to_string(version);

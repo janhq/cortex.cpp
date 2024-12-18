@@ -3,7 +3,6 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/function_calling/common.h"
-#include "utils/http_util.h"
 
 using namespace inferences;
 

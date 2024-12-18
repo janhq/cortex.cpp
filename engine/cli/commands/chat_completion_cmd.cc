@@ -1,5 +1,6 @@
 #include "chat_completion_cmd.h"
 #include <curl/curl.h>
+#include "config/gguf_parser.h"
 #include "config/yaml_config.h"
 #include "cortex_upd_cmd.h"
 #include "database/models.h"
@@ -97,6 +98,30 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
     return;
   }
 
+  std::string chat_template{""};
+  std::string bos_token{""};
+  std::string eos_token{""};
+  {
+    // try to fetch the chat template
+    namespace fs = std::filesystem;
+    namespace fmu = file_manager_utils;
+    config::GGUFHandler gguf_handler;
+    config::YamlHandler yaml_handler;
+    auto abs_path = fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0]));
+    gguf_handler.Parse(abs_path.string());
+    auto model_config = gguf_handler.GetModelConfig();
+    if (!model_config.chat_template.empty()) {
+      chat_template = model_config.chat_template;
+    }
+
+    if (!model_config.bos_token.empty()) {
+      bos_token = model_config.bos_token;
+    }
+    if (!model_config.eos_token.empty()) {
+      eos_token = model_config.eos_token;
+    }
+  }
+
   auto curl = curl_easy_init();
   if (!curl) {
     CLI_LOG("Failed to initialize CURL");
@@ -150,10 +175,18 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       json_data["messages"] = msgs_array;
       json_data["model"] = model_handle;
       json_data["stream"] = true;
+      if (!chat_template.empty()) {
+        json_data["chat_template"] = chat_template;
+      }
+      if (!bos_token.empty()) {
+        json_data["bos_token"] = bos_token;
+      }
+      if (!eos_token.empty()) {
+        json_data["eos_token"] = eos_token;
+      }
 
-      std::string json_payload = json_data.toStyledString();
-
-      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_payload.c_str());
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
+                       json_data.toStyledString().c_str());
 
       std::string ai_chat;
       StreamingCallback callback;

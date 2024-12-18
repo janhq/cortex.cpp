@@ -163,6 +163,9 @@ struct ModelConfig {
   int n_parallel = 1;
   std::string engine;
   std::string prompt_template;
+  std::string chat_template;
+  std::string bos_token;
+  std::string eos_token;
   std::string system_template;
   std::string user_template;
   std::string ai_template;

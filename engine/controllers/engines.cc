@@ -3,6 +3,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
+#include "utils/jinja_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 
@@ -19,6 +20,41 @@ std::string NormalizeEngine(const std::string& engine) {
   return engine;
 };
 }  // namespace
+
+void Engines::TestJinja(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  auto body = req->getJsonObject();
+  if (body == nullptr) {
+    Json::Value ret;
+    ret["message"] = "Body can't be empty";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto jinja = body->get("jinja", "").asString();
+  auto data = body->get("data", {});
+  auto bos_token = data.get("bos_token", "").asString();
+  auto eos_token = data.get("eos_token", "").asString();
+
+  auto rendered_data = jinja::RenderTemplate(jinja, data, bos_token, eos_token);
+
+  if (rendered_data.has_error()) {
+    Json::Value ret;
+    ret["message"] = rendered_data.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+  // TODO: namh recheck all the api using this. because we have an issue with Germany locale before.
+  auto resp = HttpResponse::newHttpResponse();
+  resp->setBody(rendered_data.value());
+  resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
+  callback(resp);
+}
 
 void Engines::ListEngine(
     const HttpRequestPtr& req,

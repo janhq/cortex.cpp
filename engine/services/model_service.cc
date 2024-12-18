@@ -10,7 +10,6 @@
 #include "database/models.h"
 #include "hardware_service.h"
 #include "utils/cli_selection_utils.h"
-#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
@@ -844,6 +843,20 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data["system_prompt"] = parse_prompt_result.system_prompt;
       json_data["user_prompt"] = parse_prompt_result.user_prompt;
       json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
+    }
+
+    {
+      // try to fetch the chat template
+      config::GGUFHandler gguf_handler;
+      config::YamlHandler yaml_handler;
+      auto abs_path = fmu::ToAbsoluteCortexDataPath(
+          fs::path(json_data["files"][0].asString()));
+      gguf_handler.Parse(abs_path.string());
+      auto model_config = gguf_handler.GetModelConfig();
+      if (!model_config.chat_template.empty()) {
+        CTL_INF("Chat template: " + model_config.chat_template);
+        json_data["chat_template"] = model_config.chat_template;
+      }
     }
 
 #define ASSIGN_IF_PRESENT(json_obj, param_override, param_name) \

@@ -2,6 +2,7 @@
 #include <drogon/HttpTypes.h>
 #include "utils/engine_constants.h"
 #include "utils/function_calling/common.h"
+#include "utils/jinja_utils.h"
 
 namespace services {
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
@@ -23,6 +24,35 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
+
+  {
+    auto chat_template = json_body->get("chat_template", "").asString();
+    if (!chat_template.empty()) {
+      auto messages = (*json_body)["messages"];
+      Json::Value messages_jsoncpp(Json::arrayValue);
+      for (auto message : messages) {
+        messages_jsoncpp.append(message);
+      }
+      Json::Value wrapper_json;
+      wrapper_json["messages"] = messages_jsoncpp;
+      // we can add tools here
+      auto bos_token{json_body->get("bos_token", "").asString()};
+      auto eos_token{json_body->get("eos_token", "").asString()};
+
+      CTL_INF("bos_token: " + bos_token);
+      CTL_INF("eos_token: " + eos_token);
+      auto prompt_result = jinja::RenderTemplate(chat_template, wrapper_json,
+                                                 bos_token, eos_token);
+      if (prompt_result.has_value()) {
+        CTL_INF("Rendered prompt: " + prompt_result.value());
+        (*json_body)["prompt"] = prompt_result.value();
+      } else {
+        CTL_ERR("Failed to render prompt: " + prompt_result.error());
+      }
+    }
+  }
+
+  CTL_INF("Prompt is: " + json_body->get("prompt", "").asString());
 
   auto cb = [q, tool_choice](Json::Value status, Json::Value res) {
     if (!tool_choice.isNull()) {
