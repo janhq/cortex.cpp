@@ -704,8 +704,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
 #if defined(_WIN32) || defined(_WIN64)
     // register deps
-    if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
-        should_use_dll_search_path) {
+    if (!(getenv("ENGINE_PATH"))) {
       std::vector<std::filesystem::path> paths{};
       paths.push_back(std::move(cuda_path));
       paths.push_back(std::move(engine_dir_path));
