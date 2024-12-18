@@ -704,21 +704,23 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
 #if defined(_WIN32) || defined(_WIN64)
     // register deps
-    std::vector<std::filesystem::path> paths{};
-    paths.push_back(std::move(cuda_path));
-    paths.push_back(std::move(engine_dir_path));
+    if (!(getenv("ENGINE_PATH"))) {
+      std::vector<std::filesystem::path> paths{};
+      paths.push_back(std::move(cuda_path));
+      paths.push_back(std::move(engine_dir_path));
 
-    CTL_DBG("Registering dylib for "
-            << ne << " with " << std::to_string(paths.size()) << " paths.");
-    for (const auto& path : paths) {
-      CTL_DBG("Registering path: " << path.string());
-    }
+      CTL_DBG("Registering dylib for "
+              << ne << " with " << std::to_string(paths.size()) << " paths.");
+      for (const auto& path : paths) {
+        CTL_DBG("Registering path: " << path.string());
+      }
 
-    auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
-    if (reg_result.has_error()) {
-      CTL_DBG("Failed register lib paths for: " << ne);
-    } else {
-      CTL_DBG("Registered lib paths for: " << ne);
+      auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
+      if (reg_result.has_error()) {
+        CTL_DBG("Failed register lib paths for: " << ne);
+      } else {
+        CTL_DBG("Registered lib paths for: " << ne);
+      }
     }
 #endif
 
