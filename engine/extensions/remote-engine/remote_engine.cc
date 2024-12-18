@@ -313,15 +313,15 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
       api_key_template_ = ReplaceApiKeyPlaceholder(
           config["api_key_template"].as<std::string>(), api_key);
     }
-    if (config["TransformReq"]) {
-      model_config.transform_req = config["TransformReq"];
+    if (config["transform_req"]) {
+      model_config.transform_req = config["transform_req"];
     } else {
-      LOG_WARN << "Missing TransformReq in config for model " << model;
+      LOG_WARN << "Missing transform_req in config for model " << model;
     }
-    if (config["TransformResp"]) {
-      model_config.transform_resp = config["TransformResp"];
+    if (config["transform_resp"]) {
+      model_config.transform_resp = config["transform_resp"];
     } else {
-      LOG_WARN << "Missing TransformResp in config for model " << model;
+      LOG_WARN << "Missing transform_resp in config for model " << model;
     }
 
     model_config.is_loaded = true;
@@ -406,19 +406,19 @@ void RemoteEngine::LoadModel(
   }
   if (json_body->isMember("metadata")) {
     metadata_ = (*json_body)["metadata"];
-    if (!metadata_["TransformReq"].isNull() &&
-        !metadata_["TransformReq"]["chat_completions"].isNull() &&
-        !metadata_["TransformReq"]["chat_completions"]["template"].isNull()) {
+    if (!metadata_["transform_req"].isNull() &&
+        !metadata_["transform_req"]["chat_completions"].isNull() &&
+        !metadata_["transform_req"]["chat_completions"]["template"].isNull()) {
       chat_req_template_ =
-          metadata_["TransformReq"]["chat_completions"]["template"].asString();
+          metadata_["transform_req"]["chat_completions"]["template"].asString();
       CTL_INF(chat_req_template_);
     }
 
-    if (!metadata_["TransformResp"].isNull() &&
-        !metadata_["TransformResp"]["chat_completions"].isNull() &&
-        !metadata_["TransformResp"]["chat_completions"]["template"].isNull()) {
+    if (!metadata_["transform_resp"].isNull() &&
+        !metadata_["transform_resp"]["chat_completions"].isNull() &&
+        !metadata_["transform_resp"]["chat_completions"]["template"].isNull()) {
       chat_res_template_ =
-          metadata_["TransformResp"]["chat_completions"]["template"].asString();
+          metadata_["transform_resp"]["chat_completions"]["template"].asString();
       CTL_INF(chat_res_template_);
     }
   }

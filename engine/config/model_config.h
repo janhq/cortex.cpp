@@ -23,8 +23,8 @@ struct RemoteModelConfig {
   std::string object = "model";
   std::string owned_by = "";
   Json::Value inference_params;
-  Json::Value TransformReq;
-  Json::Value TransformResp;
+  Json::Value transform_req;
+  Json::Value transform_resp;
   Json::Value metadata;
   void LoadFromJson(const Json::Value& json) {
     if (!json.isObject()) {
@@ -44,27 +44,27 @@ struct RemoteModelConfig {
 
     // Load JSON object fields directly
     inference_params = json.get("inference_params", inference_params);
-    TransformReq = json.get("TransformReq", TransformReq);
+    transform_req = json.get("transform_req", transform_req);
     // Use default template if it is empty, currently we only support 2 remote engines
     auto is_anthropic = [](const std::string& model) {
       return model.find("claude") != std::string::npos;
     };
-    if (TransformReq["chat_completions"]["template"].isNull()) {
+    if (transform_req["chat_completions"]["template"].isNull()) {
       if (is_anthropic(model)) {
-        TransformReq["chat_completions"]["template"] =
+        transform_req["chat_completions"]["template"] =
             kAnthropicTransformReqTemplate;
       } else {
-        TransformReq["chat_completions"]["template"] =
+        transform_req["chat_completions"]["template"] =
             kOpenAITransformReqTemplate;
       }
     }
-    TransformResp = json.get("TransformResp", TransformResp);
-    if (TransformResp["chat_completions"]["template"].isNull()) {
+    transform_resp = json.get("transform_resp", transform_resp);
+    if (transform_resp["chat_completions"]["template"].isNull()) {
       if (is_anthropic(model)) {
-        TransformResp["chat_completions"]["template"] =
+        transform_resp["chat_completions"]["template"] =
             kAnthropicTransformRespTemplate;
       } else {
-        TransformResp["chat_completions"]["template"] =
+        transform_resp["chat_completions"]["template"] =
             kOpenAITransformRespTemplate;
       }
     }
@@ -86,8 +86,8 @@ struct RemoteModelConfig {
 
     // Add JSON object fields directly
     json["inference_params"] = inference_params;
-    json["TransformReq"] = TransformReq;
-    json["TransformResp"] = TransformResp;
+    json["transform_req"] = transform_req;
+    json["transform_resp"] = transform_resp;
     json["metadata"] = metadata;
 
     return json;
@@ -108,8 +108,8 @@ struct RemoteModelConfig {
     // Convert Json::Value to YAML::Node using utility function
     root["inference_params"] =
         remote_models_utils::jsonToYaml(inference_params);
-    root["TransformReq"] = remote_models_utils::jsonToYaml(TransformReq);
-    root["TransformResp"] = remote_models_utils::jsonToYaml(TransformResp);
+    root["transform_req"] = remote_models_utils::jsonToYaml(transform_req);
+    root["transform_resp"] = remote_models_utils::jsonToYaml(transform_resp);
     root["metadata"] = remote_models_utils::jsonToYaml(metadata);
 
     // Save to file
@@ -141,8 +141,8 @@ struct RemoteModelConfig {
     // Load complex fields using utility function
     inference_params =
         remote_models_utils::yamlToJson(root["inference_params"]);
-    TransformReq = remote_models_utils::yamlToJson(root["TransformReq"]);
-    TransformResp = remote_models_utils::yamlToJson(root["TransformResp"]);
+    transform_req = remote_models_utils::yamlToJson(root["transform_req"]);
+    transform_resp = remote_models_utils::yamlToJson(root["transform_resp"]);
     metadata = remote_models_utils::yamlToJson(root["metadata"]);
   }
 };

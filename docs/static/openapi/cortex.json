@@ -4858,8 +4858,8 @@
           "engine",
           "version",
           "inference_params",
-          "TransformReq",
-          "TransformResp",
+          "transform_req",
+          "transform_resp",
           "metadata"
         ],
         "properties": {
@@ -4902,7 +4902,7 @@
               }
             }
           },
-          "TransformReq": {
+          "transform_req": {
             "type": "object",
             "properties": {
               "get_models": {
@@ -4924,7 +4924,7 @@
               }
             }
           },
-          "TransformResp": {
+          "transform_resp": {
             "type": "object",
             "properties": {
               "chat_completions": {
