@@ -21,7 +21,7 @@ struct StreamContext {
   // Cache value for Anthropic
   std::string id;
   std::string model;
-  TemplateRenderer& renderer;
+  extensions::TemplateRenderer& renderer;
   std::string stream_template;
 };
 struct CurlResponse {
