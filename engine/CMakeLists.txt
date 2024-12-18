@@ -150,9 +150,6 @@ add_executable(${TARGET_NAME} main.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/openai_engine.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/anthropic_engine.cc
-
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
