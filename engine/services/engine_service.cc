@@ -17,6 +17,7 @@
 #include "utils/semantic_version_utils.h"
 #include "utils/system_info_utils.h"
 #include "utils/url_parser.h"
+#include "utils/cpuid/cpu_info.h"
 
 namespace {
 std::string GetSuitableCudaVersion(const std::string& engine,
@@ -691,6 +692,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // End hard code
 
   CTL_INF("Loading engine: " << ne);
+  CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
 
   auto engine_dir_path_res = GetEngineDirPath(ne);
   if (engine_dir_path_res.has_error()) {
