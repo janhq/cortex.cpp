@@ -19,7 +19,7 @@ struct RemoteModelConfig {
   std::string api_key_template;
   std::string engine;
   std::string version;
-  std::size_t created;
+  size_t created;
   std::string object = "model";
   std::string owned_by = "";
   Json::Value inference_params;

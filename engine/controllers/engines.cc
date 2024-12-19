@@ -5,6 +5,7 @@
 #include "utils/engine_constants.h"
 #include "utils/http_util.h"
 #include "utils/logging_utils.h"
+#include "utils/scope_exit.h"
 #include "utils/string_utils.h"
 
 namespace {
@@ -213,8 +214,9 @@ void Engines::InstallRemoteEngine(
     norm_version = version;
   }
 
+  std::string engine;
   if (auto o = req->getJsonObject(); o) {
-    auto engine = (*o).get("engine", "").asString();
+    engine = (*o).get("engine", "").asString();
     auto type = (*o).get("type", "").asString();
     auto api_key = (*o).get("api_key", "").asString();
     auto url = (*o).get("url", "").asString();
@@ -275,6 +277,11 @@ void Engines::InstallRemoteEngine(
       resp->setStatusCode(k400BadRequest);
       callback(resp);
     } else {
+      auto gr = engine_service_->GenerateRemoteModel(engine);
+      if (gr.has_error()) {
+        CTL_INF("Error: " << gr.error());
+      }
+
       Json::Value res;
       if (get_models_url.empty()) {
         res["warning"] =

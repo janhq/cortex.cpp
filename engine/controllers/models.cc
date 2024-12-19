@@ -668,7 +668,7 @@ void Models::AddRemoteModel(
 
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   auto engine_name = (*(req->getJsonObject())).get("engine", "").asString();
- 
+
   auto engine_validate = engine_service_->IsEngineReady(engine_name);
   if (engine_validate.has_error()) {
     Json::Value ret;
@@ -687,7 +687,7 @@ void Models::AddRemoteModel(
     callback(resp);
     return;
   }
-  
+
   config::RemoteModelConfig model_config;
   model_config.LoadFromJson(*(req->getJsonObject()));
   cortex::db::Models modellist_utils_obj;
@@ -699,11 +699,10 @@ void Models::AddRemoteModel(
     // Use relative path for model_yaml_path. In case of import, we use absolute path for model
     auto yaml_rel_path =
         fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
-    // TODO: remove hardcode "openai" when engine is finish
     cortex::db::ModelEntry model_entry{
         model_handle, "",       "",         yaml_rel_path.string(),
         model_handle, "remote", "imported", cortex::db::ModelStatus::Remote,
-        "openai"};
+        engine_name};
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
