@@ -199,7 +199,8 @@ RemoteEngine::ModelConfig* RemoteEngine::GetModelConfig(
   return nullptr;
 }
 
-CurlResponse RemoteEngine::MakeGetModelsRequest() {
+CurlResponse RemoteEngine::MakeGetModelsRequest(const std::string& url,
+                                                const std::string& api_key) {
   CURL* curl = curl_easy_init();
   CurlResponse response;
 
@@ -209,13 +210,12 @@ CurlResponse RemoteEngine::MakeGetModelsRequest() {
     return response;
   }
 
-  std::string full_url = metadata_["get_models_url"].asString();
-
+  std::string api_key_header = "Authorization: Bearer " + api_key;
   struct curl_slist* headers = nullptr;
-  headers = curl_slist_append(headers, api_key_template_.c_str());
+  headers = curl_slist_append(headers, api_key_header.c_str());
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
-  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
   std::string response_string;
@@ -418,7 +418,8 @@ void RemoteEngine::LoadModel(
         !metadata_["transform_resp"]["chat_completions"].isNull() &&
         !metadata_["transform_resp"]["chat_completions"]["template"].isNull()) {
       chat_res_template_ =
-          metadata_["transform_resp"]["chat_completions"]["template"].asString();
+          metadata_["transform_resp"]["chat_completions"]["template"]
+              .asString();
       CTL_INF(chat_res_template_);
     }
   }
@@ -686,9 +687,9 @@ void RemoteEngine::HandleEmbedding(
   callback(Json::Value(), Json::Value());
 }
 
-Json::Value RemoteEngine::GetRemoteModels() {
-  if (metadata_["get_models_url"].isNull() ||
-      metadata_["get_models_url"].asString().empty()) {
+Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
+                                          const std::string& api_key) {
+  if (url.empty()) {
     if (engine_name_ == kAnthropicEngine) {
       Json::Value json_resp;
       Json::Value model_array(Json::arrayValue);
@@ -709,10 +710,11 @@ Json::Value RemoteEngine::GetRemoteModels() {
       return Json::Value();
     }
   } else {
-    auto response = MakeGetModelsRequest();
+    auto response = MakeGetModelsRequest(url, api_key);
     if (response.error) {
       Json::Value error;
       error["error"] = response.error_message;
+      CTL_WRN(response.error_message);
       return error;
     }
     Json::Value response_json;

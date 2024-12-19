@@ -1061,17 +1061,21 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     return cpp::fail(r.error());
   }
 
+  auto exist_engine = GetEngineByNameAndVariant(engine_name);
+  if (exist_engine.has_error()) {
+    return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+  }
+
   if (!IsEngineLoaded(engine_name)) {
-    auto exist_engine = GetEngineByNameAndVariant(engine_name);
-    if (exist_engine.has_error()) {
-      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
-    }
     engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
 
     CTL_INF("Loaded engine: " << engine_name);
   }
-  auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
-  auto res = e->GetRemoteModels();
+  auto remote_engine_json = exist_engine.value().ToJson();
+  auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);  
+  auto url = remote_engine_json["metadata"]["get_models_url"].asString();
+  auto api_key = remote_engine_json["api_key"].asString();
+  auto res = e->GetRemoteModels(url, api_key);
   if (!res["error"].isNull()) {
     return cpp::fail(res["error"].asString());
   } else {

@@ -3,6 +3,7 @@
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
+#include "utils/http_util.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
 
@@ -173,21 +174,57 @@ void Engines::InstallEngine(
     norm_version = version;
   }
 
-  if ((req->getJsonObject()) &&
-      (*(req->getJsonObject())).get("type", "").asString() == "remote") {
-    auto type = (*(req->getJsonObject())).get("type", "").asString();
-    auto api_key = (*(req->getJsonObject())).get("api_key", "").asString();
-    auto url = (*(req->getJsonObject())).get("url", "").asString();
+  auto result =
+      engine_service_->InstallEngineAsync(engine, norm_version, norm_variant);
+  if (result.has_error()) {
+    Json::Value res;
+    res["message"] = result.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k400BadRequest);
+    CTL_INF("Error: " << result.error());
+    callback(resp);
+  } else {
+    Json::Value res;
+    res["message"] = "Engine starts installing!";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k200OK);
+    CTL_INF("Engine starts installing!");
+    callback(resp);
+  }
+}
+
+void Engines::InstallRemoteEngine(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+  if (!http_util::HasFieldInReq(req, callback, "engine")) {
+    return;
+  }
+  std::optional<std::string> norm_variant = std::nullopt;
+  std::string norm_version{"latest"};
+
+  if (req->getJsonObject() != nullptr) {
+    auto variant = (*(req->getJsonObject())).get("variant", "").asString();
+    auto version =
+        (*(req->getJsonObject())).get("version", "latest").asString();
+
+    if (!variant.empty()) {
+      norm_variant = variant;
+    }
+    norm_version = version;
+  }
+
+  if (auto o = req->getJsonObject(); o) {
+    auto engine = (*o).get("engine", "").asString();
+    auto type = (*o).get("type", "").asString();
+    auto api_key = (*o).get("api_key", "").asString();
+    auto url = (*o).get("url", "").asString();
     auto variant = norm_variant.value_or("all-platforms");
-    auto status = (*(req->getJsonObject())).get("status", "Default").asString();
+    auto status = (*o).get("status", "Default").asString();
     std::string metadata;
-    if ((*(req->getJsonObject())).isMember("metadata") &&
-        (*(req->getJsonObject()))["metadata"].isObject()) {
-      metadata = (*(req->getJsonObject()))
-                     .get("metadata", Json::Value(Json::objectValue))
-                     .toStyledString();
-    } else if ((*(req->getJsonObject())).isMember("metadata") &&
-               !(*(req->getJsonObject()))["metadata"].isObject()) {
+    if ((*o).isMember("metadata") && (*o)["metadata"].isObject()) {
+      metadata =
+          (*o).get("metadata", Json::Value(Json::objectValue)).toStyledString();
+    } else if ((*o).isMember("metadata") && !(*o)["metadata"].isObject()) {
       Json::Value res;
       res["message"] = "metadata must be object";
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
@@ -196,8 +233,7 @@ void Engines::InstallEngine(
       return;
     }
 
-    auto get_models_url = (*(req->getJsonObject()))
-                              .get("metadata", Json::Value(Json::objectValue))
+    auto get_models_url = (*o).get("metadata", Json::Value(Json::objectValue))
                               .get("get_models_url", "")
                               .asString();
 
@@ -250,25 +286,6 @@ void Engines::InstallEngine(
       resp->setStatusCode(k200OK);
       callback(resp);
     }
-    return;
-  }
-
-  auto result =
-      engine_service_->InstallEngineAsync(engine, norm_version, norm_variant);
-  if (result.has_error()) {
-    Json::Value res;
-    res["message"] = result.error();
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(k400BadRequest);
-    CTL_INF("Error: " << result.error());
-    callback(resp);
-  } else {
-    Json::Value res;
-    res["message"] = "Engine starts installing!";
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(k200OK);
-    CTL_INF("Engine starts installing!");
-    callback(resp);
   }
 }
 
@@ -298,6 +315,8 @@ void Engines::UpdateEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) {
+  // Check if it is remote engine
+
   auto result = engine_service_->UpdateEngine(engine);
   if (result.has_error()) {
     Json::Value res;
