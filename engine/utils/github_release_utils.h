@@ -194,7 +194,7 @@ inline cpp::result<GitHubRelease, std::string> GetReleaseByVersion(
       .pathParams = path_params,
   };
 
-  CTL_DBG("GetReleaseByVersion: " << url.ToFullPath());
+  // CTL_DBG("GetReleaseByVersion: " << url.ToFullPath());
   auto result =
       curl_utils::SimpleGetJson(url_parser::FromUrl(url), kCurlGetTimeout);
 

@@ -6282,7 +6282,7 @@
         },
         "required": ["available", "total", "type"]
       },
-      "Storage": {
+      "StorageDto": {
         "type": "object",
         "properties": {
           "available": {
