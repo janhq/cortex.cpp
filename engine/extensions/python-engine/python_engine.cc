@@ -360,14 +360,15 @@ void PythonEngine::LoadModel(
   }
   auto model_config = models_[model];
   auto model_folder_path = model_config.files[0];
-  auto data_folder_path = std::filesystem::path(model_folder_path) / std::filesystem::path("venv");
+  auto data_folder_path =
+      std::filesystem::path(model_folder_path) / std::filesystem::path("venv");
   try {
 #ifdef _WIN32
     auto executable = std::filesystem::path(data_folder_path) /
                       std::filesystem::path("Scripts");
 #else
-    auto executable = std::filesystem::path(data_folder_path) /
-                      std::filesystem::path("bin");
+    auto executable =
+        std::filesystem::path(data_folder_path) / std::filesystem::path("bin");
 #endif
 
     auto executable_str =
@@ -377,9 +378,14 @@ void PythonEngine::LoadModel(
     command.push_back((std::filesystem::path(model_folder_path) /
                        std::filesystem::path(model_config.script))
                           .string());
-    std::list<std::string> args{"--port",      model_config.port,
-                                "--log_path",  model_config.log_path,
-                                "--log_level", model_config.log_level};
+    std::list<std::string> args{"--port",
+                                model_config.port,
+                                "--log_path",
+                                (file_manager_utils::GetCortexLogPath() /
+                                 std::filesystem::path(model_config.log_path))
+                                    .string(),
+                                "--log_level",
+                                model_config.log_level};
     if (!model_config.extra_params.isNull() &&
         model_config.extra_params.isObject()) {
       for (const auto& key : model_config.extra_params.getMemberNames()) {
