@@ -277,10 +277,10 @@ void Engines::InstallRemoteEngine(
       resp->setStatusCode(k400BadRequest);
       callback(resp);
     } else {
-      auto gr = engine_service_->GenerateRemoteModel(engine);
-      if (gr.has_error()) {
-        CTL_INF("Error: " << gr.error());
-      }
+      // auto gr = engine_service_->GenerateRemoteModel(engine);
+      // if (gr.has_error()) {
+      //   CTL_INF("Error: " << gr.error());
+      // }
 
       Json::Value res;
       if (get_models_url.empty()) {
