@@ -107,7 +107,7 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
-    headers = curl_slist_append(headers, api_key_template_.c_str());
+    headers = curl_slist_append(headers, api_key_header_.c_str());
   }
 
   if (is_anthropic(config.model)) {
@@ -199,7 +199,9 @@ RemoteEngine::ModelConfig* RemoteEngine::GetModelConfig(
   return nullptr;
 }
 
-CurlResponse RemoteEngine::MakeGetModelsRequest() {
+CurlResponse RemoteEngine::MakeGetModelsRequest(
+    const std::string& url, const std::string& api_key,
+    const std::string& api_key_template) {
   CURL* curl = curl_easy_init();
   CurlResponse response;
 
@@ -209,13 +211,14 @@ CurlResponse RemoteEngine::MakeGetModelsRequest() {
     return response;
   }
 
-  std::string full_url = metadata_["get_models_url"].asString();
+  std::string api_key_header =
+      ReplaceApiKeyPlaceholder(api_key_template, api_key);
 
   struct curl_slist* headers = nullptr;
-  headers = curl_slist_append(headers, api_key_template_.c_str());
+  headers = curl_slist_append(headers, api_key_header.c_str());
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
-  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
   std::string response_string;
@@ -251,7 +254,7 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
-    headers = curl_slist_append(headers, api_key_template_.c_str());
+    headers = curl_slist_append(headers, api_key_header_.c_str());
   }
 
   if (is_anthropic(config.model)) {
@@ -310,18 +313,18 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
     // model_config.url = ;
     // Optional fields
     if (config["api_key_template"]) {
-      api_key_template_ = ReplaceApiKeyPlaceholder(
+      api_key_header_ = ReplaceApiKeyPlaceholder(
           config["api_key_template"].as<std::string>(), api_key);
     }
-    if (config["TransformReq"]) {
-      model_config.transform_req = config["TransformReq"];
+    if (config["transform_req"]) {
+      model_config.transform_req = config["transform_req"];
     } else {
-      LOG_WARN << "Missing TransformReq in config for model " << model;
+      LOG_WARN << "Missing transform_req in config for model " << model;
     }
-    if (config["TransformResp"]) {
-      model_config.transform_resp = config["TransformResp"];
+    if (config["transform_resp"]) {
+      model_config.transform_resp = config["transform_resp"];
     } else {
-      LOG_WARN << "Missing TransformResp in config for model " << model;
+      LOG_WARN << "Missing transform_resp in config for model " << model;
     }
 
     model_config.is_loaded = true;
@@ -393,6 +396,26 @@ void RemoteEngine::LoadModel(
   const std::string& model_path = (*json_body)["model_path"].asString();
   const std::string& api_key = (*json_body)["api_key"].asString();
 
+  if (json_body->isMember("metadata")) {
+    metadata_ = (*json_body)["metadata"];
+    if (!metadata_["transform_req"].isNull() &&
+        !metadata_["transform_req"]["chat_completions"].isNull() &&
+        !metadata_["transform_req"]["chat_completions"]["template"].isNull()) {
+      chat_req_template_ =
+          metadata_["transform_req"]["chat_completions"]["template"].asString();
+      CTL_INF(chat_req_template_);
+    }
+
+    if (!metadata_["transform_resp"].isNull() &&
+        !metadata_["transform_resp"]["chat_completions"].isNull() &&
+        !metadata_["transform_resp"]["chat_completions"]["template"].isNull()) {
+      chat_res_template_ =
+          metadata_["transform_resp"]["chat_completions"]["template"]
+              .asString();
+      CTL_INF(chat_res_template_);
+    }
+  }
+
   if (!LoadModelConfig(model, model_path, api_key)) {
     Json::Value error;
     error["error"] = "Failed to load model configuration";
@@ -404,22 +427,11 @@ void RemoteEngine::LoadModel(
     callback(std::move(status), std::move(error));
     return;
   }
-  if (json_body->isMember("metadata")) {
-    metadata_ = (*json_body)["metadata"];
-    if (!metadata_["TransformReq"].isNull() &&
-        !metadata_["TransformReq"]["chat_completions"].isNull() &&
-        !metadata_["TransformReq"]["chat_completions"]["template"].isNull()) {
-      chat_req_template_ =
-          metadata_["TransformReq"]["chat_completions"]["template"].asString();
-      CTL_INF(chat_req_template_);
-    }
 
-    if (!metadata_["TransformResp"].isNull() &&
-        !metadata_["TransformResp"]["chat_completions"].isNull() &&
-        !metadata_["TransformResp"]["chat_completions"]["template"].isNull()) {
-      chat_res_template_ =
-          metadata_["TransformResp"]["chat_completions"]["template"].asString();
-      CTL_INF(chat_res_template_);
+  if (json_body->isMember("metadata")) {
+    if (!metadata_["api_key_template"].isNull()) {
+      api_key_header_ = ReplaceApiKeyPlaceholder(
+          metadata_["api_key_template"].asString(), api_key);
     }
   }
 
@@ -686,9 +698,10 @@ void RemoteEngine::HandleEmbedding(
   callback(Json::Value(), Json::Value());
 }
 
-Json::Value RemoteEngine::GetRemoteModels() {
-  if (metadata_["get_models_url"].isNull() ||
-      metadata_["get_models_url"].asString().empty()) {
+Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
+                                          const std::string& api_key,
+                                          const std::string& api_key_template) {
+  if (url.empty()) {
     if (engine_name_ == kAnthropicEngine) {
       Json::Value json_resp;
       Json::Value model_array(Json::arrayValue);
@@ -709,10 +722,11 @@ Json::Value RemoteEngine::GetRemoteModels() {
       return Json::Value();
     }
   } else {
-    auto response = MakeGetModelsRequest();
+    auto response = MakeGetModelsRequest(url, api_key, api_key_template);
     if (response.error) {
       Json::Value error;
       error["error"] = response.error_message;
+      CTL_WRN(response.error_message);
       return error;
     }
     Json::Value response_json;

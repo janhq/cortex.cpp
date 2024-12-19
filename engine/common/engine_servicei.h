@@ -31,6 +31,7 @@ struct EngineVariantResponse {
     root["name"] = name;
     root["version"] = version;
     root["engine"] = engine;
+    root["type"] = "local";
     return root;
   }
 };
@@ -58,6 +59,6 @@ class EngineServiceI {
   GetEngineByNameAndVariant(
       const std::string& engine_name,
       const std::optional<std::string> variant = std::nullopt) = 0;
-  
+
   virtual bool IsRemoteEngine(const std::string& engine_name) = 0;
 };
