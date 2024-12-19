@@ -48,6 +48,7 @@ ARG CMAKE_EXTRA_FLAGS=""
 WORKDIR /app
 
 # Copy source code
+COPY ./.github /app/.github
 COPY ./engine /app/engine
 COPY ./docs/static/openapi/cortex.json /app/docs/static/openapi/cortex.json
 
