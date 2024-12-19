@@ -254,7 +254,6 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   };
 // Load the Vulkan library
 #if defined(__APPLE__) && defined(__MACH__)
-  void* vulkanLibrary = nullptr;
   return std::vector<cortex::hw::GPU>{};
 #elif defined(__linux__)
   auto vulkan_path = get_vulkan_path("libvulkan.so");
@@ -270,6 +269,7 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   }
   HMODULE vulkanLibrary = LoadLibraryW(vulkan_path.value().wstring().c_str());
 #endif
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   if (!vulkanLibrary) {
     std::cerr << "Failed to load the Vulkan library." << std::endl;
     return cpp::fail("Failed to load the Vulkan library.");
@@ -420,5 +420,6 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   vkDestroyInstance(instance, nullptr);
   FreeLibrary(vulkanLibrary);
   return gpus;
+#endif
 }
 }  // namespace cortex::hw
