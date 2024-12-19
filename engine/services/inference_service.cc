@@ -1,7 +1,10 @@
 #include "inference_service.h"
 #include <drogon/HttpTypes.h>
 #include "utils/engine_constants.h"
+#include "utils/file_manager_utils.h"
 #include "utils/function_calling/common.h"
+#include "utils/gguf_metadata_reader.h"
+#include "utils/jinja_utils.h"
 
 namespace services {
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
@@ -23,6 +26,41 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
+
+  {
+    if (json_body->isMember("files") && !(*json_body)["files"].empty()) {
+      auto file = (*json_body)["files"][0].asString();
+      auto model_metadata_res = cortex_utils::ReadGgufMetadata(
+          file_manager_utils::ToAbsoluteCortexDataPath(
+              std::filesystem::path(file)));
+      if (model_metadata_res.has_value()) {
+        auto metadata = model_metadata_res.value().get();
+        if (!metadata->tokenizer->chat_template.empty()) {
+          auto messages = (*json_body)["messages"];
+          Json::Value messages_jsoncpp(Json::arrayValue);
+          for (auto message : messages) {
+            messages_jsoncpp.append(message);
+          }
+
+          Json::Value tools(Json::arrayValue);
+          Json::Value template_data_json;
+          template_data_json["messages"] = messages_jsoncpp;
+          // template_data_json["tools"] = tools;
+
+          auto prompt_result = jinja::RenderTemplate(
+              metadata->tokenizer->chat_template, template_data_json,
+              metadata->tokenizer->bos_token, metadata->tokenizer->eos_token);
+          if (prompt_result.has_value()) {
+            (*json_body)["prompt"] = prompt_result.value();
+          } else {
+            CTL_ERR("Failed to render prompt: " + prompt_result.error());
+          }
+        }
+      }
+    }
+  }
+
+  CTL_INF("Prompt is: " + json_body->get("prompt", "").asString());
 
   auto cb = [q, tool_choice](Json::Value status, Json::Value res) {
     if (!tool_choice.isNull()) {

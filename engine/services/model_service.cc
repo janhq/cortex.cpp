@@ -10,7 +10,6 @@
 #include "database/models.h"
 #include "hardware_service.h"
 #include "utils/cli_selection_utils.h"
-#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"

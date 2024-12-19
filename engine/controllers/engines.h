@@ -12,6 +12,8 @@ class Engines : public drogon::HttpController<Engines, false> {
  public:
   METHOD_LIST_BEGIN
 
+  ADD_METHOD_TO(Engines::TestJinja, "/v1/jinja", Options, Post);
+
   // install engine
   METHOD_ADD(Engines::InstallEngine, "/{1}/install", Options, Post);
   ADD_METHOD_TO(Engines::InstallEngine, "/v1/engines/{1}/install", Options,
@@ -109,6 +111,9 @@ class Engines : public drogon::HttpController<Engines, false> {
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback,
       const std::string& engine) const;
+
+  void TestJinja(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>&& callback);
 
   void LoadEngine(const HttpRequestPtr& req,
                   std::function<void(const HttpResponsePtr&)>&& callback,
