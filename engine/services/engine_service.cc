@@ -8,6 +8,7 @@
 #include "database/engines.h"
 #include "extensions/remote-engine/remote_engine.h"
 #include "utils/archive_utils.h"
+#include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -691,6 +692,9 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // End hard code
 
   CTL_INF("Loading engine: " << ne);
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+  CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
+#endif
 
   auto engine_dir_path_res = GetEngineDirPath(ne);
   if (engine_dir_path_res.has_error()) {
