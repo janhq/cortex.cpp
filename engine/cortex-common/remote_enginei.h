@@ -34,5 +34,6 @@ class RemoteEngineI {
 
   // Get available remote models
   virtual Json::Value GetRemoteModels(const std::string& url,
-                                      const std::string& api_key) = 0;
+                                      const std::string& api_key,
+                                      const std::string& api_key_template) = 0;
 };

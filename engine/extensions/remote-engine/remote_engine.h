@@ -50,7 +50,7 @@ class RemoteEngine : public RemoteEngineI {
   Json::Value metadata_;
   std::string chat_req_template_;
   std::string chat_res_template_;
-  std::string api_key_template_;
+  std::string api_key_header_;
   std::string engine_name_;
 
   // Helper functions
@@ -61,7 +61,8 @@ class RemoteEngine : public RemoteEngineI {
       const ModelConfig& config, const std::string& body,
       const std::function<void(Json::Value&&, Json::Value&&)>& callback);
   CurlResponse MakeGetModelsRequest(const std::string& url,
-                                    const std::string& api_key);
+                                    const std::string& api_key,
+                                    const std::string& api_key_template);
 
   // Internal model management
   bool LoadModelConfig(const std::string& model, const std::string& yaml_path,
@@ -99,7 +100,8 @@ class RemoteEngine : public RemoteEngineI {
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
   Json::Value GetRemoteModels(const std::string& url,
-                              const std::string& api_key) override;
+                              const std::string& api_key,
+                              const std::string& api_key_template) override;
 };
 
 }  // namespace remote_engine

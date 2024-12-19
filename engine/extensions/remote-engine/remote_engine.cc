@@ -107,7 +107,7 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
-    headers = curl_slist_append(headers, api_key_template_.c_str());
+    headers = curl_slist_append(headers, api_key_header_.c_str());
   }
 
   if (is_anthropic(config.model)) {
@@ -199,8 +199,9 @@ RemoteEngine::ModelConfig* RemoteEngine::GetModelConfig(
   return nullptr;
 }
 
-CurlResponse RemoteEngine::MakeGetModelsRequest(const std::string& url,
-                                                const std::string& api_key) {
+CurlResponse RemoteEngine::MakeGetModelsRequest(
+    const std::string& url, const std::string& api_key,
+    const std::string& api_key_template) {
   CURL* curl = curl_easy_init();
   CurlResponse response;
 
@@ -210,7 +211,9 @@ CurlResponse RemoteEngine::MakeGetModelsRequest(const std::string& url,
     return response;
   }
 
-  std::string api_key_header = "Authorization: Bearer " + api_key;
+  std::string api_key_header =
+      ReplaceApiKeyPlaceholder(api_key_template, api_key);
+
   struct curl_slist* headers = nullptr;
   headers = curl_slist_append(headers, api_key_header.c_str());
   headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -251,7 +254,7 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
-    headers = curl_slist_append(headers, api_key_template_.c_str());
+    headers = curl_slist_append(headers, api_key_header_.c_str());
   }
 
   if (is_anthropic(config.model)) {
@@ -310,7 +313,7 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
     // model_config.url = ;
     // Optional fields
     if (config["api_key_template"]) {
-      api_key_template_ = ReplaceApiKeyPlaceholder(
+      api_key_header_ = ReplaceApiKeyPlaceholder(
           config["api_key_template"].as<std::string>(), api_key);
     }
     if (config["transform_req"]) {
@@ -393,17 +396,6 @@ void RemoteEngine::LoadModel(
   const std::string& model_path = (*json_body)["model_path"].asString();
   const std::string& api_key = (*json_body)["api_key"].asString();
 
-  if (!LoadModelConfig(model, model_path, api_key)) {
-    Json::Value error;
-    error["error"] = "Failed to load model configuration";
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k500InternalServerError;
-    callback(std::move(status), std::move(error));
-    return;
-  }
   if (json_body->isMember("metadata")) {
     metadata_ = (*json_body)["metadata"];
     if (!metadata_["transform_req"].isNull() &&
@@ -421,6 +413,25 @@ void RemoteEngine::LoadModel(
           metadata_["transform_resp"]["chat_completions"]["template"]
               .asString();
       CTL_INF(chat_res_template_);
+    }
+  }
+
+  if (!LoadModelConfig(model, model_path, api_key)) {
+    Json::Value error;
+    error["error"] = "Failed to load model configuration";
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k500InternalServerError;
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  if (json_body->isMember("metadata")) {
+    if (!metadata_["api_key_template"].isNull()) {
+      api_key_header_ = ReplaceApiKeyPlaceholder(
+          metadata_["api_key_template"].asString(), api_key);
     }
   }
 
@@ -688,7 +699,8 @@ void RemoteEngine::HandleEmbedding(
 }
 
 Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
-                                          const std::string& api_key) {
+                                          const std::string& api_key,
+                                          const std::string& api_key_template) {
   if (url.empty()) {
     if (engine_name_ == kAnthropicEngine) {
       Json::Value json_resp;
@@ -710,7 +722,7 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
       return Json::Value();
     }
   } else {
-    auto response = MakeGetModelsRequest(url, api_key);
+    auto response = MakeGetModelsRequest(url, api_key, api_key_template);
     if (response.error) {
       Json::Value error;
       error["error"] = response.error_message;
