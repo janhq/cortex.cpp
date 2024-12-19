@@ -138,7 +138,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES
 )
 
 if(UNIX AND NOT APPLE)
-configure_file("${PROJECT_SOURCE_DIR}/../../.github/patches/linux/libvulkan.so" "${CMAKE_BINARY_DIR}/libvulkan.so" COPYONLY)
+configure_file("${PROJECT_SOURCE_DIR}/../deps/linux/libvulkan.so" "${CMAKE_BINARY_DIR}/libvulkan.so" COPYONLY)
 elseif(MSVC)
-configure_file("${PROJECT_SOURCE_DIR}/../../.github/patches/windows/vulkan-1.dll" "${CMAKE_BINARY_DIR}/vulkan-1.dll" COPYONLY)
+configure_file("${PROJECT_SOURCE_DIR}/../deps/windows/vulkan-1.dll" "${CMAKE_BINARY_DIR}/vulkan-1.dll" COPYONLY)
 endif()
