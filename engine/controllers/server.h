@@ -25,7 +25,8 @@ namespace inferences {
 class server : public drogon::HttpController<server, false>,
                public BaseModel,
                public BaseChatCompletion,
-               public BaseEmbedding {
+               public BaseEmbedding,
+               public BasePythonModel {
  public:
   server(std::shared_ptr<services::InferenceService> inference_service,
          std::shared_ptr<EngineService> engine_service);
@@ -46,8 +47,11 @@ class server : public drogon::HttpController<server, false>,
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Options, Post);
   ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Options, Post);
   ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Options, Post);
+  ADD_METHOD_TO(server::Inference, "/v1/inference", Options, Post);
+  ADD_METHOD_TO(server::RouteRequest, "/v1/route/request", Options, Post);
 
   METHOD_LIST_END
+
   void ChatCompletion(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
@@ -67,6 +71,12 @@ class server : public drogon::HttpController<server, false>,
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
   void FineTuning(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void Inference(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void RouteRequest(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
 

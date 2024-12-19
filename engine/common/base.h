@@ -46,3 +46,16 @@ class BaseEmbedding {
 
   // The derived class can also override other methods if needed
 };
+
+class BasePythonModel {
+ public:
+  virtual ~BasePythonModel() {}
+
+  // Model management
+  virtual void Inference(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+  virtual void RouteRequest(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback) = 0;
+};

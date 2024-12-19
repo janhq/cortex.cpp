@@ -3,9 +3,9 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include "extensions/remote-engine/remote_engine.h"
 #include "services/engine_service.h"
 #include "utils/result.hpp"
-#include "extensions/remote-engine/remote_engine.h"
 namespace services {
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;
@@ -41,6 +41,12 @@ class InferenceService {
   cpp::result<void, InferResult> HandleEmbedding(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
 
+  cpp::result<void, InferResult> HandleInference(
+      std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
+
+  cpp::result<void, InferResult> HandleRouteRequest(
+      std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
+      
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
   InferResult UnloadModel(const std::string& engine,

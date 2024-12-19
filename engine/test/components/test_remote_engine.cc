@@ -1,4 +1,4 @@
-#include "extensions/remote-engine/template_renderer.h"
+#include "extensions/template_renderer.h"
 #include "gtest/gtest.h"
 #include "utils/json_helper.h"
 
@@ -42,7 +42,7 @@ TEST_F(RemoteEngineTest, OpenAiToAnthropicRequest) {
 
     auto data = json_helper::ParseJsonString(message_with_system);
 
-    remote_engine::TemplateRenderer rdr;
+    extensions::TemplateRenderer rdr;
     auto res = rdr.Render(tpl, data);
 
     auto res_json = json_helper::ParseJsonString(res);
@@ -69,7 +69,7 @@ TEST_F(RemoteEngineTest, OpenAiToAnthropicRequest) {
 
     auto data = json_helper::ParseJsonString(message_without_system);
 
-    remote_engine::TemplateRenderer rdr;
+    extensions::TemplateRenderer rdr;
     auto res = rdr.Render(tpl, data);
 
     auto res_json = json_helper::ParseJsonString(res);
