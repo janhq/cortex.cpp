@@ -216,11 +216,11 @@ typedef void(VKAPI_PTR* PFN_vkDestroyInstance)(VkInstance,
                                                const VkAllocationCallbacks*);
 
 typedef void(VKAPI_PTR* PFN_vkGetPhysicalDeviceMemoryProperties)(
-    VkPhysicalDevice physicalDevice,
+    VkPhysicalDevice physical_device,
     VkPhysicalDeviceMemoryProperties* pMemoryProperties);
 
 typedef void(VKAPI_PTR* PFN_vkGetPhysicalDeviceProperties2)(
-    VkPhysicalDevice physicalDevice, VkPhysicalDeviceProperties2* pProperties);
+    VkPhysicalDevice physical_device, VkPhysicalDeviceProperties2* pProperties);
 
 typedef VkResult(VKAPI_PTR* PFN_vkEnumerateInstanceExtensionProperties)(
     const char* pLayerName, uint32_t* pPropertyCount,
@@ -260,17 +260,17 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   if (vulkan_path.has_error()) {
     return cpp::fail(vulkan_path.error());
   }
-  void* vulkanLibrary =
+  void* vulkan_library =
       dlopen(vulkan_path.value().string().c_str(), RTLD_LAZY | RTLD_GLOBAL);
 #else
   auto vulkan_path = get_vulkan_path("vulkan-1.dll");
   if (vulkan_path.has_error()) {
     return cpp::fail(vulkan_path.error());
   }
-  HMODULE vulkanLibrary = LoadLibraryW(vulkan_path.value().wstring().c_str());
+  HMODULE vulkan_library = LoadLibraryW(vulkan_path.value().wstring().c_str());
 #endif
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
-  if (!vulkanLibrary) {
+  if (!vulkan_library) {
     std::cerr << "Failed to load the Vulkan library." << std::endl;
     return cpp::fail("Failed to load the Vulkan library.");
   }
@@ -278,45 +278,45 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   // Get the function pointers for other Vulkan functions
   auto vkEnumerateInstanceExtensionProperties =
       reinterpret_cast<PFN_vkEnumerateInstanceExtensionProperties>(
-          GetProcAddress(vulkanLibrary,
+          GetProcAddress(vulkan_library,
                          "vkEnumerateInstanceExtensionProperties"));
   auto vkCreateInstance = reinterpret_cast<PFN_vkCreateInstance>(
-      GetProcAddress(vulkanLibrary, "vkCreateInstance"));
+      GetProcAddress(vulkan_library, "vkCreateInstance"));
   auto vkEnumeratePhysicalDevices =
       reinterpret_cast<PFN_vkEnumeratePhysicalDevices>(
-          GetProcAddress(vulkanLibrary, "vkEnumeratePhysicalDevices"));
+          GetProcAddress(vulkan_library, "vkEnumeratePhysicalDevices"));
   auto vkGetPhysicalDeviceProperties =
       reinterpret_cast<PFN_vkGetPhysicalDeviceProperties>(
-          GetProcAddress(vulkanLibrary, "vkGetPhysicalDeviceProperties"));
+          GetProcAddress(vulkan_library, "vkGetPhysicalDeviceProperties"));
   auto vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(
-      GetProcAddress(vulkanLibrary, "vkDestroyInstance"));
+      GetProcAddress(vulkan_library, "vkDestroyInstance"));
   auto vkGetPhysicalDeviceMemoryProperties =
       (PFN_vkGetPhysicalDeviceMemoryProperties)GetProcAddress(
-          vulkanLibrary, "vkGetPhysicalDeviceMemoryProperties");
+          vulkan_library, "vkGetPhysicalDeviceMemoryProperties");
 
   auto vkGetPhysicalDeviceProperties2 =
       (PFN_vkGetPhysicalDeviceProperties2)GetProcAddress(
-          vulkanLibrary, "vkGetPhysicalDeviceProperties2");
+          vulkan_library, "vkGetPhysicalDeviceProperties2");
 
-  uint32_t extensionCount = 0;
-  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-  std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-  vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
+  uint32_t extension_count = 0;
+  vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+  std::vector<VkExtensionProperties> availableExtensions(extension_count);
+  vkEnumerateInstanceExtensionProperties(nullptr, &extension_count,
                                          availableExtensions.data());
 
   // Create a Vulkan instance
-  VkInstanceCreateInfo instanceCreateInfo = {};
-  instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+  VkInstanceCreateInfo instance_create_info = {};
+  instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   // If the extension is available, enable it
-  std::vector<const char*> enabledExtensions;
+  std::vector<const char*> enabled_extensions;
 
   for (const auto& extension : availableExtensions) {
-    enabledExtensions.push_back(extension.extensionName);
+    enabled_extensions.push_back(extension.extensionName);
   }
 
-  instanceCreateInfo.enabledExtensionCount =
+  instance_create_info.enabledExtensionCount =
       static_cast<uint32_t>(availableExtensions.size());
-  instanceCreateInfo.ppEnabledExtensionNames = enabledExtensions.data();
+  instance_create_info.ppEnabledExtensionNames = enabled_extensions.data();
 
   VkInstance instance;
   if (vkCreateInstance == nullptr || vkEnumeratePhysicalDevices == nullptr ||
@@ -327,23 +327,23 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
     return cpp::fail("vulkan API is missing!");
   }
 
-  VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+  VkResult result = vkCreateInstance(&instance_create_info, nullptr, &instance);
   if (result != VK_SUCCESS) {
-    FreeLibrary(vulkanLibrary);
+    FreeLibrary(vulkan_library);
     return cpp::fail("Failed to create a Vulkan instance.");
   }
 
   // Get the physical devices
-  uint32_t physicalDeviceCount = 0;
-  result = vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr);
+  uint32_t physical_device_count = 0;
+  result = vkEnumeratePhysicalDevices(instance, &physical_device_count, nullptr);
   if (result != VK_SUCCESS) {
     vkDestroyInstance(instance, nullptr);
-    FreeLibrary(vulkanLibrary);
+    FreeLibrary(vulkan_library);
     return cpp::fail("Failed to enumerate physical devices.");
   }
-  std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
-  vkEnumeratePhysicalDevices(instance, &physicalDeviceCount,
-                             physicalDevices.data());
+  std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
+  vkEnumeratePhysicalDevices(instance, &physical_device_count,
+                             physical_devices.data());
 
   auto uuid_to_string = [](const uint8_t* device_uuid) -> std::string {
     std::stringstream ss;
@@ -368,26 +368,26 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
 
   // Get the device properties
   size_t id = 0;
-  for (const auto& physicalDevice : physicalDevices) {
-    VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(physicalDevice, &deviceProperties);
+  for (const auto& physical_device : physical_devices) {
+    VkPhysicalDeviceProperties device_properties;
+    vkGetPhysicalDeviceProperties(physical_device, &device_properties);
 
-    VkPhysicalDeviceIDProperties deviceIDProperties = {};
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    deviceProperties2.pNext = &deviceIDProperties;
-    deviceIDProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+    VkPhysicalDeviceIDProperties device_id_properties = {};
+    VkPhysicalDeviceProperties2 device_properties2 = {};
+    device_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    device_properties2.pNext = &device_id_properties;
+    device_id_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
 
-    vkGetPhysicalDeviceProperties2(physicalDevice, &deviceProperties2);
+    vkGetPhysicalDeviceProperties2(physical_device, &device_properties2);
 
-    VkPhysicalDeviceMemoryProperties memoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
     int gpu_avail_MiB = 0;
-    for (uint32_t i = 0; i < memoryProperties.memoryHeapCount; ++i) {
-      if (memoryProperties.memoryHeaps[i].flags &
+    for (uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
+      if (memory_properties.memoryHeaps[i].flags &
           VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
         gpu_avail_MiB +=
-            memoryProperties.memoryHeaps[i].size / (1024ull * 1024ull);
+            memory_properties.memoryHeaps[i].size / (1024ull * 1024ull);
       }
     }
 
@@ -395,30 +395,30 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
     int64_t used_vram_MiB = 0;
 
 #if defined(__linux__)
-    total_vram_MiB = gpus_usages[deviceProperties.deviceID].total_vram_MiB;
-    used_vram_MiB = gpus_usages[deviceProperties.deviceID].used_vram_MiB;
+    total_vram_MiB = gpus_usages[device_properties.deviceID].total_vram_MiB;
+    used_vram_MiB = gpus_usages[device_properties.deviceID].used_vram_MiB;
 #elif defined(_WIN32)
     total_vram_MiB = gpu_avail_MiB;
-    used_vram_MiB = gpus_usages[deviceProperties.deviceName];
+    used_vram_MiB = gpus_usages[device_properties.deviceName];
 
 #endif
     int free_vram_MiB =
         total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
     gpus.emplace_back(cortex::hw::GPU{
         .id = std::to_string(id),
-        .device_id = deviceProperties.deviceID,
-        .name = deviceProperties.deviceName,
-        .version = std::to_string(deviceProperties.driverVersion),
+        .device_id = device_properties.deviceID,
+        .name = device_properties.deviceName,
+        .version = std::to_string(device_properties.driverVersion),
         .add_info = cortex::hw::AmdAddInfo{},
         .free_vram = free_vram_MiB,
         .total_vram = total_vram_MiB,
-        .uuid = uuid_to_string(deviceIDProperties.deviceUUID)});
+        .uuid = uuid_to_string(device_id_properties.deviceUUID)});
     id++;
   }
 
   // Clean up
   vkDestroyInstance(instance, nullptr);
-  FreeLibrary(vulkanLibrary);
+  FreeLibrary(vulkan_library);
   return gpus;
 #endif
 }
