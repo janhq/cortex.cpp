@@ -7,6 +7,7 @@ import subprocess
 import threading
 import time
 import requests
+from requests.exceptions import RequestException
 from typing import List
 
 import websockets
@@ -70,6 +71,42 @@ def start_server() -> bool:
         return start_server_windows()
     else:
         return start_server_nix()
+
+
+def start_server_if_needed():
+    """
+    Start the server if it is not already running.
+    Sending a healthz request to the server to check if it is running.
+    """
+    try:
+        response = requests.get(
+            'http://localhost:3928/healthz',
+            timeout=5
+        )
+        if response.status_code == 200:
+            print("Server is already running")
+    except RequestException as e:
+        print("Server is not running. Starting the server...")
+        start_server()
+        
+
+def pull_model_if_needed(model_id: str = "tinyllama:gguf"):
+    """
+    Pull the model if it is not already pulled.
+    """
+    should_pull = False
+    try:
+        response = requests.get("http://localhost:3928/models/" + model_id,
+                                timeout=5
+        )
+        if response.status_code != 200:
+            should_pull = True
+
+    except RequestException as e:
+        print("Http error occurred: " + e)
+    
+    if should_pull:
+        run("Pull model", ["pull", model_id], timeout=10*60)
 
 
 def start_server_nix() -> bool:

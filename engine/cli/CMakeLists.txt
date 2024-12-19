@@ -61,7 +61,6 @@ add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(httplib CONFIG REQUIRED)
 find_package(CLI11 CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
@@ -76,6 +75,7 @@ find_package(lfreist-hwinfo CONFIG REQUIRED)
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/dylib_path_manager.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/command_line_parser.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/config_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/download_service.cc
@@ -83,11 +83,16 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/inference_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/hardware_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/remote_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/template_renderer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_progress.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/config_yaml_utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_manager_utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/curl_utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/system_info_utils.cc
   )
 
-target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
@@ -119,11 +124,12 @@ aux_source_directory(../cortex-common CORTEX_COMMON)
 aux_source_directory(../config CONFIG_SRC)
 aux_source_directory(commands COMMANDS_SRC)
 aux_source_directory(../database DB_SRC)
+aux_source_directory(../extensions EX_SRC)
  
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/.. )
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${COMMANDS_SRC} ${CONFIG_SRC} ${COMMON_SRC} ${DB_SRC} ${EX_SRC})
 
 set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}

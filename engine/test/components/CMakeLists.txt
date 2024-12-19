@@ -12,12 +12,16 @@ add_executable(${PROJECT_NAME}
   ${CMAKE_CURRENT_SOURCE_DIR}/../../services/config_service.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../services/download_service.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/../../database/models.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/config_yaml_utils.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/file_manager_utils.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/curl_utils.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../utils/system_info_utils.cc
+  ${CMAKE_CURRENT_SOURCE_DIR}/../../extensions/remote-engine/template_renderer.cc
 )
 
 find_package(Drogon CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(httplib CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(CURL REQUIRED)
@@ -26,7 +30,6 @@ find_package(SQLiteCpp REQUIRED)
 target_link_libraries(${PROJECT_NAME} PRIVATE Drogon::Drogon GTest::gtest GTest::gtest_main yaml-cpp::yaml-cpp 
                                               ${CMAKE_THREAD_LIBS_INIT})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${PROJECT_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${PROJECT_NAME} PRIVATE LibArchive::LibArchive)
 target_link_libraries(${PROJECT_NAME} PRIVATE CURL::libcurl)

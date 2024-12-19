@@ -9,11 +9,6 @@
 
 #include <drogon/HttpController.h>
 
-#ifndef NDEBUG
-// crash the server in debug mode, otherwise send an http 500 error
-#define CPPHTTPLIB_NO_EXCEPTIONS 1
-#endif
-
 #include <cstddef>
 #include <string>
 #include "common/base.h"
@@ -77,7 +72,9 @@ class server : public drogon::HttpController<server, false>,
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                        std::shared_ptr<services::SyncQueue> q);
+                        std::shared_ptr<services::SyncQueue> q,
+                        const std::string& engine_type,
+                        const std::string& model_id);
   void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
                            services::SyncQueue& q);
 

@@ -120,8 +120,11 @@ For example, it returns the following:w
 
 | Option                    | Description                                        | Required | Default value | Example              |
 |---------------------------|----------------------------------------------------|----------|---------------|----------------------|
-| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`             |
-<!-- | `-f`, `--format <format>` | Specify output format for the models list.         | No       | `json`        | `-f json`       | -->
+| `-h`, `--help`            | Display help for command.                          | No       | -             | `-h`                 |
+| `-e`, `--engine`          | Display engines.                                   | No       | -             | `--engine`           |
+| `-v`, `--version`         | Display version for model.                         | No       | -             | `--version`          |
+| `--cpu_mode`              | Display CPU mode.                                  | No       | -             | `--cpu_mode`         |
+| `--gpu_mode`              | Display GPU mode.                                  | No       | -             | `--gpu_mode`         |
 
 ## `cortex models start`
 :::info
@@ -156,9 +159,10 @@ This command uses a `model_id` from the model that you have downloaded or availa
 
 | Option                    | Description                                                               | Required | Default value                                | Example                |
 |---------------------------|---------------------------------------------------------------------------|----------|----------------------------------------------|------------------------|
-| `model_id`                | The identifier of the model you want to start.                            | Yes       | `Prompt to select from the available models` | `mistral`       |
-| `--gpus`                  | List of GPUs to use.                                                      | No       | -                                            | `[0,1]`           |
-| `-h`, `--help`            | Display help information for the command.                                 | No       | -                                            | `-h`               |
+| `model_id`                | The identifier of the model you want to start.                            | Yes      | `Prompt to select from the available models` | `mistral`              |
+| `--gpus`                  | List of GPUs to use.                                                      | No       | -                                            | `[0,1]`                |
+| `--ctx_len`               | Maximum context length for inference.                                     | No       | `min(8192, max_model_context_length)`        | `1024`                 |
+| `-h`, `--help`            | Display help information for the command.                                 | No       | -                                            | `-h`                   |
 
 ## `cortex models stop`
 :::info

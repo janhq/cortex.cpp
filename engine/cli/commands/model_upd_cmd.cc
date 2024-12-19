@@ -1,9 +1,9 @@
 #include "model_upd_cmd.h"
-#include "httplib.h"
-
 #include "server_start_cmd.h"
-#include "utils/file_manager_utils.h"
+#include "utils/curl_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
+#include "utils/url_parser.h"
 
 namespace commands {
 
@@ -22,7 +22,12 @@ void ModelUpdCmd::Exec(
     }
   }
 
-  httplib::Client cli(host + ":" + std::to_string(port));
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "models", model_handle_},
+  };
+
   Json::Value json_data;
   for (const auto& [key, value] : options) {
     if (!value.empty()) {
@@ -30,21 +35,15 @@ void ModelUpdCmd::Exec(
     }
   }
   auto data_str = json_data.toStyledString();
-  auto res = cli.Patch("/v1/models/" + model_handle_, httplib::Headers(),
-                       data_str.data(), data_str.size(), "application/json");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      CLI_LOG("Successfully updated model ID '" + model_handle_ + "'!");
-      return;
-    } else {
-      CTL_ERR("Model failed to update with status code: " << res->status);
-      return;
-    }
-  } else {
-    auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+  auto res = curl_utils::SimplePatchJson(url.ToFullPath(), data_str);
+  if (res.has_error()) {
+    auto root = json_helper::ParseJsonString(res.error());
+    CLI_LOG(root["message"].asString());
     return;
   }
+
+  CLI_LOG("Successfully updated model ID '" + model_handle_ + "'!");
+  return;
 }
 
 void ModelUpdCmd::UpdateConfig(Json::Value& data, const std::string& key,

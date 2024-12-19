@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 #include "utils/curl_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/json_parser_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
@@ -66,6 +67,7 @@ struct HuggingFaceModelRepoInfo {
   std::vector<HuggingFaceFileSibling> siblings;
   std::vector<std::string> spaces;
   std::string createdAt;
+  std::string metadata;
 
   static cpp::result<HuggingFaceModelRepoInfo, std::string> FromJson(
       const Json::Value& body) {
@@ -103,6 +105,7 @@ struct HuggingFaceModelRepoInfo {
         .spaces =
             json_parser_utils::ParseJsonArray<std::string>(body["spaces"]),
         .createdAt = body["createdAt"].asString(),
+        .metadata = body.toStyledString(),
     };
   }
 

@@ -36,7 +36,6 @@ bool HardwareActivateCmd::Exec(
     }
   }
 
-  // TODO(sang) should use curl but it does not work (?)
   Json::Value body;
   Json::Value gpus_json = Json::arrayValue;
   std::vector<int> gpus;
@@ -51,35 +50,29 @@ bool HardwareActivateCmd::Exec(
   body["gpus"] = gpus_json;
   auto data_str = body.toStyledString();
 
-  httplib::Client cli(host + ":" + std::to_string(port));
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "hardware", "activate"},
+  };
 
-  auto res = cli.Post("/v1/hardware/activate", httplib::Headers(),
-                      data_str.data(), data_str.size(), "application/json");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      auto root = json_helper::ParseJsonString(res->body);
-      if (!root["warning"].isNull()) {
-        CLI_LOG(root["warning"].asString());
-      }
-      if(body["gpus"].empty()) {
-        CLI_LOG("Deactivated all GPUs!");        
-      } else {
-        std::string gpus_str;
-        for(auto i: gpus) {
-            gpus_str += " " + std::to_string(i);
-        }
-        CLI_LOG("Activated GPUs:" << gpus_str);
-      }
-      return true;
-    } else {
-      auto root = json_helper::ParseJsonString(res->body);
-      CLI_LOG(root["message"].asString());
-      return false;
-    }
-  } else {
-    auto err = res.error();
-    CTL_ERR("HTTP error: " << httplib::to_string(err));
+  auto res = curl_utils::SimplePostJson(url.ToFullPath(), data_str);
+  if (res.has_error()) {
+    auto root = json_helper::ParseJsonString(res.error());
+    CLI_LOG(root["message"].asString());
     return false;
+  }
+  if (!res.value()["warning"].isNull()) {
+    CLI_LOG(res.value()["warning"].asString());
+  }
+  if (body["gpus"].empty()) {
+    CLI_LOG("Deactivated all GPUs!");
+  } else {
+    std::string gpus_str;
+    for (auto i : gpus) {
+      gpus_str += " " + std::to_string(i);
+    }
+    CLI_LOG("Activated GPUs:" << gpus_str);
   }
   return true;
 }

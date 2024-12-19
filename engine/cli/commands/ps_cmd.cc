@@ -1,29 +1,30 @@
 #include "ps_cmd.h"
-#include <httplib.h>
 #include <string>
 #include <tabulate/table.hpp>
+#include "utils/curl_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/format_utils.h"
-#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
+#include "utils/url_parser.h"
 
 namespace commands {
 
 void PsCmd::Exec(const std::string& host, int port) {
-  auto host_and_port{host + ":" + std::to_string(port)};
-  httplib::Client cli(host_and_port);
-
-  auto res = cli.Get("/inferences/server/models");
-  if (!res || res->status != httplib::StatusCode::OK_200) {
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"inferences", "server", "models"},
+  };
+  auto res = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (res.has_error()) {
     CLI_LOG("No models loaded!");
     return;
   }
 
-  auto data = json_helper::ParseJsonString(res->body)["data"];
   std::vector<ModelLoadedStatus> model_status_list;
   try {
-    for (const auto& item : data) {
+    for (const auto& item : res.value()["data"]) {
       ModelLoadedStatus model_status;
       // TODO(sang) hardcode for now
       model_status.engine = kLlamaEngine;

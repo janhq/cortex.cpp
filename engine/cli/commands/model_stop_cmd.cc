@@ -1,30 +1,29 @@
 #include "model_stop_cmd.h"
-#include "httplib.h"
+#include <json/value.h>
+#include "utils/curl_utils.h"
 #include "utils/logging_utils.h"
+#include "utils/url_parser.h"
 
 namespace commands {
 
 void ModelStopCmd::Exec(const std::string& host, int port,
                         const std::string& model_handle) {
-  // Call API to stop model
-  httplib::Client cli(host + ":" + std::to_string(port));
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "models", "stop"},
+  };
+
   Json::Value json_data;
   json_data["model"] = model_handle;
   auto data_str = json_data.toStyledString();
-  auto res = cli.Post("/v1/models/stop", httplib::Headers(), data_str.data(),
-                      data_str.size(), "application/json");
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      CLI_LOG("Model unloaded!");
-    } else {
-      auto root = json_helper::ParseJsonString(res->body);
-      CLI_LOG(root["message"].asString());
-      return;
-    }
-  } else {
-    auto err = res.error();
-    CLI_LOG("HTTP error: " << httplib::to_string(err));
-  }
-}
+  auto res = curl_utils::SimplePostJson(url.ToFullPath(), data_str);
 
+  if (res.has_error()) {
+    CLI_LOG_ERROR("Failed to stop model: " << res.error());
+    return;
+  }
+
+  CLI_LOG("Model stopped!");
+}
 };  // namespace commands

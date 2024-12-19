@@ -1,28 +1,38 @@
 #include <drogon/HttpAppFramework.h>
 #include <drogon/drogon.h>
 #include <memory>
+#include "controllers/assistants.h"
 #include "controllers/configs.h"
 #include "controllers/engines.h"
 #include "controllers/events.h"
+#include "controllers/files.h"
 #include "controllers/hardware.h"
+#include "controllers/messages.h"
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
 #include "controllers/server.h"
-#include "cortex-common/cortexpythoni.h"
+#include "controllers/swagger.h"
+#include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
+#include "repositories/file_fs_repository.h"
+#include "repositories/message_fs_repository.h"
+#include "repositories/thread_fs_repository.h"
+#include "services/assistant_service.h"
 #include "services/config_service.h"
 #include "services/file_watcher_service.h"
+#include "services/message_service.h"
 #include "services/model_service.h"
+#include "services/model_source_service.h"
+#include "services/thread_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
-#include "utils/dylib.h"
+#include "utils/dylib_path_manager.h"
 #include "utils/event_processor.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
-#include "utils/widechar_conv.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -35,12 +45,14 @@
 #include <unistd.h>  // for readlink()
 #elif defined(_WIN32)
 #include <windows.h>
+#include "utils/widechar_conv.h"
 #undef max
 #else
 #error "Unsupported platform!"
 #endif
 
-void RunServer(std::optional<int> port, bool ignore_cout) {
+void RunServer(std::optional<std::string> host, std::optional<int> port,
+               bool ignore_cout) {
 #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
   signal(SIGINT, SIG_IGN);
 #elif defined(_WIN32)
@@ -51,9 +63,16 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       reinterpret_cast<PHANDLER_ROUTINE>(console_ctrl_handler), true);
 #endif
   auto config = file_manager_utils::GetCortexConfig();
-  if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
+  if (host.has_value() || port.has_value()) {
+    if (host.has_value() && *host != config.apiServerHost) {
+      config.apiServerHost = *host;
+    }
+
+    if (port.has_value() && *port != std::stoi(config.apiServerPort)) {
+      config.apiServerPort = std::to_string(*port);
+    }
+
     auto config_path = file_manager_utils::GetConfigurationPath();
-    config.apiServerPort = std::to_string(*port);
     auto result =
         config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
             config, config_path.string());
@@ -61,6 +80,7 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       CTL_ERR("Error update " << config_path.string() << result.error());
     }
   }
+
   if (!ignore_cout) {
     std::cout << "Host: " << config.apiServerHost
               << " Port: " << config.apiServerPort << "\n";
@@ -115,13 +135,28 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   auto event_queue_ptr = std::make_shared<EventQueue>();
   cortex::event::EventProcessor event_processor(event_queue_ptr);
 
+  auto data_folder_path = file_manager_utils::GetCortexDataPath();
+  // utils
+  auto dylib_path_manager = std::make_shared<cortex::DylibPathManager>();
+
+  auto file_repo = std::make_shared<FileFsRepository>(data_folder_path);
+  auto msg_repo = std::make_shared<MessageFsRepository>(data_folder_path);
+  auto thread_repo = std::make_shared<ThreadFsRepository>(data_folder_path);
+
+  auto file_srv = std::make_shared<FileService>(file_repo);
+  auto assistant_srv = std::make_shared<AssistantService>(thread_repo);
+  auto thread_srv = std::make_shared<ThreadService>(thread_repo);
+  auto message_srv = std::make_shared<MessageService>(msg_repo);
+
   auto model_dir_path = file_manager_utils::GetModelsContainerPath();
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
       std::make_shared<DownloadService>(event_queue_ptr, config_service);
-  auto engine_service = std::make_shared<EngineService>(download_service);
+  auto engine_service =
+      std::make_shared<EngineService>(download_service, dylib_path_manager);
   auto inference_svc =
       std::make_shared<services::InferenceService>(engine_service);
+  auto model_src_svc = std::make_shared<services::ModelSourceService>();
   auto model_service = std::make_shared<ModelService>(
       download_service, inference_svc, engine_service);
 
@@ -130,8 +165,15 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   file_watcher_srv->start();
 
   // initialize custom controllers
+  auto swagger_ctl = std::make_shared<SwaggerController>(config.apiServerHost,
+                                                         config.apiServerPort);
+  auto file_ctl = std::make_shared<Files>(file_srv, message_srv);
+  auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
+  auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
+  auto message_ctl = std::make_shared<Messages>(message_srv);
   auto engine_ctl = std::make_shared<Engines>(engine_service);
-  auto model_ctl = std::make_shared<Models>(model_service, engine_service);
+  auto model_ctl =
+      std::make_shared<Models>(model_service, engine_service, model_src_svc);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
   auto hw_ctl = std::make_shared<Hardware>(engine_service, hw_service);
@@ -139,6 +181,11 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
       std::make_shared<inferences::server>(inference_svc, engine_service);
   auto config_ctl = std::make_shared<Configs>(config_service);
 
+  drogon::app().registerController(swagger_ctl);
+  drogon::app().registerController(file_ctl);
+  drogon::app().registerController(assistant_ctl);
+  drogon::app().registerController(thread_ctl);
+  drogon::app().registerController(message_ctl);
   drogon::app().registerController(engine_ctl);
   drogon::app().registerController(model_ctl);
   drogon::app().registerController(event_ctl);
@@ -146,9 +193,6 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   drogon::app().registerController(server_ctl);
   drogon::app().registerController(hw_ctl);
   drogon::app().registerController(config_ctl);
-
-  auto upload_path = std::filesystem::temp_directory_path() / "cortex-uploads";
-  drogon::app().setUploadPath(upload_path.string());
 
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
@@ -163,6 +207,12 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
   drogon::app().setThreadNum(drogon_thread_num);
   LOG_INFO << "Number of thread is:" << drogon::app().getThreadNum();
   drogon::app().disableSigtermHandling();
+
+  // file upload
+  drogon::app()
+      .enableCompressedRequest(true)
+      .setClientMaxBodySize(256 * 1024 * 1024)   // Max 256MiB body size
+      .setClientMaxMemoryBodySize(1024 * 1024);  // 1MiB before writing to disk
 
   // CORS
   drogon::app().registerPostHandlingAdvice(
@@ -198,6 +248,24 @@ void RunServer(std::optional<int> port, bool ignore_cout) {
         resp->addHeader("Access-Control-Allow-Methods", "*");
       });
 
+  // ssl
+  auto ssl_cert_path = config.sslCertPath;
+  auto ssl_key_path = config.sslKeyPath;
+
+  if (!ssl_cert_path.empty() && !ssl_key_path.empty()) {
+    CTL_INF("SSL cert path: " << ssl_cert_path);
+    CTL_INF("SSL key path: " << ssl_key_path);
+
+    if (!std::filesystem::exists(ssl_cert_path) ||
+        !std::filesystem::exists(ssl_key_path)) {
+      CTL_ERR("SSL cert or key file not exist at specified path! Ignore..");
+      return;
+    }
+
+    drogon::app().setSSLFiles(ssl_cert_path, ssl_key_path);
+    drogon::app().addListener(config.apiServerHost, 443, true);
+  }
+
   drogon::app().run();
   if (hw_service->ShouldRestart()) {
     CTL_INF("Restart to update hardware configuration");
@@ -219,9 +287,12 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+
   // avoid printing logs to terminal
   is_server = true;
 
+  std::optional<std::string> server_host;
   std::optional<int> server_port;
   bool ignore_cout_log = false;
 #if defined(_WIN32)
@@ -235,6 +306,8 @@ int main(int argc, char* argv[]) {
       std::wstring v = argv[i + 1];
       file_manager_utils::cortex_data_folder_path =
           cortex::wc::WstringToUtf8(v);
+    } else if (command == L"--host") {
+      server_host = cortex::wc::WstringToUtf8(argv[i + 1]);
     } else if (command == L"--port") {
       server_port = std::stoi(argv[i + 1]);
     } else if (command == L"--ignore_cout") {
@@ -251,6 +324,8 @@ int main(int argc, char* argv[]) {
       file_manager_utils::cortex_config_file_path = argv[i + 1];
     } else if (strcmp(argv[i], "--data_folder_path") == 0) {
       file_manager_utils::cortex_data_folder_path = argv[i + 1];
+    } else if (strcmp(argv[i], "--host") == 0) {
+      server_host = argv[i + 1];
     } else if (strcmp(argv[i], "--port") == 0) {
       server_port = std::stoi(argv[i + 1]);
     } else if (strcmp(argv[i], "--ignore_cout") == 0) {
@@ -306,27 +381,6 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // // Check if this process is for python execution
-  // if (argc > 1) {
-  //   if (strcmp(argv[1], "--run_python_file") == 0) {
-  //     std::string py_home_path = (argc > 3) ? argv[3] : "";
-  //     std::unique_ptr<cortex_cpp::dylib> dl;
-  //     try {
-  //       std::string abs_path =
-  //           cortex_utils::GetCurrentPath() + kPythonRuntimeLibPath;
-  //       dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
-  //     } catch (const cortex_cpp::dylib::load_error& e) {
-  //       LOG_ERROR << "Could not load engine: " << e.what();
-  //       return 1;
-  //     }
-
-  //     auto func = dl->get_function<CortexPythonEngineI*()>("get_engine");
-  //     auto e = func();
-  //     e->ExecutePythonFile(argv[0], argv[2], py_home_path);
-  //     return 0;
-  //   }
-  // }
-
-  RunServer(server_port, ignore_cout_log);
+  RunServer(server_host, server_port, ignore_cout_log);
   return 0;
 }

@@ -1,7 +1,9 @@
 #include "model_status_cmd.h"
-#include "httplib.h"
 #include "server_start_cmd.h"
+#include "utils/curl_utils.h"
+#include "utils/json_helper.h"
 #include "utils/logging_utils.h"
+#include "utils/url_parser.h"
 
 namespace commands {
 bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
@@ -14,22 +16,20 @@ bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
       return false;
     }
   }
+  auto url = url_parser::Url{
+      .protocol = "http",
+      .host = host + ":" + std::to_string(port),
+      .pathParams = {"v1", "models", "status", model_handle},
+  };
 
-  // Call API to check model status
-  httplib::Client cli(host + ":" + std::to_string(port));
-  auto res = cli.Get("/v1/models/status/" + model_handle);
-  if (res) {
-    if (res->status == httplib::StatusCode::OK_200) {
-      CTL_INF(res->body);
-    } else {
-      CTL_WRN("Failed to get model status with code: " << res->status);
-      return false;
-    }
-  } else {
-    auto err = res.error();
-    CTL_WRN("HTTP error: " << httplib::to_string(err));
+  auto res = curl_utils::SimpleGetJson(url.ToFullPath());
+  if (res.has_error()) {
+    auto root = json_helper::ParseJsonString(res.error());
+    CTL_WRN(root["message"].asString());
     return false;
   }
+
+  CTL_INF(res.value().toStyledString());
   return true;
 }
 }  // namespace commands

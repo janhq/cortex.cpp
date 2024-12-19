@@ -88,6 +88,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  curl_global_init(CURL_GLOBAL_DEFAULT);
+
   bool should_install_server = false;
   bool verbose = false;
   for (int i = 0; i < argc; i++) {
@@ -146,7 +148,6 @@ int main(int argc, char* argv[]) {
 
   if (should_check_for_latest_llamacpp_version) {
     std::thread t1([]() {
-      auto config = file_manager_utils::GetCortexConfig();
       // TODO: namh current we only check for llamacpp. Need to add support for other engine
       auto get_latest_version = []() -> cpp::result<std::string, std::string> {
         try {
@@ -174,6 +175,7 @@ int main(int argc, char* argv[]) {
 
       auto now = std::chrono::system_clock::now();
       CTL_DBG("latest llama.cpp version: " << res.value());
+      auto config = file_manager_utils::GetCortexConfig();
       config.checkedForLlamacppUpdateAt =
           std::chrono::duration_cast<std::chrono::milliseconds>(
               now.time_since_epoch())

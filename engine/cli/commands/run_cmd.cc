@@ -14,7 +14,6 @@
 namespace commands {
 
 std::optional<std::string> SelectLocalModel(std::string host, int port,
-                                            ModelService& model_service,
                                             const std::string& model_handle) {
   std::optional<std::string> model_id = model_handle;
   cortex::db::Models modellist_handler;
@@ -45,7 +44,7 @@ std::optional<std::string> SelectLocalModel(std::string host, int port,
   } else {
     auto related_models_ids = modellist_handler.FindRelatedModel(model_handle);
     if (related_models_ids.has_error() || related_models_ids.value().empty()) {
-      auto result = ModelPullCmd(model_service).Exec(host, port, model_handle);
+      auto result = ModelPullCmd().Exec(host, port, model_handle);
       if (!result) {
         CLI_LOG("Model " << model_handle << " not found!");
         return std::nullopt;
@@ -70,7 +69,7 @@ std::optional<std::string> SelectLocalModel(std::string host, int port,
 void RunCmd::Exec(bool run_detach,
                   const std::unordered_map<std::string, std::string>& options) {
   std::optional<std::string> model_id =
-      SelectLocalModel(host_, port_, model_service_, model_handle_);
+      SelectLocalModel(host_, port_, model_handle_);
   if (!model_id.has_value()) {
     return;
   }
@@ -95,7 +94,7 @@ void RunCmd::Exec(bool run_detach,
 
     // Check if engine existed. If not, download it
     {
-      auto is_engine_ready = engine_service_.IsEngineReady(mc.engine);
+      auto is_engine_ready = engine_service_->IsEngineReady(mc.engine);
       if (is_engine_ready.has_error()) {
         throw std::runtime_error(is_engine_ready.error());
       }
@@ -103,7 +102,7 @@ void RunCmd::Exec(bool run_detach,
       if (!is_engine_ready.value()) {
         CTL_INF("Engine " << mc.engine
                           << " is not ready. Proceed to install..");
-        if (!EngineInstallCmd(download_service_, host_, port_, false)
+        if (!EngineInstallCmd(engine_service_, host_, port_, false)
                  .Exec(mc.engine)) {
           return;
         } else {
@@ -127,10 +126,9 @@ void RunCmd::Exec(bool run_detach,
       {
         if ((mc.engine.find(kLlamaRepo) == std::string::npos &&
              mc.engine.find(kLlamaEngine) == std::string::npos) ||
-            !commands::ModelStatusCmd(model_service_)
-                 .IsLoaded(host_, port_, *model_id)) {
+            !commands::ModelStatusCmd().IsLoaded(host_, port_, *model_id)) {
 
-          auto res = commands::ModelStartCmd(model_service_)
+          auto res = commands::ModelStartCmd()
                          .Exec(host_, port_, *model_id, options,
                                false /*print_success_log*/);
           if (!res) {
@@ -146,7 +144,7 @@ void RunCmd::Exec(bool run_detach,
                           << commands::GetCortexBinary() << " run " << *model_id
                           << "` for interactive chat shell");
       } else {
-        ChatCompletionCmd(model_service_).Exec(host_, port_, *model_id, mc, "");
+        ChatCompletionCmd().Exec(host_, port_, *model_id, mc, "");
       }
     }
   } catch (const std::exception& e) {

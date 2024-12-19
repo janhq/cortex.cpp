@@ -2,30 +2,17 @@
 #include "cortex_openapi.h"
 #include "utils/cortex_utils.h"
 
-constexpr auto ScalarUi = R"(
-<!doctype html>
-<html>
-  <head>
-    <title>Cortex API Reference</title>
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1" />
-  </head>
-  <body>
-    <!-- Need a Custom Header? Check out this example https://codepen.io/scalarorg/pen/VwOXqam -->
-    <script
-      id="api-reference"
-      data-url="/openapi.json"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
-  </body>
-</html>
-)";
-
-Json::Value SwaggerController::generateOpenAPISpec() {
+Json::Value SwaggerController::GenerateOpenApiSpec() const {
   Json::Value root;
   Json::Reader reader;
   reader.parse(CortexOpenApi::GetOpenApiJson(), root);
+
+  Json::Value server_url;
+  server_url["url"] = "http://" + host_ + ":" + port_;
+  Json::Value resp_data(Json::arrayValue);
+  resp_data.append(server_url);
+
+  root["servers"] = resp_data;
   return root;
 }
 
@@ -41,7 +28,7 @@ void SwaggerController::serveSwaggerUI(
 void SwaggerController::serveOpenAPISpec(
     const drogon::HttpRequestPtr& req,
     std::function<void(const drogon::HttpResponsePtr&)>&& callback) const {
-  Json::Value spec = generateOpenAPISpec();
+  auto spec = GenerateOpenApiSpec();
   auto resp = cortex_utils::CreateCortexHttpJsonResponse(spec);
   callback(resp);
 }

@@ -7,6 +7,7 @@
 #include "config/model_config.h"
 #include "services/download_service.h"
 #include "services/inference_service.h"
+#include "utils/hardware/gguf/gguf_file_estimate.h"
 
 struct ModelPullInfo {
   std::string id;
@@ -96,6 +97,10 @@ class ModelService {
 
   bool HasModel(const std::string& id) const;
 
+  cpp::result<std::optional<hardware::Estimation>, std::string> GetEstimation(
+      const std::string& model_handle, const std::string& kv_cache = "f16",
+      int n_batch = 2048, int n_ubatch = 2048);
+
  private:
   /**
    * Handle downloading model which have following pattern: author/model_name
@@ -110,6 +115,10 @@ class ModelService {
    */
   cpp::result<std::string, std::string> HandleCortexsoModel(
       const std::string& modelName);
+
+  cpp::result<std::optional<std::string>, std::string> MayFallbackToCpu(
+      const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
+      int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
   std::shared_ptr<DownloadService> download_service_;
   std::shared_ptr<services::InferenceService> inference_svc_;

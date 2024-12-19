@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <functional>
 #include <memory>
 
@@ -7,7 +8,27 @@
 #include "trantor/utils/Logger.h"
 class EngineI {
  public:
+  struct EngineLoadOption {
+    // engine
+    std::filesystem::path engine_path;
+    std::filesystem::path deps_path;
+    bool is_custom_engine_path;
+
+    // logging
+    std::filesystem::path log_path;
+    int max_log_lines;
+    trantor::Logger::LogLevel log_level;
+  };
+
+  struct EngineUnloadOption {
+    // place holder for now
+  };
+
   virtual ~EngineI() {}
+
+  virtual void Load(EngineLoadOption opts) = 0;
+
+  virtual void Unload(EngineUnloadOption opts) = 0;
 
   // cortex.llamacpp interface
   virtual void HandleChatCompletion(
@@ -37,4 +58,7 @@ class EngineI {
   virtual bool SetFileLogger(int max_log_lines,
                              const std::string& log_path) = 0;
   virtual void SetLogLevel(trantor::Logger::LogLevel logLevel) = 0;
+
+  // Stop inflight chat completion in stream mode
+  virtual void StopInferencing(const std::string& model_id) = 0;
 };

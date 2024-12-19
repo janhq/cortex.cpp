@@ -2,9 +2,13 @@
 #include <cstdlib>
 #include <filesystem>
 #include <optional>
+#include <utility>
+#include <vector>
 #include "algorithm"
+#include "database/engines.h"
+#include "extensions/remote-engine/remote_engine.h"
 #include "utils/archive_utils.h"
-#include "utils/cortex_utils.h"
+#include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -180,6 +184,18 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+  // TODO: handle uninstall remote engine
+  // only delete a remote engine if no model are using it
+  auto exist_engine = GetEngineByNameAndVariant(engine);
+  if (exist_engine.has_value() && exist_engine.value().type == kRemote) {
+    auto result = DeleteEngine(exist_engine.value().id);
+    if (!result.empty()) {  // This mean no error when delete model
+      CTL_ERR("Failed to delete engine: " << result);
+      return cpp::fail(result);
+    }
+    return cpp::result<bool, std::string>(true);
+  }
+
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(ne);
@@ -227,21 +243,19 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
 cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
+
   auto normalized_version = version == "latest"
                                 ? "latest"
                                 : string_utils::RemoveSubstring(version, "v");
-
   auto res = GetEngineVariants(engine, version);
   if (res.has_error()) {
     return cpp::fail("Failed to fetch engine releases: " + res.error());
   }
-
   if (res.value().empty()) {
     return cpp::fail("No release found for " + version);
   }
 
   std::optional<EngineVariant> selected_variant = std::nullopt;
-
   if (variant_name.has_value()) {
     auto latest_version_semantic = normalized_version == "latest"
                                        ? res.value()[0].version
@@ -270,9 +284,10 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     }
   }
 
-  if (selected_variant == std::nullopt) {
+  if (!selected_variant) {
     return cpp::fail("Failed to find a suitable variant for " + engine);
   }
+
   if (IsEngineLoaded(engine)) {
     CTL_INF("Engine " << engine << " is already loaded, unloading it");
     auto unload_res = UnloadEngine(engine);
@@ -283,17 +298,17 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
       CTL_INF("Engine " << engine << " unloaded successfully");
     }
   }
-  auto normalize_version = "v" + selected_variant->version;
 
+  auto normalize_version = "v" + selected_variant->version;
   auto variant_folder_name = engine_matcher_utils::GetVariantFromNameAndVersion(
       selected_variant->name, engine, selected_variant->version);
-
   auto variant_folder_path = file_manager_utils::GetEnginesContainerPath() /
                              engine / variant_folder_name.value() /
                              normalize_version;
-
   auto variant_path = variant_folder_path / selected_variant->name;
+
   std::filesystem::create_directories(variant_folder_path);
+
   CTL_INF("variant_folder_path: " + variant_folder_path.string());
   auto on_finished = [this, engine, selected_variant, variant_folder_path,
                       normalize_version](const DownloadTask& finishedTask) {
@@ -302,14 +317,15 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("Version: " + normalize_version);
 
     auto extract_path = finishedTask.items[0].localPath.parent_path();
-
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   extract_path.string(), true);
 
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
         selected_variant->name, engine, normalize_version);
+
     CTL_INF("Extracted variant: " + variant.value());
     // set as default
+
     auto res =
         SetDefaultEngineVariant(engine, normalize_version, variant.value());
     if (res.has_error()) {
@@ -317,10 +333,15 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     } else {
       CTL_INF("Set default engine variant: " << res.value().variant);
     }
+    auto create_res = EngineService::UpsertEngine(
+        engine,  // engine_name
+        kLocal, "", "", normalize_version, variant.value(), "Default", "");
 
-    // remove other engines
-    auto engine_directories = file_manager_utils::GetEnginesContainerPath() /
-                              engine / selected_variant->name;
+    if (create_res.has_value()) {
+      CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
+    } else {
+      CTL_INF("Engine entry created successfully");
+    }
 
     for (const auto& entry : std::filesystem::directory_iterator(
              variant_folder_path.parent_path())) {
@@ -334,7 +355,6 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
       }
     }
 
-    // remove the downloaded file
     try {
       std::filesystem::remove(finishedTask.items[0].localPath);
     } catch (const std::exception& e) {
@@ -343,18 +363,18 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     CTL_INF("Finished!");
   };
 
-  auto downloadTask{
+  auto downloadTask =
       DownloadTask{.id = engine,
                    .type = DownloadType::Engine,
                    .items = {DownloadItem{
                        .id = engine,
                        .downloadUrl = selected_variant->browser_download_url,
                        .localPath = variant_path,
-                   }}}};
+                   }}};
 
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
-  if (res.has_error()) {
-    return cpp::fail(res.error());
+  if (add_task_result.has_error()) {
+    return cpp::fail(add_task_result.error());
   }
   return {};
 }
@@ -631,13 +651,14 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   return variants;
 }
 
-bool EngineService::IsEngineLoaded(const std::string& engine) const {
+bool EngineService::IsEngineLoaded(const std::string& engine) {
   auto ne = NormalizeEngine(engine);
   return engines_.find(ne) != engines_.end();
 }
 
 cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
     const std::string& engine_name) {
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   auto ne = NormalizeEngine(engine_name);
   if (engines_.find(ne) == engines_.end()) {
     return cpp::fail("Engine " + engine_name + " is not loaded yet!");
@@ -649,13 +670,138 @@ cpp::result<EngineV, std::string> EngineService::GetLoadedEngine(
 cpp::result<void, std::string> EngineService::LoadEngine(
     const std::string& engine_name) {
   auto ne = NormalizeEngine(engine_name);
-
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (IsEngineLoaded(ne)) {
     CTL_INF("Engine " << ne << " is already loaded");
     return {};
   }
 
+  // Check for remote engine
+  if (IsRemoteEngine(engine_name)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine_name);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+    }
+
+    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
+
+    CTL_INF("Loaded engine: " << engine_name);
+    return {};
+  }
+
+  // End hard code
+
   CTL_INF("Loading engine: " << ne);
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+  CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
+#endif
+
+  auto engine_dir_path_res = GetEngineDirPath(ne);
+  if (engine_dir_path_res.has_error()) {
+    return cpp::fail(engine_dir_path_res.error());
+  }
+  auto engine_dir_path = engine_dir_path_res.value().first;
+  auto custom_engine_path = engine_dir_path_res.value().second;
+
+  try {
+    auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
+
+#if defined(_WIN32) || defined(_WIN64)
+    // register deps
+    if (!(getenv("ENGINE_PATH"))) {
+      std::vector<std::filesystem::path> paths{};
+      paths.push_back(std::move(cuda_path));
+      paths.push_back(std::move(engine_dir_path));
+
+      CTL_DBG("Registering dylib for "
+              << ne << " with " << std::to_string(paths.size()) << " paths.");
+      for (const auto& path : paths) {
+        CTL_DBG("Registering path: " << path.string());
+      }
+
+      auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
+      if (reg_result.has_error()) {
+        CTL_DBG("Failed register lib paths for: " << ne);
+      } else {
+        CTL_DBG("Registered lib paths for: " << ne);
+      }
+    }
+#endif
+
+    auto dylib =
+        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
+
+    auto config = file_manager_utils::GetCortexConfig();
+    auto log_path = std::filesystem::path(config.logFolderPath) /
+                    std::filesystem::path(config.logLlamaCppPath);
+
+    // init
+    auto func = dylib->get_function<EngineI*()>("get_engine");
+    auto engine_obj = func();
+    auto load_opts = EngineI::EngineLoadOption{
+        .engine_path = engine_dir_path,
+        .deps_path = cuda_path,
+        .is_custom_engine_path = custom_engine_path,
+        .log_path = log_path,
+        .max_log_lines = config.maxLogLines,
+        .log_level = logging_utils_helper::global_log_level,
+    };
+    engine_obj->Load(load_opts);
+
+    engines_[ne].engine = engine_obj;
+    engines_[ne].dl = std::move(dylib);
+
+    CTL_DBG("Engine loaded: " << ne);
+    return {};
+  } catch (const cortex_cpp::dylib::load_error& e) {
+    CTL_ERR("Could not load engine: " << e.what());
+    engines_.erase(ne);
+    return cpp::fail("Could not load engine " + ne + ": " + e.what());
+  }
+}
+
+void EngineService::RegisterEngineLibPath() {
+  auto engine_names = GetSupportedEngineNames().value();
+  for (const auto& engine : engine_names) {
+    auto ne = NormalizeEngine(engine);
+    try {
+      auto engine_dir_path_res = GetEngineDirPath(engine);
+      if (engine_dir_path_res.has_error()) {
+        CTL_WRN(
+            "Could not get engine dir path: " << engine_dir_path_res.error());
+        continue;
+      }
+      auto engine_dir_path = engine_dir_path_res.value().first;
+      auto custom_engine_path = engine_dir_path_res.value().second;
+      auto cuda_path = file_manager_utils::GetCudaToolkitPath(ne);
+
+      // register deps
+      std::vector<std::filesystem::path> paths{};
+      paths.push_back(std::move(cuda_path));
+      paths.push_back(std::move(engine_dir_path));
+
+      CTL_DBG("Registering dylib for "
+              << ne << " with " << std::to_string(paths.size()) << " paths.");
+      for (const auto& path : paths) {
+        CTL_DBG("Registering path: " << path.string());
+      }
+
+      auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
+      if (reg_result.has_error()) {
+        CTL_WRN("Failed register lib path for " << engine);
+      } else {
+        CTL_DBG("Registered lib path for " << engine);
+      }
+
+    } catch (const std::exception& e) {
+      CTL_WRN("Failed to registering engine lib path: " << e.what());
+    }
+  }
+}
+
+cpp::result<std::pair<std::filesystem::path, bool>, std::string>
+EngineService::GetEngineDirPath(const std::string& engine_name) {
+  auto ne = NormalizeEngine(engine_name);
 
   auto selected_engine_variant = GetDefaultEngineVariant(ne);
 
@@ -671,6 +817,7 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   auto user_defined_engine_path = getenv("ENGINE_PATH");
 #endif
 
+  auto custom_engine_path = user_defined_engine_path != nullptr;
   CTL_DBG("user defined engine path: " << user_defined_engine_path);
   const std::filesystem::path engine_dir_path = [&] {
     if (user_defined_engine_path != nullptr) {
@@ -684,150 +831,47 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     }
   }();
 
-  CTL_DBG("Engine path: " << engine_dir_path.string());
-
   if (!std::filesystem::exists(engine_dir_path)) {
     CTL_ERR("Directory " + engine_dir_path.string() + " is not exist!");
     return cpp::fail("Directory " + engine_dir_path.string() +
                      " is not exist!");
   }
 
-  CTL_INF("Engine path: " << engine_dir_path.string());
-
-  try {
-#if defined(_WIN32)
-    // TODO(?) If we only allow to load an engine at a time, the logic is simpler.
-    // We would like to support running multiple engines at the same time. Therefore,
-    // the adding/removing dll directory logic is quite complicated:
-    // 1. If llamacpp is loaded and new requested engine is tensorrt-llm:
-    // Unload the llamacpp dll directory then load the tensorrt-llm
-    // 2. If tensorrt-llm is loaded and new requested engine is llamacpp:
-    // Do nothing, llamacpp can re-use tensorrt-llm dependencies (need to be tested careful)
-    // 3. Add dll directory if met other conditions
-
-    auto add_dll = [this](const std::string& e_type,
-                          const std::filesystem::path& p) {
-      if (auto cookie = AddDllDirectory(p.c_str()); cookie != 0) {
-        CTL_DBG("Added dll directory: " << p);
-        engines_[e_type].cookie = cookie;
-      } else {
-        CTL_WRN("Could not add dll directory: " << p);
-      }
-
-      auto cuda_path = file_manager_utils::GetCudaToolkitPath(e_type);
-      if (auto cuda_cookie = AddDllDirectory(cuda_path.c_str());
-          cuda_cookie != 0) {
-        CTL_DBG("Added cuda dll directory: " << p);
-        engines_[e_type].cuda_cookie = cuda_cookie;
-      } else {
-        CTL_WRN("Could not add cuda dll directory: " << p);
-      }
-    };
-
-#if defined(_WIN32)
-    if (bool should_use_dll_search_path = !(_wgetenv(L"ENGINE_PATH"));
-#else
-    if (bool should_use_dll_search_path = !(getenv("ENGINE_PATH"));
-#endif
-        should_use_dll_search_path) {
-      if (IsEngineLoaded(kLlamaRepo) && ne == kTrtLlmRepo &&
-          should_use_dll_search_path) {
-        // Remove llamacpp dll directory
-        if (!RemoveDllDirectory(engines_[kLlamaRepo].cookie)) {
-          CTL_WRN("Could not remove dll directory: " << kLlamaRepo);
-        } else {
-          CTL_DBG("Removed dll directory: " << kLlamaRepo);
-        }
-        if (!RemoveDllDirectory(engines_[kLlamaRepo].cuda_cookie)) {
-          CTL_WRN("Could not remove cuda dll directory: " << kLlamaRepo);
-        } else {
-          CTL_DBG("Removed cuda dll directory: " << kLlamaRepo);
-        }
-
-        add_dll(ne, engine_dir_path);
-      } else if (IsEngineLoaded(kTrtLlmRepo) && ne == kLlamaRepo) {
-        // Do nothing
-      } else {
-        add_dll(ne, engine_dir_path);
-      }
-    }
-#endif
-    engines_[ne].dl =
-        std::make_unique<cortex_cpp::dylib>(engine_dir_path.string(), "engine");
-#if defined(__linux__)
-    const char* name = "LD_LIBRARY_PATH";
-    auto data = getenv(name);
-    std::string v;
-    if (auto g = getenv(name); g) {
-      v += g;
-    }
-    CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
-    CTL_INF("llamacpp_path: " << llamacpp_path);
-    // tensorrt is not supported for now
-    // auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
-
-    auto new_v = llamacpp_path.string() + ":" + v;
-    setenv(name, new_v.c_str(), true);
-    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
-#endif
-
-  } catch (const cortex_cpp::dylib::load_error& e) {
-    CTL_ERR("Could not load engine: " << e.what());
-    engines_.erase(ne);
-    return cpp::fail("Could not load engine " + ne + ": " + e.what());
-  }
-
-  auto func = engines_[ne].dl->get_function<EngineI*()>("get_engine");
-  engines_[ne].engine = func();
-
-  auto& en = std::get<EngineI*>(engines_[ne].engine);
-  if (ne == kLlamaRepo) {  //fix for llamacpp engine first
-    auto config = file_manager_utils::GetCortexConfig();
-    if (en->IsSupported("SetFileLogger")) {
-      en->SetFileLogger(config.maxLogLines,
-                        (std::filesystem::path(config.logFolderPath) /
-                         std::filesystem::path(config.logLlamaCppPath))
-                            .string());
-    } else {
-      CTL_WRN("Method SetFileLogger is not supported yet");
-    }
-    if (en->IsSupported("SetLogLevel")) {
-      en->SetLogLevel(logging_utils_helper::global_log_level);
-    } else {
-      CTL_WRN("Method SetLogLevel is not supported yet");
-    }
-  }
-  CTL_DBG("Loaded engine: " << ne);
-  return {};
+  CTL_INF("Engine path: " << engine_dir_path.string()
+                          << ", custom_engine_path: " << custom_engine_path);
+  return std::make_pair(engine_dir_path, custom_engine_path);
 }
 
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   if (!IsEngineLoaded(ne)) {
     return cpp::fail("Engine " + ne + " is not loaded yet!");
   }
-  EngineI* e = std::get<EngineI*>(engines_[ne].engine);
-  delete e;
-#if defined(_WIN32)
-  if (!RemoveDllDirectory(engines_[ne].cookie)) {
-    CTL_WRN("Could not remove dll directory: " << ne);
+  if (std::holds_alternative<EngineI*>(engines_[ne].engine)) {
+    LOG_INFO << "Unloading engine " << ne;
+    auto unreg_result = dylib_path_manager_->Unregister(ne);
+    if (unreg_result.has_error()) {
+      CTL_DBG("Failed unregister lib paths for: " << ne);
+    } else {
+      CTL_DBG("Unregistered lib paths for: " << ne);
+    }
+    auto* e = std::get<EngineI*>(engines_[ne].engine);
+    auto unload_opts = EngineI::EngineUnloadOption{};
+    e->Unload(unload_opts);
+    delete e;
+    engines_.erase(ne);
   } else {
-    CTL_DBG("Removed dll directory: " << ne);
+    delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
-  if (!RemoveDllDirectory(engines_[ne].cuda_cookie)) {
-    CTL_WRN("Could not remove cuda dll directory: " << ne);
-  } else {
-    CTL_DBG("Removed cuda dll directory: " << ne);
-  }
-#endif
-  engines_.erase(ne);
-  CTL_DBG("Unloaded engine " + ne);
+
+  CTL_DBG("Engine unloaded: " + ne);
   return {};
 }
 
 std::vector<EngineV> EngineService::GetLoadedEngines() {
+  std::lock_guard<std::mutex> lock(engines_mutex_);
   std::vector<EngineV> loaded_engines;
   for (const auto& [key, value] : engines_) {
     loaded_engines.push_back(value.engine);
@@ -846,8 +890,19 @@ EngineService::GetLatestEngineVersion(const std::string& engine) const {
 }
 
 cpp::result<bool, std::string> EngineService::IsEngineReady(
-    const std::string& engine) const {
+    const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+
+  // Check for remote engine
+  if (IsRemoteEngine(engine)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine + "' is not installed");
+    }
+    return true;
+  }
+
+  // End hard code
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
@@ -933,4 +988,112 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
                             .variant = default_variant->variant,
                             .from = default_variant->version,
                             .to = latest_version->tag_name};
+}
+
+cpp::result<std::vector<cortex::db::EngineEntry>, std::string>
+EngineService::GetEngines() {
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngines();
+
+  if (!get_res.has_value()) {
+    return cpp::fail("Failed to get engine entries");
+  }
+
+  return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
+    int id) {
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngineById(id);
+
+  if (!get_res.has_value()) {
+    return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
+  }
+
+  return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string>
+EngineService::GetEngineByNameAndVariant(
+    const std::string& engine_name, const std::optional<std::string> variant) {
+
+  cortex::db::Engines engines;
+  auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+
+  if (!get_res.has_value()) {
+    if (variant.has_value()) {
+      return cpp::fail("Variant " + variant.value() + " not found for engine " +
+                       engine_name);
+    } else {
+      return cpp::fail("Engine " + engine_name + " not found");
+    }
+  }
+
+  return get_res.value();
+}
+
+cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
+    const std::string& engine_name, const std::string& type,
+    const std::string& api_key, const std::string& url,
+    const std::string& version, const std::string& variant,
+    const std::string& status, const std::string& metadata) {
+  cortex::db::Engines engines;
+  auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url,
+                                         version, variant, status, metadata);
+  if (upsert_res.has_value()) {
+    return upsert_res.value();
+  } else {
+    return cpp::fail("Failed to upsert engine entry");
+  }
+}
+
+std::string EngineService::DeleteEngine(int id) {
+  cortex::db::Engines engines;
+  auto delete_res = engines.DeleteEngineById(id);
+  if (delete_res.has_value()) {
+    return delete_res.value();
+  } else {
+    return "";
+  }
+}
+
+cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
+    const std::string& engine_name) {
+  std::lock_guard<std::mutex> lock(engines_mutex_);
+  if (auto r = IsEngineReady(engine_name); r.has_error()) {
+    return cpp::fail(r.error());
+  }
+
+  if (!IsEngineLoaded(engine_name)) {
+    auto exist_engine = GetEngineByNameAndVariant(engine_name);
+    if (exist_engine.has_error()) {
+      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+    }
+    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
+
+    CTL_INF("Loaded engine: " << engine_name);
+  }
+  auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
+  auto res = e->GetRemoteModels();
+  if (!res["error"].isNull()) {
+    return cpp::fail(res["error"].asString());
+  } else {
+    return res;
+  }
+}
+
+bool EngineService::IsRemoteEngine(const std::string& engine_name) {
+  auto ne = Repo2Engine(engine_name);
+  auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
+  for (auto const& le : local_engines) {
+    if (le == ne)
+      return false;
+  }
+  return true;
+}
+
+cpp::result<std::vector<std::string>, std::string>
+EngineService::GetSupportedEngineNames() {
+  return file_manager_utils::GetCortexConfig().supportedEngines;
 }
