@@ -322,7 +322,64 @@ void Engines::UpdateEngine(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) {
-  // Check if it is remote engine
+
+  if (engine_service_->IsRemoteEngine(engine)) {
+    auto exist_engine = engine_service_->GetEngineByNameAndVariant(engine);
+    // only allow 1 variant 1 version of a remote engine name
+    if (!exist_engine) {
+      Json::Value res;
+      res["message"] = "Remote engine '" + engine + "' is not installed";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+    } else {
+      if (auto o = req->getJsonObject(); o) {
+        auto type = (*o).get("type", (*exist_engine).type).asString();
+        auto api_key = (*o).get("api_key", (*exist_engine).api_key).asString();
+        auto url = (*o).get("url", (*exist_engine).url).asString();
+        auto status = (*o).get("status", (*exist_engine).status).asString();
+        auto version = (*o).get("version", "latest").asString();
+        std::string metadata;
+        if ((*o).isMember("metadata") && (*o)["metadata"].isObject()) {
+          metadata = (*o).get("metadata", Json::Value(Json::objectValue))
+                         .toStyledString();
+        } else if ((*o).isMember("metadata") && !(*o)["metadata"].isObject()) {
+          Json::Value res;
+          res["message"] = "metadata must be object";
+          auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+          resp->setStatusCode(k400BadRequest);
+          callback(resp);
+          return;
+        } else {
+          metadata = (*exist_engine).metadata;
+        }
+
+        auto upd_res =
+            engine_service_->UpsertEngine(engine, type, api_key, url, version,
+                                          "all-platforms", status, metadata);
+        if (upd_res.has_error()) {
+          Json::Value res;
+          res["message"] = upd_res.error();
+          auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+          resp->setStatusCode(k400BadRequest);
+          callback(resp);
+        } else {
+          Json::Value res;
+          res["message"] = "Remote Engine update successfully!";
+          auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+          resp->setStatusCode(k200OK);
+          callback(resp);
+        }
+      } else {
+        Json::Value res;
+        res["message"] = "Request body is empty!";
+        auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+        resp->setStatusCode(k400BadRequest);
+        callback(resp);
+      }
+    }
+    return;
+  }
 
   auto result = engine_service_->UpdateEngine(engine);
   if (result.has_error()) {
