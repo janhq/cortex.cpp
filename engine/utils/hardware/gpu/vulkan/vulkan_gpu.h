@@ -254,6 +254,7 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
   };
 // Load the Vulkan library
 #if defined(__APPLE__) && defined(__MACH__)
+  void* vulkanLibrary = nullptr;
   return std::vector<cortex::hw::GPU>{};
 #elif defined(__linux__)
   auto vulkan_path = get_vulkan_path("libvulkan.so");
