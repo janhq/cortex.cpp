@@ -554,7 +554,7 @@ ModelService::DownloadModelFromCortexsoAsync(
       }
       auto venv_zip = model_folder / std::filesystem::path("venv.zip");
       if (std::filesystem::exists(venv_zip)) {
-        if (archive_utils::ExtractArchive(venv_zip.string(), venv_path)) {
+        if (archive_utils::ExtractArchive(venv_zip.string(), venv_path.string())) {
           std::filesystem::remove_all(venv_zip);
           CTL_INF("Successfully extract venv.zip");
           // If extract success create pyvenv.cfg

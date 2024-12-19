@@ -30,15 +30,14 @@ inline bool SetExecutePermission(const std::filesystem::path& filePath,
   // Clear read-only attribute
   DWORD fileAttributes = GetFileAttributes(exePath.c_str());
   if (fileAttributes == INVALID_FILE_ATTRIBUTES) {
-    CTL_ERROR << "Error accessing file: " << GetLastError() << std::endl;
+    CTL_ERROR("Error accessing file: " << GetLastError());
     return false;
   }
 
   fileAttributes &= ~FILE_ATTRIBUTE_READONLY;
 
   if (!SetFileAttributes(exePath.c_str(), fileAttributes)) {
-    CTL_ERROR << "Error setting file attributes: " << GetLastError()
-              << std::endl;
+    CTL_ERROR("Error setting file attributes: " << GetLastError());
     return false;
   }
 
