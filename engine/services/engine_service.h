@@ -4,7 +4,6 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -17,7 +16,6 @@
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
 #include "utils/dylib_path_manager.h"
-#include "utils/engine_constants.h"
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
@@ -48,10 +46,6 @@ class EngineService : public EngineServiceI {
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
-#if defined(_WIN32)
-    DLL_DIRECTORY_COOKIE cookie;
-    DLL_DIRECTORY_COOKIE cuda_cookie;
-#endif
   };
 
   std::mutex engines_mutex_;
