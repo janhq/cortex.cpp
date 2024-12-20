@@ -1,7 +1,10 @@
 #include "inference_service.h"
 #include <drogon/HttpTypes.h>
 #include "utils/engine_constants.h"
+#include "utils/file_manager_utils.h"
 #include "utils/function_calling/common.h"
+#include "utils/gguf_metadata_reader.h"
+#include "utils/jinja_utils.h"
 
 namespace services {
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
@@ -23,6 +26,58 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
+
+  {
+    // TODO: we can cache this one so we don't have to read the file every inference
+    auto model_id = json_body->get("model", "").asString();
+    if (!model_id.empty()) {
+      if (auto model_service = model_service_.lock()) {
+        auto model_config = model_service->GetDownloadedModel(model_id);
+        if (model_config.has_value() && !model_config->files.empty()) {
+          auto file = model_config->files[0];
+
+          auto model_metadata_res = cortex_utils::ReadGgufMetadata(
+              file_manager_utils::ToAbsoluteCortexDataPath(
+                  std::filesystem::path(file)));
+          if (model_metadata_res.has_value()) {
+            auto metadata = model_metadata_res.value().get();
+            if (!metadata->tokenizer->chat_template.empty()) {
+              auto messages = (*json_body)["messages"];
+              Json::Value messages_jsoncpp(Json::arrayValue);
+              for (auto message : messages) {
+                messages_jsoncpp.append(message);
+              }
+
+              Json::Value tools(Json::arrayValue);
+              Json::Value template_data_json;
+              template_data_json["messages"] = messages_jsoncpp;
+              // template_data_json["tools"] = tools;
+
+              auto prompt_result = jinja::RenderTemplate(
+                  metadata->tokenizer->chat_template, template_data_json,
+                  metadata->tokenizer->bos_token,
+                  metadata->tokenizer->eos_token,
+                  metadata->tokenizer->add_bos_token,
+                  metadata->tokenizer->add_eos_token,
+                  metadata->tokenizer->add_generation_prompt);
+              if (prompt_result.has_value()) {
+                (*json_body)["prompt"] = prompt_result.value();
+                Json::Value stops(Json::arrayValue);
+                stops.append(metadata->tokenizer->eos_token);
+                (*json_body)["stop"] = stops;
+              } else {
+                CTL_ERR("Failed to render prompt: " + prompt_result.error());
+              }
+            }
+          } else {
+            CTL_ERR("Failed to read metadata: " + model_metadata_res.error());
+          }
+        }
+      }
+    }
+  }
+
+  CTL_INF("Json body inference: " + json_body->toStyledString());
 
   auto cb = [q, tool_choice](Json::Value status, Json::Value res) {
     if (!tool_choice.isNull()) {

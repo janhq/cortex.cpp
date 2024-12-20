@@ -151,9 +151,8 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       json_data["model"] = model_handle;
       json_data["stream"] = true;
 
-      std::string json_payload = json_data.toStyledString();
-
-      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_payload.c_str());
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS,
+                       json_data.toStyledString().c_str());
 
       std::string ai_chat;
       StreamingCallback callback;

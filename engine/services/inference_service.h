@@ -4,9 +4,11 @@
 #include <mutex>
 #include <queue>
 #include "services/engine_service.h"
+#include "services/model_service.h"
 #include "utils/result.hpp"
-#include "extensions/remote-engine/remote_engine.h"
+
 namespace services {
+
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;
 
@@ -58,7 +60,12 @@ class InferenceService {
   bool HasFieldInReq(std::shared_ptr<Json::Value> json_body,
                      const std::string& field);
 
+  void SetModelService(std::shared_ptr<ModelService> model_service) {
+    model_service_ = model_service;
+  }
+
  private:
   std::shared_ptr<EngineService> engine_service_;
+  std::weak_ptr<ModelService> model_service_;
 };
 }  // namespace services

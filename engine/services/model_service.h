@@ -6,8 +6,11 @@
 #include "common/engine_servicei.h"
 #include "config/model_config.h"
 #include "services/download_service.h"
-#include "services/inference_service.h"
 #include "utils/hardware/gguf/gguf_file_estimate.h"
+
+namespace services {
+class InferenceService;
+}
 
 struct ModelPullInfo {
   std::string id;
