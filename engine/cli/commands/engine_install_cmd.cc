@@ -12,7 +12,7 @@ bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& src) {
   // Handle local install, if fails, fallback to remote install
   if (!src.empty()) {
-    auto res = engine_service_.UnzipEngine(engine, version, src);
+    auto res = engine_service_->UnzipEngine(engine, version, src);
     if (res.has_error()) {
       CLI_LOG(res.error());
       return false;
@@ -179,7 +179,6 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   auto response = curl_utils::SimplePostJson(install_url.ToFullPath(),
                                              body.toStyledString());
   if (response.has_error()) {
-    // TODO: namh refactor later
     Json::Value root;
     Json::Reader reader;
     if (!reader.parse(response.error(), root)) {

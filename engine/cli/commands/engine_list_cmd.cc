@@ -1,9 +1,10 @@
 #include "engine_list_cmd.h"
 #include <json/reader.h>
 #include <json/value.h>
+#include "common/engine_servicei.h"
 #include "server_start_cmd.h"
-#include "services/engine_service.h"
 #include "utils/curl_utils.h"
+#include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 #include "utils/url_parser.h"
 // clang-format off
@@ -12,7 +13,6 @@
 // clang-format on
 
 namespace commands {
-
 bool EngineListCmd::Exec(const std::string& host, int port) {
   // Start server if server is not started yet
   if (!commands::IsServerAlive(host, port)) {
@@ -37,15 +37,10 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
     return false;
   }
 
-  std::vector<std::string> engines = {
-      kLlamaEngine,
-      kOnnxEngine,
-      kTrtLlmEngine,
-  };
-
   std::unordered_map<std::string, std::vector<EngineVariantResponse>>
       engine_map;
 
+  auto engines = engine_service_->GetSupportedEngineNames().value();
   for (const auto& engine : engines) {
     auto installed_variants = result.value()[engine];
     for (const auto& variant : installed_variants) {

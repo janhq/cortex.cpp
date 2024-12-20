@@ -1,4 +1,6 @@
 #include "model_service.h"
+#include <curl/multi.h>
+#include <drogon/HttpTypes.h>
 #include <filesystem>
 #include <iostream>
 #include <optional>
@@ -7,7 +9,6 @@
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "hardware_service.h"
-#include "httplib.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
@@ -63,14 +64,30 @@ void ParseGguf(const DownloadItem& ggufDownloadItem,
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   cortex::db::Models modellist_utils_obj;
-  cortex::db::ModelEntry model_entry{.model = ggufDownloadItem.id,
-                                     .author_repo_id = author_id,
-                                     .branch_name = branch,
-                                     .path_to_model_yaml = rel.string(),
-                                     .model_alias = ggufDownloadItem.id};
-  auto result = modellist_utils_obj.AddModelEntry(model_entry, true);
-  if (result.has_error()) {
-    CTL_WRN("Error adding model to modellist: " + result.error());
+  if (!modellist_utils_obj.HasModel(ggufDownloadItem.id)) {
+    cortex::db::ModelEntry model_entry{
+        .model = ggufDownloadItem.id,
+        .author_repo_id = author_id,
+        .branch_name = branch,
+        .path_to_model_yaml = rel.string(),
+        .model_alias = ggufDownloadItem.id,
+        .status = cortex::db::ModelStatus::Downloaded};
+    auto result = modellist_utils_obj.AddModelEntry(model_entry);
+
+    if (result.has_error()) {
+      CTL_ERR("Error adding model to modellist: " + result.error());
+    }
+  } else {
+    if (auto m = modellist_utils_obj.GetModelInfo(ggufDownloadItem.id);
+        m.has_value()) {
+      auto upd_m = m.value();
+      upd_m.status = cortex::db::ModelStatus::Downloaded;
+      if (auto r =
+              modellist_utils_obj.UpdateModelEntry(ggufDownloadItem.id, upd_m);
+          r.has_error()) {
+        CTL_ERR(r.error());
+      }
+    }
   }
 }
 
@@ -79,7 +96,8 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
   url_parser::Url url = {
       .protocol = "https",
       .host = kHuggingFaceHost,
-      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch}};
+      .pathParams = {"api", "models", "cortexso", modelId, "tree", branch},
+  };
 
   auto result = curl_utils::SimpleGetJson(url.ToFullPath());
   if (result.has_error()) {
@@ -132,6 +150,9 @@ void ModelService::ForceIndexingModelList() {
 
   CTL_DBG("Database model size: " + std::to_string(list_entry.value().size()));
   for (const auto& model_entry : list_entry.value()) {
+    if (model_entry.status != cortex::db::ModelStatus::Downloaded) {
+      continue;
+    }
     try {
       yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(
@@ -297,7 +318,8 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   }
 
   auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
-  if (model_entry.has_value()) {
+  if (model_entry.has_value() &&
+      model_entry->status == cortex::db::ModelStatus::Downloaded) {
     CLI_LOG("Model already downloaded: " << unique_model_id);
     return cpp::fail("Please delete the model before downloading again");
   }
@@ -335,6 +357,54 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
 
   downloadTask.id = unique_model_id;
   return download_service_->AddTask(downloadTask, on_finished);
+}
+
+cpp::result<std::optional<hardware::Estimation>, std::string>
+ModelService::GetEstimation(const std::string& model_handle,
+                            const std::string& kv_cache, int n_batch,
+                            int n_ubatch) {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+  cortex::db::Models modellist_handler;
+  config::YamlHandler yaml_handler;
+
+  try {
+    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    if (model_entry.has_error()) {
+      CTL_WRN("Error: " + model_entry.error());
+      return cpp::fail(model_entry.error());
+    }
+    auto file_path = fmu::ToAbsoluteCortexDataPath(
+                         fs::path(model_entry.value().path_to_model_yaml))
+                         .parent_path() /
+                     "model.gguf";
+    yaml_handler.ModelConfigFromFile(
+        fmu::ToAbsoluteCortexDataPath(
+            fs::path(model_entry.value().path_to_model_yaml))
+            .string());
+    auto mc = yaml_handler.GetModelConfig();
+    services::HardwareService hw_svc;
+    auto hw_info = hw_svc.GetHardwareInfo();
+    auto free_vram_MiB = 0u;
+    for (const auto& gpu : hw_info.gpus) {
+      free_vram_MiB += gpu.free_vram;
+    }
+
+#if defined(__APPLE__) && defined(__MACH__)
+    free_vram_MiB = hw_info.ram.available_MiB;
+#endif
+
+    return hardware::EstimateLLaMACppRun(file_path.string(),
+                                         {.ngl = mc.ngl,
+                                          .ctx_len = mc.ctx_len,
+                                          .n_batch = n_batch,
+                                          .n_ubatch = n_ubatch,
+                                          .kv_cache_type = kv_cache,
+                                          .free_vram_MiB = free_vram_MiB});
+  } catch (const std::exception& e) {
+    return cpp::fail("Fail to get model status with ID '" + model_handle +
+                     "': " + e.what());
+  }
 }
 
 cpp::result<std::string, std::string> ModelService::HandleUrl(
@@ -439,7 +509,8 @@ ModelService::DownloadModelFromCortexsoAsync(
   }
 
   auto model_entry = modellist_handler.GetModelInfo(unique_model_id);
-  if (model_entry.has_value()) {
+  if (model_entry.has_value() &&
+      model_entry->status == cortex::db::ModelStatus::Downloaded) {
     return cpp::fail("Please delete the model before downloading again");
   }
 
@@ -480,14 +551,32 @@ ModelService::DownloadModelFromCortexsoAsync(
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{.model = unique_model_id,
-                                       .author_repo_id = "cortexso",
-                                       .branch_name = branch,
-                                       .path_to_model_yaml = rel.string(),
-                                       .model_alias = unique_model_id};
-    auto result = modellist_utils_obj.AddModelEntry(model_entry);
-    if (result.has_error()) {
-      CTL_ERR("Error adding model to modellist: " + result.error());
+    if (!modellist_utils_obj.HasModel(unique_model_id)) {
+      cortex::db::ModelEntry model_entry{
+          .model = unique_model_id,
+          .author_repo_id = "cortexso",
+          .branch_name = branch,
+          .path_to_model_yaml = rel.string(),
+          .model_alias = unique_model_id,
+          .status = cortex::db::ModelStatus::Downloaded};
+      auto result = modellist_utils_obj.AddModelEntry(model_entry);
+
+      if (result.has_error()) {
+        CTL_ERR("Error adding model to modellist: " + result.error());
+      }
+    } else {
+      if (auto m = modellist_utils_obj.GetModelInfo(unique_model_id);
+          m.has_value()) {
+        auto upd_m = m.value();
+        upd_m.status = cortex::db::ModelStatus::Downloaded;
+        if (auto r =
+                modellist_utils_obj.UpdateModelEntry(unique_model_id, upd_m);
+            r.has_error()) {
+          CTL_ERR(r.error());
+        }
+      } else {
+        CTL_WRN("Could not get model entry with model id: " << unique_model_id);
+      }
     }
   };
 
@@ -533,14 +622,28 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     cortex::db::Models modellist_utils_obj;
-    cortex::db::ModelEntry model_entry{.model = model_id,
-                                       .author_repo_id = "cortexso",
-                                       .branch_name = branch,
-                                       .path_to_model_yaml = rel.string(),
-                                       .model_alias = model_id};
-    auto result = modellist_utils_obj.AddModelEntry(model_entry);
-    if (result.has_error()) {
-      CTL_ERR("Error adding model to modellist: " + result.error());
+    if (!modellist_utils_obj.HasModel(model_id)) {
+      cortex::db::ModelEntry model_entry{
+          .model = model_id,
+          .author_repo_id = "cortexso",
+          .branch_name = branch,
+          .path_to_model_yaml = rel.string(),
+          .model_alias = model_id,
+          .status = cortex::db::ModelStatus::Downloaded};
+      auto result = modellist_utils_obj.AddModelEntry(model_entry);
+
+      if (result.has_error()) {
+        CTL_ERR("Error adding model to modellist: " + result.error());
+      }
+    } else {
+      if (auto m = modellist_utils_obj.GetModelInfo(model_id); m.has_value()) {
+        auto upd_m = m.value();
+        upd_m.status = cortex::db::ModelStatus::Downloaded;
+        if (auto r = modellist_utils_obj.UpdateModelEntry(model_id, upd_m);
+            r.has_error()) {
+          CTL_ERR(r.error());
+        }
+      }
     }
   };
 
@@ -653,6 +756,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
   config::YamlHandler yaml_handler;
 
   try {
+    constexpr const int kDefautlContextLength = 8192;
+    int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
     // Currently we don't support download vision models, so we need to bypass check
     if (!params_override.bypass_model_check()) {
@@ -666,6 +771,49 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
               fs::path(model_entry.value().path_to_model_yaml))
               .string());
       auto mc = yaml_handler.GetModelConfig();
+
+      // Running remote model
+      if (engine_svc_->IsRemoteEngine(mc.engine)) {
+
+        config::RemoteModelConfig remote_mc;
+        remote_mc.LoadFromYamlFile(
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string());
+        auto remote_engine_entry =
+            engine_svc_->GetEngineByNameAndVariant(mc.engine);
+        if (remote_engine_entry.has_error()) {
+          CTL_WRN("Remote engine error: " + model_entry.error());
+          return cpp::fail(remote_engine_entry.error());
+        }
+        auto remote_engine_json = remote_engine_entry.value().ToJson();
+        json_data = remote_mc.ToJson();
+
+        json_data["api_key"] = std::move(remote_engine_json["api_key"]);
+        json_data["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string();
+        json_data["metadata"] = std::move(remote_engine_json["metadata"]);
+
+        auto ir =
+            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+        auto status = std::get<0>(ir)["status_code"].asInt();
+        auto data = std::get<1>(ir);
+        if (status == drogon::k200OK) {
+          return StartModelResult{.success = true, .warning = ""};
+        } else if (status == drogon::k409Conflict) {
+          CTL_INF("Model '" + model_handle + "' is already loaded");
+          return StartModelResult{.success = true, .warning = ""};
+        } else {
+          // only report to user the error
+          CTL_ERR("Model failed to start with status code: " << status);
+          return cpp::fail("Model failed to start: " +
+                           data["message"].asString());
+        }
+      }
+
+      // end hard code
 
       json_data = mc.ToJson();
       if (mc.files.size() > 0) {
@@ -683,6 +831,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
+      json_data["ctx_len"] = std::min(kDefautlContextLength, mc.ctx_len);
+      max_model_context_length = mc.ctx_len;
     } else {
       bypass_stop_check_set_.insert(model_handle);
     }
@@ -704,107 +854,20 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     ASSIGN_IF_PRESENT(json_data, params_override, cache_enabled);
     ASSIGN_IF_PRESENT(json_data, params_override, ngl);
     ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
-    ASSIGN_IF_PRESENT(json_data, params_override, ctx_len);
     ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
     ASSIGN_IF_PRESENT(json_data, params_override, mmproj);
     ASSIGN_IF_PRESENT(json_data, params_override, model_path);
 #undef ASSIGN_IF_PRESENT
-
+    if (params_override.ctx_len) {
+      json_data["ctx_len"] =
+          std::min(params_override.ctx_len.value(), max_model_context_length);
+    }
     CTL_INF(json_data.toStyledString());
-    // TODO(sang) move this into another function
-    // Calculate ram/vram needed to load model
-    services::HardwareService hw_svc;
-    auto hw_info = hw_svc.GetHardwareInfo();
-    assert(!!engine_svc_);
-    auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
-    bool is_cuda = false;
-    if (default_engine.has_error()) {
-      CTL_INF("Could not get default engine");
-    } else {
-      auto& de = default_engine.value();
-      is_cuda = de.variant.find("cuda") != std::string::npos;
-      CTL_INF("is_cuda: " << is_cuda);
-    }
-
-    std::optional<std::string> warning;
-    if (is_cuda && !system_info_utils::IsNvidiaSmiAvailable()) {
-      CTL_INF(
-          "Running cuda variant but nvidia-driver is not installed yet, "
-          "fallback to CPU mode");
-      auto res = engine_svc_->GetInstalledEngineVariants(kLlamaEngine);
-      if (res.has_error()) {
-        CTL_WRN("Could not get engine variants");
-        return cpp::fail("Nvidia-driver is not installed!");
-      } else {
-        auto& es = res.value();
-        std::sort(
-            es.begin(), es.end(),
-            [](const EngineVariantResponse& e1,
-               const EngineVariantResponse& e2) { return e1.name > e2.name; });
-        for (auto& e : es) {
-          CTL_INF(e.name << " " << e.version << " " << e.engine);
-          // Select the first CPU candidate
-          if (e.name.find("cuda") == std::string::npos) {
-            auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine,
-                                                          e.version, e.name);
-            if (r.has_error()) {
-              CTL_WRN("Could not set default engine variant");
-              return cpp::fail("Nvidia-driver is not installed!");
-            } else {
-              CTL_INF("Change default engine to: " << e.name);
-              auto rl = engine_svc_->LoadEngine(kLlamaEngine);
-              if (rl.has_error()) {
-                return cpp::fail("Nvidia-driver is not installed!");
-              } else {
-                CTL_INF("Engine started");
-                is_cuda = false;
-                warning = "Nvidia-driver is not installed, use CPU variant: " +
-                          e.version + "-" + e.name;
-                break;
-              }
-            }
-          }
-        }
-        // If we reach here, means that no CPU variant to fallback
-        if (!warning) {
-          return cpp::fail(
-              "Nvidia-driver is not installed, no available CPU version to "
-              "fallback");
-        }
-      }
-    }
-    // If in GPU acceleration mode:
-    // We use all visible GPUs, so only need to sum all free vram
-    auto free_vram_MiB = 0u;
-    for (const auto& gpu : hw_info.gpus) {
-      free_vram_MiB += gpu.free_vram;
-    }
-
-    auto free_ram_MiB = hw_info.ram.available_MiB;
-
-    auto const& mp = json_data["model_path"].asString();
-    auto ngl = json_data["ngl"].asInt();
-    // Bypass for now
-    auto vram_needed_MiB = 0u;
-    auto ram_needed_MiB = 0u;
-
-    if (vram_needed_MiB > free_vram_MiB && is_cuda) {
-      CTL_WRN("Not enough VRAM - " << "required: " << vram_needed_MiB
-                                   << ", available: " << free_vram_MiB);
-
-      return cpp::fail(
-          "Not enough VRAM - required: " + std::to_string(vram_needed_MiB) +
-          " MiB, available: " + std::to_string(free_vram_MiB) +
-          " MiB - Should adjust ngl to " +
-          std::to_string(free_vram_MiB / (vram_needed_MiB / ngl) - 1));
-    }
-
-    if (ram_needed_MiB > free_ram_MiB) {
-      CTL_WRN("Not enough RAM - " << "required: " << ram_needed_MiB
-                                  << ", available: " << free_ram_MiB);
-      return cpp::fail(
-          "Not enough RAM - required: " + std::to_string(ram_needed_MiB) +
-          " MiB,, available: " + std::to_string(free_ram_MiB) + " MiB");
+    auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
+                                             json_data["ngl"].asInt(),
+                                             json_data["ctx_len"].asInt());
+    if (may_fallback_res.has_error()) {
+      return cpp::fail(may_fallback_res.error());
     }
 
     assert(!!inference_svc_);
@@ -812,11 +875,14 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
-      return StartModelResult{.success = true, .warning = warning};
-    } else if (status == httplib::StatusCode::Conflict_409) {
+
+    if (status == drogon::k200OK) {
+      return StartModelResult{.success = true,
+                              .warning = may_fallback_res.value()};
+    } else if (status == drogon::k409Conflict) {
       CTL_INF("Model '" + model_handle + "' is already loaded");
-      return StartModelResult{.success = true, .warning = warning};
+      return StartModelResult{
+          .success = true, .warning = may_fallback_res.value_or(std::nullopt)};
     } else {
       // only report to user the error
       CTL_ERR("Model failed to start with status code: " << status);
@@ -859,7 +925,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
     auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       if (bypass_check) {
         bypass_stop_check_set_.erase(model_handle);
       }
@@ -901,12 +967,10 @@ cpp::result<bool, std::string> ModelService::GetModelStatus(
         inference_svc_->GetModelStatus(std::make_shared<Json::Value>(root));
     auto status = std::get<0>(ir)["status_code"].asInt();
     auto data = std::get<1>(ir);
-    if (status == httplib::StatusCode::OK_200) {
+    if (status == drogon::k200OK) {
       return true;
     } else {
-      CTL_ERR("Model failed to get model status with status code: " << status);
-      return cpp::fail("Model failed to get model status: " +
-                       data["message"].asString());
+      return cpp::fail(data["message"].asString());
     }
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
@@ -1044,4 +1108,103 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 cpp::result<std::string, std::string> ModelService::AbortDownloadModel(
     const std::string& task_id) {
   return download_service_->StopTask(task_id);
+}
+
+cpp::result<std::optional<std::string>, std::string>
+ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
+                               int ctx_len, int n_batch, int n_ubatch,
+                               const std::string& kv_cache_type) {
+  services::HardwareService hw_svc;
+  auto hw_info = hw_svc.GetHardwareInfo();
+  assert(!!engine_svc_);
+  auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
+  bool is_cuda = false;
+  if (default_engine.has_error()) {
+    CTL_INF("Could not get default engine");
+  } else {
+    auto& de = default_engine.value();
+    is_cuda = de.variant.find("cuda") != std::string::npos;
+    CTL_INF("is_cuda: " << is_cuda);
+  }
+
+  std::optional<std::string> warning;
+  if (is_cuda && !system_info_utils::IsNvidiaSmiAvailable()) {
+    CTL_INF(
+        "Running cuda variant but nvidia-driver is not installed yet, "
+        "fallback to CPU mode");
+    auto res = engine_svc_->GetInstalledEngineVariants(kLlamaEngine);
+    if (res.has_error()) {
+      CTL_WRN("Could not get engine variants");
+      return cpp::fail("Nvidia-driver is not installed!");
+    } else {
+      auto& es = res.value();
+      std::sort(
+          es.begin(), es.end(),
+          [](const EngineVariantResponse& e1, const EngineVariantResponse& e2) {
+            return e1.name > e2.name;
+          });
+      for (auto& e : es) {
+        CTL_INF(e.name << " " << e.version << " " << e.engine);
+        // Select the first CPU candidate
+        if (e.name.find("cuda") == std::string::npos) {
+          auto r = engine_svc_->SetDefaultEngineVariant(kLlamaEngine, e.version,
+                                                        e.name);
+          if (r.has_error()) {
+            CTL_WRN("Could not set default engine variant");
+            return cpp::fail("Nvidia-driver is not installed!");
+          } else {
+            CTL_INF("Change default engine to: " << e.name);
+            auto rl = engine_svc_->LoadEngine(kLlamaEngine);
+            if (rl.has_error()) {
+              return cpp::fail("Nvidia-driver is not installed!");
+            } else {
+              CTL_INF("Engine started");
+              is_cuda = false;
+              warning = "Nvidia-driver is not installed, use CPU variant: " +
+                        e.version + "-" + e.name;
+              break;
+            }
+          }
+        }
+      }
+      // If we reach here, means that no CPU variant to fallback
+      if (!warning) {
+        return cpp::fail(
+            "Nvidia-driver is not installed, no available CPU version to "
+            "fallback");
+      }
+    }
+  }
+  // If in GPU acceleration mode:
+  // We use all visible GPUs, so only need to sum all free vram
+  auto free_vram_MiB = 0u;
+  for (const auto& gpu : hw_info.gpus) {
+    free_vram_MiB += gpu.free_vram;
+  }
+
+  auto free_ram_MiB = hw_info.ram.available_MiB;
+
+#if defined(__APPLE__) && defined(__MACH__)
+  free_vram_MiB = free_ram_MiB;
+#endif
+
+  hardware::RunConfig rc = {.ngl = ngl,
+                            .ctx_len = ctx_len,
+                            .n_batch = n_batch,
+                            .n_ubatch = n_ubatch,
+                            .kv_cache_type = kv_cache_type,
+                            .free_vram_MiB = free_vram_MiB};
+  auto es = hardware::EstimateLLaMACppRun(model_path, rc);
+
+  if (!!es && (*es).gpu_mode.vram_MiB > free_vram_MiB && is_cuda) {
+    CTL_WRN("Not enough VRAM - " << "required: " << (*es).gpu_mode.vram_MiB
+                                 << ", available: " << free_vram_MiB);
+  }
+
+  if (!!es && (*es).cpu_mode.ram_MiB > free_ram_MiB) {
+    CTL_WRN("Not enough RAM - " << "required: " << (*es).cpu_mode.ram_MiB
+                                << ", available: " << free_ram_MiB);
+  }
+
+  return warning;
 }

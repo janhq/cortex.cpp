@@ -5,7 +5,7 @@
 #include <queue>
 #include "services/engine_service.h"
 #include "utils/result.hpp"
-
+#include "extensions/remote-engine/remote_engine.h"
 namespace services {
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;
@@ -52,10 +52,13 @@ class InferenceService {
 
   InferResult FineTuning(std::shared_ptr<Json::Value> json_body);
 
- private:
+  bool StopInferencing(const std::string& engine_name,
+                       const std::string& model_id);
+
   bool HasFieldInReq(std::shared_ptr<Json::Value> json_body,
                      const std::string& field);
 
+ private:
   std::shared_ptr<EngineService> engine_service_;
 };
 }  // namespace services

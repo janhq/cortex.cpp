@@ -1,8 +1,6 @@
 #include "hardware.h"
-#include "common/hardware_config.h"
 #include "utils/cortex_utils.h"
-#include "utils/file_manager_utils.h"
-#include "utils/scope_exit.h"
+#include "utils/logging_utils.h"
 
 void Hardware::GetHardwareInfo(
     const HttpRequestPtr& req,
@@ -40,7 +38,7 @@ void Hardware::Activate(
       ahc.gpus.push_back(g.asInt());
     }
   }
-  std::sort(ahc.gpus.begin(), ahc.gpus.end());
+  
   if (!hw_svc_->IsValidConfig(ahc)) {
     Json::Value ret;
     ret["message"] = "Invalid GPU index provided.";

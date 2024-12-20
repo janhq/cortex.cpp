@@ -71,7 +71,6 @@ add_subdirectory(cli)
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
-find_package(httplib CONFIG REQUIRED)
 find_package(unofficial-minizip CONFIG REQUIRED)
 find_package(LibArchive REQUIRED)
 find_package(CURL REQUIRED)
@@ -143,11 +142,13 @@ file(APPEND "${CMAKE_CURRENT_BINARY_DIR}/cortex_openapi.h"
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/cpuid/cpu_info.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/file_logger.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/dylib_path_manager.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/template_renderer.cc
 )
 
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
-target_link_libraries(${TARGET_NAME} PRIVATE httplib::httplib)
 target_link_libraries(${TARGET_NAME} PRIVATE unofficial::minizip::minizip)
 target_link_libraries(${TARGET_NAME} PRIVATE LibArchive::LibArchive)
 target_link_libraries(${TARGET_NAME} PRIVATE CURL::libcurl)
@@ -171,17 +172,19 @@ else()
 endif()
 
 aux_source_directory(controllers CTL_SRC)
+aux_source_directory(repositories REPO_SRC)
 aux_source_directory(services SERVICES_SRC)
-aux_source_directory(common COMMON_SRC)
 aux_source_directory(models MODEL_SRC)
 aux_source_directory(cortex-common CORTEX_COMMON)
 aux_source_directory(config CONFIG_SRC)
 aux_source_directory(database DB_SRC)
+aux_source_directory(extensions EX_SRC)
 aux_source_directory(migrations MIGR_SRC)
+aux_source_directory(utils UTILS_SRC)
  
 target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} )
 
-target_sources(${TARGET_NAME} PRIVATE ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC} ${MIGR_SRC})
+target_sources(${TARGET_NAME} PRIVATE ${UTILS_SRC} ${CONFIG_SRC} ${CTL_SRC} ${COMMON_SRC} ${SERVICES_SRC} ${DB_SRC} ${EX_SRC} ${MIGR_SRC} ${REPO_SRC})
 
 set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_BINARY_DIR}

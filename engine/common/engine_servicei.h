@@ -3,8 +3,8 @@
 #include <json/value.h>
 #include <string>
 #include <vector>
+#include "database/engines.h"
 #include "utils/result.hpp"
-
 // TODO: namh think of the other name
 struct DefaultEngineVariant {
   std::string engine;
@@ -54,4 +54,10 @@ class EngineServiceI {
 
   virtual cpp::result<void, std::string> UnloadEngine(
       const std::string& engine_name) = 0;
+  virtual cpp::result<cortex::db::EngineEntry, std::string>
+  GetEngineByNameAndVariant(
+      const std::string& engine_name,
+      const std::optional<std::string> variant = std::nullopt) = 0;
+  
+  virtual bool IsRemoteEngine(const std::string& engine_name) = 0;
 };
