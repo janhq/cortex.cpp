@@ -3,7 +3,6 @@
 #include "trantor/utils/Logger.h"
 #include "utils/cortex_utils.h"
 #include "utils/function_calling/common.h"
-#include "utils/http_util.h"
 
 using namespace inferences;
 
@@ -27,6 +26,14 @@ void server::ChatCompletion(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   LOG_DEBUG << "Start chat completion";
   auto json_body = req->getJsonObject();
+  if (json_body == nullptr) {
+    Json::Value ret;
+    ret["message"] = "Body can't be empty";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
   bool is_stream = (*json_body).get("stream", false).asBool();
   auto model_id = (*json_body).get("model", "invalid_model").asString();
   auto engine_type = [this, &json_body]() -> std::string {

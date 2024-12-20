@@ -216,10 +216,8 @@ void Files::RetrieveFileContent(
         return;
       }
 
-      auto [buffer, size] = std::move(res.value());
-      auto resp = HttpResponse::newHttpResponse();
-      resp->setBody(std::string(buffer.get(), size));
-      resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+      auto resp =
+          cortex_utils::CreateCortexContentResponse(std::move(res.value()));
       callback(resp);
     } else {
       if (!msg_res->rel_path.has_value()) {
@@ -243,10 +241,8 @@ void Files::RetrieveFileContent(
         return;
       }
 
-      auto [buffer, size] = std::move(content_res.value());
-      auto resp = HttpResponse::newHttpResponse();
-      resp->setBody(std::string(buffer.get(), size));
-      resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+      auto resp = cortex_utils::CreateCortexContentResponse(
+          std::move(content_res.value()));
       callback(resp);
     }
   }
@@ -261,9 +257,6 @@ void Files::RetrieveFileContent(
     return;
   }
 
-  auto [buffer, size] = std::move(res.value());
-  auto resp = HttpResponse::newHttpResponse();
-  resp->setBody(std::string(buffer.get(), size));
-  resp->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+  auto resp = cortex_utils::CreateCortexContentResponse(std::move(res.value()));
   callback(resp);
 }
