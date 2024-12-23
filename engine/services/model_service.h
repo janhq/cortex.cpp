@@ -4,10 +4,14 @@
 #include <optional>
 #include <string>
 #include "common/engine_servicei.h"
+#include "common/model_metadata.h"
 #include "config/model_config.h"
 #include "services/download_service.h"
-#include "services/inference_service.h"
 #include "utils/hardware/gguf/gguf_file_estimate.h"
+
+namespace services {
+class InferenceService;
+}
 
 struct ModelPullInfo {
   std::string id;
@@ -101,6 +105,12 @@ class ModelService {
       const std::string& model_handle, const std::string& kv_cache = "f16",
       int n_batch = 2048, int n_ubatch = 2048);
 
+  cpp::result<std::shared_ptr<ModelMetadata>, std::string> GetModelMetadata(
+      const std::string& model_id) const;
+
+  std::shared_ptr<ModelMetadata> GetCachedModelMetadata(
+      const std::string& model_id) const;
+
  private:
   /**
    * Handle downloading model which have following pattern: author/model_name
@@ -124,4 +134,10 @@ class ModelService {
   std::shared_ptr<services::InferenceService> inference_svc_;
   std::unordered_set<std::string> bypass_stop_check_set_;
   std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
+
+  /**
+   * Store the chat template of loaded model.
+   */
+  std::unordered_map<std::string, std::shared_ptr<ModelMetadata>>
+      loaded_model_metadata_map_;
 };
