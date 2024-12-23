@@ -22,8 +22,8 @@ on:
 
 
 env:
-  MODEL_DIR: models/ichigo-wrapper # ${{ inputs.model_dir }}
-  MODEL_NAME: ichigo-wrapper # ${{ inputs.model_name }}
+  MODEL_DIR: models/whispervq # ${{ inputs.model_dir }}
+  MODEL_NAME: whispervq # ${{ inputs.model_name }}
   REPO_NAME: janhq/models # ${{ inputs.model_name }}
   BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
 
@@ -38,12 +38,12 @@ jobs:
           - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
-          - os: "mac"
-            name: "amd64"
-            runs-on: "macos-selfhosted-12"
-          - os: "mac"
-            name: "arm64"
-            runs-on: "macos-selfhosted-12-arm64"
+          # - os: "mac"
+          #   name: "amd64"
+          #   runs-on: "macos-selfhosted-12"
+          # - os: "mac"
+          #   name: "arm64"
+          #   runs-on: "macos-selfhosted-12-arm64"
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
