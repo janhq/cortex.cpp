@@ -13,6 +13,7 @@
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
+#include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -487,7 +488,8 @@ EngineService::GetEngineReleases(const std::string& engine) const {
 
 cpp::result<std::vector<EngineService::EngineVariant>, std::string>
 EngineService::GetEngineVariants(const std::string& engine,
-                                 const std::string& version) const {
+                                 const std::string& version,
+                                 bool filter_compatible_only) const {
   auto ne = NormalizeEngine(engine);
   auto engine_release =
       github_release_utils::GetReleaseByVersion("janhq", ne, version);
@@ -509,6 +511,44 @@ EngineService::GetEngineVariants(const std::string& engine,
 
   if (compatible_variants.empty()) {
     return cpp::fail("No compatible variants found for " + engine);
+  }
+
+  if (filter_compatible_only) {
+    auto system_info = system_info_utils::GetSystemInfo();
+    compatible_variants.erase(
+        std::remove_if(compatible_variants.begin(), compatible_variants.end(),
+                       [&system_info](const EngineVariant& variant) {
+                         std::string name = variant.name;
+                         std::transform(name.begin(), name.end(), name.begin(),
+                                        ::tolower);
+
+                         bool os_match = false;
+                         if (system_info->os == "mac" &&
+                             name.find("mac") != std::string::npos)
+                           os_match = true;
+                         if (system_info->os == "windows" &&
+                             name.find("windows") != std::string::npos)
+                           os_match = true;
+                         if (system_info->os == "linux" &&
+                             name.find("linux") != std::string::npos)
+                           os_match = true;
+
+                         bool arch_match = false;
+                         if (system_info->arch == "arm64" &&
+                             name.find("arm64") != std::string::npos)
+                           arch_match = true;
+                         if (system_info->arch == "amd64" &&
+                             name.find("amd64") != std::string::npos)
+                           arch_match = true;
+
+                         return !(os_match && arch_match);
+                       }),
+        compatible_variants.end());
+
+    if (compatible_variants.empty()) {
+      return cpp::fail("No compatible variants found for system " +
+                       system_info->os + "/" + system_info->arch);
+    }
   }
 
   return compatible_variants;
@@ -705,6 +745,9 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // End hard code
 
   CTL_INF("Loading engine: " << ne);
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+  CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
+#endif
 
   auto engine_dir_path_res = GetEngineDirPath(ne);
   if (engine_dir_path_res.has_error()) {
@@ -718,21 +761,23 @@ cpp::result<void, std::string> EngineService::LoadEngine(
 
 #if defined(_WIN32) || defined(_WIN64)
     // register deps
-    std::vector<std::filesystem::path> paths{};
-    paths.push_back(std::move(cuda_path));
-    paths.push_back(std::move(engine_dir_path));
+    if (!(getenv("ENGINE_PATH"))) {
+      std::vector<std::filesystem::path> paths{};
+      paths.push_back(std::move(cuda_path));
+      paths.push_back(std::move(engine_dir_path));
 
-    CTL_DBG("Registering dylib for "
-            << ne << " with " << std::to_string(paths.size()) << " paths.");
-    for (const auto& path : paths) {
-      CTL_DBG("Registering path: " << path.string());
-    }
+      CTL_DBG("Registering dylib for "
+              << ne << " with " << std::to_string(paths.size()) << " paths.");
+      for (const auto& path : paths) {
+        CTL_DBG("Registering path: " << path.string());
+      }
 
-    auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
-    if (reg_result.has_error()) {
-      CTL_DBG("Failed register lib paths for: " << ne);
-    } else {
-      CTL_DBG("Registered lib paths for: " << ne);
+      auto reg_result = dylib_path_manager_->RegisterPath(ne, paths);
+      if (reg_result.has_error()) {
+        CTL_DBG("Failed register lib paths for: " << ne);
+      } else {
+        CTL_DBG("Registered lib paths for: " << ne);
+      }
     }
 #endif
 

@@ -25,7 +25,7 @@ bool ModelStatusCmd::IsLoaded(const std::string& host, int port,
   auto res = curl_utils::SimpleGetJson(url.ToFullPath());
   if (res.has_error()) {
     auto root = json_helper::ParseJsonString(res.error());
-    CLI_LOG(root["message"].asString());
+    CTL_WRN(root["message"].asString());
     return false;
   }
 

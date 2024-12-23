@@ -4,7 +4,6 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -17,7 +16,6 @@
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
 #include "utils/dylib_path_manager.h"
-#include "utils/engine_constants.h"
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
@@ -48,10 +46,6 @@ class EngineService : public EngineServiceI {
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
-#if defined(_WIN32)
-    DLL_DIRECTORY_COOKIE cookie;
-    DLL_DIRECTORY_COOKIE cuda_cookie;
-#endif
   };
 
   std::mutex engines_mutex_;
@@ -101,25 +95,28 @@ class EngineService : public EngineServiceI {
       const std::string& engine) const;
 
   cpp::result<std::vector<EngineVariant>, std::string> GetEngineVariants(
-      const std::string& engine, const std::string& version) const;
+      const std::string& engine, const std::string& version,
+      bool filter_compatible_only = false) const;
 
   cpp::result<DefaultEngineVariant, std::string> SetDefaultEngineVariant(
       const std::string& engine, const std::string& version,
-      const std::string& variant);
+      const std::string& variant) override;
 
   cpp::result<DefaultEngineVariant, std::string> GetDefaultEngineVariant(
-      const std::string& engine);
+      const std::string& engine) override;
 
   cpp::result<std::vector<EngineVariantResponse>, std::string>
-  GetInstalledEngineVariants(const std::string& engine) const;
+  GetInstalledEngineVariants(const std::string& engine) const override;
 
   cpp::result<EngineV, std::string> GetLoadedEngine(
       const std::string& engine_name);
 
   std::vector<EngineV> GetLoadedEngines();
 
-  cpp::result<void, std::string> LoadEngine(const std::string& engine_name);
-  cpp::result<void, std::string> UnloadEngine(const std::string& engine_name);
+  cpp::result<void, std::string> LoadEngine(
+      const std::string& engine_name) override;
+  cpp::result<void, std::string> UnloadEngine(
+      const std::string& engine_name) override;
 
   cpp::result<github_release_utils::GitHubRelease, std::string>
   GetLatestEngineVersion(const std::string& engine) const;
@@ -138,7 +135,7 @@ class EngineService : public EngineServiceI {
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineByNameAndVariant(
       const std::string& engine_name,
-      const std::optional<std::string> variant = std::nullopt);
+      const std::optional<std::string> variant = std::nullopt) override;
 
   cpp::result<cortex::db::EngineEntry, std::string> UpsertEngine(
       const std::string& engine_name, const std::string& type,
