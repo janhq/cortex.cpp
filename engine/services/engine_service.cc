@@ -488,7 +488,8 @@ EngineService::GetEngineReleases(const std::string& engine) const {
 
 cpp::result<std::vector<EngineService::EngineVariant>, std::string>
 EngineService::GetEngineVariants(const std::string& engine,
-                                 const std::string& version) const {
+                                 const std::string& version,
+                                 bool filter_compatible_only) const {
   auto ne = NormalizeEngine(engine);
   auto engine_release =
       github_release_utils::GetReleaseByVersion("janhq", ne, version);
@@ -510,6 +511,44 @@ EngineService::GetEngineVariants(const std::string& engine,
 
   if (compatible_variants.empty()) {
     return cpp::fail("No compatible variants found for " + engine);
+  }
+
+  if (filter_compatible_only) {
+    auto system_info = system_info_utils::GetSystemInfo();
+    compatible_variants.erase(
+        std::remove_if(compatible_variants.begin(), compatible_variants.end(),
+                       [&system_info](const EngineVariant& variant) {
+                         std::string name = variant.name;
+                         std::transform(name.begin(), name.end(), name.begin(),
+                                        ::tolower);
+
+                         bool os_match = false;
+                         if (system_info->os == "mac" &&
+                             name.find("mac") != std::string::npos)
+                           os_match = true;
+                         if (system_info->os == "windows" &&
+                             name.find("windows") != std::string::npos)
+                           os_match = true;
+                         if (system_info->os == "linux" &&
+                             name.find("linux") != std::string::npos)
+                           os_match = true;
+
+                         bool arch_match = false;
+                         if (system_info->arch == "arm64" &&
+                             name.find("arm64") != std::string::npos)
+                           arch_match = true;
+                         if (system_info->arch == "amd64" &&
+                             name.find("amd64") != std::string::npos)
+                           arch_match = true;
+
+                         return !(os_match && arch_match);
+                       }),
+        compatible_variants.end());
+
+    if (compatible_variants.empty()) {
+      return cpp::fail("No compatible variants found for system " +
+                       system_info->os + "/" + system_info->arch);
+    }
   }
 
   return compatible_variants;

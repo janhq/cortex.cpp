@@ -11,10 +11,13 @@
 #include "database/models.h"
 #include "hardware_service.h"
 #include "utils/archive_utils.h"
+
+#include "services/inference_service.h"
+
 #include "utils/cli_selection_utils.h"
-#include "utils/cortex_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
+#include "utils/gguf_metadata_reader.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
@@ -1012,6 +1015,18 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     auto data = std::get<1>(ir);
 
     if (status == drogon::k200OK) {
+      // start model successfully, we store the metadata so we can use
+      // for each inference
+      auto metadata_res = GetModelMetadata(model_handle);
+      if (metadata_res.has_value()) {
+        loaded_model_metadata_map_.emplace(model_handle,
+                                           std::move(metadata_res.value()));
+        CTL_INF("Successfully stored metadata for model " << model_handle);
+      } else {
+        CTL_WRN("Failed to get metadata for model " << model_handle << ": "
+                                                    << metadata_res.error());
+      }
+
       return StartModelResult{.success = true,
                               .warning = may_fallback_res.value()};
     } else if (status == drogon::k409Conflict) {
@@ -1081,6 +1096,8 @@ cpp::result<bool, std::string> ModelService::StopModel(
       if (bypass_check) {
         bypass_stop_check_set_.erase(model_handle);
       }
+      loaded_model_metadata_map_.erase(model_handle);
+      CTL_INF("Removed metadata for model " << model_handle);
       return true;
     } else {
       CTL_ERR("Model failed to stop with status code: " << status);
@@ -1359,4 +1376,36 @@ ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
   }
 
   return warning;
+}
+
+cpp::result<std::shared_ptr<ModelMetadata>, std::string>
+ModelService::GetModelMetadata(const std::string& model_id) const {
+  if (model_id.empty()) {
+    return cpp::fail("Model ID can't be empty");
+  }
+
+  auto model_config = GetDownloadedModel(model_id);
+  if (!model_config.has_value()) {
+    return cpp::fail("Can't get model config for " + model_id);
+  }
+
+  if (model_config->files.empty()) {
+    return cpp::fail("Model has no actual file. Might not be a local model!");
+  }
+  // TODO: handle the case we have multiple files
+  auto file = model_config->files[0];
+
+  auto model_metadata_res = cortex_utils::ReadGgufMetadata(
+      file_manager_utils::ToAbsoluteCortexDataPath(
+          std::filesystem::path(file)));
+  if (!model_metadata_res.has_value()) {
+    CTL_ERR("Failed to read metadata: " + model_metadata_res.error());
+    return cpp::fail("Failed to read metadata: " + model_metadata_res.error());
+  }
+  return std::move(*model_metadata_res);
+}
+
+std::shared_ptr<ModelMetadata> ModelService::GetCachedModelMetadata(
+    const std::string& model_id) const {
+  return loaded_model_metadata_map_.at(model_id);
 }
