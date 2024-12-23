@@ -1,6 +1,7 @@
 #include "thread_service.h"
+#include <chrono>
 #include "utils/logging_utils.h"
-#include "utils/ulid/ulid.hh"
+#include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
     std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
@@ -12,11 +13,8 @@ cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
           std::chrono::system_clock::now().time_since_epoch())
           .count();
 
-  auto ulid = ulid::CreateNowRand();
-  auto thread_id = ulid::Marshal(ulid);
-
   OpenAi::Thread thread;
-  thread.id = thread_id;
+  thread.id = ulid::GenerateUlid();
   thread.object = "thread";
   thread.created_at = seconds_since_epoch;
 
