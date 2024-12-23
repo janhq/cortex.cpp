@@ -95,7 +95,7 @@ jobs:
           python3 -m pip freeze | % { python3 -m pip uninstall -y $_ }
           python3 -m pip install --upgrade pip
           python3 -m pip install -I -r ${{env.MODEL_DIR}}/requirements.cuda.txt
-
+          python3 -m pip install dotenv
       - name: Install dependencies Linux
         if: runner.os == 'linux'
         run: |
@@ -107,7 +107,7 @@ jobs:
           python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
-  
+          python -m pip install dotenv
       - name: Install dependencies Mac
         if: runner.os == 'macOS'
         run: |
@@ -119,6 +119,7 @@ jobs:
           python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
+          python -m pip install dotenv
 
       - name: prepare python package windows
         if : runner.os == 'windows'
