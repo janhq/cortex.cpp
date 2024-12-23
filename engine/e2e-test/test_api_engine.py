@@ -44,7 +44,8 @@ class TestApiEngine:
     # engines uninstall
     @pytest.mark.asyncio
     async def test_engines_install_uninstall_llamacpp_should_be_successful(self):
-        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
+        data = {"version": "v0.1.43"}
+        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install", json=data)
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
         time.sleep(30)

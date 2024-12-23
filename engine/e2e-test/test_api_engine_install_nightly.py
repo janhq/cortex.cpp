@@ -19,7 +19,8 @@ class TestApiEngineInstall:
         stop_server()
 
     def test_engines_install_llamacpp_should_be_successful(self):
-        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
+        data = {"version": "v0.1.43"}
+        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install", json=data)
         assert response.status_code == 200
 
     def test_engines_install_llamacpp_specific_version_and_variant(self):
