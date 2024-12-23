@@ -514,6 +514,7 @@ struct PythonModelConfig {
   std::string environment;
   std::vector<std::string> command;  // New command field
   std::vector<std::string> files;
+  std::vector<std::string> depends;
   std::string engine;
   Json::Value extra_params;  // Accept dynamic extra parameters
 
@@ -574,6 +575,13 @@ struct PythonModelConfig {
     out << YAML::Key << "files" << YAML::Value << YAML::BeginSeq;
     for (const auto& file : files) {
       out << file;
+    }
+    out << YAML::EndSeq;
+
+    // Serialize command as YAML list
+    out << YAML::Key << "depends" << YAML::Value << YAML::BeginSeq;
+    for (const auto& depend : depends) {
+      out << depend;
     }
     out << YAML::EndSeq;
 
@@ -664,6 +672,12 @@ struct PythonModelConfig {
       }
     }
 
+    if (mlp["depends"] && mlp["depends"].IsSequence()) {
+      for (const auto& depend : mlp["depends"]) {
+        depends.push_back(depend.as<std::string>());
+      }
+    }
+
     if (mlp["extra_params"]) {
       for (YAML::const_iterator it = mlp["extra_params"].begin();
            it != mlp["extra_params"].end(); ++it) {
@@ -715,6 +729,10 @@ struct PythonModelConfig {
 
     for (const auto& file : files) {
       root["files"].append(file);
+    }
+
+    for (const auto& depend : depends) {
+      root["depends"].append(depend);
     }
 
     root["engine"] = engine;
@@ -788,6 +806,12 @@ struct PythonModelConfig {
     if (mlp.isMember("files")) {
       for (const auto& file : mlp["files"]) {
         files.push_back(file.asString());
+      }
+    }
+
+    if (mlp.isMember("depends")) {
+      for (const auto& depend : mlp["depends"]) {
+        depends.push_back(depend.asString());
       }
     }
 

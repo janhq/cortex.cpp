@@ -554,7 +554,8 @@ ModelService::DownloadModelFromCortexsoAsync(
       }
       auto venv_zip = model_folder / std::filesystem::path("venv.zip");
       if (std::filesystem::exists(venv_zip)) {
-        if (archive_utils::ExtractArchive(venv_zip.string(), venv_path.string())) {
+        if (archive_utils::ExtractArchive(venv_zip.string(),
+                                          venv_path.string())) {
           std::filesystem::remove_all(venv_zip);
           CTL_INF("Successfully extract venv.zip");
           // If extract success create pyvenv.cfg
@@ -839,6 +840,29 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
     // Check if Python model first
     if (mc.engine == kPythonEngine) {
+
+      config::PythonModelConfig python_model_config;
+      python_model_config.ReadFromYaml(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      // Start all depends model
+      auto depends = python_model_config.depends;
+      for (auto& depend : depends) {
+        StartParameterOverride temp;
+        auto res = StartModel(depend, temp);
+        if (res.has_error()) {
+          CTL_WRN("Error: " + res.error());
+          for (auto& depend : depends) {
+            if (depend != model_handle) {
+              StopModel(depend);
+            }
+          }
+          return cpp::fail("Model failed to start dependency '" + depend +
+                           "' : " + res.error());
+        }
+      }
+
       json_data["model"] = model_handle;
       json_data["model_path"] =
           fmu::ToAbsoluteCortexDataPath(
@@ -860,6 +884,18 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         return StartModelResult{.success = true, .warning = ""};
       } else {
         // only report to user the error
+        for (auto& depend : depends) {
+          StartParameterOverride temp;
+          auto res = StartModel(depend, temp);
+          if (res.has_error()) {
+            CTL_WRN("Error: " + res.error());
+            for (auto& depend : depends) {
+              if (depend != model_handle) {
+                StopModel(depend);
+              }
+            }
+          }
+        }
         CTL_ERR("Model failed to start with status code: " << status);
         return cpp::fail("Model failed to start: " +
                          data["message"].asString());
@@ -1020,6 +1056,23 @@ cpp::result<bool, std::string> ModelService::StopModel(
     if (bypass_check) {
       engine_name = kLlamaEngine;
     }
+
+    // Update for python engine
+    if (engine_name == kPythonEngine) {
+      auto model_entry = modellist_handler.GetModelInfo(model_handle);
+      config::PythonModelConfig python_model_config;
+      python_model_config.ReadFromYaml(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      // Stop all depends model
+      auto depends = python_model_config.depends;
+      for (auto& depend : depends) {
+        StopModel(depend);
+      }
+    }
+
+    //
     assert(inference_svc_);
     auto ir = inference_svc_->UnloadModel(engine_name, model_handle);
     auto status = std::get<0>(ir)["status_code"].asInt();
