@@ -101,7 +101,8 @@ class EngineService : public EngineServiceI {
       const std::string& engine) const;
 
   cpp::result<std::vector<EngineVariant>, std::string> GetEngineVariants(
-      const std::string& engine, const std::string& version) const;
+      const std::string& engine, const std::string& version,
+      bool filter_compatible_only = false) const;
 
   cpp::result<DefaultEngineVariant, std::string> SetDefaultEngineVariant(
       const std::string& engine, const std::string& version,
