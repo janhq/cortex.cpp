@@ -22,8 +22,8 @@ on:
 
 
 env:
-  MODEL_DIR: models/fish-speech # ${{ inputs.model_dir }}
-  MODEL_NAME: fish-speech # ${{ inputs.model_name }}
+  MODEL_DIR: models/ichigo-wrapper # ${{ inputs.model_dir }}
+  MODEL_NAME: ichigo-wrapper # ${{ inputs.model_name }}
   REPO_NAME: janhq/models # ${{ inputs.model_name }}
   BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
 
@@ -35,15 +35,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - os: "linux"
-          #   name: "amd64"
-          #   runs-on: "ubuntu-20-04-cuda-12-0"
-          # - os: "mac"
-          #   name: "amd64"
-          #   runs-on: "macos-selfhosted-12"
-          # - os: "mac"
-          #   name: "arm64"
-          #   runs-on: "macos-selfhosted-12-arm64"
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-selfhosted-12"
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-selfhosted-12-arm64"
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
@@ -91,6 +91,8 @@ jobs:
         if: runner.os == 'windows'
         shell: pwsh
         run: |
+          python3 -m pip install fastapi
+          python3 -m pip freeze | % { python3 -m pip uninstall -y $_ }
           python3 -m pip install --upgrade pip
           python3 -m pip install -I -r ${{env.MODEL_DIR}}/requirements.cuda.txt
 
@@ -101,6 +103,8 @@ jobs:
           source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
+          python -m pip install fastapi
+          python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.cuda.txt
   
@@ -111,6 +115,8 @@ jobs:
           source $HOME/miniconda3/bin/activate base
           conda init
           conda activate ${{env.MODEL_NAME}}
+          python -m pip install fastapi
+          python -m pip freeze | xargs python -m pip uninstall -y
           python -m pip install --upgrade pip
           python -m pip install -r ${{env.MODEL_DIR}}/requirements.txt
 
