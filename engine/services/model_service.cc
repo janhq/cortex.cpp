@@ -749,19 +749,28 @@ cpp::result<void, std::string> ModelService::DeleteModel(
 }
 
 cpp::result<StartModelResult, std::string> ModelService::StartModel(
-    const std::string& model_handle,
-    const StartParameterOverride& params_override) {
+    const std::string& model_handle, const Json::Value& params_override,
+    bool bypass_model_check) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
+  std::optional<std::string> custom_prompt_template;
+  std::optional<int> ctx_len;
+  if (auto& o = params_override["prompt_template"]; !o.isNull()) {
+    custom_prompt_template = o.asString();
+  }
+
+  if (auto& o = params_override["ctx_len"]; !o.isNull()) {
+    ctx_len = o.asInt();
+  }
 
   try {
     constexpr const int kDefautlContextLength = 8192;
     int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
     // Currently we don't support download vision models, so we need to bypass check
-    if (!params_override.bypass_model_check()) {
+    if (!bypass_model_check) {
       auto model_entry = modellist_handler.GetModelInfo(model_handle);
       if (model_entry.has_error()) {
         CTL_WRN("Error: " + model_entry.error());
@@ -839,29 +848,19 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     }
 
     json_data["model"] = model_handle;
-    if (auto& cpt = params_override.custom_prompt_template;
-        !cpt.value_or("").empty()) {
+    if (auto& cpt = custom_prompt_template; !cpt.value_or("").empty()) {
       auto parse_prompt_result = string_utils::ParsePrompt(cpt.value());
       json_data["system_prompt"] = parse_prompt_result.system_prompt;
       json_data["user_prompt"] = parse_prompt_result.user_prompt;
       json_data["ai_prompt"] = parse_prompt_result.ai_prompt;
     }
 
-#define ASSIGN_IF_PRESENT(json_obj, param_override, param_name) \
-  if (param_override.param_name) {                              \
-    json_obj[#param_name] = param_override.param_name.value();  \
-  }
+    json_helper::MergeJson(json_data, params_override);
 
-    ASSIGN_IF_PRESENT(json_data, params_override, cache_enabled);
-    ASSIGN_IF_PRESENT(json_data, params_override, ngl);
-    ASSIGN_IF_PRESENT(json_data, params_override, n_parallel);
-    ASSIGN_IF_PRESENT(json_data, params_override, cache_type);
-    ASSIGN_IF_PRESENT(json_data, params_override, mmproj);
-    ASSIGN_IF_PRESENT(json_data, params_override, model_path);
-#undef ASSIGN_IF_PRESENT
-    if (params_override.ctx_len) {
+    // Set the latest ctx_len
+    if (ctx_len) {
       json_data["ctx_len"] =
-          std::min(params_override.ctx_len.value(), max_model_context_length);
+          std::min(ctx_len.value(), max_model_context_length);
     }
     CTL_INF(json_data.toStyledString());
     auto may_fallback_res = MayFallbackToCpu(json_data["model_path"].asString(),
