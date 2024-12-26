@@ -600,7 +600,7 @@ void PythonEngine::HandleInference(
 
       // Render with error handling
       try {
-        transformed_request = renderer_.Render(transform_request, *json_body);
+        transformed_request = renderer_.Render(transform_request, body);
       } catch (const std::exception& e) {
         throw std::runtime_error("Template rendering error: " +
                                  std::string(e.what()));
@@ -622,6 +622,7 @@ void PythonEngine::HandleInference(
     if (body.isMember("stream") && body["stream"].asBool()) {
       response =
           MakeStreamPostRequest(model, path, transformed_request, callback);
+          return;
     } else {
       response = MakePostRequest(model, path, transformed_request);
     }

@@ -899,7 +899,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       } else {
         // only report to user the error
         for (auto& depend : depends) {
-          Json::Value temp;
 
           StopModel(depend);
         }

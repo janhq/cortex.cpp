@@ -36,20 +36,21 @@ static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   std::string chunk(ptr, size * nmemb);
 
   context->buffer += chunk;
-
+  LOG_INFO<< "start writing";
   // Process complete lines
   size_t pos;
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
     std::string line = context->buffer.substr(0, pos);
     context->buffer = context->buffer.substr(pos + 1);
-
+    LOG_INFO << "line: "<<line;
     // Skip empty lines
     if (line.empty() || line == "\r")
       continue;
 
+
     // Skip [DONE] message
 
-    if (line == "") {
+    if (line == "data: [DONE]") {
       Json::Value status;
       status["is_done"] = true;
       status["has_error"] = false;
