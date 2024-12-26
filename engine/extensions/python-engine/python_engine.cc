@@ -509,6 +509,62 @@ void PythonEngine::HandleChatCompletion(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {}
 
+CurlResponse PythonEngine::MakeStreamPostRequest(
+    const std::string& model, const std::string& path, const std::string& body,
+    const std::function<void(Json::Value&&, Json::Value&&)>& callback) {
+  auto config = models_[model];
+  CURL* curl = curl_easy_init();
+  CurlResponse response;
+
+  if (!curl) {
+    response.error = true;
+    response.error_message = "Failed to initialize CURL";
+    return response;
+  }
+
+  std::string full_url = "http://localhost:" + config.port + path;
+
+  struct curl_slist* headers = nullptr;
+  headers = curl_slist_append(headers, "Content-Type: application/json");
+  headers = curl_slist_append(headers, "Accept: text/event-stream");
+  headers = curl_slist_append(headers, "Cache-Control: no-cache");
+  headers = curl_slist_append(headers, "Connection: keep-alive");
+
+  StreamContext context{
+      std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
+          callback),
+      ""};
+
+  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
+  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(curl, CURLOPT_POST, 1L);
+  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, StreamWriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &context);
+  curl_easy_setopt(curl, CURLOPT_TRANSFER_ENCODING, 1L);
+
+  CURLcode res = curl_easy_perform(curl);
+
+  if (res != CURLE_OK) {
+    response.error = true;
+    response.error_message = curl_easy_strerror(res);
+
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = true;
+    status["status_code"] = 500;
+
+    Json::Value error;
+    error["error"] = response.error_message;
+    callback(std::move(status), std::move(error));
+  }
+
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(curl);
+  return response;
+}
+
 void PythonEngine::HandleInference(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
@@ -563,7 +619,12 @@ void PythonEngine::HandleInference(
 
   CurlResponse response;
   if (method == "post") {
-    response = MakePostRequest(model, path, transformed_request);
+    if (body.isMember("stream") && body["stream"].asBool()) {
+      response =
+          MakeStreamPostRequest(model, path, transformed_request, callback);
+    } else {
+      response = MakePostRequest(model, path, transformed_request);
+    }
   } else if (method == "get") {
     response = MakeGetRequest(model, path);
   } else if (method == "delete") {

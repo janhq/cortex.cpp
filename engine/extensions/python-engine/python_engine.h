@@ -47,15 +47,9 @@ static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
     if (line.empty() || line == "\r")
       continue;
 
-    // Remove "data: " prefix if present
-    // if (line.substr(0, 6) == "data: ")
-    // {
-    //     line = line.substr(6);
-    // }
-
     // Skip [DONE] message
-    std::cout << line << std::endl;
-    if (line == "data: [DONE]") {
+
+    if (line == "") {
       Json::Value status;
       status["is_done"] = true;
       status["has_error"] = false;
@@ -106,7 +100,10 @@ class PythonEngine : public EngineI {
                               const std::string& path);
   CurlResponse MakeDeleteRequest(const std::string& model,
                                  const std::string& path);
-
+  CurlResponse MakeStreamPostRequest(
+      const std::string& model, const std::string& path,
+      const std::string& body,
+      const std::function<void(Json::Value&&, Json::Value&&)>& callback);
   // Process manager functions
   pid_t SpawnProcess(const std::string& model,
                      const std::vector<std::string>& command);

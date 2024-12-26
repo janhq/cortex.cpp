@@ -1,7 +1,7 @@
 #include "services/message_service.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
-#include "utils/ulid/ulid.hh"
+#include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
     const std::string& thread_id, const OpenAi::Role& role,
@@ -27,11 +27,8 @@ cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
         std::get<std::vector<std::unique_ptr<OpenAi::Content>>>(content));
   }
 
-  auto ulid = ulid::CreateNowRand();
-  auto msg_id = ulid::Marshal(ulid);
-
   OpenAi::Message msg;
-  msg.id = msg_id;
+  msg.id = ulid::GenerateUlid();
   msg.object = "thread.message";
   msg.created_at = seconds_since_epoch;
   msg.thread_id = thread_id;

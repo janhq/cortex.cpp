@@ -22,21 +22,6 @@ struct ModelPullInfo {
   std::string download_url;
 };
 
-struct StartParameterOverride {
-  std::optional<bool> cache_enabled;
-  std::optional<int> ngl;
-  std::optional<int> n_parallel;
-  std::optional<int> ctx_len;
-  std::optional<std::string> custom_prompt_template;
-  std::optional<std::string> cache_type;
-  std::optional<std::string> mmproj;
-  std::optional<std::string> model_path;
-  bool bypass_llama_model_path = false;
-  bool bypass_model_check() const {
-    return mmproj.has_value() || bypass_llama_model_path;
-  }
-};
-
 struct StartModelResult {
   bool success;
   std::optional<std::string> warning;
@@ -82,8 +67,8 @@ class ModelService {
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
   cpp::result<StartModelResult, std::string> StartModel(
-      const std::string& model_handle,
-      const StartParameterOverride& params_override);
+      const std::string& model_handle, const Json::Value& params_override,
+      bool bypass_model_check);
 
   cpp::result<bool, std::string> StopModel(const std::string& model_handle);
 
