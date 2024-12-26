@@ -30,7 +30,7 @@ env:
 jobs:
   build-and-test:
     runs-on: ${{ matrix.runs-on }}
-    timeout-minutes: 360
+    timeout-minutes: 3600
     strategy:
       fail-fast: false
       matrix:
