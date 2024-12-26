@@ -2199,6 +2199,84 @@
         "tags": ["Engines"]
       }
     },
+    "/v1/engines/{name}/releases/{version}": {
+      "get": {
+        "summary": "List variants for a specific engine version",
+        "description": "Lists all available variants (builds) for a specific version of an engine. Variants can include different CPU architectures (AVX, AVX2, AVX512), GPU support (CUDA, Vulkan), and operating systems (Windows, Linux, macOS).",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["llama-cpp", "onnxruntime", "tensorrt-llm"],
+              "default": "llama-cpp"
+            },
+            "description": "The type of engine"
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The version of the engine"
+          },
+          {
+            "name": "show",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": ["all", "compatible"],
+              "default": "all"
+            },
+            "description": "Filter the variants list. Use 'compatible' to show only variants compatible with the current system, or 'all' to show all available variants."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully retrieved variants list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "description": "The name of the variant, including OS, architecture, and capabilities",
+                        "example": "linux-amd64-avx-cuda-11-7"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Creation timestamp of the variant",
+                        "example": "2024-11-13T04:51:16Z"
+                      },
+                      "size": {
+                        "type": "integer",
+                        "description": "Size of the variant in bytes",
+                        "example": 151224604
+                      },
+                      "download_count": {
+                        "type": "integer",
+                        "description": "Number of times this variant has been downloaded",
+                        "example": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": ["Engines"]
+      }
+    },
     "/v1/engines/{name}/releases/latest": {
       "get": {
         "summary": "Get latest release",

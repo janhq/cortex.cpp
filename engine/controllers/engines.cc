@@ -131,7 +131,8 @@ void Engines::GetEngineReleases(
 void Engines::GetEngineVariants(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    const std::string& engine, const std::string& version) const {
+    const std::string& engine, const std::string& version,
+    std::optional<std::string> show) const {
   if (engine.empty()) {
     Json::Value res;
     res["message"] = "Engine name is required";
@@ -142,7 +143,18 @@ void Engines::GetEngineVariants(
     return;
   }
 
-  auto result = engine_service_->GetEngineVariants(engine, version);
+  auto show_value = show.value_or("all");
+  if (show_value != "all" && show_value != "compatible") {
+    Json::Value res;
+    res["message"] = "Invalid show value. Can either be `all` or `compatible`";
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  auto result = engine_service_->GetEngineVariants(engine, version,
+                                                   show_value == "compatible");
 
   auto normalize_version = string_utils::RemoveSubstring(version, "v");
   Json::Value releases(Json::arrayValue);

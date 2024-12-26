@@ -2,16 +2,10 @@
 #include <drogon/HttpClient.h>
 #include <drogon/HttpResponse.h>
 #include <sys/stat.h>
-#include <algorithm>
 #include <ctime>
-#include <filesystem>
-#include <fstream>
 #include <iomanip>
-#include <iostream>
-#include <ostream>
-#include <random>
-#include <regex>
 #include <string>
+#include <utility>
 #if defined(__linux__)
 #include <limits.h>
 #include <unistd.h>
@@ -69,6 +63,30 @@ inline drogon::HttpResponsePtr CreateCortexHttpJsonResponse(
   return res;
 };
 
+inline drogon::HttpResponsePtr CreateCortexContentResponse(
+    std::pair<std::unique_ptr<char[]>, size_t> content) {
+  auto [buffer, size] = std::move(content);
+  auto resp = drogon::HttpResponse::newHttpResponse();
+  resp->setBody(std::string(buffer.get(), size));
+  resp->setContentTypeCode(drogon::CT_APPLICATION_OCTET_STREAM);
+
+#if defined(_WIN32)
+  resp->addHeader("date", GetDateRFC1123());
+#endif
+  return resp;
+}
+
+inline drogon::HttpResponsePtr CreateTextPlainResponse(
+    const std::string& text) {
+  auto resp = drogon::HttpResponse::newHttpResponse();
+  resp->setBody(text);
+  resp->setContentTypeCode(drogon::CT_TEXT_PLAIN);
+#if defined(_WIN32)
+  resp->addHeader("date", GetDateRFC1123());
+#endif
+  return resp;
+}
+
 inline drogon::HttpResponsePtr CreateCortexStreamResponse(
     const std::function<std::size_t(char*, std::size_t)>& callback,
     const std::string& attachmentFileName = "") {
@@ -79,8 +97,6 @@ inline drogon::HttpResponsePtr CreateCortexStreamResponse(
 #endif
   return res;
 }
-
-
 
 #if defined(_WIN32)
 inline std::string GetCurrentPath() {
