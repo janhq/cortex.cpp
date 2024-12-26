@@ -22,8 +22,8 @@ on:
 
 
 env:
-  MODEL_DIR: models/fish-speech # ${{ inputs.model_dir }}
-  MODEL_NAME: fish-speech # ${{ inputs.model_name }}
+  MODEL_DIR: models/whispervq # ${{ inputs.model_dir }}
+  MODEL_NAME: whispervq # ${{ inputs.model_name }}
   REPO_NAME: janhq/models # ${{ inputs.model_name }}
   BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
 
