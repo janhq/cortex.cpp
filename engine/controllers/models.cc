@@ -488,55 +488,31 @@ void Models::StartModel(
   if (!http_util::HasFieldInReq(req, callback, "model"))
     return;
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  StartParameterOverride params_override;
-  if (auto& o = (*(req->getJsonObject()))["prompt_template"]; !o.isNull()) {
-    params_override.custom_prompt_template = o.asString();
-  }
 
-  if (auto& o = (*(req->getJsonObject()))["cache_enabled"]; !o.isNull()) {
-    params_override.cache_enabled = o.asBool();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["ngl"]; !o.isNull()) {
-    params_override.ngl = o.asInt();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["n_parallel"]; !o.isNull()) {
-    params_override.n_parallel = o.asInt();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["ctx_len"]; !o.isNull()) {
-    params_override.ctx_len = o.asInt();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["cache_type"]; !o.isNull()) {
-    params_override.cache_type = o.asString();
-  }
-
+  std::optional<std::string> mmproj;
   if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
-    params_override.mmproj = o.asString();
+    mmproj = o.asString();
   }
 
+  auto bypass_llama_model_path = false;
   // Support both llama_model_path and model_path for backward compatible
   // model_path has higher priority
   if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
-    params_override.model_path = o.asString();
+    auto model_path = o.asString();
     if (auto& mp = (*(req->getJsonObject()))["model_path"]; mp.isNull()) {
       // Bypass if model does not exist in DB and llama_model_path exists
-      if (std::filesystem::exists(params_override.model_path.value()) &&
+      if (std::filesystem::exists(model_path) &&
           !model_service_->HasModel(model_handle)) {
         CTL_INF("llama_model_path exists, bypass check model id");
-        params_override.bypass_llama_model_path = true;
+        bypass_llama_model_path = true;
       }
     }
   }
 
-  if (auto& o = (*(req->getJsonObject()))["model_path"]; !o.isNull()) {
-    params_override.model_path = o.asString();
-  }
+  auto bypass_model_check = (mmproj.has_value() || bypass_llama_model_path);
 
   auto model_entry = model_service_->GetDownloadedModel(model_handle);
-  if (!model_entry.has_value() && !params_override.bypass_model_check()) {
+  if (!model_entry.has_value() && !bypass_model_check) {
     Json::Value ret;
     ret["message"] = "Cannot find model: " + model_handle;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -544,9 +520,8 @@ void Models::StartModel(
     callback(resp);
     return;
   }
-  std::string engine_name = params_override.bypass_model_check()
-                                ? kLlamaEngine
-                                : model_entry.value().engine;
+  std::string engine_name =
+      bypass_model_check ? kLlamaEngine : model_entry.value().engine;
   auto engine_validate = engine_service_->IsEngineReady(engine_name);
   if (engine_validate.has_error()) {
     Json::Value ret;
@@ -565,7 +540,9 @@ void Models::StartModel(
     return;
   }
 
-  auto result = model_service_->StartModel(model_handle, params_override);
+  auto result = model_service_->StartModel(
+      model_handle, *(req->getJsonObject()) /*params_override*/,
+      bypass_model_check);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -668,7 +645,7 @@ void Models::AddRemoteModel(
 
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
   auto engine_name = (*(req->getJsonObject())).get("engine", "").asString();
- 
+
   auto engine_validate = engine_service_->IsEngineReady(engine_name);
   if (engine_validate.has_error()) {
     Json::Value ret;
@@ -687,7 +664,7 @@ void Models::AddRemoteModel(
     callback(resp);
     return;
   }
-  
+
   config::RemoteModelConfig model_config;
   model_config.LoadFromJson(*(req->getJsonObject()));
   cortex::db::Models modellist_utils_obj;
