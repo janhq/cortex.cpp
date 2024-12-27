@@ -243,7 +243,7 @@ cpp::result<YAML::Node, std::string> ReadRemoteYaml(const std::string& url) {
 }
 
 cpp::result<Json::Value, std::string> SimpleGetJson(
-    const std::string& url, const int timeout, std::optional<bool> recursive) {
+    const std::string& url, const int timeout, bool recursive) {
   auto result = SimpleGet(url, timeout);
   if (result.has_error()) {
     CTL_ERR("Failed to get JSON from " + url + ": " + result.error());
