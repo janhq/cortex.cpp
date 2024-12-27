@@ -132,8 +132,8 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
           CTL_INF("Found cuda variant, extract it");
           found_cuda = true;
           // extract binary
-          auto cuda_path =
-              file_manager_utils::GetCudaToolkitPath(NormalizeEngine(engine));
+          auto cuda_path = file_manager_utils::GetCudaToolkitPath(
+              NormalizeEngine(engine), true);
           archive_utils::ExtractArchive(path + "/" + cf, cuda_path.string(),
                                         true);
         }
@@ -434,7 +434,8 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
-    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine);
+    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine, true);
+
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   engine_path.string());
     try {
