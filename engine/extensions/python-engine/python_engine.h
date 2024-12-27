@@ -36,7 +36,6 @@ static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   std::string chunk(ptr, size * nmemb);
 
   context->buffer += chunk;
-  LOG_INFO<< "start writing";
   // Process complete lines
   size_t pos;
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
