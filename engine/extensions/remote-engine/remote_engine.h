@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include "cortex-common/remote_enginei.h"
 #include "extensions/remote-engine/template_renderer.h"
+#include "trantor/utils/ConcurrentTaskQueue.h"
 #include "utils/engine_constants.h"
 #include "utils/file_logger.h"
 // Helper for CURL response
@@ -52,6 +53,7 @@ class RemoteEngine : public RemoteEngineI {
   std::string chat_res_template_;
   std::string api_key_header_;
   std::string engine_name_;
+  trantor::ConcurrentTaskQueue q_;
 
   // Helper functions
   CurlResponse MakeChatCompletionRequest(const ModelConfig& config,

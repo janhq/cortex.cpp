@@ -16,10 +16,6 @@ bool is_anthropic(const std::string& model) {
   return model.find("claude") != std::string::npos;
 }
 
-bool is_openai(const std::string& model) {
-  return model.find("gpt") != std::string::npos;
-}
-
 constexpr const std::array<std::string_view, 5> kAnthropicModels = {
     "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
     "claude-3-opus-20240229", "claude-3-sonnet-20240229",
@@ -59,23 +55,20 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
 
     // Parse the JSON
     Json::Value chunk_json;
-    if (!is_openai(context->model)) {
-      std::string s = line.substr(6);
-      try {
-        auto root = json_helper::ParseJsonString(s);
-        root["model"] = context->model;
-        root["id"] = context->id;
-        root["stream"] = true;
-        auto result = context->renderer.Render(context->stream_template, root);
-        CTL_DBG(result);
-        chunk_json["data"] = "data: " + result + "\n\n";
-      } catch (const std::exception& e) {
-        CTL_WRN("JSON parse error: " << e.what());
-        continue;
-      }
-    } else {
-      chunk_json["data"] = line + "\n\n";
+    std::string s = line.substr(6);
+    try {
+      auto root = json_helper::ParseJsonString(s);
+      root["model"] = context->model;
+      root["id"] = context->id;
+      root["stream"] = true;
+      auto result = context->renderer.Render(context->stream_template, root);
+      CTL_DBG(result);
+      chunk_json["data"] = "data: " + result + "\n\n";
+    } catch (const std::exception& e) {
+      CTL_WRN("JSON parse error: " << e.what());
+      continue;
     }
+
     Json::Reader reader;
 
     Json::Value status;
@@ -181,7 +174,7 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
 }
 
 RemoteEngine::RemoteEngine(const std::string& engine_name)
-    : engine_name_(engine_name) {
+    : engine_name_(engine_name), q_(1 /*n_parallel*/, engine_name) {
   curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -552,7 +545,9 @@ void RemoteEngine::HandleChatCompletion(
   }
 
   if (is_stream) {
-    MakeStreamingChatCompletionRequest(*model_config, result, callback);
+    q_.runTaskInQueue([this, model_config, result, cb = std::move(callback)] {
+      MakeStreamingChatCompletionRequest(*model_config, result, cb);
+    });
   } else {
 
     auto response = MakeChatCompletionRequest(*model_config, result);
