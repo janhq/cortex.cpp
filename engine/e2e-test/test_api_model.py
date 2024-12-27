@@ -88,9 +88,7 @@ class TestApiModel:
     @pytest.mark.asyncio
     async def test_models_start_stop_should_be_successful(self):
         print("Install engine")
-        # TODO(sang) Remove version after marking 0.1.43 as stable
-        data = {"version": "v0.1.43"}
-        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install", json=data)
+        response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
         await wait_for_websocket_download_success_event(timeout=None)
         # TODO(sang) need to fix for cuda download
