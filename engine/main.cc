@@ -15,6 +15,7 @@
 #include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
+#include "repositories/assistant_fs_repository.h"
 #include "repositories/file_fs_repository.h"
 #include "repositories/message_fs_repository.h"
 #include "repositories/thread_fs_repository.h"
@@ -142,9 +143,12 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto file_repo = std::make_shared<FileFsRepository>(data_folder_path);
   auto msg_repo = std::make_shared<MessageFsRepository>(data_folder_path);
   auto thread_repo = std::make_shared<ThreadFsRepository>(data_folder_path);
+  auto assistant_repo =
+      std::make_shared<AssistantFsRepository>(data_folder_path);
 
   auto file_srv = std::make_shared<FileService>(file_repo);
-  auto assistant_srv = std::make_shared<AssistantService>(thread_repo);
+  auto assistant_srv =
+      std::make_shared<AssistantService>(thread_repo, assistant_repo);
   auto thread_srv = std::make_shared<ThreadService>(thread_repo);
   auto message_srv = std::make_shared<MessageService>(msg_repo);
 

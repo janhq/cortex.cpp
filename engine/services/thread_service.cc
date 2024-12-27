@@ -4,7 +4,7 @@
 #include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
-    std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
+    std::unique_ptr<OpenAi::ToolResources> tool_resources,
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "CreateThread";
 
@@ -46,7 +46,7 @@ cpp::result<OpenAi::Thread, std::string> ThreadService::RetrieveThread(
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::ModifyThread(
     const std::string& thread_id,
-    std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
+    std::unique_ptr<OpenAi::ToolResources> tool_resources,
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "ModifyThread " << thread_id;
   auto retrieve_res = RetrieveThread(thread_id);
