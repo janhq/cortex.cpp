@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include "config/model_config.h"
+#include "trantor/utils/ConcurrentTaskQueue.h"
 #include "cortex-common/EngineI.h"
 #include "extensions/template_renderer.h"
 #include "utils/file_logger.h"
@@ -91,6 +92,7 @@ class PythonEngine : public EngineI {
   extensions::TemplateRenderer renderer_;
   std::unique_ptr<trantor::FileLogger> async_file_logger_;
   std::unordered_map<std::string, pid_t> processMap;
+  trantor::ConcurrentTaskQueue q_;
 
   // Helper functions
   CurlResponse MakePostRequest(const std::string& model,

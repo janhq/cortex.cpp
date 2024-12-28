@@ -16,7 +16,7 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-PythonEngine::PythonEngine() {
+PythonEngine::PythonEngine():q_(4 /*n_parallel*/, "python_engine") {
   curl_global_init(CURL_GLOBAL_ALL);
 }
 
@@ -620,9 +620,12 @@ void PythonEngine::HandleInference(
   CurlResponse response;
   if (method == "post") {
     if (body.isMember("stream") && body["stream"].asBool()) {
-      response =
-          MakeStreamPostRequest(model, path, transformed_request, callback);
-          return;
+      q_.runTaskInQueue(
+          [this, model, path, transformed_request, cb = std::move(callback)] {
+            MakeStreamPostRequest(model, path, transformed_request, cb);
+          });
+
+      return;
     } else {
       response = MakePostRequest(model, path, transformed_request);
     }
