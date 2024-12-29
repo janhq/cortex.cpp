@@ -49,8 +49,9 @@ CommandLineParser::CommandLineParser()
     : app_("\nCortex.cpp CLI\n"),
       download_service_{std::make_shared<DownloadService>()},
       dylib_path_manager_{std::make_shared<cortex::DylibPathManager>()},
-      engine_service_{std::make_shared<EngineService>(download_service_,
-                                                      dylib_path_manager_)} {
+      db_service_{std::make_shared<DatabaseService>()},
+      engine_service_{std::make_shared<EngineService>(
+          download_service_, dylib_path_manager_, db_service_)} {
   supported_engines_ = engine_service_->GetSupportedEngineNames().value();
 }
 

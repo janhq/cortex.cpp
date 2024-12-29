@@ -21,6 +21,7 @@
 #include "repositories/thread_fs_repository.h"
 #include "services/assistant_service.h"
 #include "services/config_service.h"
+#include "services/database_service.h"
 #include "services/file_watcher_service.h"
 #include "services/message_service.h"
 #include "services/model_service.h"
@@ -128,6 +129,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
     return;
   }
 
+  auto db_service = std::make_shared<DatabaseService>();
+
   using Event = cortex::event::Event;
   using EventQueue =
       eventpp::EventQueue<EventType,
@@ -156,10 +159,9 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
       std::make_shared<DownloadService>(event_queue_ptr, config_service);
-  auto engine_service =
-      std::make_shared<EngineService>(download_service, dylib_path_manager);
-  auto inference_svc =
-      std::make_shared<InferenceService>(engine_service);
+  auto engine_service = std::make_shared<EngineService>(
+      download_service, dylib_path_manager, db_service);
+  auto inference_svc = std::make_shared<InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<ModelSourceService>();
   auto model_service = std::make_shared<ModelService>(
       download_service, inference_svc, engine_service);
