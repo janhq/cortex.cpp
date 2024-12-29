@@ -6,6 +6,7 @@
 #include "common/engine_servicei.h"
 #include "common/model_metadata.h"
 #include "config/model_config.h"
+#include "services/database_service.h"
 #include "services/download_service.h"
 #include "services/hardware_service.h"
 #include "utils/hardware/gguf/gguf_file_estimate.h"
@@ -30,14 +31,13 @@ class ModelService {
  public:
   void ForceIndexingModelList();
 
-  explicit ModelService(std::shared_ptr<DownloadService> download_service)
-      : download_service_{download_service} {};
-
-  explicit ModelService(std::shared_ptr<HardwareService> hw_service,
+  explicit ModelService(std::shared_ptr<DatabaseService> db_service,
+                        std::shared_ptr<HardwareService> hw_service,
                         std::shared_ptr<DownloadService> download_service,
                         std::shared_ptr<InferenceService> inference_service,
                         std::shared_ptr<EngineServiceI> engine_svc)
-      : hw_service_(hw_service),
+      : db_service_(db_service),
+        hw_service_(hw_service),
         download_service_{download_service},
         inference_svc_(inference_service),
         engine_svc_(engine_svc) {};
@@ -115,6 +115,7 @@ class ModelService {
       const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
+  std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<HardwareService> hw_service_;
   std::shared_ptr<DownloadService> download_service_;
   std::shared_ptr<InferenceService> inference_svc_;

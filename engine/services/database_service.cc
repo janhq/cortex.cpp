@@ -71,5 +71,60 @@ cpp::result<bool, std::string> DatabaseService::DeleteHardwareEntry(
     const std::string& id) {
   return cortex::db::Hardware().DeleteHardwareEntry(id);
 }
-
 // end hardware
+
+// begin models
+cpp::result<std::vector<ModelEntry>, std::string>
+DatabaseService::LoadModelList() const {
+  return cortex::db::Models().LoadModelList();
+}
+
+cpp::result<ModelEntry, std::string> DatabaseService::GetModelInfo(
+    const std::string& identifier) const {
+  return cortex::db::Models().GetModelInfo(identifier);
+}
+
+cpp::result<bool, std::string> DatabaseService::AddModelEntry(
+    ModelEntry new_entry) {
+  return cortex::db::Models().AddModelEntry(new_entry);
+}
+
+cpp::result<bool, std::string> DatabaseService::UpdateModelEntry(
+    const std::string& identifier, const ModelEntry& updated_entry) {
+  return cortex::db::Models().UpdateModelEntry(identifier, updated_entry);
+}
+
+cpp::result<bool, std::string> DatabaseService::DeleteModelEntry(
+    const std::string& identifier) {
+  return cortex::db::Models().DeleteModelEntry(identifier);
+}
+
+cpp::result<bool, std::string> DatabaseService::DeleteModelEntryWithOrg(
+    const std::string& src) {
+  return cortex::db::Models().DeleteModelEntryWithOrg(src);
+}
+
+cpp::result<bool, std::string> DatabaseService::DeleteModelEntryWithRepo(
+    const std::string& src) {
+  return cortex::db::Models().DeleteModelEntryWithRepo(src);
+}
+
+cpp::result<std::vector<std::string>, std::string>
+DatabaseService::FindRelatedModel(const std::string& identifier) const {
+  return cortex::db::Models().FindRelatedModel(identifier);
+}
+
+bool DatabaseService::HasModel(const std::string& identifier) const {
+  return cortex::db::Models().HasModel(identifier);
+}
+
+cpp::result<std::vector<std::string>, std::string>
+DatabaseService::GetModelSources() const {
+  return cortex::db::Models().GetModelSources();
+}
+
+cpp::result<std::vector<std::string>, std::string> DatabaseService::GetModels(
+    const std::string& model_src) const {
+  return cortex::db::Models().GetModels(model_src);
+}
+// end models

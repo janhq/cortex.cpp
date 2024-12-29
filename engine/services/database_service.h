@@ -6,6 +6,7 @@
 
 using EngineEntry = cortex::db::EngineEntry;
 using HardwareEntry = cortex::db::HardwareEntry;
+using ModelEntry = cortex::db::ModelEntry;
 
 class DatabaseService {
  public:
@@ -43,5 +44,25 @@ class DatabaseService {
   cpp::result<bool, std::string> DeleteHardwareEntry(const std::string& id);
 
   // models
+  cpp::result<std::vector<ModelEntry>, std::string> LoadModelList() const;
+  cpp::result<ModelEntry, std::string> GetModelInfo(
+      const std::string& identifier) const;
+  void PrintModelInfo(const ModelEntry& entry) const;
+  cpp::result<bool, std::string> AddModelEntry(ModelEntry new_entry);
+  cpp::result<bool, std::string> UpdateModelEntry(
+      const std::string& identifier, const ModelEntry& updated_entry);
+  cpp::result<bool, std::string> DeleteModelEntry(
+      const std::string& identifier);
+  cpp::result<bool, std::string> DeleteModelEntryWithOrg(
+      const std::string& src);
+  cpp::result<bool, std::string> DeleteModelEntryWithRepo(
+      const std::string& src);
+  cpp::result<std::vector<std::string>, std::string> FindRelatedModel(
+      const std::string& identifier) const;
+  bool HasModel(const std::string& identifier) const;
+  cpp::result<std::vector<std::string>, std::string> GetModelSources() const;
+  cpp::result<std::vector<std::string>, std::string> GetModels(
+      const std::string& model_src) const;
+
  private:
 };
