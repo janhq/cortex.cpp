@@ -5,6 +5,8 @@
 #include "database/models.h"
 
 using EngineEntry = cortex::db::EngineEntry;
+using HardwareEntry = cortex::db::HardwareEntry;
+
 class DatabaseService {
  public:
   // engines
@@ -33,6 +35,12 @@ class DatabaseService {
   cpp::result<void, std::string> DeleteFileEntry(const std::string& file_id);
 
   // hardware
+  cpp::result<std::vector<HardwareEntry>, std::string> LoadHardwareList() const;
+  cpp::result<bool, std::string> AddHardwareEntry(
+      const HardwareEntry& new_entry);
+  cpp::result<bool, std::string> UpdateHardwareEntry(
+      const std::string& id, const HardwareEntry& updated_entry);
+  cpp::result<bool, std::string> DeleteHardwareEntry(const std::string& id);
 
   // models
  private:

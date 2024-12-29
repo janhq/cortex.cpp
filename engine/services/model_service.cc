@@ -384,8 +384,8 @@ ModelService::GetEstimation(const std::string& model_handle,
             fs::path(model_entry.value().path_to_model_yaml))
             .string());
     auto mc = yaml_handler.GetModelConfig();
-    HardwareService hw_svc;
-    auto hw_info = hw_svc.GetHardwareInfo();
+    assert(hw_service_);
+    auto hw_info = hw_service_->GetHardwareInfo();
     auto free_vram_MiB = 0u;
     for (const auto& gpu : hw_info.gpus) {
       free_vram_MiB += gpu.free_vram;
@@ -1128,8 +1128,8 @@ cpp::result<std::optional<std::string>, std::string>
 ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
                                int ctx_len, int n_batch, int n_ubatch,
                                const std::string& kv_cache_type) {
-  HardwareService hw_svc;
-  auto hw_info = hw_svc.GetHardwareInfo();
+  assert(hw_service_);
+  auto hw_info = hw_service_->GetHardwareInfo();
   assert(!!engine_svc_);
   auto default_engine = engine_svc_->GetDefaultEngineVariant(kLlamaEngine);
   bool is_cuda = false;

@@ -1,6 +1,6 @@
 #include "database_service.h"
 
-// engines
+// begin engines
 std::optional<EngineEntry> DatabaseService::UpsertEngine(
     const std::string& engine_name, const std::string& type,
     const std::string& api_key, const std::string& url,
@@ -29,7 +29,7 @@ std::optional<std::string> DatabaseService::DeleteEngineById(int id) {
 }
 // end engines
 
-// file
+// begin file
 cpp::result<std::vector<OpenAi::File>, std::string>
 DatabaseService::GetFileList() const {
   return cortex::db::File().GetFileList();
@@ -50,3 +50,26 @@ cpp::result<void, std::string> DatabaseService::DeleteFileEntry(
   return cortex::db::File().DeleteFileEntry(file_id);
 }
 // end file
+
+// begin hardware
+cpp::result<std::vector<HardwareEntry>, std::string>
+DatabaseService::LoadHardwareList() const {
+  return cortex::db::Hardware().LoadHardwareList();
+}
+
+cpp::result<bool, std::string> DatabaseService::AddHardwareEntry(
+    const HardwareEntry& new_entry) {
+  return cortex::db::Hardware().AddHardwareEntry(new_entry);
+}
+
+cpp::result<bool, std::string> DatabaseService::UpdateHardwareEntry(
+    const std::string& id, const HardwareEntry& updated_entry) {
+  return cortex::db::Hardware().UpdateHardwareEntry(id, updated_entry);
+}
+
+cpp::result<bool, std::string> DatabaseService::DeleteHardwareEntry(
+    const std::string& id) {
+  return cortex::db::Hardware().DeleteHardwareEntry(id);
+}
+
+// end hardware

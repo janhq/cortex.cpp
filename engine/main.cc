@@ -121,15 +121,14 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-  auto hw_service = std::make_shared<HardwareService>();
+  auto db_service = std::make_shared<DatabaseService>();
+  auto hw_service = std::make_shared<HardwareService>(db_service);
   hw_service->UpdateHardwareInfos();
   if (hw_service->ShouldRestart()) {
     CTL_INF("Restart to update hardware configuration");
     hw_service->Restart(config.apiServerHost, std::stoi(config.apiServerPort));
     return;
   }
-
-  auto db_service = std::make_shared<DatabaseService>();
 
   using Event = cortex::event::Event;
   using EventQueue =
@@ -165,7 +164,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto inference_svc = std::make_shared<InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<ModelSourceService>();
   auto model_service = std::make_shared<ModelService>(
-      download_service, inference_svc, engine_service);
+      hw_service, download_service, inference_svc, engine_service);
   inference_svc->SetModelService(model_service);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
