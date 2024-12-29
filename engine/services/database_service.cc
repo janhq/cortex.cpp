@@ -27,3 +27,26 @@ std::optional<EngineEntry> DatabaseService::GetEngineByNameAndVariant(
 std::optional<std::string> DatabaseService::DeleteEngineById(int id) {
   return cortex::db::Engines().DeleteEngineById(id);
 }
+// end engines
+
+// file
+cpp::result<std::vector<OpenAi::File>, std::string>
+DatabaseService::GetFileList() const {
+  return cortex::db::File().GetFileList();
+}
+
+cpp::result<OpenAi::File, std::string> DatabaseService::GetFileById(
+    const std::string& file_id) const {
+  return cortex::db::File().GetFileById(file_id);
+}
+
+cpp::result<void, std::string> DatabaseService::AddFileEntry(
+    OpenAi::File& file) {
+  return cortex::db::File().AddFileEntry(file);
+}
+
+cpp::result<void, std::string> DatabaseService::DeleteFileEntry(
+    const std::string& file_id) {
+  return cortex::db::File().DeleteFileEntry(file_id);
+}
+// end file

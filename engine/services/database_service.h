@@ -23,6 +23,14 @@ class DatabaseService {
   std::optional<std::string> DeleteEngineById(int id);
 
   // file
+  cpp::result<std::vector<OpenAi::File>, std::string> GetFileList() const;
+
+  cpp::result<OpenAi::File, std::string> GetFileById(
+      const std::string& file_id) const;
+
+  cpp::result<void, std::string> AddFileEntry(OpenAi::File& file);
+
+  cpp::result<void, std::string> DeleteFileEntry(const std::string& file_id);
 
   // hardware
 

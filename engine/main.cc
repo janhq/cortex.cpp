@@ -143,7 +143,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   // utils
   auto dylib_path_manager = std::make_shared<cortex::DylibPathManager>();
 
-  auto file_repo = std::make_shared<FileFsRepository>(data_folder_path);
+  auto file_repo =
+      std::make_shared<FileFsRepository>(data_folder_path, db_service);
   auto msg_repo = std::make_shared<MessageFsRepository>(data_folder_path);
   auto thread_repo = std::make_shared<ThreadFsRepository>(data_folder_path);
   auto assistant_repo =
