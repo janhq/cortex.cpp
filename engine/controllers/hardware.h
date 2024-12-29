@@ -9,7 +9,7 @@ using namespace drogon;
 class Hardware : public drogon::HttpController<Hardware, false> {
  public:
   explicit Hardware(std::shared_ptr<EngineServiceI> engine_svc,
-                    std::shared_ptr<services::HardwareService> hw_svc)
+                    std::shared_ptr<HardwareService> hw_svc)
       : engine_svc_(engine_svc), hw_svc_(hw_svc) {}
   METHOD_LIST_BEGIN
   METHOD_ADD(Hardware::GetHardwareInfo, "/hardware", Get);
@@ -27,5 +27,5 @@ class Hardware : public drogon::HttpController<Hardware, false> {
 
  private:
   std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
-  std::shared_ptr<services::HardwareService> hw_svc_= nullptr;
+  std::shared_ptr<HardwareService> hw_svc_= nullptr;
 };

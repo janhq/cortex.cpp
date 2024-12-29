@@ -11,8 +11,6 @@
 #include "utils/hardware/ram_info.h"
 #include "utils/hardware/storage_info.h"
 
-namespace services {
-
 struct HardwareInfo {
   cortex::hw::CPU cpu;
   cortex::hw::OS os;
@@ -34,4 +32,3 @@ class HardwareService {
  private:
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
 };
-}  // namespace services

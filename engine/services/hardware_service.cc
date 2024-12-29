@@ -11,8 +11,6 @@
 #include "database/hardware.h"
 #include "utils/cortex_utils.h"
 
-namespace services {
-
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
   constexpr const auto kMaxRetry = 4u;
@@ -364,4 +362,3 @@ bool HardwareService::IsValidConfig(
   }
   return false;
 }
-}  // namespace services

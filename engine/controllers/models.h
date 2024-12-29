@@ -47,7 +47,7 @@ class Models : public drogon::HttpController<Models, false> {
 
   explicit Models(std::shared_ptr<ModelService> model_service,
                   std::shared_ptr<EngineService> engine_service,
-                  std::shared_ptr<services::ModelSourceService> mss)
+                  std::shared_ptr<ModelSourceService> mss)
       : model_service_{model_service},
         engine_service_{engine_service},
         model_src_svc_(mss) {}
@@ -107,5 +107,5 @@ class Models : public drogon::HttpController<Models, false> {
  private:
   std::shared_ptr<ModelService> model_service_;
   std::shared_ptr<EngineService> engine_service_;
-  std::shared_ptr<services::ModelSourceService> model_src_svc_;
+  std::shared_ptr<ModelSourceService> model_src_svc_;
 };

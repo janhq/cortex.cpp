@@ -7,8 +7,6 @@
 #include "services/model_service.h"
 #include "utils/result.hpp"
 
-namespace services {
-
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;
 
@@ -68,4 +66,3 @@ class InferenceService {
   std::shared_ptr<EngineService> engine_service_;
   std::weak_ptr<ModelService> model_service_;
 };
-}  // namespace services

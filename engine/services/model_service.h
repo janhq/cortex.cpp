@@ -9,9 +9,7 @@
 #include "services/download_service.h"
 #include "utils/hardware/gguf/gguf_file_estimate.h"
 
-namespace services {
 class InferenceService;
-}
 
 struct ModelPullInfo {
   std::string id;
@@ -36,7 +34,7 @@ class ModelService {
 
   explicit ModelService(
       std::shared_ptr<DownloadService> download_service,
-      std::shared_ptr<services::InferenceService> inference_service,
+      std::shared_ptr<InferenceService> inference_service,
       std::shared_ptr<EngineServiceI> engine_svc)
       : download_service_{download_service},
         inference_svc_(inference_service),
@@ -116,7 +114,7 @@ class ModelService {
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
   std::shared_ptr<DownloadService> download_service_;
-  std::shared_ptr<services::InferenceService> inference_svc_;
+  std::shared_ptr<InferenceService> inference_svc_;
   std::unordered_set<std::string> bypass_stop_check_set_;
   std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
 

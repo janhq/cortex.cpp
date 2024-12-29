@@ -120,7 +120,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-  auto hw_service = std::make_shared<services::HardwareService>();
+  auto hw_service = std::make_shared<HardwareService>();
   hw_service->UpdateHardwareInfos();
   if (hw_service->ShouldRestart()) {
     CTL_INF("Restart to update hardware configuration");
@@ -159,8 +159,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto engine_service =
       std::make_shared<EngineService>(download_service, dylib_path_manager);
   auto inference_svc =
-      std::make_shared<services::InferenceService>(engine_service);
-  auto model_src_svc = std::make_shared<services::ModelSourceService>();
+      std::make_shared<InferenceService>(engine_service);
+  auto model_src_svc = std::make_shared<ModelSourceService>();
   auto model_service = std::make_shared<ModelService>(
       download_service, inference_svc, engine_service);
   inference_svc->SetModelService(model_service);

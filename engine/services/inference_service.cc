@@ -4,7 +4,6 @@
 #include "utils/function_calling/common.h"
 #include "utils/jinja_utils.h"
 
-namespace services {
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -337,4 +336,3 @@ bool InferenceService::HasFieldInReq(std::shared_ptr<Json::Value> json_body,
   }
   return true;
 }
-}  // namespace services

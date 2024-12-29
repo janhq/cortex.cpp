@@ -8,7 +8,7 @@ using namespace inferences;
 
 namespace inferences {
 
-server::server(std::shared_ptr<services::InferenceService> inference_service,
+server::server(std::shared_ptr<InferenceService> inference_service,
                std::shared_ptr<EngineService> engine_service)
     : inference_svc_(inference_service), engine_service_(engine_service) {
 #if defined(_WIN32)
@@ -45,7 +45,7 @@ void server::ChatCompletion(
   }();
 
   LOG_DEBUG << "request body: " << json_body->toStyledString();
-  auto q = std::make_shared<services::SyncQueue>();
+  auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
   if (ir.has_error()) {
     auto err = ir.error();
@@ -67,7 +67,7 @@ void server::ChatCompletion(
 void server::Embedding(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   LOG_TRACE << "Start embedding";
-  auto q = std::make_shared<services::SyncQueue>();
+  auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleEmbedding(q, req->getJsonObject());
   if (ir.has_error()) {
     auto err = ir.error();
@@ -138,7 +138,7 @@ void server::LoadModel(const HttpRequestPtr& req,
 }
 
 void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                              std::shared_ptr<services::SyncQueue> q,
+                              std::shared_ptr<SyncQueue> q,
                               const std::string& engine_type,
                               const std::string& model_id) {
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
@@ -178,7 +178,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
 }
 
 void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                                 services::SyncQueue& q) {
+                                 SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
   function_calling_utils::PostProcessResponse(res);
   LOG_DEBUG << "response: " << res.toStyledString();

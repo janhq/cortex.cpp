@@ -9,7 +9,6 @@
 #include "utils/string_utils.h"
 #include "utils/url_parser.h"
 
-namespace services {
 namespace hu = huggingface_utils;
 
 namespace {
@@ -489,5 +488,3 @@ void ModelSourceService::SyncModelSource() {
     }
   }
 }
-
-}  // namespace services

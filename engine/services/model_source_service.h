@@ -4,7 +4,6 @@
 #include <unordered_set>
 #include "utils/result.hpp"
 
-namespace services {
 class ModelSourceService {
  public:
   explicit ModelSourceService();
@@ -50,4 +49,3 @@ class ModelSourceService {
   std::thread sync_db_thread_;
   std::atomic<bool> running_;
 };
-}  // namespace services
