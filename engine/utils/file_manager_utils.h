@@ -45,7 +45,8 @@ void CreateDirectoryRecursively(const std::string& path);
 
 std::filesystem::path GetModelsContainerPath();
 
-std::filesystem::path GetCudaToolkitPath(const std::string& engine);
+std::filesystem::path GetCudaToolkitPath(const std::string& engine,
+                                         bool create_if_not_exist = false);
 
 std::filesystem::path GetEnginesContainerPath();
 

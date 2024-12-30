@@ -289,13 +289,14 @@ std::filesystem::path GetModelsContainerPath() {
   return models_container_path;
 }
 
-std::filesystem::path GetCudaToolkitPath(const std::string& engine) {
+std::filesystem::path GetCudaToolkitPath(const std::string& engine,
+                                         bool create_if_not_exist) {
   auto engine_path = getenv("ENGINE_PATH")
                          ? std::filesystem::path(getenv("ENGINE_PATH"))
                          : GetCortexDataPath();
 
   auto cuda_path = engine_path / "engines" / engine / "deps";
-  if (!std::filesystem::exists(cuda_path)) {
+  if (create_if_not_exist && !std::filesystem::exists(cuda_path)) {
     std::filesystem::create_directories(cuda_path);
   }
 
