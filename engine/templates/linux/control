@@ -2,7 +2,7 @@ Package: $PACKAGE_NAME
 Version: $VERSION
 Section: base
 Priority: optional
-Architecture: amd64
+Architecture: $ARCH
 Depends: openmpi-bin,libopenmpi-dev
 Maintainer: Homebrew Computer Pte Ltd <service@homebrew.ltd>
 Description: Cortex

@@ -161,7 +161,7 @@ jobs:
         shell: bash
         run: |
           cd engine
-          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" SOURCE_BINARY_SERVER_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}" VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}"
+          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" SOURCE_BINARY_SERVER_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}" VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}" ARCH="${{ inputs.arch }}"
           mv ${{ steps.set-output-params.outputs.package_name }}.deb ${{ steps.set-output-params.outputs.package_name }}-network.deb
 
       - name: Build local Installers
@@ -194,7 +194,7 @@ jobs:
           rm -rf ${{ steps.set-output-params.outputs.package_name }}
           rm ${{ steps.set-output-params.outputs.package_name }}.deb
           chmod +x create_deb_local.sh
-          ./create_deb_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }};
+          ./create_deb_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }} ${{ inputs.arch }};
           cp ${{ steps.set-output-params.outputs.package_name }}.deb ../../${{ steps.set-output-params.outputs.package_name }}-local.deb
 
       - name: Package
