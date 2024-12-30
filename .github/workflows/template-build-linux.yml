@@ -211,24 +211,24 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}-network-installer
+          name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-network-installer
           path: ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}-local-installer
+          name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-local-installer
           path: ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb
 
       - name: upload to aws s3 if public provider is aws
         if: inputs.public_provider == 'aws-s3'
         run: |
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux--${{ inputs.arch }}-cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux--${{ inputs.arch }}-network-installer.deb
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-${{ inputs.arch }}-cortex-nightly.tar.gz
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux-${{ inputs.arch }}-network-installer.deb
 
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux--${{ inputs.arch }}/cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux--${{ inputs.arch }}/cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}-network-installer.deb
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux--${{ inputs.arch }}/cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}-local-installer.deb
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-${{ inputs.arch }}/cortex-nightly.tar.gz
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-${{ inputs.arch }}/cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-network-installer.deb
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-${{ inputs.arch }}/cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-local-installer.deb
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
@@ -243,7 +243,7 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/cortex.tar.gz
-          asset_name: cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-linux${{ inputs.arch }}.tar.gz
           asset_content_type: application/zip
 
       - name: Upload release assert if public provider is github
@@ -254,7 +254,7 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb
-          asset_name: cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}-network-installer.deb
+          asset_name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-network-installer.deb
           asset_content_type: application/octet-stream
 
       - name: Upload release assert if public provider is github
@@ -265,5 +265,5 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb
-          asset_name: cortex-${{ inputs.new_version }}-linux--${{ inputs.arch }}-local-installer.deb
+          asset_name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-local-installer.deb
           asset_content_type: application/octet-stream
