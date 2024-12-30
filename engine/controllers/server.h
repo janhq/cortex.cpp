@@ -25,8 +25,7 @@ namespace inferences {
 class server : public drogon::HttpController<server, false>,
                public BaseModel,
                public BaseChatCompletion,
-               public BaseEmbedding,
-               public BasePythonModel {
+               public BaseEmbedding {
  public:
   server(std::shared_ptr<services::InferenceService> inference_service,
          std::shared_ptr<EngineService> engine_service);
@@ -73,12 +72,10 @@ class server : public drogon::HttpController<server, false>,
   void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void Inference(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) override;
-  void RouteRequest(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void Inference(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>&& callback);
+  void RouteRequest(const HttpRequestPtr& req,
+                    std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
