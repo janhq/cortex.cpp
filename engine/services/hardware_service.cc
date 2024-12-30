@@ -11,8 +11,6 @@
 #include "database/hardware.h"
 #include "utils/cortex_utils.h"
 
-namespace services {
-
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
   constexpr const auto kMaxRetry = 4u;
@@ -34,9 +32,8 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
-  cortex::db::Hardware hw_db;
   auto gpus = cortex::hw::GetGPUInfo();
-  auto res = hw_db.LoadHardwareList();
+  auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
     // Only a few elements, brute-force is enough
     for (auto& entry : res.value()) {
@@ -210,7 +207,6 @@ bool HardwareService::SetActivateHardwareConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
   // Note: need to map software_id and hardware_id
   // Update to db
-  cortex::db::Hardware hw_db;
   // copy all gpu information to new vector
   auto ahc_gpus = ahc.gpus;
   auto activate = [&ahc](int software_id) {
@@ -225,7 +221,7 @@ bool HardwareService::SetActivateHardwareConfig(
     return INT_MAX;
   };
 
-  auto res = hw_db.LoadHardwareList();
+  auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
     bool need_update = false;
     std::vector<std::pair<int, int>> activated_ids;
@@ -258,7 +254,7 @@ bool HardwareService::SetActivateHardwareConfig(
     for (auto& e : res.value()) {
       e.activated = activate(e.software_id);
       e.priority = priority(e.software_id);
-      auto res = hw_db.UpdateHardwareEntry(e.uuid, e);
+      auto res = db_service_->UpdateHardwareEntry(e.uuid, e);
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
@@ -271,8 +267,7 @@ bool HardwareService::SetActivateHardwareConfig(
 void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
   auto gpus = cortex::hw::GetGPUInfo();
-  cortex::db::Hardware hw_db;
-  auto b = hw_db.LoadHardwareList();
+  auto b = db_service_->LoadHardwareList();
   std::vector<std::pair<int, int>> activated_gpu_bf;
   std::string debug_b;
   for (auto const& he : b.value()) {
@@ -285,7 +280,8 @@ void HardwareService::UpdateHardwareInfos() {
   for (auto const& gpu : gpus) {
     // ignore error
     // Note: only support NVIDIA for now, so hardware_id = software_id
-    auto res = hw_db.AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
+    auto res =
+        db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
                                               .type = "gpu",
                                               .hardware_id = std::stoi(gpu.id),
                                               .software_id = std::stoi(gpu.id),
@@ -296,7 +292,7 @@ void HardwareService::UpdateHardwareInfos() {
     }
   }
 
-  auto a = hw_db.LoadHardwareList();
+  auto a = db_service_->LoadHardwareList();
   std::vector<HwEntry> a_gpu;
   std::vector<std::pair<int, int>> activated_gpu_af;
   std::string debug_a;
@@ -350,11 +346,10 @@ bool HardwareService::IsValidConfig(
     const cortex::hw::ActivateHardwareConfig& ahc) {
   if (ahc.gpus.empty())
     return true;
-  cortex::db::Hardware hw_db;
   auto is_valid = [&ahc](int software_id) {
     return std::count(ahc.gpus.begin(), ahc.gpus.end(), software_id) > 0;
   };
-  auto res = hw_db.LoadHardwareList();
+  auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
     for (auto const& e : res.value()) {
       if (is_valid(e.software_id)) {
@@ -364,4 +359,3 @@ bool HardwareService::IsValidConfig(
   }
   return false;
 }
-}  // namespace services

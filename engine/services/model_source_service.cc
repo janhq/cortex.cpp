@@ -9,7 +9,6 @@
 #include "utils/string_utils.h"
 #include "utils/url_parser.h"
 
-namespace services {
 namespace hu = huggingface_utils;
 
 namespace {
@@ -61,10 +60,13 @@ std::vector<ModelInfo> ParseJsonString(const std::string& json_str) {
 
 }  // namespace
 
-ModelSourceService::ModelSourceService() {
+ModelSourceService::ModelSourceService(
+    std::shared_ptr<DatabaseService> db_service)
+    : db_service_(db_service) {
   sync_db_thread_ = std::thread(&ModelSourceService::SyncModelSource, this);
   running_ = true;
 }
+
 ModelSourceService::~ModelSourceService() {
   running_ = false;
   if (sync_db_thread_.joinable()) {
@@ -106,8 +108,7 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
 
 cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
     const std::string& model_source) {
-  cortex::db::Models model_db;
-  auto srcs = model_db.GetModelSources();
+  auto srcs = db_service_->GetModelSources();
   if (srcs.has_error()) {
     return cpp::fail(srcs.error());
   } else {
@@ -127,13 +128,13 @@ cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
     }
 
     if (r.pathParams.size() == 1) {
-      if (auto del_res = model_db.DeleteModelEntryWithOrg(model_source);
+      if (auto del_res = db_service_->DeleteModelEntryWithOrg(model_source);
           del_res.has_error()) {
         CTL_INF(del_res.error());
         return cpp::fail(del_res.error());
       }
     } else {
-      if (auto del_res = model_db.DeleteModelEntryWithRepo(model_source);
+      if (auto del_res = db_service_->DeleteModelEntryWithRepo(model_source);
           del_res.has_error()) {
         CTL_INF(del_res.error());
         return cpp::fail(del_res.error());
@@ -145,8 +146,7 @@ cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
 
 cpp::result<std::vector<std::string>, std::string>
 ModelSourceService::GetModelSources() {
-  cortex::db::Models model_db;
-  return model_db.GetModelSources();
+  return db_service_->GetModelSources();
 }
 
 cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
@@ -156,10 +156,9 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
   if (res.has_value()) {
     auto models = ParseJsonString(res.value());
     // Get models from db
-    cortex::db::Models model_db;
 
-    auto model_list_before =
-        model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+    auto model_list_before = db_service_->GetModels(model_source)
+                                 .value_or(std::vector<std::string>{});
     std::unordered_set<std::string> updated_model_list;
     // Add new models
     for (auto const& m : models) {
@@ -179,7 +178,7 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
     // Clean up
     for (auto const& mid : model_list_before) {
       if (updated_model_list.find(mid) == updated_model_list.end()) {
-        if (auto del_res = model_db.DeleteModelEntry(mid);
+        if (auto del_res = db_service_->DeleteModelEntry(mid);
             del_res.has_error()) {
           CTL_INF(del_res.error());
         }
@@ -195,10 +194,9 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
     const std::string& model_source, const std::string& author,
     const std::string& model_name) {
   // Get models from db
-  cortex::db::Models model_db;
 
   auto model_list_before =
-      model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+      db_service_->GetModels(model_source).value_or(std::vector<std::string>{});
   std::unordered_set<std::string> updated_model_list;
   auto add_res = AddRepoSiblings(model_source, author, model_name);
   if (add_res.has_error()) {
@@ -208,7 +206,8 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
   }
   for (auto const& mid : model_list_before) {
     if (updated_model_list.find(mid) == updated_model_list.end()) {
-      if (auto del_res = model_db.DeleteModelEntry(mid); del_res.has_error()) {
+      if (auto del_res = db_service_->DeleteModelEntry(mid);
+          del_res.has_error()) {
         CTL_INF(del_res.error());
       }
     }
@@ -234,7 +233,6 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
 
   for (const auto& sibling : repo_info->siblings) {
     if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
-      cortex::db::Models model_db;
       std::string model_id =
           author + ":" + model_name + ":" + sibling.rfilename;
       cortex::db::ModelEntry e = {
@@ -248,15 +246,15 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
           .status = cortex::db::ModelStatus::Downloadable,
           .engine = "llama-cpp",
           .metadata = repo_info->metadata};
-      if (!model_db.HasModel(model_id)) {
-        if (auto add_res = model_db.AddModelEntry(e); add_res.has_error()) {
+      if (!db_service_->HasModel(model_id)) {
+        if (auto add_res = db_service_->AddModelEntry(e); add_res.has_error()) {
           CTL_INF(add_res.error());
         }
       } else {
-        if (auto m = model_db.GetModelInfo(model_id);
+        if (auto m = db_service_->GetModelInfo(model_id);
             m.has_value() &&
             m->status == cortex::db::ModelStatus::Downloadable) {
-          if (auto upd_res = model_db.UpdateModelEntry(model_id, e);
+          if (auto upd_res = db_service_->UpdateModelEntry(model_id, e);
               upd_res.has_error()) {
             CTL_INF(upd_res.error());
           }
@@ -276,10 +274,9 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
   if (res.has_value()) {
     auto models = ParseJsonString(res.value());
     // Get models from db
-    cortex::db::Models model_db;
 
-    auto model_list_before =
-        model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+    auto model_list_before = db_service_->GetModels(model_source)
+                                 .value_or(std::vector<std::string>{});
     std::unordered_set<std::string> updated_model_list;
     for (auto const& m : models) {
       CTL_INF(m.id);
@@ -313,7 +310,7 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
     // Clean up
     for (auto const& mid : model_list_before) {
       if (updated_model_list.find(mid) == updated_model_list.end()) {
-        if (auto del_res = model_db.DeleteModelEntry(mid);
+        if (auto del_res = db_service_->DeleteModelEntry(mid);
             del_res.has_error()) {
           CTL_INF(del_res.error());
         }
@@ -340,10 +337,9 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
     return cpp::fail(repo_info.error());
   }
   // Get models from db
-  cortex::db::Models model_db;
 
   auto model_list_before =
-      model_db.GetModels(model_source).value_or(std::vector<std::string>{});
+      db_service_->GetModels(model_source).value_or(std::vector<std::string>{});
   std::unordered_set<std::string> updated_model_list;
 
   for (auto const& [branch, _] : branches.value()) {
@@ -359,7 +355,8 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   // Clean up
   for (auto const& mid : model_list_before) {
     if (updated_model_list.find(mid) == updated_model_list.end()) {
-      if (auto del_res = model_db.DeleteModelEntry(mid); del_res.has_error()) {
+      if (auto del_res = db_service_->DeleteModelEntry(mid);
+          del_res.has_error()) {
         CTL_INF(del_res.error());
       }
     }
@@ -397,7 +394,6 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
     CTL_INF("Only support gguf file format! - branch: " << branch);
     return {};
   } else {
-    cortex::db::Models model_db;
     std::string model_id = model_name + ":" + branch;
     cortex::db::ModelEntry e = {.model = model_id,
                                 .author_repo_id = author,
@@ -409,16 +405,16 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
                                 .status = cortex::db::ModelStatus::Downloadable,
                                 .engine = "llama-cpp",
                                 .metadata = metadata};
-    if (!model_db.HasModel(model_id)) {
+    if (!db_service_->HasModel(model_id)) {
       CTL_INF("Adding model to db: " << model_name << ":" << branch);
-      if (auto res = model_db.AddModelEntry(e);
+      if (auto res = db_service_->AddModelEntry(e);
           res.has_error() || !res.value()) {
         CTL_DBG("Cannot add model to db: " << model_id);
       }
     } else {
-      if (auto m = model_db.GetModelInfo(model_id);
+      if (auto m = db_service_->GetModelInfo(model_id);
           m.has_value() && m->status == cortex::db::ModelStatus::Downloadable) {
-        if (auto upd_res = model_db.UpdateModelEntry(model_id, e);
+        if (auto upd_res = db_service_->UpdateModelEntry(model_id, e);
             upd_res.has_error()) {
           CTL_INF(upd_res.error());
         }
@@ -444,8 +440,7 @@ void ModelSourceService::SyncModelSource() {
       CTL_DBG("Start to sync cortex.db");
       start_time = current_time;
 
-      cortex::db::Models model_db;
-      auto res = model_db.GetModelSources();
+      auto res = db_service_->GetModelSources();
       if (res.has_error()) {
         CTL_INF(res.error());
       } else {
@@ -489,5 +484,3 @@ void ModelSourceService::SyncModelSource() {
     }
   }
 }
-
-}  // namespace services

@@ -1031,8 +1031,8 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
 
 cpp::result<std::vector<cortex::db::EngineEntry>, std::string>
 EngineService::GetEngines() {
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngines();
+  assert(db_service_);
+  auto get_res = db_service_->GetEngines();
 
   if (!get_res.has_value()) {
     return cpp::fail("Failed to get engine entries");
@@ -1043,8 +1043,8 @@ EngineService::GetEngines() {
 
 cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
     int id) {
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngineById(id);
+  assert(db_service_);
+  auto get_res = db_service_->GetEngineById(id);
 
   if (!get_res.has_value()) {
     return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
@@ -1057,8 +1057,8 @@ cpp::result<cortex::db::EngineEntry, std::string>
 EngineService::GetEngineByNameAndVariant(
     const std::string& engine_name, const std::optional<std::string> variant) {
 
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+  assert(db_service_);
+  auto get_res = db_service_->GetEngineByNameAndVariant(engine_name, variant);
 
   if (!get_res.has_value()) {
     if (variant.has_value()) {
@@ -1077,9 +1077,9 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
     const std::string& api_key, const std::string& url,
     const std::string& version, const std::string& variant,
     const std::string& status, const std::string& metadata) {
-  cortex::db::Engines engines;
-  auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url,
-                                         version, variant, status, metadata);
+  assert(db_service_);
+  auto upsert_res = db_service_->UpsertEngine(
+      engine_name, type, api_key, url, version, variant, status, metadata);
   if (upsert_res.has_value()) {
     return upsert_res.value();
   } else {
@@ -1088,8 +1088,8 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
 }
 
 std::string EngineService::DeleteEngine(int id) {
-  cortex::db::Engines engines;
-  auto delete_res = engines.DeleteEngineById(id);
+  assert(db_service_);
+  auto delete_res = db_service_->DeleteEngineById(id);
   if (delete_res.has_value()) {
     return delete_res.value();
   } else {

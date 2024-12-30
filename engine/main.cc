@@ -21,6 +21,7 @@
 #include "repositories/thread_fs_repository.h"
 #include "services/assistant_service.h"
 #include "services/config_service.h"
+#include "services/database_service.h"
 #include "services/file_watcher_service.h"
 #include "services/message_service.h"
 #include "services/model_service.h"
@@ -120,7 +121,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   LOG_INFO << "cortex.cpp version: undefined";
 #endif
 
-  auto hw_service = std::make_shared<services::HardwareService>();
+  auto db_service = std::make_shared<DatabaseService>();
+  auto hw_service = std::make_shared<HardwareService>(db_service);
   hw_service->UpdateHardwareInfos();
   if (hw_service->ShouldRestart()) {
     CTL_INF("Restart to update hardware configuration");
@@ -140,7 +142,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   // utils
   auto dylib_path_manager = std::make_shared<cortex::DylibPathManager>();
 
-  auto file_repo = std::make_shared<FileFsRepository>(data_folder_path);
+  auto file_repo =
+      std::make_shared<FileFsRepository>(data_folder_path, db_service);
   auto msg_repo = std::make_shared<MessageFsRepository>(data_folder_path);
   auto thread_repo = std::make_shared<ThreadFsRepository>(data_folder_path);
   auto assistant_repo =
@@ -156,13 +159,12 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto config_service = std::make_shared<ConfigService>();
   auto download_service =
       std::make_shared<DownloadService>(event_queue_ptr, config_service);
-  auto engine_service =
-      std::make_shared<EngineService>(download_service, dylib_path_manager);
-  auto inference_svc =
-      std::make_shared<services::InferenceService>(engine_service);
-  auto model_src_svc = std::make_shared<services::ModelSourceService>();
+  auto engine_service = std::make_shared<EngineService>(
+      download_service, dylib_path_manager, db_service);
+  auto inference_svc = std::make_shared<InferenceService>(engine_service);
+  auto model_src_svc = std::make_shared<ModelSourceService>(db_service);
   auto model_service = std::make_shared<ModelService>(
-      download_service, inference_svc, engine_service);
+      db_service, hw_service, download_service, inference_svc, engine_service);
   inference_svc->SetModelService(model_service);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
@@ -177,8 +179,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
   auto message_ctl = std::make_shared<Messages>(message_srv);
   auto engine_ctl = std::make_shared<Engines>(engine_service);
-  auto model_ctl =
-      std::make_shared<Models>(model_service, engine_service, model_src_svc);
+  auto model_ctl = std::make_shared<Models>(db_service, model_service,
+                                            engine_service, model_src_svc);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
   auto pm_ctl = std::make_shared<ProcessManager>();
   auto hw_ctl = std::make_shared<Hardware>(engine_service, hw_service);
