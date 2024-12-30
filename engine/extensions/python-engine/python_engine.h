@@ -12,6 +12,8 @@
 #include "extensions/template_renderer.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
+
+#include "utils/curl_utils.h"
 #ifdef _WIN32
 #include <process.h>
 #include <windows.h>

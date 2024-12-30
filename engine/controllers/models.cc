@@ -290,21 +290,7 @@ void Models::GetModel(const HttpRequestPtr& req,
       auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
       resp->setStatusCode(drogon::k200OK);
       callback(resp);
-    } else if (model_config.engine == kOpenAiEngine ||
-               model_config.engine == kAnthropicEngine) {
-      config::RemoteModelConfig remote_model_config;
-      remote_model_config.LoadFromYamlFile(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      ret = remote_model_config.ToJson();
-      ret["id"] = remote_model_config.model;
-      ret["object"] = "model";
-      ret["result"] = "OK";
-      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
-      resp->setStatusCode(k200OK);
-      callback(resp);
-    } else {
+    } else if (model_config.engine == kPythonEngine) {
       config::PythonModelConfig python_model_config;
       python_model_config.ReadFromYaml(
           fmu::ToAbsoluteCortexDataPath(
@@ -312,6 +298,19 @@ void Models::GetModel(const HttpRequestPtr& req,
               .string());
       ret = python_model_config.ToJson();
       ret["id"] = python_model_config.model;
+      ret["object"] = "model";
+      ret["result"] = "OK";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+    } else {
+      config::RemoteModelConfig remote_model_config;
+      remote_model_config.LoadFromYamlFile(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      ret = remote_model_config.ToJson();
+      ret["id"] = remote_model_config.model;
       ret["object"] = "model";
       ret["result"] = "OK";
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);

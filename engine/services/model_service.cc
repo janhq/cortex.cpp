@@ -103,7 +103,7 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
       .pathParams = {"api", "models", "cortexso", modelId, "tree", branch},
   };
 
-  auto result = curl_utils::SimpleGetJson(url.ToFullPath());
+  auto result = curl_utils::SimpleGetJsonRecursive(url.ToFullPath());
   if (result.has_error()) {
     return cpp::fail("Model " + modelId + " not found");
   }
@@ -126,6 +126,9 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
         .pathParams = {"cortexso", modelId, "resolve", branch, path}};
 
     auto local_path = model_container_path / path;
+    if (!std::filesystem::exists(local_path.parent_path())) {
+      std::filesystem::create_directories(local_path.parent_path());
+    }
     download_items.push_back(
         DownloadItem{.id = path,
                      .downloadUrl = download_url.ToFullPath(),
