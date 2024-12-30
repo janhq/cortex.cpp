@@ -130,7 +130,7 @@ void server::FineTuning(
 void server::Inference(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   LOG_TRACE << "Start inference";
-  auto q = std::make_shared<services::SyncQueue>();
+  auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleInference(q, req->getJsonObject());
   LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
   if (ir.has_error()) {
@@ -156,7 +156,7 @@ void server::RouteRequest(
     std::function<void(const HttpResponsePtr&)>&& callback) {
 
   LOG_TRACE << "Start route request";
-  auto q = std::make_shared<services::SyncQueue>();
+  auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleRouteRequest(q, req->getJsonObject());
   LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
   if (ir.has_error()) {

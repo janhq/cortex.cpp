@@ -84,8 +84,7 @@ void ParseGguf(DatabaseService& db_service,
       CTL_ERR("Error adding model to modellist: " + result.error());
     }
   } else {
-    if (auto m = db_service.GetModelInfo(ggufDownloadItem.id);
-        m.has_value()) {
+    if (auto m = db_service.GetModelInfo(ggufDownloadItem.id); m.has_value()) {
       auto upd_m = m.value();
       upd_m.status = cortex::db::ModelStatus::Downloaded;
       if (auto r = db_service.UpdateModelEntry(ggufDownloadItem.id, upd_m);
@@ -472,7 +471,8 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
       model_size = model_size + item.bytes.value_or(0);
     }
     auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(*db_service_, gguf_download_item, author, std::nullopt, model_size);
+    ParseGguf(*db_service_, gguf_download_item, author, std::nullopt,
+              model_size);
   };
 
   auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
@@ -653,7 +653,8 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
   }
 
   std::string model_id{name + ":" + branch};
-  auto on_finished = [this, branch, model_id](const DownloadTask& finishedTask) {
+  auto on_finished = [this, branch,
+                      model_id](const DownloadTask& finishedTask) {
     const DownloadItem* model_yml_item = nullptr;
     auto need_parse_gguf = true;
 
@@ -824,8 +825,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     constexpr const int kDefautlContextLength = 8192;
     int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
-
-    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    auto model_entry = db_service_->GetModelInfo(model_handle);
     if (model_entry.has_error()) {
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
@@ -841,7 +841,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       config::PythonModelConfig python_model_config;
       python_model_config.ReadFromYaml(
-
 
           fmu::ToAbsoluteCortexDataPath(
               fs::path(model_entry.value().path_to_model_yaml))
@@ -1051,7 +1050,7 @@ cpp::result<bool, std::string> ModelService::StopModel(
 
     // Update for python engine
     if (engine_name == kPythonEngine) {
-      auto model_entry = modellist_handler.GetModelInfo(model_handle);
+      auto model_entry = db_service_->GetModelInfo(model_handle);
       config::PythonModelConfig python_model_config;
       python_model_config.ReadFromYaml(
           fmu::ToAbsoluteCortexDataPath(
