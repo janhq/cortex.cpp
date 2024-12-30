@@ -69,8 +69,6 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
       continue;
     }
 
-    Json::Reader reader;
-
     Json::Value status;
     status["is_done"] = false;
     status["has_error"] = false;
@@ -114,6 +112,12 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   headers = curl_slist_append(headers, "Connection: keep-alive");
 
   std::string stream_template = chat_res_template_;
+  if (!config.transform_resp["chat_completions"] &&
+      !config.transform_resp["chat_completions"]["template"]) {
+    // Model level overrides engine level
+    stream_template =
+        config.transform_resp["chat_completions"]["template"].as<std::string>();
+  }
 
   StreamContext context{
       std::make_shared<std::function<void(Json::Value&&, Json::Value&&)>>(
@@ -522,12 +526,16 @@ void RemoteEngine::HandleChatCompletion(
 
     // Get template string with error check
     std::string template_str;
-    try {
+    if (!chat_req_template_.empty()) {
+      CTL_DBG("Use engine transform request template: " << chat_req_template_);
+      template_str = chat_req_template_;
+    }
+    if (!model_config->transform_req["chat_completions"] &&
+        !model_config->transform_req["chat_completions"]["template"]) {
+      // Model level overrides engine level
       template_str = model_config->transform_req["chat_completions"]["template"]
                          .as<std::string>();
-    } catch (const YAML::BadConversion& e) {
-      throw std::runtime_error("Failed to convert template node to string: " +
-                               std::string(e.what()));
+      CTL_DBG("Use model transform request template: " << template_str);
     }
 
     // Render with error handling
@@ -586,33 +594,14 @@ void RemoteEngine::HandleChatCompletion(
         CTL_DBG(
             "Use engine transform response template: " << chat_res_template_);
         template_str = chat_res_template_;
-      } else {
-        // Check if required YAML nodes exist
-        if (!model_config->transform_resp["chat_completions"]) {
-          throw std::runtime_error(
-              "Missing 'chat_completions' node in transform_resp");
-        }
-        if (!model_config->transform_resp["chat_completions"]["template"]) {
-          throw std::runtime_error(
-              "Missing 'template' node in chat_completions");
-        }
-
-        // Validate JSON body
-        if (!response_json || response_json.isNull()) {
-          throw std::runtime_error("Invalid or null JSON body");
-        }
-
-        // Get template string with error check
-
-        try {
-          template_str =
-              model_config->transform_resp["chat_completions"]["template"]
-                  .as<std::string>();
-        } catch (const YAML::BadConversion& e) {
-          throw std::runtime_error(
-              "Failed to convert template node to string: " +
-              std::string(e.what()));
-        }
+      }
+      if (!model_config->transform_resp["chat_completions"] &&
+          !model_config->transform_resp["chat_completions"]["template"]) {
+        // Model level overrides engine level
+        template_str =
+            model_config->transform_resp["chat_completions"]["template"]
+                .as<std::string>();
+        CTL_DBG("Use model transform request template: " << template_str);
       }
 
       try {

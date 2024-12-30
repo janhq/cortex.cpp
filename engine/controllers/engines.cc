@@ -307,6 +307,24 @@ void Engines::GetInstalledEngineVariants(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
     const std::string& engine) const {
+
+  if (engine_service_->IsRemoteEngine(engine)) {
+    auto remote_engines = engine_service_->GetEngines();
+    Json::Value releases(Json::arrayValue);
+    if (remote_engines.has_value()) {
+      for (auto e : remote_engines.value()) {
+        if (e.type == kRemote && e.engine_name == engine) {
+          releases.append(e.ToJson());
+          break;
+        }
+      }
+    }
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(releases);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+    return;
+  }
+
   auto result = engine_service_->GetInstalledEngineVariants(engine);
   if (result.has_error()) {
     Json::Value res;

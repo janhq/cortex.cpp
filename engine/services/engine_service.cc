@@ -1057,7 +1057,8 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
 
 cpp::result<cortex::db::EngineEntry, std::string>
 EngineService::GetEngineByNameAndVariant(
-    const std::string& engine_name, const std::optional<std::string> variant) {
+    const std::string& engine_name,
+    const std::optional<std::string> variant) const {
 
   cortex::db::Engines engines;
   auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
@@ -1130,7 +1131,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   }
 }
 
-bool EngineService::IsRemoteEngine(const std::string& engine_name) {
+bool EngineService::IsRemoteEngine(const std::string& engine_name) const {
   auto ne = Repo2Engine(engine_name);
   auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
   for (auto const& le : local_engines) {
