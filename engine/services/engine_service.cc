@@ -13,7 +13,6 @@
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
-#include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -370,10 +369,10 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
   };
 
   auto downloadTask =
-      DownloadTask{.id = engine,
+      DownloadTask{.id = selected_variant->name,
                    .type = DownloadType::Engine,
                    .items = {DownloadItem{
-                       .id = engine,
+                       .id = selected_variant->name,
                        .downloadUrl = selected_variant->browser_download_url,
                        .localPath = variant_path,
                    }}};

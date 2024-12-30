@@ -28,7 +28,7 @@ class FileFsRepository : public FileRepository {
   cpp::result<void, std::string> DeleteFileLocal(
       const std::string& file_id) override;
 
-  explicit FileFsRepository(std::filesystem::path data_folder_path)
+  explicit FileFsRepository(const std::filesystem::path& data_folder_path)
       : data_folder_path_{data_folder_path} {
     CTL_INF("Constructing FileFsRepository..");
     auto file_container_path = data_folder_path_ / kFileContainerFolderName;
