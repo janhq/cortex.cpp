@@ -13,7 +13,6 @@
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
-#include "utils/cpuid/cpu_info.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
 #include "utils/file_manager_utils.h"
@@ -137,8 +136,8 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
           CTL_INF("Found cuda variant, extract it");
           found_cuda = true;
           // extract binary
-          auto cuda_path =
-              file_manager_utils::GetCudaToolkitPath(NormalizeEngine(engine));
+          auto cuda_path = file_manager_utils::GetCudaToolkitPath(
+              NormalizeEngine(engine), true);
           archive_utils::ExtractArchive(path + "/" + cf, cuda_path.string(),
                                         true);
         }
@@ -370,10 +369,10 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
   };
 
   auto downloadTask =
-      DownloadTask{.id = engine,
+      DownloadTask{.id = selected_variant->name,
                    .type = DownloadType::Engine,
                    .items = {DownloadItem{
-                       .id = engine,
+                       .id = selected_variant->name,
                        .downloadUrl = selected_variant->browser_download_url,
                        .localPath = variant_path,
                    }}};
@@ -440,7 +439,8 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
-    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine);
+    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine, true);
+
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   engine_path.string());
     try {
@@ -1050,8 +1050,8 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
 
 cpp::result<std::vector<cortex::db::EngineEntry>, std::string>
 EngineService::GetEngines() {
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngines();
+  assert(db_service_);
+  auto get_res = db_service_->GetEngines();
 
   if (!get_res.has_value()) {
     return cpp::fail("Failed to get engine entries");
@@ -1062,8 +1062,8 @@ EngineService::GetEngines() {
 
 cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
     int id) {
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngineById(id);
+  assert(db_service_);
+  auto get_res = db_service_->GetEngineById(id);
 
   if (!get_res.has_value()) {
     return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
@@ -1076,8 +1076,8 @@ cpp::result<cortex::db::EngineEntry, std::string>
 EngineService::GetEngineByNameAndVariant(
     const std::string& engine_name, const std::optional<std::string> variant) {
 
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+  assert(db_service_);
+  auto get_res = db_service_->GetEngineByNameAndVariant(engine_name, variant);
 
   if (!get_res.has_value()) {
     if (variant.has_value()) {
@@ -1096,9 +1096,9 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
     const std::string& api_key, const std::string& url,
     const std::string& version, const std::string& variant,
     const std::string& status, const std::string& metadata) {
-  cortex::db::Engines engines;
-  auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url,
-                                         version, variant, status, metadata);
+  assert(db_service_);
+  auto upsert_res = db_service_->UpsertEngine(
+      engine_name, type, api_key, url, version, variant, status, metadata);
   if (upsert_res.has_value()) {
     return upsert_res.value();
   } else {
@@ -1107,8 +1107,8 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
 }
 
 std::string EngineService::DeleteEngine(int id) {
-  cortex::db::Engines engines;
-  auto delete_res = engines.DeleteEngineById(id);
+  assert(db_service_);
+  auto delete_res = db_service_->DeleteEngineById(id);
   if (delete_res.has_value()) {
     return delete_res.value();
   } else {
