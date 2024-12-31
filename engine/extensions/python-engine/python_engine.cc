@@ -16,11 +16,7 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
-
-PythonEngine::PythonEngine():q_(4 /*n_parallel*/, "python_engine") {
-}
-
-
+PythonEngine::PythonEngine() : q_(4 /*n_parallel*/, "python_engine") {}
 
 PythonEngine::~PythonEngine() {
   curl_global_cleanup();
@@ -173,7 +169,7 @@ bool PythonEngine::TerminateModelProcess(const std::string& model) {
 }
 CurlResponse PythonEngine::MakeGetRequest(const std::string& model,
                                           const std::string& path) {
-  auto config = models_[model];
+  auto const& config = models_[model];
   std::string full_url = "http://localhost:" + config.port + path;
   CurlResponse response;
 
@@ -188,7 +184,7 @@ CurlResponse PythonEngine::MakeGetRequest(const std::string& model,
 }
 CurlResponse PythonEngine::MakeDeleteRequest(const std::string& model,
                                              const std::string& path) {
-  auto config = models_[model];
+  auto const& config = models_[model];
   std::string full_url = "http://localhost:" + config.port + path;
   CurlResponse response;
 
@@ -207,7 +203,7 @@ CurlResponse PythonEngine::MakeDeleteRequest(const std::string& model,
 CurlResponse PythonEngine::MakePostRequest(const std::string& model,
                                            const std::string& path,
                                            const std::string& body) {
-  auto config = models_[model];
+  auto const& config = models_[model];
   std::string full_url = "http://localhost:" + config.port + path;
 
   CurlResponse response;
@@ -457,7 +453,7 @@ void PythonEngine::HandleChatCompletion(
 CurlResponse PythonEngine::MakeStreamPostRequest(
     const std::string& model, const std::string& path, const std::string& body,
     const std::function<void(Json::Value&&, Json::Value&&)>& callback) {
-  auto config = models_[model];
+  auto const& config = models_[model];
   CURL* curl = curl_easy_init();
   CurlResponse response;
 

@@ -158,12 +158,7 @@ void server::Inference(const HttpRequestPtr& req,
     }();
     ProcessStreamRes(callback, q, engine_type, model_id);
   } else {
-    auto [status, res] = q->wait_and_pop();
-    LOG_DEBUG << "response: " << res.toStyledString();
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(
-        static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-    callback(resp);
+    ProcessNonStreamRes(callback, *q);
     LOG_TRACE << "Done  inference";
   }
 }
@@ -200,12 +195,7 @@ void server::RouteRequest(
     }();
     ProcessStreamRes(callback, q, engine_type, model_id);
   } else {
-    auto [status, res] = q->wait_and_pop();
-    LOG_DEBUG << "response: " << res.toStyledString();
-    auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-    resp->setStatusCode(
-        static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-    callback(resp);
+    ProcessNonStreamRes(callback, *q);
     LOG_TRACE << "Done route request";
   }
 }
