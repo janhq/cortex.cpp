@@ -129,6 +129,9 @@ void server::FineTuning(
 
 void server::Inference(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
+
+  auto json_body = req->getJsonObject();
+
   LOG_TRACE << "Start inference";
   auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleInference(q, req->getJsonObject());
@@ -141,19 +144,33 @@ void server::Inference(const HttpRequestPtr& req,
     callback(resp);
     return;
   }
+
+  bool is_stream =
+      (*json_body).get("stream", false).asBool() ||
+      (*json_body).get("body", Json::Value()).get("stream", false).asBool();
+
   LOG_TRACE << "Wait to inference";
-  auto [status, res] = q->wait_and_pop();
-  LOG_DEBUG << "response: " << res.toStyledString();
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-  resp->setStatusCode(
-      static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-  callback(resp);
-  LOG_TRACE << "Done  inference";
+  if (is_stream) {
+    auto model_id = (*json_body).get("model", "invalid_model").asString();
+    auto engine_type = [this, &json_body]() -> std::string {
+      if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
+        return kLlamaRepo;
+      } else {
+        return (*(json_body)).get("engine", kLlamaRepo).asString();
+      }
+    }();
+    ProcessStreamRes(callback, q, engine_type, model_id);
+  } else {
+    ProcessNonStreamRes(callback, *q);
+    LOG_TRACE << "Done  inference";
+  }
 }
 
 void server::RouteRequest(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+
+  auto json_body = req->getJsonObject();
 
   LOG_TRACE << "Start route request";
   auto q = std::make_shared<SyncQueue>();
@@ -167,14 +184,26 @@ void server::RouteRequest(
     callback(resp);
     return;
   }
+  auto is_stream =
+      (*json_body).get("stream", false).asBool() ||
+      (*json_body).get("body", Json::Value()).get("stream", false).asBool();
   LOG_TRACE << "Wait to route request";
-  auto [status, res] = q->wait_and_pop();
-  LOG_DEBUG << "response: " << res.toStyledString();
-  auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
-  resp->setStatusCode(
-      static_cast<drogon::HttpStatusCode>(status["status_code"].asInt()));
-  callback(resp);
-  LOG_TRACE << "Done  route request";
+  if (is_stream) {
+
+    auto model_id = (*json_body).get("model", "invalid_model").asString();
+    auto engine_type = [this, &json_body]() -> std::string {
+      if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
+        return kLlamaRepo;
+      } else {
+        return (*(json_body)).get("engine", kLlamaRepo).asString();
+      }
+    }();
+    ProcessStreamRes(callback, q, engine_type, model_id);
+  } else {
+    ProcessNonStreamRes(callback, *q);
+    LOG_TRACE << "Done route request";
+  }
+
 }
 
 void server::LoadModel(const HttpRequestPtr& req,

@@ -8,6 +8,8 @@
 #include <string>
 #include <unordered_map>
 #include "config/model_config.h"
+#include "trantor/utils/ConcurrentTaskQueue.h"
+
 #include "cortex-common/EngineI.h"
 #include "extensions/template_renderer.h"
 #include "utils/file_logger.h"
@@ -44,19 +46,12 @@ static size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
     std::string line = context->buffer.substr(0, pos);
     context->buffer = context->buffer.substr(pos + 1);
+    LOG_DEBUG << "line: "<<line;
 
     // Skip empty lines
     if (line.empty() || line == "\r")
       continue;
 
-    // Remove "data: " prefix if present
-    // if (line.substr(0, 6) == "data: ")
-    // {
-    //     line = line.substr(6);
-    // }
-
-    // Skip [DONE] message
-    std::cout << line << std::endl;
     if (line == "data: [DONE]") {
       Json::Value status;
       status["is_done"] = true;
@@ -99,6 +94,8 @@ class PythonEngine : public EngineI {
   extensions::TemplateRenderer renderer_;
   std::unique_ptr<trantor::FileLogger> async_file_logger_;
   std::unordered_map<std::string, pid_t> processMap;
+  trantor::ConcurrentTaskQueue q_;
+
 
   // Helper functions
   CurlResponse MakePostRequest(const std::string& model,
@@ -108,6 +105,10 @@ class PythonEngine : public EngineI {
                               const std::string& path);
   CurlResponse MakeDeleteRequest(const std::string& model,
                                  const std::string& path);
+  CurlResponse MakeStreamPostRequest(
+      const std::string& model, const std::string& path,
+      const std::string& body,
+      const std::function<void(Json::Value&&, Json::Value&&)>& callback);
 
   // Process manager functions
   pid_t SpawnProcess(const std::string& model,
