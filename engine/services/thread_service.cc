@@ -1,6 +1,6 @@
 #include "thread_service.h"
-#include <chrono>
 #include "utils/logging_utils.h"
+#include "utils/time_utils.h"
 #include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
@@ -8,15 +8,10 @@ cpp::result<OpenAi::Thread, std::string> ThreadService::CreateThread(
     std::optional<Cortex::VariantMap> metadata) {
   LOG_TRACE << "CreateThread";
 
-  auto seconds_since_epoch =
-      std::chrono::duration_cast<std::chrono::seconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count();
-
   OpenAi::Thread thread;
   thread.id = ulid::GenerateUlid();
   thread.object = "thread";
-  thread.created_at = seconds_since_epoch;
+  thread.created_at = cortex_utils::SecondsSinceEpoch();
 
   if (tool_resources) {
     thread.tool_resources = std::move(tool_resources);

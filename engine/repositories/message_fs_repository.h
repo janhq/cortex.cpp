@@ -11,7 +11,7 @@ class MessageFsRepository : public MessageRepository {
 
  public:
   cpp::result<void, std::string> CreateMessage(
-      OpenAi::Message& message) override;
+      const OpenAi::Message& message) override;
 
   cpp::result<std::vector<OpenAi::Message>, std::string> ListMessages(
       const std::string& thread_id, uint8_t limit, const std::string& order,
@@ -23,7 +23,7 @@ class MessageFsRepository : public MessageRepository {
       const std::string& message_id) const override;
 
   cpp::result<void, std::string> ModifyMessage(
-      OpenAi::Message& message) override;
+      const OpenAi::Message& message) override;
 
   cpp::result<void, std::string> DeleteMessage(
       const std::string& thread_id, const std::string& message_id) override;

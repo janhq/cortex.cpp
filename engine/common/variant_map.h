@@ -1,5 +1,6 @@
 #pragma once
 
+#include <json/reader.h>
 #include <json/value.h>
 #include <string>
 #include <unordered_map>
@@ -58,5 +59,40 @@ inline cpp::result<VariantMap, std::string> ConvertJsonValueToMap(
   }
 
   return result;
+}
+
+inline cpp::result<VariantMap, std::string> VariantMapFromJsonString(
+    std::string&& json_str) {
+  Json::Value root;
+  Json::Reader reader;
+  if (!reader.parse(json_str, root)) {
+    return cpp::fail("Failed to parse JSON: " +
+                     reader.getFormattedErrorMessages());
+  }
+  return ConvertJsonValueToMap(root);
+}
+
+inline cpp::result<std::string, std::string> VariantMapToString(
+    const VariantMap& map) {
+  Json::Value root(Json::objectValue);
+
+  for (const auto& [key, value] : map) {
+    std::visit(
+        [&root, &key](auto&& arg) {
+          using T = std::decay_t<decltype(arg)>;
+          if constexpr (std::is_same_v<T, std::string>) {
+            root[key] = arg;
+          } else if constexpr (std::is_same_v<T, bool>) {
+            root[key] = arg;
+          } else if constexpr (std::is_same_v<T, uint64_t>) {
+            root[key] = arg;
+          } else if constexpr (std::is_same_v<T, double>) {
+            root[key] = arg;
+          }
+        },
+        value);
+  }
+
+  return root.toStyledString();
 }
 };  // namespace Cortex

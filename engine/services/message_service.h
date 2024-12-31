@@ -14,7 +14,8 @@ class MessageService {
       std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>&&
           content,
       std::optional<std::vector<OpenAi::Attachment>> attachments,
-      std::optional<Cortex::VariantMap> metadata);
+      std::optional<Cortex::VariantMap> metadata,
+      OpenAi::Status status = OpenAi::Status::COMPLETED);
 
   cpp::result<void, std::string> InitializeMessages(
       const std::string& thread_id,
@@ -34,6 +35,9 @@ class MessageService {
       std::optional<std::variant<std::string,
                                  std::vector<std::unique_ptr<OpenAi::Content>>>>
           content);
+
+  cpp::result<OpenAi::Message, std::string> ModifyMessage(
+      const OpenAi::Message& message);
 
   cpp::result<std::string, std::string> DeleteMessage(
       const std::string& thread_id, const std::string& message_id);

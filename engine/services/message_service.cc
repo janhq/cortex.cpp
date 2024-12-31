@@ -1,6 +1,7 @@
 #include "services/message_service.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include "utils/time_utils.h"
 #include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
@@ -8,32 +9,33 @@ cpp::result<OpenAi::Message, std::string> MessageService::CreateMessage(
     std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>&&
         content,
     std::optional<std::vector<OpenAi::Attachment>> attachments,
-    std::optional<Cortex::VariantMap> metadata) {
+    std::optional<Cortex::VariantMap> metadata, OpenAi::Status status) {
   LOG_TRACE << "CreateMessage for thread " << thread_id;
 
-  uint32_t seconds_since_epoch =
-      std::chrono::duration_cast<std::chrono::seconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count();
+  auto seconds_since_epoch = cortex_utils::SecondsSinceEpoch();
   std::vector<std::unique_ptr<OpenAi::Content>> content_list{};
 
-  // if content is string
   if (std::holds_alternative<std::string>(content)) {
-    auto text_content = std::make_unique<OpenAi::TextContent>();
-    text_content->text.value = std::get<std::string>(content);
+    auto text_content =
+        std::make_unique<OpenAi::TextContent>(std::get<std::string>(content));
     content_list.push_back(std::move(text_content));
   } else {
     content_list = std::move(
         std::get<std::vector<std::unique_ptr<OpenAi::Content>>>(content));
   }
 
+  std::optional<uint32_t> completed_at =
+      (status == OpenAi::Status::COMPLETED)
+          ? std::optional<uint32_t>(seconds_since_epoch)
+          : std::nullopt;
+
   OpenAi::Message msg;
   msg.id = ulid::GenerateUlid();
   msg.object = "thread.message";
   msg.created_at = seconds_since_epoch;
   msg.thread_id = thread_id;
-  msg.status = OpenAi::Status::COMPLETED;
-  msg.completed_at = seconds_since_epoch;
+  msg.status = status;
+  msg.completed_at = completed_at;
   msg.incomplete_at = std::nullopt;
   msg.incomplete_details = std::nullopt;
   msg.role = role;
@@ -135,4 +137,15 @@ cpp::result<void, std::string> MessageService::InitializeMessages(
 
   return message_repository_->InitializeMessages(thread_id,
                                                  std::move(messages));
+}
+
+cpp::result<OpenAi::Message, std::string> MessageService::ModifyMessage(
+    const OpenAi::Message& message) {
+  auto res = message_repository_->ModifyMessage(message);
+  if (res.has_error()) {
+    CTL_ERR("Failed to modify message: " + res.error());
+    return cpp::fail("Failed to modify message: " + res.error());
+  }
+
+  return RetrieveMessage(message.thread_id, message.id);
 }

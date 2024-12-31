@@ -1,4 +1,6 @@
 #include "database_service.h"
+#include "database/file.h"
+#include "database/runs.h"
 
 // begin engines
 std::optional<EngineEntry> DatabaseService::UpsertEngine(
@@ -128,3 +130,30 @@ cpp::result<std::vector<std::string>, std::string> DatabaseService::GetModels(
   return cortex::db::Models().GetModels(model_src);
 }
 // end models
+
+// runs
+cpp::result<void, std::string> DatabaseService::AddRunEntry(
+    const OpenAi::Run& run) {
+  return cortex::db::Runs().AddRunEntry(run);
+}
+
+cpp::result<OpenAi::Run, std::string> DatabaseService::RetrieveRun(
+    const std::string& run_id) const {
+  return cortex::db::Runs().RetrieveRun(run_id);
+}
+
+cpp::result<void, std::string> DatabaseService::ModifyRun(
+    const OpenAi::Run& run) {
+  return cortex::db::Runs().UpdateRun(run);
+}
+
+cpp::result<void, std::string> DatabaseService::DeleteRun(
+    const std::string& run_id) {
+  return cortex::db::Runs().DeleteRun(run_id);
+}
+
+cpp::result<std::vector<OpenAi::Run>, std::string> DatabaseService::ListRuns(
+    uint8_t limit, const std::string& order, const std::string& after,
+    const std::string& before) {
+  return cortex::db::Runs().ListRuns(limit, order, after, before);
+}

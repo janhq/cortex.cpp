@@ -1,6 +1,7 @@
 #include "migration_manager.h"
 #include <filesystem>
 #include "assert.h"
+#include "migrations/v4/migration.h"
 #include "schema_version.h"
 #include "utils/file_manager_utils.h"
 #include "utils/scope_exit.h"
@@ -149,6 +150,8 @@ cpp::result<bool, std::string> MigrationManager::DoUpFolderStructure(
       return v2::MigrateFolderStructureUp();
     case 3:
       return v3::MigrateFolderStructureUp();
+    case 4:
+      return v4::MigrateFolderStructureUp();
 
     default:
       return true;
@@ -165,6 +168,8 @@ cpp::result<bool, std::string> MigrationManager::DoDownFolderStructure(
       return v2::MigrateFolderStructureDown();
     case 3:
       return v3::MigrateFolderStructureDown();
+    case 4:
+      return v4::MigrateFolderStructureDown();
 
     default:
       return true;
@@ -203,6 +208,8 @@ cpp::result<bool, std::string> MigrationManager::DoUpDB(int version) {
       return v2::MigrateDBUp(db_);
     case 3:
       return v3::MigrateDBUp(db_);
+    case 4:
+      return v4::MigrateDBUp(db_);
 
     default:
       return true;
@@ -218,6 +225,8 @@ cpp::result<bool, std::string> MigrationManager::DoDownDB(int version) {
     case 2:
       return v2::MigrateDBDown(db_);
     case 3:
+      return v3::MigrateDBDown(db_);
+    case 4:
       return v3::MigrateDBDown(db_);
 
     default:

@@ -1,6 +1,7 @@
 #include "assistant_service.h"
 #include <variant>
 #include "utils/logging_utils.h"
+#include "utils/time_utils.h"
 #include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::JanAssistant, std::string>
@@ -95,11 +96,7 @@ cpp::result<OpenAi::Assistant, std::string> AssistantService::CreateAssistantV2(
   if (create_dto.response_format) {
     assistant.response_format = *create_dto.response_format;
   }
-  auto seconds_since_epoch =
-      std::chrono::duration_cast<std::chrono::seconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count();
-  assistant.created_at = seconds_since_epoch;
+  assistant.created_at = cortex_utils::SecondsSinceEpoch();
   return assistant_repository_->CreateAssistant(assistant);
 }
 cpp::result<OpenAi::Assistant, std::string>

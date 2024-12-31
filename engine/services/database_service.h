@@ -1,6 +1,8 @@
 #pragma once
+
+#include "common/file.h"
+#include "common/run.h"
 #include "database/engines.h"
-#include "database/file.h"
 #include "database/hardware.h"
 #include "database/models.h"
 
@@ -63,6 +65,16 @@ class DatabaseService {
   cpp::result<std::vector<std::string>, std::string> GetModelSources() const;
   cpp::result<std::vector<std::string>, std::string> GetModels(
       const std::string& model_src) const;
+
+  // runs
+  cpp::result<void, std::string> AddRunEntry(const OpenAi::Run& run);
+  cpp::result<OpenAi::Run, std::string> RetrieveRun(
+      const std::string& run_id) const;
+  cpp::result<void, std::string> ModifyRun(const OpenAi::Run& run);
+  cpp::result<void, std::string> DeleteRun(const std::string& run_id);
+  cpp::result<std::vector<OpenAi::Run>, std::string> ListRuns(
+      uint8_t limit, const std::string& order, const std::string& after,
+      const std::string& before);
 
  private:
 };

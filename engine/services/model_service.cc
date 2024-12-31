@@ -10,10 +10,8 @@
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "hardware_service.h"
-#include "utils/archive_utils.h"
-
 #include "services/inference_service.h"
-
+#include "utils/archive_utils.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
@@ -232,11 +230,11 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
       continue;
     }
     auto model_id = modelName + ":" + branch.second.name;
-    if (std::find(downloaded_model_ids.begin(), downloaded_model_ids.end(),
-                  model_id) !=
-        downloaded_model_ids.end()) {  // if downloaded, we skip it
+    if (auto it = std::ranges::find(downloaded_model_ids, model_id);
+        it != downloaded_model_ids.end()) {
       continue;
     }
+
     avai_download_opts.emplace_back(model_id);
   }
 
@@ -847,7 +845,10 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
           CTL_WRN("Error: " + res.error());
           for (auto& depend : depends) {
             if (depend != model_handle) {
-              StopModel(depend);
+              auto res = StopModel(depend);
+              if (res.has_error()) {
+                CTL_WRN("Error: " + res.error());
+              }
             }
           }
           return cpp::fail("Model failed to start dependency '" + depend +
@@ -877,8 +878,10 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       } else {
         // only report to user the error
         for (auto& depend : depends) {
-
-          StopModel(depend);
+          auto res = StopModel(depend);
+          if (res.has_error()) {
+            CTL_WRN("Error: " + res.error());
+          }
         }
       }
       CTL_ERR("Model failed to start with status code: " << status);
@@ -1052,7 +1055,10 @@ cpp::result<bool, std::string> ModelService::StopModel(
       // Stop all depends model
       auto depends = python_model_config.depends;
       for (auto& depend : depends) {
-        StopModel(depend);
+        auto res = StopModel(depend);
+        if (res.has_error()) {
+          CTL_WRN("Error: " + res.error());
+        }
       }
     }
 

@@ -53,11 +53,11 @@ inline cpp::result<bool, std::string> MigrateDBUp(SQLite::Database& db) {
 
 inline cpp::result<bool, std::string> MigrateDBDown(SQLite::Database& db) {
   try {
-    // hardware
+    // files
     {
       SQLite::Statement query(db,
                               "SELECT name FROM sqlite_master WHERE "
-                              "type='table' AND name='hardware'");
+                              "type='table' AND name='files'");
       auto table_exists = query.executeStep();
       if (table_exists) {
         db.exec("DROP TABLE files");

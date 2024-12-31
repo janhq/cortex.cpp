@@ -36,11 +36,13 @@ inline std::string ExtractFileId(const std::string& path) {
 // Represents a message within a thread.
 struct Message : JsonSerializable {
   Message() = default;
-  // Delete copy operations
+
   Message(const Message&) = delete;
+
   Message& operator=(const Message&) = delete;
-  // Allow move operations
+
   Message(Message&&) = default;
+
   Message& operator=(Message&&) = default;
 
   // The identifier, which can be referenced in API endpoints.
@@ -208,21 +210,30 @@ struct Message : JsonSerializable {
     }
   }
 
-  cpp::result<std::string, std::string> ToSingleLineJsonString() {
-    auto json_result = ToJson();
-    if (json_result.has_error()) {
-      return cpp::fail(json_result.error());
+  cpp::result<std::string, std::string> ToSingleLineJsonString(
+      bool add_new_line = true) const {
+    auto json = ToJson();
+    if (json.has_error()) {
+      return cpp::fail(json.error());
     }
 
     Json::FastWriter writer;
     try {
-      return writer.write(json_result.value());
+      if (add_new_line) {
+        return writer.write(json.value());
+      } else {
+        auto json_str = writer.write(json.value());
+        if (!json_str.empty() && json_str.back() == '\n') {
+          json_str.pop_back();
+        }
+        return json_str;
+      }
     } catch (const std::exception& e) {
       return cpp::fail(std::string("Failed to write JSON: ") + e.what());
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
 
@@ -294,6 +305,21 @@ struct Message : JsonSerializable {
     } catch (const std::exception& e) {
       return cpp::fail(std::string("ToJson failed: ") + e.what());
     }
+  }
+
+  static cpp::result<Message, std::string> Clone(const Message& original) {
+    // First convert to JSON
+    auto json_result = original.ToJson();
+    if (json_result.has_error()) {
+      return cpp::fail("Failed to convert to JSON: " + json_result.error());
+    }
+
+    // Convert JSON back to string
+    Json::FastWriter writer;
+    std::string json_str = writer.write(json_result.value());
+
+    // Create new Message from JSON string
+    return Message::FromJsonString(std::move(json_str));
   }
 };
 };  // namespace OpenAi

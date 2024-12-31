@@ -1,4 +1,5 @@
 #include "migration_helper.h"
+#include "utils/logging_utils.h"
 
 namespace cortex::migr {
 cpp::result<bool, std::string> MigrationHelper::BackupDatabase(

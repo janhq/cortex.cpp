@@ -2,7 +2,7 @@
 #include "cortex_openapi.h"
 #include "utils/cortex_utils.h"
 
-Json::Value SwaggerController::GenerateOpenApiSpec() const {
+auto SwaggerController::GenerateOpenApiSpec() const -> Json::Value {
   Json::Value root;
   Json::Reader reader;
   reader.parse(CortexOpenApi::GetOpenApiJson(), root);

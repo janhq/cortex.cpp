@@ -64,10 +64,6 @@ struct AssistantFunction : public JsonSerializable {
       return cpp::fail("Function name can't be empty");
     }
 
-    if (!json.isMember("description")) {
-      return cpp::fail("Function description is mandatory");
-    }
-
     if (!json.isMember("parameters")) {
       return cpp::fail("Function parameters are mandatory");
     }
@@ -76,14 +72,14 @@ struct AssistantFunction : public JsonSerializable {
     if (json.isMember("strict")) {
       is_strict = json["strict"].asBool();
     }
-    AssistantFunction function{json["description"].asString(),
+    AssistantFunction function{json.get("description", "").asString(),
                                json["name"].asString(), json["parameters"],
                                is_strict};
     function.parameters = json["parameters"];
     return function;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     json["description"] = description;
     json["name"] = name;
@@ -120,7 +116,7 @@ struct AssistantFunctionTool : public AssistantTool {
     return AssistantFunctionTool{function_res.value()};
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value root;
     root["type"] = type;
     root["function"] = function.ToJson().value();

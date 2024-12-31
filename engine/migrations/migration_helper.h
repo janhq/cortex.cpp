@@ -3,7 +3,6 @@
 #include <SQLiteCpp/SQLiteCpp.h>
 #include <sqlite3.h>
 #include <filesystem>
-#include "utils/logging_utils.h"
 #include "utils/result.hpp"
 
 namespace cortex::migr {

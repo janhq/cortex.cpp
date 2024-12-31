@@ -8,7 +8,7 @@ struct DeleteSuccessResponse : JsonSerializable {
   std::string object;
   bool deleted;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     json["id"] = id;
     json["object"] = object;

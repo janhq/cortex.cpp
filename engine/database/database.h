@@ -1,7 +1,6 @@
 #pragma once
 
-#include <string>
-#include "SQLiteCpp/SQLiteCpp.h"
+#include <SQLiteCpp/Database.h>
 #include "utils/file_manager_utils.h"
 
 namespace cortex::db {

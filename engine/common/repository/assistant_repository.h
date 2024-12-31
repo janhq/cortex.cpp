@@ -10,7 +10,7 @@ class AssistantRepository {
                  const std::string& after, const std::string& before) const = 0;
 
   virtual cpp::result<OpenAi::Assistant, std::string> CreateAssistant(
-      OpenAi::Assistant& assistant) = 0;
+      const OpenAi::Assistant& assistant) = 0;
 
   virtual cpp::result<OpenAi::Assistant, std::string> RetrieveAssistant(
       const std::string assistant_id) const = 0;

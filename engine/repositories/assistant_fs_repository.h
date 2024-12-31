@@ -15,7 +15,7 @@ class AssistantFsRepository : public AssistantRepository {
       const std::string& before) const override;
 
   cpp::result<OpenAi::Assistant, std::string> CreateAssistant(
-      OpenAi::Assistant& assistant) override;
+      const OpenAi::Assistant& assistant) override;
 
   cpp::result<OpenAi::Assistant, std::string> RetrieveAssistant(
       const std::string assistant_id) const override;
@@ -43,7 +43,8 @@ class AssistantFsRepository : public AssistantRepository {
 
   std::shared_mutex& GrabAssistantMutex(const std::string& assistant_id) const;
 
-  cpp::result<void, std::string> SaveAssistant(OpenAi::Assistant& assistant);
+  cpp::result<void, std::string> SaveAssistant(
+      const OpenAi::Assistant& assistant);
 
   cpp::result<OpenAi::Assistant, std::string> LoadAssistant(
       const std::string& assistant_id) const;

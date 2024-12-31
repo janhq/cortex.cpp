@@ -113,7 +113,7 @@ cpp::result<void, std::string> AssistantFsRepository::DeleteAssistant(
 }
 
 cpp::result<OpenAi::Assistant, std::string>
-AssistantFsRepository::CreateAssistant(OpenAi::Assistant& assistant) {
+AssistantFsRepository::CreateAssistant(const OpenAi::Assistant& assistant) {
   CTL_INF("CreateAssistant: " + assistant.id);
   {
     std::unique_lock lock(GrabAssistantMutex(assistant.id));
@@ -139,7 +139,7 @@ AssistantFsRepository::CreateAssistant(OpenAi::Assistant& assistant) {
 }
 
 cpp::result<void, std::string> AssistantFsRepository::SaveAssistant(
-    OpenAi::Assistant& assistant) {
+    const OpenAi::Assistant& assistant) {
   auto path = GetAssistantPath(assistant.id) / kAssistantFileName;
   if (!std::filesystem::exists(path)) {
     std::filesystem::create_directories(path);

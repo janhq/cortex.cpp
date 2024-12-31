@@ -55,7 +55,7 @@ struct File : public JsonSerializable {
     return file;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value root;
 
     root["id"] = id;

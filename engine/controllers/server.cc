@@ -19,8 +19,6 @@ server::server(std::shared_ptr<InferenceService> inference_service,
 #endif
 };
 
-server::~server() {}
-
 void server::ChatCompletion(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
@@ -203,7 +201,6 @@ void server::RouteRequest(
     ProcessNonStreamRes(callback, *q);
     LOG_TRACE << "Done route request";
   }
-
 }
 
 void server::LoadModel(const HttpRequestPtr& req,

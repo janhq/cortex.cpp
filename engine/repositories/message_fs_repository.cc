@@ -11,7 +11,7 @@ std::filesystem::path MessageFsRepository::GetMessagePath(
 }
 
 cpp::result<void, std::string> MessageFsRepository::CreateMessage(
-    OpenAi::Message& message) {
+    const OpenAi::Message& message) {
   CTL_INF("CreateMessage for thread " + message.thread_id);
   auto path = GetMessagePath(message.thread_id);
 
@@ -133,7 +133,7 @@ cpp::result<OpenAi::Message, std::string> MessageFsRepository::RetrieveMessage(
 }
 
 cpp::result<void, std::string> MessageFsRepository::ModifyMessage(
-    OpenAi::Message& message) {
+    const OpenAi::Message& message) {
   auto mutex = GrabMutex(message.thread_id);
   std::unique_lock<std::shared_mutex> lock(*mutex);
 

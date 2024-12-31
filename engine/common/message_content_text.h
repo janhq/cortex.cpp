@@ -58,7 +58,7 @@ struct FileCitationWrapper : Annotation {
 
   FileCitation file_citation;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["text"] = text;
@@ -105,7 +105,7 @@ struct FilePathWrapper : Annotation {
 
   FilePath file_path;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["text"] = text;
@@ -124,13 +124,17 @@ struct Text : JsonSerializable {
   // The data that makes up the text.
   Text() = default;
 
-  Text(Text&&) noexcept = default;
+  Text(const std::string& text_content) : value{text_content} {}
 
-  Text& operator=(Text&&) noexcept = default;
+  ~Text() = default;
 
   Text(const Text&) = delete;
 
   Text& operator=(const Text&) = delete;
+
+  Text(Text&&) noexcept = default;
+
+  Text& operator=(Text&&) noexcept = default;
 
   std::string value;
 
@@ -178,7 +182,7 @@ struct Text : JsonSerializable {
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["value"] = value;
@@ -192,7 +196,7 @@ struct Text : JsonSerializable {
       }
       json["annotations"] = annotations_json_arr;
       return json;
-    } catch (const std::exception e) {
+    } catch (const std::exception& e) {
       return cpp::fail(std::string("ToJson failed: ") + e.what());
     }
   };
@@ -202,6 +206,10 @@ struct Text : JsonSerializable {
 struct TextContent : Content {
   // Always text.
   TextContent() : Content("text") {}
+
+  TextContent(const std::string& text_value) : Content("text") {
+    text = Text(text_value);
+  }
 
   TextContent(TextContent&&) noexcept = default;
 
@@ -229,7 +237,7 @@ struct TextContent : Content {
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["type"] = type;

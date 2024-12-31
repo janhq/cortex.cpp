@@ -1,22 +1,18 @@
 #include "file_service.h"
 #include <cstdint>
+#include "utils/time_utils.h"
 #include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::File, std::string> FileService::UploadFile(
     const std::string& filename, const std::string& purpose,
     const char* content, uint64_t content_length) {
 
-  auto seconds_since_epoch =
-      std::chrono::duration_cast<std::chrono::seconds>(
-          std::chrono::system_clock::now().time_since_epoch())
-          .count();
-
   auto file_id{"file-" + ulid::GenerateUlid()};
   OpenAi::File file;
   file.id = file_id;
   file.object = "file";
   file.bytes = content_length;
-  file.created_at = seconds_since_epoch;
+  file.created_at = cortex_utils::SecondsSinceEpoch();
   file.filename = filename;
   file.purpose = purpose;
 

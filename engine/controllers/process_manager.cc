@@ -1,7 +1,4 @@
 #include "process_manager.h"
-#include <trantor/utils/Logger.h>
-#include <cstdlib>
-#include "json/json.h"
 #include "utils/cortex_utils.h"
 
 void ProcessManager::destroy(
@@ -9,7 +6,10 @@ void ProcessManager::destroy(
     std::function<void(const HttpResponsePtr&)>&& callback) {
   auto loaded_engines = engine_service_->GetSupportedEngineNames();
   for (const auto& engine : loaded_engines.value()) {
-    engine_service_->UnloadEngine(engine);
+    auto res = engine_service_->UnloadEngine(engine);
+    if (res.has_error()) {
+      CTL_WRN("Failed to unload engine: " + res.error());
+    }
   }
   app().quit();
   Json::Value ret;

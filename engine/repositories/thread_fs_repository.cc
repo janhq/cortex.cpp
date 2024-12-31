@@ -116,7 +116,7 @@ cpp::result<OpenAi::Thread, std::string> ThreadFsRepository::LoadThread(
 }
 
 cpp::result<void, std::string> ThreadFsRepository::CreateThread(
-    OpenAi::Thread& thread) {
+    const OpenAi::Thread& thread) {
   CTL_INF("CreateThread: " + thread.id);
   std::unique_lock lock(GrabThreadMutex(thread.id));
   auto thread_path = GetThreadPath(thread.id);
@@ -134,7 +134,7 @@ cpp::result<void, std::string> ThreadFsRepository::CreateThread(
 }
 
 cpp::result<void, std::string> ThreadFsRepository::SaveThread(
-    OpenAi::Thread& thread) {
+    const OpenAi::Thread& thread) {
   auto path = GetThreadPath(thread.id) / kThreadFileName;
   if (!std::filesystem::exists(path)) {
     return cpp::fail("Path does not exist: " + path.string());

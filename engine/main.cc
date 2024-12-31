@@ -10,6 +10,7 @@
 #include "controllers/messages.h"
 #include "controllers/models.h"
 #include "controllers/process_manager.h"
+#include "controllers/runs.h"
 #include "controllers/server.h"
 #include "controllers/swagger.h"
 #include "controllers/threads.h"
@@ -18,6 +19,7 @@
 #include "repositories/assistant_fs_repository.h"
 #include "repositories/file_fs_repository.h"
 #include "repositories/message_fs_repository.h"
+#include "repositories/run_sqlite_repository.h"
 #include "repositories/thread_fs_repository.h"
 #include "services/assistant_service.h"
 #include "services/config_service.h"
@@ -26,6 +28,7 @@
 #include "services/message_service.h"
 #include "services/model_service.h"
 #include "services/model_source_service.h"
+#include "services/run_service.h"
 #include "services/thread_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -148,6 +151,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto thread_repo = std::make_shared<ThreadFsRepository>(data_folder_path);
   auto assistant_repo =
       std::make_shared<AssistantFsRepository>(data_folder_path);
+  auto run_repo = std::make_shared<RunSqliteRepository>(db_service);
 
   auto file_srv = std::make_shared<FileService>(file_repo);
   auto assistant_srv =
@@ -166,6 +170,9 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto model_service = std::make_shared<ModelService>(
       db_service, hw_service, download_service, inference_svc, engine_service);
   inference_svc->SetModelService(model_service);
+  auto run_srv =
+      std::make_shared<RunService>(run_repo, assistant_srv, model_service,
+                                   message_srv, inference_svc, thread_srv);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
       model_dir_path.string(), model_service);
@@ -174,6 +181,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   // initialize custom controllers
   auto swagger_ctl = std::make_shared<SwaggerController>(config.apiServerHost,
                                                          config.apiServerPort);
+  auto run_ctl = std::make_shared<Runs>(run_srv, inference_svc);
   auto file_ctl = std::make_shared<Files>(file_srv, message_srv);
   auto assistant_ctl = std::make_shared<Assistants>(assistant_srv);
   auto thread_ctl = std::make_shared<Threads>(thread_srv, message_srv);
@@ -189,6 +197,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto config_ctl = std::make_shared<Configs>(config_service);
 
   drogon::app().registerController(swagger_ctl);
+  drogon::app().registerController(run_ctl);
   drogon::app().registerController(file_ctl);
   drogon::app().registerController(assistant_ctl);
   drogon::app().registerController(thread_ctl);
@@ -236,18 +245,16 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
         auto allowed_origins =
             config_service->GetApiServerConfiguration()->allowed_origins;
 
-        auto is_contains_asterisk =
-            std::find(allowed_origins.begin(), allowed_origins.end(), "*");
-        if (is_contains_asterisk != allowed_origins.end()) {
+        if (auto it = std::ranges::find(allowed_origins, "*");
+            it != allowed_origins.end()) {
           resp->addHeader("Access-Control-Allow-Origin", "*");
           resp->addHeader("Access-Control-Allow-Methods", "*");
           return;
         }
 
         // Check if the origin is in our allowed list
-        auto it =
-            std::find(allowed_origins.begin(), allowed_origins.end(), origin);
-        if (it != allowed_origins.end()) {
+        if (auto it = std::ranges::find(allowed_origins, origin);
+            it != allowed_origins.end()) {
           resp->addHeader("Access-Control-Allow-Origin", origin);
         } else if (allowed_origins.empty()) {
           resp->addHeader("Access-Control-Allow-Origin", "*");

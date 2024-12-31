@@ -46,7 +46,7 @@ class ThreadFsRepository : public ThreadRepository,
   cpp::result<OpenAi::Thread, std::string> LoadThread(
       const std::string& thread_id) const;
 
-  cpp::result<void, std::string> SaveThread(OpenAi::Thread& thread);
+  cpp::result<void, std::string> SaveThread(const OpenAi::Thread& thread);
 
  public:
   explicit ThreadFsRepository(const std::filesystem::path& data_folder_path)
@@ -59,7 +59,8 @@ class ThreadFsRepository : public ThreadRepository,
     }
   }
 
-  cpp::result<void, std::string> CreateThread(OpenAi::Thread& thread) override;
+  cpp::result<void, std::string> CreateThread(
+      const OpenAi::Thread& thread) override;
 
   cpp::result<std::vector<OpenAi::Thread>, std::string> ListThreads(
       uint8_t limit, const std::string& order, const std::string& after,

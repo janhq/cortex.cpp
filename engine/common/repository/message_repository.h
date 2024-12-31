@@ -6,7 +6,7 @@
 class MessageRepository {
  public:
   virtual cpp::result<void, std::string> CreateMessage(
-      OpenAi::Message& message) = 0;
+      const OpenAi::Message& message) = 0;
 
   virtual cpp::result<std::vector<OpenAi::Message>, std::string> ListMessages(
       const std::string& thread_id, uint8_t limit, const std::string& order,
@@ -17,7 +17,7 @@ class MessageRepository {
       const std::string& thread_id, const std::string& message_id) const = 0;
 
   virtual cpp::result<void, std::string> ModifyMessage(
-      OpenAi::Message& message) = 0;
+      const OpenAi::Message& message) = 0;
 
   virtual cpp::result<void, std::string> DeleteMessage(
       const std::string& thread_id, const std::string& message_id) = 0;

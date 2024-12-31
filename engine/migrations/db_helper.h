@@ -1,11 +1,9 @@
 #pragma once
+
 #include <SQLiteCpp/SQLiteCpp.h>
 
 namespace cortex::mgr {
-#include <iostream>
-#include <stdexcept>
 #include <string>
-#include <vector>
 
 inline bool ColumnExists(SQLite::Database& db, const std::string& table_name,
                          const std::string& column_name) {

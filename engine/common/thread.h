@@ -116,7 +116,7 @@ struct Thread : JsonSerializable {
     return thread;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
 
@@ -130,7 +130,7 @@ struct Thread : JsonSerializable {
         if (it == metadata.end()) {
           json["title"] = "";
         } else {
-          json["title"] = std::get<std::string>(metadata["title"]);
+          json["title"] = std::get<std::string>(it->second);
         }
 
       } catch (const std::bad_variant_access& ex) {

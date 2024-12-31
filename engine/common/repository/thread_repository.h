@@ -6,7 +6,7 @@
 class ThreadRepository {
  public:
   virtual cpp::result<void, std::string> CreateThread(
-      OpenAi::Thread& thread) = 0;
+      const OpenAi::Thread& thread) = 0;
 
   virtual cpp::result<std::vector<OpenAi::Thread>, std::string> ListThreads(
       uint8_t limit, const std::string& order, const std::string&,
