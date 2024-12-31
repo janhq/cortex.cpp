@@ -32,7 +32,7 @@ class MessageFsRepository : public MessageRepository {
       const std::string& thread_id,
       std::optional<std::vector<OpenAi::Message>> messages) override;
 
-  explicit MessageFsRepository(std::filesystem::path data_folder_path)
+  explicit MessageFsRepository(const std::filesystem::path& data_folder_path)
       : data_folder_path_{data_folder_path} {
     CTL_INF("Constructing MessageFsRepository..");
     auto thread_container_path = data_folder_path_ / kThreadContainerFolderName;

@@ -16,9 +16,11 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
   return size * nmemb;
 }
 
+
 PythonEngine::PythonEngine():q_(4 /*n_parallel*/, "python_engine") {
-  curl_global_init(CURL_GLOBAL_ALL);
 }
+
+
 
 PythonEngine::~PythonEngine() {
   curl_global_cleanup();
@@ -172,69 +174,33 @@ bool PythonEngine::TerminateModelProcess(const std::string& model) {
 CurlResponse PythonEngine::MakeGetRequest(const std::string& model,
                                           const std::string& path) {
   auto config = models_[model];
-  CURL* curl = curl_easy_init();
+  std::string full_url = "http://localhost:" + config.port + path;
   CurlResponse response;
 
-  if (!curl) {
+  auto result = curl_utils::SimpleRequest(full_url, RequestType::GET);
+  if (result.has_error()) {
     response.error = true;
-    response.error_message = "Failed to initialize CURL";
-    return response;
-  }
-
-  std::string full_url = "http://localhost:" + config.port + path;
-
-  struct curl_slist* headers = nullptr;
-
-  headers = curl_slist_append(headers, "Content-Type: application/json");
-
-  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-  std::string response_string;
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
-
-  CURLcode res = curl_easy_perform(curl);
-  if (res != CURLE_OK) {
-    response.error = true;
-    response.error_message = curl_easy_strerror(res);
+    response.error_message = result.error();
   } else {
-    response.body = response_string;
+    response.body = result.value();
   }
-
-  curl_slist_free_all(headers);
-  curl_easy_cleanup(curl);
   return response;
 }
 CurlResponse PythonEngine::MakeDeleteRequest(const std::string& model,
                                              const std::string& path) {
   auto config = models_[model];
-  CURL* curl = curl_easy_init();
+  std::string full_url = "http://localhost:" + config.port + path;
   CurlResponse response;
 
-  if (!curl) {
+  auto result = curl_utils::SimpleRequest(full_url, RequestType::DEL);
+
+  if (result.has_error()) {
     response.error = true;
-    response.error_message = "Failed to initialize CURL";
-    return response;
-  }
-  std::string full_url = "http://localhost:" + config.port + path;
-
-  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
-  curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-
-  std::string response_string;
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
-
-  CURLcode res = curl_easy_perform(curl);
-  if (res != CURLE_OK) {
-    response.error = true;
-    response.error_message = curl_easy_strerror(res);
+    response.error_message = result.error();
   } else {
-    response.body = response_string;
+    response.body = result.value();
   }
 
-  curl_easy_cleanup(curl);
   return response;
 }
 
@@ -242,38 +208,17 @@ CurlResponse PythonEngine::MakePostRequest(const std::string& model,
                                            const std::string& path,
                                            const std::string& body) {
   auto config = models_[model];
-  CURL* curl = curl_easy_init();
-  CurlResponse response;
-
-  if (!curl) {
-    response.error = true;
-    response.error_message = "Failed to initialize CURL";
-    return response;
-  }
   std::string full_url = "http://localhost:" + config.port + path;
 
-  struct curl_slist* headers = nullptr;
-  headers = curl_slist_append(headers, "Content-Type: application/json");
+  CurlResponse response;
+  auto result = curl_utils::SimpleRequest(full_url, RequestType::POST, body);
 
-  curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
-  curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-
-  curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
-
-  std::string response_string;
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_string);
-
-  CURLcode res = curl_easy_perform(curl);
-  if (res != CURLE_OK) {
+  if (result.has_error()) {
     response.error = true;
-    response.error_message = curl_easy_strerror(res);
+    response.error_message = result.error();
   } else {
-    response.body = response_string;
+    response.body = result.value();
   }
-
-  curl_slist_free_all(headers);
-  curl_easy_cleanup(curl);
   return response;
 }
 

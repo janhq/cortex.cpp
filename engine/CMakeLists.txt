@@ -162,7 +162,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE JsonCpp::JsonCpp Drogon::Drogon Ope
 target_link_libraries(${TARGET_NAME} PRIVATE SQLiteCpp)
 target_link_libraries(${TARGET_NAME} PRIVATE eventpp::eventpp)
 target_link_libraries(${TARGET_NAME} PRIVATE lfreist-hwinfo::hwinfo)
- 
+
 # ##############################################################################
 
 if(CMAKE_CXX_STANDARD LESS 17)
