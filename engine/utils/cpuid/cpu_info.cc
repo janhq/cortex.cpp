@@ -26,7 +26,7 @@ CpuInfo::CpuInfo() : impl(new Impl()) {
   init_cpuinfo(*impl);
 }
 
-CpuInfo::~CpuInfo() {}
+CpuInfo::~CpuInfo() = default;
 
 // x86 member functions
 bool CpuInfo::has_fpu() const {

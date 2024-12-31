@@ -36,11 +36,13 @@ inline std::string ExtractFileId(const std::string& path) {
 // Represents a message within a thread.
 struct Message : JsonSerializable {
   Message() = default;
-  // Delete copy operations
+
   Message(const Message&) = delete;
+
   Message& operator=(const Message&) = delete;
-  // Allow move operations
+
   Message(Message&&) = default;
+
   Message& operator=(Message&&) = default;
 
   // The identifier, which can be referenced in API endpoints.

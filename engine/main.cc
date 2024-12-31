@@ -236,18 +236,16 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
         auto allowed_origins =
             config_service->GetApiServerConfiguration()->allowed_origins;
 
-        auto is_contains_asterisk =
-            std::find(allowed_origins.begin(), allowed_origins.end(), "*");
-        if (is_contains_asterisk != allowed_origins.end()) {
+        if (auto it = std::ranges::find(allowed_origins, "*");
+            it != allowed_origins.end()) {
           resp->addHeader("Access-Control-Allow-Origin", "*");
           resp->addHeader("Access-Control-Allow-Methods", "*");
           return;
         }
 
         // Check if the origin is in our allowed list
-        auto it =
-            std::find(allowed_origins.begin(), allowed_origins.end(), origin);
-        if (it != allowed_origins.end()) {
+        if (auto it = std::ranges::find(allowed_origins, origin);
+            it != allowed_origins.end()) {
           resp->addHeader("Access-Control-Allow-Origin", origin);
         } else if (allowed_origins.empty()) {
           resp->addHeader("Access-Control-Allow-Origin", "*");

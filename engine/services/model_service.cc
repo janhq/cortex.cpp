@@ -10,10 +10,8 @@
 #include "config/yaml_config.h"
 #include "database/models.h"
 #include "hardware_service.h"
-#include "utils/archive_utils.h"
-
 #include "services/inference_service.h"
-
+#include "utils/archive_utils.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
@@ -232,11 +230,11 @@ cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
       continue;
     }
     auto model_id = modelName + ":" + branch.second.name;
-    if (std::find(downloaded_model_ids.begin(), downloaded_model_ids.end(),
-                  model_id) !=
-        downloaded_model_ids.end()) {  // if downloaded, we skip it
+    if (auto it = std::ranges::find(downloaded_model_ids, model_id);
+        it != downloaded_model_ids.end()) {
       continue;
     }
+
     avai_download_opts.emplace_back(model_id);
   }
 
