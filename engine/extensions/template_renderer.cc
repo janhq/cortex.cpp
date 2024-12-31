@@ -7,7 +7,7 @@
 #include <regex>
 #include <stdexcept>
 #include "utils/logging_utils.h"
-namespace remote_engine {
+namespace extensions {
 TemplateRenderer::TemplateRenderer() {
   // Configure Inja environment
   env_.set_trim_blocks(true);

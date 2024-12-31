@@ -3,10 +3,15 @@
 #include <filesystem>
 #include <optional>
 #include <utility>
+
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
+
+#include "extensions/python-engine/python_engine.h"
+
 #include "extensions/remote-engine/remote_engine.h"
+
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
@@ -183,6 +188,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+
   // TODO: handle uninstall remote engine
   // only delete a remote engine if no model are using it
   auto exist_engine = GetEngineByNameAndVariant(engine);
@@ -715,6 +721,14 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // Check for python engine
+
+  if (engine_name == kPythonEngine) {
+    engines_[engine_name].engine = new python_engine::PythonEngine();
+    CTL_INF("Loaded engine: " << engine_name);
+    return {};
+  }
+
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
@@ -884,6 +898,7 @@ EngineService::GetEngineDirPath(const std::string& engine_name) {
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+
   std::lock_guard<std::mutex> lock(engines_mutex_);
   if (!IsEngineLoaded(ne)) {
     return cpp::fail("Engine " + ne + " is not loaded yet!");
@@ -942,6 +957,10 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   }
 
   // End hard code
+  // Check for python engine
+  if (engine == kPythonEngine) {
+    return true;
+  }
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
