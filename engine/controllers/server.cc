@@ -129,7 +129,9 @@ void server::FineTuning(
 
 void server::Inference(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
+
   auto json_body = req->getJsonObject();
+
   LOG_TRACE << "Start inference";
   auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleInference(q, req->getJsonObject());
@@ -142,6 +144,7 @@ void server::Inference(const HttpRequestPtr& req,
     callback(resp);
     return;
   }
+
   bool is_stream =
       (*json_body).get("stream", false).asBool() ||
       (*json_body).get("body", Json::Value()).get("stream", false).asBool();
@@ -171,7 +174,9 @@ void server::Inference(const HttpRequestPtr& req,
 void server::RouteRequest(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
+
   auto json_body = req->getJsonObject();
+
   LOG_TRACE << "Start route request";
   auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleRouteRequest(q, req->getJsonObject());
@@ -208,6 +213,7 @@ void server::RouteRequest(
     callback(resp);
     LOG_TRACE << "Done route request";
   }
+
 }
 
 void server::LoadModel(const HttpRequestPtr& req,
