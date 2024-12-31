@@ -18,6 +18,7 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
 
 PythonEngine::PythonEngine() : q_(4 /*n_parallel*/, "python_engine") {}
 
+
 PythonEngine::~PythonEngine() {
   curl_global_cleanup();
 }
@@ -506,6 +507,7 @@ CurlResponse PythonEngine::MakeStreamPostRequest(
   return response;
 }
 
+
 void PythonEngine::HandleInference(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
@@ -542,6 +544,7 @@ void PythonEngine::HandleInference(
       // Render with error handling
       try {
         transformed_request = renderer_.Render(transform_request, body);
+
       } catch (const std::exception& e) {
         throw std::runtime_error("Template rendering error: " +
                                  std::string(e.what()));
@@ -570,6 +573,7 @@ void PythonEngine::HandleInference(
     } else {
       response = MakePostRequest(model, path, transformed_request);
     }
+
   } else if (method == "get") {
     response = MakeGetRequest(model, path);
   } else if (method == "delete") {
