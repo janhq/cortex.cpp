@@ -184,7 +184,7 @@ void server::RouteRequest(
     callback(resp);
     return;
   }
-  bool is_stream =
+  auto is_stream =
       (*json_body).get("stream", false).asBool() ||
       (*json_body).get("body", Json::Value()).get("stream", false).asBool();
   LOG_TRACE << "Wait to route request";
