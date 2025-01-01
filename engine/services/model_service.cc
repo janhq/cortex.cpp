@@ -584,10 +584,10 @@ ModelService::DownloadModelFromCortexsoAsync(
 
 #ifdef _WIN32
           set_permission_utils::SetExecutePermissionsRecursive(
-              venv_path / std::filesystem::path("Scripts"));
+              venv_path );
 #else
           set_permission_utils::SetExecutePermissionsRecursive(
-              venv_path / std::filesystem::path("bin"));
+              venv_path );
 #endif
 
         } else {
