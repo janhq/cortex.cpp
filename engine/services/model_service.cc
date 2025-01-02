@@ -582,8 +582,7 @@ ModelService::DownloadModelFromCortexsoAsync(
           pyvenv_cfg.close();
           // Add executable permission to python
 
-          set_permission_utils::SetExecutePermissionsRecursive(
-              venv_path );
+          set_permission_utils::SetExecutePermissionsRecursive(venv_path);
 
         } else {
           CTL_ERR("Failed to extract venv.zip");
