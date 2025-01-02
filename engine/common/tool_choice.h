@@ -47,5 +47,5 @@ struct ToolChoice {
       return cpp::fail("FromJson failed: " + std::string(e.what()));
     }
   }
-}
+};
 }  // namespace OpenAi

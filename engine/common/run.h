@@ -4,6 +4,7 @@
 #include "common/assistant_tool.h"
 #include "common/json_serializable.h"
 #include "common/last_error.h"
+#include "common/message_incomplete_detail.h"
 #include "common/required_action.h"
 #include "common/run_usage.h"
 #include "common/truncation_strategy.h"
@@ -21,16 +22,6 @@ enum class RunStatus {
   COMPLETED,
   INCOMPLETE,
   EXPIRED
-};
-
-struct IncompleteDetail : public JsonSerializable {
-  std::string reason;
-
-  cpp::result<Json::Value, std::string> ToJson() override {
-    Json::Value root;
-    root["reason"] = reason;
-    return root;
-  }
 };
 
 struct Run : public JsonSerializable {
