@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "utils/result.hpp"
 
 namespace OpenAi {
 /**
@@ -20,8 +21,21 @@ namespace OpenAi {
  * and finally a thread.message.completed event.
  */
 struct AssistantStreamEvent {
+  AssistantStreamEvent(const std::string& event) : event{std::move(event)} {}
+
   virtual ~AssistantStreamEvent() = default;
 
   std::string event;
+
+  virtual auto SingleLineJsonData() const
+      -> cpp::result<std::string, std::string> = 0;
+
+  auto ToEvent() const -> cpp::result<std::string, std::string> {
+    auto data = SingleLineJsonData();
+    if (data.has_error()) {
+      return cpp::fail(data.error());
+    }
+    return "event: " + event + "\n" + "data: " + data.value() + "\n\n";
+  }
 };
 }  // namespace OpenAi

@@ -192,7 +192,7 @@ struct RunCreateDto : public BaseDto<RunCreateDto> {
       RunCreateDto dto;
 
       if (!json.isMember("assistant_id") || !json["assistant_id"].isString()) {
-        return cpp::fail("Missing or invalid 'id' field");
+        return cpp::fail("Missing or invalid 'assistant_id' field");
       }
       dto.assistant_id = json["assistant_id"].asString();
       dto.model = json["model"].asString();

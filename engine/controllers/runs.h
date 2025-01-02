@@ -2,6 +2,7 @@
 
 #include <drogon/HttpController.h>
 #include <trantor/utils/Logger.h>
+#include "services/inference_service.h"
 #include "services/run_service.h"
 
 using namespace drogon;
@@ -26,8 +27,9 @@ class Runs : public drogon::HttpController<Runs, false> {
                 Options, Post);
   METHOD_LIST_END
 
-  explicit Runs(std::shared_ptr<RunService> run_service)
-      : run_service_{run_service} {}
+  explicit Runs(std::shared_ptr<RunService> run_service,
+                std::shared_ptr<InferenceService> inference_service)
+      : run_srv_{run_service}, inference_srv_{inference_service} {}
 
   void CreateRun(const HttpRequestPtr& req,
                  std::function<void(const HttpResponsePtr&)>&& callback,
@@ -51,5 +53,11 @@ class Runs : public drogon::HttpController<Runs, false> {
                         const std::string& run_id);
 
  private:
-  std::shared_ptr<RunService> run_service_;
+  std::shared_ptr<RunService> run_srv_;
+  std::shared_ptr<InferenceService> inference_srv_;
+
+  void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
+                        std::shared_ptr<SyncQueue> q,
+                        const std::string& engine_type,
+                        const std::string& model_id);
 };

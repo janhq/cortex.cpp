@@ -1,6 +1,7 @@
 #pragma once
 
 #include "common/dto/run_create_dto.h"
+#include "common/events/assistant_stream_event.h"
 #include "common/run.h"
 #include "services/assistant_service.h"
 #include "services/message_service.h"
@@ -14,7 +15,8 @@ class RunService {
 
   auto CreateRunStream(
       const dto::RunCreateDto& create_dto,
-      std::function<void(const std::string&, bool is_done)> callback) -> void;
+      std::function<void(const OpenAi::AssistantStreamEvent&, bool disconnect)>
+          callback) -> void;
 
   explicit RunService(std::shared_ptr<AssistantService> assistant_srv,
                       std::shared_ptr<ModelService> model_srv,
