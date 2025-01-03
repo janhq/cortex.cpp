@@ -139,7 +139,7 @@ class EngineService : public EngineServiceI {
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineByNameAndVariant(
       const std::string& engine_name,
-      const std::optional<std::string> variant = std::nullopt) override;
+      const std::optional<std::string> variant = std::nullopt) const override;
 
   cpp::result<cortex::db::EngineEntry, std::string> UpsertEngine(
       const std::string& engine_name, const std::string& type,
@@ -155,7 +155,7 @@ class EngineService : public EngineServiceI {
 
   void RegisterEngineLibPath();
 
-  bool IsRemoteEngine(const std::string& engine_name) override;
+  bool IsRemoteEngine(const std::string& engine_name) const override;
 
  private:
   bool IsEngineLoaded(const std::string& engine);
