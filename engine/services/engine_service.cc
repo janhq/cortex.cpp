@@ -736,9 +736,11 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
 
-    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
-
-    CTL_INF("Loaded engine: " << engine_name);
+    if (!IsEngineLoaded(engine_name)) {
+      engines_[engine_name].engine =
+          new remote_engine::RemoteEngine(engine_name);
+      CTL_INF("Loaded engine: " << engine_name);
+    }
     return {};
   }
 

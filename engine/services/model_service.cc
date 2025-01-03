@@ -900,7 +900,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
-
+        engine_svc_->LoadEngine(mc.engine);
         config::RemoteModelConfig remote_mc;
         remote_mc.LoadFromYamlFile(
             fmu::ToAbsoluteCortexDataPath(

@@ -530,8 +530,8 @@ void RemoteEngine::HandleChatCompletion(
       CTL_DBG("Use engine transform request template: " << chat_req_template_);
       template_str = chat_req_template_;
     }
-    if (!model_config->transform_req["chat_completions"] &&
-        !model_config->transform_req["chat_completions"]["template"]) {
+    if (model_config->transform_req["chat_completions"] &&
+        model_config->transform_req["chat_completions"]["template"]) {
       // Model level overrides engine level
       template_str = model_config->transform_req["chat_completions"]["template"]
                          .as<std::string>();
@@ -595,8 +595,8 @@ void RemoteEngine::HandleChatCompletion(
             "Use engine transform response template: " << chat_res_template_);
         template_str = chat_res_template_;
       }
-      if (!model_config->transform_resp["chat_completions"] &&
-          !model_config->transform_resp["chat_completions"]["template"]) {
+      if (model_config->transform_resp["chat_completions"] &&
+          model_config->transform_resp["chat_completions"]["template"]) {
         // Model level overrides engine level
         template_str =
             model_config->transform_resp["chat_completions"]["template"]
