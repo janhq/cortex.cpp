@@ -106,8 +106,9 @@ auto RunService::CreateRunStream(
                                                    after, before, run_id);
     // todo: recheck the order of messages
 
-    auto model = create_dto.model.has_value() ? create_dto.model.value()
-                                              : assistant->model;
+    auto model = create_dto.model.has_value() && !create_dto.model->empty()
+                     ? create_dto.model.value()
+                     : assistant->model;
 
     auto additional_inst = create_dto.additional_instructions.value_or("");
     auto instructions = create_dto.instructions.has_value()
@@ -149,7 +150,6 @@ auto RunService::CreateRunStream(
     json["model"] = model;
     json["stream"] = stream;
 
-    CTL_INF("NamH json body: " + json.toStyledString());
     auto json_ptr = std::make_shared<Json::Value>(std::move(json));
 
     auto ir = inference_srv_->HandleChatCompletion(q, json_ptr);
@@ -176,21 +176,43 @@ auto RunService::CreateRunStream(
       }
 
       auto str = res["data"].asString();
+      if (str.substr(0, 6) == "data: ") {
+        str = str.substr(6);
+      }
+      Json::Value json;
+      Json::Reader reader;
+      bool parse_success = reader.parse(str, json);
+      if (!parse_success) {
+        CTL_ERR("Failed to parse JSON: " + reader.getFormattedErrorMessages());
+        continue;
+      }
+
+      if (!json.isMember("choices") || json["choices"].empty() ||
+          !json["choices"][0].isMember("delta") ||
+          !json["choices"][0]["delta"].isMember("content")) {
+        CTL_WRN("Missing required fields in JSON");
+        CTL_WRN("Has choices: " + std::to_string(json.isMember("choices")));
+        if (json.isMember("choices")) {
+          CTL_WRN("Choices size: " + std::to_string(json["choices"].size()));
+          CTL_WRN("First choice has delta: " +
+                  std::to_string(json["choices"][0].isMember("delta")));
+        }
+        continue;
+      }
+
+      auto content_str = json["choices"][0]["delta"]["content"].asString();
+
       auto text_ptr = std::make_unique<OpenAi::TextContent>();
-      CTL_INF("Input string: " + str);  // Log input string
       text_ptr->text = OpenAi::Text();
-      text_ptr->text.value = std::move(str);
-      CTL_INF("Text value after setting: " +
-              text_ptr->text.value);  // Log text value
+      text_ptr->text.value = std::move(content_str);
 
-      // Create content list and add the text_ptr
       auto content_list = std::vector<std::unique_ptr<OpenAi::Content>>();
-      content_list.push_back(std::move(text_ptr));  // Add this line
+      content_list.push_back(std::move(text_ptr));
+      CTL_INF("Content list size: " + std::to_string(content_list.size()));
 
-      // Create event with the content
-      auto msg_delta_evt =
-          OpenAi::ThreadMessageDeltaEvent(OpenAi::MessageDelta::Delta(
-              OpenAi::Role::ASSISTANT, std::move(content_list)));
+      auto delta = OpenAi::MessageDelta::Delta(OpenAi::Role::ASSISTANT,
+                                               std::move(content_list));
+      auto msg_delta_evt = OpenAi::ThreadMessageDeltaEvent(std::move(delta));
       callback(msg_delta_evt, false);
     }
   }).detach();

@@ -8,7 +8,7 @@ namespace {
 // Mock class for testing abstract ToolResources
 class MockToolResources : public ToolResources {
  public:
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     json["mock"] = "value";
     return json;

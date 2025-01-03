@@ -194,7 +194,7 @@ struct Text : JsonSerializable {
       }
       json["annotations"] = annotations_json_arr;
       return json;
-    } catch (const std::exception e) {
+    } catch (const std::exception& e) {
       return cpp::fail(std::string("ToJson failed: ") + e.what());
     }
   };
