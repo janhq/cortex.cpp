@@ -1142,6 +1142,12 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   auto api_key = remote_engine_json["api_key"].asString();
   auto api_key_template =
       remote_engine_json["metadata"]["api_key_template"].asString();
+  if (url.empty())
+    CTL_WRN("url is empty");
+  if (api_key.empty())
+    CTL_WRN("api_key is empty");
+  if (api_key_template.empty())
+    CTL_WRN("api_key_template is empty");
   auto res = e->GetRemoteModels(url, api_key, api_key_template);
   if (!res["error"].isNull()) {
     return cpp::fail(res["error"].asString());

@@ -53,6 +53,7 @@ class RemoteEngine : public RemoteEngineI {
   std::string chat_res_template_;
   std::string api_key_header_;
   std::string engine_name_;
+  std::string chat_url_;
   trantor::ConcurrentTaskQueue q_;
 
   // Helper functions

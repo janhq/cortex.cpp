@@ -93,8 +93,13 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
     return response;
   }
 
-  std::string full_url =
-      config.transform_req["chat_completions"]["url"].as<std::string>();
+  std::string full_url = chat_url_;
+
+  if (config.transform_req["chat_completions"]["url"]) {
+    full_url =
+        config.transform_req["chat_completions"]["url"].as<std::string>();
+  }
+  CTL_DBG("full_url: " << full_url);
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
@@ -246,8 +251,13 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
     response.error_message = "Failed to initialize CURL";
     return response;
   }
-  std::string full_url =
-      config.transform_req["chat_completions"]["url"].as<std::string>();
+  std::string full_url = chat_url_;
+
+  if (config.transform_req["chat_completions"]["url"]) {
+    full_url =
+        config.transform_req["chat_completions"]["url"].as<std::string>();
+  }
+  CTL_DBG("full_url: " << full_url);
 
   struct curl_slist* headers = nullptr;
   if (!config.api_key.empty()) {
@@ -410,6 +420,14 @@ void RemoteEngine::LoadModel(
           metadata_["transform_resp"]["chat_completions"]["template"]
               .asString();
       CTL_INF(chat_res_template_);
+    }
+
+    if (!metadata_["transform_req"].isNull() &&
+        !metadata_["transform_req"]["chat_completions"].isNull() &&
+        !metadata_["transform_req"]["chat_completions"]["url"].isNull()) {
+      chat_url_ =
+          metadata_["transform_req"]["chat_completions"]["url"].asString();
+      CTL_INF(chat_url_);
     }
   }
 
@@ -713,14 +731,12 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
       CTL_WRN(response.error_message);
       return error;
     }
-    Json::Value response_json;
-    Json::Reader reader;
-    if (!reader.parse(response.body, response_json)) {
-      Json::Value error;
-      error["error"] = "Failed to parse response";
-      return error;
+    CTL_DBG(response.body);
+    auto body_json = json_helper::ParseJsonString(response.body);
+    if (body_json.isMember("error")) {
+      return body_json["error"];
     }
-    return response_json;
+    return body_json;
   }
 }
 
