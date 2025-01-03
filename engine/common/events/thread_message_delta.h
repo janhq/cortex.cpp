@@ -31,10 +31,14 @@ struct ThreadMessageDeltaEvent : public AssistantStreamEvent {
 
   auto SingleLineJsonData() const
       -> cpp::result<std::string, std::string> override {
-    Json::Value json;
-    Json::FastWriter writer;
     try {
-      std::string json_str = writer.write(json);
+      auto delta_json = delta.ToJson();
+      if (!delta_json.has_value()) {
+        return cpp::fail("Failed to convert delta to JSON");
+      }
+
+      Json::FastWriter writer;
+      std::string json_str = writer.write(delta_json.value());
       if (!json_str.empty() && json_str.back() == '\n') {
         json_str.pop_back();
       }

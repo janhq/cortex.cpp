@@ -19,7 +19,7 @@ struct ToolResources : JsonSerializable {
 
   virtual ~ToolResources() = default;
 
-  virtual cpp::result<Json::Value, std::string> ToJson() override = 0;
+  virtual cpp::result<Json::Value, std::string> ToJson() const override = 0;
 };
 
 struct CodeInterpreter : ToolResources {
@@ -55,7 +55,7 @@ struct CodeInterpreter : ToolResources {
     return code_interpreter;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     Json::Value file_ids_json{Json::arrayValue};
     for (auto& file_id : file_ids) {
@@ -101,7 +101,7 @@ struct FileSearch : ToolResources {
     return file_search;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     Json::Value vector_store_ids_json{Json::arrayValue};
     for (auto& vector_store_id : vector_store_ids) {

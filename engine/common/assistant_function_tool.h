@@ -79,7 +79,7 @@ struct AssistantFunction : public JsonSerializable {
     return function;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     json["description"] = description;
     json["name"] = name;
@@ -116,7 +116,7 @@ struct AssistantFunctionTool : public AssistantTool {
     return AssistantFunctionTool{function_res.value()};
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value root;
     root["type"] = type;
     root["function"] = function.ToJson().value();

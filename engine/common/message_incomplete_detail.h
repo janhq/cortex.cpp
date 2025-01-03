@@ -19,7 +19,7 @@ struct IncompleteDetail : JsonSerializable {
     return incomplete_detail;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["reason"] = reason;

@@ -29,7 +29,7 @@ struct JanAssistant : JsonSerializable {
 
   ~JanAssistant() = default;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
 
@@ -201,7 +201,7 @@ struct Assistant : JsonSerializable {
 
   std::variant<std::string, Json::Value> response_format;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value root;
 

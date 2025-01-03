@@ -215,9 +215,9 @@ struct Run : public JsonSerializable {
 
   std::variant<std::string, Json::Value> response_format;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value root;
-
+    // TODO: NamH implement this
     return root;
   }
 };

@@ -26,7 +26,7 @@ struct LastError : public JsonSerializable {
 
   std::string message;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value root;
     root["code"] = static_cast<int>(code);
     root["message"] = message;

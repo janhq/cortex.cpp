@@ -58,7 +58,7 @@ struct FileCitationWrapper : Annotation {
 
   FileCitation file_citation;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["text"] = text;
@@ -105,7 +105,7 @@ struct FilePathWrapper : Annotation {
 
   FilePath file_path;
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["text"] = text;
@@ -180,7 +180,7 @@ struct Text : JsonSerializable {
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["value"] = value;
@@ -231,7 +231,7 @@ struct TextContent : Content {
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value json;
       json["type"] = type;

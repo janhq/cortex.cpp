@@ -42,7 +42,7 @@ struct FileSearchRankingOption : public JsonSerializable {
     return option;
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value json;
     json["ranker"] = ranker;
     json["score_threshold"] = score_threshold;
@@ -99,7 +99,7 @@ struct AssistantFileSearch : public JsonSerializable {
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     Json::Value root;
     root["max_num_results"] = max_num_results;
     root["ranking_options"] = ranking_options.ToJson().value();
@@ -137,7 +137,7 @@ struct AssistantFileSearchTool : public AssistantTool {
     }
   }
 
-  cpp::result<Json::Value, std::string> ToJson() override {
+  cpp::result<Json::Value, std::string> ToJson() const override {
     try {
       Json::Value root;
       root["type"] = type;

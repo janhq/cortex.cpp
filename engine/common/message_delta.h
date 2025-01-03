@@ -32,7 +32,7 @@ struct MessageDelta : public JsonSerializable {
 
     std::vector<std::unique_ptr<Content>> content;
 
-    cpp::result<Json::Value, std::string> ToJson() override {
+    cpp::result<Json::Value, std::string> ToJson() const override {
       Json::Value json;
       json["role"] = RoleToString(role);
       Json::Value content_json_arr{Json::arrayValue};
@@ -85,7 +85,7 @@ struct MessageDelta : public JsonSerializable {
    */
   Delta delta;
 
-  cpp::result<Json::Value, std::string> ToJson() {
+  auto ToJson() const -> cpp::result<Json::Value, std::string> override {
     Json::Value json;
     json["id"] = id;
     json["object"] = object;
