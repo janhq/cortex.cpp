@@ -1,35 +1,9 @@
 #pragma once
 
-#include <condition_variable>
-#include <mutex>
-#include <queue>
-#include "extensions/remote-engine/remote_engine.h"
+#include "common/cortex/sync_queue.h"
 #include "services/engine_service.h"
 #include "services/model_service.h"
 #include "utils/result.hpp"
-
-// Status and result
-using InferResult = std::pair<Json::Value, Json::Value>;
-
-struct SyncQueue {
-  void push(InferResult&& p) {
-    std::unique_lock<std::mutex> l(mtx);
-    q.push(p);
-    cond.notify_one();
-  }
-
-  InferResult wait_and_pop() {
-    std::unique_lock<std::mutex> l(mtx);
-    cond.wait(l, [this] { return !q.empty(); });
-    auto res = q.front();
-    q.pop();
-    return res;
-  }
-
-  std::mutex mtx;
-  std::condition_variable cond;
-  std::queue<InferResult> q;
-};
 
 class InferenceService {
  public:
@@ -47,7 +21,7 @@ class InferenceService {
 
   cpp::result<void, InferResult> HandleRouteRequest(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
-      
+
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
   InferResult UnloadModel(const std::string& engine,

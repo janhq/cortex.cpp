@@ -1,6 +1,5 @@
 #include <memory>
 #include "gtest/gtest.h"
-#include "json/json.h"
 #include "utils/function_calling/common.h"
 
 class FunctionCallingUtilsTest : public ::testing::Test {

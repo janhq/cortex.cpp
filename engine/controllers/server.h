@@ -29,7 +29,7 @@ class server : public drogon::HttpController<server, false>,
  public:
   server(std::shared_ptr<InferenceService> inference_service,
          std::shared_ptr<EngineService> engine_service);
-  ~server();
+
   METHOD_LIST_BEGIN
   // list path definitions here;
   METHOD_ADD(server::ChatCompletion, "chat_completion", Options, Post);
