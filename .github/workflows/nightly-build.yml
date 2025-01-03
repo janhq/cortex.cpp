@@ -74,7 +74,7 @@ jobs:
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
           
   build-linux-x64:
-    uses: ./.github/workflows/template-build-linux-x64.yml
+    uses: ./.github/workflows/template-build-linux.yml
     secrets: inherit
     needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
     with:
@@ -85,11 +85,26 @@ jobs:
       cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
       channel: nightly
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      arch: amd64
+
+  build-linux-arm64:
+    uses: ./.github/workflows/template-build-linux.yml
+    secrets: inherit
+    needs: [get-update-version, set-public-provider, get-cortex-llamacpp-latest-version]
+    with:
+      ref: ${{ needs.set-public-provider.outputs.ref }}
+      public_provider: ${{ needs.set-public-provider.outputs.public_provider }}
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-2004-arm64
+      cmake-flags: "-DCORTEX_VARIANT=nightly -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: nightly
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      arch: arm64
 
   update-latest-version:
     runs-on: ubuntu-latest
     if: needs.set-public-provider.outputs.public_provider == 'aws-s3'
-    needs: [get-update-version, set-public-provider, build-linux-x64, build-macos, build-windows-x64, get-cortex-llamacpp-latest-version]
+    needs: [get-update-version, set-public-provider, build-linux-x64, build-linux-arm64, build-macos, build-windows-x64, get-cortex-llamacpp-latest-version]
     steps:
       - name: Update latest version
         id: update-latest-version
@@ -100,9 +115,11 @@ jobs:
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-universal-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-arm64/cortex-nightly.tar.gz
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/mac-universal-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-universal/cortex-nightly.tar.gz
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-amd64/cortex-nightly.tar.gz
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-arm64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-arm64/cortex-nightly.tar.gz
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/windows-amd64-cortex-nightly.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-nightly.tar.gz
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-mac-universal-network-installer.pkg s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/mac-universal/cortex-mac-universal-network-installer.pkg
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux-amd64-network-installer.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-amd64/cortex-linux-amd64-network-installer.deb
+          aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux-arm64-network-installer.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/linux-arm64/cortex-linux-arm64-network-installer.deb
           aws s3 cp s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-windows-amd64-network-installer.exe s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/latest/windows-amd64/cortex-windows-amd64-network-installer.exe
 
         env:

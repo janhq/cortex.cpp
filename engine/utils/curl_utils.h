@@ -15,8 +15,11 @@ enum class RequestType { GET, PATCH, POST, DEL };
 
 namespace curl_utils {
 
-std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
-    const std::string& url);
+struct Header {
+  std::unordered_map<std::string, std::string> m;
+};
+
+std::shared_ptr<Header> GetHeaders(const std::string& url);
 
 cpp::result<std::string, std::string> SimpleGet(const std::string& url,
                                                 const int timeout = -1);

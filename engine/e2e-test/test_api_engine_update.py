@@ -25,7 +25,7 @@ class TestApiEngineUpdate:
 
     @pytest.mark.asyncio
     async def test_engines_update_should_be_successfully(self):
-        requests.post("http://localhost:3928/v1/engines/llama-cpp?version=0.1.34")
+        requests.post("http://localhost:3928/v1/engines/llama-cpp?version=0.1.43")
         response = requests.post("http://localhost:3928/v1/engines/llama-cpp/update")
         assert response.status_code == 200
 

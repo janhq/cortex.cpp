@@ -24,6 +24,7 @@ DESTINATION_BINARY_SERVER_NAME ?= cortex-server
 DATA_FOLDER_NAME ?= .cortex
 CONFIGURATION_FILE_NAME ?= .cortexrc
 UNINSTALLER_FILE_NAME ?= cortex-uninstall.sh
+ARCH ?= amd64
 
 # Default target, does nothing
 all:
@@ -120,7 +121,7 @@ else ifeq ($(shell uname -s),Linux)
 	@echo "Building installer for linux"; \
 	cd templates/linux; \
 	chmod +x create_deb.sh; \
-	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(SOURCE_BINARY_SERVER_PATH) $(DESTINATION_BINARY_NAME) $(DESTINATION_BINARY_SERVER_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME); \
+	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(SOURCE_BINARY_SERVER_PATH) $(DESTINATION_BINARY_NAME) $(DESTINATION_BINARY_SERVER_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME) $(ARCH); \
 	cp $(PACKAGE_NAME).deb ../../
 else
 	@echo "Building installer for Macos"; \

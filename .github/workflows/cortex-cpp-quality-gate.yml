@@ -21,6 +21,12 @@ jobs:
       matrix:
         include:
           - os: "linux"
+            name: "arm64"
+            runs-on: "ubuntu-2004-arm64"
+            cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
+            build-deps-cmake-flags: ""
+            ccache-dir: ""
+          - os: "linux"
             name: "amd64"
             runs-on: "ubuntu-20-04-cuda-12-0"
             cmake-flags: "-DCORTEX_CPP_VERSION=${{github.event.pull_request.head.sha}} -DCMAKE_BUILD_TEST=ON -DCMAKE_TOOLCHAIN_FILE=vcpkg/scripts/buildsystems/vcpkg.cmake"
@@ -52,6 +58,7 @@ jobs:
           submodules: recursive
 
       - name: use python
+        continue-on-error: true
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -90,14 +97,43 @@ jobs:
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
       - name: Configure vcpkg
+        if: runner.os != 'Linux'
         run: |
           cd engine
           make configure-vcpkg
 
+      - name: Configure vcpkg linux amd64
+        if: runner.os != 'Linux'
+        run: |
+          cd engine
+          make configure-vcpkg
+
+      - name: Configure vcpkg linux arm64
+        if: runner.os == 'Linux'
+        run: |
+          cd engine
+          # Set env if arch is arm64
+          if [ "${{ matrix.name }}" == "arm64" ]; then
+            sudo apt install ninja-build pkg-config -y
+            export VCPKG_FORCE_SYSTEM_BINARIES=1
+          fi
+          make configure-vcpkg
+
       - name: Build
+        if: runner.os != 'Linux'
         run: |
           cd engine
           make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+
+      - name: Build
+        if: runner.os == 'Linux'
+        run: |
+          cd engine
+          if [ "${{ matrix.name }}" == "arm64" ]; then
+            export VCPKG_FORCE_SYSTEM_BINARIES=1
+          fi
+          make build CMAKE_EXTRA_FLAGS="${{ matrix.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ matrix.build-deps-cmake-flags }}"
+
 
       - name: Run setup config
         run: |

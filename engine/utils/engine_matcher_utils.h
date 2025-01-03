@@ -156,6 +156,11 @@ inline std::string Validate(const std::vector<std::string>& variants,
   if (os == "mac" && !os_and_arch_compatible_list.empty())
     return os_and_arch_compatible_list[0];
 
+  if (os == "linux" && cpu_arch == "arm64" &&
+      !os_and_arch_compatible_list.empty()) {
+    return os_and_arch_compatible_list[0];
+  }
+
   std::vector<std::string> avx_compatible_list;
 
   std::copy_if(os_and_arch_compatible_list.begin(),
