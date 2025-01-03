@@ -1,6 +1,11 @@
 #include "run_service.h"
 #include <thread>
+#include "common/cortex/sync_queue.h"
+#include "common/events/done.h"
 #include "common/events/error.h"
+#include "common/events/thread_message_delta.h"
+#include "common/message_delta.h"
+#include "utils/logging_utils.h"
 #include "utils/ulid_generator.h"
 
 auto RunService::CreateRun(const dto::RunCreateDto& create_dto)
@@ -59,10 +64,10 @@ auto RunService::CreateRun(const dto::RunCreateDto& create_dto)
 }
 
 auto RunService::CreateRunStream(
-    const dto::RunCreateDto& create_dto,
+    dto::RunCreateDto&& create_dto, const std::string& thread_id,
     std::function<void(const OpenAi::AssistantStreamEvent&, bool)> callback)
     -> void {
-  std::thread([this, &create_dto, callback = std::move(callback)]() {
+  std::thread([this, &create_dto, thread_id, callback = std::move(callback)]() {
     auto assistant =
         assistant_srv_->RetrieveAssistantV2(create_dto.assistant_id);
     if (assistant.has_error()) {
@@ -70,6 +75,123 @@ auto RunService::CreateRunStream(
       auto error = OpenAi::ErrorEvent(assistant.error());
       callback(error, true);
       return;
+    }
+
+    auto thread_res = thread_srv_->RetrieveThread(thread_id);
+    if (thread_res.has_error()) {
+      // TODO: namh will need to create new thread?
+      auto error = OpenAi::ErrorEvent(thread_res.error());
+      callback(error, true);
+      return;
+    }
+
+    auto additional_messages = std::move(*create_dto.additional_messages);
+    for (auto& msg : additional_messages) {
+      auto create_msg_res = message_srv_->CreateMessage(
+          thread_id, msg.role, std::move(msg.content),
+          std::move(msg.attachments), std::move(msg.metadata));
+
+      if (create_msg_res.has_error()) {
+        CTL_WRN("Create message error: " + create_msg_res.error());
+        continue;
+      }
+    }
+
+    auto limit{-1};
+    auto order{"desc"};
+    auto after{""};
+    auto before{""};
+    auto run_id{""};
+    auto messages_res = message_srv_->ListMessages(thread_id, limit, order,
+                                                   after, before, run_id);
+    // todo: recheck the order of messages
+
+    auto model = create_dto.model.has_value() ? create_dto.model.value()
+                                              : assistant->model;
+
+    auto additional_inst = create_dto.additional_instructions.value_or("");
+    auto instructions = create_dto.instructions.has_value()
+                            ? create_dto.instructions.value()
+                            : assistant->instructions.value_or("");
+    instructions += ". " + additional_inst;
+
+    auto temperature = create_dto.temperature.has_value()
+                           ? create_dto.temperature.value()
+                           : assistant->temperature.value_or(1.0f);
+
+    auto top_p = create_dto.top_p.has_value() ? create_dto.top_p.value()
+                                              : assistant->top_p.value_or(1.0f);
+    auto stream{true};
+    auto q = std::make_shared<SyncQueue>();
+    Json::Value json;
+    Json::Value messages(Json::arrayValue);
+    // TODO: namh check what if the message is not text based?
+    // TODO: namh what if message have multiple text array item?
+    for (const auto& msg : messages_res.value()) {
+      Json::Value message;
+      for (const auto& content : msg.content) {
+        if (content->type == "text") {
+          if (auto* text_content =
+                  dynamic_cast<OpenAi::TextContent*>(content.get())) {
+            auto text = text_content->text.value;
+            message["content"] = std::move(text);
+            break;
+          }
+        }
+      }
+
+      message["role"] = RoleToString(msg.role);
+      messages.append(message);
+    }
+    // TODO: namh should check if model is available or not
+
+    json["messages"] = messages;
+    json["model"] = model;
+    json["stream"] = stream;
+
+    CTL_INF("NamH json body: " + json.toStyledString());
+    auto json_ptr = std::make_shared<Json::Value>(std::move(json));
+
+    auto ir = inference_srv_->HandleChatCompletion(q, json_ptr);
+    if (ir.has_error()) {
+      auto err = ir.error();
+      auto error = OpenAi::ErrorEvent(std::get<1>(err).toStyledString());
+      callback(error, true);
+      return;
+    }
+
+    while (true) {
+      auto [status, res] = q->wait_and_pop();
+
+      if (status["has_error"].asBool()) {
+        auto error = OpenAi::ErrorEvent(res["message"].asString());
+        callback(error, true);
+        return;
+      }
+
+      if (status["is_done"].asBool()) {
+        auto done = OpenAi::DoneEvent();
+        callback(done, true);
+        return;
+      }
+
+      auto str = res["data"].asString();
+      auto text_ptr = std::make_unique<OpenAi::TextContent>();
+      CTL_INF("Input string: " + str);  // Log input string
+      text_ptr->text = OpenAi::Text();
+      text_ptr->text.value = std::move(str);
+      CTL_INF("Text value after setting: " +
+              text_ptr->text.value);  // Log text value
+
+      // Create content list and add the text_ptr
+      auto content_list = std::vector<std::unique_ptr<OpenAi::Content>>();
+      content_list.push_back(std::move(text_ptr));  // Add this line
+
+      // Create event with the content
+      auto msg_delta_evt =
+          OpenAi::ThreadMessageDeltaEvent(OpenAi::MessageDelta::Delta(
+              OpenAi::Role::ASSISTANT, std::move(content_list)));
+      callback(msg_delta_evt, false);
     }
   }).detach();
 }

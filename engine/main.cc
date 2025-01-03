@@ -168,8 +168,8 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto model_service = std::make_shared<ModelService>(
       db_service, hw_service, download_service, inference_svc, engine_service);
   inference_svc->SetModelService(model_service);
-  auto run_srv =
-      std::make_shared<RunService>(assistant_srv, model_service, message_srv);
+  auto run_srv = std::make_shared<RunService>(
+      assistant_srv, model_service, message_srv, inference_svc, thread_srv);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
       model_dir_path.string(), model_service);

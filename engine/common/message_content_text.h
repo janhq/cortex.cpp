@@ -124,13 +124,15 @@ struct Text : JsonSerializable {
   // The data that makes up the text.
   Text() = default;
 
-  Text(Text&&) noexcept = default;
-
-  Text& operator=(Text&&) noexcept = default;
+  ~Text() = default;
 
   Text(const Text&) = delete;
 
   Text& operator=(const Text&) = delete;
+
+  Text(Text&&) noexcept = default;
+
+  Text& operator=(Text&&) noexcept = default;
 
   std::string value;
 

@@ -3,7 +3,6 @@
 #include "common/cortex/sync_queue.h"
 #include "common/events/assistant_stream_event.h"
 #include "utils/cortex_utils.h"
-#include "utils/logging_utils.h"
 
 void Runs::CreateRun(const HttpRequestPtr& req,
                      std::function<void(const HttpResponsePtr&)>&& callback,
@@ -31,19 +30,21 @@ void Runs::CreateRun(const HttpRequestPtr& req,
   // Create a shared state structure to hold our resources
   struct SharedState {
     dto::RunCreateDto dto;
+    std::string thread_id;
     std::shared_ptr<drogon::ResponseStream> stream;
     explicit SharedState(dto::RunCreateDto&& d) : dto(std::move(d)) {}
   };
 
   // Create shared state with move-constructed DTO
   auto state = std::make_shared<SharedState>(std::move(parse_run_res.value()));
+  state->thread_id = thread_id;
 
   auto sendEvents = [this, state](ResponseStreamPtr res) {
     // Store the response stream in the shared state
     state->stream = std::shared_ptr<drogon::ResponseStream>(std::move(res));
 
     run_srv_->CreateRunStream(
-        std::move(state->dto),
+        std::move(state->dto), state->thread_id,
         [state](const OpenAi::AssistantStreamEvent& event, bool disconnect) {
           auto parse_event_res = event.ToEvent();
           if (parse_event_res.has_value()) {

@@ -23,6 +23,20 @@ namespace OpenAi {
 struct AssistantStreamEvent {
   AssistantStreamEvent(const std::string& event) : event{std::move(event)} {}
 
+  AssistantStreamEvent(const AssistantStreamEvent&) = delete;
+
+  AssistantStreamEvent& operator=(const AssistantStreamEvent&) = delete;
+
+  AssistantStreamEvent(AssistantStreamEvent&& other) noexcept
+      : event{std::move(other.event)} {}
+
+  AssistantStreamEvent& operator=(AssistantStreamEvent&& other) noexcept {
+    if (this != &other) {
+      event = std::move(other.event);
+    }
+    return *this;
+  }
+
   virtual ~AssistantStreamEvent() = default;
 
   std::string event;

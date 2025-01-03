@@ -1,3 +1,5 @@
+#pragma once
+
 #include <optional>
 #include <variant>
 #include "common/message_attachment.h"
@@ -38,8 +40,7 @@ struct AdditionalMessage {
    */
   Role role;
 
-  std::optional<
-      std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>>
+  std::variant<std::string, std::vector<std::unique_ptr<OpenAi::Content>>>
       content;
 
   /**
@@ -62,25 +63,36 @@ struct AdditionalMessage {
       if (json.isMember("role") && json["role"].isString()) {
         msg.role = RoleFromString(json["role"].asString());
       }
-      if (json.isMember("content")) {
-        if (json["content"].isString()) {
-          msg.content = std::move(json["content"].asString());
-        } else if (json["content"].isArray()) {
-          auto result = ParseContents(std::move(json["content"]));
-          if (result.has_error()) {
-            return cpp::fail("Failed to parse content array: " +
-                             result.error());
-          }
-          if (result.value().empty()) {
-            return cpp::fail("Content array cannot be empty");
-          }
-          msg.content = std::move(result.value());
+      if (!json.isMember("content")) {
+        return cpp::fail("content is mandatory");
+      }
+      if (json["content"].isString()) {
+        msg.content = std::move(json["content"].asString());
+      } else if (json["content"].isArray()) {
+        auto result = ParseContents(std::move(json["content"]));
+        if (result.has_error()) {
+          return cpp::fail("Failed to parse content array: " + result.error());
         }
+        if (result.value().empty()) {
+          return cpp::fail("Content array cannot be empty");
+        }
+        msg.content = std::move(result.value());
+      } else {
+        return cpp::fail("content must be either a string or an array");
       }
 
       if (json.isMember("attachments")) {
         msg.attachments =
             ParseAttachments(std::move(json["attachments"])).value();
+      }
+      if (json.isMember("metadata") && json["metadata"].isObject() &&
+          !json["metadata"].empty()) {
+        auto res = Cortex::ConvertJsonValueToMap(json["metadata"]);
+        if (res.has_error()) {
+          CTL_WRN("Failed to convert metadata to map: " + res.error());
+        } else {
+          msg.metadata = res.value();
+        }
       }
       return msg;
     } catch (const std::exception& e) {
