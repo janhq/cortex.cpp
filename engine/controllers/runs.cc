@@ -1,6 +1,5 @@
 #include "runs.h"
 #include <memory>
-#include "common/cortex/sync_queue.h"
 #include "common/events/assistant_stream_event.h"
 #include "utils/cortex_utils.h"
 
@@ -61,45 +60,6 @@ void Runs::CreateRun(const HttpRequestPtr& req,
   resp->addHeader("Cache-Control", "no-cache");
   resp->addHeader("Connection", "keep-alive");
   callback(resp);
-}
-
-void Runs::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                            std::shared_ptr<SyncQueue> q,
-                            const std::string& engine_type,
-                            const std::string& model_id) {
-  auto err_or_done = std::make_shared<std::atomic_bool>(false);
-  auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
-                                      char* buf,
-                                      std::size_t buf_size) -> std::size_t {
-    if (buf == nullptr) {
-      LOG_TRACE << "Buf is null";
-      if (!(*err_or_done)) {
-        inference_srv_->StopInferencing(engine_type, model_id);
-      }
-      return 0;
-    }
-
-    if (*err_or_done) {
-      LOG_TRACE << "Done";
-      return 0;
-    }
-
-    auto [status, res] = q->wait_and_pop();
-
-    if (status["has_error"].asBool() || status["is_done"].asBool()) {
-      *err_or_done = true;
-    }
-
-    auto str = res["data"].asString();
-    std::size_t n = std::min(str.size(), buf_size);
-    memcpy(buf, str.data(), n);
-
-    return n;
-  };
-
-  auto resp = cortex_utils::CreateCortexStreamResponse(chunked_content_provider,
-                                                       "chat_completions.txt");
-  cb(resp);
 }
 
 void Runs::RetrieveRun(const HttpRequestPtr& req,
