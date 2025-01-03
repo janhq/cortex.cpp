@@ -165,10 +165,9 @@ void Models::ListModel(
   model_service_->ForceIndexingModelList();
   // Iterate through directory
 
-  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
 
-  auto list_entry = modellist_handler.LoadModelList();
+  auto list_entry = db_service_->LoadModelList();
   if (list_entry) {
     for (const auto& model_entry : list_entry.value()) {
       try {
@@ -211,6 +210,16 @@ void Models::ListModel(
           }
           data.append(std::move(obj));
           yaml_handler.Reset();
+        } else if (model_config.engine == kPythonEngine) {
+          config::PythonModelConfig python_model_config;
+          python_model_config.ReadFromYaml(
+              fmu::ToAbsoluteCortexDataPath(
+                  fs::path(model_entry.path_to_model_yaml))
+                  .string());
+          Json::Value obj = python_model_config.ToJson();
+          obj["id"] = model_entry.model;
+          obj["model"] = model_entry.model;
+          data.append(std::move(obj));
         } else {
           config::RemoteModelConfig remote_model_config;
           remote_model_config.LoadFromYamlFile(
@@ -256,9 +265,8 @@ void Models::GetModel(const HttpRequestPtr& req,
   Json::Value ret;
 
   try {
-    cortex::db::Models modellist_handler;
     config::YamlHandler yaml_handler;
-    auto model_entry = modellist_handler.GetModelInfo(model_id);
+    auto model_entry = db_service_->GetModelInfo(model_id);
     if (model_entry.has_error()) {
       ret["id"] = model_id;
       ret["object"] = "model";
@@ -281,6 +289,19 @@ void Models::GetModel(const HttpRequestPtr& req,
       auto ret = model_config.ToJsonString();
       auto resp = cortex_utils::CreateCortexHttpTextAsJsonResponse(ret);
       resp->setStatusCode(drogon::k200OK);
+      callback(resp);
+    } else if (model_config.engine == kPythonEngine) {
+      config::PythonModelConfig python_model_config;
+      python_model_config.ReadFromYaml(
+          fmu::ToAbsoluteCortexDataPath(
+              fs::path(model_entry.value().path_to_model_yaml))
+              .string());
+      ret = python_model_config.ToJson();
+      ret["id"] = python_model_config.model;
+      ret["object"] = "model";
+      ret["result"] = "OK";
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
       callback(resp);
     } else {
       config::RemoteModelConfig remote_model_config;
@@ -337,8 +358,7 @@ void Models::UpdateModel(const HttpRequestPtr& req,
   namespace fmu = file_manager_utils;
   auto json_body = *(req->getJsonObject());
   try {
-    cortex::db::Models model_list_utils;
-    auto model_entry = model_list_utils.GetModelInfo(model_id);
+    auto model_entry = db_service_->GetModelInfo(model_id);
     config::YamlHandler yaml_handler;
     auto yaml_fp = fmu::ToAbsoluteCortexDataPath(
         fs::path(model_entry.value().path_to_model_yaml));
@@ -351,6 +371,13 @@ void Models::UpdateModel(const HttpRequestPtr& req,
       model_config.FromJson(json_body);
       yaml_handler.UpdateModelConfig(model_config);
       yaml_handler.WriteYamlFile(yaml_fp.string());
+      message = "Successfully update model ID '" + model_id +
+                "': " + json_body.toStyledString();
+    } else if (model_config.engine == kPythonEngine) {
+      config::PythonModelConfig python_model_config;
+      python_model_config.ReadFromYaml(yaml_fp.string());
+      python_model_config.FromJson(json_body);
+      python_model_config.ToYaml(yaml_fp.string());
       message = "Successfully update model ID '" + model_id +
                 "': " + json_body.toStyledString();
     } else {
@@ -401,7 +428,6 @@ void Models::ImportModel(
   auto option = (*(req->getJsonObject())).get("option", "symlink").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
-  cortex::db::Models modellist_utils_obj;
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("imported") /
                                  std::filesystem::path(modelHandle + ".yml"))
@@ -440,7 +466,7 @@ void Models::ImportModel(
     model_config.name = modelName.empty() ? model_config.name : modelName;
     yaml_handler.UpdateModelConfig(model_config);
 
-    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
+    if (db_service_->AddModelEntry(model_entry).value()) {
       yaml_handler.WriteYamlFile(model_yaml_path);
       std::string success_message = "Model is imported successfully!";
       LOG_INFO << success_message;
@@ -488,55 +514,31 @@ void Models::StartModel(
   if (!http_util::HasFieldInReq(req, callback, "model"))
     return;
   auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
-  StartParameterOverride params_override;
-  if (auto& o = (*(req->getJsonObject()))["prompt_template"]; !o.isNull()) {
-    params_override.custom_prompt_template = o.asString();
-  }
 
-  if (auto& o = (*(req->getJsonObject()))["cache_enabled"]; !o.isNull()) {
-    params_override.cache_enabled = o.asBool();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["ngl"]; !o.isNull()) {
-    params_override.ngl = o.asInt();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["n_parallel"]; !o.isNull()) {
-    params_override.n_parallel = o.asInt();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["ctx_len"]; !o.isNull()) {
-    params_override.ctx_len = o.asInt();
-  }
-
-  if (auto& o = (*(req->getJsonObject()))["cache_type"]; !o.isNull()) {
-    params_override.cache_type = o.asString();
-  }
-
+  std::optional<std::string> mmproj;
   if (auto& o = (*(req->getJsonObject()))["mmproj"]; !o.isNull()) {
-    params_override.mmproj = o.asString();
+    mmproj = o.asString();
   }
 
+  auto bypass_llama_model_path = false;
   // Support both llama_model_path and model_path for backward compatible
   // model_path has higher priority
   if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
-    params_override.model_path = o.asString();
+    auto model_path = o.asString();
     if (auto& mp = (*(req->getJsonObject()))["model_path"]; mp.isNull()) {
       // Bypass if model does not exist in DB and llama_model_path exists
-      if (std::filesystem::exists(params_override.model_path.value()) &&
+      if (std::filesystem::exists(model_path) &&
           !model_service_->HasModel(model_handle)) {
         CTL_INF("llama_model_path exists, bypass check model id");
-        params_override.bypass_llama_model_path = true;
+        bypass_llama_model_path = true;
       }
     }
   }
 
-  if (auto& o = (*(req->getJsonObject()))["model_path"]; !o.isNull()) {
-    params_override.model_path = o.asString();
-  }
+  auto bypass_model_check = (mmproj.has_value() || bypass_llama_model_path);
 
   auto model_entry = model_service_->GetDownloadedModel(model_handle);
-  if (!model_entry.has_value() && !params_override.bypass_model_check()) {
+  if (!model_entry.has_value() && !bypass_model_check) {
     Json::Value ret;
     ret["message"] = "Cannot find model: " + model_handle;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -544,9 +546,8 @@ void Models::StartModel(
     callback(resp);
     return;
   }
-  std::string engine_name = params_override.bypass_model_check()
-                                ? kLlamaEngine
-                                : model_entry.value().engine;
+  std::string engine_name =
+      bypass_model_check ? kLlamaEngine : model_entry.value().engine;
   auto engine_validate = engine_service_->IsEngineReady(engine_name);
   if (engine_validate.has_error()) {
     Json::Value ret;
@@ -565,7 +566,9 @@ void Models::StartModel(
     return;
   }
 
-  auto result = model_service_->StartModel(model_handle, params_override);
+  auto result = model_service_->StartModel(
+      model_handle, *(req->getJsonObject()) /*params_override*/,
+      bypass_model_check);
   if (result.has_error()) {
     Json::Value ret;
     ret["message"] = result.error();
@@ -690,7 +693,6 @@ void Models::AddRemoteModel(
 
   config::RemoteModelConfig model_config;
   model_config.LoadFromJson(*(req->getJsonObject()));
-  cortex::db::Models modellist_utils_obj;
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("remote") /
                                  std::filesystem::path(model_handle + ".yml"))
@@ -705,7 +707,7 @@ void Models::AddRemoteModel(
         engine_name};
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
-    if (modellist_utils_obj.AddModelEntry(model_entry).value()) {
+    if (db_service_->AddModelEntry(model_entry).value()) {
       model_config.SaveToYamlFile(model_yaml_path);
       std::string success_message = "Model is imported successfully!";
       LOG_INFO << success_message;

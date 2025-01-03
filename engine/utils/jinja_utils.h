@@ -3,7 +3,7 @@
 #include <json/value.h>
 #include <string>
 
-#include "extensions/remote-engine/template_renderer.h"
+#include "extensions/template_renderer.h"
 #include "utils/chat-template.hpp"
 #include "utils/result.hpp"
 
@@ -14,7 +14,7 @@ inline cpp::result<std::string, std::string> RenderTemplate(
     bool add_generation_prompt = true) {
   try {
     auto converted_json =
-        remote_engine::TemplateRenderer().ConvertJsonValue(data);
+        extensions::TemplateRenderer().ConvertJsonValue(data);
 
     minja::chat_template chat_tmpl(tmpl, add_bos_token ? bos_token : "",
                                    add_eos_token ? eos_token : "");

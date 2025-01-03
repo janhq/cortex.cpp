@@ -8,7 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include "cortex-common/remote_enginei.h"
-#include "extensions/remote-engine/template_renderer.h"
+#include "extensions/template_renderer.h"
 #include "trantor/utils/ConcurrentTaskQueue.h"
 #include "utils/engine_constants.h"
 #include "utils/file_logger.h"
@@ -22,7 +22,7 @@ struct StreamContext {
   // Cache value for Anthropic
   std::string id;
   std::string model;
-  TemplateRenderer& renderer;
+  extensions::TemplateRenderer& renderer;
   std::string stream_template;
 };
 struct CurlResponse {
@@ -47,7 +47,7 @@ class RemoteEngine : public RemoteEngineI {
   // Thread-safe model config storage
   mutable std::shared_mutex models_mtx_;
   std::unordered_map<std::string, ModelConfig> models_;
-  TemplateRenderer renderer_;
+  extensions::TemplateRenderer renderer_;
   Json::Value metadata_;
   std::string chat_req_template_;
   std::string chat_res_template_;

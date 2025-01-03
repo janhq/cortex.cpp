@@ -14,7 +14,7 @@
 #include <nlohmann/json.hpp>
 #include <inja/inja.hpp>
 // clang-format on
-namespace remote_engine {
+namespace extensions {
 class TemplateRenderer {
  public:
   TemplateRenderer();
