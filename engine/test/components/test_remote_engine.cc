@@ -114,12 +114,12 @@ TEST_F(RemoteEngineTest, OpenAiResponse) {
   })";
   auto data = json_helper::ParseJsonString(message);
 
-  remote_engine::TemplateRenderer rdr;
+  extensions::TemplateRenderer rdr;
   auto res = rdr.Render(tpl, data);
 
   auto res_json = json_helper::ParseJsonString(res);
-    EXPECT_EQ(data["model"].asString(), res_json["model"].asString());
-    EXPECT_EQ(data["created"].asInt(), res_json["created"].asInt());
-    EXPECT_EQ(data["choices"][0]["delta"]["content"].asString(),
-              res_json["choices"][0]["delta"]["content"].asString());
+  EXPECT_EQ(data["model"].asString(), res_json["model"].asString());
+  EXPECT_EQ(data["created"].asInt(), res_json["created"].asInt());
+  EXPECT_EQ(data["choices"][0]["delta"]["content"].asString(),
+            res_json["choices"][0]["delta"]["content"].asString());
 }
