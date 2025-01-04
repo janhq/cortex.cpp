@@ -531,6 +531,18 @@ void PythonEngine::HandleInference(
   std::string model = (*json_body)["model"].asString();
   Json::Value body = (*json_body)["body"];
 
+  if (models_.find(model) == models_.end()) {
+    Json::Value error;
+    error["error"] = "Model '" + model + "' is not loaded!";
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
   // Transform Request
   std::string transformed_request;
   if (!transform_request.empty()) {
@@ -698,6 +710,18 @@ void PythonEngine::HandleRouteRequest(
       (*json_body).get("transform_response", "").asString();
   std::string model = (*json_body)["model"].asString();
   Json::Value body = (*json_body)["body"];
+
+  if (models_.find(model) == models_.end()) {
+    Json::Value error;
+    error["error"] = "Model '" + model + "' is not loaded!";
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = false;
+    status["status_code"] = k400BadRequest;
+    callback(std::move(status), std::move(error));
+    return;
+  }
 
   // Transform Request
   std::string transformed_request;

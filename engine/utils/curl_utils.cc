@@ -271,8 +271,12 @@ cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(
   if (root.isArray()) {
     for (const auto& value : root) {
       if (value["type"].asString() == "directory") {
-        auto temp = SimpleGetJsonRecursive(url + "/" + value["path"].asString(),
-                                           timeout);
+        auto temp = SimpleGetJsonRecursive(
+            url + "/" +
+                std::filesystem::path(value["path"].asString())
+                    .filename()
+                    .string(),
+            timeout);
         if (!temp.has_error()) {
           if (temp.value().isArray()) {
             for (const auto& item : temp.value()) {
