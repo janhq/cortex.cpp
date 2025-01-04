@@ -117,8 +117,8 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   headers = curl_slist_append(headers, "Connection: keep-alive");
 
   std::string stream_template = chat_res_template_;
-  if (!config.transform_resp["chat_completions"] &&
-      !config.transform_resp["chat_completions"]["template"]) {
+  if (config.transform_resp["chat_completions"] &&
+      config.transform_resp["chat_completions"]["template"]) {
     // Model level overrides engine level
     stream_template =
         config.transform_resp["chat_completions"]["template"].as<std::string>();
@@ -528,15 +528,6 @@ void RemoteEngine::HandleChatCompletion(
   // Transform request
   std::string result;
   try {
-    // Check if required YAML nodes exist
-    if (!model_config->transform_req["chat_completions"]) {
-      throw std::runtime_error(
-          "Missing 'chat_completions' node in transform_req");
-    }
-    if (!model_config->transform_req["chat_completions"]["template"]) {
-      throw std::runtime_error("Missing 'template' node in chat_completions");
-    }
-
     // Validate JSON body
     if (!json_body || json_body->isNull()) {
       throw std::runtime_error("Invalid or null JSON body");
