@@ -48,30 +48,7 @@ struct RemoteModelConfig {
     // Load JSON object fields directly
     inference_params = json.get("inference_params", inference_params);
     transform_req = json.get("transform_req", transform_req);
-    // Use default template if it is empty, currently we only support 2 remote engines
-    auto is_anthropic = [](const std::string& model) {
-      return model.find("claude") != std::string::npos;
-    };
-    if (transform_req["chat_completions"]["template"].isNull()) {
-      if (is_anthropic(model)) {
-        transform_req["chat_completions"]["template"] =
-            kAnthropicTransformReqTemplate;
-      } else {
-        transform_req["chat_completions"]["template"] =
-            kOpenAITransformReqTemplate;
-      }
-    }
     transform_resp = json.get("transform_resp", transform_resp);
-    if (transform_resp["chat_completions"]["template"].isNull()) {
-      if (is_anthropic(model)) {
-        transform_resp["chat_completions"]["template"] =
-            kAnthropicTransformRespTemplate;
-      } else {
-        transform_resp["chat_completions"]["template"] =
-            kOpenAITransformRespTemplate;
-      }
-    }
-
     metadata = json.get("metadata", metadata);
   }
 

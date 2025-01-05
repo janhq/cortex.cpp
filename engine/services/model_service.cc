@@ -778,7 +778,8 @@ cpp::result<void, std::string> ModelService::DeleteModel(
     // Remove yaml file
     std::filesystem::remove(yaml_fp);
     // Remove model files if they are not imported locally
-    if (model_entry.value().branch_name != "imported") {
+    if (model_entry.value().branch_name != "imported" &&
+        !engine_svc_->IsRemoteEngine(mc.engine)) {
       if (mc.files.size() > 0) {
         if (mc.engine == kLlamaRepo || mc.engine == kLlamaEngine) {
           for (auto& file : mc.files) {

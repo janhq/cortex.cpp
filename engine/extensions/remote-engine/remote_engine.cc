@@ -55,9 +55,13 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
 
     // Parse the JSON
     Json::Value chunk_json;
-    std::string s = line.substr(6);
+    std::string s = line;
+    if (line.size() > 6)
+      s = line.substr(6);
     try {
       auto root = json_helper::ParseJsonString(s);
+      if (root.getMemberNames().empty())
+        continue;
       root["model"] = context->model;
       root["id"] = context->id;
       root["stream"] = true;
