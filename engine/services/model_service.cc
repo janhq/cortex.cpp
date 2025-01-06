@@ -567,7 +567,6 @@ ModelService::DownloadModelFromCortexsoAsync(
                          std::filesystem::path("python.exe"))
                             .string()
                      << std::endl;
-
 #else
           pyvenv_cfg << "home = "
                      << (venv_path / std::filesystem::path("bin/")).string()
@@ -577,14 +576,10 @@ ModelService::DownloadModelFromCortexsoAsync(
               << (venv_path / std::filesystem::path("bin/python")).string()
               << std::endl;
 #endif
-
           // Close the file
           pyvenv_cfg.close();
           // Add executable permission to python
-
-          set_permission_utils::SetExecutePermissionsRecursive(
-              venv_path );
-
+          set_permission_utils::SetExecutePermissionsRecursive(venv_path);
         } else {
           CTL_ERR("Failed to extract venv.zip");
         };

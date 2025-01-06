@@ -182,7 +182,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto model_ctl = std::make_shared<Models>(db_service, model_service,
                                             engine_service, model_src_svc);
   auto event_ctl = std::make_shared<Events>(event_queue_ptr);
-  auto pm_ctl = std::make_shared<ProcessManager>();
+  auto pm_ctl = std::make_shared<ProcessManager>(engine_service);
   auto hw_ctl = std::make_shared<Hardware>(engine_service, hw_service);
   auto server_ctl =
       std::make_shared<inferences::server>(inference_svc, engine_service);
