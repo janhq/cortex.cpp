@@ -18,14 +18,22 @@ on:
         description: "name of branch to be checked out"
         required: true
         default: main
+      hf_repo:
+        description: "name of huggingface repo to be pushed"
+        required: true
+      hf_prefix_branch: 
+        description: "prefix of hf branch"
+        required: false
 
 
 
 env:
-  MODEL_DIR: models/fish-speech # ${{ inputs.model_dir }}
-  MODEL_NAME: fish-speech # ${{ inputs.model_name }}
+  MODEL_DIR: models/ichigo # ${{ inputs.model_dir }}
+  MODEL_NAME: ichigo # ${{ inputs.model_name }}
   REPO_NAME: janhq/models # ${{ inputs.model_name }}
   BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
+  HF_REPO: cortexso/test # ${{ inputs.hf_repo }}
+  HF_PREFIX_BRANCH: fp16 # ${{ inputs.hf_prefix_branch }}
 
 jobs:
   build-and-test:
@@ -35,15 +43,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - os: "linux"
-          #   name: "amd64"
-          #   runs-on: "ubuntu-20-04-cuda-12-0"
-          - os: "mac"
+          - os: "linux"
             name: "amd64"
-            runs-on: "macos-selfhosted-12"
-          - os: "mac"
-            name: "arm64"
-            runs-on: "macos-selfhosted-12-arm64"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+          # - os: "mac"
+          #   name: "amd64"
+          #   runs-on: "macos-selfhosted-12"
+          # - os: "mac"
+          #   name: "arm64"
+          #   runs-on: "macos-selfhosted-12-arm64"
           # - os: "windows"
           #   name: "amd64"
           #   runs-on: "windows-cuda-12-0"
@@ -213,14 +221,55 @@ jobs:
           QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
           QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
 
-      - name: Upload Artifact
-        #if : runner.os == 'windows' || runner.os == 'linux'
+      # - name: Upload Artifact
+      #   #if : runner.os == 'windows' || runner.os == 'linux'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #       name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
+      #       path: ${{env.PYTHON_FOLDER}}
+      #       include-hidden-files: true
+      #       compression-level: 9
+
+      - name: Upload Artifact MacOS
+        if : runner.os == 'macOS'
+        run: |
+          brew install zip
+          cd ${{env.PYTHON_FOLDER}} && zip -r venv.zip *
+          conda create -y -n hf-upload python=3.11
+          source $HOME/miniconda3/bin/activate base
+          conda init
+          conda activate hf-upload
+          python -m pip install hf-transfer huggingface_hub
+          huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN_WRITE }} --add-to-git-credential
+          huggingface-cli upload ${{env.HF_REPO}} venv.zip . --revision ${{env.HF_PREFIX_BRANCH}}-${{ matrix.os }}-${{ matrix.name }}"
+          rm -rf venv.zip
+          huggingface-cli logout
+
+      - name: Upload Artifact Linux
+        if : runner.os == 'linux'
+        run: |
+          sudo apt-get install -y zip
+          cd ${{env.PYTHON_FOLDER}} && zip -r venv.zip *
+          conda create -y -n hf-upload python=3.11
+          source $HOME/miniconda3/bin/activate base
+          conda init
+          conda activate hf-upload
+          python -m pip install hf-transfer huggingface_hub
+          huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN_WRITE }} --add-to-git-credential
+          huggingface-cli upload ${{env.HF_REPO}} venv.zip . --revision ${{env.HF_PREFIX_BRANCH}}-${{ matrix.os }}-${{ matrix.name }}"
+          rm -rf venv.zip
+          huggingface-cli logout
+
+
+      - name: Upload Artifact Windows
+        if : runner.os == 'windows'
         uses: actions/upload-artifact@v4
         with:
             name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
             path: ${{env.PYTHON_FOLDER}}
             include-hidden-files: true
             compression-level: 9
+
 
       - name: Post Upload windows
         if : runner.os == 'windows'
