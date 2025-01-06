@@ -256,19 +256,21 @@ jobs:
           conda activate hf-upload
           python -m pip install hf-transfer huggingface_hub
           huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN_WRITE }} --add-to-git-credential
-          huggingface-cli upload ${{env.HF_REPO}} venv.zip . --revision ${{env.HF_PREFIX_BRANCH}}-${{ matrix.os }}-${{ matrix.name }}
+          huggingface-cli upload ${{env.HF_REPO}} venv.zip --revision ${{env.HF_PREFIX_BRANCH}}-${{ matrix.os }}-${{ matrix.name }}
           rm -rf venv.zip
           huggingface-cli logout
 
 
       - name: Upload Artifact Windows
         if : runner.os == 'windows'
-        uses: actions/upload-artifact@v4
-        with:
-            name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
-            path: ${{env.PYTHON_FOLDER}}
-            include-hidden-files: true
-            compression-level: 9
+        shell: pwsh
+        run: |
+          Compress-Archive -Path ${{env.PYTHON_FOLDER}}/* -DestinationPath venv.zip
+          python -m pip install hf-transfer huggingface_hub
+          huggingface-cli login --token ${{ secrets.HUGGINGFACE_TOKEN_WRITE }} --add-to-git-credential
+          huggingface-cli upload ${{env.HF_REPO}} venv.zip --revision ${{env.HF_PREFIX_BRANCH}}-${{ matrix.os }}-${{ matrix.name }}
+          rm -rf venv.zip
+          huggingface-cli logout
 
 
       - name: Post Upload windows
