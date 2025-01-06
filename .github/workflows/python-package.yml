@@ -28,7 +28,7 @@ on:
 
 
 env:
-  MODEL_DIR: models/ichigo # ${{ inputs.model_dir }}
+  MODEL_DIR: models/ichigo-wrapper # ${{ inputs.model_dir }}
   MODEL_NAME: ichigo # ${{ inputs.model_name }}
   REPO_NAME: janhq/models # ${{ inputs.model_name }}
   BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
