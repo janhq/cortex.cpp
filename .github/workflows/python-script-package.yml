@@ -1,9 +1,6 @@
 name: Build and Package Python Code
 
 on:
-  push:
-    branches:
-      - feat/python-package-ci
   workflow_dispatch:
     inputs:
       model_dir:
@@ -24,11 +21,11 @@ on:
         required: false
 
 env:
-  MODEL_DIR: deployments/ichigo # ${{ inputs.model_dir }}
-  REPO_NAME: janhq/ichigo # ${{ inputs.repo_name}}
-  BRANCH_NAME: feat/ichigo-deployment # ${{ inputs.branch_name }}
-  HF_REPO: cortexso/test # ${{ inputs.hf_repo }}
-  HF_PREFIX_BRANCH: fp16 # ${{ inputs.hf_prefix_branch }}
+  MODEL_DIR: ${{ inputs.model_dir }}
+  REPO_NAME: ${{ inputs.repo_name}}
+  BRANCH_NAME: ${{ inputs.branch_name }}
+  HF_REPO: ${{ inputs.hf_repo }}
+  HF_PREFIX_BRANCH: ${{ inputs.hf_prefix_branch }}
 
 jobs:
   build-and-test:
