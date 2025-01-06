@@ -1,8 +1,6 @@
 name: Build and Package Python Library
 
 on:
-  push:
-    branches: [ feat/python-package-ci ]
   workflow_dispatch:
     inputs:
       model_dir:
@@ -28,12 +26,12 @@ on:
 
 
 env:
-  MODEL_DIR: models/ichigo-wrapper # ${{ inputs.model_dir }}
-  MODEL_NAME: ichigo # ${{ inputs.model_name }}
-  REPO_NAME: janhq/models # ${{ inputs.model_name }}
-  BRANCH_NAME: feat/ci-python-models # ${{ inputs.model_name }}
-  HF_REPO: cortexso/test # ${{ inputs.hf_repo }}
-  HF_PREFIX_BRANCH: fp16 # ${{ inputs.hf_prefix_branch }}
+  MODEL_DIR: ${{ inputs.model_dir }}
+  MODEL_NAME:  ${{ inputs.model_name }}
+  REPO_NAME:  ${{ inputs.model_name }}
+  BRANCH_NAME:  ${{ inputs.model_name }}
+  HF_REPO: ${{ inputs.hf_repo }}
+  HF_PREFIX_BRANCH: ${{ inputs.hf_prefix_branch }}
 
 jobs:
   build-and-test:
@@ -43,15 +41,15 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # - os: "linux"
-          #   name: "amd64"
-          #   runs-on: "ubuntu-20-04-cuda-12-0"
-          # - os: "mac"
-          #   name: "amd64"
-          #   runs-on: "macos-selfhosted-12"
-          # - os: "mac"
-          #   name: "arm64"
-          #   runs-on: "macos-selfhosted-12-arm64"
+          - os: "linux"
+            name: "amd64"
+            runs-on: "ubuntu-20-04-cuda-12-0"
+          - os: "mac"
+            name: "amd64"
+            runs-on: "macos-selfhosted-12"
+          - os: "mac"
+            name: "arm64"
+            runs-on: "macos-selfhosted-12-arm64"
           - os: "windows"
             name: "amd64"
             runs-on: "windows-cuda-12-0"
@@ -221,14 +219,6 @@ jobs:
           QUILL_NOTARY_ISSUER: ${{ secrets.NOTARY_ISSUER }}
           QUILL_NOTARY_KEY: "/tmp/notary-key.p8"
 
-      # - name: Upload Artifact
-      #   #if : runner.os == 'windows' || runner.os == 'linux'
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #       name: ${{env.MODEL_NAME}}-${{ matrix.os }}-${{ matrix.name }}
-      #       path: ${{env.PYTHON_FOLDER}}
-      #       include-hidden-files: true
-      #       compression-level: 9
 
       - name: Upload Artifact MacOS
         if : runner.os == 'macOS'
