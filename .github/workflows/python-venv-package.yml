@@ -1,10 +1,10 @@
-name: Build and Package Python Library
+name: Build and Package Python Virtual Environment
 
 on:
   workflow_dispatch:
     inputs:
       model_dir:
-        description: "Path to model directory in janhq/models repo"
+        description: "Path to model directory in github repo"
         required: true
       model_name:
         description: "name of model to be release"
@@ -28,8 +28,8 @@ on:
 env:
   MODEL_DIR: ${{ inputs.model_dir }}
   MODEL_NAME:  ${{ inputs.model_name }}
-  REPO_NAME:  ${{ inputs.model_name }}
-  BRANCH_NAME:  ${{ inputs.model_name }}
+  REPO_NAME:  ${{ inputs.repo_name }}
+  BRANCH_NAME:  ${{ inputs.branch_name }}
   HF_REPO: ${{ inputs.hf_repo }}
   HF_PREFIX_BRANCH: ${{ inputs.hf_prefix_branch }}
 
