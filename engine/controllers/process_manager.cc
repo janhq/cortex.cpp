@@ -7,16 +7,10 @@
 void ProcessManager::destroy(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  auto res = inference_service_->GetModels(std::make_shared<Json::Value>());
-  // Check if there are any running models
-  auto running_models = std::get<1>(res);
-  if (!running_models.get("data", Json::Value()).empty()) {
-    for (const auto& model : running_models["data"]) {
-      std::string model_id = model["id"].asString();
-      model_service_->StopModel(model_id);
-    }
+  auto loaded_engines = engine_service_->GetSupportedEngineNames();
+  for (const auto& engine : loaded_engines.value()) {
+    engine_service_->UnloadEngine(engine);
   }
-
   app().quit();
   Json::Value ret;
   ret["message"] = "Program is exitting, goodbye!";

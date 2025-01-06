@@ -18,7 +18,6 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
 
 PythonEngine::PythonEngine() : q_(4 /*n_parallel*/, "python_engine") {}
 
-
 PythonEngine::~PythonEngine() {
   curl_global_cleanup();
 }
@@ -507,7 +506,6 @@ CurlResponse PythonEngine::MakeStreamPostRequest(
   return response;
 }
 
-
 void PythonEngine::HandleInference(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
@@ -943,7 +941,11 @@ void PythonEngine::Load(EngineLoadOption opts) {
   // Develop register model here on loading engine
 };
 
-void PythonEngine::Unload(EngineUnloadOption opts) {};
+void PythonEngine::Unload(EngineUnloadOption opts) {
+  for (const auto& pair : models_) {
+    TerminateModelProcess(pair.first);
+  }
+};
 
 // extern "C" {
 // EngineI* get_engine() {
