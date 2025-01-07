@@ -51,7 +51,7 @@ class RemoteEngine : public RemoteEngineI {
   Json::Value metadata_;
   std::string chat_req_template_;
   std::string chat_res_template_;
-  std::string api_key_header_;
+  std::vector<std::string> header_;
   std::string engine_name_;
   std::string chat_url_;
   trantor::ConcurrentTaskQueue q_;
@@ -65,11 +65,11 @@ class RemoteEngine : public RemoteEngineI {
       const std::function<void(Json::Value&&, Json::Value&&)>& callback);
   CurlResponse MakeGetModelsRequest(const std::string& url,
                                     const std::string& api_key,
-                                    const std::string& api_key_template);
+                                    const std::string& header_template);
 
   // Internal model management
   bool LoadModelConfig(const std::string& model, const std::string& yaml_path,
-                       const std::string& api_key);
+                       const Json::Value& body);
   ModelConfig* GetModelConfig(const std::string& model);
 
  public:
@@ -104,7 +104,7 @@ class RemoteEngine : public RemoteEngineI {
 
   Json::Value GetRemoteModels(const std::string& url,
                               const std::string& api_key,
-                              const std::string& api_key_template) override;
+                              const std::string& header_template) override;
 };
 
 }  // namespace remote_engine

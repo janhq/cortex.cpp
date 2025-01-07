@@ -5397,9 +5397,9 @@
             "type": "string",
             "description": "The identifier of the model."
           },
-          "api_key_template": {
+          "header_template": {
             "type": "string",
-            "description": "Template for the API key header."
+            "description": "Template for the header."
           },
           "engine": {
             "type": "string",
@@ -6162,9 +6162,9 @@
             "description": "Number of GPU layers.",
             "example": 33
           },
-          "api_key_template": {
+          "header_template": {
             "type": "string",
-            "description": "Template for the API key header."
+            "description": "Template for the header."
           },
           "version": {
             "type": "string",

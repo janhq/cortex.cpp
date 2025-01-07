@@ -1140,15 +1140,15 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
   auto url = remote_engine_json["metadata"]["get_models_url"].asString();
   auto api_key = remote_engine_json["api_key"].asString();
-  auto api_key_template =
-      remote_engine_json["metadata"]["api_key_template"].asString();
+  auto header_template =
+      remote_engine_json["metadata"]["header_template"].asString();
   if (url.empty())
     CTL_WRN("url is empty");
   if (api_key.empty())
     CTL_WRN("api_key is empty");
-  if (api_key_template.empty())
-    CTL_WRN("api_key_template is empty");
-  auto res = e->GetRemoteModels(url, api_key, api_key_template);
+  if (header_template.empty())
+    CTL_WRN("header_template is empty");
+  auto res = e->GetRemoteModels(url, api_key, header_template);
   if (!res["error"].isNull()) {
     return cpp::fail(res["error"].asString());
   } else {

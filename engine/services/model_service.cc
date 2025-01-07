@@ -917,6 +917,10 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         json_data = remote_mc.ToJson();
 
         json_data["api_key"] = std::move(remote_engine_json["api_key"]);
+        if (auto v = remote_engine_json["version"].asString();
+            !v.empty() && v != "latest") {
+          json_data["version"] = v;
+        }
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(
                 fs::path(model_entry.value().path_to_model_yaml))

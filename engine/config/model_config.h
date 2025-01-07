@@ -19,7 +19,7 @@ namespace config {
 
 struct RemoteModelConfig {
   std::string model;
-  std::string api_key_template;
+  std::string header_template;
   std::string engine;
   std::string version;
   size_t created;
@@ -36,8 +36,8 @@ struct RemoteModelConfig {
 
     // Load basic string fields
     model = json.get("model", model).asString();
-    api_key_template =
-        json.get("api_key_template", api_key_template).asString();
+    header_template =
+        json.get("header_template", header_template).asString();
     engine = json.get("engine", engine).asString();
     version = json.get("version", version).asString();
     created =
@@ -57,7 +57,7 @@ struct RemoteModelConfig {
 
     // Add basic string fields
     json["model"] = model;
-    json["api_key_template"] = api_key_template;
+    json["header_template"] = header_template;
     json["engine"] = engine;
     json["version"] = version;
     json["created"] = static_cast<Json::UInt64>(created);
@@ -78,7 +78,7 @@ struct RemoteModelConfig {
 
     // Convert basic fields
     root["model"] = model;
-    root["api_key_template"] = api_key_template;
+    root["header_template"] = header_template;
     root["engine"] = engine;
     root["version"] = version;
     root["object"] = object;
@@ -111,7 +111,7 @@ struct RemoteModelConfig {
 
     // Load basic fields
     model = root["model"].as<std::string>("");
-    api_key_template = root["api_key_template"].as<std::string>("");
+    header_template = root["header_template"].as<std::string>("");
     engine = root["engine"].as<std::string>("");
     version = root["version"] ? root["version"].as<std::string>() : "";
     created = root["created"] ? root["created"].as<std::size_t>() : 0;

@@ -66,7 +66,7 @@ const std::string kAnthropicTransformRespTemplate = R"({
 const std::string kDefaultRemoteModelConfig = R"(
 {
   "model": "o1-preview",
-  "api_key_template": "Authorization: Bearer {{api_key}}",
+  "header_template": "Authorization: Bearer {{api_key}}",
   "engine": "openai",
   "version": "1",
   "inference_params": {

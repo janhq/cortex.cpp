@@ -1,6 +1,7 @@
 #include "remote_engine.h"
 #include <filesystem>
 #include <iostream>
+#include <regex>
 #include <sstream>
 #include <string>
 #include "utils/json_helper.h"
@@ -16,6 +17,79 @@ bool is_anthropic(const std::string& model) {
   return model.find("claude") != std::string::npos;
 }
 
+std::vector<std::string> GetReplacements(const std::string& header_template) {
+  std::vector<std::string> replacements;
+  std::regex placeholder_regex(R"(\{\{(.*?)\}\})");
+  std::smatch match;
+
+  std::string template_copy = header_template;
+  while (std::regex_search(template_copy, match, placeholder_regex)) {
+    std::string key = match[1].str();
+    replacements.push_back(key);
+    template_copy = match.suffix().str();
+  }
+
+  return replacements;
+}
+
+std::vector<std::string> ReplaceHeaderPlaceholder(
+    const std::string& header_template,
+    const std::unordered_map<std::string, std::string>& replacements) {
+  std::vector<std::string> result;
+  size_t start = 0;
+  size_t end = header_template.find("}}");
+
+  while (end != std::string::npos) {
+    // Extract the part
+    std::string part = header_template.substr(start, end - start + 2);
+
+    // Replace variables in this part
+    for (const auto& var : replacements) {
+      std::string placeholder = "{{" + var.first + "}}";
+      size_t pos = part.find(placeholder);
+      if (pos != std::string::npos) {
+        part.replace(pos, placeholder.length(), var.second);
+      }
+    }
+
+    // Trim whitespace
+    part.erase(0, part.find_first_not_of(" \t\n\r\f\v"));
+    part.erase(part.find_last_not_of(" \t\n\r\f\v") + 1);
+
+    // Add to result if not empty
+    if (!part.empty()) {
+      result.push_back(part);
+    }
+
+    // Move to next part
+    start = end + 2;
+    end = header_template.find("}}", start);
+  }
+
+  // Process any remaining part
+  if (start < header_template.length()) {
+    std::string part = header_template.substr(start);
+
+    // Replace variables in this part
+    for (const auto& var : replacements) {
+      std::string placeholder = "{{" + var.first + "}}";
+      size_t pos = part.find(placeholder);
+      if (pos != std::string::npos) {
+        part.replace(pos, placeholder.length(), var.second);
+      }
+    }
+
+    // Trim whitespace
+    part.erase(0, part.find_first_not_of(" \t\n\r\f\v"));
+    part.erase(part.find_last_not_of(" \t\n\r\f\v") + 1);
+
+    if (!part.empty()) {
+      result.push_back(part);
+    }
+  }
+  return result;
+}
+
 constexpr const std::array<std::string_view, 5> kAnthropicModels = {
     "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
     "claude-3-opus-20240229", "claude-3-sonnet-20240229",
@@ -29,7 +103,7 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   std::string chunk(ptr, size * nmemb);
 
   context->buffer += chunk;
-
+  CTL_DBG(chunk);
   // Process complete lines
   size_t pos;
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
@@ -106,13 +180,8 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
   CTL_DBG("full_url: " << full_url);
 
   struct curl_slist* headers = nullptr;
-  if (!config.api_key.empty()) {
-    headers = curl_slist_append(headers, api_key_header_.c_str());
-  }
-
-  if (is_anthropic(config.model)) {
-    std::string v = "anthropic-version: " + config.version;
-    headers = curl_slist_append(headers, v.c_str());
+  for (auto const& h : header_) {
+    headers = curl_slist_append(headers, h.c_str());
   }
 
   headers = curl_slist_append(headers, "Content-Type: application/json");
@@ -180,6 +249,21 @@ std::string ReplaceApiKeyPlaceholder(const std::string& templateStr,
   return result;
 }
 
+std::vector<std::string> ReplaceHeaderPlaceholder(
+    const std::string& template_str, Json::Value json_body) {
+  CTL_DBG(template_str);
+  auto keys = GetReplacements(template_str);
+  if (keys.empty())
+    return std::vector<std::string>{};
+  std::unordered_map<std::string, std::string> replacements;
+  for (auto const& k : keys) {
+    if (json_body.isMember(k)) {
+      replacements.insert({k, json_body[k].asString()});
+    }
+  }
+  return ReplaceHeaderPlaceholder(template_str, replacements);
+}
+
 static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
                             std::string* data) {
   data->append(ptr, size * nmemb);
@@ -207,7 +291,7 @@ RemoteEngine::ModelConfig* RemoteEngine::GetModelConfig(
 
 CurlResponse RemoteEngine::MakeGetModelsRequest(
     const std::string& url, const std::string& api_key,
-    const std::string& api_key_template) {
+    const std::string& header_template) {
   CURL* curl = curl_easy_init();
   CurlResponse response;
 
@@ -218,7 +302,7 @@ CurlResponse RemoteEngine::MakeGetModelsRequest(
   }
 
   std::string api_key_header =
-      ReplaceApiKeyPlaceholder(api_key_template, api_key);
+      ReplaceApiKeyPlaceholder(header_template, api_key);
 
   struct curl_slist* headers = nullptr;
   headers = curl_slist_append(headers, api_key_header.c_str());
@@ -264,14 +348,10 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
   CTL_DBG("full_url: " << full_url);
 
   struct curl_slist* headers = nullptr;
-  if (!config.api_key.empty()) {
-    headers = curl_slist_append(headers, api_key_header_.c_str());
+  for (auto const& h : header_) {
+    headers = curl_slist_append(headers, h.c_str());
   }
 
-  if (is_anthropic(config.model)) {
-    std::string v = "anthropic-version: " + config.version;
-    headers = curl_slist_append(headers, v.c_str());
-  }
   headers = curl_slist_append(headers, "Content-Type: application/json");
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
@@ -300,32 +380,21 @@ CurlResponse RemoteEngine::MakeChatCompletionRequest(
 
 bool RemoteEngine::LoadModelConfig(const std::string& model,
                                    const std::string& yaml_path,
-                                   const std::string& api_key) {
+                                   const Json::Value& body) {
   try {
     YAML::Node config = YAML::LoadFile(yaml_path);
 
     ModelConfig model_config;
     model_config.model = model;
-    if (is_anthropic(model)) {
-      if (!config["version"]) {
-        CTL_ERR("Missing version for model: " << model);
-        return false;
-      }
-      model_config.version = config["version"].as<std::string>();
-    }
-
-    // Required fields
-    if (!config["api_key_template"]) {
-      LOG_ERROR << "Missing required fields in config for model " << model;
-      return false;
-    }
-
-    model_config.api_key = api_key;
+    model_config.api_key = body["api_key"].asString();
     // model_config.url = ;
     // Optional fields
-    if (config["api_key_template"]) {
-      api_key_header_ = ReplaceApiKeyPlaceholder(
-          config["api_key_template"].as<std::string>(), api_key);
+    if (auto s = config["header_template"];
+        s && !s.as<std::string>().empty()) {
+      header_ = ReplaceHeaderPlaceholder(s.as<std::string>(), body);
+      for (auto const& h : header_) {
+        CTL_DBG("header: " << h);
+      }
     }
     if (config["transform_req"]) {
       model_config.transform_req = config["transform_req"];
@@ -435,7 +504,17 @@ void RemoteEngine::LoadModel(
     }
   }
 
-  if (!LoadModelConfig(model, model_path, api_key)) {
+  if (json_body->isMember("metadata")) {
+    if (!metadata_["header_template"].isNull()) {
+      header_ = ReplaceHeaderPlaceholder(
+          metadata_["header_template"].asString(), *json_body);
+      for (auto const& h : header_) {
+        CTL_DBG("header: " << h);
+      }
+    }
+  }
+
+  if (!LoadModelConfig(model, model_path, *json_body)) {
     Json::Value error;
     error["error"] = "Failed to load model configuration";
     Json::Value status;
@@ -445,13 +524,6 @@ void RemoteEngine::LoadModel(
     status["status_code"] = k500InternalServerError;
     callback(std::move(status), std::move(error));
     return;
-  }
-
-  if (json_body->isMember("metadata")) {
-    if (!metadata_["api_key_template"].isNull()) {
-      api_key_header_ = ReplaceApiKeyPlaceholder(
-          metadata_["api_key_template"].asString(), api_key);
-    }
   }
 
   Json::Value response;
@@ -697,7 +769,7 @@ void RemoteEngine::HandleEmbedding(
 
 Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
                                           const std::string& api_key,
-                                          const std::string& api_key_template) {
+                                          const std::string& header_template) {
   if (url.empty()) {
     if (engine_name_ == kAnthropicEngine) {
       Json::Value json_resp;
@@ -719,7 +791,7 @@ Json::Value RemoteEngine::GetRemoteModels(const std::string& url,
       return Json::Value();
     }
   } else {
-    auto response = MakeGetModelsRequest(url, api_key, api_key_template);
+    auto response = MakeGetModelsRequest(url, api_key, header_template);
     if (response.error) {
       Json::Value error;
       error["error"] = response.error_message;
