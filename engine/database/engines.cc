@@ -14,7 +14,7 @@ Engines::Engines(SQLite::Database& db) : db_(db) {
   CreateTable(db_);
 }
 
-Engines::~Engines() {}
+Engines::~Engines() = default;
 
 std::optional<EngineEntry> Engines::UpsertEngine(
     const std::string& engine_name, const std::string& type,
