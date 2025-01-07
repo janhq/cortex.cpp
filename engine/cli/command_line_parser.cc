@@ -908,6 +908,7 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
                                            "ngl",
                                            "ctx_len",
                                            "n_parallel",
+                                           "cpu_threads",
                                            "engine",
                                            "prompt_template",
                                            "system_template",
