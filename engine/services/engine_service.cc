@@ -763,8 +763,8 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     // register deps
     if (!(getenv("ENGINE_PATH"))) {
       std::vector<std::filesystem::path> paths{};
-      paths.push_back(std::move(cuda_path));
-      paths.push_back(std::move(engine_dir_path));
+      paths.push_back(cuda_path);
+      paths.push_back(engine_dir_path);
 
       CTL_DBG("Registering dylib for "
               << ne << " with " << std::to_string(paths.size()) << " paths.");
@@ -830,8 +830,8 @@ void EngineService::RegisterEngineLibPath() {
 
       // register deps
       std::vector<std::filesystem::path> paths{};
-      paths.push_back(std::move(cuda_path));
-      paths.push_back(std::move(engine_dir_path));
+      paths.push_back(cuda_path);
+      paths.push_back(engine_dir_path);
 
       CTL_DBG("Registering dylib for "
               << ne << " with " << std::to_string(paths.size()) << " paths.");
