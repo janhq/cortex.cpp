@@ -101,9 +101,20 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
                            void* userdata) {
   auto* context = static_cast<StreamContext*>(userdata);
   std::string chunk(ptr, size * nmemb);
+  CTL_DBG(chunk);
+  auto check_error = json_helper::ParseJsonString(chunk);
+  if (check_error.isMember("error")) {
+    CTL_WRN(chunk);
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = true;
+    status["is_stream"] = true;
+    status["status_code"] = k400BadRequest;
+    (*context->callback)(std::move(status), std::move(check_error));
+    return size * nmemb;
+  }
 
   context->buffer += chunk;
-  CTL_DBG(chunk);
   // Process complete lines
   size_t pos;
   while ((pos = context->buffer.find('\n')) != std::string::npos) {
@@ -389,8 +400,7 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
     model_config.api_key = body["api_key"].asString();
     // model_config.url = ;
     // Optional fields
-    if (auto s = config["header_template"];
-        s && !s.as<std::string>().empty()) {
+    if (auto s = config["header_template"]; s && !s.as<std::string>().empty()) {
       header_ = ReplaceHeaderPlaceholder(s.as<std::string>(), body);
       for (auto const& h : header_) {
         CTL_DBG("header: " << h);
