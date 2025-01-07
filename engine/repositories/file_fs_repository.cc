@@ -17,7 +17,6 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
     std::filesystem::create_directories(file_container_path);
   }
 
-  cortex::db::File db;
   auto original_filename = file_metadata.filename;
   auto file_full_path = file_container_path / original_filename;
 
@@ -53,7 +52,7 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
     file.flush();
     file.close();
 
-    auto result = db.AddFileEntry(file_metadata);
+    auto result = db_service_->AddFileEntry(file_metadata);
     if (result.has_error()) {
       std::filesystem::remove(file_full_path);
       return cpp::fail(result.error());
@@ -70,8 +69,7 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
 cpp::result<std::vector<OpenAi::File>, std::string> FileFsRepository::ListFiles(
     const std::string& purpose, uint8_t limit, const std::string& order,
     const std::string& after) const {
-  cortex::db::File db;
-  auto res = db.GetFileList();
+  auto res = db_service_->GetFileList();
   if (res.has_error()) {
     return cpp::fail(res.error());
   }
@@ -101,8 +99,7 @@ cpp::result<OpenAi::File, std::string> FileFsRepository::RetrieveFile(
   CTL_INF("Retrieving file: " + file_id);
 
   auto file_container_path = GetFilePath();
-  cortex::db::File db;
-  auto res = db.GetFileById(file_id);
+  auto res = db_service_->GetFileById(file_id);
   if (res.has_error()) {
     return cpp::fail(res.error());
   }
@@ -158,15 +155,14 @@ cpp::result<void, std::string> FileFsRepository::DeleteFileLocal(
     const std::string& file_id) {
   CTL_INF("Deleting file: " + file_id);
   auto file_container_path = GetFilePath();
-  cortex::db::File db;
-  auto file_metadata = db.GetFileById(file_id);
+  auto file_metadata = db_service_->GetFileById(file_id);
   if (file_metadata.has_error()) {
     return cpp::fail(file_metadata.error());
   }
 
   auto file_path = file_container_path / file_metadata->filename;
 
-  auto res = db.DeleteFileEntry(file_id);
+  auto res = db_service_->DeleteFileEntry(file_id);
   if (res.has_error()) {
     CTL_ERR("Failed to delete file entry: " << res.error());
     return cpp::fail(res.error());
