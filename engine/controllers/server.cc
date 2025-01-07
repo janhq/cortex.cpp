@@ -44,6 +44,11 @@ void server::ChatCompletion(
     }
   }();
 
+  if (auto efm = inference_svc_->GetEngineByModelId(model_id); !efm.empty()) {
+    engine_type = efm;
+    (*json_body)["engine"] = efm;
+  }
+
   LOG_DEBUG << "request body: " << json_body->toStyledString();
   auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
@@ -203,7 +208,6 @@ void server::RouteRequest(
     ProcessNonStreamRes(callback, *q);
     LOG_TRACE << "Done route request";
   }
-
 }
 
 void server::LoadModel(const HttpRequestPtr& req,

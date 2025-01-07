@@ -1394,3 +1394,22 @@ std::shared_ptr<ModelMetadata> ModelService::GetCachedModelMetadata(
     return nullptr;
   return loaded_model_metadata_map_.at(model_id);
 }
+
+std::string ModelService::GetEngineByModelId(
+    const std::string& model_id) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+  auto model_entry = db_service_->GetModelInfo(model_id);
+  if (model_entry.has_error()) {
+    CTL_WRN("Error: " + model_entry.error());
+    return "";
+  }
+  config::YamlHandler yaml_handler;
+  yaml_handler.ModelConfigFromFile(
+      fmu::ToAbsoluteCortexDataPath(
+          fs::path(model_entry.value().path_to_model_yaml))
+          .string());
+  auto mc = yaml_handler.GetModelConfig();
+  CTL_DBG(mc.engine);
+  return mc.engine;
+}
