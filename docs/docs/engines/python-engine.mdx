@@ -1,0 +1,210 @@
+---
+title: Python Engine
+description: Interface for running Python process through cortex
+---
+
+:::warning
+🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+:::
+# Guild to Python Engine
+## Introduction
+To run python program, we need python environment and python intepreter to running the different process from the main cortex process. All requests to The python program will be routed through cortex with Http API protocol.
+
+The python-engine acts like a process manager, mange all python processes. 
+Each python program will be treated as a model and has it own model.yml template
+
+## Python engine cpp implementation
+The python-engine implemented the [EngineI Interface ](/docs/engines/index) with the following map:
+- LoadModel: Load the python program and start the python process
+- UnloadModel: Stop the python process
+- GetModelStatus: Send health check requests to the python processes
+- GetModels: Get running python program
+
+Beside the EngineI interface, the python-engine also implemented the HandleInference and HandleRouteRequest method:
+- HandleInference: Send inference request to the python process
+- HandleRouteRequest: route any types of requests to the python process
+
+Python engine is a built in engine of cortex-cpp, so that it will automatically loaded when load model, users don't need to download engine or load/unload engine like working with llama-cpp engine.
+
+## Python program implementation
+
+Each python program will be treated as python model. Each python model has it own `model.yml` template:
+```yaml
+
+id: ichigo-0.5:fp16-linux-amd64
+model: ichigo-0.5:fp16-linux-amd64
+name: Ichigo Wrapper
+version: 1
+
+port: 22310
+script: src/app.py
+log_path: ichigo-wrapper.log
+log_level: INFO
+command:
+  - python
+files:
+  - /home/thuan/cortexcpp/models/cortex.so/ichigo-0.5/fp16-linux-amd64
+depends:
+  - ichigo-0.4:8b-gguf-q4-km
+  - whispervq:fp16-linux-amd64
+  - fish-speech:fp16-linux-amd64
+engine: python-engine
+extra_params:
+  device_id: 0
+  fish_speech_port: 22312
+  ichigo_model: ichigo-0.4:8b-gguf-q4-km
+  ichigo_port: 39281
+  whisper_port: 3348
+```
+
+
+| **Parameter**   | **Description**                                                                                           | **Required** |
+|-----------------|-----------------------------------------------------------------------------------------------------------|--------------|
+| `id`            | Unique identifier for the model, typically includes version and platform information.                     | Yes          |
+| `model`         | Specifies the variant of the model, often denoting size or quantization details.                          | Yes          |
+| `name`          | The human-readable name for the model, used as the `model_id`.                                            | Yes          |
+| `version`       | The specific version number of the model.                                                                 | Yes          |
+| `port`          | The network port on which the Python program will listen for requests.                                    | Yes          |
+| `script`        | Path to the main Python script to be executed by the engine. This is relative path to the model folder                                            | Yes          |
+| `log_path`      | File location where logs will be stored for the Python program's execution. log_path is relative path of cortex data folder                               | No           |
+| `log_level`     | The level of logging detail (e.g., INFO, DEBUG).                                                          | No           |
+| `command`       | The command used to launch the Python program, typically starting with 'python'.                          | Yes          |
+| `files`         | For python models, the files is the path to folder contains all python scripts, model binary and environment to run the program  | No           |
+| `depends`       | Dependencies required by the model, specified by their identifiers. The dependencies are other models                                      | No           |
+| `engine`        | Specifies the engine to use, which in this context is 'python-engine'.                                    | Yes          |
+| `extra_params`  | Additional parameters that may be required by the model, often including device IDs and network ports of dependencies models. This extra_params will be passed when running python script  | No           |
+
+## Ichigo python with cortex
+
+[Ichigo python](https://github.com/janhq/ichigo) is built in model in cortex that support chat with audio.
+### Downloads models
+Ichigo python requires 4 models to run:
+- ichigo-0.5
+- whispervq
+- ichigo-0.4
+- fish-speech (this model is required if user want to use text to speech mode)
+
+Firstly, you need to download these models, remember to chose the correct version base on your device and operating system.
+for example for linux amd64:
+```sh
+> curl --location '127.0.0.1:39281/v1/models/pull' \
+    --header 'Content-Type: application/json' \
+    --data '{"model":"ichigo-0.5:fp16-linux-amd64"}'
+
+> curl --location '127.0.0.1:39281/v1/models/pull' \
+    --header 'Content-Type: application/json' \
+    --data '{"model":"ichigo-0.4:8b-gguf-q4-km"}'
+
+> curl --location '127.0.0.1:39281/v1/models/pull' \
+    --header 'Content-Type: application/json' \
+    --data '{"model":"whispervq:fp16-linux-amd64"}'
+
+> curl --location '127.0.0.1:39281/v1/models/pull' \
+    --header 'Content-Type: application/json' \
+    --data '{"model":"fish-speech:fp16-linux-amd64"}'
+```
+### Start model
+
+Each python model will run it owns server with a port defined in `model.yml`, you can update `model.yml` to change the port.
+for the ichigo-0.5 model, it has `extra_params` that need to be defined correctly:
+extra_params:
+  device_id: 0
+  fish_speech_port: 22312
+  ichigo_model: ichigo-0.4:8b-gguf-q4-km
+  ichigo_port: 39281
+  whisper_port: 3348
+
+To start model just need to send API:
+```sh
+> curl --location '127.0.0.1:39281/v1/models/start' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model":"ichigo-0.5:fp16-linux-amd64"
+}'
+
+```
+
+Then the model will start all dependencies model of ichigo
+
+### Check Status
+
+You can check the status of the model by sending API:
+```
+curl --location '127.0.0.1:39281/v1/models/status/fish-speech:fp16-linux-amd64' 
+```
+
+### Inference
+
+You can send inference request to the model by sending API:
+```sh
+> curl --location '127.0.0.1:39281/v1/inference' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model":"ichigo-0.5:fp16-linux-amd64",
+    "engine":"python-engine",
+    "body":{
+  "messages": [
+    {
+       "role":"system",
+"content":"you are helpful assistant, you must answer questions short and concil!"
+    }
+  ],
+  "input_audio": {
+    "data": "base64_encoded_audio_data",
+    "format": "wav"
+  },
+  "model": "ichigo-0.4:8b-gguf-q4km",
+  "stream": true,
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 2048,
+  "presence_penalty": 0,
+  "frequency_penalty": 0,
+  "stop": [
+    "<|eot_id|>"
+  ],
+  "output_audio": true
+}}'
+
+```
+
+### Stop Model
+
+You can stop the model by sending API:
+```sh
+> curl --location '127.0.0.1:39281/v1/models/stop' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model":"ichigo-0.5:fp16-linux-amd64"
+}'
+```
+
+Cortex also stop all dependencies of this model.
+
+### Route requests
+
+Beside from that, cortex also support route any kind of request to python program through the route request endpoint.
+
+```sh
+curl --location '127.0.0.1:39281/v1/route/request' \
+--header 'Content-Type: application/json' \
+--data '{
+    "model":"whispervq:fp16",
+    "path":"/inference",
+    "engine":"python-engine",
+    "method":"post",
+    "transform_response":"{ {%- set first = true -%} {%- for key, value in input_request -%} {%- if key == \"tokens\" -%} {%- if not first -%},{%- endif -%} \"{{ key }}\": {{ tojson(value) }} {%- set first = false -%} {%- endif -%} {%- endfor -%} }",
+    "body": {
+  "data": "base64 data",
+  "format": "wav"
+}
+}
+'
+
+```
+## Add new python model
+
+### Python model implementation
+
+
+### Python venv package
