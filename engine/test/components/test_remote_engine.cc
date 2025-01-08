@@ -128,6 +128,59 @@ TEST_F(RemoteEngineTest, OpenAiResponse) {
             res_json["choices"][0]["delta"]["content"].asString());
 }
 
+TEST_F(RemoteEngineTest, AnthropicResponse) {
+  std::string tpl = R"(
+  {% if input_request.stream %} 
+  {"object": "chat.completion.chunk", "model": "{{ input_request.model }}", "choices": [{"index": 0, "delta": { {% if input_request.type == "message_start" %} "role": "assistant", "content": null {% else if input_request.type == "ping" %} "role": "assistant", "content": null {% else if input_request.type == "content_block_delta" %} "role": "assistant", "content": "{{ input_request.delta.text }}" {% else if input_request.type == "content_block_stop" %} "role": "assistant", "content": null {% else if input_request.type == "content_block_stop" %} "role": "assistant", "content": null {% endif %} }, {% if input_request.type == "content_block_stop" %} "finish_reason": "stop" {% else %} "finish_reason": null {% endif %} }]} 
+  {% else %} 
+    {"id": "{{ input_request.id }}", 
+    "created": null, 
+    "object": "chat.completion", 
+    "model": "{{ input_request.model }}", 
+    "choices": [{ 
+      "index": 0, 
+      "message": { 
+        "role": "{{ input_request.role }}", 
+        "content": {% if not input_request.content %} null {% else if input_request.content and input_request.content.0.type == "text" %}  {{input_request.content.0.text}} {% else %} null {% endif %}, 
+        "refusal": null }, 
+      "logprobs": null, 
+      "finish_reason": "{{ input_request.stop_reason }}" } ], 
+    "usage": { 
+      "prompt_tokens": {{ input_request.usage.input_tokens }}, 
+      "completion_tokens": {{ input_request.usage.output_tokens }}, 
+      "total_tokens": {{ input_request.usage.input_tokens + input_request.usage.output_tokens }}, 
+      "prompt_tokens_details": { "cached_tokens": 0 }, 
+      "completion_tokens_details": { "reasoning_tokens": 0, "accepted_prediction_tokens": 0, "rejected_prediction_tokens": 0 } }, 
+      "system_fingerprint": "fp_6b68a8204b"} 
+  {% endif %})";
+  std::string message = R"(
+ {
+    "content": [],
+    "id": "msg_01SckpnDyChcmmawQsWHr8CH",
+    "model": "claude-3-opus-20240229",
+    "role": "assistant",
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stream": false,
+    "type": "message",
+    "usage": {
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "input_tokens": 130,
+      "output_tokens": 3
+    }
+  })";
+  auto data = json_helper::ParseJsonString(message);
+
+  extensions::TemplateRenderer rdr;
+  auto res = rdr.Render(tpl, data);
+
+  auto res_json = json_helper::ParseJsonString(res);
+  EXPECT_EQ(data["model"].asString(), res_json["model"].asString());
+  EXPECT_EQ(data["created"].asInt(), res_json["created"].asInt());
+  EXPECT_TRUE(res_json["choices"][0]["message"]["content"].isNull());
+}
+
 TEST_F(RemoteEngineTest, HeaderTemplate) {
   {
     std::string header_template =
