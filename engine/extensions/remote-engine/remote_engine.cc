@@ -4,6 +4,7 @@
 #include <regex>
 #include <sstream>
 #include <string>
+#include "helper.h"
 #include "utils/json_helper.h"
 #include "utils/logging_utils.h"
 namespace remote_engine {
@@ -13,82 +14,6 @@ constexpr const int k400BadRequest = 400;
 constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
 constexpr const int kFileLoggerOption = 0;
-bool is_anthropic(const std::string& model) {
-  return model.find("claude") != std::string::npos;
-}
-
-std::vector<std::string> GetReplacements(const std::string& header_template) {
-  std::vector<std::string> replacements;
-  std::regex placeholder_regex(R"(\{\{(.*?)\}\})");
-  std::smatch match;
-
-  std::string template_copy = header_template;
-  while (std::regex_search(template_copy, match, placeholder_regex)) {
-    std::string key = match[1].str();
-    replacements.push_back(key);
-    template_copy = match.suffix().str();
-  }
-
-  return replacements;
-}
-
-std::vector<std::string> ReplaceHeaderPlaceholder(
-    const std::string& header_template,
-    const std::unordered_map<std::string, std::string>& replacements) {
-  std::vector<std::string> result;
-  size_t start = 0;
-  size_t end = header_template.find("}}");
-
-  while (end != std::string::npos) {
-    // Extract the part
-    std::string part = header_template.substr(start, end - start + 2);
-
-    // Replace variables in this part
-    for (const auto& var : replacements) {
-      std::string placeholder = "{{" + var.first + "}}";
-      size_t pos = part.find(placeholder);
-      if (pos != std::string::npos) {
-        part.replace(pos, placeholder.length(), var.second);
-      }
-    }
-
-    // Trim whitespace
-    part.erase(0, part.find_first_not_of(" \t\n\r\f\v"));
-    part.erase(part.find_last_not_of(" \t\n\r\f\v") + 1);
-
-    // Add to result if not empty
-    if (!part.empty()) {
-      result.push_back(part);
-    }
-
-    // Move to next part
-    start = end + 2;
-    end = header_template.find("}}", start);
-  }
-
-  // Process any remaining part
-  if (start < header_template.length()) {
-    std::string part = header_template.substr(start);
-
-    // Replace variables in this part
-    for (const auto& var : replacements) {
-      std::string placeholder = "{{" + var.first + "}}";
-      size_t pos = part.find(placeholder);
-      if (pos != std::string::npos) {
-        part.replace(pos, placeholder.length(), var.second);
-      }
-    }
-
-    // Trim whitespace
-    part.erase(0, part.find_first_not_of(" \t\n\r\f\v"));
-    part.erase(part.find_last_not_of(" \t\n\r\f\v") + 1);
-
-    if (!part.empty()) {
-      result.push_back(part);
-    }
-  }
-  return result;
-}
 
 constexpr const std::array<std::string_view, 5> kAnthropicModels = {
     "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022",
@@ -260,7 +185,7 @@ std::string ReplaceApiKeyPlaceholder(const std::string& templateStr,
   return result;
 }
 
-std::vector<std::string> ReplaceHeaderPlaceholder(
+std::vector<std::string> ReplaceHeaderPlaceholders(
     const std::string& template_str, Json::Value json_body) {
   CTL_DBG(template_str);
   auto keys = GetReplacements(template_str);
@@ -272,7 +197,7 @@ std::vector<std::string> ReplaceHeaderPlaceholder(
       replacements.insert({k, json_body[k].asString()});
     }
   }
-  return ReplaceHeaderPlaceholder(template_str, replacements);
+  return ReplaceHeaderPlaceholders(template_str, replacements);
 }
 
 static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
@@ -401,7 +326,7 @@ bool RemoteEngine::LoadModelConfig(const std::string& model,
     // model_config.url = ;
     // Optional fields
     if (auto s = config["header_template"]; s && !s.as<std::string>().empty()) {
-      header_ = ReplaceHeaderPlaceholder(s.as<std::string>(), body);
+      header_ = ReplaceHeaderPlaceholders(s.as<std::string>(), body);
       for (auto const& h : header_) {
         CTL_DBG("header: " << h);
       }
@@ -516,7 +441,7 @@ void RemoteEngine::LoadModel(
 
   if (json_body->isMember("metadata")) {
     if (!metadata_["header_template"].isNull()) {
-      header_ = ReplaceHeaderPlaceholder(
+      header_ = ReplaceHeaderPlaceholders(
           metadata_["header_template"].asString(), *json_body);
       for (auto const& h : header_) {
         CTL_DBG("header: " << h);

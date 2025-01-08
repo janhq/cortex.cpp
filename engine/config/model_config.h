@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "config/remote_template.h"
 #include "utils/format_utils.h"
 #include "utils/remote_models_utils.h"
 

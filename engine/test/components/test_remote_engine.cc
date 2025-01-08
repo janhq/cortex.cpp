@@ -1,3 +1,7 @@
+#include <regex>
+#include <string>
+#include <unordered_map>
+#include "extensions/remote-engine/helper.h"
 #include "extensions/template_renderer.h"
 #include "gtest/gtest.h"
 #include "utils/json_helper.h"
@@ -122,4 +126,66 @@ TEST_F(RemoteEngineTest, OpenAiResponse) {
   EXPECT_EQ(data["created"].asInt(), res_json["created"].asInt());
   EXPECT_EQ(data["choices"][0]["delta"]["content"].asString(),
             res_json["choices"][0]["delta"]["content"].asString());
+}
+
+TEST_F(RemoteEngineTest, HeaderTemplate) {
+  {
+    std::string header_template =
+        R"(x-api-key: {{api_key}} anthropic-version: {{version}})";
+    Json::Value test_value;
+    test_value["api_key"] = "test";
+    test_value["version"] = "test_version";
+    std::unordered_map<std::string, std::string> replacements;
+    auto r = remote_engine::GetReplacements(header_template);
+    for (auto s : r) {
+      if (test_value.isMember(s)) {
+        replacements.insert({s, test_value[s].asString()});
+      }
+    }
+
+    auto result =
+        remote_engine::ReplaceHeaderPlaceholders(header_template, replacements);
+
+    EXPECT_EQ(result[0], "x-api-key: test");
+    EXPECT_EQ(result[1], "anthropic-version: test_version");
+  }
+
+  {
+    std::string header_template =
+        R"(x-api-key: {{api_key}} anthropic-version: test_version)";
+    Json::Value test_value;
+    test_value["api_key"] = "test";
+    test_value["version"] = "test_version";
+    std::unordered_map<std::string, std::string> replacements;
+    auto r = remote_engine::GetReplacements(header_template);
+    for (auto s : r) {
+      if (test_value.isMember(s)) {
+        replacements.insert({s, test_value[s].asString()});
+      }
+    }
+
+    auto result =
+        remote_engine::ReplaceHeaderPlaceholders(header_template, replacements);
+
+    EXPECT_EQ(result[0], "x-api-key: test");
+    EXPECT_EQ(result[1], "anthropic-version: test_version");
+  }
+
+  {
+    std::string header_template = R"(Authorization: Bearer {{api_key}}")";
+    Json::Value test_value;
+    test_value["api_key"] = "test";
+    std::unordered_map<std::string, std::string> replacements;
+    auto r = remote_engine::GetReplacements(header_template);
+    for (auto s : r) {
+      if (test_value.isMember(s)) {
+        replacements.insert({s, test_value[s].asString()});
+      }
+    }
+
+    auto result =
+        remote_engine::ReplaceHeaderPlaceholders(header_template, replacements);
+
+    EXPECT_EQ(result[0], "Authorization: Bearer test");
+  }
 }
