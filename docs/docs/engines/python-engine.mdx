@@ -206,5 +206,98 @@ curl --location '127.0.0.1:39281/v1/route/request' \
 
 ### Python model implementation
 
+The implementation of a python program can follow this [implementation](https://github.com/janhq/ichigo/pull/154).
+The python server should expose at least 2 endpoint:
+- /health : for checking status of server.
+- /inference : for inferencing purpose.
 
+Exemple of the main entrypoint `src/app.py`:
+
+```
+import argparse
+import os
+import sys
+from pathlib import Path
+
+from contextlib import asynccontextmanager
+
+from typing import AsyncGenerator, List
+
+import uvicorn
+from dotenv import load_dotenv
+from fastapi import APIRouter, FastAPI
+
+from common.utility.logger_utility import LoggerUtility
+from services.audio.audio_controller import AudioController
+from services.audio.implementation.audio_service import AudioService
+from services.health.health_controller import HealthController
+
+
+def create_app() -> FastAPI:
+    routes: List[APIRouter] = [
+        HealthController(),
+        AudioController()
+    ]
+    app = FastAPI()
+    for route in routes:
+        app.include_router(route)
+    return app
+
+
+def parse_argument():
+    parser = argparse.ArgumentParser(description="Ichigo-wrapper Application")
+    parser.add_argument('--log_path', type=str,
+                        default='Ichigo-wrapper.log', help='The log file path')
+    parser.add_argument('--log_level', type=str, default='INFO',
+                        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'TRACE'], help='The log level')
+    parser.add_argument('--port', type=int, default=22310,
+                        help='The port to run the Ichigo-wrapper app on')
+    parser.add_argument('--device_id', type=str, default="0",
+                        help='The port to run the Ichigo-wrapper app on')
+    parser.add_argument('--package_dir', type=str, default="",
+                        help='The package-dir to be extended to sys.path')
+    parser.add_argument('--whisper_port', type=int, default=3348,
+                        help='The port of whisper vq model')
+    parser.add_argument('--ichigo_port', type=int, default=39281,
+                        help='The port of ichigo model')
+    parser.add_argument('--fish_speech_port', type=int, default=22312,
+                        help='The port of fish speech model')
+    parser.add_argument('--ichigo_model', type=str, default="ichigo:8b-gguf-q4-km",
+                        help='The ichigo model name')
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    args = parse_argument()
+    LoggerUtility.init_logger(__name__, args.log_level, args.log_path)
+
+    env_path = Path(os.path.dirname(os.path.realpath(__file__))
+                    ) / "variables" / ".env"
+    AudioService.initialize(
+        args.whisper_port, args.ichigo_port, args.fish_speech_port, args.ichigo_model)
+    load_dotenv(dotenv_path=env_path)
+    app: FastAPI = create_app()
+    print("Server is running at: 0.0.0.0:", args.port)
+    uvicorn.run(app=app, host="0.0.0.0", port=args.port)
+
+```
+
+
+The parse_argument must include parameters to integrate with cortex:
+- port
+- log_path
+- log_level
+
+The python server can also have extra parameters and need to be defined in `extra_params` part of `model.yml`
+When starting server, the parameters will be override by the parameters in `model.yml`
+
+When finished python code, you need to trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-script-package.yml)
+so that the latest code will be pushed to cortexso huggingface. After pushed to HF, user can download and use it.
 ### Python venv package
+For packaging python venv, you need to prepare a `requirements.txt` and a `requirements.cuda.txt` file in the root of your project.
+The `requirements.txt` file should contain all the dependencies for your project, and the `requirements.cuda.txt` file should contain all the dependencies that require CUDA.
+The `requirements.txt will be used to build venv for MacOS. The `requirements.cuda.txt` will be used to build venv for Linux and Windows.
+
+After finished you need to trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-venv-package.yml). 
+ After the CI is finished, the venv for 4 os will be build and pushed to HuggingFace and it can be downloaded and used by users.
