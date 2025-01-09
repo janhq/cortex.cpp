@@ -294,10 +294,24 @@ When starting server, the parameters will be override by the parameters in `mode
 
 When finished python code, you need to trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-script-package.yml)
 so that the latest code will be pushed to cortexso huggingface. After pushed to HF, user can download and use it.
+The CI will clone and checkout approriate branch of your repo and navigate to the correct folder base on input parameters.The CI needs 5 parameters:
+- Path to model directory in github repo: the path to folder contains all model scripts for running python program
+- name of repo to be checked out: name of github repo 
+- branch to be checked out: name of branch to be checked out
+- name of huggingface repo to be pushed: name of huggingface repo to be pushed (e.g. cortexso/ichigo-0.5)
+- prefix of hf branch: The prefix of branch name (e.g `fp16`)
+
 ### Python venv package
 For packaging python venv, you need to prepare a `requirements.txt` and a `requirements.cuda.txt` file in the root of your project.
 The `requirements.txt` file should contain all the dependencies for your project, and the `requirements.cuda.txt` file should contain all the dependencies that require CUDA.
-The `requirements.txt will be used to build venv for MacOS. The `requirements.cuda.txt` will be used to build venv for Linux and Windows.
+The `requirements.txt` will be used to build venv for MacOS. The `requirements.cuda.txt` will be used to build venv for Linux and Windows.
 
 After finished you need to trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-venv-package.yml). 
  After the CI is finished, the venv for 4 os will be build and pushed to HuggingFace and it can be downloaded and used by users.
+ The CI will clone and checkout approriate branch of your repo and navigate to the correct folder contains `requirements.txt` base on input parameters.The CI needs 5 parameters:
+- Path to model directory in github repo: the path to folder contains all model scripts for running python program
+- name of repo to be checked out: name of github repo 
+- name of model to be release: name of the model that we are building venv for (e.g whispervq)
+- branch to be checked out: name of branch to be checked out
+- name of huggingface repo to be pushed: name of huggingface repo to be pushed (e.g. cortexso/ichigo-0.5)
+- prefix of hf branch: The prefix of branch name (e.g `fp16`)
