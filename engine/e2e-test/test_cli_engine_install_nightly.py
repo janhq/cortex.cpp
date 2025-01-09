@@ -47,6 +47,7 @@ class TestCliEngineInstall:
         assert "is not supported on" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
+    @pytest.mark.skipif(platform.system() == "Linux", reason="Wait for linux arm ready")
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
         exit_code, output, error = run(
             "Install Engine",
