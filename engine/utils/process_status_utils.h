@@ -3,6 +3,8 @@
 #ifdef _WIN32
 #include <tlhelp32.h>
 #include <windows.h>
+#include <process.h>
+using pid_t = DWORD;
 #elif defined(__APPLE__) || defined(__linux__)
 #include <errno.h>
 #include <signal.h>
