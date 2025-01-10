@@ -15,16 +15,17 @@ Each python program will be treated as a model and has it own model.yml template
 
 ## Python engine cpp implementation
 The python-engine implemented the [EngineI Interface ](/docs/engines/engine-extension) with the following map:
-- LoadModel: Load the python program and start the python process
-- UnloadModel: Stop the python process
-- GetModelStatus: Send health check requests to the python processes
-- GetModels: Get running python program
+- LoadModel: Loads the Python program and starts the Python process
+- UnloadModel: Stops the Python process
+- GetModelStatus: Sends health check requests to the Python processes
+- GetModels: Retrieves running Python programs
 
 Beside the EngineI interface, the python-engine also implemented the HandleInference and HandleRouteRequest method:
-- HandleInference: Send inference request to the python process
-- HandleRouteRequest: route any types of requests to the python process
+- HandleInference: Sends inference request to the python process
+- HandleRouteRequest: routes any types of requests to the python process
 
-Python engine is a built in engine of cortex-cpp, so that it will automatically loaded when load model, users don't need to download engine or load/unload engine like working with llama-cpp engine.
+The Python engine is a built-in engine of cortex.cpp, so it will automatically load when models are loaded. Users don't need to download or manage the engine separately, unlike working with the llama.cpp engine.
+
 
 ## Python program implementation
 
@@ -105,8 +106,7 @@ for example for linux amd64:
 ```
 ### Start model
 
-Each python model will run it owns server with a port defined in `model.yml`, you can update `model.yml` to change the port.
-for the ichigo-0.5 model, it has `extra_params` that need to be defined correctly:
+Each Python model runs its own server on a port defined in `model.yml`. You can update `model.yml` to change the port. For the ichigo-0.5 model, it includes `extra_params` that need to be defined correctly:
 extra_params:
   device_id: 0
   fish_speech_port: 22312
@@ -292,26 +292,25 @@ The parse_argument must include parameters to integrate with cortex:
 The python server can also have extra parameters and need to be defined in `extra_params` part of `model.yml`
 When starting server, the parameters will be override by the parameters in `model.yml`
 
-When finished python code, you need to trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-script-package.yml)
-so that the latest code will be pushed to cortexso huggingface. After pushed to HF, user can download and use it.
-The CI will clone and checkout approriate branch of your repo and navigate to the correct folder base on input parameters.The CI needs 5 parameters:
-- Path to model directory in github repo: the path to folder contains all model scripts for running python program
-- name of repo to be checked out: name of github repo 
-- branch to be checked out: name of branch to be checked out
-- name of huggingface repo to be pushed: name of huggingface repo to be pushed (e.g. cortexso/ichigo-0.5)
-- prefix of hf branch: The prefix of branch name (e.g `fp16`)
+
+After finishing the Python code, trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-script-package.yml) so that the latest code will be pushed to CortexSO on Hugging Face. After it is pushed to HF, users can download and use it. The CI cloning and checkout are based on the appropriate branch and directory in your repository, with the following inputs:
+
+- Path to the model directory in the GitHub repo: the path to the folder containing all model scripts for running the Python program.
+- Name of the repo: the name of the GitHub repo.
+- Branch to be checked out: name of the branch to be checked out.
+- Name of the Hugging Face repo to be pushed to: name of the Hugging Face repo (e.g., cortexso/ichigo-0.5).
+- Prefix of HF branch: the prefix of the branch name (e.g., `fp16`).
 
 ### Python venv package
-For packaging python venv, you need to prepare a `requirements.txt` and a `requirements.cuda.txt` file in the root of your project.
-The `requirements.txt` file should contain all the dependencies for your project, and the `requirements.cuda.txt` file should contain all the dependencies that require CUDA.
-The `requirements.txt` will be used to build venv for MacOS. The `requirements.cuda.txt` will be used to build venv for Linux and Windows.
 
-After finished you need to trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-venv-package.yml). 
- After the CI is finished, the venv for 4 os will be build and pushed to HuggingFace and it can be downloaded and used by users.
- The CI will clone and checkout approriate branch of your repo and navigate to the correct folder contains `requirements.txt` base on input parameters.The CI needs 5 parameters:
-- Path to model directory in github repo: the path to folder contains all model scripts for running python program
-- name of repo to be checked out: name of github repo 
-- name of model to be release: name of the model that we are building venv for (e.g whispervq)
-- branch to be checked out: name of branch to be checked out
-- name of huggingface repo to be pushed: name of huggingface repo to be pushed (e.g. cortexso/ichigo-0.5)
-- prefix of hf branch: The prefix of branch name (e.g `fp16`)
+For packaging the Python virtual environment, prepare a `requirements.txt` and a `requirements.cuda.txt` file in the root of your project. The `requirements.txt` file should list all dependencies for your project, while `requirements.cuda.txt` should list all dependencies that require CUDA. The `requirements.txt` will be used for building the virtual environment for macOS, and `requirements.cuda.txt` for Linux and Windows.
+
+
+After completing, trigger this [CI](https://github.com/janhq/cortex.cpp/actions/workflows/python-venv-package.yml). The CI will build and push the virtual environment for four OSes to Hugging Face. The inputs for CI are:
+
+- Path to the model directory in the GitHub repo: the path to the folder containing all model scripts for running the Python program.
+- Name of the repo: the name of the GitHub repo.
+- Name of the model to be released: name of the model for which the virtual environment is being built (e.g., whispervq).
+- Branch to be checked out: name of the branch to be checked out.
+- Name of the Hugging Face repo to be pushed to: name of the Hugging Face repo (e.g., cortexso/ichigo-0.5).
+- Prefix of HF branch: the prefix of the branch name (e.g., fp16).
