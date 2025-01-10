@@ -16,17 +16,8 @@
 #include "utils/file_manager_utils.h"
 
 #include "utils/curl_utils.h"
-#if defined(_WIN32)
-#include <process.h>
-#include <windows.h>
-using pid_t = DWORD;
-#elif defined(__APPLE__) || defined(__linux__)
-#include <signal.h>
-#include <spawn.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
-#endif
+#include "utils/process/utils.h"
+
 // Helper for CURL response
 namespace python_engine {
 struct StreamContext {
@@ -52,7 +43,6 @@ class PythonEngine : public EngineI {
   std::unordered_map<std::string, pid_t> process_map_;
   trantor::ConcurrentTaskQueue q_;
 
-
   // Helper functions
   CurlResponse MakePostRequest(const std::string& model,
                                const std::string& path,
@@ -67,8 +57,6 @@ class PythonEngine : public EngineI {
       const std::function<void(Json::Value&&, Json::Value&&)>& callback);
 
   // Process manager functions
-  pid_t SpawnProcess(const std::string& model,
-                     const std::vector<std::string>& command);
   bool TerminateModelProcess(const std::string& model);
 
   // Internal model management
