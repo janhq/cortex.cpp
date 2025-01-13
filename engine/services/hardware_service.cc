@@ -10,6 +10,9 @@
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
 #include "utils/cortex_utils.h"
+#if defined(__linux__)
+#include "services/download_service.h"
+#endif
 
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
@@ -290,6 +293,7 @@ bool HardwareService::SetActivateHardwareConfig(
 
 void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
+  CheckDependencies();
   auto gpus = cortex::hw::GetGPUInfo();
   cortex::db::Hardware hw_db;
   auto b = hw_db.LoadHardwareList();
@@ -414,6 +418,55 @@ bool HardwareService::IsValidConfig(
     }
   }
   return false;
+}
+
+void HardwareService::CheckDependencies() {
+  // search for libvulkan.so, if does not exist, pull it
+#if defined(__linux__)
+  namespace fmu = file_manager_utils;
+  auto get_vulkan_path = [](const std::string& lib_vulkan)
+      -> cpp::result<std::filesystem::path, std::string> {
+    if (std::filesystem::exists(fmu::GetExecutableFolderContainerPath() /
+                                lib_vulkan)) {
+      return fmu::GetExecutableFolderContainerPath() / lib_vulkan;
+      // fallback to deps path
+    } else if (std::filesystem::exists(fmu::GetCortexDataPath() / "deps" /
+                                       lib_vulkan)) {
+      return fmu::GetCortexDataPath() / "deps" / lib_vulkan;
+    } else {
+      CTL_WRN("Could not found " << lib_vulkan);
+      return cpp::fail("Could not found " + lib_vulkan);
+    }
+  };
+
+  if (get_vulkan_path("libvulkan.so").has_error()) {
+    if (!std::filesystem::exists(fmu::GetCortexDataPath() / "deps")) {
+      std::filesystem::create_directories(fmu::GetCortexDataPath() / "deps");
+    }
+    auto download_task{DownloadTask{
+        .id = "vulkan",
+        .type = DownloadType::Miscellaneous,
+        .items = {DownloadItem{
+            .id = "vulkan",
+            .downloadUrl = "https://catalog.jan.ai/libvulkan.so",
+            .localPath = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+        }},
+    }};
+    auto result = DownloadService().AddDownloadTask(
+        download_task,
+        [](const DownloadTask& finishedTask) {
+          // try to unzip the downloaded file
+          CTL_INF("Downloaded libvulkan path: "
+                  << finishedTask.items[0].localPath.string());
+
+          CTL_INF("Finished!");
+        },
+        /*show_progress*/ false);
+    if (result.has_error()) {
+      CTL_WRN("Failed to download: " << result.error());
+    }
+  }
+#endif
 }
 
 std::vector<int> HardwareService::GetCudaConfig() {

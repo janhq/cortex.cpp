@@ -80,7 +80,8 @@ ifeq ($(OS),Windows_NT)
 else ifeq ($(shell uname -s),Linux)
 	@mkdir -p cortex; \
 	cp build/cortex-server cortex/$(DESTINATION_BINARY_SERVER_NAME); \
-	cp build/cortex cortex/$(DESTINATION_BINARY_NAME);
+	cp build/cortex cortex/$(DESTINATION_BINARY_NAME); \
+	cp ../engine/deps/linux/libvulkan.so cortex/libvulkan.so;
 else
 	@mkdir -p cortex; \
 	cp build/cortex-server cortex/$(DESTINATION_BINARY_SERVER_NAME); \
