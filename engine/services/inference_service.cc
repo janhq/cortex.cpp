@@ -394,3 +394,8 @@ bool InferenceService::HasFieldInReq(std::shared_ptr<Json::Value> json_body,
   }
   return true;
 }
+
+std::string InferenceService::GetEngineByModelId(
+    const std::string& model_id) const {
+  return model_service_.lock()->GetEngineByModelId(model_id);
+}

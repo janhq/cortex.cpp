@@ -27,7 +27,7 @@ struct EngineEntry {
 
     // Convert basic fields
     root["id"] = id;
-    root["engine_name"] = engine_name;
+    root["engine"] = engine_name;
     root["type"] = type;
     root["api_key"] = api_key;
     root["url"] = url;

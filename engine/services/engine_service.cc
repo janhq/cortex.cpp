@@ -6,10 +6,10 @@
 
 #include <vector>
 #include "algorithm"
+#include "config/model_config.h"
 #include "database/engines.h"
-
+#include "database/models.h"
 #include "extensions/python-engine/python_engine.h"
-
 #include "extensions/remote-engine/remote_engine.h"
 
 #include "utils/archive_utils.h"
@@ -736,9 +736,11 @@ cpp::result<void, std::string> EngineService::LoadEngine(
       return cpp::fail("Remote engine '" + engine_name + "' is not installed");
     }
 
-    engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
-
-    CTL_INF("Loaded engine: " << engine_name);
+    if (!IsEngineLoaded(engine_name)) {
+      engines_[engine_name].engine =
+          new remote_engine::RemoteEngine(engine_name);
+      CTL_INF("Loaded engine: " << engine_name);
+    }
     return {};
   }
 
@@ -1074,7 +1076,8 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
 
 cpp::result<cortex::db::EngineEntry, std::string>
 EngineService::GetEngineByNameAndVariant(
-    const std::string& engine_name, const std::optional<std::string> variant) {
+    const std::string& engine_name,
+    const std::optional<std::string> variant) const {
 
   assert(db_service_);
   auto get_res = db_service_->GetEngineByNameAndVariant(engine_name, variant);
@@ -1123,17 +1126,29 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
     return cpp::fail(r.error());
   }
 
+  auto exist_engine = GetEngineByNameAndVariant(engine_name);
+  if (exist_engine.has_error()) {
+    return cpp::fail("Remote engine '" + engine_name + "' is not installed");
+  }
+
   if (!IsEngineLoaded(engine_name)) {
-    auto exist_engine = GetEngineByNameAndVariant(engine_name);
-    if (exist_engine.has_error()) {
-      return cpp::fail("Remote engine '" + engine_name + "' is not installed");
-    }
     engines_[engine_name].engine = new remote_engine::RemoteEngine(engine_name);
 
     CTL_INF("Loaded engine: " << engine_name);
   }
+  auto remote_engine_json = exist_engine.value().ToJson();
   auto& e = std::get<RemoteEngineI*>(engines_[engine_name].engine);
-  auto res = e->GetRemoteModels();
+  auto url = remote_engine_json["metadata"]["get_models_url"].asString();
+  auto api_key = remote_engine_json["api_key"].asString();
+  auto header_template =
+      remote_engine_json["metadata"]["header_template"].asString();
+  if (url.empty())
+    CTL_WRN("url is empty");
+  if (api_key.empty())
+    CTL_WRN("api_key is empty");
+  if (header_template.empty())
+    CTL_WRN("header_template is empty");
+  auto res = e->GetRemoteModels(url, api_key, header_template);
   if (!res["error"].isNull()) {
     return cpp::fail(res["error"].asString());
   } else {
@@ -1141,7 +1156,7 @@ cpp::result<Json::Value, std::string> EngineService::GetRemoteModels(
   }
 }
 
-bool EngineService::IsRemoteEngine(const std::string& engine_name) {
+bool EngineService::IsRemoteEngine(const std::string& engine_name) const {
   auto ne = Repo2Engine(engine_name);
   auto local_engines = file_manager_utils::GetCortexConfig().supportedEngines;
   for (auto const& le : local_engines) {
