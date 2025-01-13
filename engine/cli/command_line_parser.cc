@@ -49,8 +49,9 @@ CommandLineParser::CommandLineParser()
     : app_("\nCortex.cpp CLI\n"),
       download_service_{std::make_shared<DownloadService>()},
       dylib_path_manager_{std::make_shared<cortex::DylibPathManager>()},
-      engine_service_{std::make_shared<EngineService>(download_service_,
-                                                      dylib_path_manager_)} {
+      db_service_{std::make_shared<DatabaseService>()},
+      engine_service_{std::make_shared<EngineService>(
+          download_service_, dylib_path_manager_, db_service_)} {
   supported_engines_ = engine_service_->GetSupportedEngineNames().value();
 }
 
@@ -177,7 +178,7 @@ void CommandLineParser::SetupCommonCommands() {
       return;
     commands::RunCmd rc(cml_data_.config.apiServerHost,
                         std::stoi(cml_data_.config.apiServerPort),
-                        cml_data_.model_id, engine_service_);
+                        cml_data_.model_id, db_service_, engine_service_);
     rc.Exec(cml_data_.run_detach, run_settings_);
   });
 }
@@ -216,9 +217,10 @@ void CommandLineParser::SetupModelCommands() {
       CLI_LOG(model_start_cmd->help());
       return;
     };
-    commands::ModelStartCmd().Exec(cml_data_.config.apiServerHost,
-                                   std::stoi(cml_data_.config.apiServerPort),
-                                   cml_data_.model_id, run_settings_);
+    commands::ModelStartCmd(db_service_)
+        .Exec(cml_data_.config.apiServerHost,
+              std::stoi(cml_data_.config.apiServerPort), cml_data_.model_id,
+              run_settings_);
   });
 
   auto stop_model_cmd =
@@ -906,6 +908,7 @@ void CommandLineParser::ModelUpdate(CLI::App* parent) {
                                            "ngl",
                                            "ctx_len",
                                            "n_parallel",
+                                           "cpu_threads",
                                            "engine",
                                            "prompt_template",
                                            "system_template",

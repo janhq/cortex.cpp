@@ -2,8 +2,8 @@
 #include <drogon/HttpTypes.h>
 #include "utils/engine_constants.h"
 #include "utils/function_calling/common.h"
+#include "utils/jinja_utils.h"
 
-namespace services {
 cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -23,6 +23,45 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
+
+  {
+    auto model_id = json_body->get("model", "").asString();
+    if (!model_id.empty()) {
+      if (auto model_service = model_service_.lock()) {
+        auto metadata_ptr = model_service->GetCachedModelMetadata(model_id);
+        if (metadata_ptr != nullptr &&
+            !metadata_ptr->tokenizer->chat_template.empty()) {
+          auto tokenizer = metadata_ptr->tokenizer;
+          auto messages = (*json_body)["messages"];
+          Json::Value messages_jsoncpp(Json::arrayValue);
+          for (auto message : messages) {
+            messages_jsoncpp.append(message);
+          }
+
+          Json::Value tools(Json::arrayValue);
+          Json::Value template_data_json;
+          template_data_json["messages"] = messages_jsoncpp;
+          // template_data_json["tools"] = tools;
+
+          auto prompt_result = jinja::RenderTemplate(
+              tokenizer->chat_template, template_data_json,
+              tokenizer->bos_token, tokenizer->eos_token,
+              tokenizer->add_bos_token, tokenizer->add_eos_token,
+              tokenizer->add_generation_prompt);
+          if (prompt_result.has_value()) {
+            (*json_body)["prompt"] = prompt_result.value();
+            Json::Value stops(Json::arrayValue);
+            stops.append(tokenizer->eos_token);
+            (*json_body)["stop"] = stops;
+          } else {
+            CTL_ERR("Failed to render prompt: " + prompt_result.error());
+          }
+        }
+      }
+    }
+  }
+
+  CTL_INF("Json body inference: " + json_body->toStyledString());
 
   auto cb = [q, tool_choice](Json::Value status, Json::Value res) {
     if (!tool_choice.isNull()) {
@@ -69,6 +108,64 @@ cpp::result<void, InferResult> InferenceService::HandleEmbedding(
   } else {
     std::get<RemoteEngineI*>(engine_result.value())
         ->HandleEmbedding(json_body, std::move(cb));
+  }
+  return {};
+}
+
+cpp::result<void, InferResult> InferenceService::HandleInference(
+    std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
+  std::string engine_type;
+  if (!HasFieldInReq(json_body, "engine")) {
+    engine_type = kLlamaRepo;
+  } else {
+    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
+  }
+
+  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  if (engine_result.has_error()) {
+    Json::Value res;
+    Json::Value stt;
+    res["message"] = "Engine is not loaded yet";
+    stt["status_code"] = drogon::k400BadRequest;
+    LOG_WARN << "Engine is not loaded yet";
+    return cpp::fail(std::make_pair(stt, res));
+  }
+
+  auto cb = [q](Json::Value status, Json::Value res) {
+    q->push(std::make_pair(status, res));
+  };
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->HandleInference(json_body, std::move(cb));
+  }
+  return {};
+}
+
+cpp::result<void, InferResult> InferenceService::HandleRouteRequest(
+    std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body) {
+  std::string engine_type;
+  if (!HasFieldInReq(json_body, "engine")) {
+    engine_type = kLlamaRepo;
+  } else {
+    engine_type = (*(json_body)).get("engine", kLlamaRepo).asString();
+  }
+
+  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  if (engine_result.has_error()) {
+    Json::Value res;
+    Json::Value stt;
+    res["message"] = "Engine is not loaded yet";
+    stt["status_code"] = drogon::k400BadRequest;
+    LOG_WARN << "Engine is not loaded yet";
+    return cpp::fail(std::make_pair(stt, res));
+  }
+
+  auto cb = [q](Json::Value status, Json::Value res) {
+    q->push(std::make_pair(status, res));
+  };
+  if (std::holds_alternative<EngineI*>(engine_result.value())) {
+    std::get<EngineI*>(engine_result.value())
+        ->HandleRouteRequest(json_body, std::move(cb));
   }
   return {};
 }
@@ -297,4 +394,8 @@ bool InferenceService::HasFieldInReq(std::shared_ptr<Json::Value> json_body,
   }
   return true;
 }
-}  // namespace services
+
+std::string InferenceService::GetEngineByModelId(
+    const std::string& model_id) const {
+  return model_service_.lock()->GetEngineByModelId(model_id);
+}

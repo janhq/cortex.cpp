@@ -4,7 +4,6 @@
 #include <mutex>
 #include <optional>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -13,11 +12,11 @@
 #include "cortex-common/cortexpythoni.h"
 #include "cortex-common/remote_enginei.h"
 #include "database/engines.h"
+#include "services/database_service.h"
 #include "services/download_service.h"
 #include "utils/cpuid/cpu_info.h"
 #include "utils/dylib.h"
 #include "utils/dylib_path_manager.h"
-#include "utils/engine_constants.h"
 #include "utils/github_release_utils.h"
 #include "utils/result.hpp"
 #include "utils/system_info_utils.h"
@@ -48,10 +47,6 @@ class EngineService : public EngineServiceI {
   struct EngineInfo {
     std::unique_ptr<cortex_cpp::dylib> dl;
     EngineV engine;
-#if defined(_WIN32)
-    DLL_DIRECTORY_COOKIE cookie;
-    DLL_DIRECTORY_COOKIE cuda_cookie;
-#endif
   };
 
   std::mutex engines_mutex_;
@@ -65,16 +60,19 @@ class EngineService : public EngineServiceI {
     std::string cuda_driver_version;
   };
   HardwareInfo hw_inf_;
+  std::shared_ptr<DatabaseService> db_service_ = nullptr;
 
  public:
   explicit EngineService(
       std::shared_ptr<DownloadService> download_service,
-      std::shared_ptr<cortex::DylibPathManager> dylib_path_manager)
+      std::shared_ptr<cortex::DylibPathManager> dylib_path_manager,
+      std::shared_ptr<DatabaseService> db_service)
       : download_service_{download_service},
         dylib_path_manager_{dylib_path_manager},
         hw_inf_{.sys_inf = system_info_utils::GetSystemInfo(),
                 .cuda_driver_version =
-                    system_info_utils::GetDriverAndCudaVersion().second} {}
+                    system_info_utils::GetDriverAndCudaVersion().second},
+        db_service_(db_service) {}
 
   std::vector<EngineInfo> GetEngineInfoList() const;
 
@@ -101,25 +99,28 @@ class EngineService : public EngineServiceI {
       const std::string& engine) const;
 
   cpp::result<std::vector<EngineVariant>, std::string> GetEngineVariants(
-      const std::string& engine, const std::string& version) const;
+      const std::string& engine, const std::string& version,
+      bool filter_compatible_only = false) const;
 
   cpp::result<DefaultEngineVariant, std::string> SetDefaultEngineVariant(
       const std::string& engine, const std::string& version,
-      const std::string& variant);
+      const std::string& variant) override;
 
   cpp::result<DefaultEngineVariant, std::string> GetDefaultEngineVariant(
-      const std::string& engine);
+      const std::string& engine) override;
 
   cpp::result<std::vector<EngineVariantResponse>, std::string>
-  GetInstalledEngineVariants(const std::string& engine) const;
+  GetInstalledEngineVariants(const std::string& engine) const override;
 
   cpp::result<EngineV, std::string> GetLoadedEngine(
       const std::string& engine_name);
 
   std::vector<EngineV> GetLoadedEngines();
 
-  cpp::result<void, std::string> LoadEngine(const std::string& engine_name);
-  cpp::result<void, std::string> UnloadEngine(const std::string& engine_name);
+  cpp::result<void, std::string> LoadEngine(
+      const std::string& engine_name) override;
+  cpp::result<void, std::string> UnloadEngine(
+      const std::string& engine_name) override;
 
   cpp::result<github_release_utils::GitHubRelease, std::string>
   GetLatestEngineVersion(const std::string& engine) const;
@@ -131,13 +132,14 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
+ 
   cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineByNameAndVariant(
       const std::string& engine_name,
-      const std::optional<std::string> variant = std::nullopt);
+      const std::optional<std::string> variant = std::nullopt) const override;
 
   cpp::result<cortex::db::EngineEntry, std::string> UpsertEngine(
       const std::string& engine_name, const std::string& type,
@@ -153,7 +155,7 @@ class EngineService : public EngineServiceI {
 
   void RegisterEngineLibPath();
 
-  bool IsRemoteEngine(const std::string& engine_name) override;
+  bool IsRemoteEngine(const std::string& engine_name) const override;
 
  private:
   bool IsEngineLoaded(const std::string& engine);

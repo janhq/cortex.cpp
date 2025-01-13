@@ -114,7 +114,8 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
     // Some engines requires to add lib search path before process being created
     auto download_srv = std::make_shared<DownloadService>();
     auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
-    EngineService(download_srv, dylib_path_mng).RegisterEngineLibPath();
+    auto db_srv = std::make_shared<DatabaseService>();
+    EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
 
     std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
     execl(p.c_str(), exe.c_str(), "--start-server", "--config_file_path",

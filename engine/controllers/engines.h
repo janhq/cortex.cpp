@@ -16,6 +16,8 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::InstallEngine, "/{1}/install", Options, Post);
   ADD_METHOD_TO(Engines::InstallEngine, "/v1/engines/{1}/install", Options,
                 Post);
+  METHOD_ADD(Engines::InstallRemoteEngine, "/engines", Options, Post);
+  ADD_METHOD_TO(Engines::InstallRemoteEngine, "/v1/engines", Options, Post);
 
   // uninstall engine
   METHOD_ADD(Engines::UninstallEngine, "/{1}/install", Options, Delete);
@@ -53,13 +55,11 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::GetEngineReleases, "/{1}/releases", Get);
   ADD_METHOD_TO(Engines::GetEngineReleases, "/v1/engines/{1}/releases", Get);
 
-  METHOD_ADD(Engines::GetEngineVariants, "/{1}/releases/{2}", Get);
-  ADD_METHOD_TO(Engines::GetEngineVariants, "/v1/engines/{1}/releases/{2}",
-                Get);
+  ADD_METHOD_TO(Engines::GetEngineVariants,
+                "/v1/engines/{engine}/releases/{version}?show={show}", Get);
 
-  METHOD_ADD(Engines::GetLatestEngineVersion, "/{1}/releases/latest", Get);
   ADD_METHOD_TO(Engines::GetLatestEngineVersion,
-                "/v1/engines/{1}/releases/latest", Get);
+                "/v1/engines/{engine}/releases/latest", Get);
 
   METHOD_LIST_END
 
@@ -69,6 +69,10 @@ class Engines : public drogon::HttpController<Engines, false> {
   void InstallEngine(const HttpRequestPtr& req,
                      std::function<void(const HttpResponsePtr&)>&& callback,
                      const std::string& engine);
+
+  void InstallRemoteEngine(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback);
 
   void UninstallEngine(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback,
@@ -83,8 +87,8 @@ class Engines : public drogon::HttpController<Engines, false> {
 
   void GetEngineVariants(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
-                         const std::string& engine,
-                         const std::string& version) const;
+                         const std::string& engine, const std::string& version,
+                         std::optional<std::string> show) const;
 
   void GetInstalledEngineVariants(
       const HttpRequestPtr& req,
