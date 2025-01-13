@@ -50,17 +50,15 @@ size_t WriteCallback(char* ptr, size_t size, size_t nmemb, void* userdata) {
 
   return data_length;
 }
-
 }  // namespace
 
 void ChatCompletionCmd::Exec(const std::string& host, int port,
                              const std::string& model_handle, std::string msg) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
-  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
-    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    auto model_entry = db_service_->GetModelInfo(model_handle);
     if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
@@ -103,7 +101,7 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
     return;
   }
 
-  std::string url = "http://" + address + "/v1/chat/completions";
+  auto url = "http://" + address + "/v1/chat/completions";
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
   curl_easy_setopt(curl, CURLOPT_POST, 1L);
 
@@ -151,9 +149,10 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
       json_data["model"] = model_handle;
       json_data["stream"] = true;
 
-      std::string json_payload = json_data.toStyledString();
-
-      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_payload.c_str());
+      auto json_str = json_data.toStyledString();
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDS, json_str.c_str());
+      curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, json_str.length());
+      curl_easy_setopt(curl, CURLOPT_TCP_KEEPALIVE, 1L);
 
       std::string ai_chat;
       StreamingCallback callback;
@@ -161,8 +160,7 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
 
       curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
       curl_easy_setopt(curl, CURLOPT_WRITEDATA, &callback);
-
-      CURLcode res = curl_easy_perform(curl);
+      auto res = curl_easy_perform(curl);
 
       if (res != CURLE_OK) {
         CLI_LOG("CURL request failed: " << curl_easy_strerror(res));

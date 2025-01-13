@@ -46,13 +46,13 @@ inline std::string print_float(const std::string& key, float value) {
   } else
     return "";
 };
-inline std::string writeKeyValue(const std::string& key,
+inline std::string WriteKeyValue(const std::string& key,
                                  const YAML::Node& value,
                                  const std::string& comment = "") {
-  std::ostringstream outFile;
+  std::ostringstream out_file;
   if (!value)
     return "";
-  outFile << key << ": ";
+  out_file << key << ": ";
 
   // Check if the value is a float and round it to 6 decimal places
   if (value.IsScalar()) {
@@ -66,19 +66,19 @@ inline std::string writeKeyValue(const std::string& key,
       if (strValue.back() == '.') {
         strValue.pop_back();
       }
-      outFile << strValue;
+      out_file << strValue;
     } catch (const std::exception& e) {
-      outFile << value;  // If not a float, write as is
+      out_file << value;  // If not a float, write as is
     }
   } else {
-    outFile << value;
+    out_file << value;
   }
 
   if (!comment.empty()) {
-    outFile << " # " << comment;
+    out_file << " # " << comment;
   }
-  outFile << "\n";
-  return outFile.str();
+  out_file << "\n";
+  return out_file.str();
 };
 
 inline std::string BytesToHumanReadable(uint64_t bytes) {

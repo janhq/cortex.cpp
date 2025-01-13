@@ -27,7 +27,7 @@ class server : public drogon::HttpController<server, false>,
                public BaseChatCompletion,
                public BaseEmbedding {
  public:
-  server(std::shared_ptr<services::InferenceService> inference_service,
+  server(std::shared_ptr<InferenceService> inference_service,
          std::shared_ptr<EngineService> engine_service);
   ~server();
   METHOD_LIST_BEGIN
@@ -46,8 +46,11 @@ class server : public drogon::HttpController<server, false>,
   ADD_METHOD_TO(server::ChatCompletion, "/v1/chat/completions", Options, Post);
   ADD_METHOD_TO(server::FineTuning, "/v1/fine_tuning/job", Options, Post);
   ADD_METHOD_TO(server::Embedding, "/v1/embeddings", Options, Post);
+  ADD_METHOD_TO(server::Inference, "/v1/inference", Options, Post);
+  ADD_METHOD_TO(server::RouteRequest, "/v1/route/request", Options, Post);
 
   METHOD_LIST_END
+
   void ChatCompletion(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
@@ -69,17 +72,21 @@ class server : public drogon::HttpController<server, false>,
   void FineTuning(
       const HttpRequestPtr& req,
       std::function<void(const HttpResponsePtr&)>&& callback) override;
+  void Inference(const HttpRequestPtr& req,
+                 std::function<void(const HttpResponsePtr&)>&& callback);
+  void RouteRequest(const HttpRequestPtr& req,
+                    std::function<void(const HttpResponsePtr&)>&& callback);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                        std::shared_ptr<services::SyncQueue> q,
+                        std::shared_ptr<SyncQueue> q,
                         const std::string& engine_type,
                         const std::string& model_id);
   void ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                           services::SyncQueue& q);
+                           SyncQueue& q);
 
  private:
-  std::shared_ptr<services::InferenceService> inference_svc_;
+  std::shared_ptr<InferenceService> inference_svc_;
   std::shared_ptr<EngineService> engine_service_;
 };
 };  // namespace inferences

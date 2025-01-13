@@ -3,10 +3,15 @@
 #include <filesystem>
 #include <optional>
 #include <utility>
+
 #include <vector>
 #include "algorithm"
 #include "database/engines.h"
+
+#include "extensions/python-engine/python_engine.h"
+
 #include "extensions/remote-engine/remote_engine.h"
+
 #include "utils/archive_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/engine_matcher_utils.h"
@@ -131,8 +136,8 @@ cpp::result<bool, std::string> EngineService::UnzipEngine(
           CTL_INF("Found cuda variant, extract it");
           found_cuda = true;
           // extract binary
-          auto cuda_path =
-              file_manager_utils::GetCudaToolkitPath(NormalizeEngine(engine));
+          auto cuda_path = file_manager_utils::GetCudaToolkitPath(
+              NormalizeEngine(engine), true);
           archive_utils::ExtractArchive(path + "/" + cf, cuda_path.string(),
                                         true);
         }
@@ -183,6 +188,7 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
     const std::string& engine, const std::optional<std::string> version,
     const std::optional<std::string> variant) {
   auto ne = NormalizeEngine(engine);
+
   // TODO: handle uninstall remote engine
   // only delete a remote engine if no model are using it
   auto exist_engine = GetEngineByNameAndVariant(engine);
@@ -363,10 +369,10 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
   };
 
   auto downloadTask =
-      DownloadTask{.id = engine,
+      DownloadTask{.id = selected_variant->name,
                    .type = DownloadType::Engine,
                    .items = {DownloadItem{
-                       .id = engine,
+                       .id = selected_variant->name,
                        .downloadUrl = selected_variant->browser_download_url,
                        .localPath = variant_path,
                    }}};
@@ -433,7 +439,8 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
-    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine);
+    auto engine_path = file_manager_utils::GetCudaToolkitPath(engine, true);
+
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   engine_path.string());
     try {
@@ -481,7 +488,8 @@ EngineService::GetEngineReleases(const std::string& engine) const {
 
 cpp::result<std::vector<EngineService::EngineVariant>, std::string>
 EngineService::GetEngineVariants(const std::string& engine,
-                                 const std::string& version) const {
+                                 const std::string& version,
+                                 bool filter_compatible_only) const {
   auto ne = NormalizeEngine(engine);
   auto engine_release =
       github_release_utils::GetReleaseByVersion("janhq", ne, version);
@@ -503,6 +511,44 @@ EngineService::GetEngineVariants(const std::string& engine,
 
   if (compatible_variants.empty()) {
     return cpp::fail("No compatible variants found for " + engine);
+  }
+
+  if (filter_compatible_only) {
+    auto system_info = system_info_utils::GetSystemInfo();
+    compatible_variants.erase(
+        std::remove_if(compatible_variants.begin(), compatible_variants.end(),
+                       [&system_info](const EngineVariant& variant) {
+                         std::string name = variant.name;
+                         std::transform(name.begin(), name.end(), name.begin(),
+                                        ::tolower);
+
+                         bool os_match = false;
+                         if (system_info->os == "mac" &&
+                             name.find("mac") != std::string::npos)
+                           os_match = true;
+                         if (system_info->os == "windows" &&
+                             name.find("windows") != std::string::npos)
+                           os_match = true;
+                         if (system_info->os == "linux" &&
+                             name.find("linux") != std::string::npos)
+                           os_match = true;
+
+                         bool arch_match = false;
+                         if (system_info->arch == "arm64" &&
+                             name.find("arm64") != std::string::npos)
+                           arch_match = true;
+                         if (system_info->arch == "amd64" &&
+                             name.find("amd64") != std::string::npos)
+                           arch_match = true;
+
+                         return !(os_match && arch_match);
+                       }),
+        compatible_variants.end());
+
+    if (compatible_variants.empty()) {
+      return cpp::fail("No compatible variants found for system " +
+                       system_info->os + "/" + system_info->arch);
+    }
   }
 
   return compatible_variants;
@@ -675,6 +721,14 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     return {};
   }
 
+  // Check for python engine
+
+  if (engine_name == kPythonEngine) {
+    engines_[engine_name].engine = new python_engine::PythonEngine();
+    CTL_INF("Loaded engine: " << engine_name);
+    return {};
+  }
+
   // Check for remote engine
   if (IsRemoteEngine(engine_name)) {
     auto exist_engine = GetEngineByNameAndVariant(engine_name);
@@ -691,6 +745,9 @@ cpp::result<void, std::string> EngineService::LoadEngine(
   // End hard code
 
   CTL_INF("Loading engine: " << ne);
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
+  CTL_INF("CPU Info: " << cortex::cpuid::CpuInfo().to_string());
+#endif
 
   auto engine_dir_path_res = GetEngineDirPath(ne);
   if (engine_dir_path_res.has_error()) {
@@ -706,8 +763,8 @@ cpp::result<void, std::string> EngineService::LoadEngine(
     // register deps
     if (!(getenv("ENGINE_PATH"))) {
       std::vector<std::filesystem::path> paths{};
-      paths.push_back(std::move(cuda_path));
-      paths.push_back(std::move(engine_dir_path));
+      paths.push_back(cuda_path);
+      paths.push_back(engine_dir_path);
 
       CTL_DBG("Registering dylib for "
               << ne << " with " << std::to_string(paths.size()) << " paths.");
@@ -773,8 +830,8 @@ void EngineService::RegisterEngineLibPath() {
 
       // register deps
       std::vector<std::filesystem::path> paths{};
-      paths.push_back(std::move(cuda_path));
-      paths.push_back(std::move(engine_dir_path));
+      paths.push_back(cuda_path);
+      paths.push_back(engine_dir_path);
 
       CTL_DBG("Registering dylib for "
               << ne << " with " << std::to_string(paths.size()) << " paths.");
@@ -841,6 +898,7 @@ EngineService::GetEngineDirPath(const std::string& engine_name) {
 cpp::result<void, std::string> EngineService::UnloadEngine(
     const std::string& engine) {
   auto ne = NormalizeEngine(engine);
+
   std::lock_guard<std::mutex> lock(engines_mutex_);
   if (!IsEngineLoaded(ne)) {
     return cpp::fail("Engine " + ne + " is not loaded yet!");
@@ -899,6 +957,10 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   }
 
   // End hard code
+  // Check for python engine
+  if (engine == kPythonEngine) {
+    return true;
+  }
 
   auto os = hw_inf_.sys_inf->os;
   if (os == kMacOs && (ne == kOnnxRepo || ne == kTrtLlmRepo)) {
@@ -988,8 +1050,8 @@ cpp::result<EngineUpdateResult, std::string> EngineService::UpdateEngine(
 
 cpp::result<std::vector<cortex::db::EngineEntry>, std::string>
 EngineService::GetEngines() {
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngines();
+  assert(db_service_);
+  auto get_res = db_service_->GetEngines();
 
   if (!get_res.has_value()) {
     return cpp::fail("Failed to get engine entries");
@@ -1000,8 +1062,8 @@ EngineService::GetEngines() {
 
 cpp::result<cortex::db::EngineEntry, std::string> EngineService::GetEngineById(
     int id) {
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngineById(id);
+  assert(db_service_);
+  auto get_res = db_service_->GetEngineById(id);
 
   if (!get_res.has_value()) {
     return cpp::fail("Engine with ID " + std::to_string(id) + " not found");
@@ -1014,8 +1076,8 @@ cpp::result<cortex::db::EngineEntry, std::string>
 EngineService::GetEngineByNameAndVariant(
     const std::string& engine_name, const std::optional<std::string> variant) {
 
-  cortex::db::Engines engines;
-  auto get_res = engines.GetEngineByNameAndVariant(engine_name, variant);
+  assert(db_service_);
+  auto get_res = db_service_->GetEngineByNameAndVariant(engine_name, variant);
 
   if (!get_res.has_value()) {
     if (variant.has_value()) {
@@ -1034,9 +1096,9 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
     const std::string& api_key, const std::string& url,
     const std::string& version, const std::string& variant,
     const std::string& status, const std::string& metadata) {
-  cortex::db::Engines engines;
-  auto upsert_res = engines.UpsertEngine(engine_name, type, api_key, url,
-                                         version, variant, status, metadata);
+  assert(db_service_);
+  auto upsert_res = db_service_->UpsertEngine(
+      engine_name, type, api_key, url, version, variant, status, metadata);
   if (upsert_res.has_value()) {
     return upsert_res.value();
   } else {
@@ -1045,8 +1107,8 @@ cpp::result<cortex::db::EngineEntry, std::string> EngineService::UpsertEngine(
 }
 
 std::string EngineService::DeleteEngine(int id) {
-  cortex::db::Engines engines;
-  auto delete_res = engines.DeleteEngineById(id);
+  assert(db_service_);
+  auto delete_res = db_service_->DeleteEngineById(id);
   if (delete_res.has_value()) {
     return delete_res.value();
   } else {

@@ -63,6 +63,7 @@ temperature: 0.7
 max_tokens: 100
 stream: true
 n_parallel: 2
+cpu_threads: 3
 stop:
   - "END"
 files:
@@ -84,6 +85,7 @@ files:
   EXPECT_EQ(config.max_tokens, 100);
   EXPECT_TRUE(config.stream);
   EXPECT_EQ(config.n_parallel, 2);
+  EXPECT_EQ(config.cpu_threads, 3);
   EXPECT_EQ(config.stop.size(), 1);
   EXPECT_EQ(config.stop[0], "END");
   EXPECT_EQ(config.files.size(), 1);
@@ -104,6 +106,7 @@ TEST_F(YamlHandlerTest, UpdateModelConfig) {
   new_config.max_tokens = 200;
   new_config.stream = false;
   new_config.n_parallel = 2;
+  new_config.cpu_threads = 3;
   new_config.stop = {"STOP", "END"};
   new_config.files = {"updated_file1.gguf", "updated_file2.gguf"};
 
@@ -120,6 +123,7 @@ TEST_F(YamlHandlerTest, UpdateModelConfig) {
   EXPECT_EQ(config.max_tokens, 200);
   EXPECT_FALSE(config.stream);
   EXPECT_EQ(config.n_parallel, 2);
+  EXPECT_EQ(config.cpu_threads, 3);
   EXPECT_EQ(config.stop.size(), 2);
   EXPECT_EQ(config.stop[0], "STOP");
   EXPECT_EQ(config.stop[1], "END");
@@ -140,6 +144,7 @@ TEST_F(YamlHandlerTest, WriteYamlFile) {
   new_config.max_tokens = 150;
   new_config.stream = true;
   new_config.n_parallel = 2;
+  new_config.cpu_threads = 3;
   new_config.stop = {"HALT"};
   new_config.files = {"write_test_file.gguf"};
 
@@ -164,6 +169,7 @@ TEST_F(YamlHandlerTest, WriteYamlFile) {
   EXPECT_EQ(read_config.max_tokens, 150);
   EXPECT_TRUE(read_config.stream);
   EXPECT_EQ(read_config.n_parallel, 2);
+  EXPECT_EQ(read_config.cpu_threads, 3);
   EXPECT_EQ(read_config.stop.size(), 1);
   EXPECT_EQ(read_config.stop[0], "HALT");
   EXPECT_EQ(read_config.files.size(), 1);

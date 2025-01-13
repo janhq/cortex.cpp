@@ -53,13 +53,11 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::GetEngineReleases, "/{1}/releases", Get);
   ADD_METHOD_TO(Engines::GetEngineReleases, "/v1/engines/{1}/releases", Get);
 
-  METHOD_ADD(Engines::GetEngineVariants, "/{1}/releases/{2}", Get);
-  ADD_METHOD_TO(Engines::GetEngineVariants, "/v1/engines/{1}/releases/{2}",
-                Get);
+  ADD_METHOD_TO(Engines::GetEngineVariants,
+                "/v1/engines/{engine}/releases/{version}?show={show}", Get);
 
-  METHOD_ADD(Engines::GetLatestEngineVersion, "/{1}/releases/latest", Get);
   ADD_METHOD_TO(Engines::GetLatestEngineVersion,
-                "/v1/engines/{1}/releases/latest", Get);
+                "/v1/engines/{engine}/releases/latest", Get);
 
   METHOD_LIST_END
 
@@ -83,8 +81,8 @@ class Engines : public drogon::HttpController<Engines, false> {
 
   void GetEngineVariants(const HttpRequestPtr& req,
                          std::function<void(const HttpResponsePtr&)>&& callback,
-                         const std::string& engine,
-                         const std::string& version) const;
+                         const std::string& engine, const std::string& version,
+                         std::optional<std::string> show) const;
 
   void GetInstalledEngineVariants(
       const HttpRequestPtr& req,

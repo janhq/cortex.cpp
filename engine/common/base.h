@@ -5,7 +5,7 @@ using namespace drogon;
 
 class BaseModel {
  public:
-  virtual ~BaseModel() {}
+  virtual ~BaseModel() = default;
 
   // Model management
   virtual void LoadModel(
@@ -27,7 +27,7 @@ class BaseModel {
 
 class BaseChatCompletion {
  public:
-  virtual ~BaseChatCompletion() {}
+  virtual ~BaseChatCompletion() = default;
 
   // General chat method
   virtual void ChatCompletion(
@@ -37,7 +37,7 @@ class BaseChatCompletion {
 
 class BaseEmbedding {
  public:
-  virtual ~BaseEmbedding() {}
+  virtual ~BaseEmbedding() = default;
 
   // Implement embedding functionality specific to chat
   virtual void Embedding(
@@ -46,3 +46,4 @@ class BaseEmbedding {
 
   // The derived class can also override other methods if needed
 };
+

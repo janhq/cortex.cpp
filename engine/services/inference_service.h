@@ -3,10 +3,11 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
-#include "services/engine_service.h"
-#include "utils/result.hpp"
 #include "extensions/remote-engine/remote_engine.h"
-namespace services {
+#include "services/engine_service.h"
+#include "services/model_service.h"
+#include "utils/result.hpp"
+
 // Status and result
 using InferResult = std::pair<Json::Value, Json::Value>;
 
@@ -41,6 +42,12 @@ class InferenceService {
   cpp::result<void, InferResult> HandleEmbedding(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
 
+  cpp::result<void, InferResult> HandleInference(
+      std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
+
+  cpp::result<void, InferResult> HandleRouteRequest(
+      std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
+      
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
   InferResult UnloadModel(const std::string& engine,
@@ -58,7 +65,11 @@ class InferenceService {
   bool HasFieldInReq(std::shared_ptr<Json::Value> json_body,
                      const std::string& field);
 
+  void SetModelService(std::shared_ptr<ModelService> model_service) {
+    model_service_ = model_service;
+  }
+
  private:
   std::shared_ptr<EngineService> engine_service_;
+  std::weak_ptr<ModelService> model_service_;
 };
-}  // namespace services
