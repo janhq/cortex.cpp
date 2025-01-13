@@ -73,6 +73,7 @@ ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex;"
 	@powershell -Command "cp build\cortex-server.exe .\cortex\$(DESTINATION_BINARY_SERVER_NAME).exe;"
 	@powershell -Command "cp build\cortex.exe .\cortex\$(DESTINATION_BINARY_NAME).exe;"
+	@powershell -Command "cp ..\engine\deps\windows\vulkan-1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
