@@ -16,6 +16,8 @@ class Engines : public drogon::HttpController<Engines, false> {
   METHOD_ADD(Engines::InstallEngine, "/{1}/install", Options, Post);
   ADD_METHOD_TO(Engines::InstallEngine, "/v1/engines/{1}/install", Options,
                 Post);
+  METHOD_ADD(Engines::InstallRemoteEngine, "/engines", Options, Post);
+  ADD_METHOD_TO(Engines::InstallRemoteEngine, "/v1/engines", Options, Post);
 
   // uninstall engine
   METHOD_ADD(Engines::UninstallEngine, "/{1}/install", Options, Delete);
@@ -67,6 +69,10 @@ class Engines : public drogon::HttpController<Engines, false> {
   void InstallEngine(const HttpRequestPtr& req,
                      std::function<void(const HttpResponsePtr&)>&& callback,
                      const std::string& engine);
+
+  void InstallRemoteEngine(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback);
 
   void UninstallEngine(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback,

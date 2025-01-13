@@ -69,6 +69,8 @@ class InferenceService {
     model_service_ = model_service;
   }
 
+  std::string GetEngineByModelId(const std::string& model_id) const;
+
  private:
   std::shared_ptr<EngineService> engine_service_;
   std::weak_ptr<ModelService> model_service_;

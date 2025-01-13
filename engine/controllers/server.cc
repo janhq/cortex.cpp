@@ -44,6 +44,11 @@ void server::ChatCompletion(
     }
   }();
 
+  if (auto efm = inference_svc_->GetEngineByModelId(model_id); !efm.empty()) {
+    engine_type = efm;
+    (*json_body)["engine"] = efm;
+  }
+
   LOG_DEBUG << "request body: " << json_body->toStyledString();
   auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
@@ -203,7 +208,6 @@ void server::RouteRequest(
     ProcessNonStreamRes(callback, *q);
     LOG_TRACE << "Done route request";
   }
-
 }
 
 void server::LoadModel(const HttpRequestPtr& req,
@@ -223,7 +227,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
                                       char* buf,
-                                      std::size_t buf_size) -> std::size_t {
+                                       std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
       if (!(*err_or_done)) {
@@ -243,7 +247,12 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
       *err_or_done = true;
     }
 
-    auto str = res["data"].asString();
+    std::string str;
+    if (status["status_code"].asInt() != k200OK) {
+      str = json_helper::DumpJsonString(res);
+    } else {
+      str = res["data"].asString();
+    }
     LOG_DEBUG << "data: " << str;
     std::size_t n = std::min(str.size(), buf_size);
     memcpy(buf, str.data(), n);

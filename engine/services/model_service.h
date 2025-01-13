@@ -96,6 +96,8 @@ class ModelService {
   std::shared_ptr<ModelMetadata> GetCachedModelMetadata(
       const std::string& model_id) const;
 
+  std::string GetEngineByModelId(const std::string& model_id) const;
+
  private:
   /**
    * Handle downloading model which have following pattern: author/model_name
