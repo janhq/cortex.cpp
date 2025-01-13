@@ -9,37 +9,37 @@ TEST_F(FormatUtilsTest, WriteKeyValue) {
   {
     YAML::Node node;
     std::string result =
-        format_utils::writeKeyValue("key", node["does_not_exist"]);
+        format_utils::WriteKeyValue("key", node["does_not_exist"]);
     EXPECT_EQ(result, "");
   }
 
   {
     YAML::Node node = YAML::Load("value");
-    std::string result = format_utils::writeKeyValue("key", node);
+    std::string result = format_utils::WriteKeyValue("key", node);
     EXPECT_EQ(result, "key: value\n");
   }
 
   {
     YAML::Node node = YAML::Load("3.14159");
-    std::string result = format_utils::writeKeyValue("key", node);
+    std::string result = format_utils::WriteKeyValue("key", node);
     EXPECT_EQ(result, "key: 3.14159\n");
   }
 
   {
     YAML::Node node = YAML::Load("3.000000");
-    std::string result = format_utils::writeKeyValue("key", node);
+    std::string result = format_utils::WriteKeyValue("key", node);
     EXPECT_EQ(result, "key: 3\n");
   }
 
   {
     YAML::Node node = YAML::Load("3.140000");
-    std::string result = format_utils::writeKeyValue("key", node);
+    std::string result = format_utils::WriteKeyValue("key", node);
     EXPECT_EQ(result, "key: 3.14\n");
   }
 
   {
     YAML::Node node = YAML::Load("value");
-    std::string result = format_utils::writeKeyValue("key", node, "comment");
+    std::string result = format_utils::WriteKeyValue("key", node, "comment");
     EXPECT_EQ(result, "key: value # comment\n");
   }
 }

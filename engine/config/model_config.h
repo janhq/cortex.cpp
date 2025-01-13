@@ -164,6 +164,7 @@ struct ModelConfig {
   int ngl = std::numeric_limits<int>::quiet_NaN();
   int ctx_len = std::numeric_limits<int>::quiet_NaN();
   int n_parallel = 1;
+  int cpu_threads = -1;
   std::string engine;
   std::string prompt_template;
   std::string system_template;
@@ -272,6 +273,8 @@ struct ModelConfig {
       ctx_len = json["ctx_len"].asInt();
     if (json.isMember("n_parallel"))
       n_parallel = json["n_parallel"].asInt();
+    if (json.isMember("cpu_threads"))
+      cpu_threads = json["cpu_threads"].asInt();
     if (json.isMember("engine"))
       engine = json["engine"].asString();
     if (json.isMember("prompt_template"))
@@ -362,6 +365,9 @@ struct ModelConfig {
     obj["ngl"] = ngl;
     obj["ctx_len"] = ctx_len;
     obj["n_parallel"] = n_parallel;
+    if (cpu_threads > 0) {
+      obj["cpu_threads"] = cpu_threads;
+    }
     obj["engine"] = engine;
     obj["prompt_template"] = prompt_template;
     obj["system_template"] = system_template;
@@ -473,6 +479,8 @@ struct ModelConfig {
       oss << format_utils::print_kv("ctx_len", std::to_string(ctx_len),
                                     format_utils::MAGENTA);
     oss << format_utils::print_kv("n_parallel", std::to_string(n_parallel),
+                                  format_utils::MAGENTA);
+    oss << format_utils::print_kv("cpu_threads", std::to_string(cpu_threads),
                                   format_utils::MAGENTA);
     if (ngl != std::numeric_limits<int>::quiet_NaN())
       oss << format_utils::print_kv("ngl", std::to_string(ngl),
