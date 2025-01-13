@@ -243,7 +243,7 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/cortex.tar.gz
-          asset_name: cortex-${{ inputs.new_version }}-linux${{ inputs.arch }}.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}.tar.gz
           asset_content_type: application/zip
 
       - name: Upload release assert if public provider is github
