@@ -140,10 +140,10 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
   auto headers = curl_utils::GetHeaders(url);
-  if (headers.has_value()) {
+  if (headers) {
     curl_slist* curl_headers = nullptr;
 
-    for (const auto& [key, value] : headers.value()) {
+    for (const auto& [key, value] : headers->m) {
       auto header = key + ": " + value;
       curl_headers = curl_slist_append(curl_headers, header.c_str());
     }
@@ -227,10 +227,10 @@ cpp::result<bool, std::string> DownloadService::Download(
 
   curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
   auto headers = curl_utils::GetHeaders(download_item.downloadUrl);
-  if (headers.has_value()) {
+  if (headers) {
     curl_slist* curl_headers = nullptr;
 
-    for (const auto& [key, value] : headers.value()) {
+    for (const auto& [key, value] : headers->m) {
       auto header = key + ": " + value;
       curl_headers = curl_slist_append(curl_headers, header.c_str());
     }
@@ -469,7 +469,7 @@ void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
   auto headers = curl_utils::GetHeaders(item.downloadUrl);
   if (headers) {
     curl_slist* curl_headers = nullptr;
-    for (const auto& [key, value] : headers.value()) {
+    for (const auto& [key, value] : headers->m) {
       curl_headers =
           curl_slist_append(curl_headers, (key + ": " + value).c_str());
     }
