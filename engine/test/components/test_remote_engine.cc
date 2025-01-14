@@ -249,7 +249,7 @@ TEST_F(RemoteEngineTest, CohereRequest) {
   {
     std::string message_without_system = R"({
       "messages": [
-          {"role": "user", "content": "Hello, \"the\" world"}
+          {"role": "user", "content": "Hello, \"the\" \n\nworld"}
       ],
       "model": "command-r-plus-08-2024",
       "max_tokens": 1024,

@@ -23,6 +23,7 @@ TemplateRenderer::TemplateRenderer() {
     if (value.is_string()) {
       std::string v = value.get<std::string>();
       v = std::regex_replace(v, std::regex("\""), "\\\"");
+      v = std::regex_replace(v, std::regex("\n"), "\\n");
       return nlohmann::json(std::string("\"") + v + "\"");
     }
     return value;
