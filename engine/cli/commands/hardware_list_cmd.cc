@@ -130,6 +130,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
           std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).compute_cap);
       row.emplace_back(gpu.is_activated ? "Yes" : "No");
       table.add_row({row.begin(), row.end()});
+      count++;
     }
 
     std::cout << table << std::endl;

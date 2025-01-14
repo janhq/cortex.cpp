@@ -64,6 +64,7 @@ struct AmdAddInfo {};
 using GPUAddInfo = std::variant<NvidiaAddInfo, AmdAddInfo>;
 struct GPU {
   std::string id;
+  uint32_t device_id;
   std::string name;
   std::string version;
   GPUAddInfo add_info;
@@ -77,7 +78,7 @@ inline Json::Value ToJson(const std::vector<GPU>& gpus) {
   Json::Value res(Json::arrayValue);
   for (size_t i = 0; i < gpus.size(); i++) {
     Json::Value gpu;
-    gpu["id"] = std::to_string(i);
+    gpu["id"] = gpus[i].id;
     gpu["name"] = gpus[i].name;
     gpu["version"] = gpus[i].version;
     Json::Value add_info;
