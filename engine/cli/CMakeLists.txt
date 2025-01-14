@@ -140,3 +140,9 @@ set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}
                       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+if(UNIX AND NOT APPLE)
+configure_file("${PROJECT_SOURCE_DIR}/../deps/linux/libvulkan.so" "${CMAKE_BINARY_DIR}/libvulkan.so" COPYONLY)
+elseif(MSVC)
+configure_file("${PROJECT_SOURCE_DIR}/../deps/windows/vulkan-1.dll" "${CMAKE_BINARY_DIR}/vulkan-1.dll" COPYONLY)
+endif()

@@ -867,17 +867,30 @@ void PythonEngine::GetModelStatus(
   auto model = json_body->get("model", "").asString();
   auto model_config = models_[model];
   auto health_endpoint = model_config.heath_check;
+  auto pid = processMap[model];
+  auto is_process_live = process_status_utils::IsProcessRunning(pid);
   auto response_health = MakeGetRequest(model, health_endpoint.path);
 
-  if (response_health.error) {
+  if (response_health.error && is_process_live) {
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = false;
+    status["is_stream"] = false;
+    status["status_code"] = k200OK;
+    Json::Value message;
+    message["message"] = "model '"+model+"' is loading";
+    callback(std::move(status), std::move(message));
+    return;
+  }
+  else if(response_health.error && !is_process_live){
     Json::Value status;
     status["is_done"] = true;
     status["has_error"] = true;
     status["is_stream"] = false;
     status["status_code"] = k400BadRequest;
-    Json::Value error;
-    error["error"] = response_health.error_message;
-    callback(std::move(status), std::move(error));
+    Json::Value message;
+    message["message"] = response_health.error_message;
+    callback(std::move(status), std::move(message));
     return;
   }
 
