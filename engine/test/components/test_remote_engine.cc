@@ -337,7 +337,7 @@ TEST_F(RemoteEngineTest, CohereResponse) {
   // non-stream
   message = R"(
   {
-  "text": "Isaac Newton was born on 25 December 1642 (Old Style) or 4 January 1643 (New Style).",
+  "text": "Isaac Newton was born on 25 December 1642 (Old Style) \n\nor 4 January 1643 (New Style).",
   "generation_id": "0385c7cf-4247-43a3-a450-b25b547a31e1",
   "citations": [
     {
@@ -410,7 +410,7 @@ TEST_F(RemoteEngineTest, CohereResponse) {
   res = rdr.Render(tpl, data);
   res_json = json_helper::ParseJsonString(res);
   EXPECT_EQ(res_json["choices"][0]["message"]["content"].asString(),
-            "Isaac Newton was born on 25 December 1642 (Old Style) or 4 "
+            "Isaac Newton was born on 25 December 1642 (Old Style) \n\nor 4 "
             "January 1643 (New Style).");
 }
 

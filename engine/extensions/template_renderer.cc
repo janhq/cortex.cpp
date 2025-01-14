@@ -50,9 +50,6 @@ std::string TemplateRenderer::Render(const std::string& tmpl,
 
     LOG_DEBUG << "Result: " << result;
 
-    // Validate JSON
-    auto parsed = nlohmann::json::parse(result);
-
     return result;
   } catch (const std::exception& e) {
     LOG_ERROR << "Template rendering failed: " << e.what();
@@ -133,4 +130,4 @@ std::string TemplateRenderer::RenderFile(const std::string& template_path,
                              e.what());
   }
 }
-}  // namespace remote_engine
+}  // namespace extensions

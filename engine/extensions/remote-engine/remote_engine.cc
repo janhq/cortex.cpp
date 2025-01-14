@@ -663,6 +663,7 @@ void RemoteEngine::HandleChatCompletion(
       Json::Value error;
       error["error"] = "Failed to parse response";
       callback(std::move(status), std::move(error));
+      LOG_WARN << "Failed to parse response: " << response_str;
       return;
     }
 
