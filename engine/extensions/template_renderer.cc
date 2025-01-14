@@ -7,7 +7,9 @@
 #include <regex>
 #include <stdexcept>
 #include "utils/logging_utils.h"
+#include "utils/string_utils.h"
 namespace extensions {
+
 TemplateRenderer::TemplateRenderer() {
   // Configure Inja environment
   env_.set_trim_blocks(true);
@@ -21,10 +23,9 @@ TemplateRenderer::TemplateRenderer() {
     const auto& value = *args[0];
 
     if (value.is_string()) {
-      std::string v = value.get<std::string>();
-      v = std::regex_replace(v, std::regex("\""), "\\\"");
-      v = std::regex_replace(v, std::regex("\n"), "\\n");
-      return nlohmann::json(std::string("\"") + v + "\"");
+      return nlohmann::json(std::string("\"") +
+                            string_utils::EscapeJson(value.get<std::string>()) +
+                            "\"");
     }
     return value;
   });
@@ -48,7 +49,7 @@ std::string TemplateRenderer::Render(const std::string& tmpl,
     std::string result = env_.render(tmpl, template_data);
 
     // Clean up any potential double quotes in JSON strings
-    result = std::regex_replace(result, std::regex("\\\"\\\""), "\"");
+    // result = std::regex_replace(result, std::regex("\\\"\\\""), "\"");
 
     LOG_DEBUG << "Result: " << result;
 

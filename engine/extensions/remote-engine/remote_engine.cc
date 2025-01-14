@@ -613,6 +613,7 @@ void RemoteEngine::HandleChatCompletion(
       status["status_code"] = k500InternalServerError;
       Json::Value error;
       error["error"] = "Failed to parse response";
+      LOG_WARN << "Failed to parse response: " << response.body;
       callback(std::move(status), std::move(error));
       return;
     }
@@ -648,6 +649,7 @@ void RemoteEngine::HandleChatCompletion(
     } catch (const std::exception& e) {
       // Log error and potentially rethrow or handle accordingly
       LOG_WARN << "Error: " << e.what();
+      LOG_WARN << "Response: " << response.body;
       LOG_WARN << "Using original body";
       response_str = response_json.toStyledString();
     }
