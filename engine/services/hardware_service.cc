@@ -10,6 +10,9 @@
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
 #include "utils/cortex_utils.h"
+#if defined(__linux__)
+#include "services/download_service.h"
+#endif
 
 namespace {
 bool TryConnectToServer(const std::string& host, int port) {
@@ -83,13 +86,15 @@ bool HardwareService::Restart(const std::string& host, int port) {
 
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
   std::string cuda_visible_devices = "";
-  for (auto i : (*ahc_).gpus) {
+  auto cuda_config = GetCudaConfig();
+  for (auto i : cuda_config) {
     if (!cuda_visible_devices.empty())
       cuda_visible_devices += ",";
     cuda_visible_devices += std::to_string(i);
   }
   if (cuda_visible_devices.empty())
     cuda_visible_devices += " ";
+
   // Set the CUDA_VISIBLE_DEVICES environment variable
   if (!set_env("CUDA_VISIBLE_DEVICES", cuda_visible_devices)) {
     LOG_WARN << "Error setting CUDA_VISIBLE_DEVICES";
@@ -101,6 +106,28 @@ bool HardwareService::Restart(const std::string& host, int port) {
     LOG_INFO << "CUDA_VISIBLE_DEVICES is set to: " << value;
   } else {
     LOG_WARN << "CUDA_VISIBLE_DEVICES is not set.";
+  }
+
+  std::string vk_visible_devices = "";
+  for (auto i : (*ahc_).gpus) {
+    if (!vk_visible_devices.empty())
+      vk_visible_devices += ",";
+    vk_visible_devices += std::to_string(i);
+  }
+
+  if (vk_visible_devices.empty())
+    vk_visible_devices += " ";
+
+  if (!set_env("GGML_VK_VISIBLE_DEVICES", vk_visible_devices)) {
+    LOG_WARN << "Error setting GGML_VK_VISIBLE_DEVICES";
+    return false;
+  }
+
+  const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+  if (vk_value) {
+    LOG_INFO << "GGML_VK_VISIBLE_DEVICES is set to: " << vk_value;
+  } else {
+    LOG_WARN << "GGML_VK_VISIBLE_DEVICES is not set.";
   }
 #endif
 
@@ -266,8 +293,26 @@ bool HardwareService::SetActivateHardwareConfig(
 
 void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
+  CheckDependencies();
   auto gpus = cortex::hw::GetGPUInfo();
-  auto b = db_service_->LoadHardwareList();
+  cortex::db::Hardware hw_db;
+  auto b = hw_db.LoadHardwareList();
+  // delete if not exists
+  auto exists = [&gpus](const std::string& uuid) {
+    for (auto const& g : gpus) {
+      if (g.uuid == uuid)
+        return true;
+    }
+    return false;
+  };
+  for (auto const& he : b.value()) {
+    if (!exists(he.uuid)) {
+      hw_db.DeleteHardwareEntry(he.uuid);
+    }
+  }
+
+  // Get updated list
+  b = hw_db.LoadHardwareList();
   std::vector<std::pair<int, int>> activated_gpu_bf;
   std::string debug_b;
   for (auto const& he : b.value()) {
@@ -280,15 +325,23 @@ void HardwareService::UpdateHardwareInfos() {
   for (auto const& gpu : gpus) {
     // ignore error
     // Note: only support NVIDIA for now, so hardware_id = software_id
-    auto res =
-        db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
-                                              .type = "gpu",
-                                              .hardware_id = std::stoi(gpu.id),
-                                              .software_id = std::stoi(gpu.id),
-                                              .activated = true,
-                                              .priority = INT_MAX});
-    if (res.has_error()) {
-      CTL_WRN(res.error());
+    if (hw_db.HasHardwareEntry(gpu.uuid)) {
+      auto res = hw_db.UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
+                                           std::stoi(gpu.id));
+      if (res.has_error()) {
+        CTL_WRN(res.error());
+      }
+    } else {
+      auto res =
+          hw_db.AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
+                                         .type = "gpu",
+                                         .hardware_id = std::stoi(gpu.id),
+                                         .software_id = std::stoi(gpu.id),
+                                         .activated = true,
+                                         .priority = INT_MAX});
+      if (res.has_error()) {
+        CTL_WRN(res.error());
+      }
     }
   }
 
@@ -329,6 +382,13 @@ void HardwareService::UpdateHardwareInfos() {
     } else {
       need_restart = true;
     }
+
+    const char* vk_value = std::getenv("GGML_VK_VISIBLE_DEVICES");
+    if (vk_value) {
+      LOG_INFO << "GGML_VK_VISIBLE_DEVICES: " << vk_value;
+    } else {
+      need_restart = true;
+    }
   }
 #endif
 
@@ -358,4 +418,80 @@ bool HardwareService::IsValidConfig(
     }
   }
   return false;
+}
+
+void HardwareService::CheckDependencies() {
+  // search for libvulkan.so, if does not exist, pull it
+#if defined(__linux__)
+  namespace fmu = file_manager_utils;
+  auto get_vulkan_path = [](const std::string& lib_vulkan)
+      -> cpp::result<std::filesystem::path, std::string> {
+    if (std::filesystem::exists(fmu::GetExecutableFolderContainerPath() /
+                                lib_vulkan)) {
+      return fmu::GetExecutableFolderContainerPath() / lib_vulkan;
+      // fallback to deps path
+    } else if (std::filesystem::exists(fmu::GetCortexDataPath() / "deps" /
+                                       lib_vulkan)) {
+      return fmu::GetCortexDataPath() / "deps" / lib_vulkan;
+    } else {
+      CTL_WRN("Could not found " << lib_vulkan);
+      return cpp::fail("Could not found " + lib_vulkan);
+    }
+  };
+
+  if (get_vulkan_path("libvulkan.so").has_error()) {
+    if (!std::filesystem::exists(fmu::GetCortexDataPath() / "deps")) {
+      std::filesystem::create_directories(fmu::GetCortexDataPath() / "deps");
+    }
+    auto download_task{DownloadTask{
+        .id = "vulkan",
+        .type = DownloadType::Miscellaneous,
+        .items = {DownloadItem{
+            .id = "vulkan",
+            .downloadUrl = "https://catalog.jan.ai/libvulkan.so",
+            .localPath = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+        }},
+    }};
+    auto result = DownloadService().AddDownloadTask(
+        download_task,
+        [](const DownloadTask& finishedTask) {
+          // try to unzip the downloaded file
+          CTL_INF("Downloaded libvulkan path: "
+                  << finishedTask.items[0].localPath.string());
+
+          CTL_INF("Finished!");
+        },
+        /*show_progress*/ false);
+    if (result.has_error()) {
+      CTL_WRN("Failed to download: " << result.error());
+    }
+  }
+#endif
+}
+
+std::vector<int> HardwareService::GetCudaConfig() {
+  std::vector<int> res;
+  if (!ahc_)
+    return res;
+  auto nvidia_gpus = system_info_utils::GetGpuInfoList();
+  auto all_gpus = cortex::hw::GetGPUInfo();
+  // Map id with uuid
+  std::vector<std::string> uuids;
+  for (auto i : (*ahc_).gpus) {
+    for (auto const& gpu : all_gpus) {
+      if (i == std::stoi(gpu.id)) {
+        uuids.push_back(gpu.uuid);
+      }
+    }
+  }
+
+  // Map uuid back to nvidia id
+  for (auto const& uuid : uuids) {
+    for (auto const& ngpu : nvidia_gpus) {
+      if (uuid == ngpu.uuid) {
+        res.push_back(std::stoi(ngpu.id));
+      }
+    }
+  }
+  return res;
 }
