@@ -21,8 +21,9 @@ TemplateRenderer::TemplateRenderer() {
     const auto& value = *args[0];
 
     if (value.is_string()) {
-      return nlohmann::json(std::string("\"") + value.get<std::string>() +
-                            "\"");
+      std::string v = value.get<std::string>();
+      v = std::regex_replace(v, std::regex("\""), "\\\"");
+      return nlohmann::json(std::string("\"") + v + "\"");
     }
     return value;
   });
@@ -53,6 +54,7 @@ std::string TemplateRenderer::Render(const std::string& tmpl,
     return result;
   } catch (const std::exception& e) {
     LOG_ERROR << "Template rendering failed: " << e.what();
+    LOG_ERROR << "Data: " << data.toStyledString();
     LOG_ERROR << "Template: " << tmpl;
     throw std::runtime_error(std::string("Template rendering failed: ") +
                              e.what());

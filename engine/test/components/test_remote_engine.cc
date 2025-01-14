@@ -18,14 +18,14 @@ TEST_F(RemoteEngineTest, OpenAiToAnthropicRequest) {
             "messages": [
               {% for message in input_request.messages %}
                 {% if not loop.is_first %}
-                  {"role": "{{ message.role }}", "content": "{{ message.content }}" } {% if not loop.is_last %},{% endif %}
+                  {"role": "{{ message.role }}", "content": {{ tojson(message.content) }} } {% if not loop.is_last %},{% endif %}
                 {% endif %}
               {% endfor %}
             ]
           {% else %}
             "messages": [
               {% for message in input_request.messages %}
-                {"role": " {{ message.role}}", "content": "{{ message.content }}" } {% if not loop.is_last %},{% endif %}
+                {"role": " {{ message.role}}", "content": {{ tojson(message.content) }} } {% if not loop.is_last %},{% endif %}
               {% endfor %}
             ]
           {% endif %}
@@ -187,28 +187,28 @@ TEST_F(RemoteEngineTest, CohereRequest) {
       {% for key, value in input_request %}
         {% if key == "messages" %}  
           {% if input_request.messages.0.role == "system" %}
-            "preamble": "{{ input_request.messages.0.content }}",
+            "preamble": {{ tojson(input_request.messages.0.content) }},
             {% if length(input_request.messages) > 2 %}
             "chatHistory": [
               {% for message in input_request.messages %}
                 {% if not loop.is_first and not loop.is_last %}
-                  {"role": {% if message.role == "user" %} "USER" {% else %} "CHATBOT" {% endif %}, "content": "{{ message.content }}" } {% if loop.index < length(input_request.messages) - 2 %},{% endif %}
+                  {"role": {% if message.role == "user" %} "USER" {% else %} "CHATBOT" {% endif %}, "content": {{ tojson(message.content) }} } {% if loop.index < length(input_request.messages) - 2 %},{% endif %}
                 {% endif %}
               {% endfor %}
             ],
             {% endif %}
-            "message": "{{ last(input_request.messages).content }}"
+            "message": {{ tojson(last(input_request.messages).content) }}
           {% else %}
            {% if length(input_request.messages) > 2 %}
             "chatHistory": [
               {% for message in input_request.messages %}
                 {% if not loop.is_last %}
-                  { "role": {% if message.role == "user" %} "USER" {% else %} "CHATBOT" {% endif %}, "content": "{{ message.content }}" } {% if loop.index < length(input_request.messages) - 2 %},{% endif %}
+                  { "role": {% if message.role == "user" %} "USER" {% else %} "CHATBOT" {% endif %}, "content": {{ tojson(message.content) }} } {% if loop.index < length(input_request.messages) - 2 %},{% endif %}
                 {% endif %}
               {% endfor %}
             ],
             {% endif %}
-            "message": "{{ last(input_request.messages).content }}"
+            "message": {{ tojson(last(input_request.messages).content) }}
           {% endif %}
           {% if not loop.is_last %},{% endif %} 
         {% else if key == "system" or key == "model" or key == "temperature" or key == "store" or key == "max_tokens" or key == "stream" or key == "presence_penalty" or key == "metadata" or key == "frequency_penalty" or key == "tools" or key == "tool_choice" or key == "logprobs" or key == "top_logprobs" or key == "logit_bias" or key == "n" or key == "modalities" or key == "prediction" or key == "response_format" or key == "service_tier" or key == "seed" or key == "stop" or key == "stream_options" or key == "top_p" or key == "parallel_tool_calls" or key == "user" %}
@@ -249,7 +249,7 @@ TEST_F(RemoteEngineTest, CohereRequest) {
   {
     std::string message_without_system = R"({
       "messages": [
-          {"role": "user", "content": "Hello, world"}
+          {"role": "user", "content": "Hello, \"the\" world"}
       ],
       "model": "command-r-plus-08-2024",
       "max_tokens": 1024,
@@ -273,7 +273,7 @@ TEST_F(RemoteEngineTest, CohereResponse) {
   {% if input_request.stream %} 
     {"object": "chat.completion.chunk", 
     "model": "{{ input_request.model }}", 
-    "choices": [{"index": 0, "delta": { {% if input_request.event_type == "text-generation" %} "role": "assistant", "content": "{{ input_request.text }}" {% else %} "role": "assistant", "content": null {% endif %} }, 
+    "choices": [{"index": 0, "delta": { {% if input_request.event_type == "text-generation" %} "role": "assistant", "content": {{ tojson(input_request.text) }} {% else %} "role": "assistant", "content": null {% endif %} }, 
     {% if input_request.event_type == "stream-end" %} "finish_reason": "{{ input_request.finish_reason }}" {% else %} "finish_reason": null {% endif %} }]
     } 
   {% else %} 
@@ -281,7 +281,7 @@ TEST_F(RemoteEngineTest, CohereResponse) {
     "created": null, 
     "object": "chat.completion", 
     "model": "{{ input_request.model }}", 
-    "choices": [{ "index": 0, "message": { "role": "assistant", "content": {% if not input_request.text %} null {% else  %}  "{{input_request.text}}" {% endif %}, "refusal": null }, "logprobs": null, "finish_reason": "{{ input_request.finish_reason }}" } ], "usage": { "prompt_tokens": {{ input_request.meta.tokens.input_tokens }}, "completion_tokens": {{ input_request.meta.tokens.output_tokens }}, "total_tokens": {{ input_request.meta.tokens.input_tokens + input_request.meta.tokens.output_tokens }}, "prompt_tokens_details": { "cached_tokens": 0 }, "completion_tokens_details": { "reasoning_tokens": 0, "accepted_prediction_tokens": 0, "rejected_prediction_tokens": 0 } }, "system_fingerprint": "fp_6b68a8204b"} {% endif %})";
+    "choices": [{ "index": 0, "message": { "role": "assistant", "content": {% if not input_request.text %} null {% else  %} {{ tojson(input_request.text) }} {% endif %}, "refusal": null }, "logprobs": null, "finish_reason": "{{ input_request.finish_reason }}" } ], "usage": { "prompt_tokens": {{ input_request.meta.tokens.input_tokens }}, "completion_tokens": {{ input_request.meta.tokens.output_tokens }}, "total_tokens": {{ input_request.meta.tokens.input_tokens + input_request.meta.tokens.output_tokens }}, "prompt_tokens_details": { "cached_tokens": 0 }, "completion_tokens_details": { "reasoning_tokens": 0, "accepted_prediction_tokens": 0, "rejected_prediction_tokens": 0 } }, "system_fingerprint": "fp_6b68a8204b"} {% endif %})";
   std::string message = R"({
    "event_type": "text-generation",
    "text": " help"
@@ -337,7 +337,7 @@ TEST_F(RemoteEngineTest, CohereResponse) {
   // non-stream
   message = R"(
   {
-  "text": "Isaac Newton was born on 25 December 1642 (Old Style) \n\nor 4 January 1643 (New Style).",
+  "text": "Isaac Newton was 'born' on 25 \"December\" 1642 (Old Style) \n\nor 4 January 1643 (New Style).",
   "generation_id": "0385c7cf-4247-43a3-a450-b25b547a31e1",
   "citations": [
     {
@@ -409,9 +409,10 @@ TEST_F(RemoteEngineTest, CohereResponse) {
   data["model"] = "cohere";
   res = rdr.Render(tpl, data);
   res_json = json_helper::ParseJsonString(res);
-  EXPECT_EQ(res_json["choices"][0]["message"]["content"].asString(),
-            "Isaac Newton was born on 25 December 1642 (Old Style) \n\nor 4 "
-            "January 1643 (New Style).");
+  EXPECT_EQ(
+      res_json["choices"][0]["message"]["content"].asString(),
+      "Isaac Newton was 'born' on 25 \"December\" 1642 (Old Style) \n\nor 4 "
+      "January 1643 (New Style).");
 }
 
 TEST_F(RemoteEngineTest, HeaderTemplate) {

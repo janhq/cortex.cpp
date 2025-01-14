@@ -647,8 +647,8 @@ void RemoteEngine::HandleChatCompletion(
       }
     } catch (const std::exception& e) {
       // Log error and potentially rethrow or handle accordingly
-      LOG_WARN << "Error in TransformRequest: " << e.what();
-      LOG_WARN << "Using original request body";
+      LOG_WARN << "Error: " << e.what();
+      LOG_WARN << "Using original body";
       response_str = response_json.toStyledString();
     }
 
