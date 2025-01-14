@@ -35,6 +35,7 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
     status["has_error"] = true;
     status["is_stream"] = true;
     status["status_code"] = k400BadRequest;
+    context->need_stop = false;
     (*context->callback)(std::move(status), std::move(check_error));
     return size * nmemb;
   }
@@ -58,7 +59,8 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
       status["is_done"] = true;
       status["has_error"] = false;
       status["is_stream"] = true;
-      status["status_code"] = 200;
+      status["status_code"] = k200OK;
+      context->need_stop = false;
       (*context->callback)(std::move(status), Json::Value());
       break;
     }
@@ -169,6 +171,15 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
 
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
+  if (context.need_stop) {
+    CTL_DBG("No stop message received, need to stop");
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = false;
+    status["is_stream"] = true;
+    status["status_code"] = k200OK;
+    (*context.callback)(std::move(status), Json::Value());
+  }
   return response;
 }
 
@@ -626,6 +637,9 @@ void RemoteEngine::HandleChatCompletion(
 
       try {
         response_json["stream"] = false;
+        if (!response_json.isMember("model")) {
+          response_json["model"] = model;
+        }
         response_str = renderer_.Render(template_str, response_json);
       } catch (const std::exception& e) {
         throw std::runtime_error("Template rendering error: " +
