@@ -1,9 +1,9 @@
 #pragma once
+#include <assert.h>
 #include <json/json.h>
 #include <string>
 #include <variant>
 #include <vector>
-#include <assert.h>
 
 namespace cortex::hw {
 
@@ -26,6 +26,7 @@ struct CPU {
   int cores;
   std::string arch;
   std::string model;
+  float usage;
   std::vector<std::string> instructions;
 };
 
@@ -34,6 +35,7 @@ inline Json::Value ToJson(const CPU& cpu) {
   res["arch"] = cpu.arch;
   res["cores"] = cpu.cores;
   res["model"] = cpu.model;
+  res["usage"] = cpu.usage;
   Json::Value insts(Json::arrayValue);
   for (auto const& i : cpu.instructions) {
     insts.append(i);
@@ -47,11 +49,16 @@ inline CPU FromJson(const Json::Value& root) {
   int cores = root["cores"].asInt();
   std::string arch = root["arch"].asString();
   std::string model = root["model"].asString();
+  float usage = root["usage"].asFloat();
   std::vector<std::string> insts;
   for (auto const& i : root["instructions"]) {
     insts.emplace_back(i.asString());
   }
-  return {.cores = cores, .arch = arch, .model = model, .instructions = insts};
+  return {.cores = cores,
+          .arch = arch,
+          .model = model,
+          .usage = usage,
+          .instructions = insts};
 }
 }  // namespace cpu
 
@@ -143,7 +150,6 @@ inline OS FromJson(const Json::Value& root) {
 }
 }  // namespace os
 
-
 struct PowerInfo {
   std::string charging_status;
   int battery_life;
@@ -165,7 +171,6 @@ inline PowerInfo FromJson(const Json::Value& root) {
           .is_power_saving = root["is_power_saving"].asBool()};
 }
 }  // namespace power
-
 
 namespace {
 int64_t ByteToMiB(int64_t b) {
@@ -215,4 +220,4 @@ inline StorageInfo FromJson(const Json::Value& root) {
           .available = root["available"].asInt64()};
 }
 }  // namespace storage
-}
+}  // namespace cortex::hw
