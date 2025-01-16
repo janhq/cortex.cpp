@@ -47,7 +47,7 @@ class InferenceService {
 
   cpp::result<void, InferResult> HandleRouteRequest(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
-      
+
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
   InferResult UnloadModel(const std::string& engine,
@@ -74,4 +74,6 @@ class InferenceService {
  private:
   std::shared_ptr<EngineService> engine_service_;
   std::weak_ptr<ModelService> model_service_;
+  using SavedModel = std::shared_ptr<Json::Value>;
+  std::unordered_map<std::string, SavedModel> saved_models_;
 };
