@@ -117,9 +117,9 @@ void FileLogger::CircularLogFile::TruncateFileIfNeeded() {
 void FileLogger::CircularLogFile::OpenFile() {
 #ifdef _WIN32
   auto wFileName = utils::toNativePath(file_name_);
-  fp_ = _wfopen(wFileName.c_str(), L"r+");
+  fp_ = _wfopen(wFileName.c_str(), L"a+");
 #else
-  fp_ = fopen(file_name_.c_str(), "r+");
+  fp_ = fopen(file_name_.c_str(), "a+");
 #endif
 
   if (!fp_) {
