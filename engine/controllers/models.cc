@@ -526,6 +526,7 @@ void Models::StartModel(
   if (auto& o = (*(req->getJsonObject()))["llama_model_path"]; !o.isNull()) {
     auto model_path = o.asString();
     if (auto& mp = (*(req->getJsonObject()))["model_path"]; mp.isNull()) {
+      mp = model_path;
       // Bypass if model does not exist in DB and llama_model_path exists
       if (std::filesystem::exists(model_path) &&
           !model_service_->HasModel(model_handle)) {

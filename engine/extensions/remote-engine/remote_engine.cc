@@ -27,8 +27,9 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   auto* context = static_cast<StreamContext*>(userdata);
   std::string chunk(ptr, size * nmemb);
   CTL_DBG(chunk);
-  auto check_error = json_helper::ParseJsonString(chunk);
-  if (check_error.isMember("error")) {
+  Json::Value check_error;
+  Json::Reader reader;
+  if (reader.parse(chunk, check_error)) {
     CTL_WRN(chunk);
     Json::Value status;
     status["is_done"] = true;
