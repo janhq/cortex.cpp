@@ -119,6 +119,8 @@ void YamlHandler::ModelConfigFromYaml() {
       tmp.ctx_len = yaml_node_["ctx_len"].as<int>();
     if (yaml_node_["n_parallel"])
       tmp.n_parallel = yaml_node_["n_parallel"].as<int>();
+    if (yaml_node_["cpu_threads"])
+      tmp.cpu_threads = yaml_node_["cpu_threads"].as<int>();
     if (yaml_node_["tp"])
       tmp.tp = yaml_node_["tp"].as<int>();
     if (yaml_node_["stream"])
@@ -224,6 +226,8 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
       yaml_node_["ctx_len"] = model_config_.ctx_len;
     if (!std::isnan(static_cast<double>(model_config_.n_parallel)))
       yaml_node_["n_parallel"] = model_config_.n_parallel;
+    if (!std::isnan(static_cast<double>(model_config_.cpu_threads)))
+      yaml_node_["cpu_threads"] = model_config_.cpu_threads;
     if (!std::isnan(static_cast<double>(model_config_.tp)))
       yaml_node_["tp"] = model_config_.tp;
     if (!std::isnan(static_cast<double>(model_config_.stream)))
@@ -283,110 +287,112 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
 // Method to write all attributes to a YAML file
 void YamlHandler::WriteYamlFile(const std::string& file_path) const {
   try {
-    std::ofstream outFile(file_path);
-    if (!outFile) {
+    std::ofstream out_file(file_path);
+    if (!out_file) {
       throw std::runtime_error("Failed to open output file.");
     }
     // Write GENERAL GGUF METADATA
-    outFile << "# BEGIN GENERAL GGUF METADATA\n";
-    outFile << format_utils::writeKeyValue(
+    out_file << "# BEGIN GENERAL GGUF METADATA\n";
+    out_file << format_utils::WriteKeyValue(
         "id", yaml_node_["id"],
         "Model ID unique between models (author / quantization)");
-    outFile << format_utils::writeKeyValue(
+    out_file << format_utils::WriteKeyValue(
         "model", yaml_node_["model"],
         "Model ID which is used for request construct - should be "
         "unique between models (author / quantization)");
-    outFile << format_utils::writeKeyValue("name", yaml_node_["name"],
+    out_file << format_utils::WriteKeyValue("name", yaml_node_["name"],
                                            "metadata.general.name");
     if (yaml_node_["version"]) {
-      outFile << "version: " << yaml_node_["version"].as<std::string>() << "\n";
+      out_file << "version: " << yaml_node_["version"].as<std::string>() << "\n";
     }
     if (yaml_node_["files"] && yaml_node_["files"].size()) {
-      outFile << "files:             # Can be relative OR absolute local file "
+      out_file << "files:             # Can be relative OR absolute local file "
                  "path\n";
       for (const auto& source : yaml_node_["files"]) {
-        outFile << "  - " << source << "\n";
+        out_file << "  - " << source << "\n";
       }
     }
 
-    outFile << "# END GENERAL GGUF METADATA\n";
-    outFile << "\n";
+    out_file << "# END GENERAL GGUF METADATA\n";
+    out_file << "\n";
     // Write INFERENCE PARAMETERS
-    outFile << "# BEGIN INFERENCE PARAMETERS\n";
-    outFile << "# BEGIN REQUIRED\n";
+    out_file << "# BEGIN INFERENCE PARAMETERS\n";
+    out_file << "# BEGIN REQUIRED\n";
     if (yaml_node_["stop"] && yaml_node_["stop"].size()) {
-      outFile << "stop:                # tokenizer.ggml.eos_token_id\n";
+      out_file << "stop:                # tokenizer.ggml.eos_token_id\n";
       for (const auto& stop : yaml_node_["stop"]) {
-        outFile << "  - " << stop << "\n";
+        out_file << "  - " << stop << "\n";
       }
     }
 
-    outFile << "# END REQUIRED\n";
-    outFile << "\n";
-    outFile << "# BEGIN OPTIONAL\n";
-    outFile << format_utils::writeKeyValue("size", yaml_node_["size"]);
-    outFile << format_utils::writeKeyValue("stream", yaml_node_["stream"],
+    out_file << "# END REQUIRED\n";
+    out_file << "\n";
+    out_file << "# BEGIN OPTIONAL\n";
+    out_file << format_utils::WriteKeyValue("size", yaml_node_["size"]);
+    out_file << format_utils::WriteKeyValue("stream", yaml_node_["stream"],
                                            "Default true?");
-    outFile << format_utils::writeKeyValue("top_p", yaml_node_["top_p"],
+    out_file << format_utils::WriteKeyValue("top_p", yaml_node_["top_p"],
                                            "Ranges: 0 to 1");
-    outFile << format_utils::writeKeyValue(
+    out_file << format_utils::WriteKeyValue(
         "temperature", yaml_node_["temperature"], "Ranges: 0 to 1");
-    outFile << format_utils::writeKeyValue(
+    out_file << format_utils::WriteKeyValue(
         "frequency_penalty", yaml_node_["frequency_penalty"], "Ranges: 0 to 1");
-    outFile << format_utils::writeKeyValue(
+    out_file << format_utils::WriteKeyValue(
         "presence_penalty", yaml_node_["presence_penalty"], "Ranges: 0 to 1");
-    outFile << format_utils::writeKeyValue(
+    out_file << format_utils::WriteKeyValue(
         "max_tokens", yaml_node_["max_tokens"],
         "Should be default to context length");
-    outFile << format_utils::writeKeyValue("seed", yaml_node_["seed"]);
-    outFile << format_utils::writeKeyValue("dynatemp_range",
+    out_file << format_utils::WriteKeyValue("seed", yaml_node_["seed"]);
+    out_file << format_utils::WriteKeyValue("dynatemp_range",
                                            yaml_node_["dynatemp_range"]);
-    outFile << format_utils::writeKeyValue("dynatemp_exponent",
+    out_file << format_utils::WriteKeyValue("dynatemp_exponent",
                                            yaml_node_["dynatemp_exponent"]);
-    outFile << format_utils::writeKeyValue("top_k", yaml_node_["top_k"]);
-    outFile << format_utils::writeKeyValue("min_p", yaml_node_["min_p"]);
-    outFile << format_utils::writeKeyValue("tfs_z", yaml_node_["tfs_z"]);
-    outFile << format_utils::writeKeyValue("typ_p", yaml_node_["typ_p"]);
-    outFile << format_utils::writeKeyValue("repeat_last_n",
+    out_file << format_utils::WriteKeyValue("top_k", yaml_node_["top_k"]);
+    out_file << format_utils::WriteKeyValue("min_p", yaml_node_["min_p"]);
+    out_file << format_utils::WriteKeyValue("tfs_z", yaml_node_["tfs_z"]);
+    out_file << format_utils::WriteKeyValue("typ_p", yaml_node_["typ_p"]);
+    out_file << format_utils::WriteKeyValue("repeat_last_n",
                                            yaml_node_["repeat_last_n"]);
-    outFile << format_utils::writeKeyValue("repeat_penalty",
+    out_file << format_utils::WriteKeyValue("repeat_penalty",
                                            yaml_node_["repeat_penalty"]);
-    outFile << format_utils::writeKeyValue("mirostat", yaml_node_["mirostat"]);
-    outFile << format_utils::writeKeyValue("mirostat_tau",
+    out_file << format_utils::WriteKeyValue("mirostat", yaml_node_["mirostat"]);
+    out_file << format_utils::WriteKeyValue("mirostat_tau",
                                            yaml_node_["mirostat_tau"]);
-    outFile << format_utils::writeKeyValue("mirostat_eta",
+    out_file << format_utils::WriteKeyValue("mirostat_eta",
                                            yaml_node_["mirostat_eta"]);
-    outFile << format_utils::writeKeyValue("penalize_nl",
+    out_file << format_utils::WriteKeyValue("penalize_nl",
                                            yaml_node_["penalize_nl"]);
-    outFile << format_utils::writeKeyValue("ignore_eos",
+    out_file << format_utils::WriteKeyValue("ignore_eos",
                                            yaml_node_["ignore_eos"]);
-    outFile << format_utils::writeKeyValue("n_probs", yaml_node_["n_probs"]);
-    outFile << format_utils::writeKeyValue("min_keep", yaml_node_["min_keep"]);
-    outFile << format_utils::writeKeyValue("grammar", yaml_node_["grammar"]);
-    outFile << "# END OPTIONAL\n";
-    outFile << "# END INFERENCE PARAMETERS\n";
-    outFile << "\n";
+    out_file << format_utils::WriteKeyValue("n_probs", yaml_node_["n_probs"]);
+    out_file << format_utils::WriteKeyValue("min_keep", yaml_node_["min_keep"]);
+    out_file << format_utils::WriteKeyValue("grammar", yaml_node_["grammar"]);
+    out_file << "# END OPTIONAL\n";
+    out_file << "# END INFERENCE PARAMETERS\n";
+    out_file << "\n";
     // Write MODEL LOAD PARAMETERS
-    outFile << "# BEGIN MODEL LOAD PARAMETERS\n";
-    outFile << "# BEGIN REQUIRED\n";
-    outFile << format_utils::writeKeyValue("engine", yaml_node_["engine"],
+    out_file << "# BEGIN MODEL LOAD PARAMETERS\n";
+    out_file << "# BEGIN REQUIRED\n";
+    out_file << format_utils::WriteKeyValue("engine", yaml_node_["engine"],
                                            "engine to run model");
-    outFile << "prompt_template:";
-    outFile << " " << yaml_node_["prompt_template"] << "\n";
-    outFile << "# END REQUIRED\n";
-    outFile << "\n";
-    outFile << "# BEGIN OPTIONAL\n";
-    outFile << format_utils::writeKeyValue(
+    out_file << "prompt_template:";
+    out_file << " " << yaml_node_["prompt_template"] << "\n";
+    out_file << "# END REQUIRED\n";
+    out_file << "\n";
+    out_file << "# BEGIN OPTIONAL\n";
+    out_file << format_utils::WriteKeyValue(
         "ctx_len", yaml_node_["ctx_len"],
         "llama.context_length | 0 or undefined = loaded from model");
-    outFile << format_utils::writeKeyValue("n_parallel",
+    out_file << format_utils::WriteKeyValue("n_parallel",
                                            yaml_node_["n_parallel"]);
-    outFile << format_utils::writeKeyValue("ngl", yaml_node_["ngl"],
+    out_file << format_utils::WriteKeyValue("cpu_threads",
+                                           yaml_node_["cpu_threads"]);
+    out_file << format_utils::WriteKeyValue("ngl", yaml_node_["ngl"],
                                            "Undefined = loaded from model");
-    outFile << "# END OPTIONAL\n";
-    outFile << "# END MODEL LOAD PARAMETERS\n";
+    out_file << "# END OPTIONAL\n";
+    out_file << "# END MODEL LOAD PARAMETERS\n";
 
-    outFile.close();
+    out_file.close();
   } catch (const std::exception& e) {
     std::cerr << "Error writing to file: " << e.what() << std::endl;
     throw;

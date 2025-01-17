@@ -768,7 +768,8 @@ cpp::result<void, std::string> ModelService::DeleteModel(
     // Remove yaml file
     std::filesystem::remove(yaml_fp);
     // Remove model files if they are not imported locally
-    if (model_entry.value().branch_name != "imported") {
+    if (model_entry.value().branch_name != "imported" &&
+        !engine_svc_->IsRemoteEngine(mc.engine)) {
       if (mc.files.size() > 0) {
         if (mc.engine == kLlamaRepo || mc.engine == kLlamaEngine) {
           for (auto& file : mc.files) {
@@ -890,7 +891,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
-
+        engine_svc_->LoadEngine(mc.engine);
         config::RemoteModelConfig remote_mc;
         remote_mc.LoadFromYamlFile(
             fmu::ToAbsoluteCortexDataPath(
@@ -906,6 +907,10 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         json_data = remote_mc.ToJson();
 
         json_data["api_key"] = std::move(remote_engine_json["api_key"]);
+        if (auto v = remote_engine_json["version"].asString();
+            !v.empty() && v != "latest") {
+          json_data["version"] = v;
+        }
         json_data["model_path"] =
             fmu::ToAbsoluteCortexDataPath(
                 fs::path(model_entry.value().path_to_model_yaml))
@@ -1374,5 +1379,27 @@ ModelService::GetModelMetadata(const std::string& model_id) const {
 
 std::shared_ptr<ModelMetadata> ModelService::GetCachedModelMetadata(
     const std::string& model_id) const {
+  if (loaded_model_metadata_map_.find(model_id) ==
+      loaded_model_metadata_map_.end())
+    return nullptr;
   return loaded_model_metadata_map_.at(model_id);
+}
+
+std::string ModelService::GetEngineByModelId(
+    const std::string& model_id) const {
+  namespace fs = std::filesystem;
+  namespace fmu = file_manager_utils;
+  auto model_entry = db_service_->GetModelInfo(model_id);
+  if (model_entry.has_error()) {
+    CTL_WRN("Error: " + model_entry.error());
+    return "";
+  }
+  config::YamlHandler yaml_handler;
+  yaml_handler.ModelConfigFromFile(
+      fmu::ToAbsoluteCortexDataPath(
+          fs::path(model_entry.value().path_to_model_yaml))
+          .string());
+  auto mc = yaml_handler.GetModelConfig();
+  CTL_DBG(mc.engine);
+  return mc.engine;
 }

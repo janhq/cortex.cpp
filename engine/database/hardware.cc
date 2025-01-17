@@ -98,4 +98,41 @@ cpp::result<bool, std::string> Hardware::DeleteHardwareEntry(
     return cpp::fail(e.what());
   }
 }
+
+bool Hardware::HasHardwareEntry(const std::string& id) {
+   try {
+    SQLite::Statement query(db_,
+                            "SELECT COUNT(*) FROM hardware WHERE uuid = ?");
+    query.bind(1, id);
+    if (query.executeStep()) {
+      return query.getColumn(0).getInt() > 0;
+    }
+    return false;
+  } catch (const std::exception& e) {
+    CTL_WRN(e.what());
+    return false;
+  }
+}
+
+cpp::result<bool, std::string> Hardware::UpdateHardwareEntry(const std::string& id,
+                                                     int hw_id,
+                                                     int sw_id) const {
+ try {
+    SQLite::Statement upd(
+        db_,
+        "UPDATE hardware "
+        "SET hardware_id = ?, software_id = ? "
+        "WHERE uuid = ?");
+    upd.bind(1, hw_id);
+    upd.bind(2, sw_id);
+    upd.bind(3, id);
+    if (upd.exec() == 1) {
+      CTL_INF("Updated: " << id << " " << hw_id << " " << sw_id);
+      return true;
+    }
+    return false;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
+  }
+                                                     }
 }  // namespace cortex::db

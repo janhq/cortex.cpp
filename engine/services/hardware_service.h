@@ -33,6 +33,10 @@ class HardwareService {
   bool IsValidConfig(const cortex::hw::ActivateHardwareConfig& ahc);
 
  private:
+  void CheckDependencies();
+  std::vector<int> GetCudaConfig();
+
+ private:
   std::shared_ptr<DatabaseService> db_service_ = nullptr;
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
 };

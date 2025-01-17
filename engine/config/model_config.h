@@ -11,7 +11,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "config/remote_template.h"
 #include "utils/format_utils.h"
 #include "utils/remote_models_utils.h"
 
@@ -19,15 +18,15 @@ namespace config {
 
 struct RemoteModelConfig {
   std::string model;
-  std::string api_key_template;
+  std::string header_template;
   std::string engine;
   std::string version;
-  std::size_t created;
+  size_t created;
   std::string object = "model";
   std::string owned_by = "";
   Json::Value inference_params;
-  Json::Value TransformReq;
-  Json::Value TransformResp;
+  Json::Value transform_req;
+  Json::Value transform_resp;
   Json::Value metadata;
   void LoadFromJson(const Json::Value& json) {
     if (!json.isObject()) {
@@ -36,8 +35,8 @@ struct RemoteModelConfig {
 
     // Load basic string fields
     model = json.get("model", model).asString();
-    api_key_template =
-        json.get("api_key_template", api_key_template).asString();
+    header_template =
+        json.get("header_template", header_template).asString();
     engine = json.get("engine", engine).asString();
     version = json.get("version", version).asString();
     created =
@@ -47,31 +46,8 @@ struct RemoteModelConfig {
 
     // Load JSON object fields directly
     inference_params = json.get("inference_params", inference_params);
-    TransformReq = json.get("TransformReq", TransformReq);
-    // Use default template if it is empty, currently we only support 2 remote engines
-    auto is_anthropic = [](const std::string& model) {
-      return model.find("claude") != std::string::npos;
-    };
-    if (TransformReq["chat_completions"]["template"].isNull()) {
-      if (is_anthropic(model)) {
-        TransformReq["chat_completions"]["template"] =
-            kAnthropicTransformReqTemplate;
-      } else {
-        TransformReq["chat_completions"]["template"] =
-            kOpenAITransformReqTemplate;
-      }
-    }
-    TransformResp = json.get("TransformResp", TransformResp);
-    if (TransformResp["chat_completions"]["template"].isNull()) {
-      if (is_anthropic(model)) {
-        TransformResp["chat_completions"]["template"] =
-            kAnthropicTransformRespTemplate;
-      } else {
-        TransformResp["chat_completions"]["template"] =
-            kOpenAITransformRespTemplate;
-      }
-    }
-
+    transform_req = json.get("transform_req", transform_req);
+    transform_resp = json.get("transform_resp", transform_resp);
     metadata = json.get("metadata", metadata);
   }
 
@@ -80,7 +56,7 @@ struct RemoteModelConfig {
 
     // Add basic string fields
     json["model"] = model;
-    json["api_key_template"] = api_key_template;
+    json["header_template"] = header_template;
     json["engine"] = engine;
     json["version"] = version;
     json["created"] = static_cast<Json::UInt64>(created);
@@ -89,8 +65,8 @@ struct RemoteModelConfig {
 
     // Add JSON object fields directly
     json["inference_params"] = inference_params;
-    json["TransformReq"] = TransformReq;
-    json["TransformResp"] = TransformResp;
+    json["transform_req"] = transform_req;
+    json["transform_resp"] = transform_resp;
     json["metadata"] = metadata;
 
     return json;
@@ -101,7 +77,7 @@ struct RemoteModelConfig {
 
     // Convert basic fields
     root["model"] = model;
-    root["api_key_template"] = api_key_template;
+    root["header_template"] = header_template;
     root["engine"] = engine;
     root["version"] = version;
     root["object"] = object;
@@ -111,8 +87,8 @@ struct RemoteModelConfig {
     // Convert Json::Value to YAML::Node using utility function
     root["inference_params"] =
         remote_models_utils::jsonToYaml(inference_params);
-    root["TransformReq"] = remote_models_utils::jsonToYaml(TransformReq);
-    root["TransformResp"] = remote_models_utils::jsonToYaml(TransformResp);
+    root["transform_req"] = remote_models_utils::jsonToYaml(transform_req);
+    root["transform_resp"] = remote_models_utils::jsonToYaml(transform_resp);
     root["metadata"] = remote_models_utils::jsonToYaml(metadata);
 
     // Save to file
@@ -134,7 +110,7 @@ struct RemoteModelConfig {
 
     // Load basic fields
     model = root["model"].as<std::string>("");
-    api_key_template = root["api_key_template"].as<std::string>("");
+    header_template = root["header_template"].as<std::string>("");
     engine = root["engine"].as<std::string>("");
     version = root["version"] ? root["version"].as<std::string>() : "";
     created = root["created"] ? root["created"].as<std::size_t>() : 0;
@@ -144,8 +120,8 @@ struct RemoteModelConfig {
     // Load complex fields using utility function
     inference_params =
         remote_models_utils::yamlToJson(root["inference_params"]);
-    TransformReq = remote_models_utils::yamlToJson(root["TransformReq"]);
-    TransformResp = remote_models_utils::yamlToJson(root["TransformResp"]);
+    transform_req = remote_models_utils::yamlToJson(root["transform_req"]);
+    transform_resp = remote_models_utils::yamlToJson(root["transform_resp"]);
     metadata = remote_models_utils::yamlToJson(root["metadata"]);
   }
 };
@@ -164,6 +140,7 @@ struct ModelConfig {
   int ngl = std::numeric_limits<int>::quiet_NaN();
   int ctx_len = std::numeric_limits<int>::quiet_NaN();
   int n_parallel = 1;
+  int cpu_threads = -1;
   std::string engine;
   std::string prompt_template;
   std::string system_template;
@@ -272,6 +249,8 @@ struct ModelConfig {
       ctx_len = json["ctx_len"].asInt();
     if (json.isMember("n_parallel"))
       n_parallel = json["n_parallel"].asInt();
+    if (json.isMember("cpu_threads"))
+      cpu_threads = json["cpu_threads"].asInt();
     if (json.isMember("engine"))
       engine = json["engine"].asString();
     if (json.isMember("prompt_template"))
@@ -362,6 +341,9 @@ struct ModelConfig {
     obj["ngl"] = ngl;
     obj["ctx_len"] = ctx_len;
     obj["n_parallel"] = n_parallel;
+    if (cpu_threads > 0) {
+      obj["cpu_threads"] = cpu_threads;
+    }
     obj["engine"] = engine;
     obj["prompt_template"] = prompt_template;
     obj["system_template"] = system_template;
@@ -473,6 +455,8 @@ struct ModelConfig {
       oss << format_utils::print_kv("ctx_len", std::to_string(ctx_len),
                                     format_utils::MAGENTA);
     oss << format_utils::print_kv("n_parallel", std::to_string(n_parallel),
+                                  format_utils::MAGENTA);
+    oss << format_utils::print_kv("cpu_threads", std::to_string(cpu_threads),
                                   format_utils::MAGENTA);
     if (ngl != std::numeric_limits<int>::quiet_NaN())
       oss << format_utils::print_kv("ngl", std::to_string(ngl),

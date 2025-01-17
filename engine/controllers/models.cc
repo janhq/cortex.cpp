@@ -701,11 +701,10 @@ void Models::AddRemoteModel(
     // Use relative path for model_yaml_path. In case of import, we use absolute path for model
     auto yaml_rel_path =
         fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
-    // TODO: remove hardcode "openai" when engine is finish
     cortex::db::ModelEntry model_entry{
         model_handle, "",       "",         yaml_rel_path.string(),
         model_handle, "remote", "imported", cortex::db::ModelStatus::Remote,
-        "openai"};
+        engine_name};
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
     if (db_service_->AddModelEntry(model_entry).value()) {
