@@ -156,7 +156,7 @@ jobs:
               - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
               - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
               - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64.tar.gz
-            - Linux amd64 Deb:
+            - Linux arm64 Deb:
               - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-network-installer.deb
               - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-local-installer.deb
               - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64.tar.gz
