@@ -95,6 +95,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_manager_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/curl_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/system_info_utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/process/utils.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
