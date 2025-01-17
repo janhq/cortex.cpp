@@ -404,17 +404,6 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
   auto suitable_toolkit_version =
       GetSuitableCudaVersion(engine, hw_inf_.cuda_driver_version);
 
-  // compare cuda driver version with cuda toolkit version
-  // cuda driver version should be greater than toolkit version to ensure compatibility
-  if (semantic_version_utils::CompareSemanticVersion(
-          hw_inf_.cuda_driver_version, suitable_toolkit_version) < 0) {
-    CTL_ERR("Your Cuda driver version "
-            << hw_inf_.cuda_driver_version
-            << " is not compatible with cuda toolkit version "
-            << suitable_toolkit_version);
-    return cpp::fail("Cuda driver is not compatible with cuda toolkit");
-  }
-
   auto url_obj = url_parser::Url{
       .protocol = "https",
       .host = jan_host,

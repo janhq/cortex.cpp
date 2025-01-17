@@ -17,7 +17,7 @@ inline std::vector<GPU> GetGPUInfo() {
 
   for (size_t i = 0; i < nvidia_gpus.size(); i++) {
     for (size_t j = 0; j < vulkan_gpus.size(); j++) {
-      if (nvidia_gpus[i].uuid == vulkan_gpus[j].uuid) {
+      if (nvidia_gpus[i].uuid.find(vulkan_gpus[j].uuid) != std::string::npos) {
         vulkan_gpus[j].version =
             nvidia_gpus[0].cuda_driver_version.value_or("unknown");
         vulkan_gpus[j].add_info = NvidiaAddInfo{
