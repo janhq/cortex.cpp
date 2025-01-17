@@ -819,75 +819,75 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     constexpr const int kDefautlContextLength = 8192;
     int max_model_context_length = kDefautlContextLength;
     Json::Value json_data;
-    auto model_entry = db_service_->GetModelInfo(model_handle);
-    if (model_entry.has_error()) {
-      CTL_WRN("Error: " + model_entry.error());
-      return cpp::fail(model_entry.error());
-    }
-    yaml_handler.ModelConfigFromFile(
-        fmu::ToAbsoluteCortexDataPath(
-            fs::path(model_entry.value().path_to_model_yaml))
-            .string());
-    auto mc = yaml_handler.GetModelConfig();
-
-    // Check if Python model first
-    if (mc.engine == kPythonEngine) {
-
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(
-
+    // Currently we don't support download vision models, so we need to bypass check
+    if (!bypass_model_check) {
+      auto model_entry = db_service_->GetModelInfo(model_handle);
+      if (model_entry.has_error()) {
+        CTL_WRN("Error: " + model_entry.error());
+        return cpp::fail(model_entry.error());
+      }
+      yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(
               fs::path(model_entry.value().path_to_model_yaml))
               .string());
-      // Start all depends model
-      auto depends = python_model_config.depends;
-      for (auto& depend : depends) {
-        Json::Value temp;
-        auto res = StartModel(depend, temp, false);
-        if (res.has_error()) {
-          CTL_WRN("Error: " + res.error());
-          for (auto& depend : depends) {
-            if (depend != model_handle) {
-              StopModel(depend);
-            }
-          }
-          return cpp::fail("Model failed to start dependency '" + depend +
-                           "' : " + res.error());
-        }
-      }
+      auto mc = yaml_handler.GetModelConfig();
 
-      json_data["model"] = model_handle;
-      json_data["model_path"] =
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string();
-      json_data["engine"] = mc.engine;
-      assert(!!inference_svc_);
-      // Check if python engine
+      // Check if Python model first
+      if (mc.engine == kPythonEngine) {
 
-      auto ir =
-          inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
-      auto status = std::get<0>(ir)["status_code"].asInt();
-      auto data = std::get<1>(ir);
+        config::PythonModelConfig python_model_config;
+        python_model_config.ReadFromYaml(
 
-      if (status == drogon::k200OK) {
-        return StartModelResult{.success = true, .warning = ""};
-      } else if (status == drogon::k409Conflict) {
-        CTL_INF("Model '" + model_handle + "' is already loaded");
-        return StartModelResult{.success = true, .warning = ""};
-      } else {
-        // only report to user the error
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string());
+        // Start all depends model
+        auto depends = python_model_config.depends;
         for (auto& depend : depends) {
-
-          StopModel(depend);
+          Json::Value temp;
+          auto res = StartModel(depend, temp, false);
+          if (res.has_error()) {
+            CTL_WRN("Error: " + res.error());
+            for (auto& depend : depends) {
+              if (depend != model_handle) {
+                StopModel(depend);
+              }
+            }
+            return cpp::fail("Model failed to start dependency '" + depend +
+                             "' : " + res.error());
+          }
         }
-      }
-      CTL_ERR("Model failed to start with status code: " << status);
-      return cpp::fail("Model failed to start: " + data["message"].asString());
-    }
 
-    // Currently we don't support download vision models, so we need to bypass check
-    if (!bypass_model_check) {
+        json_data["model"] = model_handle;
+        json_data["model_path"] =
+            fmu::ToAbsoluteCortexDataPath(
+                fs::path(model_entry.value().path_to_model_yaml))
+                .string();
+        json_data["engine"] = mc.engine;
+        assert(!!inference_svc_);
+        // Check if python engine
+
+        auto ir =
+            inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
+        auto status = std::get<0>(ir)["status_code"].asInt();
+        auto data = std::get<1>(ir);
+
+        if (status == drogon::k200OK) {
+          return StartModelResult{.success = true, .warning = ""};
+        } else if (status == drogon::k409Conflict) {
+          CTL_INF("Model '" + model_handle + "' is already loaded");
+          return StartModelResult{.success = true, .warning = ""};
+        } else {
+          // only report to user the error
+          for (auto& depend : depends) {
+
+            StopModel(depend);
+          }
+        }
+        CTL_ERR("Model failed to start with status code: " << status);
+        return cpp::fail("Model failed to start: " +
+                         data["message"].asString());
+      }
 
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
