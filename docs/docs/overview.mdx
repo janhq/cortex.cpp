@@ -29,13 +29,13 @@ Key Features:
 - Swappable Inference Backends (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp), future: [`ONNXRuntime`](https://github.com/janhq/cortex.onnx), [`TensorRT-LLM`](https://github.com/janhq/cortex.tensorrt-llm))
 - Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
 
-Cortex's roadmap is to implement the full OpenAI API including Tools, Runs, Multi-modal and Realtime APIs.
+Cortex's roadmap includes implementing full compatibility with OpenAI API's and that includes Tools, Runs, Multi-modal and Realtime APIs.
 
 
 ## Inference Backends
 - Default: [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
-- Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs
-- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports Nvidia GPUs 
+- Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs and traditional machine learning models
+- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports a variety of model architectures on Nvidia GPUs 
 
 If GPU hardware is available, Cortex is GPU accelerated by default.
 
@@ -45,26 +45,26 @@ Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexib
 - [Cortex Built-in Models](https://cortex.so/models)
 
 > **Note**:
-> As a very general guide: You should have >8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
+> As a very general guide: For quantized models you should have >8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
 
 ### Cortex Built-in Models & Quantizations
 | Model /Engine  | llama.cpp             | Command                       |
 | -------------- | --------------------- | ----------------------------- |
-| phi-3.5        | ✅                    | cortex run phi3.5             |
-| llama3.2       | ✅                    | cortex run llama3.2           |
-| llama3.1       | ✅                    | cortex run llama3.1           |
-| codestral      | ✅                    | cortex run codestral          |
-| gemma2         | ✅                    | cortex run gemma2             |
-| mistral        | ✅                    | cortex run mistral            |
-| ministral      | ✅                    | cortex run ministral          |
-| qwen2          | ✅                    | cortex run qwen2.5            |
-| openhermes-2.5 | ✅                    | cortex run openhermes-2.5     |
-| tinyllama      | ✅                    | cortex run tinyllama          |
+| phi-3.5        | ✅                    | `cortex run phi3.5`             |
+| llama3.2       | ✅                    | `cortex run llama3.2`           |
+| llama3.1       | ✅                    | `cortex run llama3.1`           |
+| codestral      | ✅                    | `cortex run codestral`          |
+| gemma2         | ✅                    | `cortex run gemma2`             |
+| mistral        | ✅                    | `cortex run mistral`            |
+| ministral      | ✅                    | `cortex run ministral`          |
+| qwen2          | ✅                    | `cortex run qwen2.5`            |
+| openhermes-2.5 | ✅                    | `cortex run openhermes-2.5`     |
+| tinyllama      | ✅                    | `cortex run tinyllama`          |
 
 View all [Cortex Built-in Models](https://cortex.so/models).
 
 Cortex supports multiple quantizations for each model.
-```
+```sh
 ❯ cortex-nightly pull llama3.2
 Downloaded models:
     llama3.2:3b-gguf-q2-k
