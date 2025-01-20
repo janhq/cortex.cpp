@@ -157,11 +157,11 @@ ModelSourceService::GetModelSources() {
     ms[m.model_source].models.push_back(
         {m.model, meta_json["size"].asUInt64()});
     meta_json.removeMember("size");
-    if (ms[m.model_source].metadata.empty()) {
-      ms[m.model_source].metadata = json_helper::DumpJsonString(meta_json);
+    if (ms[m.model_source].metadata.isNull()) {
+      ms[m.model_source].metadata = meta_json;
     }
     ms[m.model_source].id = m.model_source;
-    LOG_INFO << m.model;
+    LOG_DEBUG << m.model;
   }
   return ms;
 }
@@ -179,8 +179,8 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
     auto meta_json = json_helper::ParseJsonString(m.metadata);
     ms.models.push_back({m.model, meta_json["size"].asUInt64()});
     meta_json.removeMember("size");
-    if (ms.metadata.empty()) {
-      ms.metadata = json_helper::DumpJsonString(meta_json);
+    if (ms.metadata.isNull()) {
+      ms.metadata = meta_json;
     }
     ms.id = m.model_source;
     LOG_INFO << m.model;

@@ -43,7 +43,7 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::AddModelSource, "/v1/models/sources", Post);
   ADD_METHOD_TO(Models::DeleteModelSource, "/v1/models/sources", Delete);
   ADD_METHOD_TO(Models::GetModelSources, "/v1/models/sources", Get);
-  ADD_METHOD_TO(Models::GetModelSource, "/v1/models?source={src}", Get);
+  ADD_METHOD_TO(Models::GetModelSource, "/v1/models/sources/{src}", Get);
   METHOD_LIST_END
 
   explicit Models(std::shared_ptr<DatabaseService> db_service,

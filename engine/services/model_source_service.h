@@ -20,7 +20,7 @@ struct ModelSourceInfo {
 struct ModelSource {
   std::string id;
   std::vector<ModelSourceInfo> models;
-  std::string metadata;
+  Json::Value metadata;
 
   Json::Value ToJson() {
     Json::Value root;
