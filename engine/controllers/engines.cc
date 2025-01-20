@@ -251,9 +251,9 @@ void Engines::InstallRemoteEngine(
                               .get("get_models_url", "")
                               .asString();
 
-    if (engine.empty() || type.empty() || url.empty()) {
+    if (engine.empty() || type.empty()) {
       Json::Value res;
-      res["message"] = "Engine name, type, url are required";
+      res["message"] = "Engine name, type are required";
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
       resp->setStatusCode(k400BadRequest);
       callback(resp);

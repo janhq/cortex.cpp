@@ -27,14 +27,16 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   auto* context = static_cast<StreamContext*>(userdata);
   std::string chunk(ptr, size * nmemb);
   CTL_DBG(chunk);
-  auto check_error = json_helper::ParseJsonString(chunk);
-  if (check_error.isMember("error")) {
+  Json::Value check_error;
+  Json::Reader reader;
+  if (reader.parse(chunk, check_error)) {
     CTL_WRN(chunk);
     Json::Value status;
     status["is_done"] = true;
     status["has_error"] = true;
     status["is_stream"] = true;
     status["status_code"] = k400BadRequest;
+    context->need_stop = false;
     (*context->callback)(std::move(status), std::move(check_error));
     return size * nmemb;
   }
@@ -58,7 +60,8 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
       status["is_done"] = true;
       status["has_error"] = false;
       status["is_stream"] = true;
-      status["status_code"] = 200;
+      status["status_code"] = k200OK;
+      context->need_stop = false;
       (*context->callback)(std::move(status), Json::Value());
       break;
     }
@@ -169,6 +172,15 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
 
   curl_slist_free_all(headers);
   curl_easy_cleanup(curl);
+  if (context.need_stop) {
+    CTL_DBG("No stop message received, need to stop");
+    Json::Value status;
+    status["is_done"] = true;
+    status["has_error"] = false;
+    status["is_stream"] = true;
+    status["status_code"] = k200OK;
+    (*context.callback)(std::move(status), Json::Value());
+  }
   return response;
 }
 
@@ -602,6 +614,7 @@ void RemoteEngine::HandleChatCompletion(
       status["status_code"] = k500InternalServerError;
       Json::Value error;
       error["error"] = "Failed to parse response";
+      LOG_WARN << "Failed to parse response: " << response.body;
       callback(std::move(status), std::move(error));
       return;
     }
@@ -626,6 +639,9 @@ void RemoteEngine::HandleChatCompletion(
 
       try {
         response_json["stream"] = false;
+        if (!response_json.isMember("model")) {
+          response_json["model"] = model;
+        }
         response_str = renderer_.Render(template_str, response_json);
       } catch (const std::exception& e) {
         throw std::runtime_error("Template rendering error: " +
@@ -633,8 +649,9 @@ void RemoteEngine::HandleChatCompletion(
       }
     } catch (const std::exception& e) {
       // Log error and potentially rethrow or handle accordingly
-      LOG_WARN << "Error in TransformRequest: " << e.what();
-      LOG_WARN << "Using original request body";
+      LOG_WARN << "Error: " << e.what();
+      LOG_WARN << "Response: " << response.body;
+      LOG_WARN << "Using original body";
       response_str = response_json.toStyledString();
     }
 
@@ -649,6 +666,7 @@ void RemoteEngine::HandleChatCompletion(
       Json::Value error;
       error["error"] = "Failed to parse response";
       callback(std::move(status), std::move(error));
+      LOG_WARN << "Failed to parse response: " << response_str;
       return;
     }
 
