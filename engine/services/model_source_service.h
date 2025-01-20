@@ -5,6 +5,35 @@
 #include "services/database_service.h"
 #include "utils/result.hpp"
 
+struct ModelSourceInfo {
+  std::string id;
+  uint64_t size;
+  Json::Value ToJson() const {
+    Json::Value root;
+    root["id"] = id;
+    root["size"] = size;
+    return root;
+  }
+};
+
+struct ModelSource {
+  std::string id;
+  std::vector<ModelSourceInfo> models;
+  std::string metadata;
+
+  Json::Value ToJson() {
+    Json::Value root;
+    root["id"] = id;
+    Json::Value models_json;
+    for (auto const& m : models) {
+      models_json.append(m.ToJson());
+    }
+    root["models"] = models_json;
+    root["metadata"] = metadata;
+    return root;
+  };
+};
+
 class ModelSourceService {
  public:
   explicit ModelSourceService(std::shared_ptr<DatabaseService> db_service);
@@ -16,7 +45,8 @@ class ModelSourceService {
   cpp::result<bool, std::string> RemoveModelSource(
       const std::string& model_source);
 
-  cpp::result<std::vector<std::string>, std::string> GetModelSources();
+  cpp::result<std::unordered_map<std::string, ModelSource>, std::string>
+  GetModelSources();
 
  private:
   cpp::result<bool, std::string> AddHfOrg(const std::string& model_source,

@@ -810,11 +810,11 @@ void Models::GetModelSources(
     resp->setStatusCode(k400BadRequest);
     callback(resp);
   } else {
-    auto const& info = res.value();
+    auto& info = res.value();
     Json::Value ret;
     Json::Value data(Json::arrayValue);
-    for (auto const& i : info) {
-      data.append(i);
+    for (auto& i : info) {
+      data.append(i.second.ToJson());
     }
     ret["data"] = data;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);

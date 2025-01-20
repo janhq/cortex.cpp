@@ -10,7 +10,6 @@ namespace cortex::db {
 
 enum class ModelStatus { Remote, Downloaded, Downloadable };
 
-
 struct ModelEntry {
   std::string model;
   std::string author_repo_id;
@@ -60,6 +59,7 @@ class Models {
   cpp::result<std::vector<std::string>, std::string> GetModelSources() const;
   cpp::result<std::vector<std::string>, std::string> GetModels(
       const std::string& model_src) const;
+  cpp::result<std::vector<ModelEntry>, std::string> GetDownloadableModels() const;
 };
 
 }  // namespace cortex::db

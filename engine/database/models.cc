@@ -304,4 +304,34 @@ cpp::result<std::vector<std::string>, std::string> Models::GetModels(
   }
 }
 
+cpp::result<std::vector<ModelEntry>, std::string>
+Models::GetDownloadableModels() const {
+  try {
+    std::vector<ModelEntry> res;
+    SQLite::Statement query(
+        db_,
+        "SELECT model_id, author_repo_id, branch_name, "
+        "path_to_model_yaml, model_alias, model_format, "
+        "model_source, status, engine, metadata FROM models "
+        "WHERE status = \"downloadable\"");
+    while (query.executeStep()) {
+      ModelEntry entry;
+      entry.model = query.getColumn(0).getString();
+      entry.author_repo_id = query.getColumn(1).getString();
+      entry.branch_name = query.getColumn(2).getString();
+      entry.path_to_model_yaml = query.getColumn(3).getString();
+      entry.model_alias = query.getColumn(4).getString();
+      entry.model_format = query.getColumn(5).getString();
+      entry.model_source = query.getColumn(6).getString();
+      entry.status = StringToStatus(query.getColumn(7).getString());
+      entry.engine = query.getColumn(8).getString();
+      entry.metadata = query.getColumn(9).getString();
+      res.push_back(entry);
+    }
+    return res;
+  } catch (const std::exception& e) {
+    return cpp::fail(e.what());
+  }
+}
+
 }  // namespace cortex::db
