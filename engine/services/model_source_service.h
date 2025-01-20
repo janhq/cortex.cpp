@@ -1,6 +1,7 @@
 #pragma once
 #include <atomic>
 #include <thread>
+#include <unordered_map>
 #include <unordered_set>
 #include "services/database_service.h"
 #include "utils/result.hpp"
@@ -48,6 +49,8 @@ class ModelSourceService {
   cpp::result<std::unordered_map<std::string, ModelSource>, std::string>
   GetModelSources();
 
+  cpp::result<ModelSource, std::string> GetModelSource(const std::string& src);
+
  private:
   cpp::result<bool, std::string> AddHfOrg(const std::string& model_source,
                                           const std::string& author);
@@ -71,7 +74,8 @@ class ModelSourceService {
   AddCortexsoRepoBranch(const std::string& model_source,
                         const std::string& author,
                         const std::string& model_name,
-                        const std::string& branch, const std::string& metadata);
+                        const std::string& branch, const std::string& metadata,
+                        const std::string& desc);
 
   void SyncModelSource();
 

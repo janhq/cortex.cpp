@@ -822,3 +822,22 @@ void Models::GetModelSources(
     callback(resp);
   }
 }
+
+void Models::GetModelSource(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    const std::string& src) {
+  auto res = model_src_svc_->GetModelSource(src);
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto& info = res.value();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(info.ToJson());
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}

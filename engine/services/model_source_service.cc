@@ -154,12 +154,35 @@ ModelSourceService::GetModelSources() {
   std::unordered_map<std::string, ModelSource> ms;
   for (auto const& m : models) {
     auto meta_json = json_helper::ParseJsonString(m.metadata);
-    ms[m.model_source].models.push_back({m.model, meta_json["size"].asUInt64()});
+    ms[m.model_source].models.push_back(
+        {m.model, meta_json["size"].asUInt64()});
     meta_json.removeMember("size");
     if (ms[m.model_source].metadata.empty()) {
       ms[m.model_source].metadata = json_helper::DumpJsonString(meta_json);
     }
     ms[m.model_source].id = m.model_source;
+    LOG_INFO << m.model;
+  }
+  return ms;
+}
+
+cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
+    const std::string& src) {
+  auto res = db_service_->GetModels(src);
+  if (res.has_error()) {
+    return cpp::fail(res.error());
+  }
+
+  auto& models = res.value();
+  ModelSource ms;
+  for (auto const& m : models) {
+    auto meta_json = json_helper::ParseJsonString(m.metadata);
+    ms.models.push_back({m.model, meta_json["size"].asUInt64()});
+    meta_json.removeMember("size");
+    if (ms.metadata.empty()) {
+      ms.metadata = json_helper::DumpJsonString(meta_json);
+    }
+    ms.id = m.model_source;
     LOG_INFO << m.model;
   }
   return ms;
@@ -196,8 +219,8 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
     const std::string& model_name) {
   // Get models from db
 
-  auto model_list_before =
-      db_service_->GetModels(model_source).value_or(std::vector<std::string>{});
+  auto model_list_before = db_service_->GetModels(model_source)
+                               .value_or(std::vector<cortex::db::ModelEntry>{});
   std::unordered_set<std::string> updated_model_list;
   auto add_res = AddRepoSiblings(model_source, author, model_name);
   if (add_res.has_error()) {
@@ -206,8 +229,8 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
     updated_model_list = add_res.value();
   }
   for (auto const& mid : model_list_before) {
-    if (updated_model_list.find(mid) == updated_model_list.end()) {
-      if (auto del_res = db_service_->DeleteModelEntry(mid);
+    if (updated_model_list.find(mid.model) == updated_model_list.end()) {
+      if (auto del_res = db_service_->DeleteModelEntry(mid.model);
           del_res.has_error()) {
         CTL_INF(del_res.error());
       }
@@ -331,16 +354,22 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   if (repo_info.has_error()) {
     return cpp::fail(repo_info.error());
   }
+
+  auto readme = hu::GetReadMe(author, model_name);
+  std::string desc;
+  if (!readme.has_error()) {
+    desc = readme.value();
+  }
   // Get models from db
 
-  auto model_list_before =
-      db_service_->GetModels(model_source).value_or(std::vector<std::string>{});
+  auto model_list_before = db_service_->GetModels(model_source)
+                               .value_or(std::vector<cortex::db::ModelEntry>{});
   std::unordered_set<std::string> updated_model_list;
 
   for (auto const& [branch, _] : branches.value()) {
     CTL_INF(branch);
     auto add_res = AddCortexsoRepoBranch(model_source, author, model_name,
-                                         branch, repo_info->metadata)
+                                         branch, repo_info->metadata, desc)
                        .value_or(std::unordered_set<std::string>{});
     for (auto const& a : add_res) {
       updated_model_list.insert(a);
@@ -349,8 +378,8 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
 
   // Clean up
   for (auto const& mid : model_list_before) {
-    if (updated_model_list.find(mid) == updated_model_list.end()) {
-      if (auto del_res = db_service_->DeleteModelEntry(mid);
+    if (updated_model_list.find(mid.model) == updated_model_list.end()) {
+      if (auto del_res = db_service_->DeleteModelEntry(mid.model);
           del_res.has_error()) {
         CTL_INF(del_res.error());
       }
@@ -364,7 +393,8 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
                                           const std::string& author,
                                           const std::string& model_name,
                                           const std::string& branch,
-                                          const std::string& metadata) {
+                                          const std::string& metadata,
+                                          const std::string& desc) {
   std::unordered_set<std::string> res;
 
   url_parser::Url url = {
@@ -393,6 +423,7 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
   } else {
     auto meta_json = json_helper::ParseJsonString(metadata);
     meta_json["size"] = model_size;
+    meta_json["description"] = desc;
     std::string model_id = model_name + ":" + branch;
     cortex::db::ModelEntry e = {
         .model = model_id,

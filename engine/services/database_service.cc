@@ -123,7 +123,7 @@ DatabaseService::GetModelSources() const {
   return cortex::db::Models().GetModelSources();
 }
 
-cpp::result<std::vector<std::string>, std::string> DatabaseService::GetModels(
+cpp::result<std::vector<ModelEntry>, std::string> DatabaseService::GetModels(
     const std::string& model_src) const {
   return cortex::db::Models().GetModels(model_src);
 }
