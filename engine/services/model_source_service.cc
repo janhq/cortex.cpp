@@ -4,6 +4,7 @@
 #include "database/models.h"
 #include "json/json.h"
 #include "utils/curl_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/huggingface_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/string_utils.h"
@@ -464,19 +465,17 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
 }
 
 void ModelSourceService::SyncModelSource() {
-  // Do interval check for 10 minutes
-  constexpr const int kIntervalCheck = 10 * 60;
-  auto start_time = std::chrono::steady_clock::now();
   while (running_) {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    auto current_time = std::chrono::steady_clock::now();
-    auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
-                            current_time - start_time)
-                            .count();
+    auto now = std::chrono::system_clock::now();
+    auto config = file_manager_utils::GetCortexConfig();
+    auto last_check =
+        std::chrono::system_clock::time_point(
+            std::chrono::milliseconds(config.checkedForSyncHubAt)) +
+        std::chrono::hours(1);
 
-    if (elapsed_time > kIntervalCheck) {
+    if (now > last_check) {
       CTL_DBG("Start to sync cortex.db");
-      start_time = current_time;
 
       auto res = db_service_->GetModelSources();
       if (res.has_error()) {
@@ -519,6 +518,20 @@ void ModelSourceService::SyncModelSource() {
       }
 
       CTL_DBG("Done sync cortex.db");
+
+      auto now = std::chrono::system_clock::now();
+      auto config = file_manager_utils::GetCortexConfig();
+      config.checkedForSyncHubAt =
+          std::chrono::duration_cast<std::chrono::milliseconds>(
+              now.time_since_epoch())
+              .count();
+
+      auto upd_config_res =
+          config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
+              config, file_manager_utils::GetConfigurationPath().string());
+      if (upd_config_res.has_error()) {
+        CTL_ERR("Failed to update config file: " << upd_config_res.error());
+      }
     }
   }
 }
