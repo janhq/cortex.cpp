@@ -270,23 +270,6 @@ bool Models::HasModel(const std::string& identifier) const {
   }
 }
 
-cpp::result<std::vector<std::string>, std::string> Models::GetModelSources()
-    const {
-  try {
-    std::vector<std::string> sources;
-    SQLite::Statement query(db_,
-                            "SELECT DISTINCT model_source FROM models WHERE "
-                            "status = \"downloadable\"");
-
-    while (query.executeStep()) {
-      sources.push_back(query.getColumn(0).getString());
-    }
-    return sources;
-  } catch (const std::exception& e) {
-    return cpp::fail(e.what());
-  }
-}
-
 cpp::result<std::vector<ModelEntry>, std::string> Models::GetModels(
     const std::string& model_src) const {
   try {
@@ -318,8 +301,8 @@ cpp::result<std::vector<ModelEntry>, std::string> Models::GetModels(
   }
 }
 
-cpp::result<std::vector<ModelEntry>, std::string>
-Models::GetDownloadableModels() const {
+cpp::result<std::vector<ModelEntry>, std::string> Models::GetModelSources()
+    const {
   try {
     std::vector<ModelEntry> res;
     SQLite::Statement query(
@@ -327,7 +310,8 @@ Models::GetDownloadableModels() const {
         "SELECT model_id, author_repo_id, branch_name, "
         "path_to_model_yaml, model_alias, model_format, "
         "model_source, status, engine, metadata FROM models "
-        "WHERE status = \"downloadable\"");
+        "WHERE model_source != \"\" AND (status = \"downloaded\" OR status = "
+        "\"downloadable\")");
     while (query.executeStep()) {
       ModelEntry entry;
       entry.model = query.getColumn(0).getString();

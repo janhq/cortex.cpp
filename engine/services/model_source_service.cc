@@ -113,7 +113,14 @@ cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
     return cpp::fail(srcs.error());
   } else {
     auto& v = srcs.value();
-    if (std::find(v.begin(), v.end(), model_source) == v.end()) {
+    auto exists = [&v, &model_source]() {
+      for (auto const& m : v) {
+        if (m.model_source == model_source)
+          return true;
+      }
+      return false;
+    }();
+    if (!exists) {
       return cpp::fail("Model source does not exist: " + model_source);
     }
   }
@@ -146,7 +153,7 @@ cpp::result<bool, std::string> ModelSourceService::RemoveModelSource(
 
 cpp::result<std::unordered_map<std::string, ModelSource>, std::string>
 ModelSourceService::GetModelSources() {
-  auto res = db_service_->GetDownloadableModels();
+  auto res = db_service_->GetModelSources();
   if (res.has_error()) {
     return cpp::fail(res.error());
   }
@@ -476,18 +483,18 @@ void ModelSourceService::SyncModelSource() {
         CTL_INF(res.error());
       } else {
         for (auto const& src : res.value()) {
-          CTL_DBG(src);
+          CTL_DBG(src.model_source);
         }
 
         std::unordered_set<std::string> orgs;
         std::vector<std::string> repos;
         for (auto const& src : res.value()) {
-          auto url_res = url_parser::FromUrlString(src);
+          auto url_res = url_parser::FromUrlString(src.model_source);
           if (url_res.has_value()) {
             if (url_res->pathParams.size() == 1) {
-              orgs.insert(src);
+              orgs.insert(src.model_source);
             } else if (url_res->pathParams.size() == 2) {
-              repos.push_back(src);
+              repos.push_back(src.model_source);
             }
           }
         }
