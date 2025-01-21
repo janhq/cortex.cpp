@@ -67,7 +67,8 @@ void ParseGguf(DatabaseService& db_service,
   CTL_INF("Adding model to modellist with branch: " << branch);
 
   auto rel = file_manager_utils::ToRelativeCortexDataPath(yaml_name);
-  CTL_INF("path_to_model_yaml: " << rel.string());
+  CTL_INF("path_to_model_yaml: " << rel.string()
+                                 << ", model: " << ggufDownloadItem.id);
 
   auto author_id = author.has_value() ? author.value() : "cortexso";
   if (!db_service.HasModel(ggufDownloadItem.id)) {
@@ -86,6 +87,7 @@ void ParseGguf(DatabaseService& db_service,
   } else {
     if (auto m = db_service.GetModelInfo(ggufDownloadItem.id); m.has_value()) {
       auto upd_m = m.value();
+      upd_m.path_to_model_yaml = rel.string();
       upd_m.status = cortex::db::ModelStatus::Downloaded;
       if (auto r = db_service.UpdateModelEntry(ggufDownloadItem.id, upd_m);
           r.has_error()) {
@@ -161,6 +163,9 @@ void ModelService::ForceIndexingModelList() {
       continue;
     }
     try {
+      CTL_DBG(fmu::ToAbsoluteCortexDataPath(
+                  fs::path(model_entry.path_to_model_yaml))
+                  .string());
       yaml_handler.ModelConfigFromFile(
           fmu::ToAbsoluteCortexDataPath(
               fs::path(model_entry.path_to_model_yaml))
@@ -171,6 +176,7 @@ void ModelService::ForceIndexingModelList() {
     } catch (const std::exception& e) {
       // remove in db
       auto remove_result = db_service_->DeleteModelEntry(model_entry.model);
+      CTL_DBG(e.what());
       // silently ignore result
     }
   }
