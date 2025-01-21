@@ -618,7 +618,8 @@ ModelService::DownloadModelFromCortexsoAsync(
           .branch_name = branch,
           .path_to_model_yaml = rel.string(),
           .model_alias = unique_model_id,
-          .status = cortex::db::ModelStatus::Downloaded};
+          .status = cortex::db::ModelStatus::Downloaded,
+          .engine = mc.engine};
       auto result = db_service_->AddModelEntry(model_entry);
 
       if (result.has_error()) {
@@ -627,6 +628,7 @@ ModelService::DownloadModelFromCortexsoAsync(
     } else {
       if (auto m = db_service_->GetModelInfo(unique_model_id); m.has_value()) {
         auto upd_m = m.value();
+        upd_m.path_to_model_yaml = rel.string();
         upd_m.status = cortex::db::ModelStatus::Downloaded;
         if (auto r = db_service_->UpdateModelEntry(unique_model_id, upd_m);
             r.has_error()) {
