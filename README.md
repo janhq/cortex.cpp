@@ -313,11 +313,18 @@ Cortex.cpp is available with a Network Installer, which is a smaller installer b
 
 ### Build from Source
 
+Firstly, clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp) and initialize the submodules:
+
+```bash
+git clone https://github.com/janhq/cortex.cpp
+cd cortex.cpp
+git submodule update --init --recursive
+```
+
 #### Windows
 
-1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
-2. Navigate to the `engine` folder.
-3. Configure the vpkg:
+1. Navigate to the `engine` folder.
+2. Configure the vpkg:
 
 ```bash
 cd vcpkg
@@ -325,7 +332,7 @@ cd vcpkg
 vcpkg install
 ```
 
-4. Build the Cortex.cpp inside the `engine/build` folder:
+3. Build the Cortex.cpp inside the `engine/build` folder:
 
 ```bash
 mkdir build
@@ -334,7 +341,7 @@ cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder_in_
 cmake --build . --config Release
 ```
 
-5. Verify that Cortex.cpp is installed correctly by getting help information.
+4. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
 cortex -h
@@ -342,9 +349,8 @@ cortex -h
 
 #### MacOS
 
-1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
-2. Navigate to the `engine` folder.
-3. Configure the vpkg:
+1. Navigate to the `engine` folder.
+2. Configure the vpkg:
 
 ```bash
 cd vcpkg
@@ -352,7 +358,7 @@ cd vcpkg
 vcpkg install
 ```
 
-4. Build the Cortex.cpp inside the `engine/build` folder:
+3. Build the Cortex.cpp inside the `engine/build` folder:
 
 ```bash
 mkdir build
@@ -361,17 +367,16 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder_in_cortex_repo/vcpkg/script
 make -j4
 ```
 
-5. Verify that Cortex.cpp is installed correctly by getting help information.
+4. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
-cortex -h
+./cortex -h
 ```
 
 #### Linux
 
-1. Clone the Cortex.cpp repository [here](https://github.com/janhq/cortex.cpp).
-2. Navigate to the `engine` folder.
-3. Configure the vpkg:
+1. Navigate to the `engine` folder.
+2. Configure the vpkg:
 
 ```bash
 cd vcpkg
@@ -379,7 +384,7 @@ cd vcpkg
 vcpkg install
 ```
 
-4. Build the Cortex.cpp inside the `engine/build` folder:
+3. Build the Cortex.cpp inside the `engine/build` folder:
 
 ```bash
 mkdir build
@@ -388,10 +393,10 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=path_to_vcpkg_folder_in_cortex_repo/vcpkg/script
 make -j4
 ```
 
-5. Verify that Cortex.cpp is installed correctly by getting help information.
+4. Verify that Cortex.cpp is installed correctly by getting help information.
 
 ```sh
-cortex -h
+./cortex -h
 ```
 
 #### Devcontainer / Codespaces
