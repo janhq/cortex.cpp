@@ -17,9 +17,9 @@ Cortex.cpp is in active development. If you have any questions, please reach out
 ## Local Installation
 
 Cortex has a **Local Installer** with all of the required dependencies, so that once you've downloaded it, no internet connection is required during the installation process.
-  - [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
-  - [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
-  - [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
+- [Windows](https://app.cortexcpp.com/download/latest/windows-amd64-local)
+- [Mac (Universal)](https://app.cortexcpp.com/download/latest/mac-universal-local)
+- [Linux](https://app.cortexcpp.com/download/latest/linux-amd64-local)
 
 ## Start a Cortex Server
 
@@ -43,11 +43,11 @@ This command allows users to download a model from these Model Hubs:
 - [Cortex Built-in Models](https://cortex.so/models)
 - [Hugging Face](https://huggingface.co) (GGUF): `cortex pull <author/ModelRepo>`
 
-It displays available quantizations, recommends a default and downloads the desired quantization. 
+It displays available quantizations, recommends a default and downloads the desired quantization.
 
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
-  The following two options will show you all of the available models under those names. Cortex will first search 
+  The following two options will show you all of the available models under those names. Cortex will first search
   on its own hub for models like `llama3.3`, and in huggingface for hyper specific ones like `bartowski/Meta-Llama-3.1-8B-Instruct-GGU`.
   ```sh
   cortex pull llama3.3
@@ -70,8 +70,8 @@ It displays available quantizations, recommends a default and downloads the desi
 
 ## Run a Model
 
-This command downloads the default `gguf` model (if not available in your file system) from the [Cortex Hub](https://huggingface.co/cortexso), 
-starts the model, and chat with the model.
+This command downloads the default `gguf` model (if not available in your file system) from the
+[Cortex Hub](https://huggingface.co/cortexso), starts the model, and chat with the model.
 
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
@@ -137,6 +137,7 @@ This command displays the running model and the hardware system status (RAM, Eng
 ## Stop a Model
 
 This command stops the running model.
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
@@ -153,6 +154,7 @@ This command stops the running model.
 ## Stop a Cortex Server
 
 This command stops the Cortex.cpp API server at `localhost:39281` or whichever other port you used to start cortex.
+
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
