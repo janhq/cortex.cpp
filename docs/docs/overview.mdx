@@ -19,7 +19,7 @@ or [Discord](https://discord.com/invite/FTk2MvZwJH)
 
 ![Cortex Cover Image](/img/social-card.jpg)
 
-Cortex is a Local AI API Platform that is used to run and customize LLMs. 
+Cortex is a Local AI API Platform that is used to run and customize LLMs.
 
 Key Features:
 - Straightforward CLI (inspired by Ollama)
@@ -36,12 +36,12 @@ Cortex's roadmap includes implementing full compatibility with OpenAI API's and 
 ## Inference Backends
 - Default: [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
 - Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs and traditional machine learning models
-- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports a variety of model architectures on Nvidia GPUs 
+- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports a variety of model architectures on Nvidia GPUs
 
 If GPU hardware is available, Cortex is GPU accelerated by default.
 
 ## Models
-Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access. 
+Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access.
 - [Hugging Face](https://huggingface.co)
 - [Cortex Built-in Models](https://cortex.so/models)
 
@@ -51,7 +51,7 @@ Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexib
 ### Cortex Built-in Models & Quantizations
 | Model /Engine  | llama.cpp             | Command                       |
 | -------------- | --------------------- | ----------------------------- |
-| phi-3.5        | ✅                    | `cortex run phi3.5`             |
+| phi-4        | ✅                    | `cortex run phi-4`             |
 | llama3.2       | ✅                    | `cortex run llama3.2`           |
 | llama3.1       | ✅                    | `cortex run llama3.1`           |
 | codestral      | ✅                    | `cortex run codestral`          |
@@ -66,22 +66,25 @@ View all [Cortex Built-in Models](https://cortex.so/models).
 
 Cortex supports multiple quantizations for each model.
 ```sh
-❯ cortex-nightly pull llama3.2
+cortex pull phi-4
+```
+```
 Downloaded models:
-    llama3.2:3b-gguf-q2-k
+    bartowski:phi-4-GGUF:phi-4-Q3_K_S.gguf
 
 Available to download:
-    1. llama3.2:3b-gguf-q3-kl
-    2. llama3.2:3b-gguf-q3-km
-    3. llama3.2:3b-gguf-q3-ks
-    4. llama3.2:3b-gguf-q4-km (default)
-    5. llama3.2:3b-gguf-q4-ks
-    6. llama3.2:3b-gguf-q5-km
-    7. llama3.2:3b-gguf-q5-ks
-    8. llama3.2:3b-gguf-q6-k
-    9. llama3.2:3b-gguf-q8-0
+    1. phi-4:14.7b-gguf-q2-k
+    2. phi-4:14.7b-gguf-q3-kl
+    3. phi-4:14.7b-gguf-q3-km
+    4. phi-4:14.7b-gguf-q3-ks
+    5. phi-4:14.7b-gguf-q4-km (default)
+    6. phi-4:14.7b-gguf-q4-ks
+    7. phi-4:14.7b-gguf-q5-km
+    8. phi-4:14.7b-gguf-q5-ks
+    9. phi-4:14.7b-gguf-q6-k
+    10. phi-4:14.7b-gguf-q8-0
 
-Select a model (1-9): 
+Select a model (1-10):
 ```
 
 
