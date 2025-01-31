@@ -26,7 +26,7 @@ Key Features:
 - Full C++ implementation, packageable into Desktop and Mobile apps
 - Pull from Huggingface, or Cortex Built-in Model Library
 - Models stored in universal file formats (vs blobs)
-- Swappable Inference Backends (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp), future: [`ONNXRuntime`](https://github.com/janhq/cortex.onnx), [`TensorRT-LLM`](https://github.com/janhq/cortex.tensorrt-llm))
+- Swappable Inference Backends (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp) and [`ONNXRuntime`](https://github.com/janhq/cortex.onnx))
 - Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
 - Automatic API docs for your server
 
@@ -36,7 +36,6 @@ Cortex's roadmap includes implementing full compatibility with OpenAI API's and 
 ## Inference Backends
 - Default: [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
 - Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs and traditional machine learning models
-- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports a variety of model architectures on Nvidia GPUs
 
 If GPU hardware is available, Cortex is GPU accelerated by default.
 
@@ -86,51 +85,3 @@ Available to download:
 
 Select a model (1-10):
 ```
-
-
-{/*
- <Tabs>
- <TabItem  value="Llama.cpp" label="Llama.cpp" default>
-| Model ID         | Variant (Branch) | Model size        | CLI command                        |
-|------------------|------------------|-------------------|------------------------------------|
-| codestral        | 22b-gguf         | 22B               | `cortex run codestral:22b-gguf`    |
-| command-r        | 35b-gguf         | 35B               | `cortex run command-r:35b-gguf`    |
-| gemma            | 7b-gguf          | 7B                | `cortex run gemma:7b-gguf`         |
-| llama3           | gguf             | 8B                | `cortex run llama3:gguf`           |
-| llama3.1         | gguf             | 8B                | `cortex run llama3.1:gguf`         |
-| mistral          | 7b-gguf          | 7B                | `cortex run mistral:7b-gguf`       |
-| mixtral          | 7x8b-gguf        | 46.7B             | `cortex run mixtral:7x8b-gguf`     |
-| openhermes-2.5   | 7b-gguf          | 7B                | `cortex run openhermes-2.5:7b-gguf`|
-| phi3             | medium-gguf      | 14B - 4k ctx len  | `cortex run phi3:medium-gguf`      |
-| phi3             | mini-gguf        | 3.82B - 4k ctx len| `cortex run phi3:mini-gguf`        |
-| qwen2            | 7b-gguf          | 7B                | `cortex run qwen2:7b-gguf`         |
-| tinyllama        | 1b-gguf          | 1.1B              | `cortex run tinyllama:1b-gguf`     |
-  </TabItem>
-  <TabItem  value="ONNX" label="ONNX" default>
-| Model ID         | Variant (Branch) | Model size        | CLI command                        |
-|------------------|------------------|-------------------|------------------------------------|
-| gemma            | 7b-onnx          | 7B                | `cortex run gemma:7b-onnx`         |
-| llama3           | onnx             | 8B                | `cortex run llama3:onnx`           |
-| mistral          | 7b-onnx          | 7B                | `cortex run mistral:7b-onnx`       |
-| openhermes-2.5   | 7b-onnx          | 7B                | `cortex run openhermes-2.5:7b-onnx`|
-| phi3             | mini-onnx        | 3.82B - 4k ctx len| `cortex run phi3:mini-onnx`        |
-| phi3             | medium-onnx      | 14B - 4k ctx len  | `cortex run phi3:medium-onnx`      |
-
-  </TabItem>
-  <TabItem value="TensorRT-LLM" label="TensorRT-LLM">
-| Model ID         | Variant (Branch)              | Model size        | CLI command                        |
-|------------------|-------------------------------|-------------------|------------------------------------|
-| llama3           | 8b-tensorrt-llm-windows-ampere       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ampere`   |
-| llama3           | 8b-tensorrt-llm-linux-ampere     | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ampere` |
-| llama3           | 8b-tensorrt-llm-linux-ada   | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ada`|
-| llama3           | 8b-tensorrt-llm-windows-ada       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ada`   |
-| mistral          | 7b-tensorrt-llm-linux-ampere     | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ampere`|
-| mistral          | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ampere`  |
-| mistral          | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ada`|
-| mistral          | 7b-tensorrt-llm-windows-ada       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ada`  |
-| openhermes-2.5   | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ampere`|
-| openhermes-2.5   | 7b-tensorrt-llm-windows-ada     | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ada`|
-| openhermes-2.5   | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-linux-ada`|
-
-  </TabItem>
-</Tabs> */}

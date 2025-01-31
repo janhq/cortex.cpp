@@ -5,7 +5,7 @@ unlisted: true
 ---
 
 :::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+🚧 Cortex is currently under active development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
 
 Cortex uses `onnxruntime-genai` with DirectML to provide GPU acceleration for AMD, Intel, NVIDIA, and Qualcomm GPUs.
@@ -14,11 +14,14 @@ Cortex uses `onnxruntime-genai` with DirectML to provide GPU acceleration for AM
 ```bash
 ## Initialize the ONNX engine
 cortex engines onnx init
+```
 
 ## Run an ONNX model
+```sh
 cortex run openhermes-2.5:7b-onnx
 ```
-## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
+
+## `model.yaml` Sample
 ```yaml
 name: openhermes-2.5
 model: openhermes
@@ -33,7 +36,7 @@ top_p: 1.0
 temperature: 1.0
 frequency_penalty: 0
 presence_penalty: 0
-max_tokens: 2048 
+max_tokens: 2048
 stream: true # true | false
 
 ```

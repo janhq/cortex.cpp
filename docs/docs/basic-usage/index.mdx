@@ -36,7 +36,7 @@ curl --request DELETE \
 
 ## Engines
 Cortex currently supports a general Python Engine for highly customised deployments and
-3 specialized ones for different multi-modal foundation models: llama.cpp, ONNXRuntime and TensorRT-LLM.
+2 specialized ones for different multi-modal foundation models: llama.cpp and ONNXRuntime.
 
 By default, Cortex installs `llama.cpp` as it main engine as it can be used in most laptops,
 desktop environments and operating systems.
@@ -58,8 +58,7 @@ curl --request GET \
       "name": "linux-amd64-avx2-cuda-12-0",
       "version": "v0.1.49"
     }
-  ],
-  "tensorrt-llm": []
+  ]
 }
 ```
 
