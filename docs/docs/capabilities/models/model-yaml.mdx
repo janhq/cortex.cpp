@@ -6,11 +6,9 @@ description: The model.yaml
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
-Cortex.cpp utilizes a `model.yaml` file to specify the configuration for running a model. Models can be downloaded from the Cortex Model Hub or Hugging Face repositories. Once downloaded, the model data is parsed and stored in the `models` folder.
+Cortex uses a `model.yaml` file to specify the configuration desired for each model. Models can be downloaded
+from the Cortex Model Hub or Hugging Face repositories. Once downloaded, the model data is parsed and stored
+in the `models` directory.
 
 ## Structure of `model.yaml`
 
@@ -77,18 +75,28 @@ engine: llama-cpp
 
 ```
 
-The `model.yaml` is composed of three high-level sections:
+The `model.yaml` is composed of three high-level sections: The model metadata,
+inference parameters, and model load parameters. Each section contains a set of
+parameters that define the model's behavior and configuration and some parameters
+are optional.
+
+The `model.yaml` contains sensible defaults for each parameter but there are instances where
+may need to override these default values to get your model to work as intended. For example,
+if you train or fine-tune a highly bespoke model with a custom template and less common parameters,
+you can specify these in the `model.yaml` file.
 
 ### Model Metadata
 ```yaml
-model: gemma-2-9b-it-Q8_0 
-name: Llama 3.1      
-version: 1          
-sources:             
-  - models://huggingface/bartowski/Mixtral-8x22B-v0.1/main/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf 
-  - files://C:/Users/user/Downloads/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf 
+model: gemma-2-9b-it-Q8_0
+name: Llama 3.1
+version: 1
+sources:
+  - models://huggingface/bartowski/Mixtral-8x22B-v0.1/main/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf
+  - files://C:/Users/user/Downloads/Mixtral-8x22B-v0.1-IQ3_M-00001-of-00005.gguf
 ```
-Cortex Meta consists of essential metadata that identifies the model within Cortex.cpp. The required parameters include:
+A Cortex Model consists of essential metadata that identifies it within the server and the local
+files. The required parameters include:
+
 | **Parameter**          | **Description**                                                                      | **Required** |
 |------------------------|--------------------------------------------------------------------------------------|--------------|
 | `name`        | The identifier name of the model, used as the `model_id`. |Yes          |
@@ -98,7 +106,7 @@ Cortex Meta consists of essential metadata that identifies the model within Cort
 
 ### Inference Parameters
 ```yaml
-stop:                
+stop:
   - <|end_of_text|>
   - <|eot_id|>
   - <|eom_id|>
@@ -125,9 +133,10 @@ ignore_eos: false
 n_probs: 0
 n_parallels: 1
 min_keep: 0
-
 ```
-Inference parameters define how the results will be produced. The required parameters include:
+
+Inference parameters affect the results of our model's predictions. While not all parameters are
+required, all of the following can be used to tweak the model's output.
 
 | **Parameter** | **Description** | **Required** |
 |---------------|-----------------|--------------|
@@ -158,38 +167,47 @@ Inference parameters define how the results will be produced. The required param
 
 
 ### Model Load Parameters
+
+The Model load parameters give you the options that control how Cortex runs the model and can be crucial
+for the model's performance.
+
 ```yaml
-prompt_template: |+  
+prompt_template: |+
   <|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
   {system_message}<|eot_id|><|start_header_id|>user<|end_header_id|>
 
   {prompt}<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
-ctx_len: 0          
-ngl: 33 
+ctx_len: 4096
+ngl: 33
 engine: llama-cpp
-
 ```
-Model load parameters include the options that control how Cortex.cpp runs the model. The required parameters include:
+
+Not all parameters are required.
+
 | **Parameter**          | **Description**                                                                      | **Required** |
 |------------------------|--------------------------------------------------------------------------------------|--------------|
-| `ngl`                  | Number of model layers will be offload to GPU.                                                           | No          |
+| `ngl`                  | Number of model layers will be offload to GPU.                                       | No          |
 | `ctx_len`              | Context length (maximum number of tokens).                                           | No          |
 | `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
-| `engine`      | The engine that run model, default to `llama-cpp` for local model with gguf format.      | Yes          |
+| `engine`               | The engine that run model, default to `llama-cpp` for local model with gguf format.  | Yes          |
 
-All parameters from the `model.yml` file are used for running the model via the [CLI run command](/docs/cli/run). These parameters also act as defaults when using the [model start API](/api-reference#tag/models/post/v1/models/start) through cortex.cpp.
+These parameters also act as defaults when using the [model start API](/api-reference#tag/models/post/v1/models/start) through
+cortex. If you change these, in particular the `prompt_templpate` and the `engine` (the others can be changed during runtime)
+make sure to reload the model.
 
 ## Runtime parameters
 
-In addition to predefined parameters in `model.yml`, Cortex.cpp supports runtime parameters to override these settings when using the [model start API](/api-reference#tag/models/post/v1/models/start).
+In addition to predefined parameters in `model.yml`, Cortex supports runtime parameters to override these settings
+when using the [model start API](/api-reference#tag/models/post/v1/models/start).
 
 ### Model start params
 
-Cortex.cpp supports the following parameters when starting a model via the [model start API](/api-reference#tag/models/post/v1/models/start) for the `llama-cpp engine`:
+Cortex supports the following parameters when starting a model via the [model start API](/api-reference#tag/models/post/v1/models/start)
+for the **llama-cpp engine**:
 
-```
+```yaml
 cache_enabled: bool
 ngl: int
 n_parallel: int
@@ -197,28 +215,24 @@ cache_type: string
 ctx_len: int
 
 ## Support for vision model
-mmproj: string 
+mmproj: string
 llama_model_path: string
 model_path: string
 ```
 
-| **Parameter**          | **Description**                                                                      | **Required** |
-|------------------------|--------------------------------------------------------------------------------------|--------------|
-| `cache_type`           | Data type of the KV cache in llama.cpp models. Supported types are `f16`, `q8_0`, and `q4_0`, default is `f16`.  | No          |
-| `cache_enabled`           |Enables caching of conversation history for reuse in subsequent requests. Default is `false`  | No          |
-| `mmproj`           |  path to mmproj GGUF model, support for llava model   | No          |
+| **Parameter**      | **Description**                                                                      | **Required** |
+|--------------------|--------------------------------------------------------------------------------------|--------------|
+| `cache_type`       | Data type of the KV cache in llama.cpp models. Supported types are `f16`, `q8_0`, and `q4_0`, default is `f16`.  | No          |
+| `cache_enabled`    | Enables caching of conversation history for reuse in subsequent requests. Default is `false`  | No          |
+| `mmproj`           | path to mmproj GGUF model, support for llava model   | No          |
 | `llama_model_path` | path to llm GGUF model  | No          |
 
 These parameters will override the `model.yml` parameters when starting model through the API.
 
 ### Chat completion API parameters
 
-The API is accessible at the `/v1/chat/completions` URL and accepts all parameters from the chat completion API as described [API reference](/api-reference#tag/chat/post/v1/chat/completions)
+The API is accessible at the `/v1/chat/completions` URL and accepts all parameters from the chat completion
+API as described [API reference](/api-reference#tag/chat/post/v1/chat/completions)
 
-With the `llama-cpp` engine, cortex.cpp accept all parameters from [`model.yml` inference section](#Inference Parameters) and accept all parameters from the chat completion API.
-
-<!-- :::info
-You can download all the supported model formats from the following:
-- [Cortex Model Repos](/docs/hub/cortex-hub)
-- [HuggingFace Model Repos](/docs/hub/hugging-face)
-::: -->
+With the `llama-cpp` engine, cortex will accept all parameters from [`model.yml` inference section](#Inference Parameters)
+and from the chat completion API.

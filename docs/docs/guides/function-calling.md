@@ -9,20 +9,20 @@ This tutorial, I use the `mistral-nemo:12b-gguf-q4-km` for testing function call
 
 ### 1. Start server and run model.
 
-```
-cortex run mistral-nemo:12b-gguf-q4-km
+```sh
+cortex run -d llama3.1:8b-gguf-q4-km
 ```
 
 ### 2. Create a python script `function_calling.py` with this content:
 
-```
+```py
 from datetime import datetime
 from openai import OpenAI
 from pydantic import BaseModel
-ENDPOINT = "http://localhost:39281/v1"
-MODEL = "mistral-nemo:12b-gguf-q4-km"
+```
+```py
 client = OpenAI(
-    base_url=ENDPOINT,
+    base_url="http://localhost:39281/v1",
     api_key="not-needed"
 )
 ```
@@ -31,14 +31,13 @@ This step creates OpenAI client in python
 
 ### 3. Start create a chat completion with tool calling
 
-```
+```py
 tools = [
     {
         "type": "function",
         "function": {
             "name": "get_delivery_date",
-
-                "strict": True,
+            "strict": True,
             "description": "Get the delivery date for a customer's order. Call this whenever you need to know the delivery date, for example when a customer asks 'Where is my package'",
             "parameters": {
                 "type": "object",
@@ -54,6 +53,8 @@ tools = [
         }
     }
 ]
+```
+```py
 completion_payload = {
     "messages": [
         {"role": "system", "content": "You are a helpful customer support assistant. Use the supplied tools to assist the user."},
@@ -63,7 +64,7 @@ completion_payload = {
 response = client.chat.completions.create(
     top_p=0.9,
     temperature=0.6,
-    model=MODEL,
+    model="llama3.1:8b-gguf-q4-km",
     messages=completion_payload["messages"],
     tools=tools,
 )
@@ -329,7 +330,7 @@ response = client.chat.completions.create(
     top_p=0.9,
     temperature=0.6,
     model=MODEL,
-    messages= messages, 
+    messages= messages,
     tools=tools
 )
 print(response)
