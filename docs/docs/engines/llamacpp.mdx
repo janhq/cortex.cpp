@@ -3,52 +3,49 @@ title: Llama.cpp
 description: GGUF Model Format.
 ---
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
+Cortex leverages `llama.cpp` as its default engine for GGUF models. The example model configuration shown
+below illustrates how to configure a GGUF model (in this case DeepSeek's 8B model) with both required and
+optional parameters. The configuration includes metadata, inference parameters, and model loading settings
+that control everything from basic model identification to advanced generation behavior. Cortex can automatically
+generate GGUF models from HuggingFace repositories when a model.yaml file isn't available.
 
-Cortex uses `llama.cpp` as the default engine by default the `GGUF` format is supported by Cortex.
-
-:::info
-Cortex automatically generates any `GGUF` model from the HuggingFace repo that does not have the `model.yaml` file.
-:::
-
-## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
 ```yaml
-## BEGIN GENERAL GGUF METADATA
-id: Mistral-Nemo-Instruct-2407 # Model ID unique between models (author / quantization)
-model: mistral-nemo # Model ID which is used for request construct - should be unique between models (author / quantization)
-name: Mistral-Nemo-Instruct-2407 # metadata.general.name
-version: 2 # metadata.version
-files:             # can be universal protocol (models://) OR absolute local file path (file://) OR https remote URL (https://)
-  - /home/thuan/cortex/models/mistral-nemo-q8/Mistral-Nemo-Instruct-2407.Q6_K.gguf
+# BEGIN GENERAL GGUF METADATA
+id: deepseek-r1-distill-llama-8b # Model ID unique between models (author / quantization)
+model: deepseek-r1-distill-llama-8b:8b-gguf-q2-k # Model ID which is used for request construct - should be unique between models (author / quantization)
+name: deepseek-r1-distill-llama-8b # metadata.general.name
+version: 1
+files:             # Can be relative OR absolute local file path
+  - models/cortex.so/deepseek-r1-distill-llama-8b/8b-gguf-q2-k/model.gguf
 # END GENERAL GGUF METADATA
 
 # BEGIN INFERENCE PARAMETERS
 # BEGIN REQUIRED
 stop:                # tokenizer.ggml.eos_token_id
-  - </s>
+  - <|im_end|>
+  - <｜end▁of▁sentence｜>
 # END REQUIRED
 
 # BEGIN OPTIONAL
+size: 3179134413
 stream: true # Default true?
-top_p: 0.949999988 # Ranges: 0 to 1
-temperature: 0.699999988 # Ranges: 0 to 1
+top_p: 0.9 # Ranges: 0 to 1
+temperature: 0.7 # Ranges: 0 to 1
 frequency_penalty: 0 # Ranges: 0 to 1
 presence_penalty: 0 # Ranges: 0 to 1
-max_tokens: 1024000 # Should be default to context length
+max_tokens: 4096 # Should be default to context length
 seed: -1
 dynatemp_range: 0
 dynatemp_exponent: 1
 top_k: 40
-min_p: 0.0500000007
+min_p: 0.05
 tfs_z: 1
 typ_p: 1
 repeat_last_n: 64
 repeat_penalty: 1
 mirostat: false
 mirostat_tau: 5
-mirostat_eta: 0.100000001
+mirostat_eta: 0.1
 penalize_nl: false
 ignore_eos: false
 n_probs: 0
@@ -58,46 +55,56 @@ min_keep: 0
 
 # BEGIN MODEL LOAD PARAMETERS
 # BEGIN REQUIRED
-engine: cortex.llamacpp # engine to run model
-prompt_template: "[INST] <<SYS>>\n{system_message}\n<</SYS>>\n{prompt}[/INST]"
+engine: llama-cpp # engine to run model
+prompt_template: <|start_of_text|>{system_message}<｜User｜>{prompt}<｜Assistant｜>
 # END REQUIRED
 
 # BEGIN OPTIONAL
-ctx_len: 1024000 # llama.context_length | 0 or undefined = loaded from model
-ngl: 41 # Undefined = loaded from model
+ctx_len: 4096 # llama.context_length | 0 or undefined = loaded from model
+n_parallel: 1
+ngl: 34 # Undefined = loaded from model
 # END OPTIONAL
 # END MODEL LOAD PARAMETERS
-
 ```
+
 ## Model Parameters
+
 | **Parameter**          | **Description**                                                                      | **Required** |
 |------------------------|--------------------------------------------------------------------------------------|--------------|
-| `top_p`                | The cumulative probability threshold for token sampling.                             | No  |
-| `temperature`          | Controls the randomness of predictions by scaling logits before applying softmax.    | No   |
-| `frequency_penalty`    | Penalizes new tokens based on their existing frequency in the sequence so far.       | No   |
-| `presence_penalty`     | Penalizes new tokens based on whether they appear in the sequence so far.            | No   |
-| `max_tokens`           | Maximum number of tokens in the output.                                              | No          |
-| `stream`               | Enables or disables streaming mode for the output (true or false).                   | No          |
-| `ngl`                  | Number of attention heads.                                                           | No          |
-| `ctx_len`              | Context length (maximum number of tokens).                                           | No          |
-| `prompt_template`      | Template for formatting the prompt, including system messages and instructions.      | Yes          |
-| `stop`                 | Specifies the stopping condition for the model, which can be a word, a letter, or a specific text. | Yes          |
-| `seed`               | Random seed value used to initialize the generation process.                                           | No           |
-| `dynatemp_range`     | Dynamic temperature range used to adjust randomness during generation.                                 | No           |
-| `dynatemp_exponent`  | Exponent used to adjust the effect of dynamic temperature.                                             | No           |
-| `top_k`              | Limits the number of highest probability tokens to consider during sampling.                           | No           |
-| `min_p`              | Minimum cumulative probability for nucleus sampling.                                                   | No           |
-| `tfs_z`              | Top-p frequency selection parameter.                                                                   | No           |
-| `typ_p`              | Typical sampling probability threshold.                                                                | No           |
-| `repeat_last_n`      | Number of tokens to consider for the repetition penalty.                                               | No           |
-| `repeat_penalty`     | Penalty applied to repeated tokens to reduce their likelihood of being selected again.                 | No           |
-| `mirostat`           | Enables or disables the use of Mirostat algorithm for dynamic temperature adjustment.                  | No           |
-| `mirostat_tau`       | Target surprise value for Mirostat algorithm.                                                          | No           |
-| `mirostat_eta`       | Learning rate for Mirostat algorithm.                                                                  | No           |
-| `penalize_nl`        | Whether newline characters should be penalized during sampling.                                         | No           |
-| `ignore_eos`         | If true, ignores the end of sequence token, allowing generation to continue indefinitely.              | No           |
-| `n_probs`            | Number of top token probabilities to return in the output.                                             | No           |
-| `min_keep`           | Minimum number of tokens to keep during top-k sampling.                                                | No           |
+| `id`                  | Unique model identifier including author and quantization                             | Yes          |
+| `model`               | Model ID used for request construction                                                | Yes          |
+| `name`                | General name metadata for the model                                                   | Yes          |
+| `version`             | Model version number                                                                  | Yes          |
+| `files`               | Path to model GGUF file (relative or absolute)                                       | Yes          |
+| `stop`                | Array of stopping sequences for generation                                            | Yes          |
+| `engine`              | Model execution engine (llama-cpp)                                                    | Yes          |
+| `prompt_template`     | Template for formatting the prompt with system message and user input                | Yes          |
+| `size`                | Model file size in bytes                                                             | No           |
+| `stream`              | Enable streaming output (default: true)                                               | No           |
+| `top_p`               | Nucleus sampling probability threshold (0-1)                                          | No           |
+| `temperature`         | Output randomness control (0-1)                                                       | No           |
+| `frequency_penalty`   | Penalty for frequent token usage (0-1)                                                | No           |
+| `presence_penalty`    | Penalty for token presence (0-1)                                                      | No           |
+| `max_tokens`          | Maximum output length                                                                 | No           |
+| `seed`                | Random seed for reproducibility                                                       | No           |
+| `dynatemp_range`      | Dynamic temperature range                                                             | No           |
+| `dynatemp_exponent`   | Dynamic temperature exponent                                                          | No           |
+| `top_k`               | Top-k sampling parameter                                                              | No           |
+| `min_p`               | Minimum probability threshold                                                          | No           |
+| `tfs_z`               | Tail-free sampling parameter                                                          | No           |
+| `typ_p`               | Typical sampling parameter                                                            | No           |
+| `repeat_last_n`       | Repetition penalty window                                                            | No           |
+| `repeat_penalty`      | Penalty for repeated tokens                                                          | No           |
+| `mirostat`            | Enable Mirostat sampling                                                             | No           |
+| `mirostat_tau`        | Mirostat target entropy                                                              | No           |
+| `mirostat_eta`        | Mirostat learning rate                                                               | No           |
+| `penalize_nl`         | Apply penalty to newlines                                                            | No           |
+| `ignore_eos`          | Ignore end-of-sequence token                                                         | No           |
+| `n_probs`             | Number of probability outputs                                                         | No           |
+| `min_keep`            | Minimum tokens to retain                                                              | No           |
+| `ctx_len`             | Context window size                                                                   | No           |
+| `n_parallel`          | Number of parallel instances                                                          | No           |
+| `ngl`                 | Number of GPU layers                                                                  | No           |
 
 <!-- :::info
 You can download a `GGUF` model from the following:
