@@ -272,7 +272,7 @@ cpp::result<std::string, std::string> DownloadService::StopTask(
     const std::string& task_id) {
   // First try to cancel in queue
   CTL_INF("Stopping task: " << task_id);
-  auto cancelled = task_queue_.cancelTask(task_id);
+  auto cancelled = task_queue_.CancelTask(task_id);
   if (cancelled) {
     return task_id;
   }
@@ -332,7 +332,7 @@ void DownloadService::WorkerThread(int worker_id) {
 
     // Wait for a task or stop signal
     task_cv_.wait(lock, [this] {
-      auto pending_task = task_queue_.getNextPendingTask();
+      auto pending_task = task_queue_.GetNextPendingTask();
       return pending_task.has_value() || stop_flag_;
     });
 
@@ -340,7 +340,7 @@ void DownloadService::WorkerThread(int worker_id) {
       break;
     }
 
-    auto maybe_task = task_queue_.pop();
+    auto maybe_task = task_queue_.Pop();
     lock.unlock();
 
     if (!maybe_task || maybe_task->status == DownloadTask::Status::Cancelled) {
@@ -488,7 +488,7 @@ cpp::result<DownloadTask, std::string> DownloadService::AddTask(
 
   {  // adding task to queue
     std::lock_guard<std::mutex> lock(queue_mutex_);
-    task_queue_.push(task);
+    task_queue_.Push(task);
     CTL_INF("Task added to queue: " << task.id);
   }
 

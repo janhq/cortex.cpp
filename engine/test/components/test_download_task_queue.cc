@@ -18,84 +18,84 @@ DownloadTask CreateDownloadTask(
 }
 
 TEST_F(DownloadTaskQueueTest, PushAndPop) {
-  queue.push(CreateDownloadTask("task1"));
-  queue.push(CreateDownloadTask("task2"));
+  queue.Push(CreateDownloadTask("task1"));
+  queue.Push(CreateDownloadTask("task2"));
 
-  auto task = queue.pop();
+  auto task = queue.Pop();
   ASSERT_TRUE(task.has_value());
   EXPECT_EQ(task->id, "task1");
 
-  task = queue.pop();
+  task = queue.Pop();
   ASSERT_TRUE(task.has_value());
   EXPECT_EQ(task->id, "task2");
 
-  task = queue.pop();
+  task = queue.Pop();
   EXPECT_FALSE(task.has_value());
 }
 
 TEST_F(DownloadTaskQueueTest, CancelTask) {
-  queue.push(CreateDownloadTask("task1"));
-  queue.push(CreateDownloadTask("task2"));
-  queue.push(CreateDownloadTask("task3"));
+  queue.Push(CreateDownloadTask("task1"));
+  queue.Push(CreateDownloadTask("task2"));
+  queue.Push(CreateDownloadTask("task3"));
 
-  EXPECT_TRUE(queue.cancelTask("task2"));
-  EXPECT_FALSE(queue.cancelTask("task4"));
+  EXPECT_TRUE(queue.CancelTask("task2"));
+  EXPECT_FALSE(queue.CancelTask("task4"));
 
-  auto task = queue.pop();
+  auto task = queue.Pop();
   ASSERT_TRUE(task.has_value());
   EXPECT_EQ(task->id, "task1");
 
-  task = queue.pop();
+  task = queue.Pop();
   ASSERT_TRUE(task.has_value());
   EXPECT_EQ(task->id, "task3");
 
-  task = queue.pop();
+  task = queue.Pop();
   EXPECT_FALSE(task.has_value());
 }
 
 TEST_F(DownloadTaskQueueTest, PopEmptyQueue) {
-  auto task = queue.pop();
+  auto task = queue.Pop();
   EXPECT_FALSE(task.has_value());
 }
 
 TEST_F(DownloadTaskQueueTest, UpdateTaskStatus) {
-  queue.push(CreateDownloadTask("task1"));
+  queue.Push(CreateDownloadTask("task1"));
 
   EXPECT_TRUE(
-      queue.updateTaskStatus("task1", DownloadTask::Status::InProgress));
-  EXPECT_FALSE(queue.updateTaskStatus(
+      queue.UpdateTaskStatus("task1", DownloadTask::Status::InProgress));
+  EXPECT_FALSE(queue.UpdateTaskStatus(
       "task2", DownloadTask::Status::Completed));  // Non-existent task
 
-  auto task = queue.getNextPendingTask();
+  auto task = queue.GetNextPendingTask();
   ASSERT_FALSE(task.has_value());
 
-  queue.push(CreateDownloadTask("task2"));
-  task = queue.getNextPendingTask();
+  queue.Push(CreateDownloadTask("task2"));
+  task = queue.GetNextPendingTask();
   // task2
   EXPECT_EQ(task->id, "task2");
   EXPECT_TRUE(
-      queue.updateTaskStatus("task2", DownloadTask::Status::InProgress));
+      queue.UpdateTaskStatus("task2", DownloadTask::Status::InProgress));
 
-  EXPECT_TRUE(queue.updateTaskStatus("task1", DownloadTask::Status::Completed));
-  task = queue.pop();
-  EXPECT_TRUE(queue.updateTaskStatus("task2", DownloadTask::Status::Completed));
-  task = queue.pop();
-  task = queue.pop();
+  EXPECT_TRUE(queue.UpdateTaskStatus("task1", DownloadTask::Status::Completed));
+  task = queue.Pop();
+  EXPECT_TRUE(queue.UpdateTaskStatus("task2", DownloadTask::Status::Completed));
+  task = queue.Pop();
+  task = queue.Pop();
   EXPECT_FALSE(task.has_value());  // Task should be removed after completion
 }
 
 TEST_F(DownloadTaskQueueTest, GetNextPendingTask) {
-  queue.push(CreateDownloadTask("task1"));
-  queue.push(CreateDownloadTask("task2"));
-  queue.updateTaskStatus("task1", DownloadTask::Status::InProgress);
+  queue.Push(CreateDownloadTask("task1"));
+  queue.Push(CreateDownloadTask("task2"));
+  queue.UpdateTaskStatus("task1", DownloadTask::Status::InProgress);
 
-  auto task = queue.getNextPendingTask();
+  auto task = queue.GetNextPendingTask();
   ASSERT_TRUE(task.has_value());
   EXPECT_EQ(task->id, "task2");
   EXPECT_EQ(task->status, DownloadTask::Status::Pending);
 
-  queue.updateTaskStatus("task2", DownloadTask::Status::InProgress);
-  task = queue.getNextPendingTask();
+  queue.UpdateTaskStatus("task2", DownloadTask::Status::InProgress);
+  task = queue.GetNextPendingTask();
   EXPECT_FALSE(task.has_value());
 }
 
@@ -109,7 +109,7 @@ TEST_F(DownloadTaskQueueTest, ConcurrentPushAndPop) {
   for (int i = 0; i < 4; ++i) {
     pushThreads.emplace_back([this, numTasks, i, &pushedTasks]() {
       for (int j = 0; j < numTasks; ++j) {
-        queue.push(CreateDownloadTask("task_" + std::to_string(i) + "_" +
+        queue.Push(CreateDownloadTask("task_" + std::to_string(i) + "_" +
                                       std::to_string(j)));
         pushedTasks++;
       }
@@ -118,7 +118,7 @@ TEST_F(DownloadTaskQueueTest, ConcurrentPushAndPop) {
     popThreads.emplace_back([this, &poppedTasks, &pushedTasks]() {
       while (poppedTasks.load() < pushedTasks.load() ||
              pushedTasks.load() < numTasks * 4) {
-        if (auto task = queue.pop()) {
+        if (auto task = queue.Pop()) {
           poppedTasks++;
         }
       }
@@ -132,5 +132,5 @@ TEST_F(DownloadTaskQueueTest, ConcurrentPushAndPop) {
 
   EXPECT_EQ(pushedTasks.load(), numTasks * 4);
   EXPECT_EQ(poppedTasks.load(), numTasks * 4);
-  EXPECT_FALSE(queue.pop().has_value());
+  EXPECT_FALSE(queue.Pop().has_value());
 }

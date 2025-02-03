@@ -9,67 +9,67 @@
 
 class DownloadTaskQueue {
  private:
-  std::deque<DownloadTask> taskQueue;
+  std::deque<DownloadTask> task_queue_;
   std::unordered_map<std::string, typename std::deque<DownloadTask>::iterator>
-      taskMap;
-  mutable std::shared_mutex mutex;
-  std::condition_variable_any cv;
+      task_map_;
+  mutable std::shared_mutex mtx_;
+  std::condition_variable_any cv_;
 
  public:
-  void push(DownloadTask task) {
-    std::unique_lock lock(mutex);
-    taskQueue.push_back(std::move(task));
-    taskMap[taskQueue.back().id] = std::prev(taskQueue.end());
-    cv.notify_one();
+  void Push(DownloadTask task) {
+    std::unique_lock lock(mtx_);
+    task_queue_.push_back(std::move(task));
+    task_map_[task_queue_.back().id] = std::prev(task_queue_.end());
+    cv_.notify_one();
   }
 
-  std::optional<DownloadTask> pop() {
-    std::unique_lock lock(mutex);
-    if (taskQueue.empty()) {
+  std::optional<DownloadTask> Pop() {
+    std::unique_lock lock(mtx_);
+    if (task_queue_.empty()) {
       return std::nullopt;
     }
-    DownloadTask task = std::move(taskQueue.front());
-    taskQueue.pop_front();
-    taskMap.erase(task.id);
+    DownloadTask task = std::move(task_queue_.front());
+    task_queue_.pop_front();
+    task_map_.erase(task.id);
     return task;
   }
 
-  bool cancelTask(const std::string& task_id) {
-    std::unique_lock lock(mutex);
-    auto it = taskMap.find(task_id);
-    if (it != taskMap.end()) {
+  bool CancelTask(const std::string& task_id) {
+    std::unique_lock lock(mtx_);
+    auto it = task_map_.find(task_id);
+    if (it != task_map_.end()) {
       it->second->status = DownloadTask::Status::Cancelled;
-      taskQueue.erase(it->second);
-      taskMap.erase(it);
+      task_queue_.erase(it->second);
+      task_map_.erase(it);
       return true;
     }
     return false;
   }
 
-  bool updateTaskStatus(const std::string& task_id,
+  bool UpdateTaskStatus(const std::string& task_id,
                         DownloadTask::Status newStatus) {
-    std::unique_lock lock(mutex);
-    auto it = taskMap.find(task_id);
-    if (it != taskMap.end()) {
+    std::unique_lock lock(mtx_);
+    auto it = task_map_.find(task_id);
+    if (it != task_map_.end()) {
       it->second->status = newStatus;
       if (newStatus == DownloadTask::Status::Cancelled ||
           newStatus == DownloadTask::Status::Error) {
-        taskQueue.erase(it->second);
-        taskMap.erase(it);
+        task_queue_.erase(it->second);
+        task_map_.erase(it);
       }
       return true;
     }
     return false;
   }
 
-  std::optional<DownloadTask> getNextPendingTask() {
-    std::shared_lock lock(mutex);
+  std::optional<DownloadTask> GetNextPendingTask() {
+    std::shared_lock lock(mtx_);
     auto it = std::find_if(
-        taskQueue.begin(), taskQueue.end(), [](const DownloadTask& task) {
+        task_queue_.begin(), task_queue_.end(), [](const DownloadTask& task) {
           return task.status == DownloadTask::Status::Pending;
         });
 
-    if (it != taskQueue.end()) {
+    if (it != task_queue_.end()) {
       return *it;
     }
     return std::nullopt;
