@@ -446,8 +446,8 @@ void HardwareService::CheckDependencies() {
         .type = DownloadType::Miscellaneous,
         .items = {DownloadItem{
             .id = "vulkan",
-            .downloadUrl = "https://catalog.jan.ai/libvulkan.so",
-            .localPath = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
+            .download_url = "https://catalog.jan.ai/libvulkan.so",
+            .local_path = fmu::GetCortexDataPath() / "deps" / "libvulkan.so",
         }},
     }};
     auto result = DownloadService().AddDownloadTask(
@@ -455,7 +455,7 @@ void HardwareService::CheckDependencies() {
         [](const DownloadTask& finishedTask) {
           // try to unzip the downloaded file
           CTL_INF("Downloaded libvulkan path: "
-                  << finishedTask.items[0].localPath.string());
+                  << finishedTask.items[0].local_path.string());
 
           CTL_INF("Finished!");
         },

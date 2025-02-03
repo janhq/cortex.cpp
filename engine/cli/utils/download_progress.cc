@@ -128,7 +128,7 @@ bool DownloadProgress::Handle(
     for (int i = 0; i < ev.download_task_.items.size(); i++) {
       auto& it = ev.download_task_.items[i];
       if (ev.type_ == DownloadStatus::DownloadUpdated) {
-        uint64_t downloaded = it.downloadedBytes.value_or(0u);
+        uint64_t downloaded = it.downloaded_bytes.value_or(0u);
         uint64_t total =
             it.bytes.value_or(std::numeric_limits<uint64_t>::max());
         auto d = std::chrono::duration_cast<std::chrono::seconds>(now - start)

@@ -120,26 +120,26 @@ Unlike the CLI, where users can observe the download progress directly in the te
       {
         "bytes": 0,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
-        "downloadedBytes": 0,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
+        "downloaded_bytes": 0,
         "id": "metadata.yml",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
       },
       {
         "bytes": 0,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
-        "downloadedBytes": 0,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
+        "downloaded_bytes": 0,
         "id": "model.gguf",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
       },
       {
         "bytes": 0,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
-        "downloadedBytes": 0,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
+        "downloaded_bytes": 0,
         "id": "model.yml",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
       }
     ],
     "type": "Model"
@@ -154,9 +154,9 @@ Unlike the CLI, where users can observe the download progress directly in the te
 - A `DownloadTask` will have a list of `DownloadItem`s. Each `DownloadItem` will have the following properties:
   - `id`: the id of the download item.
   - `bytes`: the total size of the download item.
-  - `downloadedBytes`: the number of bytes that have been downloaded so far.
+  - `downloaded_bytes`: the number of bytes that have been downloaded so far.
   - `checksum`: the checksum of the download item.
-- Client can use the `downloadedBytes` and `bytes` properties to calculate the download progress.
+- Client can use the `downloaded_bytes` and `bytes` properties to calculate the download progress.
 
 ```json
 {
@@ -166,26 +166,26 @@ Unlike the CLI, where users can observe the download progress directly in the te
       {
         "bytes": 58,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
-        "downloadedBytes": 58,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
+        "downloaded_bytes": 58,
         "id": "metadata.yml",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
       },
       {
         "bytes": 432131456,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
-        "downloadedBytes": 235619714,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
+        "downloaded_bytes": 235619714,
         "id": "model.gguf",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
       },
       {
         "bytes": 562,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
-        "downloadedBytes": 562,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
+        "downloaded_bytes": 562,
         "id": "model.yml",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
       }
     ],
     "type": "Model"
@@ -196,7 +196,7 @@ Unlike the CLI, where users can observe the download progress directly in the te
 
 #### Download success event
 
-The DownloadSuccess event indicates that all items in the download task have been successfully downloaded. This event provides details about the download task and its items, including their IDs, download URLs, local paths, and other properties. In this event, the bytes and downloadedBytes properties for each item are set to 0, signifying that the download is complete and no further bytes are pending.
+The DownloadSuccess event indicates that all items in the download task have been successfully downloaded. This event provides details about the download task and its items, including their IDs, download URLs, local paths, and other properties. In this event, the bytes and downloaded_bytes properties for each item are set to 0, signifying that the download is complete and no further bytes are pending.
 
 ```json
 {
@@ -206,26 +206,26 @@ The DownloadSuccess event indicates that all items in the download task have bee
       {
         "bytes": 0,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
-        "downloadedBytes": 0,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/metadata.yml",
+        "downloaded_bytes": 0,
         "id": "metadata.yml",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/metadata.yml"
       },
       {
         "bytes": 0,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
-        "downloadedBytes": 0,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.gguf",
+        "downloaded_bytes": 0,
         "id": "model.gguf",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.gguf"
       },
       {
         "bytes": 0,
         "checksum": "N/A",
-        "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
-        "downloadedBytes": 0,
+        "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/1b-gguf-q2-k/model.yml",
+        "downloaded_bytes": 0,
         "id": "model.yml",
-        "localPath": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
+        "local_path": "/Users/user_name/cortexcpp/models/cortex.so/tinyllama/1b-gguf-q2-k/model.yml"
       }
     ],
     "type": "Model"

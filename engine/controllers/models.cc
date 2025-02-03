@@ -109,12 +109,12 @@ void Models::GetModelPullInfo(
       avails.append(s);
     }
     ret["id"] = info.id;
-    ret["modelSource"] = info.model_source;
-    ret["defaultBranch"] = info.default_branch;
+    ret["model_source"] = info.model_source;
+    ret["default_branch"] = info.default_branch;
     ret["message"] = "Get model pull information successfully";
-    ret["downloadedModels"] = downloaded;
-    ret["availableModels"] = avails;
-    ret["downloadUrl"] = info.download_url;
+    ret["downloaded_models"] = downloaded;
+    ret["available_models"] = avails;
+    ret["download_url"] = info.download_url;
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -186,7 +186,7 @@ void Models::ListModel(
             }
             return "unknown";
           };
-          obj["modelSource"] = model_entry.model_source;
+          obj["model_source"] = model_entry.model_source;
           obj["status"] = status_to_string(model_entry.status);
           obj["engine"] = model_entry.engine;
           obj["metadata"] = model_entry.metadata;

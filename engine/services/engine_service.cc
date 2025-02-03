@@ -318,11 +318,11 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
   auto on_finished = [this, engine, selected_variant, variant_folder_path,
                       normalize_version](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
-    CTL_INF("Engine zip path: " << finishedTask.items[0].localPath.string());
+    CTL_INF("Engine zip path: " << finishedTask.items[0].local_path.string());
     CTL_INF("Version: " + normalize_version);
 
-    auto extract_path = finishedTask.items[0].localPath.parent_path();
-    archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
+    auto extract_path = finishedTask.items[0].local_path.parent_path();
+    archive_utils::ExtractArchive(finishedTask.items[0].local_path.string(),
                                   extract_path.string(), true);
 
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
@@ -361,7 +361,7 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     }
 
     try {
-      std::filesystem::remove(finishedTask.items[0].localPath);
+      std::filesystem::remove(finishedTask.items[0].local_path);
     } catch (const std::exception& e) {
       CTL_WRN("Could not delete file: " << e.what());
     }
@@ -373,8 +373,8 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
                    .type = DownloadType::Engine,
                    .items = {DownloadItem{
                        .id = selected_variant->name,
-                       .downloadUrl = selected_variant->browser_download_url,
-                       .localPath = variant_path,
+                       .download_url = selected_variant->browser_download_url,
+                       .local_path = variant_path,
                    }}};
 
   auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
@@ -423,17 +423,17 @@ cpp::result<bool, std::string> EngineService::DownloadCuda(
       .id = download_id,
       .type = DownloadType::CudaToolkit,
       .items = {DownloadItem{.id = download_id,
-                             .downloadUrl = cuda_toolkit_url,
-                             .localPath = cuda_toolkit_local_path}},
+                             .download_url = cuda_toolkit_url,
+                             .local_path = cuda_toolkit_local_path}},
   }};
 
   auto on_finished = [engine](const DownloadTask& finishedTask) {
     auto engine_path = file_manager_utils::GetCudaToolkitPath(engine, true);
 
-    archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
+    archive_utils::ExtractArchive(finishedTask.items[0].local_path.string(),
                                   engine_path.string());
     try {
-      std::filesystem::remove(finishedTask.items[0].localPath);
+      std::filesystem::remove(finishedTask.items[0].local_path);
     } catch (std::exception& e) {
       CTL_ERR("Error removing downloaded file: " << e.what());
     }

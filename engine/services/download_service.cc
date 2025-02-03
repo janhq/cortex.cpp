@@ -107,7 +107,7 @@ cpp::result<bool, std::string> DownloadService::AddDownloadTask(
   std::optional<std::string> dl_err_msg = std::nullopt;
   bool has_task_done = false;
   for (const auto& item : task.items) {
-    CLI_LOG("Start downloading: " + item.localPath.filename().string());
+    CLI_LOG("Start downloading: " + item.local_path.filename().string());
     auto result = Download(task.id, item, show_progress);
     if (result.has_error()) {
       dl_err_msg = result.error();
@@ -166,7 +166,7 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
 cpp::result<bool, std::string> DownloadService::Download(
     const std::string& download_id, const DownloadItem& download_item,
     bool show_progress) noexcept {
-  CTL_INF("Absolute file output: " << download_item.localPath.string());
+  CTL_INF("Absolute file output: " << download_item.local_path.string());
 
   auto curl = curl_easy_init();
   if (!curl) {
@@ -174,20 +174,20 @@ cpp::result<bool, std::string> DownloadService::Download(
   }
 
   std::string mode = "wb";
-  if (std::filesystem::exists(download_item.localPath) &&
+  if (std::filesystem::exists(download_item.local_path) &&
       download_item.bytes.has_value()) {
     try {
       curl_off_t existing_file_size =
-          std::filesystem::file_size(download_item.localPath);
+          std::filesystem::file_size(download_item.local_path);
 
-      CTL_INF("Existing file size: " << download_item.downloadUrl << " - "
-                                     << download_item.localPath.string()
+      CTL_INF("Existing file size: " << download_item.download_url << " - "
+                                     << download_item.local_path.string()
                                      << " - " << existing_file_size);
       CTL_INF("Download item size: " << download_item.bytes.value());
       auto missing_bytes = download_item.bytes.value() - existing_file_size;
       if (missing_bytes > 0 &&
-          download_item.localPath.extension().string() != ".yaml" &&
-          download_item.localPath.extension().string() != ".yml") {
+          download_item.local_path.extension().string() != ".yaml" &&
+          download_item.local_path.extension().string() != ".yml") {
         CLI_LOG("Found unfinished download! Additional "
                 << format_utils::BytesToHumanReadable(missing_bytes)
                 << " need to be downloaded.");
@@ -201,7 +201,7 @@ cpp::result<bool, std::string> DownloadService::Download(
           CLI_LOG("Start over..");
         }
       } else {
-        CLI_LOG(download_item.localPath.filename().string()
+        CLI_LOG(download_item.local_path.filename().string()
                 << " is already downloaded!");
         std::cout << "Re-download? [Y/n]: " << std::flush;
 
@@ -215,18 +215,18 @@ cpp::result<bool, std::string> DownloadService::Download(
       }
     } catch (const std::filesystem::filesystem_error& e) {
       CLI_LOG("Cannot get file size: "
-              << e.what() << download_item.localPath.string() << "\n");
+              << e.what() << download_item.local_path.string() << "\n");
     }
   }
 
-  auto file = fopen(download_item.localPath.string().c_str(), mode.c_str());
+  auto file = fopen(download_item.local_path.string().c_str(), mode.c_str());
   if (!file) {
     return cpp::fail("Failed to open output file " +
-                     download_item.localPath.string());
+                     download_item.local_path.string());
   }
 
-  curl_easy_setopt(curl, CURLOPT_URL, download_item.downloadUrl.c_str());
-  auto headers = curl_utils::GetHeaders(download_item.downloadUrl);
+  curl_easy_setopt(curl, CURLOPT_URL, download_item.download_url.c_str());
+  auto headers = curl_utils::GetHeaders(download_item.download_url);
   if (headers) {
     curl_slist* curl_headers = nullptr;
 
@@ -249,7 +249,7 @@ cpp::result<bool, std::string> DownloadService::Download(
   if (mode == "ab") {
     try {
       curl_off_t local_file_size =
-          std::filesystem::file_size(download_item.localPath);
+          std::filesystem::file_size(download_item.local_path);
       curl_easy_setopt(curl, CURLOPT_RESUME_FROM_LARGE, local_file_size);
     } catch (const std::filesystem::filesystem_error& e) {
       CTL_ERR("Cannot get file size: " << e.what() << '\n');
@@ -376,9 +376,9 @@ void DownloadService::ProcessTask(DownloadTask& task, int worker_id) {
       CTL_ERR("Failed to init curl!");
       return;
     }
-    auto file = fopen(item.localPath.string().c_str(), "wb");
+    auto file = fopen(item.local_path.string().c_str(), "wb");
     if (!file) {
-      CTL_ERR("Failed to open output file " + item.localPath.string());
+      CTL_ERR("Failed to open output file " + item.local_path.string());
       curl_easy_cleanup(handle);
       return;
     }
@@ -460,7 +460,7 @@ cpp::result<void, ProcessDownloadFailed> DownloadService::ProcessMultiDownload(
 void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
                                       FILE* file, DownloadingData* dl_data) {
   SetUpProxy(handle, config_service_);
-  curl_easy_setopt(handle, CURLOPT_URL, item.downloadUrl.c_str());
+  curl_easy_setopt(handle, CURLOPT_URL, item.download_url.c_str());
   curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, WriteCallback);
   curl_easy_setopt(handle, CURLOPT_WRITEDATA, file);
   curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
@@ -468,7 +468,7 @@ void DownloadService::SetUpCurlHandle(CURL* handle, const DownloadItem& item,
   curl_easy_setopt(handle, CURLOPT_XFERINFOFUNCTION, ProgressCallback);
   curl_easy_setopt(handle, CURLOPT_XFERINFODATA, dl_data);
 
-  auto headers = curl_utils::GetHeaders(item.downloadUrl);
+  auto headers = curl_utils::GetHeaders(item.download_url);
   if (headers) {
     curl_slist* curl_headers = nullptr;
     for (const auto& [key, value] : headers->m) {
@@ -536,7 +536,7 @@ void DownloadService::EmitTaskCompleted(const std::string& task_id) {
   std::lock_guard<std::mutex> lock(active_tasks_mutex_);
   if (auto it = active_tasks_.find(task_id); it != active_tasks_.end()) {
     for (auto& item : it->second->items) {
-      item.downloadedBytes = item.bytes;
+      item.downloaded_bytes = item.bytes;
     }
     event_queue_->enqueue(
         EventType::DownloadEvent,
@@ -549,7 +549,7 @@ void DownloadService::ExecuteCallback(const DownloadTask& task) {
   std::lock_guard<std::mutex> active_task_lock(active_tasks_mutex_);
   if (auto it = active_tasks_.find(task.id); it != active_tasks_.end()) {
     for (auto& item : it->second->items) {
-      item.downloadedBytes = item.bytes;
+      item.downloaded_bytes = item.bytes;
     }
     std::lock_guard<std::mutex> lock(callbacks_mutex_);
     auto callback = callbacks_.find(task.id);

@@ -414,8 +414,8 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
           .type = DownloadType::Cortex,
           .items = {DownloadItem{
               .id = "cortex",
-              .downloadUrl = download_url,
-              .localPath = local_path,
+              .download_url = download_url,
+              .local_path = local_path,
           }},
       }};
 
@@ -423,7 +423,7 @@ std::optional<std::string> CortexUpdCmd::HandleGithubRelease(
           download_task, [](const DownloadTask& finishedTask) {
             // try to unzip the downloaded file
             CTL_INF("Downloaded engine path: "
-                    << finishedTask.items[0].localPath.string());
+                    << finishedTask.items[0].local_path.string());
 
             CTL_INF("Finished!");
           });
@@ -463,11 +463,11 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
 
   CTL_INF("Cortex release path: " << url_parser::FromUrl(url_obj));
 
-  std::filesystem::path localPath =
+  std::filesystem::path local_path =
       std::filesystem::temp_directory_path() / "cortex" / path_list.back();
   try {
-    if (!std::filesystem::exists(localPath.parent_path())) {
-      std::filesystem::create_directories(localPath.parent_path());
+    if (!std::filesystem::exists(local_path.parent_path())) {
+      std::filesystem::create_directories(local_path.parent_path());
     }
   } catch (const std::filesystem::filesystem_error& e) {
     CLI_LOG_ERROR("Failed to create directories: " << e.what());
@@ -478,15 +478,15 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
                    .type = DownloadType::Cortex,
                    .items = {DownloadItem{
                        .id = "cortex",
-                       .downloadUrl = url_parser::FromUrl(url_obj),
-                       .localPath = localPath,
+                       .download_url = url_parser::FromUrl(url_obj),
+                       .local_path = local_path,
                    }}};
 
   auto result = download_service_->AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
         CTL_INF("Downloaded cortex path: "
-                << finishedTask.items[0].localPath.string());
+                << finishedTask.items[0].local_path.string());
 
         CTL_INF("Finished!");
       });
@@ -507,7 +507,7 @@ bool CortexUpdCmd::GetNightly(const std::string& v) {
     }
   });
 
-  return InstallNewVersion(dst, localPath.string(), "", "");
+  return InstallNewVersion(dst, local_path.string(), "", "");
 #endif
 }
 
@@ -529,11 +529,11 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
 
   CTL_INF("Linux installer script path: " << url_parser::FromUrl(url_obj));
 
-  std::filesystem::path localPath =
+  std::filesystem::path local_path =
       std::filesystem::temp_directory_path() / "cortex" / path_list.back();
   try {
-    if (!std::filesystem::exists(localPath.parent_path())) {
-      std::filesystem::create_directories(localPath.parent_path());
+    if (!std::filesystem::exists(local_path.parent_path())) {
+      std::filesystem::create_directories(local_path.parent_path());
     }
   } catch (const std::filesystem::filesystem_error& e) {
     CLI_LOG_ERROR("Failed to create directories: " << e.what());
@@ -544,15 +544,15 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
                    .type = DownloadType::Cortex,
                    .items = {DownloadItem{
                        .id = "cortex",
-                       .downloadUrl = url_parser::FromUrl(url_obj),
-                       .localPath = localPath,
+                       .download_url = url_parser::FromUrl(url_obj),
+                       .local_path = local_path,
                    }}};
 
   auto result = download_service_->AddDownloadTask(
       download_task, [](const DownloadTask& finishedTask) {
         // try to unzip the downloaded file
         CTL_INF("Downloaded cortex path: "
-                << finishedTask.items[0].localPath.string());
+                << finishedTask.items[0].local_path.string());
 
         CTL_INF("Finished!");
       });
@@ -573,7 +573,7 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
     }
   });
   try {
-    std::filesystem::permissions(localPath,
+    std::filesystem::permissions(local_path,
                                  std::filesystem::perms::owner_exec |
                                      std::filesystem::perms::group_exec |
                                      std::filesystem::perms::others_exec,
@@ -583,6 +583,6 @@ bool CortexUpdCmd::GetLinuxInstallScript(const std::string& v,
     return false;
   }
 
-  return InstallNewVersion(dst, localPath.string(), channel, v);
+  return InstallNewVersion(dst, local_path.string(), channel, v);
 }
 }  // namespace commands

@@ -814,16 +814,16 @@
                               "checksum": {
                                 "type": "string"
                               },
-                              "downloadUrl": {
+                              "download_url": {
                                 "type": "string"
                               },
-                              "downloadedBytes": {
+                              "downloaded_bytes": {
                                 "type": "integer"
                               },
                               "id": {
                                 "type": "string"
                               },
-                              "localPath": {
+                              "local_path": {
                                 "type": "string"
                               }
                             }
@@ -844,10 +844,10 @@
                       {
                         "bytes": 3822024352,
                         "checksum": "N/A",
-                        "downloadUrl": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q3_K_L.gguf",
-                        "downloadedBytes": 0,
+                        "download_url": "https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q3_K_L.gguf",
+                        "downloaded_bytes": 0,
                         "id": "TheBloke:Mistral-7B-Instruct-v0.1-GGUF:mistral-7b-instruct-v0.1.Q3_K_L.gguf",
-                        "localPath": "/Users/user_name/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
+                        "local_path": "/Users/user_name/cortexcpp/models/huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/mistral-7b-instruct-v0.1.Q3_K_L.gguf"
                       }
                     ],
                     "type": "Model"

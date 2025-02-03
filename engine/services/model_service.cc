@@ -35,14 +35,14 @@ void ParseGguf(DatabaseService& db_service,
   namespace fmu = file_manager_utils;
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
-  gguf_handler.Parse(ggufDownloadItem.localPath.string());
+  gguf_handler.Parse(ggufDownloadItem.local_path.string());
 
   config::ModelConfig model_config = gguf_handler.GetModelConfig();
   model_config.id =
-      ggufDownloadItem.localPath.parent_path().filename().string();
+      ggufDownloadItem.local_path.parent_path().filename().string();
   // use relative path for files
   auto file_rel_path =
-      fmu::ToRelativeCortexDataPath(fs::path(ggufDownloadItem.localPath));
+      fmu::ToRelativeCortexDataPath(fs::path(ggufDownloadItem.local_path));
   model_config.files = {file_rel_path.string()};
   model_config.model = ggufDownloadItem.id;
   model_config.name =
@@ -50,16 +50,16 @@ void ParseGguf(DatabaseService& db_service,
   model_config.size = size.value_or(0);
   yaml_handler.UpdateModelConfig(model_config);
 
-  auto yaml_path{ggufDownloadItem.localPath};
+  auto yaml_path{ggufDownloadItem.local_path};
   auto yaml_name = yaml_path.replace_extension(".yml");
 
   if (!std::filesystem::exists(yaml_path)) {
     yaml_handler.WriteYamlFile(yaml_path.string());
   }
 
-  auto url_obj = url_parser::FromUrlString(ggufDownloadItem.downloadUrl);
+  auto url_obj = url_parser::FromUrlString(ggufDownloadItem.download_url);
   if (url_obj.has_error()) {
-    CTL_WRN("Error parsing url: " << ggufDownloadItem.downloadUrl);
+    CTL_WRN("Error parsing url: " << ggufDownloadItem.download_url);
     return;
   }
 
@@ -131,8 +131,8 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
     }
     download_items.push_back(
         DownloadItem{.id = path,
-                     .downloadUrl = download_url.ToFullPath(),
-                     .localPath = local_path});
+                     .download_url = download_url.ToFullPath(),
+                     .local_path = local_path});
   }
 
   return DownloadTask{.id = branch == "main" ? modelId : modelId + "-" + branch,
@@ -343,13 +343,13 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
                                  .type = DownloadType::Model,
                                  .items = {DownloadItem{
                                      .id = unique_model_id,
-                                     .downloadUrl = download_url,
-                                     .localPath = local_path,
+                                     .download_url = download_url,
+                                     .local_path = local_path,
                                  }}}};
 
   auto on_finished = [this, author,
                       temp_name](const DownloadTask& finishedTask) {
-    // Sum downloadedBytes from all items
+    // Sum downloaded_bytes from all items
     uint64_t model_size = 0;
     for (const auto& item : finishedTask.items) {
       model_size = model_size + item.bytes.value_or(0);
@@ -463,12 +463,12 @@ cpp::result<std::string, std::string> ModelService::HandleUrl(
                                  .type = DownloadType::Model,
                                  .items = {DownloadItem{
                                      .id = unique_model_id,
-                                     .downloadUrl = download_url,
-                                     .localPath = local_path,
+                                     .download_url = download_url,
+                                     .local_path = local_path,
                                  }}}};
 
   auto on_finished = [this, author](const DownloadTask& finishedTask) {
-    // Sum downloadedBytes from all items
+    // Sum downloaded_bytes from all items
     uint64_t model_size = 0;
     for (const auto& item : finishedTask.items) {
       model_size = model_size + item.bytes.value_or(0);
@@ -521,7 +521,7 @@ ModelService::DownloadModelFromCortexsoAsync(
     auto need_parse_gguf = true;
 
     for (const auto& item : finishedTask.items) {
-      if (item.localPath.filename().string() == "model.yml") {
+      if (item.local_path.filename().string() == "model.yml") {
         model_yml_item = &item;
       }
     }
@@ -531,20 +531,20 @@ ModelService::DownloadModelFromCortexsoAsync(
               unique_model_id);
       return;
     }
-    auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
+    auto url_obj = url_parser::FromUrlString(model_yml_item->download_url);
     CTL_INF("Adding model to modellist with branch: "
-            << branch << ", path: " << model_yml_item->localPath.string());
+            << branch << ", path: " << model_yml_item->local_path.string());
     config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
+    yaml_handler.ModelConfigFromFile(model_yml_item->local_path.string());
     auto mc = yaml_handler.GetModelConfig();
     if (mc.engine == kPythonEngine) {  // process for Python engine
       config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(model_yml_item->localPath.string());
+      python_model_config.ReadFromYaml(model_yml_item->local_path.string());
       python_model_config.files.push_back(
-          model_yml_item->localPath.parent_path().string());
-      python_model_config.ToYaml(model_yml_item->localPath.string());
+          model_yml_item->local_path.parent_path().string());
+      python_model_config.ToYaml(model_yml_item->local_path.string());
       // unzip venv.zip
-      auto model_folder = model_yml_item->localPath.parent_path();
+      auto model_folder = model_yml_item->local_path.parent_path();
       auto venv_path = model_folder / std::filesystem::path("venv");
       if (!std::filesystem::exists(venv_path)) {
         std::filesystem::create_directories(venv_path);
@@ -598,11 +598,11 @@ ModelService::DownloadModelFromCortexsoAsync(
       }
       mc.size = model_size;
       yaml_handler.UpdateModelConfig(mc);
-      yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
+      yaml_handler.WriteYamlFile(model_yml_item->local_path.string());
     }
 
     auto rel =
-        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
+        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->local_path);
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     if (!db_service_->HasModel(unique_model_id)) {
@@ -652,7 +652,7 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     auto need_parse_gguf = true;
 
     for (const auto& item : finishedTask.items) {
-      if (item.localPath.filename().string() == "model.yml") {
+      if (item.local_path.filename().string() == "model.yml") {
         model_yml_item = &item;
       }
     }
@@ -661,17 +661,17 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
       CTL_WRN("model.yml not found in the downloaded files for " + model_id);
       return;
     }
-    auto url_obj = url_parser::FromUrlString(model_yml_item->downloadUrl);
+    auto url_obj = url_parser::FromUrlString(model_yml_item->download_url);
     CTL_INF("Adding model to modellist with branch: " << branch);
     config::YamlHandler yaml_handler;
-    yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
+    yaml_handler.ModelConfigFromFile(model_yml_item->local_path.string());
     auto mc = yaml_handler.GetModelConfig();
     mc.model = model_id;
     yaml_handler.UpdateModelConfig(mc);
-    yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
+    yaml_handler.WriteYamlFile(model_yml_item->local_path.string());
 
     auto rel =
-        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
+        file_manager_utils::ToRelativeCortexDataPath(model_yml_item->local_path);
     CTL_INF("path_to_model_yaml: " << rel.string());
 
     if (!db_service_->HasModel(model_id)) {

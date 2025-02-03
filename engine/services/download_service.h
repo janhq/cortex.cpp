@@ -191,9 +191,9 @@ class DownloadService {
         }
 
         item.bytes = dltotal;
-        item.downloadedBytes = dlnow;
+        item.downloaded_bytes = dlnow;
 
-        if (item.bytes == 0 || item.bytes == item.downloadedBytes) {
+        if (item.bytes == 0 || item.bytes == item.downloaded_bytes) {
           break;
         }
 

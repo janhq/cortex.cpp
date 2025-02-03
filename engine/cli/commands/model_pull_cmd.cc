@@ -53,17 +53,17 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
   }
 
   auto id = res.value()["id"].asString();
-  bool is_cortexso = res.value()["modelSource"].asString() == "cortexso";
-  auto default_branch = res.value()["defaultBranch"].asString();
+  bool is_cortexso = res.value()["model_source"].asString() == "cortexso";
+  auto default_branch = res.value()["default_branch"].asString();
   std::vector<std::string> downloaded;
-  for (auto const& v : res.value()["downloadedModels"]) {
+  for (auto const& v : res.value()["downloaded_models"]) {
     downloaded.push_back(v.asString());
   }
   std::vector<std::string> avails;
-  for (auto const& v : res.value()["availableModels"]) {
+  for (auto const& v : res.value()["available_models"]) {
     avails.push_back(v.asString());
   }
-  auto download_url = res.value()["downloadUrl"].asString();
+  auto download_url = res.value()["download_url"].asString();
 
   if (downloaded.empty() && avails.empty()) {
     model_id = id;

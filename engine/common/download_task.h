@@ -19,25 +19,25 @@ struct DownloadItem {
 
   std::string id;
 
-  std::string downloadUrl;
+  std::string download_url;
 
   /**
    * An absolute path to where the file is located (locally).
    */
-  std::filesystem::path localPath;
+  std::filesystem::path local_path;
 
   std::optional<std::string> checksum;
 
   std::optional<uint64_t> bytes;
 
-  std::optional<uint64_t> downloadedBytes;
+  std::optional<uint64_t> downloaded_bytes;
 
   std::string ToString() const {
     std::ostringstream output;
-    output << "DownloadItem{id: " << id << ", downloadUrl: " << downloadUrl
-           << ", localContainerPath: " << localPath
+    output << "DownloadItem{id: " << id << ", download_url: " << download_url
+           << ", localContainerPath: " << local_path
            << ", bytes: " << bytes.value_or(0)
-           << ", downloadedBytes: " << downloadedBytes.value_or(0)
+           << ", downloaded_bytes: " << downloaded_bytes.value_or(0)
            << ", checksum: " << checksum.value_or("N/A") << "}";
     return output.str();
   }
@@ -111,12 +111,12 @@ struct DownloadTask {
     for (const auto& item : items) {
       Json::Value itemObj;
       itemObj["id"] = item.id;
-      itemObj["downloadUrl"] = item.downloadUrl;
-      itemObj["localPath"] = item.localPath.string();
+      itemObj["download_url"] = item.download_url;
+      itemObj["local_path"] = item.local_path.string();
       itemObj["checksum"] = item.checksum.value_or("N/A");
       itemObj["bytes"] = Json::Value::UInt64(item.bytes.value_or(0));
-      itemObj["downloadedBytes"] =
-          Json::Value::UInt64(item.downloadedBytes.value_or(0));
+      itemObj["downloaded_bytes"] =
+          Json::Value::UInt64(item.downloaded_bytes.value_or(0));
       itemsArray.append(itemObj);
     }
     root["items"] = itemsArray;
@@ -131,12 +131,12 @@ inline DownloadItem GetDownloadItemFromJson(const Json::Value item_json) {
   if (!item_json["id"].isNull()) {
     item.id = item_json["id"].asString();
   }
-  if (!item_json["downloadUrl"].isNull()) {
-    item.downloadUrl = item_json["downloadUrl"].asString();
+  if (!item_json["download_url"].isNull()) {
+    item.download_url = item_json["download_url"].asString();
   }
 
-  if (!item_json["localPath"].isNull()) {
-    item.localPath = std::filesystem::path(item_json["localPath"].asString());
+  if (!item_json["local_path"].isNull()) {
+    item.local_path = std::filesystem::path(item_json["local_path"].asString());
   }
 
   if (!item_json["checksum"].isNull()) {
@@ -147,8 +147,8 @@ inline DownloadItem GetDownloadItemFromJson(const Json::Value item_json) {
     item.bytes = item_json["bytes"].asUInt64();
   }
 
-  if (!item_json["downloadedBytes"].isNull()) {
-    item.downloadedBytes = item_json["downloadedBytes"].asUInt64();
+  if (!item_json["downloaded_bytes"].isNull()) {
+    item.downloaded_bytes = item_json["downloaded_bytes"].asUInt64();
   }
 
   return item;

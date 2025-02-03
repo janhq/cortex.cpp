@@ -14,19 +14,19 @@ TEST_F(EventTest, EventFromString) {
         {
           "bytes": 668788096,
           "checksum": "N/A",
-          "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/gguf/model.gguf",
-          "downloadedBytes": 0,
+          "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/gguf/model.gguf",
+          "downloaded_bytes": 0,
           "id": "model.gguf",
-          "localPath":
+          "local_path":
               "/home/jan/cortexcpp/models/cortex.so/tinyllama/gguf/model.gguf"
         },
         {
           "bytes": 545,
           "checksum": "N/A",
-          "downloadUrl": "https://huggingface.co/cortexso/tinyllama/resolve/gguf/model.yml",
-          "downloadedBytes": 0,
+          "download_url": "https://huggingface.co/cortexso/tinyllama/resolve/gguf/model.yml",
+          "downloaded_bytes": 0,
           "id": "model.yml",
-          "localPath":
+          "local_path":
               "/home/jan/cortexcpp/models/cortex.so/tinyllama/gguf/model.yml"
         }
       ],
@@ -39,8 +39,8 @@ TEST_F(EventTest, EventFromString) {
 
   auto download_item =
       common::GetDownloadItemFromJson(root["task"]["items"][0]);
-  EXPECT_EQ(download_item.downloadUrl,
-            root["task"]["items"][0]["downloadUrl"].asString());
+  EXPECT_EQ(download_item.download_url,
+            root["task"]["items"][0]["download_url"].asString());
 
   auto download_task = common::GetDownloadTaskFromJson(root["task"]);
 
