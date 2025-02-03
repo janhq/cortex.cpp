@@ -102,13 +102,13 @@ void SetUpProxy(CURL* handle, std::shared_ptr<ConfigService> config_service) {
 }  // namespace
 
 cpp::result<bool, std::string> DownloadService::AddDownloadTask(
-    DownloadTask& task,
-    std::optional<OnDownloadTaskSuccessfully> callback) noexcept {
+    DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback,
+    bool show_progress) noexcept {
   std::optional<std::string> dl_err_msg = std::nullopt;
   bool has_task_done = false;
   for (const auto& item : task.items) {
     CLI_LOG("Start downloading: " + item.localPath.filename().string());
-    auto result = Download(task.id, item);
+    auto result = Download(task.id, item, show_progress);
     if (result.has_error()) {
       dl_err_msg = result.error();
       break;
@@ -164,8 +164,8 @@ cpp::result<uint64_t, std::string> DownloadService::GetFileSize(
 }
 
 cpp::result<bool, std::string> DownloadService::Download(
-    const std::string& download_id,
-    const DownloadItem& download_item) noexcept {
+    const std::string& download_id, const DownloadItem& download_item,
+    bool show_progress) noexcept {
   CTL_INF("Absolute file output: " << download_item.localPath.string());
 
   auto curl = curl_easy_init();
@@ -241,7 +241,9 @@ cpp::result<bool, std::string> DownloadService::Download(
   SetUpProxy(curl, config_service_);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-  curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+  if (show_progress) {
+    curl_easy_setopt(curl, CURLOPT_NOPROGRESS, 0L);
+  }
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
   if (mode == "ab") {
