@@ -19,12 +19,14 @@ struct ModelSourceInfo {
 
 struct ModelSource {
   std::string id;
+  std::string author;
   std::vector<ModelSourceInfo> models;
   Json::Value metadata;
 
   Json::Value ToJson() {
     Json::Value root;
     root["id"] = id;
+    root["author"] = author;
     Json::Value models_json;
     for (auto const& m : models) {
       models_json.append(m.ToJson());

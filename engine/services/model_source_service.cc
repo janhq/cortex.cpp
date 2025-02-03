@@ -169,6 +169,7 @@ ModelSourceService::GetModelSources() {
       ms[m.model_source].metadata = meta_json;
     }
     ms[m.model_source].id = m.model_source;
+    ms[m.model_source].author = m.author_repo_id;
     LOG_DEBUG << m.model;
   }
   return ms;
@@ -191,6 +192,7 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
       ms.metadata = meta_json;
     }
     ms.id = m.model_source;
+    ms.author = m.author_repo_id;
     LOG_INFO << m.model;
   }
   return ms;
