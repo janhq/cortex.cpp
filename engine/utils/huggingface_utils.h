@@ -37,8 +37,10 @@ struct HuggingFaceSiblingsFileSize {
     try {
       HuggingFaceSiblingsFileSize res;
       for (auto const& j : json) {
-        res.file_sizes[j["path"].asString()] =
-            HuggingFaceFileSize{.size_in_bytes = j["size"].asUInt64()};
+        if (j["type"].asString() == "file") {
+          res.file_sizes[j["path"].asString()] =
+              HuggingFaceFileSize{.size_in_bytes = j["size"].asUInt64()};
+        }
       }
       return res;
     } catch (const std::exception& e) {
@@ -76,8 +78,25 @@ GetSiblingsFileSize(const std::string& author, const std::string& model_name,
     return cpp::fail("Failed to get model siblings file size: " + author + "/" +
                      model_name + "/tree/" + branch);
   }
+  auto r = result.value();
+  for (auto const& j : result.value()) {
+    if (j["type"].asString() == "directory") {
+      auto url_obj =
+          url_parser::Url{.protocol = "https",
+                          .host = kHuggingFaceHost,
+                          .pathParams = {"api", "models", author, model_name,
+                                         "tree", branch, j["path"].asString()}};
 
-  return HuggingFaceSiblingsFileSize::FromJson(result.value());
+      auto rd = curl_utils::SimpleGetJson(url_obj.ToFullPath());
+      if (rd.has_value()) {
+        for (auto const& rdj : rd.value()) {
+          r.append(rdj);
+        }
+      }
+    }
+  }
+
+  return HuggingFaceSiblingsFileSize::FromJson(r);
 }
 
 inline cpp::result<std::string, std::string> GetReadMe(

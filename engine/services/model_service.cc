@@ -182,43 +182,6 @@ void ModelService::ForceIndexingModelList() {
   }
 }
 
-cpp::result<std::string, std::string> ModelService::DownloadModel(
-    const std::string& input) {
-  if (input.empty()) {
-    return cpp::fail(
-        "Input must be Cortex Model Hub handle or HuggingFace url!");
-  }
-
-  if (string_utils::StartsWith(input, "https://")) {
-    return HandleUrl(input);
-  }
-
-  if (input.find(":") != std::string::npos) {
-    auto parsed = string_utils::SplitBy(input, ":");
-    if (parsed.size() != 2) {
-      return cpp::fail("Invalid model handle: " + input);
-    }
-    return DownloadModelFromCortexso(parsed[0], parsed[1]);
-  }
-
-  if (input.find("/") != std::string::npos) {
-    auto parsed = string_utils::SplitBy(input, "/");
-    if (parsed.size() != 2) {
-      return cpp::fail("Invalid model handle: " + input);
-    }
-
-    auto author = parsed[0];
-    auto model_name = parsed[1];
-    if (author == "cortexso") {
-      return HandleCortexsoModel(model_name);
-    }
-
-    return DownloadHuggingFaceGgufModel(author, model_name, std::nullopt);
-  }
-
-  return HandleCortexsoModel(input);
-}
-
 cpp::result<std::string, std::string> ModelService::HandleCortexsoModel(
     const std::string& modelName) {
   auto branches =
@@ -1165,7 +1128,7 @@ cpp::result<ModelPullInfo, std::string> ModelService::GetModelPullInfo(
 
   if (input.find(":") != std::string::npos) {
     auto parsed = string_utils::SplitBy(input, ":");
-    if (parsed.size() != 2) {
+    if (parsed.size() != 2 && parsed.size() != 3) {
       return cpp::fail("Invalid model handle: " + input);
     }
     return ModelPullInfo{.id = input,

@@ -277,18 +277,24 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
   }
 
   auto meta_json = json_helper::ParseJsonString(repo_info->metadata);
+  auto& siblings_fs_v = siblings_fs.value();
   for (auto& m : meta_json["siblings"]) {
-    m["size"] = siblings_fs.value()
-                    .file_sizes.at(m["rfilename"].asString())
-                    .size_in_bytes;
+    auto r_file = m["rfilename"].asString();
+    if (siblings_fs_v.file_sizes.find(r_file) !=
+        siblings_fs_v.file_sizes.end()) {
+      m["size"] = siblings_fs_v.file_sizes.at(r_file).size_in_bytes;
+    }
   }
   meta_json["description"] = desc;
   LOG_DEBUG << meta_json.toStyledString();
 
   for (const auto& sibling : repo_info->siblings) {
     if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
-      meta_json["size"] =
-          siblings_fs.value().file_sizes.at(sibling.rfilename).size_in_bytes;
+      if (siblings_fs_v.file_sizes.find(sibling.rfilename) !=
+          siblings_fs_v.file_sizes.end()) {
+        meta_json["size"] =
+            siblings_fs_v.file_sizes.at(sibling.rfilename).size_in_bytes;
+      }
       std::string model_id =
           author + ":" + model_name + ":" + sibling.rfilename;
       cortex::db::ModelEntry e = {
