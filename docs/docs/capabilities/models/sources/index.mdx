@@ -262,7 +262,7 @@ curl --request POST \
   --header 'Content-Type: application/json' \
   --data '{
   "model": "model-id",
-  "modelPath": "absolute/path/to/gguf",
+  "model_path": "absolute/path/to/gguf",
   "name": "model display name"
 }'
 ```
@@ -275,7 +275,7 @@ Clients can abort a downloading task using the task ID. Below is a sample `curl`
 curl --location --request DELETE 'http://127.0.0.1:39281/v1/models/pull' \
 --header 'Content-Type: application/json' \
 --data '{
-    "taskId": "tinyllama:1b-gguf-q2-k"
+    "task_id": "tinyllama:1b-gguf-q2-k"
 }'
 ```
 

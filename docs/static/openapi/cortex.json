@@ -872,7 +872,7 @@
       "delete": {
         "tags": ["Pulling Models"],
         "summary": "Stop model download",
-        "description": "Stops the download of a model with the corresponding taskId provided in the request body",
+        "description": "Stops the download of a model with the corresponding task_id provided in the request body",
         "operationId": "ModelsController_stopModelDownload",
         "requestBody": {
           "required": true,
@@ -881,12 +881,12 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "taskId": {
+                  "task_id": {
                     "type": "string",
                     "description": "The unique identifier of the download task to be stopped"
                   }
                 },
-                "required": ["taskId"]
+                "required": ["task_id"]
               }
             }
           }
@@ -903,7 +903,7 @@
                       "type": "string",
                       "example": "Download stopped successfully"
                     },
-                    "taskId": {
+                    "task_id": {
                       "type": "string",
                       "example": "task-123456"
                     }
@@ -921,7 +921,7 @@
                   "properties": {
                     "error": {
                       "type": "string",
-                      "example": "Invalid taskId"
+                      "example": "Invalid task_id"
                     }
                   }
                 }
@@ -1231,7 +1231,7 @@
               },
               "example": {
                 "model": "model-id",
-                "modelPath": "/path/to/gguf",
+                "model_path": "/path/to/gguf",
                 "name": "model display name",
                 "option": "symlink"
               }
@@ -5678,7 +5678,7 @@
             "type": "string",
             "description": "The unique identifier of the model."
           },
-          "modelPath": {
+          "model_path": {
             "type": "string",
             "description": "The file path to the model."
           },
@@ -5692,7 +5692,7 @@
             "enum": ["symlink", "copy"]
           }
         },
-        "required": ["model", "modelPath"]
+        "required": ["model", "model_path"]
       },
       "ImportModelResponse": {
         "type": "object",

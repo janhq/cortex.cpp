@@ -34,9 +34,9 @@ class DownloadTaskQueue {
     return task;
   }
 
-  bool cancelTask(const std::string& taskId) {
+  bool cancelTask(const std::string& task_id) {
     std::unique_lock lock(mutex);
-    auto it = taskMap.find(taskId);
+    auto it = taskMap.find(task_id);
     if (it != taskMap.end()) {
       it->second->status = DownloadTask::Status::Cancelled;
       taskQueue.erase(it->second);
@@ -46,10 +46,10 @@ class DownloadTaskQueue {
     return false;
   }
 
-  bool updateTaskStatus(const std::string& taskId,
+  bool updateTaskStatus(const std::string& task_id,
                         DownloadTask::Status newStatus) {
     std::unique_lock lock(mutex);
-    auto it = taskMap.find(taskId);
+    auto it = taskMap.find(task_id);
     if (it != taskMap.end()) {
       it->second->status = newStatus;
       if (newStatus == DownloadTask::Status::Cancelled ||

@@ -28,7 +28,7 @@ void ModelImportCmd::Exec(const std::string& host, int port,
 
   Json::Value json_data;
   json_data["model"] = model_handle;
-  json_data["modelPath"] = model_path;
+  json_data["model_path"] = model_path;
   auto data_str = json_data.toStyledString();
 
   auto res = curl_utils::SimplePostJson(url.ToFullPath(), data_str);

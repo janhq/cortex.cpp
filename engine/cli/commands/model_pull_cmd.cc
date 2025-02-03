@@ -146,7 +146,7 @@ std::optional<std::string> ModelPullCmd::Exec(const std::string& host, int port,
 bool ModelPullCmd::AbortModelPull(const std::string& host, int port,
                                   const std::string& task_id) {
   Json::Value json_data;
-  json_data["taskId"] = task_id;
+  json_data["task_id"] = task_id;
   auto data_str = json_data.toStyledString();
   auto url = url_parser::Url{
       .protocol = "http",

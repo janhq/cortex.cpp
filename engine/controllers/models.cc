@@ -124,10 +124,10 @@ void Models::GetModelPullInfo(
 void Models::AbortPullModel(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback) {
-  if (!http_util::HasFieldInReq(req, callback, "taskId")) {
+  if (!http_util::HasFieldInReq(req, callback, "task_id")) {
     return;
   }
-  auto task_id = (*(req->getJsonObject())).get("taskId", "").asString();
+  auto task_id = (*(req->getJsonObject())).get("task_id", "").asString();
   if (task_id.empty()) {
     Json::Value ret;
     ret["result"] = "Bad Request";
@@ -147,7 +147,7 @@ void Models::AbortPullModel(
   } else {
     Json::Value ret;
     ret["message"] = "Download stopped successfully";
-    ret["taskId"] = result.value();
+    ret["task_id"] = result.value();
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
     resp->setStatusCode(k200OK);
     callback(resp);
@@ -419,18 +419,18 @@ void Models::ImportModel(
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   if (!http_util::HasFieldInReq(req, callback, "model") ||
-      !http_util::HasFieldInReq(req, callback, "modelPath")) {
+      !http_util::HasFieldInReq(req, callback, "model_path")) {
     return;
   }
-  auto modelHandle = (*(req->getJsonObject())).get("model", "").asString();
-  auto modelPath = (*(req->getJsonObject())).get("modelPath", "").asString();
-  auto modelName = (*(req->getJsonObject())).get("name", "").asString();
+  auto model_handle = (*(req->getJsonObject())).get("model", "").asString();
+  auto model_path = (*(req->getJsonObject())).get("model_path", "").asString();
+  auto model_name = (*(req->getJsonObject())).get("name", "").asString();
   auto option = (*(req->getJsonObject())).get("option", "symlink").asString();
   config::GGUFHandler gguf_handler;
   config::YamlHandler yaml_handler;
   std::string model_yaml_path = (file_manager_utils::GetModelsContainerPath() /
                                  std::filesystem::path("imported") /
-                                 std::filesystem::path(modelHandle + ".yml"))
+                                 std::filesystem::path(model_handle + ".yml"))
                                     .string();
 
   try {
@@ -438,32 +438,32 @@ void Models::ImportModel(
     auto yaml_rel_path =
         fmu::ToRelativeCortexDataPath(fs::path(model_yaml_path));
     cortex::db::ModelEntry model_entry{
-        modelHandle, "",      "",         yaml_rel_path.string(),
-        modelHandle, "local", "imported", cortex::db::ModelStatus::Downloaded,
+        model_handle, "",      "",         yaml_rel_path.string(),
+        model_handle, "local", "imported", cortex::db::ModelStatus::Downloaded,
         ""};
 
     std::filesystem::create_directories(
         std::filesystem::path(model_yaml_path).parent_path());
-    gguf_handler.Parse(modelPath);
+    gguf_handler.Parse(model_path);
     config::ModelConfig model_config = gguf_handler.GetModelConfig();
     // There are 2 options: symlink and copy
     if (option == "copy") {
       // Copy GGUF file to the destination path
       std::filesystem::path file_path =
           std::filesystem::path(model_yaml_path).parent_path() /
-          std::filesystem::path(modelPath).filename();
+          std::filesystem::path(model_path).filename();
       std::filesystem::copy_file(
-          modelPath, file_path, std::filesystem::copy_options::update_existing);
+          model_path, file_path, std::filesystem::copy_options::update_existing);
       model_config.files.push_back(file_path.string());
       auto size = std::filesystem::file_size(file_path);
       model_config.size = size;
     } else {
-      model_config.files.push_back(modelPath);
-      auto size = std::filesystem::file_size(modelPath);
+      model_config.files.push_back(model_path);
+      auto size = std::filesystem::file_size(model_path);
       model_config.size = size;
     }
-    model_config.model = modelHandle;
-    model_config.name = modelName.empty() ? model_config.name : modelName;
+    model_config.model = model_handle;
+    model_config.name = model_name.empty() ? model_config.name : model_name;
     yaml_handler.UpdateModelConfig(model_config);
 
     if (db_service_->AddModelEntry(model_entry).value()) {
@@ -472,7 +472,7 @@ void Models::ImportModel(
       LOG_INFO << success_message;
       Json::Value ret;
       ret["result"] = "OK";
-      ret["modelHandle"] = modelHandle;
+      ret["modelHandle"] = model_handle;
       ret["message"] = success_message;
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
       resp->setStatusCode(k200OK);
@@ -480,11 +480,11 @@ void Models::ImportModel(
 
     } else {
       std::string error_message = "Fail to import model, model_id '" +
-                                  modelHandle + "' already exists!";
+                                  model_handle + "' already exists!";
       LOG_ERROR << error_message;
       Json::Value ret;
       ret["result"] = "Import failed!";
-      ret["modelHandle"] = modelHandle;
+      ret["modelHandle"] = model_name;
       ret["message"] = error_message;
 
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
@@ -493,13 +493,13 @@ void Models::ImportModel(
     }
 
   } catch (const std::exception& e) {
-    std::string error_message = "Error importing model path '" + modelPath +
-                                "' with model_id '" + modelHandle +
+    std::string error_message = "Error importing model path '" + model_path +
+                                "' with model_id '" + model_handle +
                                 "': " + e.what();
     LOG_ERROR << error_message;
     Json::Value ret;
     ret["result"] = "Import failed!";
-    ret["modelHandle"] = modelHandle;
+    ret["modelHandle"] = model_handle;
     ret["message"] = error_message;
 
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
