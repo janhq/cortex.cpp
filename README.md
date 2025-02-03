@@ -22,7 +22,7 @@
 > **Under Active Development** - Expect rapid improvements!
 
 
-Open-source brain for robots: vision, speech, language, tabular, and action -- the cloud is optional.
+Cortex is the open-source brain for robots: vision, speech, language, tabular, and action -- the cloud is optional.
 
 ## Installation
 
