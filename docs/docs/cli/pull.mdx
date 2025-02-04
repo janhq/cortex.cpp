@@ -12,7 +12,7 @@ import TabItem from "@theme/TabItem";
 This CLI command calls the following API endpoint:
 - [Download Model](/api-reference#tag/pulling-models/post/v1/models/pull)
 :::
-This command displays downloaded models, or displays models available for downloading. 
+This command displays downloaded models, or displays models available for downloading.
 
 There are 3 ways to download models:
 - From Cortex's [Built-in models](/models): `cortex pull <model_name>`
@@ -33,19 +33,21 @@ You can use the `--verbose` flag to display more detailed output of the internal
 <Tabs>
   <TabItem value="MacOs/Linux" label="MacOs/Linux">
   ```sh
-  cortex pull [options] <model_id> 
+  cortex pull [options] <model_id>
   ```
   </TabItem>
   <TabItem value="Windows" label="Windows">
   ```sh
-  cortex.exe pull [options] <model_id> 
+  cortex.exe pull [options] <model_id>
   ```
   </TabItem>
 </Tabs>
 
 For example, this returns the following:
 ```bash
-> cortex pull llama3.2
+cortex pull llama3.2
+```
+```
 Downloaded models:
     llama3.2:3b-gguf-q4-km
 

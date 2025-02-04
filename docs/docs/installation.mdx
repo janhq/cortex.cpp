@@ -8,24 +8,20 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Admonition from '@theme/Admonition';
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
-## Cortex.cpp Installation
 ### Cortex.cpp offers four installer types
-- Network Installers download a minimal system and require an internet connection to fetch packages during installation.
-- Local Installers include all necessary packages, enabling offline installation without internet access.
-- Dockerfile Installers are used to build a Docker image for Cortex.
-- Binary files without package management.
+
+- **Network Installers** download a minimal script and require an internet connection to fetch packages during installation.
+- **Local Installers** include all necessary packages, enabling offline installation without internet access.
+- **Dockerfile** Installers are used to build a Docker image with Cortex ready to go.
+- **Binary files** without package management.
 
 ### Cortex.cpp supports three channels
 
-- Stable: The latest stable release on github.
-- Beta: The release candidate for the next stable release, available on github release with the tag `vx.y.z-rc1`
-- Nightly: The nightly build of the latest code on dev branch, available on [discord](https://discord.com/channels/1107178041848909847/1283654073488379904).
+- **Stable**: The latest stable release on github.
+- **Beta**: The release candidate for the next stable release, available on github release with the tag `vx.y.z-rc1`
+- **Nightly**: The nightly build of the latest commit on dev branch, available on [discord](https://discord.com/channels/1107178041848909847/1283654073488379904).
 
-For more information, please check out [different channels](#different-channels).
+For more information, please check out the [different channels](#different-channels).
 
 ### Download URLs
 
@@ -45,7 +41,8 @@ For other versions, please look at [cortex.cpp repo](https://github.com/janhq/co
 ### OS
 - MacOS 12 or later
 - Windows 10 or later
-- Linux: Ubuntu 20.04 or later, Debian 11 or later (For other distributions, please use the Dockerfile installer or binary files, we have not tested on other distributions yet.)
+- Linux: Ubuntu 20.04 or later, Debian 11 or later, and any of the latest versions of Arch (for other distributions,
+please use the Dockerfile installer or binary files, we have not tested on other distributions yet.)
 
 ### Hardware
 #### CPU
@@ -81,11 +78,11 @@ Having at least 6GB VRAM when using NVIDIA, AMD, or Intel Arc GPUs is recommende
 - [CUDA Toolkit](https://developer.nvidia.com/cuda-toolkit) version 12.0 or higher. *Note: Cortex.cpp will automatically detect and install the required version of cudart to the user's machine.*
 :::
 #### Disk
-- At least 10GB for app storage and model download.
+- At least 10GB of free space for downloading models.
 
 ## Different channels
 
-Different channels have different features, stability levels, binary file name, app folder and data folder.
+Different channels have different features, stability levels, binary file name, app and data folders.
 
 ### Stable
 - App name: `cortexcpp`

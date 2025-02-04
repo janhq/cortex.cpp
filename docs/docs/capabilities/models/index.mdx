@@ -3,45 +3,41 @@ title: Model Overview
 description: The Model section overview
 ---
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
+Models in cortex are used for inference purposes (e.g., chat completion, embedding, etc.) after they
+have been downloaded locally. Currently, we support different engines including `llama.cpp` with the
+GGUF model format, and ONNX for edge or different model deployments.
 
-Models in cortex.cpp are used for inference purposes (e.g., chat completion, embedding, etc.). We support two types of models: local and remote.
+In the future, you will also be able to run remote models (like OpenAI GPT-4 and Claude 3.5 Sonnet) via
+Cortex. Support for OpenAI and Anthropic engines is under development and will be available soon.
 
-Local models use a local inference engine to run completely offline on your hardware. Currently, we support llama.cpp with the GGUF model format, and we have plans to support TensorRT-LLM and ONNX engines in the future.
-
-Remote models (like OpenAI GPT-4 and Claude 3.5 Sonnet) use remote engines. Support for OpenAI and Anthropic engines is under development and will be available in cortex.cpp soon.
-
-When Cortex.cpp is started, it automatically starts an API server, this is inspired by Docker CLI. This server manages various model endpoints. These endpoints facilitate the following:
+When you run `cortex start` in the terminal, cortex automatically starts an API server. (This
+functionality was inspired by the Docker CLI.) The cortex server manages various model endpoints which
+can facilitate the following:
 - **Model Operations**: Run and stop models.
-- **Model Management**: Manage your local models.
-:::info
-The model in the API server is automatically loaded/unloaded by using the [`/chat/completions`](/api-reference#tag/inference/post/v1/chat/completions) endpoint.
-:::
+- **Model Management**: Pull and manage your local models.
+
 ## Model Formats
-Cortex.cpp supports three model formats and each model format require specific engine to run:
+
+Cortex supports three model formats and each model format require specific engine to run:
 - GGUF - run with `llama-cpp` engine
 - ONNX - run with `onnxruntime` engine
-- TensorRT-LLM - run with `tensorrt-llm` engine
+
+Within the Python Engine (currently under development), you can run models in other formats
 
 :::info
 For details on each format, see the [Model Formats](/docs/capabilities/models/model-yaml#model-formats) page.
 :::
 
-## Built-in Models 
-Cortex offers a range of [Built-in models](/models) that include popular open-source options. 
+## Cortex Hub Models
 
-These models are hosted on [Cortex's HuggingFace](https://huggingface.co/cortexso) and are pre-compiled for different engines, enabling each model to have multiple branches in various formats.
+To make it easy to run state-of-the-art open source models, we quantize popular models and upload these
+versions the our own space in HuggingFace at [Cortex's HuggingFace](https://huggingface.co/cortexso).
+These models are ready to be downloaded and you can check them out at the link above or in our [Models section](/models).
 
-### Built-in Model Variants
-Built-in models are made available across the following variants: 
+### Model Variants
 
-- **By format**: `gguf`, `onnx`, and `tensorrt-llm`
+Built-in models are made available across the following variants:
+
+- **By format**: `gguf` and `onnx`
 - **By Size**: `7b`, `13b`, and more.
-- **By quantizations**: `q4`, `q8`, and more.
-
-## Next steps
-- See Cortex's list of [Built-in Models](/models). 
-- Cortex supports multiple model hubs hosting built-in models. See details [here](/docs/capabilities/models/sources).
-- Cortex requires a `model.yaml` file to run a model. Find out more [here](/docs/capabilities/models/model-yaml).
+- **By quantization method**: `q4`, `q8`, and more.

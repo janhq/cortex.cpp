@@ -8,125 +8,71 @@ import OAICoverage from "@site/src/components/OAICoverage"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-# Cortex
-
-:::info
-**Real-world Use**: Cortex.cpp powers [Jan](https://jan.ai), our on-device ChatGPT-alternative.
-
-Cortex.cpp is in active development. If you have any questions, please reach out to us on [GitHub](https://github.com/janhq/cortex.cpp/issues/new/choose)
-or [Discord](https://discord.com/invite/FTk2MvZwJH)
-:::
-
 ![Cortex Cover Image](/img/social-card.jpg)
 
-Cortex is a Local AI API Platform that is used to run and customize LLMs. 
+Cortex is the open-source brain for robots: vision, speech, language, tabular, and action -- the cloud is optional.
 
 Key Features:
 - Straightforward CLI (inspired by Ollama)
 - Full C++ implementation, packageable into Desktop and Mobile apps
 - Pull from Huggingface, or Cortex Built-in Model Library
 - Models stored in universal file formats (vs blobs)
-- Swappable Inference Backends (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp), future: [`ONNXRuntime`](https://github.com/janhq/cortex.onnx), [`TensorRT-LLM`](https://github.com/janhq/cortex.tensorrt-llm))
+- Swappable Inference Backends (default: [`llamacpp`](https://github.com/janhq/cortex.llamacpp) and [`ONNXRuntime`](https://github.com/janhq/cortex.onnx))
 - Cortex can be deployed as a standalone API server, or integrated into apps like [Jan.ai](https://jan.ai/)
+- Automatic API docs for your server
 
-Cortex's roadmap is to implement the full OpenAI API including Tools, Runs, Multi-modal and Realtime APIs.
+Cortex's roadmap includes implementing full compatibility with OpenAI API's and that includes Tools, Runs, Multi-modal and Realtime APIs.
 
 
 ## Inference Backends
 - Default: [llama.cpp](https://github.com/ggerganov/llama.cpp): cross-platform, supports most laptops, desktops and OSes
-- Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs
-- Future: [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM): supports Nvidia GPUs 
+- Future: [ONNX Runtime](https://github.com/microsoft/onnxruntime): supports Windows Copilot+ PCs & NPUs and traditional machine learning models
 
 If GPU hardware is available, Cortex is GPU accelerated by default.
 
 ## Models
-Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access. 
+Cortex.cpp allows users to pull models from multiple Model Hubs, offering flexibility and extensive model access.
 - [Hugging Face](https://huggingface.co)
 - [Cortex Built-in Models](https://cortex.so/models)
 
 > **Note**:
-> As a very general guide: You should have >8 GB of RAM available to run the 7B models, 16 GB to run the 14B models, and 32 GB to run the 32B models.
+> As a very general guide: You should have >8 GB of RAM available to run the 3B models, 16 GB to run the 7B models, and 32 GB to run the 14B models.
 
 ### Cortex Built-in Models & Quantizations
 | Model /Engine  | llama.cpp             | Command                       |
 | -------------- | --------------------- | ----------------------------- |
-| phi-3.5        | ✅                    | cortex run phi3.5             |
-| llama3.2       | ✅                    | cortex run llama3.2           |
-| llama3.1       | ✅                    | cortex run llama3.1           |
-| codestral      | ✅                    | cortex run codestral          |
-| gemma2         | ✅                    | cortex run gemma2             |
-| mistral        | ✅                    | cortex run mistral            |
-| ministral      | ✅                    | cortex run ministral          |
-| qwen2          | ✅                    | cortex run qwen2.5            |
-| openhermes-2.5 | ✅                    | cortex run openhermes-2.5     |
-| tinyllama      | ✅                    | cortex run tinyllama          |
+| phi-4        | ✅                    | `cortex run phi-4`             |
+| llama3.2       | ✅                    | `cortex run llama3.2`           |
+| llama3.1       | ✅                    | `cortex run llama3.1`           |
+| codestral      | ✅                    | `cortex run codestral`          |
+| gemma2         | ✅                    | `cortex run gemma2`             |
+| mistral        | ✅                    | `cortex run mistral`            |
+| ministral      | ✅                    | `cortex run ministral`          |
+| qwen2          | ✅                    | `cortex run qwen2.5`            |
+| openhermes-2.5 | ✅                    | `cortex run openhermes-2.5`     |
+| tinyllama      | ✅                    | `cortex run tinyllama`          |
 
 View all [Cortex Built-in Models](https://cortex.so/models).
 
 Cortex supports multiple quantizations for each model.
+```sh
+cortex pull phi-4
 ```
-❯ cortex-nightly pull llama3.2
+```
 Downloaded models:
-    llama3.2:3b-gguf-q2-k
+    bartowski:phi-4-GGUF:phi-4-Q3_K_S.gguf
 
 Available to download:
-    1. llama3.2:3b-gguf-q3-kl
-    2. llama3.2:3b-gguf-q3-km
-    3. llama3.2:3b-gguf-q3-ks
-    4. llama3.2:3b-gguf-q4-km (default)
-    5. llama3.2:3b-gguf-q4-ks
-    6. llama3.2:3b-gguf-q5-km
-    7. llama3.2:3b-gguf-q5-ks
-    8. llama3.2:3b-gguf-q6-k
-    9. llama3.2:3b-gguf-q8-0
+    1. phi-4:14.7b-gguf-q2-k
+    2. phi-4:14.7b-gguf-q3-kl
+    3. phi-4:14.7b-gguf-q3-km
+    4. phi-4:14.7b-gguf-q3-ks
+    5. phi-4:14.7b-gguf-q4-km (default)
+    6. phi-4:14.7b-gguf-q4-ks
+    7. phi-4:14.7b-gguf-q5-km
+    8. phi-4:14.7b-gguf-q5-ks
+    9. phi-4:14.7b-gguf-q6-k
+    10. phi-4:14.7b-gguf-q8-0
 
-Select a model (1-9): 
+Select a model (1-10):
 ```
-
-
-{/*
- <Tabs>
- <TabItem  value="Llama.cpp" label="Llama.cpp" default>
-| Model ID         | Variant (Branch) | Model size        | CLI command                        |
-|------------------|------------------|-------------------|------------------------------------|
-| codestral        | 22b-gguf         | 22B               | `cortex run codestral:22b-gguf`    |
-| command-r        | 35b-gguf         | 35B               | `cortex run command-r:35b-gguf`    |
-| gemma            | 7b-gguf          | 7B                | `cortex run gemma:7b-gguf`         |
-| llama3           | gguf             | 8B                | `cortex run llama3:gguf`           |
-| llama3.1         | gguf             | 8B                | `cortex run llama3.1:gguf`         |
-| mistral          | 7b-gguf          | 7B                | `cortex run mistral:7b-gguf`       |
-| mixtral          | 7x8b-gguf        | 46.7B             | `cortex run mixtral:7x8b-gguf`     |
-| openhermes-2.5   | 7b-gguf          | 7B                | `cortex run openhermes-2.5:7b-gguf`|
-| phi3             | medium-gguf      | 14B - 4k ctx len  | `cortex run phi3:medium-gguf`      |
-| phi3             | mini-gguf        | 3.82B - 4k ctx len| `cortex run phi3:mini-gguf`        |
-| qwen2            | 7b-gguf          | 7B                | `cortex run qwen2:7b-gguf`         |
-| tinyllama        | 1b-gguf          | 1.1B              | `cortex run tinyllama:1b-gguf`     |
-  </TabItem>
-  <TabItem  value="ONNX" label="ONNX" default>
-| Model ID         | Variant (Branch) | Model size        | CLI command                        |
-|------------------|------------------|-------------------|------------------------------------|
-| gemma            | 7b-onnx          | 7B                | `cortex run gemma:7b-onnx`         |
-| llama3           | onnx             | 8B                | `cortex run llama3:onnx`           |
-| mistral          | 7b-onnx          | 7B                | `cortex run mistral:7b-onnx`       |
-| openhermes-2.5   | 7b-onnx          | 7B                | `cortex run openhermes-2.5:7b-onnx`|
-| phi3             | mini-onnx        | 3.82B - 4k ctx len| `cortex run phi3:mini-onnx`        |
-| phi3             | medium-onnx      | 14B - 4k ctx len  | `cortex run phi3:medium-onnx`      |
-
-  </TabItem>
-  <TabItem value="TensorRT-LLM" label="TensorRT-LLM">
-| Model ID         | Variant (Branch)              | Model size        | CLI command                        |
-|------------------|-------------------------------|-------------------|------------------------------------|
-| llama3           | 8b-tensorrt-llm-windows-ampere       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ampere`   |
-| llama3           | 8b-tensorrt-llm-linux-ampere     | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ampere` |
-| llama3           | 8b-tensorrt-llm-linux-ada   | 8B                | `cortex run llama3:8b-tensorrt-llm-linux-ada`|
-| llama3           | 8b-tensorrt-llm-windows-ada       | 8B                | `cortex run llama3:8b-tensorrt-llm-windows-ada`   |
-| mistral          | 7b-tensorrt-llm-linux-ampere     | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ampere`|
-| mistral          | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ampere`  |
-| mistral          | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run mistral:7b-tensorrt-llm-linux-ada`|
-| mistral          | 7b-tensorrt-llm-windows-ada       | 7B                | `cortex run mistral:7b-tensorrt-llm-windows-ada`  |
-| openhermes-2.5   | 7b-tensorrt-llm-windows-ampere       | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ampere`|
-| openhermes-2.5   | 7b-tensorrt-llm-windows-ada     | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-windows-ada`|
-| openhermes-2.5   | 7b-tensorrt-llm-linux-ada   | 7B                | `cortex run openhermes-2.5:7b-tensorrt-llm-linux-ada`|
-
-  </TabItem>
-</Tabs> */}

@@ -201,6 +201,9 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   drogon::app().registerController(hw_ctl);
   drogon::app().registerController(config_ctl);
 
+  auto upload_path = std::filesystem::temp_directory_path() / "cortex-uploads";
+  drogon::app().setUploadPath(upload_path.string());
+
   LOG_INFO << "Server started, listening at: " << config.apiServerHost << ":"
            << config.apiServerPort;
   LOG_INFO << "Please load your model";

@@ -5,19 +5,42 @@ unlisted: true
 ---
 
 :::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
+🚧 Cortex is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
 
 Cortex uses the `tensorrt-llm` inference library for NVIDIA GPUs acceleration.
 
-## Run Model
-```bash
-## Initialize the TensorRT-LLM engine
-cortex engines tensorrt-llm init
+Download the Engine
 
-## Run a TensorRT-LLM model
-cortex run openhermes-2.5:7b-tensorrt-llm
+```bash
+cortex engines install tensorrt-llm
 ```
+```
+tensorrt-llm        100%[========================] 00m:00s 1.09 GB/1.09 GB
+cuda                100%[========================] 00m:00s 346.61 MB/346.61 MB
+Engine tensorrt-llm downloaded successfully!
+```
+
+Load TensorRT-LLM Engine
+
+```bash
+cortex engines load tensorrt-llm
+```
+
+To run a model using the `tensorrt-llm` engine, you will have to specify the parti
+```bash
+cortex run mistral:7b-tensorrt-llm-linux-ada
+```
+```
+Start downloading..
+config.json         100%[========================] 00m:00s 5.92 KB/5.92 KB
+model.yml           100%[========================] 00m:00s 445.00 B/445.00 B
+rank0.engine        89%[=====================>  ] 01m:13s 3.49 GB/3.88 GB
+tokenizer.model     100%[========================] 00m:00s 573.64 KB/573.64 KB
+Model mistral:7b-tensorrt-llm-linux-ada downloaded successfully!
+```
+
+
 ## [`model.yaml`](/docs/capabilities/models/model-yaml) Sample
 ```yaml
 name: Openhermes-2.5 7b Linux Ada

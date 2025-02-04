@@ -1,5 +1,5 @@
 ---
-title: Token
+title: Token Configuration Guide
 description: Setting up token
 slug: "token"
 ---
@@ -7,33 +7,24 @@ slug: "token"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
-# Token Configuration Guide
-
-This document describes how to configure HuggingFace token settings for Cortex.
+A lot of the models available today can be found on HuggingFace. This page describes how to configure
+HuggingFace token settings for Cortex.
 
 ## Command Line Interface (CLI)
 
-### Basic Usage
+Basic Usage
 
 ```bash
 cortex config [OPTIONS] [COMMAND]
 ```
 
-### Commands
-
-- `status`: Display all current configurations
+To display all current configurations
 
 ```bash
 cortex config status
 ```
-
-Example Output:
-
-```bash
+```
 +-----------------------+------------------------+
 | Config name           | Value                  |
 +-----------------------+------------------------+
@@ -57,11 +48,9 @@ Example Output:
 ```http
 GET /v1/configs
 ```
-
-Retrieves the current configuration settings.
-
-##### Response
-
+```sh
+curl GET http://127.0.0.1:39281/v1/configs
+```
 ```json
 {
   "allowed_origins": [
@@ -70,7 +59,15 @@ Retrieves the current configuration settings.
     "http://0.0.0.0:39281"
   ],
   "cors": true,
-  "huggingface_token": ""
+  "huggingface_token": "",
+  "no_proxy": "example.com,::1,localhost,127.0.0.1",
+  "proxy_password": "",
+  "proxy_url": "",
+  "proxy_username": "",
+  "verify_host_ssl": true,
+  "verify_peer_ssl": true,
+  "verify_proxy_host_ssl": true,
+  "verify_proxy_ssl": true
 }
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: CORS
+title: CORS Configuration Guide
 description: Setting up CORS
 slug: "cors"
 ---
@@ -7,43 +7,35 @@ slug: "cors"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
-# CORS Configuration Guide
-
-This document describes how to configure Cross-Origin Resource Sharing (CORS) settings for the API server using both CLI commands and HTTP API endpoints.
+This document describes how to configure Cross-Origin Resource Sharing (CORS) settings for the API server
+using the CLI commands and the HTTP API endpoints.
 
 ## Command Line Interface (CLI)
 
-### Basic Usage
+Basic Usage
 
 ```bash
 cortex config [OPTIONS] [COMMAND]
 ```
 
-### Commands
+To display all current configurations:
 
-- `status`: Display all current configurations
+```bash
+cortex config status
+```
 
-  ```bash
-  cortex config status
-  ```
-
-  Example Output:
-
-  ```bash
-  +-----------------+-------------------+
-  | Config name     | Value             |
-  +-----------------+-------------------+
-  | allowed_origins | http://localhost  |
-  +-----------------+-------------------+
-  | allowed_origins | https://cortex.so |
-  +-----------------+-------------------+
-  | cors            | true              |
-  +-----------------+-------------------+
-  ```
+Example Output:
+```md
++-----------------+-------------------+
+| Config name     | Value             |
++-----------------+-------------------+
+| allowed_origins | http://localhost  |
++-----------------+-------------------+
+| allowed_origins | https://cortex.so |
++-----------------+-------------------+
+| cors            | true              |
++-----------------+-------------------+
+```
 
 ### Options
 
@@ -84,39 +76,47 @@ This document describes the REST API endpoints available for managing CORS confi
 
 ### Endpoints
 
-#### Get Current Configuration
+To get the current configuration via http.
 
 ```http
 GET /v1/configs
 ```
-
-Retrieves the current CORS configuration settings.
-
-##### Response
-
+```sh
+curl GET http://127.0.0.1:39281/v1/configs
+```
 ```json
 {
-  "allowed_origins": ["http://localhost:39281"],
-  "cors": true
+  "allowed_origins": [
+    "http://localhost:39281",
+    "http://127.0.0.1:39281",
+    "http://0.0.0.0:39281"
+  ],
+  "cors": true,
+  "huggingface_token": "",
+  "no_proxy": "example.com,::1,localhost,127.0.0.1",
+  "proxy_password": "",
+  "proxy_url": "",
+  "proxy_username": "",
+  "verify_host_ssl": true,
+  "verify_peer_ssl": true,
+  "verify_proxy_host_ssl": true,
+  "verify_proxy_ssl": true
 }
 ```
 
-#### Update Configuration
+To update the current configuration.
 
 ```http
 PATCH /v1/configs
 ```
 
-Updates CORS configuration settings.
-
-##### Request Headers
+Request Headers
 
 ```
 Content-Type: application/json
 ```
 
-##### Request Body
-
+Request Body
 ```json
 {
   "cors": true,
@@ -124,15 +124,7 @@ Content-Type: application/json
 }
 ```
 
-##### Parameters
-
-| Field             | Type     | Description                  |
-| ----------------- | -------- | ---------------------------- |
-| `cors`            | boolean  | Enable or disable CORS       |
-| `allowed_origins` | string[] | Array of allowed origin URLs |
-
-##### Response
-
+Response
 ```json
 {
   "config": {
@@ -143,15 +135,7 @@ Content-Type: application/json
 }
 ```
 
-### Example cURL Commands
-
-#### Get Configuration
-
-```bash
-curl --location 'http://127.0.0.1:39281/v1/configs'
-```
-
-#### Update Configuration
+Equivalent cURL command:
 
 ```bash
 curl --location --request PATCH 'http://127.0.0.1:39281/v1/configs' \
@@ -162,6 +146,26 @@ curl --location --request PATCH 'http://127.0.0.1:39281/v1/configs' \
         "http://localhost:39281"
     ]
 }'
+```
+```json
+{
+  "config": {
+    "allowed_origins": [
+      "http://localhost:39281"
+    ],
+    "cors": false,
+    "huggingface_token": "",
+    "no_proxy": "example.com,::1,localhost,127.0.0.1",
+    "proxy_password": "",
+    "proxy_url": "",
+    "proxy_username": "",
+    "verify_host_ssl": true,
+    "verify_peer_ssl": true,
+    "verify_proxy_host_ssl": true,
+    "verify_proxy_ssl": true
+  },
+  "message": "Configuration updated successfully"
+}
 ```
 
 ## Notes

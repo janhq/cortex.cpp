@@ -8,37 +8,33 @@ import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Admonition from '@theme/Admonition';
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
-## Overview
-For Windows, Cortex.cpp can be installed in two ways:
-- [Windows](#windows)
-- [Windows Subsystem for Linux (WSL)](#windows-subsystem-linux)
+For Windows, Cortex.cpp can be installed in two ways, by downloading the [windows](#windows) installer or
+via the [Windows Subsystem for Linux (WSL)](#windows-subsystem-linux).
 
 ## Windows
 ### Install Cortex.cpp
 :::info
 Before installation, make sure that you have met the [minimum requirements](/docs/installation#minimum-requirements) to run Cortex.
-This instruction is for stable releases. For beta and nightly releases, please replace `cortex` with `cortex-beta` and `cortex-nightly`, respectively.
+The instructions below are for stable releases only. For beta and nightly releases, please replace `cortex` with `cortex-beta`
+and `cortex-nightly`, respectively.
 :::
 
 Download the windows installer:
-    - From release: https://github.com/janhq/cortex.cpp/releases
-    - From quick download links:
-        - Local installer `.deb`:
-            - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-local
-            - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-local
-            - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-local
-        - Network installer `.deb`:
-            - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-network
-            - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-network
-            - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-network
-        - Binary:
-            - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-binary
-            - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-binary
-            - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-binary
+- From release: https://github.com/janhq/cortex.cpp/releases
+- From quick download links:
+    - Local installer `.deb`:
+        - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-local
+        - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-local
+        - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-local
+    - Network installer `.deb`:
+        - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-network
+        - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-network
+        - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-network
+    - Binary:
+        - Stable: https://app.cortexcpp.com/download/latest/windows-amd64-binary
+        - Beta: https://app.cortexcpp.com/download/beta/windows-amd64-binary
+        - Nightly: https://app.cortexcpp.com/download/nightly/windows-amd64-binary
 
 
 #### Data Folder
@@ -58,14 +54,15 @@ C:\Users\<username>\.cortexrc
 To uninstall Cortex.cpp:
 1. Open the **Control Panel**.
 1. Navigate to **Add or Remove program**.
-2. Search for cortexcpp and click **Uninstall**.
+2. Search for `cortexcpp` and click **Uninstall**.
 
 ## Windows Subsystem Linux
 :::info
-Windows Subsystem Linux allows running Linux tools and workflows seamlessly alongside Windows applications. For more information, please see this [article](https://learn.microsoft.com/en-us/windows/wsl/faq).
+Windows Subsystem Linux allows running Linux tools and workflows seamlessly alongside Windows applications. For more
+information, please see this [article](https://learn.microsoft.com/en-us/windows/wsl/faq).
 :::
 
-Follow [linux installation steps](linux) to install Cortex.cpp on Windows Subsystem Linux.
+Follow the [linux installation steps](linux) to install Cortex.cpp on the WSL.
 
 
 ## Build from Source
@@ -84,7 +81,7 @@ Follow [linux installation steps](linux) to install Cortex.cpp on Windows Subsys
    cd cortex.cpp
    git submodule update --init
    ```
-2. Build the Cortex.cpp :
+2. Build Cortex.cpp from source:
 
     ```cmd
     cd engine

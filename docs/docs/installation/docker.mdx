@@ -1,142 +1,205 @@
 ---
-title: Docker
-description: Install Cortex using Docker.
+title: Docker Installation Guide
+description: Comprehensive guide for installing and running Cortex using Docker
 ---
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 import Admonition from '@theme/Admonition';
 
-:::warning
-🚧 **Cortex.cpp is currently in development.** The documentation describes the intended functionality, which may not yet be fully implemented.
-:::
 
-## Setting Up Cortex with Docker
+## Getting Started with Cortex on Docker
 
-This guide walks you through the setup and running of Cortex using Docker.
+This guide provides comprehensive instructions for installing and running Cortex in a Docker environment,
+including sensible defaults for security and performance.
 
 ### Prerequisites
 
-- Docker or Docker Desktop
-- `nvidia-container-toolkit` (for GPU support)
+Before beginning, ensure you have:
+- [Docker](https://docs.docker.com/engine/install/) (version 20.10.0 or higher) or [Docker Desktop](https://docs.docker.com/desktop/)
+- At least 8GB of RAM and 10GB of free disk space
+- For GPU support, make sure you install `nvidia-container-toolkit`. Here is an example on how to do so for Ubuntu:
+  ```bash
+  # Install NVIDIA Container Toolkit
+  curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+  ```
+  ```bash
+  # Add repository
+  curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+  ```
+  ```bash
+  # Install
+  sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+  sudo nvidia-ctk runtime configure --runtime=docker
+  sudo systemctl restart docker
+  ```
 
-### Setup Instructions
+### Installation Methods
 
-#### Build Cortex Docker Image from source or Pull from Docker Hub
+#### Method 1: Using Pre-built Image (Recommended)
 
-##### Pull Cortex Docker Image from Docker Hub
+```bash
+# Pull the latest stable release
+docker pull menloltd/cortex:latest
+```
+```bash
+# Or pull a specific version (recommended for production)
+docker pull menloltd/cortex:nightly-1.0.1-224
+```
 
-    ```bash
-    # Pull the latest image
-    docker pull menloltd/cortex:latest
+:::info Version Tags
+- `latest`: Most recent stable release
+- `nightly`: Latest development build
+- `x.y.z` (e.g., `1.0.1`): Specific version release
+:::
 
-    # Pull a specific version
-    docker pull menloltd/cortex:nightly-1.0.1-224
-    ```
+#### Method 2: Building from Source
 
-##### Build and Run Cortex Docker Container from Dockerfile
+1. **Clone the repo:**
+```bash
+git clone https://github.com/janhq/cortex.cpp.git
+cd cortex.cpp
+git submodule update --init
+```
 
-1. **Clone the Cortex Repository**
-   ```bash
-   git clone https://github.com/janhq/cortex.cpp.git
-   cd cortex.cpp
-   git submodule update --init
-   ```
+2. **Build the Docker image:**
+<Tabs>
+  <TabItem value="latest" label="Latest Build">
+  ```bash
+  docker build -t menloltd/cortex:local \
+    --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) \
+    -f docker/Dockerfile .
+  ```
+  </TabItem>
+  <TabItem value="specific" label="Specific Version">
+  ```bash
+  docker build \
+    --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 \
+    --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) \
+    -t menloltd/cortex:local \
+    -f docker/Dockerfile .
+  ```
+  </TabItem>
+</Tabs>
 
-2. **Build the Docker Image**
+### Running Cortex (Securely)
 
-  <Tabs>
-    <TabItem value="Latest cortex.llamacpp" label="Latest cortex.llamacpp">
-    ```sh
-    docker build -t cortex --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -f docker/Dockerfile .
-    ```
-    </TabItem>
-    <TabItem value="Specify cortex.llamacpp version" label="Specify cortex.llamacpp version">
-    ```sh
-    docker build --build-arg CORTEX_LLAMACPP_VERSION=0.1.34 --build-arg CORTEX_CPP_VERSION=$(git rev-parse HEAD) -t cortex -f docker/Dockerfile .
-    ```
-    </TabItem>
-  </Tabs>
+1. **[Optional] Create a dedicated user and data directory:**
+```bash
+# Create a dedicated user
+sudo useradd -r -s /bin/false cortex
+export CORTEX_UID=$(id -u cortex)
+```
+```bash
+# Create data directory with proper permissions
+sudo mkdir -p /opt/cortex/data
+sudo chown -R ${CORTEX_UID}:${CORTEX_UID} /opt/cortex
+```
 
-#### Run Cortex Docker Container
+2. **Set up persistent storage:**
+```bash
+docker volume create cortex_data
+```
 
-1. **Run the Docker Container**
-  - Create a Docker volume to store models and data:
-     ```bash
-     docker volume create cortex_data
-     ```
+3. **Launch the container:**
+<Tabs>
+  <TabItem value="gpu" label="GPU Mode">
+  ```bash
+  docker run --gpus all -d \
+    --name cortex \
+    --user ${CORTEX_UID}:${CORTEX_UID} \
+    --memory=4g \
+    --memory-swap=4g \
+    --security-opt=no-new-privileges \
+    -v cortex_data:/root/cortexcpp:rw \
+    -v /opt/cortex/data:/data:rw \
+    -p 127.0.0.1:39281:39281 \
+    menloltd/cortex:latest
+  ```
+  </TabItem>
+  <TabItem value="cpu" label="CPU Mode">
+  ```bash
+  docker run -d \
+    --name cortex \
+    --user ${CORTEX_UID}:${CORTEX_UID} \
+    --memory=4g \
+    --memory-swap=4g \
+    --security-opt=no-new-privileges \
+    -v cortex_data:/root/cortexcpp:rw \
+    -v /opt/cortex/data:/data:rw \
+    -p 127.0.0.1:39281:39281 \
+    menloltd/cortex:latest
+  ```
+  </TabItem>
+</Tabs>
 
-    <Tabs>
-      <TabItem value="GPU mode" label="GPU mode">
-      ```sh
-      # requires nvidia-container-toolkit
-      docker run --gpus all -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
-      ```
-      </TabItem>
-      <TabItem value="CPU mode" label="CPU mode">
-      ```sh
-      docker run -it -d --name cortex -v cortex_data:/root/cortexcpp -p 39281:39281 cortex
-      ```
-      </TabItem>
-    </Tabs>
+### Verification and Testing
 
-2. **Check Logs (Optional)**
-   ```bash
-   docker logs cortex
-   ```
+1. **Check container status:**
+```bash
+docker ps | grep cortex
+docker logs cortex
+```
 
-3. **Access the Cortex Documentation API**
-   - Open [http://localhost:39281](http://localhost:39281) in your browser.
+Expected output should show:
+```
+Cortex server starting...
+Initialization complete
+Server listening on port 39281
+```
 
-4. **Access the Container and Try Cortex CLI**
-   ```bash
-   docker exec -it cortex bash
-   cortex --help
-   ```
+2. **Test the API:**
+```bash
+curl http://127.0.0.1:39281/healthz
+```
 
-### Usage
+### Working with Cortex
 
-With Docker running, you can use the following commands to interact with Cortex. Ensure the container is running and `curl` is installed on your machine.
+Once your container is running, here's how to interact with Cortex. Make sure you have `curl` installed on your system.
 
-#### 1. List Available Engines
+#### 1. Check Available Engines
 
 ```bash
 curl --request GET --url http://localhost:39281/v1/engines --header "Content-Type: application/json"
 ```
 
-- **Example Response**
-  ```json
-  {
-    "data": [
-      {
-        "description": "This extension enables chat completion API calls using the Onnx engine",
-        "format": "ONNX",
-        "name": "onnxruntime",
-        "status": "Incompatible"
-      },
-      {
-        "description": "This extension enables chat completion API calls using the LlamaCPP engine",
-        "format": "GGUF",
-        "name": "llama-cpp",
-        "status": "Ready",
-        "variant": "linux-amd64-avx2",
-        "version": "0.1.37"
-      }
-    ],
-    "object": "list",
-    "result": "OK"
-  }
-  ```
+You'll see something like:
+```json
+{
+  "data": [
+    {
+      "description": "This extension enables chat completion API calls using the Onnx engine",
+      "format": "ONNX",
+      "name": "onnxruntime",
+      "status": "Incompatible"
+    },
+    {
+      "description": "This extension enables chat completion API calls using the LlamaCPP engine",
+      "format": "GGUF",
+      "name": "llama-cpp",
+      "status": "Ready",
+      "variant": "linux-amd64-avx2",
+      "version": "0.1.37"
+    }
+  ],
+  "object": "list",
+  "result": "OK"
+}
+```
 
-#### 2. Pull Models from Hugging Face
+#### 2. Download Models
 
-- Open a terminal and run `websocat ws://localhost:39281/events` to capture download events, follow [this instruction](https://github.com/vi/websocat?tab=readme-ov-file#installation) to install `websocat`.
-- In another terminal, pull models using the commands below.
+First, set up event monitoring:
+- Install `websocat` following [these instructions](https://github.com/vi/websocat?tab=readme-ov-file#installation)
+- Open a terminal and run: `websocat ws://localhost:39281/events`
+
+Then, in a new terminal, download your desired model:
 
   <Tabs>
     <TabItem value="Pull model from cortexso's Hugging Face hub" label="Pull model from Cortex's Hugging Face hub">
     ```sh
-    # requires nvidia-container-toolkit
     curl --request POST --url http://localhost:39281/v1/models/pull  --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
     ```
     </TabItem>
@@ -147,36 +210,93 @@ curl --request GET --url http://localhost:39281/v1/engines --header "Content-Typ
     </TabItem>
   </Tabs>
 
-- After pull models successfully, run command below to list models.
-   ```bash
-   curl --request GET --url http://localhost:39281/v1/models
-   ```
+To see your downloaded models:
+```bash
+curl --request GET --url http://localhost:39281/v1/models
+```
 
-#### 3. Start a Model and Send an Inference Request
+#### 3. Using the Model
 
-- **Start the model:**
-  ```bash
-  curl --request POST --url http://localhost:39281/v1/models/start --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
-  ```
+First, start your model:
+```bash
+curl --request POST --url http://localhost:39281/v1/models/start --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
+```
 
-- **Send an inference request:**
-  ```bash
-  curl --request POST --url http://localhost:39281/v1/chat/completions --header 'Content-Type: application/json' --data '{
-      "frequency_penalty": 0.2,
-      "max_tokens": 4096,
-      "messages": [{"content": "Tell me a joke", "role": "user"}],
-      "model": "tinyllama:gguf",
-      "presence_penalty": 0.6,
-      "stop": ["End"],
-      "stream": true,
-      "temperature": 0.8,
-      "top_p": 0.95
-    }'
-  ```
+Then, send it a query:
+```bash
+curl --request POST --url http://localhost:39281/v1/chat/completions --header 'Content-Type: application/json' --data '{
+    "frequency_penalty": 0.2,
+    "max_tokens": 4096,
+    "messages": [{"content": "Tell me a joke", "role": "user"}],
+    "model": "tinyllama:gguf",
+    "presence_penalty": 0.6,
+    "stop": ["End"],
+    "stream": true,
+    "temperature": 0.8,
+    "top_p": 0.95
+  }'
+```
 
-#### 4. Stop a Model
+#### 4. Shutting Down
 
-- To stop a running model, use:
-  ```bash
-  curl --request POST --url http://localhost:39281/v1/models/stop --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
-  ```
+When you're done, stop the model:
+```bash
+curl --request POST --url http://localhost:39281/v1/models/stop --header 'Content-Type: application/json' --data '{"model": "tinyllama:gguf"}'
+```
+
+### Maintenance and Troubleshooting
+
+#### Common Issues
+
+1. **Permission Denied Errors:**
+```bash
+sudo chown -R ${CORTEX_UID}:${CORTEX_UID} /opt/cortex/data
+docker restart cortex
+```
+
+2. **Container Won't Start:**
+```bash
+docker logs cortex
+docker system info # Check available resources
+```
+
+#### Cleanup
+
+```bash
+# Stop and remove container
+docker stop cortex
+docker rm cortex
+```
+
+```bash
+# Remove data (optional)
+docker volume rm cortex_data
+sudo rm -rf /opt/cortex/data
+```
+
+```bash
+# Remove image
+docker rmi cortexai/cortex:latest
+```
+
+### Updating Cortex
+
+```bash
+# Pull latest version
+docker pull cortexai/cortex:latest
+```
+
+```bash
+# Stop and remove old container
+docker stop cortex
+docker rm cortex
+
+# Start new container (use run command from above)
+```
+
+:::tip Best Practices
+- Always use specific version tags in production
+- Regularly backup your data volume
+- Monitor container resources using `docker stats cortex`
+- Keep your Docker installation updated
+:::
