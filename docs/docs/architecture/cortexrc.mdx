@@ -7,11 +7,10 @@ slug: "cortexrc"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
-Cortex.cpp supports reading its configuration from a file called `.cortexrc`. Using this file, you can also change the data folder, Cortex.cpp API server port, and host.
+Cortex supports using a config-based approach to configuring most of its functionality. During the
+installation process, a `.cortexrc` will be generated with some sensible defaults in it. Using this
+file, you can change the location and name of the data directory, the Cortex API server port, the host and more.
 
 ## File Location
 
@@ -31,25 +30,52 @@ You can configure the following parameters in the `.cortexrc` file:
 | `apiServerPort`  | Port number for the Cortex.cpp API server.       | `39281`                        |
 | `logFolderPath`  | Path the folder where logs are located           | User's home folder.            |
 | `logLlamaCppPath`  | The llama-cpp engine .                         | `./logs/cortex.log`            |
-| `logTensorrtLLMPath`  | The tensorrt-llm engine log file path.      | `./logs/cortex.log`            |
 | `logOnnxPath`    | The onnxruntime engine log file path.            | `./logs/cortex.log`            |
 | `maxLogLines`    | The maximum log lines that write to file.        | `100000`                       |
 | `checkedForUpdateAt`  | The last time for checking updates.         | `0`                            |
 | `latestRelease`  | The lastest release vesion.                      | Empty string                   |
 | `huggingFaceToken`  | HuggingFace token.                            | Empty string                   |
 
+
+In the future, every parameter will be editable from the Cortex CLI. At present, only a selected few are configurable.
+
 Example of the `.cortexrc` file:
 
 ```
-logFolderPath: /Users/<username>/cortexcpp
+﻿logFolderPath: /home/<user>/cortexcpp
 logLlamaCppPath: ./logs/cortex.log
 logTensorrtLLMPath: ./logs/cortex.log
 logOnnxPath: ./logs/cortex.log
-dataFolderPath: /Users/<username>/cortexcpp
+dataFolderPath: /home/<user>/cortexcpp
 maxLogLines: 100000
 apiServerHost: 127.0.0.1
 apiServerPort: 39281
-checkedForUpdateAt: 1730501224
-latestRelease: v1.0.1
+checkedForUpdateAt: 1737636738
+checkedForLlamacppUpdateAt: 1737636592699
+latestRelease: v1.0.8
+latestLlamacppRelease: v0.1.49
 huggingFaceToken: ""
+gitHubUserAgent: ""
+gitHubToken: ""
+llamacppVariant: linux-amd64-avx2-cuda-12-0
+llamacppVersion: v0.1.49
+enableCors: true
+allowedOrigins:
+  - http://localhost:39281
+  - http://127.0.0.1:39281
+  - http://0.0.0.0:39281
+proxyUrl: ""
+verifyProxySsl: true
+verifyProxyHostSsl: true
+proxyUsername: ""
+proxyPassword: ""
+noProxy: example.com,::1,localhost,127.0.0.1
+verifyPeerSsl: true
+verifyHostSsl: true
+sslCertPath: ""
+sslKeyPath: ""
+supportedEngines:
+  - llama-cpp
+  - onnxruntime
+  - tensorrt-llm
 ```

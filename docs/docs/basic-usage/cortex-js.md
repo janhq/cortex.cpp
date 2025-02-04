@@ -3,19 +3,17 @@ title: cortex.js
 description: How to use the Cortex.js Library
 ---
 
-[Cortex.js](https://github.com/janhq/cortex.js) is a Typescript client library that can be used to interact with the Cortex API. 
-
-This is still a work in progress, and we will let the community know once a stable version is available. 
-
 :::warning
-🚧 Cortex.js is currently under development, and this page is a stub for future development. 
+🚧 Cortex.js is currently under development, and this page is a stub for future development.
 :::
 
+[Cortex.js](https://github.com/janhq/cortex.js) is a Typescript client library that can be used to
+interact with the Cortex API. It is a fork of the OpenAI Typescript library with additional methods for Local AI.
 
-<!-- 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
+This is still a work in progress, and we will let the community know once a stable version is available.
+
+
+<!--
 
 Cortex.cpp can be used in a Typescript application with the `cortex.js` library. Cortex.cpp provides a Typescript client library as a **fork of OpenAI's [Typescript library](https://github.com/openai/openai-node)** with additional methods for Local AI.
 

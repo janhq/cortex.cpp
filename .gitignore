@@ -22,3 +22,9 @@ platform/src/infrastructure/commanders/test/test_data
 **/vcpkg_installed
 engine/test.db
 !docs/yarn.lock
+
+# Local
+docs/.yarn/
+docs/.yarnrc.yml
+docs/bun.lockb
+docs/yarn.lock
