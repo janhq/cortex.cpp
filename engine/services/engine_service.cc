@@ -325,6 +325,22 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     archive_utils::ExtractArchive(finishedTask.items[0].localPath.string(),
                                   extract_path.string(), true);
 
+#if defined(__linux__) || defined(__APPLE__)
+    // Set permission in case of llama-cpp
+    if (auto ls_path = extract_path / "llama-server";
+        std::filesystem::exists(ls_path)) {
+      try {
+        std::filesystem::permissions(ls_path,
+                                     std::filesystem::perms::owner_exec |
+                                         std::filesystem::perms::group_exec |
+                                         std::filesystem::perms::others_exec,
+                                     std::filesystem::perm_options::add);
+      } catch (const std::filesystem::filesystem_error& e) {
+        CTL_WRN("Error: " << e.what());
+      }
+    }
+#endif
+
     auto variant = engine_matcher_utils::GetVariantFromNameAndVersion(
         selected_variant->name, engine, normalize_version);
 
