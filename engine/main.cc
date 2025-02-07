@@ -69,6 +69,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
 #elif defined(_WIN32)
   auto console_ctrl_handler = +[](DWORD ctrl_type) -> BOOL {
     if (ctrl_type == CTRL_C_EVENT) {
+      std::cout << "\rCaught interrupt signal, shutting down\n";
       shutdown_signal = true;
       return TRUE;
     }
