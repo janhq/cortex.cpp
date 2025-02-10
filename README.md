@@ -162,6 +162,8 @@ cortex-nightly hardware activate
 
 ```bash
 git clone https://github.com/janhq/cortex.cpp
+cd cortex.cpp
+git submodule update --init --recursive
 cd engine/vcpkg && ./bootstrap-vcpkg.sh
 cd ../build && cmake .. && make -j4
 ```
