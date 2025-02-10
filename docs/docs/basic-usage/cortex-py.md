@@ -5,11 +5,11 @@ description: How to integrate cortex.py with a Python application.
 
 
 :::warning
-🚧 Cortex.py is currently under development, and this page is a stub for future development. 
+🚧 Cortex.py is currently under development, and this page is a placeholder until its release.
 :::
 
 
-<!-- 
+<!--
 :::warning
 🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
 :::
