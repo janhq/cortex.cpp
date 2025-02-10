@@ -100,7 +100,9 @@ inline Json::Value ToJson(const std::vector<GPU>& gpus) {
     gpu["total_vram"] = gpus[i].total_vram;
     gpu["uuid"] = gpus[i].uuid;
     gpu["activated"] = gpus[i].is_activated;
-    res.append(gpu);
+    if (gpus[i].total_vram > 0) {
+      res.append(gpu);
+    }
   }
   return res;
 }
