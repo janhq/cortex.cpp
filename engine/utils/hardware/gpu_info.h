@@ -24,10 +24,11 @@ inline std::vector<GPU> GetGPUInfo() {
             .compute_cap = nvidia_gpus[i].compute_cap.value_or("unknown")};
         vulkan_gpus[j].free_vram = std::stoll(nvidia_gpus[i].vram_free);
         vulkan_gpus[j].total_vram = std::stoll(nvidia_gpus[i].vram_total);
+        vulkan_gpus[j].vendor = nvidia_gpus[i].vendor;
       }
     }
   }
-  
+
   if (use_vulkan_info) {
     return vulkan_gpus;
   } else {
@@ -43,7 +44,8 @@ inline std::vector<GPU> GetGPUInfo() {
                       .compute_cap = n.compute_cap.value_or("unknown")},
               .free_vram = std::stoi(n.vram_free),
               .total_vram = std::stoi(n.vram_total),
-              .uuid = n.uuid});
+              .uuid = n.uuid,
+              .vendor = n.vendor});
     }
     return res;
   }
