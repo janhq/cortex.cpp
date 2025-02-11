@@ -430,7 +430,7 @@ void ModelSourceService::SyncModelSource() {
   constexpr const int kIntervalCheck = 10 * 60;
   auto start_time = std::chrono::steady_clock::now();
   while (running_) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     auto current_time = std::chrono::steady_clock::now();
     auto elapsed_time = std::chrono::duration_cast<std::chrono::seconds>(
                             current_time - start_time)
