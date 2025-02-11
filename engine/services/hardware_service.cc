@@ -60,7 +60,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
   namespace luh = logging_utils_helper;
   if (!ahc_)
     return true;
-  auto exe = commands::GetCortexServerBinary();
+  auto exe = file_manager_utils::Subtract(
+      file_manager_utils::GetExecutablePath(), cortex_utils::GetCurrentPath());
   auto get_config_file_path = []() -> std::string {
     if (file_manager_utils::cortex_config_file_path.empty()) {
       return file_manager_utils::GetConfigurationPath().string();
@@ -147,10 +148,11 @@ bool HardwareService::Restart(const std::string& host, int port) {
             file_manager_utils::GetCortexDataPath().wstring();
   params += L" --loglevel " +
             cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
-  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
+  std::wstring exe_w = exe.wstring();
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
   std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
+  CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
@@ -200,7 +202,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
     setenv(name, new_v.c_str(), true);
     CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
 #endif
-    std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
+    std::string p = cortex_utils::GetCurrentPath() + "/" + exe.string();
+    CTL_INF("server file path: " << p);
     execl(p.c_str(), exe.c_str(), "--ignore_cout", "--config_file_path",
           get_config_file_path().c_str(), "--data_folder_path",
           get_data_folder_path().c_str(), "--loglevel",
