@@ -29,6 +29,15 @@ inline std::vector<GPU> GetGPUInfo() {
     }
   }
 
+  // Erase invalid GPUs
+  for (std::vector<cortex::hw::GPU>::iterator it = vulkan_gpus.begin();
+       it != vulkan_gpus.end();) {
+    if ((*it).total_vram <= 0)
+      it = vulkan_gpus.erase(it);
+    else
+      ++it;
+  }
+
   if (use_vulkan_info) {
     return vulkan_gpus;
   } else {

@@ -421,18 +421,16 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
 #endif
     int free_vram_MiB =
         total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
-    if (total_vram_MiB > 0) {
-      gpus.emplace_back(cortex::hw::GPU{
-          .id = std::to_string(id),
-          .device_id = device_properties.deviceID,
-          .name = device_properties.deviceName,
-          .version = std::to_string(device_properties.driverVersion),
-          .add_info = cortex::hw::AmdAddInfo{},
-          .free_vram = free_vram_MiB,
-          .total_vram = total_vram_MiB,
-          .uuid = uuid_to_string(device_id_properties.deviceUUID),
-          .vendor = GetVendorStr(device_properties.vendorID)});
-    }
+    gpus.emplace_back(cortex::hw::GPU{
+        .id = std::to_string(id),
+        .device_id = device_properties.deviceID,
+        .name = device_properties.deviceName,
+        .version = std::to_string(device_properties.driverVersion),
+        .add_info = cortex::hw::AmdAddInfo{},
+        .free_vram = free_vram_MiB,
+        .total_vram = total_vram_MiB,
+        .uuid = uuid_to_string(device_id_properties.deviceUUID),
+        .vendor = GetVendorStr(device_properties.vendorID)});
     id++;
   }
 
