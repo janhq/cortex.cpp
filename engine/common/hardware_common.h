@@ -79,6 +79,7 @@ struct GPU {
   int64_t total_vram;
   std::string uuid;
   bool is_activated = true;
+  std::string vendor;
 };
 
 inline Json::Value ToJson(const std::vector<GPU>& gpus) {
@@ -100,6 +101,7 @@ inline Json::Value ToJson(const std::vector<GPU>& gpus) {
     gpu["total_vram"] = gpus[i].total_vram;
     gpu["uuid"] = gpus[i].uuid;
     gpu["activated"] = gpus[i].is_activated;
+    gpu["vendor"] = gpus[i].vendor;
     if (gpus[i].total_vram > 0) {
       res.append(gpu);
     }

@@ -24,6 +24,21 @@
 #endif
 
 namespace cortex::hw {
+inline std::string GetVendorStr(uint32_t vendor_id) {
+  switch (vendor_id) {
+    case 0x1002:
+      return "AMD";
+    case 0x10DE:
+      return "NVIDIA";
+    case 0x8086:
+      return "INTEL";
+    case 0x13B5:
+      return "ARM";
+    default:
+      return std::to_string(vendor_id);
+  }
+}
+
 #if defined(_WIN32)
 // Definitions of the used function pointers. Add more if you use other ADL APIs
 typedef int (*ADL_MAIN_CONTROL_CREATE)(ADL_MAIN_MALLOC_CALLBACK, int);
@@ -335,7 +350,8 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
 
   // Get the physical devices
   uint32_t physical_device_count = 0;
-  result = vkEnumeratePhysicalDevices(instance, &physical_device_count, nullptr);
+  result =
+      vkEnumeratePhysicalDevices(instance, &physical_device_count, nullptr);
   if (result != VK_SUCCESS) {
     vkDestroyInstance(instance, nullptr);
     FreeLibrary(vulkan_library);
@@ -376,7 +392,8 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
     VkPhysicalDeviceProperties2 device_properties2 = {};
     device_properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     device_properties2.pNext = &device_id_properties;
-    device_id_properties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
+    device_id_properties.sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ID_PROPERTIES;
 
     vkGetPhysicalDeviceProperties2(physical_device, &device_properties2);
 
@@ -404,15 +421,18 @@ inline cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
 #endif
     int free_vram_MiB =
         total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
-    gpus.emplace_back(cortex::hw::GPU{
-        .id = std::to_string(id),
-        .device_id = device_properties.deviceID,
-        .name = device_properties.deviceName,
-        .version = std::to_string(device_properties.driverVersion),
-        .add_info = cortex::hw::AmdAddInfo{},
-        .free_vram = free_vram_MiB,
-        .total_vram = total_vram_MiB,
-        .uuid = uuid_to_string(device_id_properties.deviceUUID)});
+    if (total_vram_MiB > 0) {
+      gpus.emplace_back(cortex::hw::GPU{
+          .id = std::to_string(id),
+          .device_id = device_properties.deviceID,
+          .name = device_properties.deviceName,
+          .version = std::to_string(device_properties.driverVersion),
+          .add_info = cortex::hw::AmdAddInfo{},
+          .free_vram = free_vram_MiB,
+          .total_vram = total_vram_MiB,
+          .uuid = uuid_to_string(device_id_properties.deviceUUID),
+          .vendor = GetVendorStr(device_properties.vendorID)});
+    }
     id++;
   }
 
