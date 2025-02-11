@@ -8,6 +8,15 @@ cd cortex.cpp
 git submodule update --init --recursive
 ```
 
+You also need to install CMake. On Linux and MacOS, you can install CMake via your package manager
+
+```bash
+sudo apt install cmake  # Ubuntu
+brew install cmake  # MacOS
+```
+
+On Windows, you can download CMake from https://cmake.org/download/.
+
 #### Windows
 
 1. Navigate to the `engine` folder.
