@@ -42,7 +42,7 @@ cortex -h
 ```bash
 cd vcpkg
 ./bootstrap-vcpkg.sh
-vcpkg install
+./vcpkg install
 ```
 
 3. Build the Cortex.cpp inside the `engine/build` folder (you can change `-DCMAKE_TOOLCHAIN_FILE` to use your own `vcpkg`):
