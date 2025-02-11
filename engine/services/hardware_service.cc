@@ -35,6 +35,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
+  std::lock_guard<std::mutex> l(mtx_);
   auto gpus = cortex::hw::GetGPUInfo();
   auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
