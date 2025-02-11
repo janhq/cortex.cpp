@@ -16,7 +16,7 @@ git submodule update --init --recursive
 ```bash
 cd vcpkg
 ./bootstrap-vcpkg.bat
-vcpkg install
+./vcpkg install
 ```
 
 3. Build the Cortex.cpp inside the `engine/build` folder (you can change `-DCMAKE_TOOLCHAIN_FILE` to use your own `vcpkg`):
