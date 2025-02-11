@@ -491,7 +491,7 @@ std::vector<int> HardwareService::GetCudaConfig() {
   // Map uuid back to nvidia id
   for (auto const& uuid : uuids) {
     for (auto const& ngpu : nvidia_gpus) {
-      if (uuid == ngpu.uuid) {
+      if (ngpu.uuid.find(uuid) != std::string::npos) {
         res.push_back(std::stoi(ngpu.id));
       }
     }
