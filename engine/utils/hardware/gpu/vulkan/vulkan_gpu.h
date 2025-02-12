@@ -466,8 +466,10 @@ class VulkanGpu {
   VulkanGpu(VulkanGpu const&) = delete;
   VulkanGpu& operator=(VulkanGpu const&) = delete;
   ~VulkanGpu() {
+#if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     if (vulkan_library)
       FreeLibrary(vulkan_library);
+#endif
   }
 
   static VulkanGpu& GetInstance() {
