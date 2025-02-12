@@ -9,7 +9,8 @@ namespace cortex::hw {
 
 inline std::vector<GPU> GetGPUInfo() {
   auto nvidia_gpus = system_info_utils::GetGpuInfoList();
-  auto vulkan_gpus = GetGpuInfoList().value_or(std::vector<cortex::hw::GPU>{});
+  auto vulkan_gpus = VulkanGpu::GetInstance().GetGpuInfoList().value_or(
+      std::vector<cortex::hw::GPU>{});
   auto use_vulkan_info = nvidia_gpus.empty();
 
   // In case we have vulkan info, add more information for GPUs
