@@ -488,8 +488,8 @@ class VulkanGpu {
 #elif defined(_WIN32)
       auto gpus_usages =
           GetGpuUsage().value_or(std::unordered_map<std::string, int>{});
-      total_vram_MiB = gpu_avail_MiB;
-      used_vram_MiB = gpus_usages[device_properties.deviceName];
+      total_vram_MiB = gpus_[i].free_vram;
+      used_vram_MiB = gpus_usages[gpus_[i].name];
 #endif
       int free_vram_MiB =
           total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
