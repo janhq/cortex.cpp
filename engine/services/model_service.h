@@ -74,8 +74,6 @@ class ModelService {
   cpp::result<ModelPullInfo, std::string> GetModelPullInfo(
       const std::string& model_handle);
 
-  cpp::result<std::string, std::string> HandleUrl(const std::string& url);
-
   cpp::result<DownloadTask, std::string> HandleDownloadUrlAsync(
       const std::string& url, std::optional<std::string> temp_model_id,
       std::optional<std::string> temp_name, bool resume = true);
@@ -95,12 +93,6 @@ class ModelService {
   std::string GetEngineByModelId(const std::string& model_id) const;
 
  private:
-  /**
-   * Handle downloading model which have following pattern: author/model_name
-   */
-  cpp::result<std::string, std::string> DownloadHuggingFaceGgufModel(
-      const std::string& author, const std::string& modelName,
-      std::optional<std::string> fileName);
 
   /**
    * Handling cortexso models. Will look through cortexso's HF repository and

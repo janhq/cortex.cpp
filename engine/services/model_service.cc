@@ -338,85 +338,6 @@ ModelService::GetEstimation(const std::string& model_handle,
   }
 }
 
-cpp::result<std::string, std::string> ModelService::HandleUrl(
-    const std::string& url) {
-  auto url_obj = url_parser::FromUrlString(url);
-  if (url_obj.has_error()) {
-    return cpp::fail("Invalid url: " + url);
-  }
-
-  if (url_obj->host == kHuggingFaceHost) {
-    if (url_obj->pathParams[2] == "blob") {
-      url_obj->pathParams[2] = "resolve";
-    }
-  }
-  auto author{url_obj->pathParams[0]};
-  auto model_id{url_obj->pathParams[1]};
-  auto file_name{url_obj->pathParams.back()};
-
-  if (author == "cortexso") {
-    return DownloadModelFromCortexso(model_id);
-  }
-
-  if (url_obj->pathParams.size() < 5) {
-    if (url_obj->pathParams.size() < 2) {
-      return cpp::fail("Invalid url: " + url);
-    }
-    return DownloadHuggingFaceGgufModel(author, model_id, std::nullopt);
-  }
-
-  std::string huggingFaceHost{kHuggingFaceHost};
-  std::string unique_model_id{author + ":" + model_id + ":" + file_name};
-
-  auto model_entry = db_service_->GetModelInfo(unique_model_id);
-
-  if (model_entry.has_value()) {
-    CLI_LOG("Model already downloaded: " << unique_model_id);
-    return unique_model_id;
-  }
-
-  auto local_path{file_manager_utils::GetModelsContainerPath() /
-                  kHuggingFaceHost / author / model_id / file_name};
-
-  try {
-    std::filesystem::create_directories(local_path.parent_path());
-  } catch (const std::filesystem::filesystem_error& e) {
-    // if file exist, remove it
-    std::filesystem::remove(local_path.parent_path());
-    std::filesystem::create_directories(local_path.parent_path());
-  }
-
-  auto download_url = url_parser::FromUrl(url_obj.value());
-  // this assume that the model being downloaded is a single gguf file
-  auto downloadTask{DownloadTask{.id = model_id,
-                                 .type = DownloadType::Model,
-                                 .items = {DownloadItem{
-                                     .id = unique_model_id,
-                                     .downloadUrl = download_url,
-                                     .localPath = local_path,
-                                 }}}};
-
-  auto on_finished = [this, author](const DownloadTask& finishedTask) {
-    // Sum downloadedBytes from all items
-    uint64_t model_size = 0;
-    for (const auto& item : finishedTask.items) {
-      model_size = model_size + item.bytes.value_or(0);
-    }
-    auto gguf_download_item = finishedTask.items[0];
-    ParseGguf(*db_service_, gguf_download_item, author, std::nullopt,
-              model_size);
-  };
-
-  auto result = download_service_->AddDownloadTask(downloadTask, on_finished);
-  if (result.has_error()) {
-    CTL_ERR(result.error());
-    return cpp::fail(result.error());
-  } else if (result && result.value()) {
-    CLI_LOG("Model " << model_id << " downloaded successfully!")
-  }
-  return unique_model_id;
-}
-
 bool ModelService::HasModel(const std::string& id) const {
   return db_service_->HasModel(id);
 }
@@ -640,37 +561,6 @@ cpp::result<std::string, std::string> ModelService::DownloadModelFromCortexso(
     return model_id;
   }
   return cpp::fail("Failed to download model " + model_id);
-}
-
-cpp::result<std::string, std::string>
-ModelService::DownloadHuggingFaceGgufModel(
-    const std::string& author, const std::string& modelName,
-    std::optional<std::string> fileName) {
-  auto repo_info =
-      huggingface_utils::GetHuggingFaceModelRepoInfo(author, modelName);
-
-  if (!repo_info.has_value()) {
-    return cpp::fail("Model not found");
-  }
-
-  if (!repo_info->gguf.has_value()) {
-    return cpp::fail(
-        "Not a GGUF model. Currently, only GGUF single file is "
-        "supported.");
-  }
-
-  std::vector<std::string> options{};
-  for (const auto& sibling : repo_info->siblings) {
-    if (string_utils::EndsWith(sibling.rfilename, ".gguf")) {
-      options.push_back(sibling.rfilename);
-    }
-  }
-  auto selection = cli_selection_utils::PrintSelection(options);
-  std::cout << "Selected: " << selection.value() << std::endl;
-
-  auto download_url = huggingface_utils::GetDownloadableUrl(author, modelName,
-                                                            selection.value());
-  return HandleUrl(download_url);
 }
 
 cpp::result<void, std::string> ModelService::DeleteModel(
