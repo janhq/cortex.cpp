@@ -253,27 +253,15 @@ inline int FreeLibrary(void* pLibrary) {
 
 class VulkanGpu {
  private:
-  VulkanGpu() {}
+  VulkanGpu() { Init(); }
 #if defined(__linux__) || defined(__APPLE__)
   void* vulkan_library = nullptr;
 #else
   HMODULE vulkan_library = nullptr;
 #endif
+  std::vector<cortex::hw::GPU> gpus_;
 
- public:
-  VulkanGpu(VulkanGpu const&) = delete;
-  VulkanGpu& operator=(VulkanGpu const&) = delete;
-  ~VulkanGpu() {
-    if (vulkan_library)
-      FreeLibrary(vulkan_library);
-  }
-
-  static VulkanGpu& GetInstance() {
-    static VulkanGpu vg;
-    return vg;
-  }
-
-  cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
+  bool Init() {
     namespace fmu = file_manager_utils;
     auto get_vulkan_path = [](const std::string& lib_vulkan)
         -> cpp::result<std::filesystem::path, std::string> {
@@ -291,11 +279,12 @@ class VulkanGpu {
     };
 // Load the Vulkan library
 #if defined(__APPLE__) && defined(__MACH__)
-    return std::vector<cortex::hw::GPU>{};
+    return true;
 #elif defined(__linux__)
     auto vulkan_path = get_vulkan_path("libvulkan.so");
     if (vulkan_path.has_error()) {
-      return cpp::fail(vulkan_path.error());
+      LOG_INFO << vulkan_path.error();
+      return false;
     }
     if (vulkan_library == nullptr) {
       vulkan_library =
@@ -304,7 +293,8 @@ class VulkanGpu {
 #else
     auto vulkan_path = get_vulkan_path("vulkan-1.dll");
     if (vulkan_path.has_error()) {
-      return cpp::fail(vulkan_path.error());
+      LOG_WARN << vulkan_path.error();
+      return false;
     }
     if (vulkan_library == nullptr) {
       vulkan_library = LoadLibraryW(vulkan_path.value().wstring().c_str());
@@ -313,7 +303,7 @@ class VulkanGpu {
 #if defined(_WIN32) || defined(_WIN64) || defined(__linux__)
     if (!vulkan_library) {
       std::cerr << "Failed to load the Vulkan library." << std::endl;
-      return cpp::fail("Failed to load the Vulkan library.");
+      return false;
     }
 
     // Get the function pointers for other Vulkan functions
@@ -365,14 +355,16 @@ class VulkanGpu {
         vkDestroyInstance == nullptr ||
         vkGetPhysicalDeviceMemoryProperties == nullptr ||
         vkGetPhysicalDeviceProperties2 == nullptr) {
-      return cpp::fail("vulkan API is missing!");
+      LOG_WARN << "vulkan API is missing!";
+      return false;
     }
 
     VkResult result =
         vkCreateInstance(&instance_create_info, nullptr, &instance);
     if (result != VK_SUCCESS) {
       FreeLibrary(vulkan_library);
-      return cpp::fail("Failed to create a Vulkan instance.");
+      LOG_WARN << "Failed to create a Vulkan instance.";
+      return false;
     }
 
     // Get the physical devices
@@ -382,7 +374,8 @@ class VulkanGpu {
     if (result != VK_SUCCESS) {
       vkDestroyInstance(instance, nullptr);
       FreeLibrary(vulkan_library);
-      return cpp::fail("Failed to enumerate physical devices.");
+      LOG_WARN << "Failed to enumerate physical devices.";
+      return false;
     }
     std::vector<VkPhysicalDevice> physical_devices(physical_device_count);
     vkEnumeratePhysicalDevices(instance, &physical_device_count,
@@ -464,8 +457,46 @@ class VulkanGpu {
     // Clean up
     vkDestroyInstance(instance, nullptr);
 
-    return gpus;
+    gpus_ = gpus;
 #endif
+    return true;
+  }
+
+ public:
+  VulkanGpu(VulkanGpu const&) = delete;
+  VulkanGpu& operator=(VulkanGpu const&) = delete;
+  ~VulkanGpu() {
+    if (vulkan_library)
+      FreeLibrary(vulkan_library);
+  }
+
+  static VulkanGpu& GetInstance() {
+    static VulkanGpu vg;
+    return vg;
+  }
+
+  cpp::result<std::vector<cortex::hw::GPU>, std::string> GetGpuInfoList() {
+    for (size_t i = 0; i < gpus_.size(); i++) {
+      int64_t total_vram_MiB = 0;
+      int64_t used_vram_MiB = 0;
+
+#if defined(__linux__)
+      auto gpus_usages =
+          GetGpuUsage().value_or(std::unordered_map<int, AmdGpuUsage>{});
+      total_vram_MiB = gpus_usages[gpus_[i].device_id].total_vram_MiB;
+      used_vram_MiB = gpus_usages[gpus_[i].device_id].used_vram_MiB;
+#elif defined(_WIN32)
+      auto gpus_usages =
+          GetGpuUsage().value_or(std::unordered_map<std::string, int>{});
+      total_vram_MiB = gpu_avail_MiB;
+      used_vram_MiB = gpus_usages[device_properties.deviceName];
+#endif
+      int free_vram_MiB =
+          total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
+      gpus_[i].free_vram = free_vram_MiB;
+    }
+
+    return gpus_;
   }
 };
 }  // namespace cortex::hw
