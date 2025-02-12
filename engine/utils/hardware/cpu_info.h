@@ -16,7 +16,16 @@ inline CPU GetCPUInfo() {
     return CPU{};
   auto cpu = res[0];
   cortex::cpuid::CpuInfo inst;
+
+#if defined(__linux__)
+  float usage = 0;
+  for (auto const& c : res) {
+    usage += c.currentUtilisation();
+  }
+  usage = usage / res.size() * 100;
+#else
   float usage = GetCPUUsage();
+#endif
   // float usage = 0;
   return CPU{.cores = cpu.numPhysicalCores(),
              .arch = std::string(GetArch()),
