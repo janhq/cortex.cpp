@@ -25,6 +25,7 @@ struct StreamContext {
   extensions::TemplateRenderer& renderer;
   std::string stream_template;
   bool need_stop = true;
+  std::string last_request;
 };
 struct CurlResponse {
   std::string body;
