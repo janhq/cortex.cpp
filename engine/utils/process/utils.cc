@@ -1,6 +1,10 @@
 #include "utils/process/utils.h"
 #include "utils/logging_utils.h"
 
+#if defined(__APPLE__) || defined(__linux__)
+extern char **environ;  // environment variables
+#endif
+
 namespace cortex::process {
 
 std::string ConstructWindowsCommandLine(const std::vector<std::string>& args) {
@@ -81,11 +85,7 @@ pid_t SpawnProcess(const std::vector<std::string>& command) {
                                     NULL,                // file actions
                                     NULL,                // spawn attributes
                                     argv.data(),         // argument vector
-#if defined(__linux__)
                                     environ  // environment (inherit)
-#else
-                                    NULL
-#endif
     );
 
     if (spawn_result != 0) {
