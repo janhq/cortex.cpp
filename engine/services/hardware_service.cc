@@ -143,16 +143,16 @@ bool HardwareService::Restart(const std::string& host, int port) {
   ZeroMemory(&pi, sizeof(pi));
   // TODO (sang) write a common function for this and server_start_cmd
   std::wstring params = L"--ignore_cout";
-  params += L" --config_file_path " +
-            file_manager_utils::GetConfigurationPath().wstring();
-  params += L" --data_folder_path " +
-            file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --config_file_path \"" +
+            file_manager_utils::GetConfigurationPath().wstring() + L"\"";
+  params += L" --data_folder_path \"" +
+            file_manager_utils::GetCortexDataPath().wstring() + L"\"";
   params += L" --loglevel " +
             cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
   std::wstring exe_w = exe.wstring();
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
-  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
+  std::wstring wcmds = current_path_w +  L"\\" + exe_w + L" " + params;
   CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
