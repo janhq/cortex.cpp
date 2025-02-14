@@ -379,7 +379,7 @@ void Engines::UpdateEngine(
           metadata = (*exist_engine).metadata;
         }
 
-        (void) engine_service_->UnloadEngine(engine);
+        (void)engine_service_->UnloadEngine(engine);
 
         auto upd_res =
             engine_service_->UpsertEngine(engine, type, api_key, url, version,
@@ -387,11 +387,13 @@ void Engines::UpdateEngine(
         if (upd_res.has_error()) {
           Json::Value res;
           res["message"] = upd_res.error();
+          CTL_WRN("Error: " << upd_res.error());
           auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
           resp->setStatusCode(k400BadRequest);
           callback(resp);
         } else {
           Json::Value res;
+          CTL_INF("Remote Engine update successfully!");
           res["message"] = "Remote Engine update successfully!";
           auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
           resp->setStatusCode(k200OK);
@@ -400,6 +402,7 @@ void Engines::UpdateEngine(
       } else {
         Json::Value res;
         res["message"] = "Request body is empty!";
+        CTL_WRN("Error: Request body is empty!");
         auto resp = cortex_utils::CreateCortexHttpJsonResponse(res);
         resp->setStatusCode(k400BadRequest);
         callback(resp);
