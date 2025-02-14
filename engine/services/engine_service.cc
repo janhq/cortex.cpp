@@ -261,7 +261,7 @@ cpp::result<void, std::string> EngineService::DownloadPythonUv(const std::string
       engine_name,
       kLocal, "", "", uv_version, "", "Default", "");
 
-    if (create_res.has_value()) {
+    if (create_res.has_error()) {
       CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
     } else {
       CTL_INF("Engine entry created successfully");
