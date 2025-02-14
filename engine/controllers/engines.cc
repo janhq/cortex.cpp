@@ -379,6 +379,8 @@ void Engines::UpdateEngine(
           metadata = (*exist_engine).metadata;
         }
 
+        (void) engine_service_->UnloadEngine(engine);
+
         auto upd_res =
             engine_service_->UpsertEngine(engine, type, api_key, url, version,
                                           "all-platforms", status, metadata);
