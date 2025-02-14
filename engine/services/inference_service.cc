@@ -38,7 +38,7 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     LOG_WARN << "Engine is not loaded yet";
     return cpp::fail(std::make_pair(stt, res));
   }
- 
+
   if (!model_id.empty()) {
     if (auto model_service = model_service_.lock()) {
       auto metadata_ptr = model_service->GetCachedModelMetadata(model_id);
@@ -71,7 +71,6 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
       }
     }
   }
-
 
   CTL_DBG("Json body inference: " + json_body->toStyledString());
 
@@ -217,10 +216,9 @@ InferResult InferenceService::LoadModel(
     std::get<RemoteEngineI*>(engine_result.value())
         ->LoadModel(json_body, std::move(cb));
   }
-  if (!engine_service_->IsRemoteEngine(engine_type)) {
-    auto model_id = json_body->get("model", "").asString();
-    saved_models_[model_id] = json_body;
-  }
+  // Save model config to reload if needed
+  auto model_id = json_body->get("model", "").asString();
+  saved_models_[model_id] = json_body;
   return std::make_pair(stt, r);
 }
 
