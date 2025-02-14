@@ -80,12 +80,12 @@ pid_t SpawnProcess(const std::vector<std::string>& command) {
     auto argv = ConvertToArgv(command);
 
     // Use posix_spawn for cross-platform compatibility
-    auto spawn_result = posix_spawn(&pid,                // pid output
-                                    command[0].c_str(),  // executable path
-                                    NULL,                // file actions
-                                    NULL,                // spawn attributes
-                                    argv.data(),         // argument vector
-                                    environ  // environment (inherit)
+    auto spawn_result = posix_spawnp(&pid,                // pid output
+                                     command[0].c_str(),  // executable path
+                                     NULL,                // file actions
+                                     NULL,                // spawn attributes
+                                     argv.data(),         // argument vector
+                                     environ  // environment (inherit)
     );
 
     if (spawn_result != 0) {

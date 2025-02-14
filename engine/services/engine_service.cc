@@ -223,10 +223,87 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   }
 }
 
+cpp::result<void, std::string> EngineService::DownloadPythonUv(const std::string& version) {
+  const std::string engine_name = kPythonEngine;
+  const std::string python_bin_path = file_manager_utils::GetEnginesContainerPath() /
+                                      engine_name / "bin";
+  std::filesystem::create_directories(python_bin_path);
+
+  const std::string uv_version = "0.5.30";
+
+  // NOTE: only works on MacOS and Linux
+  auto on_finished = [this, engine_name, python_bin_path, uv_version](const DownloadTask& finishedTask) {
+    // try to unzip the downloaded file
+    const std::string installer_path = finishedTask.items[0].localPath.string();
+    CTL_INF("UV install script path: " << installer_path);
+    CTL_INF("Version: " << uv_version);
+
+    // https://docs.astral.sh/uv/configuration/installer/
+    // TODO: move env var mod logic to SpawnProcess()
+    // using env to set env vars
+    // should we download from here instead? https://github.com/astral-sh/uv/releases
+    std::vector<std::string> command{"env",
+                                     "UV_UNMANAGED_INSTALL=" + python_bin_path,
+                                     "sh",
+                                     installer_path,
+                                     "-q"};
+    const auto pid = cortex::process::SpawnProcess(command);
+    if (pid == -1) {
+      CTL_ERR("Failed to install uv");
+    }
+    // wait for subprocess to finish
+    // TODO: need to check return status if successful
+    waitpid(pid, NULL, 0);
+
+    std::filesystem::remove(installer_path);
+
+    auto create_res = EngineService::UpsertEngine(
+      engine_name,
+      kLocal, "", "", uv_version, "", "Default", "");
+
+    if (create_res.has_value()) {
+      CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
+    } else {
+      CTL_INF("Engine entry created successfully");
+    }
+
+  };
+
+  const std::string url = "https://astral.sh/uv/" + uv_version + "/install.sh";
+  auto downloadTask =
+    DownloadTask{.id = "uv",
+                 .type = DownloadType::Engine,
+                 .items = {DownloadItem{
+                      .id = "uv",
+                      .downloadUrl = url,
+                      .localPath = python_bin_path + "/install.sh",
+                  }}};
+
+  auto add_task_result = download_service_->AddTask(downloadTask, on_finished);
+  if (add_task_result.has_error()) {
+    return cpp::fail(add_task_result.error());
+  }
+  return {};
+}
+
 cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
+  if (engine == kLlamaRepo) {
+    return DownloadLlamaCpp(version, variant_name);
+  } else if (engine == kPythonEngine) {
+    return DownloadPythonUv(version);
+  }
+  // raise error here?
+  return {};
+}
+
+cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
+  const std::string& version,
+  const std::optional<std::string> variant_name) {
+
+  const std::string engine = kLlamaRepo;
   auto normalized_version = version == "latest"
                                 ? "latest"
                                 : string_utils::RemoveSubstring(version, "v");

@@ -164,6 +164,13 @@ class EngineService : public EngineServiceI {
       const std::string& engine, const std::string& version = "latest",
       const std::optional<std::string> variant_name = std::nullopt);
 
+  cpp::result<void, std::string> DownloadLlamaCpp(
+      const std::string& version = "latest",
+      const std::optional<std::string> variant_name = std::nullopt);
+
+  cpp::result<void, std::string> DownloadPythonUv(
+      const std::string& version = "latest");
+
   cpp::result<bool, std::string> DownloadCuda(const std::string& engine,
                                               bool async = false);
 
