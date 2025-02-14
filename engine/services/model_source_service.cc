@@ -64,7 +64,8 @@ std::vector<ModelInfo> ParseJsonString(const std::string& json_str) {
 ModelSourceService::ModelSourceService(
     std::shared_ptr<DatabaseService> db_service)
     : db_service_(db_service) {
-  sync_db_thread_ = std::thread(&ModelSourceService::SyncModelSource, this);
+  // TODO(sang) temporariy comment out because of race condition bug
+  // sync_db_thread_ = std::thread(&ModelSourceService::SyncModelSource, this);
   running_ = true;
 }
 
