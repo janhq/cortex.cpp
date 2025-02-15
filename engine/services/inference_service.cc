@@ -24,8 +24,12 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
     auto status = std::get<0>(ir)["status_code"].asInt();
     if (status != drogon::k200OK) {
       CTL_INF("Model is not loaded, start loading it: " << model_id);
-      auto res = LoadModel(saved_models_.at(model_id));
-      // ignore return result
+      // For remote engine, we use the updated configuration
+      if (engine_service_->IsRemoteEngine(engine_type)) {
+        (void)model_service_.lock()->StartModel(model_id, {}, false);
+      } else {
+        (void)LoadModel(saved_models_.at(model_id));
+      }
     }
   }
 
