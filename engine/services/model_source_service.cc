@@ -475,14 +475,13 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
 
 void ModelSourceService::SyncModelSource() {
   while (running_) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     auto now = std::chrono::system_clock::now();
     auto config = file_manager_utils::GetCortexConfig();
     auto last_check =
         std::chrono::system_clock::time_point(
             std::chrono::milliseconds(config.checkedForSyncHubAt)) +
         std::chrono::hours(1);
-
     if (now > last_check) {
       CTL_DBG("Start to sync cortex.db");
 

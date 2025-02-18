@@ -73,7 +73,6 @@ if(CMAKE_BUILD_INJA_TEST)
   add_subdirectory(examples/inja)
 endif()
 
-
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
 find_package(yaml-cpp CONFIG REQUIRED)
