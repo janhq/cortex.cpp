@@ -266,11 +266,10 @@ void PythonEngine::GetModels(
 void PythonEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-  // TODO: handle a case that can spawn process but the process spawn fail.
-  pid_t pid;
-  if (!json_body->isMember("model") || !json_body->isMember("model_path")) {
+
+  if (!json_body->isMember("model") || !json_body->isMember("model_dir")) {
     Json::Value error;
-    error["error"] = "Missing required fields: model or model_path";
+    error["error"] = "Missing required fields: model or model_dir";
     Json::Value status;
     status["is_done"] = true;
     status["has_error"] = true;
@@ -280,8 +279,11 @@ void PythonEngine::LoadModel(
     return;
   }
 
+  namespace fs = std::filesystem;
+
   const std::string& model = (*json_body)["model"].asString();
-  const std::string& model_path = (*json_body)["model_path"].asString();
+  const fs::path model_dir = (*json_body)["model_dir"].asString();
+
   if (models_.find(model) != models_.end()) {
     Json::Value error;
     error["error"] = "Model already loaded!";
@@ -293,6 +295,9 @@ void PythonEngine::LoadModel(
     callback(std::move(status), std::move(error));
     return;
   }
+
+  // TODO: handle a case that can spawn process but the process spawn fail.
+  pid_t pid;
 
   // loads yaml into models_
   // if (!LoadModelConfig(model, model_path)) {
@@ -310,18 +315,7 @@ void PythonEngine::LoadModel(
   // auto model_folder_path = model_config.files[0];
   // CTL_INF(__func__ << ": model_folder_path=" << model_folder_path);
 
-  // auto data_folder_path =
-  //     std::filesystem::path(model_folder_path) / std::filesystem::path("venv");
   try {
-// #if defined(_WIN32)
-//     auto executable = std::filesystem::path(data_folder_path) /
-//                       std::filesystem::path("Scripts");
-// #else
-//     auto executable =
-//         std::filesystem::path(data_folder_path) / std::filesystem::path("bin");
-// #endif
-
-    const std::filesystem::path model_dir = std::filesystem::path(model_path).parent_path();
     std::vector<std::string> command{GetUvPath(), "run", model_dir / "main.py"};
 
     // TODO: what happens if the process exits?
@@ -336,20 +330,7 @@ void PythonEngine::LoadModel(
 
     process_map_[model] = pid;
     if (pid == -1) {
-      std::unique_lock lock(models_mutex_);
-      if (models_.find(model) != models_.end()) {
-        models_.erase(model);
-      }
-
-      Json::Value error;
-      error["error"] = "Fail to spawn process with pid -1";
-      Json::Value status;
-      status["is_done"] = true;
-      status["has_error"] = true;
-      status["is_stream"] = false;
-      status["status_code"] = k500InternalServerError;
-      callback(std::move(status), std::move(error));
-      return;
+      throw std::runtime_error("Fail to spawn process with pid -1");
     }
   } catch (const std::exception& e) {
     std::unique_lock lock(models_mutex_);

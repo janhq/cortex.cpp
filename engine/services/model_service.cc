@@ -805,38 +805,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       // Check if Python model first
       if (mc.engine == kPythonEngine) {
-
-        config::PythonModelConfig python_model_config;
-        python_model_config.ReadFromYaml(
-
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string());
-        // Start all depends model
-        auto depends = python_model_config.depends;
-        for (auto& depend : depends) {
-          Json::Value temp;
-          auto res = StartModel(depend, temp, false);
-          if (res.has_error()) {
-            CTL_WRN("Error: " + res.error());
-            for (auto& depend : depends) {
-              if (depend != model_handle) {
-                StopModel(depend);
-              }
-            }
-            return cpp::fail("Model failed to start dependency '" + depend +
-                             "' : " + res.error());
-          }
-        }
+        const std::string model_yaml_path = model_entry.value().path_to_model_yaml;
 
         json_data["model"] = model_handle;
-        json_data["model_path"] =
-            fmu::ToAbsoluteCortexDataPath(
-                fs::path(model_entry.value().path_to_model_yaml))
-                .string();
+        json_data["model_dir"] = fmu::ToAbsoluteCortexDataPath(
+                                    fs::path(model_yaml_path).parent_path()).string();
         json_data["engine"] = mc.engine;
         assert(!!inference_svc_);
-        // Check if python engine
 
         auto ir =
             inference_svc_->LoadModel(std::make_shared<Json::Value>(json_data));
@@ -848,12 +823,6 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         } else if (status == drogon::k409Conflict) {
           CTL_INF("Model '" + model_handle + "' is already loaded");
           return StartModelResult{.success = true, .warning = ""};
-        } else {
-          // only report to user the error
-          for (auto& depend : depends) {
-
-            StopModel(depend);
-          }
         }
         CTL_ERR("Model failed to start with status code: " << status);
         return cpp::fail("Model failed to start: " +
