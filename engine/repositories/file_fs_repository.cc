@@ -10,6 +10,20 @@ std::filesystem::path FileFsRepository::GetFilePath() const {
   return data_folder_path_ / kFileContainerFolderName;
 }
 
+std::filesystem::path SanitizePath(const std::string & user_input,
+                                    const std::string & basedir) {
+
+  std::filesystem::path abs_base = std::filesystem::canonical(basedir);
+  std::filesystem::path resolved_path = std::filesystem::weakly_canonical(
+      std::filesystem::path(basedir) / std::filesystem::path(user_input));
+      /* Ensure the resolved path is within our basedir */
+  if (resolved_path.string().find(abs_base.string()) != 0) {
+    return {};
+  }
+
+  return resolved_path;
+}
+
 cpp::result<void, std::string> FileFsRepository::StoreFile(
     OpenAi::File& file_metadata, const char* content, uint64_t length) {
   auto file_container_path = GetFilePath();
@@ -18,7 +32,11 @@ cpp::result<void, std::string> FileFsRepository::StoreFile(
   }
 
   auto original_filename = file_metadata.filename;
-  auto file_full_path = file_container_path / original_filename;
+  auto file_full_path = SanitizePath(original_filename, file_container_path);
+
+  if (file_full_path.empty()) {
+    return cpp::fail("Error resolving path in: " + original_filename);
+  }
 
   // Handle duplicate filenames
   int counter = 1;
