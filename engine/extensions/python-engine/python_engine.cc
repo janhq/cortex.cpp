@@ -64,6 +64,63 @@ static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
 
 }  // namespace
 
+cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService> download_service) {
+  const std::string py_bin_path = file_manager_utils::GetCortexDataPath() / "python_engine" / "bin";
+  std::filesystem::create_directories(py_bin_path);
+
+  const std::string uv_version = "0.5.31";
+
+  // NOTE: only works on MacOS and Linux
+  auto on_finished = [py_bin_path, uv_version](const DownloadTask& finishedTask) {
+    // try to unzip the downloaded file
+    const std::string installer_path = finishedTask.items[0].localPath.string();
+    CTL_INF("UV install script path: " << installer_path);
+    CTL_INF("Version: " << uv_version);
+
+    // https://docs.astral.sh/uv/configuration/installer/
+    // TODO: move env var mod logic to SpawnProcess()
+    // using env to set env vars
+    // should we download from here instead? https://github.com/astral-sh/uv/releases
+    std::vector<std::string> command{"env",
+                                     "UV_UNMANAGED_INSTALL=" + py_bin_path,
+                                     "sh",
+                                     installer_path,
+                                     "-q"};
+    const auto pid = cortex::process::SpawnProcess(command);
+    if (pid == -1) {
+      CTL_ERR("Failed to install uv");
+    }
+    // wait for subprocess to finish
+    // TODO: need to check return status if successful
+    waitpid(pid, NULL, 0);
+    std::filesystem::remove(installer_path);
+  };
+
+  const std::string url = "https://astral.sh/uv/" + uv_version + "/install.sh";
+  auto downloadTask =
+    DownloadTask{.id = "uv",
+                 .type = DownloadType::Engine,
+                 .items = {DownloadItem{
+                      .id = "uv",
+                      .downloadUrl = url,
+                      .localPath = py_bin_path + "/install.sh",
+                  }}};
+
+  auto add_task_result = download_service->AddTask(downloadTask, on_finished);
+  if (add_task_result.has_error()) {
+    return cpp::fail(add_task_result.error());
+  }
+  return {};
+}
+
+std::string GetUvPath() {
+  return file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
+}
+
+bool IsUvInstalled() {
+  return std::filesystem::exists(GetUvPath());
+}
+
 PythonEngine::PythonEngine() : q_(4 /*n_parallel*/, "python_engine") {}
 
 PythonEngine::~PythonEngine() {
@@ -237,74 +294,85 @@ void PythonEngine::LoadModel(
     return;
   }
 
-  if (!LoadModelConfig(model, model_path)) {
-    Json::Value error;
-    error["error"] = "Failed to load model configuration";
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k500InternalServerError;
-    callback(std::move(status), std::move(error));
-    return;
-  }
-  auto model_config = models_[model];
-  auto model_folder_path = model_config.files[0];
-  auto data_folder_path =
-      std::filesystem::path(model_folder_path) / std::filesystem::path("venv");
+  // loads yaml into models_
+  // if (!LoadModelConfig(model, model_path)) {
+  //   Json::Value error;
+  //   error["error"] = "Failed to load model configuration";
+  //   Json::Value status;
+  //   status["is_done"] = true;
+  //   status["has_error"] = true;
+  //   status["is_stream"] = false;
+  //   status["status_code"] = k500InternalServerError;
+  //   callback(std::move(status), std::move(error));
+  //   return;
+  // }
+  // auto model_config = models_[model];
+  // auto model_folder_path = model_config.files[0];
+  // CTL_INF(__func__ << ": model_folder_path=" << model_folder_path);
+
+  // auto data_folder_path =
+  //     std::filesystem::path(model_folder_path) / std::filesystem::path("venv");
   try {
-#if defined(_WIN32)
-    auto executable = std::filesystem::path(data_folder_path) /
-                      std::filesystem::path("Scripts");
-#else
-    auto executable =
-        std::filesystem::path(data_folder_path) / std::filesystem::path("bin");
-#endif
+// #if defined(_WIN32)
+//     auto executable = std::filesystem::path(data_folder_path) /
+//                       std::filesystem::path("Scripts");
+// #else
+//     auto executable =
+//         std::filesystem::path(data_folder_path) / std::filesystem::path("bin");
+// #endif
 
-    auto executable_str =
-        (executable / std::filesystem::path(model_config.command[0])).string();
-    auto command = model_config.command;
-    command[0] = executable_str;
-    command.push_back((std::filesystem::path(model_folder_path) /
-                       std::filesystem::path(model_config.script))
-                          .string());
-    std::list<std::string> args{"--port",
-                                model_config.port,
-                                "--log_path",
-                                (file_manager_utils::GetCortexLogPath() /
-                                 std::filesystem::path(model_config.log_path))
-                                    .string(),
-                                "--log_level",
-                                model_config.log_level};
-    if (!model_config.extra_params.isNull() &&
-        model_config.extra_params.isObject()) {
-      for (const auto& key : model_config.extra_params.getMemberNames()) {
-        const Json::Value& value = model_config.extra_params[key];
+//     auto executable_str =
+//         (executable / std::filesystem::path(model_config.command[0])).string();
+//     auto command = model_config.command;
+//     command[0] = executable_str;
+//     command.push_back((std::filesystem::path(model_folder_path) /
+//                        std::filesystem::path(model_config.script))
+//                           .string());
+//     std::list<std::string> args{"--port",
+//                                 model_config.port,
+//                                 "--log_path",
+//                                 (file_manager_utils::GetCortexLogPath() /
+//                                  std::filesystem::path(model_config.log_path))
+//                                     .string(),
+//                                 "--log_level",
+//                                 model_config.log_level};
+//     if (!model_config.extra_params.isNull() &&
+//         model_config.extra_params.isObject()) {
+//       for (const auto& key : model_config.extra_params.getMemberNames()) {
+//         const Json::Value& value = model_config.extra_params[key];
 
-        // Convert key to string with -- prefix
-        std::string param_key = "--" + key;
+//         // Convert key to string with -- prefix
+//         std::string param_key = "--" + key;
 
-        // Handle different JSON value types
-        if (value.isString()) {
-          args.emplace_back(param_key);
-          args.emplace_back(value.asString());
-        } else if (value.isInt()) {
-          args.emplace_back(param_key);
-          args.emplace_back(std::to_string(value.asInt()));
-        } else if (value.isDouble()) {
-          args.emplace_back(param_key);
-          args.emplace_back(std::to_string(value.asDouble()));
-        } else if (value.isBool()) {
-          // For boolean, only add the flag if true
-          if (value.asBool()) {
-            args.emplace_back(param_key);
-          }
-        }
-      }
-    }
+//         // Handle different JSON value types
+//         if (value.isString()) {
+//           args.emplace_back(param_key);
+//           args.emplace_back(value.asString());
+//         } else if (value.isInt()) {
+//           args.emplace_back(param_key);
+//           args.emplace_back(std::to_string(value.asInt()));
+//         } else if (value.isDouble()) {
+//           args.emplace_back(param_key);
+//           args.emplace_back(std::to_string(value.asDouble()));
+//         } else if (value.isBool()) {
+//           // For boolean, only add the flag if true
+//           if (value.asBool()) {
+//             args.emplace_back(param_key);
+//           }
+//         }
+//       }
+//     }
 
-    // Add the parsed arguments to the command
-    command.insert(command.end(), args.begin(), args.end());
+    // // Add the parsed arguments to the command
+    // command.insert(command.end(), args.begin(), args.end());
+
+    std::string uv_path = GetUvPath();
+    std::string entrypoint_path = std::filesystem::path(model_path).parent_path() / "main.py";
+    std::vector<std::string> command{uv_path, "run", entrypoint_path};
+
+    // TODO: what happens if the process exits?
+    // what should be expected from the subprocess
+    // TODO: stdout/stderr of subprocess
     pid = cortex::process::SpawnProcess(command);
     process_map_[model] = pid;
     if (pid == -1) {

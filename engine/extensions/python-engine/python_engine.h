@@ -17,6 +17,7 @@
 #include "utils/process_status_utils.h"
 #include "utils/curl_utils.h"
 #include "utils/process/utils.h"
+#include "services/download_service.h"
 
 // Helper for CURL response
 namespace python_engine {
@@ -30,6 +31,11 @@ struct CurlResponse {
   bool error{false};
   std::string error_message;
 };
+
+// UV-related functions
+cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService> download_service);
+std::string GetUvPath();
+bool IsUvInstalled();
 
 class PythonEngine : public EngineI {
  private:
