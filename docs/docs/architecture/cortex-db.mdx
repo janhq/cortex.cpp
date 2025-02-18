@@ -15,15 +15,14 @@ import TabItem from "@theme/TabItem";
 This document outlines Cortex database architecture which is designed to store and manage models, engines,
 files and more.
 
-## Tables Structure
-
+## Table Structure
 ### schema Table
-
 The `schema` table is designed to hold schema version for cortex database. Below is the structure of the table:
 
 | Column Name        | Data Type | Description                                             |
 |--------------------|-----------|---------------------------------------------------------|
-| version            | INTEGER   | A unique schema version for database.                   |
+| schema_version     | INTEGER   | A unique schema version for database.                   |
+
 
 ### models Table
 The `models` table is designed to hold metadata about various AI models. Below is the structure of the table:
@@ -52,7 +51,6 @@ The `hardware` table is designed to hold metadata about hardware information. Be
 | software_id        | INTEGER   | An integer value representing the software ID associated with the hardware. |
 | activated          | INTEGER   | A boolean value (0 or 1) indicating whether the hardware is activated or not. |
 | priority           | INTEGER   | An integer value representing the priority associated with the hardware. |
-
 
 ### engines Table
 The `engines` table is designed to hold metadata about the different engines available for useage with Cortex.
