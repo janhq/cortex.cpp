@@ -1,8 +1,10 @@
 #include "utils/process/utils.h"
 #include "utils/logging_utils.h"
+#include <filesystem>
 
 #if defined(__APPLE__) || defined(__linux__)
 extern char **environ;  // environment variables
+#include <fcntl.h>
 #endif
 
 namespace cortex::process {
@@ -34,7 +36,9 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
   return argv;
 }
 
-pid_t SpawnProcess(const std::vector<std::string>& command) {
+pid_t SpawnProcess(const std::vector<std::string>& command,
+                   const std::optional<std::string> stdout_file,
+                   const std::optional<std::string> stderr_file) {
   try {
 #if defined(_WIN32)
     // Windows process creation
@@ -79,14 +83,45 @@ pid_t SpawnProcess(const std::vector<std::string>& command) {
     // Convert command vector to char*[]
     auto argv = ConvertToArgv(command);
 
+    // redirect stdout and stderr
+    // caller should make sure the redirect files exist.
+    posix_spawn_file_actions_t *action_ptr = NULL;
+
+    if (stdout_file.has_value() || stderr_file.has_value()) {
+      posix_spawn_file_actions_t action;
+      posix_spawn_file_actions_init(&action);
+      action_ptr = &action;
+
+      if (stdout_file.has_value()) {
+        std::string stdout_file_val = stdout_file.value();
+        if (std::filesystem::exists(stdout_file_val)) {
+          posix_spawn_file_actions_addopen(&action, STDOUT_FILENO,
+                                           stdout_file_val.data(),
+                                           O_WRONLY | O_APPEND, 0);
+        }
+      }
+
+      if (stderr_file.has_value()) {
+        std::string stderr_file_val = stderr_file.value();
+        if (std::filesystem::exists(stderr_file_val)) {
+          posix_spawn_file_actions_addopen(&action, STDERR_FILENO,
+                                           stderr_file_val.data(),
+                                           O_WRONLY | O_APPEND, 0);
+        }
+      }
+    }
+
     // Use posix_spawn for cross-platform compatibility
     auto spawn_result = posix_spawnp(&pid,                // pid output
                                      command[0].c_str(),  // executable path
-                                     NULL,                // file actions
+                                     action_ptr,          // file actions
                                      NULL,                // spawn attributes
                                      argv.data(),         // argument vector
                                      environ  // environment (inherit)
     );
+
+    // NOTE: only destroy this when process ends?
+    // posix_spawn_file_actions_destroy(action_pr);
 
     if (spawn_result != 0) {
       throw std::runtime_error("Failed to spawn process");

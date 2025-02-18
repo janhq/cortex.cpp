@@ -321,59 +321,19 @@ void PythonEngine::LoadModel(
 //         std::filesystem::path(data_folder_path) / std::filesystem::path("bin");
 // #endif
 
-//     auto executable_str =
-//         (executable / std::filesystem::path(model_config.command[0])).string();
-//     auto command = model_config.command;
-//     command[0] = executable_str;
-//     command.push_back((std::filesystem::path(model_folder_path) /
-//                        std::filesystem::path(model_config.script))
-//                           .string());
-//     std::list<std::string> args{"--port",
-//                                 model_config.port,
-//                                 "--log_path",
-//                                 (file_manager_utils::GetCortexLogPath() /
-//                                  std::filesystem::path(model_config.log_path))
-//                                     .string(),
-//                                 "--log_level",
-//                                 model_config.log_level};
-//     if (!model_config.extra_params.isNull() &&
-//         model_config.extra_params.isObject()) {
-//       for (const auto& key : model_config.extra_params.getMemberNames()) {
-//         const Json::Value& value = model_config.extra_params[key];
-
-//         // Convert key to string with -- prefix
-//         std::string param_key = "--" + key;
-
-//         // Handle different JSON value types
-//         if (value.isString()) {
-//           args.emplace_back(param_key);
-//           args.emplace_back(value.asString());
-//         } else if (value.isInt()) {
-//           args.emplace_back(param_key);
-//           args.emplace_back(std::to_string(value.asInt()));
-//         } else if (value.isDouble()) {
-//           args.emplace_back(param_key);
-//           args.emplace_back(std::to_string(value.asDouble()));
-//         } else if (value.isBool()) {
-//           // For boolean, only add the flag if true
-//           if (value.asBool()) {
-//             args.emplace_back(param_key);
-//           }
-//         }
-//       }
-//     }
-
-    // // Add the parsed arguments to the command
-    // command.insert(command.end(), args.begin(), args.end());
-
-    std::string uv_path = GetUvPath();
-    std::string entrypoint_path = std::filesystem::path(model_path).parent_path() / "main.py";
-    std::vector<std::string> command{uv_path, "run", entrypoint_path};
+    const std::filesystem::path model_dir = std::filesystem::path(model_path).parent_path();
+    std::vector<std::string> command{GetUvPath(), "run", model_dir / "main.py"};
 
     // TODO: what happens if the process exits?
-    // what should be expected from the subprocess
-    // TODO: stdout/stderr of subprocess
-    pid = cortex::process::SpawnProcess(command);
+    const std::string stdout_path = model_dir / "stdout.txt";
+    const std::string stderr_path = model_dir / "stderr.txt";
+
+    // create empty stdout.txt and stderr.txt for redirection
+    if (!std::filesystem::exists(stdout_path)) std::ofstream(stdout_path).flush();
+    if (!std::filesystem::exists(stderr_path)) std::ofstream(stderr_path).flush();
+
+    pid = cortex::process::SpawnProcess(command, stdout_path, stderr_path);
+
     process_map_[model] = pid;
     if (pid == -1) {
       std::unique_lock lock(models_mutex_);
