@@ -29,8 +29,13 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   CTL_DBG(chunk);
   Json::Value check_error;
   Json::Reader reader;
-  if (reader.parse(chunk, check_error)) {
+  context->chunks += chunk;
+  if (reader.parse(context->chunks, check_error) ||
+      (reader.parse(chunk, check_error) &&
+       chunk.find("error") != std::string::npos)) {
+    CTL_WRN(context->chunks);
     CTL_WRN(chunk);
+    CTL_INF("Request: " << context->last_request);
     Json::Value status;
     status["is_done"] = true;
     status["has_error"] = true;
@@ -143,7 +148,9 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
       "",
       config.model,
       renderer_,
-      stream_template};
+      stream_template,
+      true,
+      body};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
