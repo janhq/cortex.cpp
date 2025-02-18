@@ -21,9 +21,8 @@ std::filesystem::path SanitizePath(const std::filesystem::path & user_input,
     if (std::filesystem::equivalent(p, abs_base)) {
       return resolved_path;
     }
-  }
-
-  return resolved_path;
+  } 
+  return {};
 }
 
 cpp::result<void, std::string> FileFsRepository::StoreFile(
