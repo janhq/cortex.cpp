@@ -736,8 +736,15 @@ cpp::result<void, std::string> ModelService::DeleteModel(
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
-    // Remove yaml file
-    std::filesystem::remove(yaml_fp);
+    // Remove yaml files
+    for (const auto& entry :
+         std::filesystem::directory_iterator(yaml_fp.parent_path())) {
+      if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
+        std::filesystem::remove(entry);
+        CTL_INF("Removed: " << entry.path().string());
+      }
+    }
+
     // Remove model files if they are not imported locally
     if (model_entry.value().branch_name != "imported" &&
         !engine_svc_->IsRemoteEngine(mc.engine)) {
