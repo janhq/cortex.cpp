@@ -56,11 +56,20 @@ class PythonEngine : public PythonEngineI {
   void LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void UnloadModel(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void GetModelStatus(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  void GetModels(
+    std::shared_ptr<Json::Value> jsonBody,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
   void HandleRequest(
-      const std::string& model,
-      const std::vector<std::string>& path_parts,
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+    const std::string& model,
+    const std::vector<std::string>& path_parts,
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 };
 }  // namespace python_engine

@@ -227,4 +227,25 @@ void PythonEngine::HandleRequest(
   callback(std::move(status), std::move(response_json));
 }
 
+void PythonEngine::UnloadModel(
+  std::shared_ptr<Json::Value> json_body,
+  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+
+  assert(false && "Not implemented");
+}
+
+void PythonEngine::GetModelStatus(
+  std::shared_ptr<Json::Value> json_body,
+  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+
+  assert(false && "Not implemented");
+}
+
+void PythonEngine::GetModels(
+  std::shared_ptr<Json::Value> jsonBody,
+  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+
+  assert(false && "Not implemented");
+}
+
 }  // namespace python_engine
