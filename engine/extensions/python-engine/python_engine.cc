@@ -234,8 +234,16 @@ void PythonEngine::GetModels(
   std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
   Json::Value res, model_list(Json::arrayValue), status;
-  for (const auto& item : model_process_map) {
-    model_list.append(Json::Value{item.first});
+  {
+    std::shared_lock read_lock(mutex);
+    for (const auto& [model_name, py_proc] : model_process_map) {
+      Json::Value val;
+      val["id"] = model_name;
+      val["engine"] = kPythonEngine;
+      val["port"] = py_proc.port;
+      val["object"] = "model";
+      model_list.append(val);
+    }
   }
 
   res["object"] = "list";
