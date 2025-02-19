@@ -210,6 +210,56 @@ void server::RouteRequest(
   }
 }
 
+void server::Python(
+  const HttpRequestPtr& req,
+  std::function<void(const HttpResponsePtr&)>&& callback,
+  const std::string& model) {
+
+  const std::string& full_path = req->getPath();
+
+  const std::string prefix = "/v1/python/";
+  if (full_path.substr(0, prefix.size()) != prefix) {
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(
+      Json::Value("Invalid path: must start with " + prefix));
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  // convert /v1/python/{model}/remaining/path -> /remaning/path
+  const std::string path = full_path.substr(prefix.size() + model.size());
+
+  auto port_result = inference_svc_->GetPythonPort(model);
+  if (port_result.has_error()) {
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(
+      Json::Value(port_result.error()));
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+    return;
+  }
+
+  // route request. localhost might not work?
+  const int port = port_result.value();
+  const std::string host = "http://127.0.0.1:" + std::to_string(port);
+  auto client = HttpClient::newHttpClient(host);
+
+  auto new_req = HttpRequest::newHttpRequest();
+  new_req->setMethod(req->method());
+  new_req->setPath(path);
+  new_req->setBody(std::string{req->body()});
+  new_req->setContentTypeCode(req->getContentType());
+
+  for (const auto& [field, value] : req->headers()) {
+    new_req->addHeader(field, value);
+  }
+
+  CTL_INF("Route request to " << host << path);
+  auto cb = [callback](ReqResult result, const HttpResponsePtr& response) {
+    callback(response);
+  };
+  client->sendRequest(new_req, cb);
+}
+
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto ir = inference_svc_->LoadModel(req->getJsonObject());

@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "json/value.h"
+#include "utils/result.hpp"
 
 class PythonEngineI {
  public:
@@ -25,9 +26,5 @@ class PythonEngineI {
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
-  virtual void HandleRequest(
-      const std::string& model,
-      const std::vector<std::string>& path_parts,
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+  virtual cpp::result<int, std::string> GetPort(const std::string& model) = 0;
 };

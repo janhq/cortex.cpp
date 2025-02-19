@@ -71,10 +71,6 @@ class PythonEngine : public PythonEngineI {
     std::shared_ptr<Json::Value> jsonBody,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-  void HandleRequest(
-    const std::string& model,
-    const std::vector<std::string>& path_parts,
-    std::shared_ptr<Json::Value> json_body,
-    std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+  cpp::result<int, std::string> GetPort(const std::string& model) override;
 };
 }  // namespace python_engine

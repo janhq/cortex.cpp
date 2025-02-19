@@ -302,14 +302,29 @@ void PythonEngine::GetModels(
   callback(std::move(status), std::move(res));
 }
 
-void PythonEngine::HandleRequest(
-  const std::string& model,
-  const std::vector<std::string>& path_parts,
-  std::shared_ptr<Json::Value> json_body,
-  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+cpp::result<int, std::string> PythonEngine::GetPort(const std::string& model) {
+  int port;
 
-  assert(false && "Not implemented");
-  // get port
+  // check if model has started
+  {
+    std::shared_lock read_lock(mutex);
+    if (model_process_map.find(model) == model_process_map.end()) {
+      return cpp::fail("Model " + model + " has not been loaded yet.");
+    }
+    port = model_process_map[model].port;
+  }
+
+  // check if subprocess is still alive
+  {
+    std::unique_lock write_lock(mutex);
+    if (!model_process_map[model].IsAlive()) {
+      // NOTE: do we need to do any other cleanup for subprocesses?
+      model_process_map.erase(model);
+      return cpp::fail("Model " + model + " stopped running.");
+    }
+  }
+
+  return port;
 }
 
 }  // namespace python_engine

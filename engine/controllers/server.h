@@ -49,6 +49,8 @@ class server : public drogon::HttpController<server, false>,
   ADD_METHOD_TO(server::Inference, "/v1/inference", Options, Post);
   ADD_METHOD_TO(server::RouteRequest, "/v1/route/request", Options, Post);
 
+  ADD_METHOD_TO(server::Python, "/v1/python/{1}/.*", Options, Get, Post);
+
   METHOD_LIST_END
 
   void ChatCompletion(
@@ -76,6 +78,10 @@ class server : public drogon::HttpController<server, false>,
                  std::function<void(const HttpResponsePtr&)>&& callback);
   void RouteRequest(const HttpRequestPtr& req,
                     std::function<void(const HttpResponsePtr&)>&& callback);
+  void Python(
+      const HttpRequestPtr& req,
+      std::function<void(const HttpResponsePtr&)>&& callback,
+      const std::string& model);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,

@@ -199,28 +199,13 @@ cpp::result<void, InferResult> InferenceService::HandleRouteRequest(
   return {};
 }
 
-InferResult InferenceService::HandlePython(
-  const std::string& model, const std::vector<std::string>& path_parts,
-  std::shared_ptr<Json::Value> json_body) {
-
-  Json::Value stt, res;
-
+cpp::result<int, std::string> InferenceService::GetPythonPort(const std::string& model) {
   auto engine_result = engine_service_->GetLoadedEngine(kPythonEngine);
   if (engine_result.has_error()) {
-    res["message"] = "Python engine is not loaded yet";
-    stt["status_code"] = drogon::k400BadRequest;
-    LOG_WARN << "Python engine is not loaded yet";
-    return std::make_pair(stt, res);
+    return cpp::fail("Python engine is not loaded yet");
   }
 
-  auto cb = [&stt, &res](Json::Value s, Json::Value r) {
-    stt = s;
-    res = r;
-  };
-  std::get<PythonEngineI*>(engine_result.value())
-      ->HandleRequest(model, path_parts, json_body, cb);
-
-  return std::make_pair(stt, res);
+  return std::get<PythonEngineI*>(engine_result.value())->GetPort(model);
 }
 
 InferResult InferenceService::LoadModel(
