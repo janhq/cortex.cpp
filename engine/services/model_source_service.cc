@@ -199,6 +199,25 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
   return ms;
 }
 
+
+cpp::result<std::vector<std::string>, std::string>
+ModelSourceService::GetRepositoryList(std::string_view author) {
+  if (!cortexso_repos_.empty())
+    return cortexso_repos_;
+  const auto begin = std::chrono::high_resolution_clock::now();
+  auto res = curl_utils::SimpleGet("https://huggingface.co/api/models?author=" +
+                                   std::string(author));
+  if (res.has_value()) {
+    auto repos = ParseJsonString(res.value());
+    for (auto& r : repos) {
+      cortexso_repos_.push_back(r.id);
+    }
+    return cortexso_repos_;
+  } else {
+    return cpp::fail(res.error());
+  }
+}
+
 cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
     const std::string& model_source, const std::string& author) {
   auto res = curl_utils::SimpleGet("https://huggingface.co/api/models?author=" +
