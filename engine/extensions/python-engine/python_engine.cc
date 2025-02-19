@@ -120,11 +120,15 @@ void PythonEngine::LoadModel(
   const std::string model = (*json_body)["model"].asString();
   const fs::path model_dir = (*json_body)["model_dir"].asString();
 
-  if (model_process_map.find(model) != model_process_map.end()) {
-    auto [status, error] = CreateResponse(
-      "Model already loaded!", k409Conflict);
-    callback(std::move(status), std::move(error));
-    return;
+  // TODO: check if model is still alive
+  {
+    std::shared_lock read_lock(mutex);
+    if (model_process_map.find(model) != model_process_map.end()) {
+      auto [status, error] = CreateResponse(
+        "Model already loaded!", k409Conflict);
+      callback(std::move(status), std::move(error));
+      return;
+    }
   }
 
   pid_t pid;
@@ -181,7 +185,6 @@ void PythonEngine::UnloadModel(
   // check if model has started
   {
     std::shared_lock read_lock(mutex);
-
     if (model_process_map.find(model) == model_process_map.end()) {
       const std::string msg = "Model " + model + " has not been loaded yet.";
       auto [status, error] = CreateResponse(msg, k400BadRequest);
@@ -226,7 +229,48 @@ void PythonEngine::GetModelStatus(
   std::shared_ptr<Json::Value> json_body,
   std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
-  assert(false && "Not implemented");
+  if (!json_body->isMember("model")) {
+    auto [status, error] = CreateResponse("Missing required field: model", k400BadRequest);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  const std::string model = (*json_body)["model"].asString();
+  Json::Value res, status;
+
+  // check if model has started
+  {
+    std::shared_lock read_lock(mutex);
+    if (model_process_map.find(model) == model_process_map.end()) {
+      const std::string msg = "Model " + model + " has not been loaded yet.";
+      auto [status, error] = CreateResponse(msg, k400BadRequest);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+  }
+
+  // we know that model has started
+  {
+    std::unique_lock write_lock(mutex);
+
+    // check if subprocess is still alive
+    if (!model_process_map[model].IsAlive()) {
+      const std::string msg = "Model " + model + " stopped running.";
+      auto [status, error] = CreateResponse(msg, k400BadRequest);
+
+      // NOTE: do we need to do any other cleanup for subprocesses?
+      model_process_map.erase(model);
+
+      callback(std::move(status), std::move(error));
+      return;
+    }
+  }
+
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = k200OK;
+  callback(std::move(status), std::move(res));
 }
 
 void PythonEngine::GetModels(
@@ -237,6 +281,7 @@ void PythonEngine::GetModels(
   {
     std::shared_lock read_lock(mutex);
     for (const auto& [model_name, py_proc] : model_process_map) {
+      // TODO: check if py_proc is still alive
       Json::Value val;
       val["id"] = model_name;
       val["engine"] = kPythonEngine;
