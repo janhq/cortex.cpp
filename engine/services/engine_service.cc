@@ -884,10 +884,10 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
-    engines_.erase(ne);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
+  engines_.erase(ne);
 
   CTL_DBG("Engine unloaded: " + ne);
   return {};

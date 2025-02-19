@@ -687,8 +687,15 @@ cpp::result<void, std::string> ModelService::DeleteModel(
         fs::path(model_entry.value().path_to_model_yaml));
     yaml_handler.ModelConfigFromFile(yaml_fp.string());
     auto mc = yaml_handler.GetModelConfig();
-    // Remove yaml file
-    std::filesystem::remove(yaml_fp);
+    // Remove yaml files
+    for (const auto& entry :
+         std::filesystem::directory_iterator(yaml_fp.parent_path())) {
+      if (entry.is_regular_file() && (entry.path().extension() == ".yml")) {
+        std::filesystem::remove(entry);
+        CTL_INF("Removed: " << entry.path().string());
+      }
+    }
+
     // Remove model files if they are not imported locally
     if (model_entry.value().branch_name != "imported" &&
         !engine_svc_->IsRemoteEngine(mc.engine)) {
@@ -1131,6 +1138,8 @@ cpp::result<std::optional<std::string>, std::string>
 ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
                                int ctx_len, int n_batch, int n_ubatch,
                                const std::string& kv_cache_type) {
+  // TODO(sang) temporary disable this function 
+  return std::nullopt;
   assert(hw_service_);
   auto hw_info = hw_service_->GetHardwareInfo();
   assert(!!engine_svc_);

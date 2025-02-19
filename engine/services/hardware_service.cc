@@ -38,6 +38,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
+  std::lock_guard<std::mutex> l(mtx_);
   auto gpus = cortex::hw::GetGPUInfo();
   auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
@@ -63,7 +64,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
   namespace luh = logging_utils_helper;
   if (!ahc_)
     return true;
-  auto exe = commands::GetCortexServerBinary();
+  auto exe = file_manager_utils::Subtract(
+      file_manager_utils::GetExecutablePath(), cortex_utils::GetCurrentPath());
   auto get_config_file_path = []() -> std::string {
     if (file_manager_utils::cortex_config_file_path.empty()) {
       return file_manager_utils::GetConfigurationPath().string();
@@ -144,16 +146,17 @@ bool HardwareService::Restart(const std::string& host, int port) {
   ZeroMemory(&pi, sizeof(pi));
   // TODO (sang) write a common function for this and server_start_cmd
   std::wstring params = L"--ignore_cout";
-  params += L" --config_file_path " +
-            file_manager_utils::GetConfigurationPath().wstring();
-  params += L" --data_folder_path " +
-            file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --config_file_path \"" +
+            file_manager_utils::GetConfigurationPath().wstring() + L"\"";
+  params += L" --data_folder_path \"" +
+            file_manager_utils::GetCortexDataPath().wstring() + L"\"";
   params += L" --loglevel " +
             cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
-  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
+  std::wstring exe_w = exe.wstring();
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
-  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
+  std::wstring wcmds = current_path_w + L"\\" + exe_w + L" " + params;
+  CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
@@ -185,7 +188,7 @@ bool HardwareService::Restart(const std::string& host, int port) {
   auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
   auto db_srv = std::make_shared<DatabaseService>();
   EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
-  std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
+  std::string p = cortex_utils::GetCurrentPath() / exe;
   commands.push_back(p);
   commands.push_back("--ignore_cout");
   commands.push_back("--config_file_path");
@@ -486,7 +489,7 @@ std::vector<int> HardwareService::GetCudaConfig() {
   // Map uuid back to nvidia id
   for (auto const& uuid : uuids) {
     for (auto const& ngpu : nvidia_gpus) {
-      if (uuid == ngpu.uuid) {
+      if (ngpu.uuid.find(uuid) != std::string::npos) {
         res.push_back(std::stoi(ngpu.id));
       }
     }
