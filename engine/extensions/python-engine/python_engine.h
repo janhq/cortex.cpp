@@ -10,7 +10,7 @@
 #include "config/model_config.h"
 #include "trantor/utils/ConcurrentTaskQueue.h"
 
-#include "cortex-common/EngineI.h"
+#include "cortex-common/python_enginei.h"
 #include "extensions/template_renderer.h"
 #include "utils/file_logger.h"
 #include "utils/file_manager_utils.h"
@@ -33,11 +33,11 @@ struct CurlResponse {
 };
 
 // UV-related functions
-cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService> download_service);
+cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& download_service);
 std::string GetUvPath();
 bool IsUvInstalled();
 
-class PythonEngine : public EngineI {
+class PythonEngine : public PythonEngineI {
  private:
   // Model configuration
 
@@ -49,69 +49,18 @@ class PythonEngine : public EngineI {
   std::unordered_map<std::string, pid_t> process_map_;
   trantor::ConcurrentTaskQueue q_;
 
-  // Helper functions
-  CurlResponse MakePostRequest(const std::string& model,
-                               const std::string& path,
-                               const std::string& body);
-  CurlResponse MakeGetRequest(const std::string& model,
-                              const std::string& path);
-  CurlResponse MakeDeleteRequest(const std::string& model,
-                                 const std::string& path);
-  CurlResponse MakeStreamPostRequest(
-      const std::string& model, const std::string& path,
-      const std::string& body,
-      const std::function<void(Json::Value&&, Json::Value&&)>& callback);
-
-  // Process manager functions
-  bool TerminateModelProcess(const std::string& model);
-
-  // Internal model management
-  bool LoadModelConfig(const std::string& model, const std::string& yaml_path);
-  config::PythonModelConfig* GetModelConfig(const std::string& model);
-
  public:
   PythonEngine();
   ~PythonEngine();
 
-  void Load(EngineLoadOption opts) override;
-
-  void Unload(EngineUnloadOption opts) override;
-
-  // Main interface implementations
-  void GetModels(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-
-  void HandleChatCompletion(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-
   void LoadModel(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
 
-  void UnloadModel(
+  void HandleRequest(
+      const std::string& model,
+      const std::vector<std::string>& path_parts,
       std::shared_ptr<Json::Value> json_body,
       std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-
-  void GetModelStatus(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-
-  // Other required virtual functions
-  void HandleEmbedding(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  bool IsSupported(const std::string& feature) override;
-  bool SetFileLogger(int max_log_lines, const std::string& log_path) override;
-  void SetLogLevel(trantor::Logger::LogLevel logLevel) override;
-  void HandleRouteRequest(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  void HandleInference(
-      std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) override;
-  Json::Value GetRemoteModels() override;
-  void StopInferencing(const std::string& model_id) override;
 };
 }  // namespace python_engine

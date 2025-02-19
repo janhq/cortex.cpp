@@ -182,6 +182,30 @@ cpp::result<void, InferResult> InferenceService::HandleRouteRequest(
   return {};
 }
 
+InferResult InferenceService::HandlePython(
+  const std::string& model, const std::vector<std::string>& path_parts,
+  std::shared_ptr<Json::Value> json_body) {
+
+  Json::Value stt, res;
+
+  auto engine_result = engine_service_->GetLoadedEngine(kPythonEngine);
+  if (engine_result.has_error()) {
+    res["message"] = "Python engine is not loaded yet";
+    stt["status_code"] = drogon::k400BadRequest;
+    LOG_WARN << "Python engine is not loaded yet";
+    return std::make_pair(stt, res);
+  }
+
+  auto cb = [&stt, &res](Json::Value s, Json::Value r) {
+    stt = s;
+    res = r;
+  };
+  std::get<PythonEngineI*>(engine_result.value())
+      ->HandleRequest(model, path_parts, json_body, cb);
+
+  return std::make_pair(stt, res);
+}
+
 InferResult InferenceService::LoadModel(
     std::shared_ptr<Json::Value> json_body) {
   std::string engine_type;
@@ -204,17 +228,20 @@ InferResult InferenceService::LoadModel(
   }
 
   // might need mutex here
-  auto engine_result = engine_service_->GetLoadedEngine(engine_type);
+  auto engine = engine_service_->GetLoadedEngine(engine_type).value();
 
   auto cb = [&stt, &r](Json::Value status, Json::Value res) {
     stt = status;
     r = res;
   };
-  if (std::holds_alternative<EngineI*>(engine_result.value())) {
-    std::get<EngineI*>(engine_result.value())
+  if (std::holds_alternative<EngineI*>(engine)) {
+    std::get<EngineI*>(engine)
+        ->LoadModel(json_body, std::move(cb));
+  } else if (std::holds_alternative<PythonEngineI*>(engine)) {
+    std::get<PythonEngineI*>(engine)
         ->LoadModel(json_body, std::move(cb));
   } else {
-    std::get<RemoteEngineI*>(engine_result.value())
+    std::get<RemoteEngineI*>(engine)
         ->LoadModel(json_body, std::move(cb));
   }
   if (!engine_service_->IsRemoteEngine(engine_type)) {
@@ -340,47 +367,8 @@ InferResult InferenceService::FineTuning(
   Json::Value r;
   Json::Value stt;
 
-  // TODO: namh refactor this
-  // if (engines_.find(ne) == engines_.end()) {
-  //   try {
-  //     std::string abs_path =
-  //         (getenv("ENGINE_PATH")
-  //              ? getenv("ENGINE_PATH")
-  //              : file_manager_utils::GetCortexDataPath().string()) +
-  //         kPythonRuntimeLibPath;
-  //     engines_[ne].dl = std::make_unique<cortex_cpp::dylib>(abs_path, "engine");
-  //   } catch (const cortex_cpp::dylib::load_error& e) {
-  //
-  //     LOG_ERROR << "Could not load engine: " << e.what();
-  //     engines_.erase(ne);
-  //
-  //     Json::Value res;
-  //     r["message"] = "Could not load engine " + ne;
-  //     stt["status_code"] = drogon::k500InternalServerError;
-  //     return std::make_pair(stt, r);
-  //   }
-  //
-  //   auto func =
-  //       engines_[ne].dl->get_function<CortexPythonEngineI*()>("get_engine");
-  //   engines_[ne].engine = func();
-  //   LOG_INFO << "Loaded engine: " << ne;
-  // }
-  //
-  // LOG_TRACE << "Start to fine-tuning";
-  // auto& en = std::get<CortexPythonEngineI*>(engines_[ne].engine);
-  // if (en->IsSupported("HandlePythonFileExecutionRequest")) {
-  //   en->HandlePythonFileExecutionRequest(
-  //       json_body, [&r, &stt](Json::Value status, Json::Value res) {
-  //         r = res;
-  //         stt = status;
-  //       });
-  // } else {
-  //   LOG_WARN << "Method is not supported yet";
   r["message"] = "Method is not supported yet";
   stt["status_code"] = drogon::k500InternalServerError;
-  //   return std::make_pair(stt, r);
-  // }
-  // LOG_TRACE << "Done fine-tuning";
   return std::make_pair(stt, r);
 }
 
