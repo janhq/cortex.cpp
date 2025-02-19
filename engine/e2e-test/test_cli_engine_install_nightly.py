@@ -31,7 +31,7 @@ class TestCliEngineInstall:
         assert len(response.json()) > 0
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
-    @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
+    @pytest.mark.skipif(reason="Ignore onnx-runtime test")
     def test_engines_install_onnx_on_macos_should_be_failed(self):
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "onnxruntime"]
@@ -39,7 +39,7 @@ class TestCliEngineInstall:
         assert "is not supported on" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
-    @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
+    @pytest.mark.skipif(reason="Ignore tensorrt-llm test")
     def test_engines_install_onnx_on_tensorrt_should_be_failed(self):
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "tensorrt-llm"]

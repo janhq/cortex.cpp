@@ -194,6 +194,7 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
       .sslCertPath = "",
       .sslKeyPath = "",
       .supportedEngines = config_yaml_utils::kDefaultSupportedEngines,
+      .checkedForSyncHubAt = 0u,
   };
 }
 

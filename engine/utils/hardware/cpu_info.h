@@ -26,6 +26,7 @@ inline CPU GetCPUInfo() {
 #else
   float usage = GetCPUUsage();
 #endif
+
   // float usage = 0;
   return CPU{.cores = cpu.numPhysicalCores(),
              .arch = std::string(GetArch()),
