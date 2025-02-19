@@ -11,16 +11,18 @@ class PythonEngineI {
 
   // virtual bool IsSupported(const std::string& f) = 0;
 
-  // virtual void ExecutePythonFile(std::string binary_execute_path,
-  //                                std::string file_execution_path,
-  //                                std::string python_library_path) = 0;
-
-  // virtual void HandlePythonFileExecutionRequest(
-  //     std::shared_ptr<Json::Value> json_body,
-  //     std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
-
+  // model management
   virtual void LoadModel(
     std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+  virtual void UnloadModel(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+  virtual void GetModelStatus(
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
+  virtual void GetModels(
+    std::shared_ptr<Json::Value> jsonBody,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 
   virtual void HandleRequest(

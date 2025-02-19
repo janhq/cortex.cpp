@@ -39,14 +39,16 @@ bool IsUvInstalled();
 
 class PythonEngine : public PythonEngineI {
  private:
-  // Model configuration
+  // extensions::TemplateRenderer renderer_;
+  // std::unique_ptr<trantor::FileLogger> async_file_logger_;
 
-  // Thread-safe model config storage
-  mutable std::shared_mutex models_mutex_;
-  std::unordered_map<std::string, config::PythonModelConfig> models_;
-  extensions::TemplateRenderer renderer_;
-  std::unique_ptr<trantor::FileLogger> async_file_logger_;
-  std::unordered_map<std::string, pid_t> process_map_;
+  struct PythonSubprocess {
+    pid_t pid;
+    int port;
+  };
+
+  mutable std::shared_mutex mutex;
+  std::unordered_map<std::string, PythonSubprocess> model_process_map;
   trantor::ConcurrentTaskQueue q_;
 
  public:

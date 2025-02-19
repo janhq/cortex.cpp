@@ -11,57 +11,6 @@ constexpr const int k400BadRequest = 400;
 constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
 constexpr const int kFileLoggerOption = 0;
-
-size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
-                           void* userdata) {
-  auto* context = static_cast<StreamContext*>(userdata);
-  std::string chunk(ptr, size * nmemb);
-
-  context->buffer += chunk;
-
-  // Process complete lines
-  size_t pos;
-  while ((pos = context->buffer.find('\n')) != std::string::npos) {
-    std::string line = context->buffer.substr(0, pos);
-    context->buffer = context->buffer.substr(pos + 1);
-    LOG_DEBUG << "line: " << line;
-
-    // Skip empty lines
-    if (line.empty() || line == "\r")
-      continue;
-
-    if (line == "data: [DONE]") {
-      Json::Value status;
-      status["is_done"] = true;
-      status["has_error"] = false;
-      status["is_stream"] = true;
-      status["status_code"] = 200;
-      (*context->callback)(std::move(status), Json::Value());
-      break;
-    }
-
-    // Parse the JSON
-    Json::Value chunk_json;
-    chunk_json["data"] = line + "\n\n";
-    Json::Reader reader;
-
-    Json::Value status;
-    status["is_done"] = false;
-    status["has_error"] = false;
-    status["is_stream"] = true;
-    status["status_code"] = 200;
-    (*context->callback)(std::move(status), std::move(chunk_json));
-  }
-
-  return size * nmemb;
-}
-
-static size_t WriteCallback(char* ptr, size_t size, size_t nmemb,
-                            std::string* data) {
-  data->append(ptr, size * nmemb);
-  return size * nmemb;
-}
-
 }  // namespace
 
 cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& download_service) {
@@ -127,18 +76,35 @@ PythonEngine::~PythonEngine() {
   curl_global_cleanup();
 }
 
+static std::pair<Json::Value, Json::Value> CreateResponse(
+    const std::string& msg, int code) {
+
+  Json::Value status, res;
+  const bool has_error = code != k200OK;
+
+  status["is_done"] = true;
+  status["has_error"] = has_error;
+  status["is_stream"] = false;
+  status["status_code"] = code;
+
+  if (has_error) {
+    CTL_ERR(msg);
+    res["error"] = msg;
+  }
+  else {
+    res["status"] = msg;
+  }
+
+  return {status, res};
+}
+
 void PythonEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
   if (!json_body->isMember("model") || !json_body->isMember("model_dir")) {
-    Json::Value error;
-    error["error"] = "Missing required fields: model or model_dir";
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k400BadRequest;
+    auto [status, error] = CreateResponse(
+      "Missing required fields: model or model_dir", k400BadRequest);
     callback(std::move(status), std::move(error));
     return;
   }
@@ -148,24 +114,34 @@ void PythonEngine::LoadModel(
   const std::string& model = (*json_body)["model"].asString();
   const fs::path model_dir = (*json_body)["model_dir"].asString();
 
-  if (models_.find(model) != models_.end()) {
-    Json::Value error;
-    error["error"] = "Model already loaded!";
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k409Conflict;
+  if (model_process_map.find(model) != model_process_map.end()) {
+    auto [status, error] = CreateResponse(
+      "Model already loaded!", k409Conflict);
     callback(std::move(status), std::move(error));
     return;
   }
 
   pid_t pid;
-
   try {
-    std::vector<std::string> command{GetUvPath(), "run", model_dir / "main.py"};
+    auto model_config = YAML::LoadFile(model_dir / "model.yml");
+    if (!model_config["entrypoint"])
+      throw std::runtime_error("`entrypoint` is not defined in model.yml");
+    if (!model_config["port"])
+      throw std::runtime_error("`port` is not defined in model.yaml");
 
-    // TODO: what happens if the process exits?
+    const std::string entrypoint = model_config["entrypoint"].as<std::string>();
+    const int port = model_config["port"].as<int>();
+
+    // NOTE: model_dir / entrypoint assumes a Python script
+    // TODO: figure out if we can support arbitrary CLI (but still launch by uv)
+    std::vector<std::string> command{GetUvPath(), "run", model_dir / entrypoint};
+
+    auto extra_args_node = model_config["extra_args"];
+    if (extra_args_node && extra_args_node.IsSequence()) {
+      for (int i = 0; i < extra_args_node.size(); i++)
+        command.push_back(extra_args_node[i].as<std::string>());
+    }
+
     const std::string stdout_path = model_dir / "stdout.txt";
     const std::string stderr_path = model_dir / "stderr.txt";
 
@@ -173,58 +149,25 @@ void PythonEngine::LoadModel(
     if (!std::filesystem::exists(stdout_path)) std::ofstream(stdout_path).flush();
     if (!std::filesystem::exists(stderr_path)) std::ofstream(stderr_path).flush();
 
+    // TODO: what happens if the process starts, but exits?
     pid = cortex::process::SpawnProcess(command, stdout_path, stderr_path);
-
-    process_map_[model] = pid;
     if (pid == -1) {
       throw std::runtime_error("Fail to spawn process with pid -1");
     }
-  } catch (const std::exception& e) {
-    std::unique_lock lock(models_mutex_);
-    if (models_.find(model) != models_.end()) {
-      models_.erase(model);
-    }
+    std::unique_lock write_lock(mutex);
+    model_process_map[model] = {pid, port};
 
-    Json::Value error;
-    error["error"] = e.what();
-    Json::Value status;
-    status["is_done"] = true;
-    status["has_error"] = true;
-    status["is_stream"] = false;
-    status["status_code"] = k500InternalServerError;
+  } catch (const std::exception& e) {
+    auto e_msg = e.what();
+    auto [status, error] = CreateResponse(e_msg, k500InternalServerError);
     callback(std::move(status), std::move(error));
     return;
   }
 
-  Json::Value response;
-  response["status"] =
-      "Model loaded successfully with pid: " + std::to_string(pid);
-  Json::Value status;
-  status["is_done"] = true;
-  status["has_error"] = false;
-  status["is_stream"] = false;
-  status["status_code"] = k200OK;
-  callback(std::move(status), std::move(response));
-}
-
-void PythonEngine::HandleRequest(
-  const std::string& model,
-  const std::vector<std::string>& path_parts,
-  std::shared_ptr<Json::Value> json_body,
-  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
-
-  // get port
-
-  Json::Value response_json;
-  response_json["object"] = "list";
-
-  Json::Value status;
-  status["is_done"] = true;
-  status["has_error"] = false;
-  status["is_stream"] = false;
-  status["status_code"] = k200OK;
-
-  callback(std::move(status), std::move(response_json));
+  auto [status, res] = CreateResponse(
+    "Model loaded successfully with pid: " + std::to_string(pid),
+    k200OK);
+  callback(std::move(status), std::move(res));
 }
 
 void PythonEngine::UnloadModel(
@@ -246,6 +189,16 @@ void PythonEngine::GetModels(
   std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
   assert(false && "Not implemented");
+}
+
+void PythonEngine::HandleRequest(
+  const std::string& model,
+  const std::vector<std::string>& path_parts,
+  std::shared_ptr<Json::Value> json_body,
+  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+
+  assert(false && "Not implemented");
+  // get port
 }
 
 }  // namespace python_engine
