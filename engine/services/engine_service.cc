@@ -884,6 +884,8 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
+  } else if (std::holds_alternative<PythonEngineI*>(engines_[ne].engine)) {
+    delete std::get<PythonEngineI*>(engines_[ne].engine);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }

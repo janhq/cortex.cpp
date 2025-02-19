@@ -76,10 +76,14 @@ bool PythonEngine::PythonSubprocess::Kill() {
   return cortex::process::KillProcess(pid);
 }
 
-PythonEngine::PythonEngine() : q_(4 /*n_parallel*/, "python_engine") {}
+PythonEngine::PythonEngine() {}
 
 PythonEngine::~PythonEngine() {
-  curl_global_cleanup();
+  // NOTE: what happens if we can't kill subprocess?
+  std::unique_lock write_lock(mutex);
+  for (auto& [model_name, py_proc] : model_process_map) {
+    if (py_proc.IsAlive()) py_proc.Kill();
+  }
 }
 
 static std::pair<Json::Value, Json::Value> CreateResponse(
