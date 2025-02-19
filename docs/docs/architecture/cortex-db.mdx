@@ -7,11 +7,13 @@ slug: "cortex-db"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
-This document outlines the architecture of the database designed to store and manage various types of entities and their associated metadata.
+![sqlite-view](/img/sqlite_view_harlequin.png)
+**db view via [Harlequin](https://harlequin.sh/)**
+
+
+This document outlines Cortex database architecture which is designed to store and manage models, engines,
+files and more.
 
 ## Table Structure
 ### schema Table
@@ -49,3 +51,32 @@ The `hardware` table is designed to hold metadata about hardware information. Be
 | activated          | INTEGER   | A boolean value (0 or 1) indicating whether the hardware is activated or not. |
 | priority           | INTEGER   | An integer value representing the priority associated with the hardware. |
 
+### engines Table
+The `engines` table is designed to hold metadata about the different engines available for useage with Cortex.
+Below is the structure of the table:
+
+| Column Name  | Data Type | Description                                             |
+|--------------|-----------|---------------------------------------------------------|
+| id           | INTEGER   | A unique identifier for each engine (Primary Key).      |
+| engine_name  | TEXT      | The name of the engine. |
+| type         | TEXT      |  |
+| api_key      | TEXT      |  |
+| url          | TEXT      |  |
+| version      | TEXT      | The current version of the engine. |
+| variant      | TEXT      |  |
+| status       | TEXT      | Current status of the engine (e.g., "downloaded", "downloadable"). |
+| metadata     | TEXT      | Additional metadata or information about the engine. |
+| date_ceated  | TEXT      | Date when the engine was downloaded. |
+| date_updated | TEXT      | Date when the engine was last updated. |
+
+### files Table
+The `files` table is designed to hold metadata about objects dowloaded via Cortex.
+
+| Column Name | Data Type | Description                     |
+|-------------|-----------|---------------------------------|
+| id         | TEXT      | The primary key for the table    |
+| object     | TEXT      | The type of hardware.            |
+| purpose    | TEXT      | Purpose of file                  |
+| filename   | TEXT      | The name of the file.            |
+| created_at | INTEGER   | Date when file was created       |
+| bytes      | INTEGER   |                                  |

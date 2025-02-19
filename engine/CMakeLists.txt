@@ -62,13 +62,16 @@ add_compile_definitions(CORTEX_CPP_VERSION="${CORTEX_CPP_VERSION}")
 add_compile_definitions(CORTEX_CONFIG_FILE_PATH="${CORTEX_CONFIG_FILE_PATH}")
 
 option(CMAKE_BUILD_TEST "Enable testing" OFF)
+option(CMAKE_BUILD_INJA_TEST "Enable inja example" OFF)
 if(CMAKE_BUILD_TEST)
   add_subdirectory(test)
 endif()
 
 add_subdirectory(cli)
 
-
+if(CMAKE_BUILD_INJA_TEST)
+  add_subdirectory(examples/inja)
+endif()
 
 find_package(jsoncpp CONFIG REQUIRED)
 find_package(Drogon CONFIG REQUIRED)
@@ -149,6 +152,7 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/python-engine/python_engine.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/dylib_path_manager.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils/process/utils.cc
 
     ${CMAKE_CURRENT_SOURCE_DIR}/extensions/remote-engine/remote_engine.cc
 

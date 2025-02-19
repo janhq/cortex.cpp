@@ -7,9 +7,6 @@ slug: "proxy"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
 # Proxy Configuration Guide
 
@@ -17,15 +14,13 @@ This document describes how to configure proxy settings for Cortex to be able to
 
 ## Command Line Interface (CLI)
 
-### Basic Usage
+Basic Usage
 
 ```bash
 cortex config [OPTIONS] [COMMAND]
 ```
 
-### Commands
-
-- `status`: Display all current configurations
+To display all current configurations
 
 ```bash
 cortex config status
@@ -33,7 +28,7 @@ cortex config status
 
 Example Output:
 
-```bash
+```md
 +-----------------------+------------------------+
 | Config name           | Value                  |
 +-----------------------+------------------------+
@@ -73,16 +68,17 @@ Example Output:
 
 ### Endpoints
 
-#### Get Current Configuration
+To get the current configuration
 
 ```http
 GET /v1/configs
 ```
+or
+```sh
+curl GET http://127.0.0.1:39281/v1/configs
+```
 
-Retrieves the current configuration settings.
-
-##### Response
-
+Response
 ```json
 {
   "allowed_origins": [
@@ -102,22 +98,18 @@ Retrieves the current configuration settings.
 }
 ```
 
-#### Update Configuration
+##### To update the current configuration
 
 ```http
 PATCH /v1/configs
 ```
 
-Updates proxy configuration settings.
-
 ##### Request Headers
-
-```
+```json
 Content-Type: application/json
 ```
 
 ##### Request Body
-
 ```json
 {
   "no_proxy": "localhost",
@@ -170,7 +162,8 @@ Content-Type: application/json
 
 ## Testing proxy configuration
 
-You can test your proxy configuration using [mitmproxy](https://docs.mitmproxy.org/stable). This guide is written on macOS, but you can use it on any other platform.
+You can test your proxy configuration using [mitmproxy](https://docs.mitmproxy.org/stable). This guide is written
+on macOS, but you can use it on any other platform.
 
 ### Install mitmproxy
 
@@ -184,19 +177,22 @@ brew install mitmproxy
 mitmproxy --set stream_large_bodies=1m
 ```
 
-mitmproxy will start on port `8080`. After mitmproxy started, you can adding options by pressing `O`. mitmproxy will display an option screen. You can check their document to learn more about mitmproxy. But let's take a simple option for now by setting the `proxyauth` for our local proxy. Inside the option screen, search for `proxyauth` and hit enter. Then, type `username:password` and hit enter again. You will see your newly added option is red-colored.
+`mitmproxy` will start on port `8080`. After `mitmproxy` has started, you can add different options by pressing
+the capital letter `O` and this will display an optional screen. As an example, try searching for `proxyauth`
+and hit enter when you find it. Then, type `username:password` and hit enter again. You will see your newly
+added option is red-colored.
 
-### Configuring Cortex to use that proxy
+Now we can use the Cortex CLI to tweak our config and use that proxy. In `mitmproxy`, press the capital letter `E`
+to see the event log. You will see the request and response logs in this screen.
 
-Let's using CLI to configure Cortex to use that proxy.
+Let's try changing our config in a different terminal window.
 
 ```bash
 cortex config --proxy_url http://localhost:8080 --proxy_username username --proxy_password password
 ```
-
-### Testing the proxy
-
-Now, let's test the proxy. If you are setting the username and password correctly (same with `proxyauth` in mitmproxy), you will see the request in mitmproxy. For example, command `cortex pull tinyllama` should be successfully and returns a list of selectable models. Also, you will see your request in mitmproxy CLI screen.
+```
+Configuration updated successfully!
+```
 
 Let's try to use a wrong authentication for your proxy.
 
@@ -204,4 +200,4 @@ Let's try to use a wrong authentication for your proxy.
 cortex config --proxy_password wrong_pw
 ```
 
-Now, let's test the proxy again. You will see the request is failed and returns an error.
+![mproxy](/img/mitproxy_ex.png)

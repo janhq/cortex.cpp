@@ -9,7 +9,10 @@
 #endif
 #include "cli/commands/cortex_upd_cmd.h"
 #include "database/hardware.h"
+#include "services/engine_service.h"
 #include "utils/cortex_utils.h"
+#include "utils/dylib_path_manager.h"
+#include "utils/process/utils.h"
 #if defined(__linux__)
 #include "services/download_service.h"
 #endif
@@ -152,7 +155,7 @@ bool HardwareService::Restart(const std::string& host, int port) {
   std::wstring exe_w = exe.wstring();
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
-  std::wstring wcmds = current_path_w +  L"\\" + exe_w + L" " + params;
+  std::wstring wcmds = current_path_w + L"\\" + exe_w + L" " + params;
   CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
@@ -179,42 +182,36 @@ bool HardwareService::Restart(const std::string& host, int port) {
   }
 
 #else
-  // Unix-like system-specific code to fork a child process
-  pid_t pid = fork();
-
+  std::vector<std::string> commands;
+  // Some engines requires to add lib search path before process being created
+  auto download_srv = std::make_shared<DownloadService>();
+  auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
+  auto db_srv = std::make_shared<DatabaseService>();
+  EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
+  std::string p = cortex_utils::GetCurrentPath() / exe;
+  commands.push_back(p);
+  commands.push_back("--ignore_cout");
+  commands.push_back("--config_file_path");
+  commands.push_back(get_config_file_path());
+  commands.push_back("--data_folder_path");
+  commands.push_back(get_data_folder_path());
+  commands.push_back("--loglevel");
+  commands.push_back(luh::LogLevelStr(luh::global_log_level));
+  auto pid = cortex::process::SpawnProcess(commands);
   if (pid < 0) {
     // Fork failed
     std::cerr << "Could not start server: " << std::endl;
     return false;
-  } else if (pid == 0) {
-    // No need to configure LD_LIBRARY_PATH for macOS
-#if !defined(__APPLE__) || !defined(__MACH__)
-    const char* name = "LD_LIBRARY_PATH";
-    auto data = getenv(name);
-    std::string v;
-    if (auto g = getenv(name); g) {
-      v += g;
-    }
-    CTL_INF("LD_LIBRARY_PATH: " << v);
-    auto llamacpp_path = file_manager_utils::GetCudaToolkitPath(kLlamaRepo);
-    auto trt_path = file_manager_utils::GetCudaToolkitPath(kTrtLlmRepo);
-
-    auto new_v = trt_path.string() + ":" + llamacpp_path.string() + ":" + v;
-    setenv(name, new_v.c_str(), true);
-    CTL_INF("LD_LIBRARY_PATH: " << getenv(name));
-#endif
-    std::string p = cortex_utils::GetCurrentPath() + "/" + exe.string();
-    CTL_INF("server file path: " << p);
-    execl(p.c_str(), exe.c_str(), "--ignore_cout", "--config_file_path",
-          get_config_file_path().c_str(), "--data_folder_path",
-          get_data_folder_path().c_str(), "--loglevel",
-          luh::LogLevelStr(luh::global_log_level).c_str(), (char*)0);
   } else {
     // Parent process
     if (!TryConnectToServer(host, port)) {
       return false;
     }
+    std::cout << "Server started" << std::endl;
+    std::cout << "API Documentation available at: http://" << host << ":"
+              << port << std::endl;
   }
+
 #endif
   return true;
 }
