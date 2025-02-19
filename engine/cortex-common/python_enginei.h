@@ -5,9 +5,9 @@
 
 #include "json/value.h"
 
-class CortexPythonEngineI {
+class PythonEngineI {
  public:
-  virtual ~CortexPythonEngineI() {}
+  virtual ~PythonEngineI() {}
 
   virtual bool IsSupported(const std::string& f) = 0;
 
@@ -17,6 +17,5 @@ class CortexPythonEngineI {
 
   virtual void HandlePythonFileExecutionRequest(
       std::shared_ptr<Json::Value> json_body,
-      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;  
+      std::function<void(Json::Value&&, Json::Value&&)>&& callback) = 0;
 };
-
