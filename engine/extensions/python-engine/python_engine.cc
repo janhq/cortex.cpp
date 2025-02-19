@@ -65,9 +65,15 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
 std::string GetUvPath() {
   return file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
 }
-
 bool IsUvInstalled() {
   return std::filesystem::exists(GetUvPath());
+}
+
+bool PythonEngine::PythonSubprocess::IsAlive() {
+  return cortex::process::IsProcessAlive(pid);
+}
+bool PythonEngine::PythonSubprocess::Kill() {
+  return cortex::process::KillProcess(pid);
 }
 
 PythonEngine::PythonEngine() : q_(4 /*n_parallel*/, "python_engine") {}
@@ -111,7 +117,7 @@ void PythonEngine::LoadModel(
 
   namespace fs = std::filesystem;
 
-  const std::string& model = (*json_body)["model"].asString();
+  const std::string model = (*json_body)["model"].asString();
   const fs::path model_dir = (*json_body)["model_dir"].asString();
 
   if (model_process_map.find(model) != model_process_map.end()) {
@@ -123,24 +129,14 @@ void PythonEngine::LoadModel(
 
   pid_t pid;
   try {
-    auto model_config = YAML::LoadFile(model_dir / "model.yml");
-    if (!model_config["entrypoint"])
-      throw std::runtime_error("`entrypoint` is not defined in model.yml");
-    if (!model_config["port"])
-      throw std::runtime_error("`port` is not defined in model.yaml");
-
-    const std::string entrypoint = model_config["entrypoint"].as<std::string>();
-    const int port = model_config["port"].as<int>();
+    config::PythonModelConfig py_cfg;
+    py_cfg.ReadFromYaml(model_dir / "model.yml");
 
     // NOTE: model_dir / entrypoint assumes a Python script
     // TODO: figure out if we can support arbitrary CLI (but still launch by uv)
-    std::vector<std::string> command{GetUvPath(), "run", model_dir / entrypoint};
-
-    auto extra_args_node = model_config["extra_args"];
-    if (extra_args_node && extra_args_node.IsSequence()) {
-      for (int i = 0; i < extra_args_node.size(); i++)
-        command.push_back(extra_args_node[i].as<std::string>());
-    }
+    std::vector<std::string> command{GetUvPath(), "run", model_dir / py_cfg.entrypoint};
+    for (const auto& item : py_cfg.extra_args)
+      command.push_back(item);
 
     const std::string stdout_path = model_dir / "stdout.txt";
     const std::string stderr_path = model_dir / "stderr.txt";
@@ -155,7 +151,7 @@ void PythonEngine::LoadModel(
       throw std::runtime_error("Fail to spawn process with pid -1");
     }
     std::unique_lock write_lock(mutex);
-    model_process_map[model] = {pid, port};
+    model_process_map[model] = {pid, py_cfg.port};
 
   } catch (const std::exception& e) {
     auto e_msg = e.what();
@@ -174,7 +170,56 @@ void PythonEngine::UnloadModel(
   std::shared_ptr<Json::Value> json_body,
   std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
-  assert(false && "Not implemented");
+  if (!json_body->isMember("model")) {
+    auto [status, error] = CreateResponse("Missing required field: model", k400BadRequest);
+    callback(std::move(status), std::move(error));
+    return;
+  }
+
+  const std::string model = (*json_body)["model"].asString();
+
+  // check if model has started
+  {
+    std::shared_lock read_lock(mutex);
+
+    if (model_process_map.find(model) == model_process_map.end()) {
+      const std::string msg = "Model " + model + " has not been loaded yet.";
+      auto [status, error] = CreateResponse(msg, k400BadRequest);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+  }
+
+  // we know that model has started
+  {
+    std::unique_lock write_lock(mutex);
+
+    // check if subprocess is still alive
+    if (!model_process_map[model].IsAlive()) {
+      const std::string msg = "Model " + model + " stopped running.";
+      auto [status, error] = CreateResponse(msg, k400BadRequest);
+
+      // NOTE: do we need to do any other cleanup for subprocesses?
+      model_process_map.erase(model);
+
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
+    // subprocess is alive. we kill it here.
+    if (!model_process_map[model].Kill()) {
+      const std::string msg = "Unable to kill process of model " + model;
+      auto [status, error] = CreateResponse(msg, k500InternalServerError);
+      callback(std::move(status), std::move(error));
+      return;
+    }
+
+    // NOTE: do we need to do any other cleanup for subprocesses?
+    model_process_map.erase(model);
+  }
+
+  auto [status, res] = CreateResponse("Unload model successfully", k200OK);
+  callback(std::move(status), std::move(res));
 }
 
 void PythonEngine::GetModelStatus(
@@ -188,7 +233,20 @@ void PythonEngine::GetModels(
   std::shared_ptr<Json::Value> jsonBody,
   std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
-  assert(false && "Not implemented");
+  Json::Value res, model_list(Json::arrayValue), status;
+  for (const auto& item : model_process_map) {
+    model_list.append(Json::Value{item.first});
+  }
+
+  res["object"] = "list";
+  res["data"] = model_list;
+
+  status["is_done"] = true;
+  status["has_error"] = false;
+  status["is_stream"] = false;
+  status["status_code"] = k200OK;
+
+  callback(std::move(status), std::move(res));
 }
 
 void PythonEngine::HandleRequest(

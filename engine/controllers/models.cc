@@ -309,7 +309,7 @@ void Models::GetModel(const HttpRequestPtr& req,
               fs::path(model_entry.value().path_to_model_yaml))
               .string());
       ret = python_model_config.ToJson();
-      ret["id"] = python_model_config.model;
+      ret["id"] = python_model_config.name;
       ret["object"] = "model";
       ret["result"] = "OK";
       auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);

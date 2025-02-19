@@ -506,57 +506,8 @@ ModelService::DownloadModelFromCortexsoAsync(
     config::YamlHandler yaml_handler;
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
-    if (mc.engine == kPythonEngine) {  // process for Python engine
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(model_yml_item->localPath.string());
-      python_model_config.files.push_back(
-          model_yml_item->localPath.parent_path().string());
-      python_model_config.ToYaml(model_yml_item->localPath.string());
-      // unzip venv.zip
-      auto model_folder = model_yml_item->localPath.parent_path();
-      auto venv_path = model_folder / std::filesystem::path("venv");
-      if (!std::filesystem::exists(venv_path)) {
-        std::filesystem::create_directories(venv_path);
-      }
-      auto venv_zip = model_folder / std::filesystem::path("venv.zip");
-      if (std::filesystem::exists(venv_zip)) {
-        if (archive_utils::ExtractArchive(venv_zip.string(),
-                                          venv_path.string())) {
-          std::filesystem::remove_all(venv_zip);
-          CTL_INF("Successfully extract venv.zip");
-          // If extract success create pyvenv.cfg
-          std::ofstream pyvenv_cfg(venv_path /
-                                   std::filesystem::path("pyvenv.cfg"));
-#ifdef _WIN32
-          pyvenv_cfg << "home = "
-                     << (venv_path / std::filesystem::path("Scripts")).string()
-                     << std::endl;
-          pyvenv_cfg << "executable = "
-                     << (venv_path / std::filesystem::path("Scripts") /
-                         std::filesystem::path("python.exe"))
-                            .string()
-                     << std::endl;
-#else
-          pyvenv_cfg << "home = "
-                     << (venv_path / std::filesystem::path("bin/")).string()
-                     << std::endl;
-          pyvenv_cfg
-              << "executable = "
-              << (venv_path / std::filesystem::path("bin/python")).string()
-              << std::endl;
-#endif
-          // Close the file
-          pyvenv_cfg.close();
-          // Add executable permission to python
-          set_permission_utils::SetExecutePermissionsRecursive(venv_path);
-        } else {
-          CTL_ERR("Failed to extract venv.zip");
-        };
 
-      } else {
-        CTL_ERR(
-            "venv.zip not found in model folder: " << model_folder.string());
-      }
+    if (mc.engine == kPythonEngine) {  // process for Python engine
 
     } else {
       mc.model = unique_model_id;
@@ -984,21 +935,6 @@ cpp::result<bool, std::string> ModelService::StopModel(
     }
     if (bypass_check) {
       engine_name = kLlamaEngine;
-    }
-
-    // Update for python engine
-    if (engine_name == kPythonEngine) {
-      auto model_entry = db_service_->GetModelInfo(model_handle);
-      config::PythonModelConfig python_model_config;
-      python_model_config.ReadFromYaml(
-          fmu::ToAbsoluteCortexDataPath(
-              fs::path(model_entry.value().path_to_model_yaml))
-              .string());
-      // Stop all depends model
-      auto depends = python_model_config.depends;
-      for (auto& depend : depends) {
-        StopModel(depend);
-      }
     }
 
     //

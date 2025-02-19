@@ -45,6 +45,9 @@ class PythonEngine : public PythonEngineI {
   struct PythonSubprocess {
     pid_t pid;
     int port;
+
+    bool IsAlive();
+    bool Kill();
   };
 
   mutable std::shared_mutex mutex;
