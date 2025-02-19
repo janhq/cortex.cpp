@@ -1,8 +1,9 @@
 #include "python_engine.h"
 #include <filesystem>
-#include <iostream>
-#include <sstream>
-#include <string>
+
+#include "config/model_config.h"
+#include "utils/file_manager_utils.h"
+#include "utils/process/utils.h"
 
 namespace python_engine {
 namespace {
@@ -10,7 +11,6 @@ constexpr const int k200OK = 200;
 constexpr const int k400BadRequest = 400;
 constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
-constexpr const int kFileLoggerOption = 0;
 }  // namespace
 
 cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& download_service) {
