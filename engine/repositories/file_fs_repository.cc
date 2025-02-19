@@ -13,7 +13,7 @@ std::filesystem::path FileFsRepository::GetFilePath() const {
 std::filesystem::path SanitizePath(const std::filesystem::path & user_input,
                                     const std::filesystem::path & basedir) {
 
-  std::filesystem::path abs_base = std::filesystem::canonical(basedir);
+  auto abs_base = std::filesystem::canonical(basedir);
   std::filesystem::path resolved_path = std::filesystem::weakly_canonical(
       std::filesystem::path(basedir) / std::filesystem::path(user_input));
       /* Ensure the resolved path is within our basedir */
