@@ -41,8 +41,8 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
   if (!ho.has_value() || ho.value().show_cpu) {
     std::cout << "CPU Information:" << std::endl;
     Table table;
-    std::vector<std::string> column_headers{"#", "Arch", "Cores", "Model",
-                                            "Instructions"};
+    std::vector<std::string> column_headers{"#",     "Arch",  "Cores",
+                                            "Model", "Usage", "Instructions"};
 
     Row_t header{column_headers.begin(), column_headers.end()};
     table.add_row(header);
@@ -52,6 +52,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
     row.emplace_back(cpu.arch);
     row.emplace_back(std::to_string(cpu.cores));
     row.emplace_back(cpu.model);
+    row.emplace_back(std::to_string(cpu.usage));
     std::string insts;
     for (auto const& i : cpu.instructions) {
       insts += i + " ";
@@ -130,6 +131,7 @@ bool HardwareListCmd::Exec(const std::string& host, int port,
           std::get<cortex::hw::NvidiaAddInfo>(gpu.add_info).compute_cap);
       row.emplace_back(gpu.is_activated ? "Yes" : "No");
       table.add_row({row.begin(), row.end()});
+      count++;
     }
 
     std::cout << table << std::endl;

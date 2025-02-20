@@ -148,6 +148,7 @@ const sidebars: SidebarsConfig = {
       collapsed: true,
       items: [
         { type: "doc", id: "engines/llamacpp", label: "llama.cpp" },
+        { type: "doc", id: "engines/python-engine", label: "python engine" },
         // { type: "doc", id: "engines/tensorrt-llm", label: "TensorRT-LLM" },
         // { type: "doc", id: "engines/onnx", label: "ONNX" },
         {

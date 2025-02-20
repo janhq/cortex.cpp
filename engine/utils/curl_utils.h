@@ -15,8 +15,11 @@ enum class RequestType { GET, PATCH, POST, DEL };
 
 namespace curl_utils {
 
-std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
-    const std::string& url);
+struct Header {
+  std::unordered_map<std::string, std::string> m;
+};
+
+std::shared_ptr<Header> GetHeaders(const std::string& url);
 
 cpp::result<std::string, std::string> SimpleGet(const std::string& url,
                                                 const int timeout = -1);
@@ -33,6 +36,8 @@ cpp::result<YAML::Node, std::string> ReadRemoteYaml(const std::string& url);
  * [timeout] is an optional parameter that specifies the timeout for the request. In second.
  */
 cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
+                                                    const int timeout = -1);
+cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(const std::string& url,
                                                     const int timeout = -1);
 
 cpp::result<Json::Value, std::string> SimplePostJson(

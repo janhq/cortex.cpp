@@ -13,7 +13,7 @@ bool ModelStartCmd::Exec(
     const std::unordered_map<std::string, std::string>& options,
     bool print_success_log) {
   std::optional<std::string> model_id =
-      SelectLocalModel(host, port, model_handle);
+      SelectLocalModel(host, port, model_handle, *db_service_);
 
   if (!model_id.has_value()) {
     return false;

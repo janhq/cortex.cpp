@@ -7,31 +7,26 @@ slug: 'mac'
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
-
-## Cortex.cpp Installation
 :::info
 Before installation, make sure that you have met the [minimum requirements](/docs/installation#minimum-requirements) to run Cortex.
-This instruction is for stable releases. For beta and nightly releases, please replace `cortex` with `cortex-beta` and `cortex-nightly`, respectively.
+The instructions below are for stable releases only. For beta and nightly releases, please replace `cortex` with `cortex-beta` and `cortex-nightly`, respectively.
 :::
 
 1. Download the Linux installer:
-    - From release: https://github.com/janhq/cortex.cpp/releases
-    - From quick download links:
-        - Local installer `.deb`:
-            - Stable: https://app.cortexcpp.com/download/latest/mac-universal-local
-            - Beta: https://app.cortexcpp.com/download/beta/mac-universal-local
-            - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-local
-        - Network installer `.deb`:
-            - Stable: https://app.cortexcpp.com/download/latest/mac-universal-network
-            - Beta: https://app.cortexcpp.com/download/beta/mac-universal-network
-            - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-network
-        - Binary:
-            - Stable: https://app.cortexcpp.com/download/latest/mac-universal-binary
-            - Beta: https://app.cortexcpp.com/download/beta/mac-universal-binary
-            - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-binary
+- From release: https://github.com/janhq/cortex.cpp/releases
+- From quick download links:
+    - Local installer `.deb`:
+        - Stable: https://app.cortexcpp.com/download/latest/mac-universal-local
+        - Beta: https://app.cortexcpp.com/download/beta/mac-universal-local
+        - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-local
+    - Network installer `.deb`:
+        - Stable: https://app.cortexcpp.com/download/latest/mac-universal-network
+        - Beta: https://app.cortexcpp.com/download/beta/mac-universal-network
+        - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-network
+    - Binary:
+        - Stable: https://app.cortexcpp.com/download/latest/mac-universal-binary
+        - Beta: https://app.cortexcpp.com/download/beta/mac-universal-binary
+        - Nightly: https://app.cortexcpp.com/download/nightly/mac-universal-binary
 
 2. Install Cortex.cpp by double-clicking the pkg downloaded file.
 
@@ -42,21 +37,29 @@ This instruction is for stable releases. For beta and nightly releases, please r
     ```
 
 ### Data Folder
-By default, Cortex.cpp is installed in the following directory:
-```
+
+By default, Cortex.cpp is installed in the `bin` directory:
+
+```sh
 # Binary Location
 /usr/local/bin/cortex
 /usr/local/bin/cortex-server
 /usr/local/bin/cortex-uninstall.sh
+```
 
-# Application Data (Engines, Models and Logs folders)
+The application data which includes Engines, Models and Logs will be installed in your home directory.
+```sh
 /Users/<username>/cortexcpp
+```
 
-# Configuration File
+The configuration file, `.cortexrc`, will also be in your home directory.
+```sh
 /Users/<username>/.cortexrc
 ```
 ## Uninstall Cortex.cpp
+
 Run the uninstaller script:
+
 ```bash
 sudo sh cortex-uninstall.sh
 ```
@@ -100,17 +103,22 @@ The script requires sudo permission.
     </TabItem>
   </Tabs>
 
-3. Verify that Cortex.cpp is builded correctly by getting help information.
+3. Verify that Cortex.cpp was built correctly by using `-h` flag to call the help info.
 
     ```sh
     # Get the help information
     ./build/cortex -h
     ```
 
-## Update cortex to latest version
+## Update Cortex
+
+Cortex can be updated in-place without any additional scripts. In addition, cortex will let you know if there is a new version of itself the next
+time you start a server.
+
 :::info
 The script requires sudo permission.
 :::
+
 ```bash
 sudo cortex update
 ```

@@ -45,6 +45,7 @@ class CommandLineParser {
   CLI::App app_;
   std::shared_ptr<DownloadService> download_service_;
   std::shared_ptr<cortex::DylibPathManager> dylib_path_manager_;
+  std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<EngineService> engine_service_;
   std::vector<std::string> supported_engines_;
 

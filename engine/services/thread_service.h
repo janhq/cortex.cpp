@@ -2,7 +2,6 @@
 
 #include <optional>
 #include "common/repository/thread_repository.h"
-#include "common/thread_tool_resources.h"
 #include "common/variant_map.h"
 #include "utils/result.hpp"
 
@@ -12,7 +11,7 @@ class ThreadService {
       : thread_repository_{thread_repository} {}
 
   cpp::result<OpenAi::Thread, std::string> CreateThread(
-      std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
+      std::unique_ptr<OpenAi::ToolResources> tool_resources,
       std::optional<Cortex::VariantMap> metadata);
 
   cpp::result<std::vector<OpenAi::Thread>, std::string> ListThreads(
@@ -24,7 +23,7 @@ class ThreadService {
 
   cpp::result<OpenAi::Thread, std::string> ModifyThread(
       const std::string& thread_id,
-      std::unique_ptr<OpenAi::ThreadToolResources> tool_resources,
+      std::unique_ptr<OpenAi::ToolResources> tool_resources,
       std::optional<Cortex::VariantMap> metadata);
 
   cpp::result<std::string, std::string> DeleteThread(

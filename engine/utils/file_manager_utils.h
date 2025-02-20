@@ -20,6 +20,8 @@ inline std::string cortex_config_file_path;
 
 inline std::string cortex_data_folder_path;
 
+std::filesystem::path GetExecutablePath();
+
 std::filesystem::path GetExecutableFolderContainerPath();
 
 std::filesystem::path GetHomeDirectoryPath();
@@ -45,7 +47,8 @@ void CreateDirectoryRecursively(const std::string& path);
 
 std::filesystem::path GetModelsContainerPath();
 
-std::filesystem::path GetCudaToolkitPath(const std::string& engine);
+std::filesystem::path GetCudaToolkitPath(const std::string& engine,
+                                         bool create_if_not_exist = false);
 
 std::filesystem::path GetEnginesContainerPath();
 

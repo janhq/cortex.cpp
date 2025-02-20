@@ -32,6 +32,7 @@
 *.so
 *.so.*
 *.dylib
+!**/libvulkan.so
 
 # Executables
 *.exe

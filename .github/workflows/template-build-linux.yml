@@ -1,4 +1,4 @@
-name: build-linux-x64
+name: build-linux
 on:
   workflow_call:
     inputs:
@@ -49,6 +49,11 @@ on:
         type: string
         default: '0.0.0'
         description: 'The version of cortex-llamacpp to use for this job'
+      arch:
+        required: false
+        type: string
+        default: 'amd64'
+        description: 'The architecture to use for this job'
     secrets:
       DELTA_AWS_S3_BUCKET_NAME:
         required: false
@@ -60,7 +65,7 @@ on:
         required: false
 
 jobs:
-  build-linux-x64:
+  build-linux:
     runs-on: ${{ inputs.runs-on }}
     permissions:
       contents: write
@@ -72,6 +77,7 @@ jobs:
           submodules: 'recursive'
 
       - name: use python 3.9
+        continue-on-error: true
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
@@ -124,14 +130,24 @@ jobs:
       - name: Configure vcpkg
         run: |
           cd engine
+          # Set env if arch is arm64
+          if [ "${{ inputs.arch }}" == "arm64" ]; then
+            sudo apt install ninja-build pkg-config -y
+            export VCPKG_FORCE_SYSTEM_BINARIES=1
+          fi
           make configure-vcpkg
 
       - name: Build
         run: |
           cd engine
+          # Set env if arch is arm64
+          if [ "${{ inputs.arch }}" == "arm64" ]; then
+            export VCPKG_FORCE_SYSTEM_BINARIES=1
+          fi
           make build CMAKE_EXTRA_FLAGS="${{ inputs.cmake-flags }}" BUILD_DEPS_CMAKE_EXTRA_FLAGS="${{ inputs.build-deps-cmake-flags }}"
           
       - name: Install Python
+        continue-on-error: true
         uses: actions/setup-python@v4
         with:
           python-version: '3.10' 
@@ -145,28 +161,32 @@ jobs:
         shell: bash
         run: |
           cd engine
-          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" SOURCE_BINARY_SERVER_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}" VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}"
+          make build-installer PACKAGE_NAME="${{ steps.set-output-params.outputs.package_name }}" SOURCE_BINARY_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }}" SOURCE_BINARY_SERVER_PATH="../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }}" VERSION=${{ inputs.new_version }} DESTINATION_BINARY_NAME="${{ steps.set-output-params.outputs.destination_binary_name }}" DESTINATION_BINARY_SERVER_NAME="${{ steps.set-output-params.outputs.destination_binary_server_name }}" DATA_FOLDER_NAME="${{ steps.set-output-params.outputs.data_folder_name }}" CONFIGURATION_FILE_NAME="${{ steps.set-output-params.outputs.configuration_file_name }}" UNINSTALLER_FILE_NAME="${{ steps.set-output-params.outputs.uninstaller_file_name }}" ARCH="${{ inputs.arch }}"
           mv ${{ steps.set-output-params.outputs.package_name }}.deb ${{ steps.set-output-params.outputs.package_name }}-network.deb
 
       - name: Build local Installers
         run: |
           mkdir -p engine/templates/linux/dependencies
           cd engine/templates/linux/dependencies
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-11-7.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-12-0.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-11-7.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-12-0.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-11-7.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-12-0.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-11-7.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-12-0.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-vulkan.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-11-7-linux-amd64.tar.gz
-          wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-12-0-linux-amd64.tar.gz
+          if [ "${{ inputs.arch }}" == "amd64" ]; then
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-11-7.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx-cuda-12-0.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-11-7.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2-cuda-12-0.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx2.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-11-7.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512-cuda-12-0.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-avx512.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-11-7.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx-cuda-12-0.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-noavx.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-amd64-vulkan.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-11-7-linux-amd64.tar.gz
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cuda-12-0-linux-amd64.tar.gz
+          else
+            wget https://github.com/janhq/cortex.llamacpp/releases/download/v${{ inputs.cortex-llamacpp-version }}/cortex.llamacpp-${{ inputs.cortex-llamacpp-version }}-linux-arm64.tar.gz
+          fi
           cd ..
 
           # Remove network package
@@ -174,7 +194,7 @@ jobs:
           rm -rf ${{ steps.set-output-params.outputs.package_name }}
           rm ${{ steps.set-output-params.outputs.package_name }}.deb
           chmod +x create_deb_local.sh
-          ./create_deb_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }};
+          ./create_deb_local.sh ${{ steps.set-output-params.outputs.package_name }} ${{ inputs.new_version }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_name }} ../../cortex/${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.destination_binary_name }} ${{ steps.set-output-params.outputs.destination_binary_server_name }} ${{ steps.set-output-params.outputs.data_folder_name }} ${{ steps.set-output-params.outputs.configuration_file_name }} ${{ inputs.arch }};
           cp ${{ steps.set-output-params.outputs.package_name }}.deb ../../${{ steps.set-output-params.outputs.package_name }}-local.deb
 
       - name: Package
@@ -185,30 +205,30 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-linux-amd64
+          name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}
           path: ./engine/cortex
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-linux-amd64-network-installer
+          name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-network-installer
           path: ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cortex-${{ inputs.new_version }}-linux-amd64-local-installer
+          name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-local-installer
           path: ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb
 
       - name: upload to aws s3 if public provider is aws
         if: inputs.public_provider == 'aws-s3'
         run: |
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-amd64-cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux-amd64-network-installer.deb
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/linux-${{ inputs.arch }}-cortex-nightly.tar.gz
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/temp-latest/cortex-linux-${{ inputs.arch }}-network-installer.deb
 
-          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-amd64/cortex-nightly.tar.gz
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-amd64/cortex-${{ inputs.new_version }}-linux-amd64-network-installer.deb
-          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-amd64/cortex-${{ inputs.new_version }}-linux-amd64-local-installer.deb
+          aws s3 cp ./engine/cortex.tar.gz s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-${{ inputs.arch }}/cortex-nightly.tar.gz
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-${{ inputs.arch }}/cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-network-installer.deb
+          aws s3 cp ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb s3://${{ secrets.DELTA_AWS_S3_BUCKET_NAME }}/cortex/v${{ inputs.new_version }}/linux-${{ inputs.arch }}/cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-local-installer.deb
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DELTA_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DELTA_AWS_SECRET_ACCESS_KEY }}
@@ -223,7 +243,7 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/cortex.tar.gz
-          asset_name: cortex-${{ inputs.new_version }}-linux-amd64.tar.gz
+          asset_name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}.tar.gz
           asset_content_type: application/zip
 
       - name: Upload release assert if public provider is github
@@ -234,7 +254,7 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}-network.deb
-          asset_name: cortex-${{ inputs.new_version }}-linux-amd64-network-installer.deb
+          asset_name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-network-installer.deb
           asset_content_type: application/octet-stream
 
       - name: Upload release assert if public provider is github
@@ -245,5 +265,5 @@ jobs:
         with:
           upload_url: ${{ inputs.upload_url }}
           asset_path: ./engine/${{ steps.set-output-params.outputs.package_name }}-local.deb
-          asset_name: cortex-${{ inputs.new_version }}-linux-amd64-local-installer.deb
+          asset_name: cortex-${{ inputs.new_version }}-linux-${{ inputs.arch }}-local-installer.deb
           asset_content_type: application/octet-stream

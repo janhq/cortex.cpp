@@ -25,12 +25,14 @@ struct EngineVariantResponse {
   std::string name;
   std::string version;
   std::string engine;
+  std::string type;
 
   Json::Value ToJson() const {
     Json::Value root;
     root["name"] = name;
     root["version"] = version;
     root["engine"] = engine;
+    root["type"] = type.empty() ? "local" : type;
     return root;
   }
 };
@@ -57,7 +59,7 @@ class EngineServiceI {
   virtual cpp::result<cortex::db::EngineEntry, std::string>
   GetEngineByNameAndVariant(
       const std::string& engine_name,
-      const std::optional<std::string> variant = std::nullopt) = 0;
-  
-  virtual bool IsRemoteEngine(const std::string& engine_name) = 0;
+      const std::optional<std::string> variant = std::nullopt) const = 0;
+
+  virtual bool IsRemoteEngine(const std::string& engine_name) const = 0;
 };

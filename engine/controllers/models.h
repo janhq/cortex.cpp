@@ -43,12 +43,15 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::AddModelSource, "/v1/models/sources", Post);
   ADD_METHOD_TO(Models::DeleteModelSource, "/v1/models/sources", Delete);
   ADD_METHOD_TO(Models::GetModelSources, "/v1/models/sources", Get);
+  ADD_METHOD_TO(Models::GetModelSource, "/v1/models/sources/{src}", Get);
   METHOD_LIST_END
 
-  explicit Models(std::shared_ptr<ModelService> model_service,
+  explicit Models(std::shared_ptr<DatabaseService> db_service,
+                  std::shared_ptr<ModelService> model_service,
                   std::shared_ptr<EngineService> engine_service,
-                  std::shared_ptr<services::ModelSourceService> mss)
-      : model_service_{model_service},
+                  std::shared_ptr<ModelSourceService> mss)
+      : db_service_(db_service),
+        model_service_{model_service},
         engine_service_{engine_service},
         model_src_svc_(mss) {}
 
@@ -104,8 +107,13 @@ class Models : public drogon::HttpController<Models, false> {
   void GetModelSources(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback);
 
+  void GetModelSource(const HttpRequestPtr& req,
+                      std::function<void(const HttpResponsePtr&)>&& callback,
+                      const std::string& src);
+
  private:
+  std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<ModelService> model_service_;
   std::shared_ptr<EngineService> engine_service_;
-  std::shared_ptr<services::ModelSourceService> model_src_svc_;
+  std::shared_ptr<ModelSourceService> model_src_svc_;
 };

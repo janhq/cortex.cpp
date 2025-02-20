@@ -83,14 +83,19 @@ add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/model_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/inference_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../services/hardware_service.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../services/database_service.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/remote_engine.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/remote-engine/template_renderer.cc
+    
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/python-engine/python_engine.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../extensions/template_renderer.cc
+
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/easywsclient.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/utils/download_progress.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/config_yaml_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_manager_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/curl_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/system_info_utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/process/utils.cc
   )
 
 target_link_libraries(${TARGET_NAME} PRIVATE CLI11::CLI11)
@@ -136,3 +141,9 @@ set_target_properties(${TARGET_NAME} PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}
                       RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+if(UNIX AND NOT APPLE)
+configure_file("${PROJECT_SOURCE_DIR}/../deps/linux/libvulkan.so" "${CMAKE_BINARY_DIR}/libvulkan.so" COPYONLY)
+elseif(MSVC)
+configure_file("${PROJECT_SOURCE_DIR}/../deps/windows/vulkan-1.dll" "${CMAKE_BINARY_DIR}/vulkan-1.dll" COPYONLY)
+endif()

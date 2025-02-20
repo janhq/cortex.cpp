@@ -1,6 +1,6 @@
 #include "file_service.h"
 #include <cstdint>
-#include "utils/ulid/ulid.hh"
+#include "utils/ulid_generator.h"
 
 cpp::result<OpenAi::File, std::string> FileService::UploadFile(
     const std::string& filename, const std::string& purpose,
@@ -11,7 +11,7 @@ cpp::result<OpenAi::File, std::string> FileService::UploadFile(
           std::chrono::system_clock::now().time_since_epoch())
           .count();
 
-  auto file_id{"file-" + ulid::Marshal(ulid::CreateNowRand())};
+  auto file_id{"file-" + ulid::GenerateUlid()};
   OpenAi::File file;
   file.id = file_id;
   file.object = "file";

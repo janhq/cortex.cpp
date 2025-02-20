@@ -4,7 +4,7 @@
 #include <json/value.h>
 #include <json/writer.h>
 #include "common/assistant.h"
-#include "common/thread_tool_resources.h"
+#include "common/tool_resources.h"
 #include "common/variant_map.h"
 #include "json_serializable.h"
 #include "utils/logging_utils.h"
@@ -36,7 +36,7 @@ struct Thread : JsonSerializable {
    * of tool. For example, the code_interpreter tool requires a list of
    * file IDs, while the file_search tool requires a list of vector store IDs.
    */
-  std::unique_ptr<ThreadToolResources> tool_resources;
+  std::unique_ptr<ToolResources> tool_resources;
 
   /**
    * Set of 16 key-value pairs that can be attached to an object.
@@ -65,7 +65,7 @@ struct Thread : JsonSerializable {
       const auto& tool_json = json["tool_resources"];
 
       if (tool_json.isMember("code_interpreter")) {
-        auto code_interpreter = std::make_unique<ThreadCodeInterpreter>();
+        auto code_interpreter = std::make_unique<CodeInterpreter>();
         const auto& file_ids = tool_json["code_interpreter"]["file_ids"];
         if (file_ids.isArray()) {
           for (const auto& file_id : file_ids) {
@@ -74,7 +74,7 @@ struct Thread : JsonSerializable {
         }
         thread.tool_resources = std::move(code_interpreter);
       } else if (tool_json.isMember("file_search")) {
-        auto file_search = std::make_unique<ThreadFileSearch>();
+        auto file_search = std::make_unique<FileSearch>();
         const auto& store_ids = tool_json["file_search"]["vector_store_ids"];
         if (store_ids.isArray()) {
           for (const auto& store_id : store_ids) {
@@ -148,10 +148,10 @@ struct Thread : JsonSerializable {
 
         Json::Value tool_json;
         if (auto code_interpreter =
-                dynamic_cast<ThreadCodeInterpreter*>(tool_resources.get())) {
+                dynamic_cast<CodeInterpreter*>(tool_resources.get())) {
           tool_json["code_interpreter"] = tool_result.value();
         } else if (auto file_search =
-                       dynamic_cast<ThreadFileSearch*>(tool_resources.get())) {
+                       dynamic_cast<FileSearch*>(tool_resources.get())) {
           tool_json["file_search"] = tool_result.value();
         }
         json["tool_resources"] = tool_json;

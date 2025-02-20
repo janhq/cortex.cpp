@@ -67,7 +67,7 @@ jobs:
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
           
   build-linux-x64:
-    uses: ./.github/workflows/template-build-linux-x64.yml
+    uses: ./.github/workflows/template-build-linux.yml
     secrets: inherit
     needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
     with:
@@ -79,6 +79,22 @@ jobs:
       channel: beta
       upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
       cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      arch: amd64
+
+  build-linux-arm64:
+    uses: ./.github/workflows/template-build-linux.yml
+    secrets: inherit
+    needs: [get-update-version, create-draft-release, get-cortex-llamacpp-latest-version]
+    with:
+      ref: ${{ github.ref }}
+      public_provider: github
+      new_version: ${{ needs.get-update-version.outputs.new_version }}
+      runs-on: ubuntu-2004-arm64
+      cmake-flags: "-DCORTEX_VARIANT=beta -DCORTEX_CPP_VERSION='v${{ needs.get-update-version.outputs.new_version }}' -DCMAKE_TOOLCHAIN_FILE=/home/runner/actions-runner/_work/cortex.cpp/cortex.cpp/engine/vcpkg/scripts/buildsystems/vcpkg.cmake"
+      channel: beta
+      upload_url: ${{ needs.create-draft-release.outputs.upload_url }}
+      cortex-llamacpp-version: ${{ needs.get-cortex-llamacpp-latest-version.outputs.cortex_llamacpp_latest_version }}
+      arch: arm64
 
   build-docker-x64:
     uses: ./.github/workflows/template-build-docker-x64.yml
@@ -111,7 +127,7 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   noti-discord:
-    needs: [get-update-version, create-draft-release, build-macos, build-windows-x64, build-linux-x64, update_release]
+    needs: [get-update-version, create-draft-release, build-macos, build-windows-x64, build-linux-x64, build-linux-arm64, update_release]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -136,9 +152,13 @@ jobs:
               - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal-network-installer.pkg
               - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal-local-installer.pkg
               - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-mac-universal.tar.gz
-            - Linux Deb:
+            - Linux amd64 Deb:
               - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-network-installer.deb
               - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64-local-installer.deb
               - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-amd64.tar.gz
+            - Linux arm64 Deb:
+              - Network Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-network-installer.deb
+              - Local Installer: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64-local-installer.deb
+              - Binary: https://github.com/janhq/cortex.cpp/releases/download/v${{ env.VERSION }}/cortex-${{ env.VERSION }}-linux-arm64.tar.gz
             - Docker: menloltd/cortex:beta-${{ env.VERSION }}
             - Github Release: https://github.com/janhq/cortex.cpp/releases/tag/v${{ env.VERSION }}

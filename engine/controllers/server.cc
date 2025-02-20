@@ -8,7 +8,7 @@ using namespace inferences;
 
 namespace inferences {
 
-server::server(std::shared_ptr<services::InferenceService> inference_service,
+server::server(std::shared_ptr<InferenceService> inference_service,
                std::shared_ptr<EngineService> engine_service)
     : inference_svc_(inference_service), engine_service_(engine_service) {
 #if defined(_WIN32)
@@ -44,8 +44,13 @@ void server::ChatCompletion(
     }
   }();
 
+  if (auto efm = inference_svc_->GetEngineByModelId(model_id); !efm.empty()) {
+    engine_type = efm;
+    (*json_body)["engine"] = efm;
+  }
+
   LOG_DEBUG << "request body: " << json_body->toStyledString();
-  auto q = std::make_shared<services::SyncQueue>();
+  auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleChatCompletion(q, json_body);
   if (ir.has_error()) {
     auto err = ir.error();
@@ -67,7 +72,7 @@ void server::ChatCompletion(
 void server::Embedding(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   LOG_TRACE << "Start embedding";
-  auto q = std::make_shared<services::SyncQueue>();
+  auto q = std::make_shared<SyncQueue>();
   auto ir = inference_svc_->HandleEmbedding(q, req->getJsonObject());
   if (ir.has_error()) {
     auto err = ir.error();
@@ -127,6 +132,84 @@ void server::FineTuning(
   LOG_TRACE << "Done fine-tuning";
 }
 
+void server::Inference(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback) {
+
+  auto json_body = req->getJsonObject();
+
+  LOG_TRACE << "Start inference";
+  auto q = std::make_shared<SyncQueue>();
+  auto ir = inference_svc_->HandleInference(q, req->getJsonObject());
+  LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
+  if (ir.has_error()) {
+    auto err = ir.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
+    resp->setStatusCode(
+        static_cast<HttpStatusCode>(std::get<0>(err)["status_code"].asInt()));
+    callback(resp);
+    return;
+  }
+
+  bool is_stream =
+      (*json_body).get("stream", false).asBool() ||
+      (*json_body).get("body", Json::Value()).get("stream", false).asBool();
+
+  LOG_TRACE << "Wait to inference";
+  if (is_stream) {
+    auto model_id = (*json_body).get("model", "invalid_model").asString();
+    auto engine_type = [this, &json_body]() -> std::string {
+      if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
+        return kLlamaRepo;
+      } else {
+        return (*(json_body)).get("engine", kLlamaRepo).asString();
+      }
+    }();
+    ProcessStreamRes(callback, q, engine_type, model_id);
+  } else {
+    ProcessNonStreamRes(callback, *q);
+    LOG_TRACE << "Done  inference";
+  }
+}
+
+void server::RouteRequest(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback) {
+
+  auto json_body = req->getJsonObject();
+
+  LOG_TRACE << "Start route request";
+  auto q = std::make_shared<SyncQueue>();
+  auto ir = inference_svc_->HandleRouteRequest(q, req->getJsonObject());
+  LOG_DEBUG << "request: " << req->getJsonObject()->toStyledString();
+  if (ir.has_error()) {
+    auto err = ir.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(std::get<1>(err));
+    resp->setStatusCode(
+        static_cast<HttpStatusCode>(std::get<0>(err)["status_code"].asInt()));
+    callback(resp);
+    return;
+  }
+  auto is_stream =
+      (*json_body).get("stream", false).asBool() ||
+      (*json_body).get("body", Json::Value()).get("stream", false).asBool();
+  LOG_TRACE << "Wait to route request";
+  if (is_stream) {
+
+    auto model_id = (*json_body).get("model", "invalid_model").asString();
+    auto engine_type = [this, &json_body]() -> std::string {
+      if (!inference_svc_->HasFieldInReq(json_body, "engine")) {
+        return kLlamaRepo;
+      } else {
+        return (*(json_body)).get("engine", kLlamaRepo).asString();
+      }
+    }();
+    ProcessStreamRes(callback, q, engine_type, model_id);
+  } else {
+    ProcessNonStreamRes(callback, *q);
+    LOG_TRACE << "Done route request";
+  }
+}
+
 void server::LoadModel(const HttpRequestPtr& req,
                        std::function<void(const HttpResponsePtr&)>&& callback) {
   auto ir = inference_svc_->LoadModel(req->getJsonObject());
@@ -138,13 +221,13 @@ void server::LoadModel(const HttpRequestPtr& req,
 }
 
 void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                              std::shared_ptr<services::SyncQueue> q,
+                              std::shared_ptr<SyncQueue> q,
                               const std::string& engine_type,
                               const std::string& model_id) {
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
                                       char* buf,
-                                      std::size_t buf_size) -> std::size_t {
+                                       std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
       if (!(*err_or_done)) {
@@ -164,7 +247,12 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
       *err_or_done = true;
     }
 
-    auto str = res["data"].asString();
+    std::string str;
+    if (status["status_code"].asInt() != k200OK) {
+      str = json_helper::DumpJsonString(res);
+    } else {
+      str = res["data"].asString();
+    }
     LOG_DEBUG << "data: " << str;
     std::size_t n = std::min(str.size(), buf_size);
     memcpy(buf, str.data(), n);
@@ -178,7 +266,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
 }
 
 void server::ProcessNonStreamRes(std::function<void(const HttpResponsePtr&)> cb,
-                                 services::SyncQueue& q) {
+                                 SyncQueue& q) {
   auto [status, res] = q.wait_and_pop();
   function_calling_utils::PostProcessResponse(res);
   LOG_DEBUG << "response: " << res.toStyledString();
