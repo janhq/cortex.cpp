@@ -108,8 +108,9 @@ class DownloadService {
    * Start download task synchronously.
    */
   cpp::result<bool, std::string> AddDownloadTask(
-      DownloadTask& task, std::optional<OnDownloadTaskSuccessfully> callback =
-                              std::nullopt) noexcept;
+      DownloadTask& task,
+      std::optional<OnDownloadTaskSuccessfully> callback = std::nullopt,
+      bool show_progress = true) noexcept;
 
   /**
    * Getting file size for a provided url. Can be used to validating the download url.
@@ -128,7 +129,8 @@ class DownloadService {
 
   cpp::result<bool, std::string> Download(
       const std::string& download_id,
-      const DownloadItem& download_item) noexcept;
+      const DownloadItem& download_item,
+      bool show_progress = true) noexcept;
 
   std::shared_ptr<EventQueue> event_queue_;
 

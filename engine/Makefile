@@ -24,6 +24,7 @@ DESTINATION_BINARY_SERVER_NAME ?= cortex-server
 DATA_FOLDER_NAME ?= .cortex
 CONFIGURATION_FILE_NAME ?= .cortexrc
 UNINSTALLER_FILE_NAME ?= cortex-uninstall.sh
+ARCH ?= amd64
 
 # Default target, does nothing
 all:
@@ -72,13 +73,15 @@ ifeq ($(OS),Windows_NT)
 	@powershell -Command "mkdir -p cortex;"
 	@powershell -Command "cp build\cortex-server.exe .\cortex\$(DESTINATION_BINARY_SERVER_NAME).exe;"
 	@powershell -Command "cp build\cortex.exe .\cortex\$(DESTINATION_BINARY_NAME).exe;"
+	@powershell -Command "cp ..\engine\deps\windows\vulkan-1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\msvcp140.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140_1.dll .\cortex\;"
 	@powershell -Command "cp ..\.github\patches\windows\vcruntime140.dll .\cortex\;"
 else ifeq ($(shell uname -s),Linux)
 	@mkdir -p cortex; \
 	cp build/cortex-server cortex/$(DESTINATION_BINARY_SERVER_NAME); \
-	cp build/cortex cortex/$(DESTINATION_BINARY_NAME);
+	cp build/cortex cortex/$(DESTINATION_BINARY_NAME); \
+	cp ../engine/deps/linux/libvulkan.so cortex/libvulkan.so;
 else
 	@mkdir -p cortex; \
 	cp build/cortex-server cortex/$(DESTINATION_BINARY_SERVER_NAME); \
@@ -120,7 +123,7 @@ else ifeq ($(shell uname -s),Linux)
 	@echo "Building installer for linux"; \
 	cd templates/linux; \
 	chmod +x create_deb.sh; \
-	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(SOURCE_BINARY_SERVER_PATH) $(DESTINATION_BINARY_NAME) $(DESTINATION_BINARY_SERVER_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME); \
+	./create_deb.sh $(PACKAGE_NAME) $(VERSION) $(SOURCE_BINARY_PATH) $(SOURCE_BINARY_SERVER_PATH) $(DESTINATION_BINARY_NAME) $(DESTINATION_BINARY_SERVER_NAME) $(DATA_FOLDER_NAME) $(CONFIGURATION_FILE_NAME) $(ARCH); \
 	cp $(PACKAGE_NAME).deb ../../
 else
 	@echo "Building installer for Macos"; \

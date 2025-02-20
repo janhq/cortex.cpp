@@ -14,12 +14,11 @@
 namespace commands {
 
 std::optional<std::string> SelectLocalModel(std::string host, int port,
-                                            const std::string& model_handle) {
+                                            const std::string& model_handle,
+                                            DatabaseService& db_service) {
   std::optional<std::string> model_id = model_handle;
-  cortex::db::Models modellist_handler;
-
   if (model_handle.empty()) {
-    auto all_local_models = modellist_handler.LoadModelList();
+    auto all_local_models = db_service.LoadModelList();
     if (all_local_models.has_error() || all_local_models.value().empty()) {
       CLI_LOG("No local models available!");
       return std::nullopt;
@@ -42,7 +41,7 @@ std::optional<std::string> SelectLocalModel(std::string host, int port,
       CLI_LOG("Selected: " << selection.value());
     }
   } else {
-    auto related_models_ids = modellist_handler.FindRelatedModel(model_handle);
+    auto related_models_ids = db_service.FindRelatedModel(model_handle);
     if (related_models_ids.has_error() || related_models_ids.value().empty()) {
       auto result = ModelPullCmd().Exec(host, port, model_handle);
       if (!result) {
@@ -69,19 +68,18 @@ std::optional<std::string> SelectLocalModel(std::string host, int port,
 void RunCmd::Exec(bool run_detach,
                   const std::unordered_map<std::string, std::string>& options) {
   std::optional<std::string> model_id =
-      SelectLocalModel(host_, port_, model_handle_);
+      SelectLocalModel(host_, port_, model_handle_, *db_service_);
   if (!model_id.has_value()) {
     return;
   }
 
-  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   auto address = host_ + ":" + std::to_string(port_);
 
   try {
     namespace fs = std::filesystem;
     namespace fmu = file_manager_utils;
-    auto model_entry = modellist_handler.GetModelInfo(*model_id);
+    auto model_entry = db_service_->GetModelInfo(*model_id);
     if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;
@@ -128,7 +126,7 @@ void RunCmd::Exec(bool run_detach,
              mc.engine.find(kLlamaEngine) == std::string::npos) ||
             !commands::ModelStatusCmd().IsLoaded(host_, port_, *model_id)) {
 
-          auto res = commands::ModelStartCmd()
+          auto res = commands::ModelStartCmd(db_service_)
                          .Exec(host_, port_, *model_id, options,
                                false /*print_success_log*/);
           if (!res) {
@@ -144,7 +142,7 @@ void RunCmd::Exec(bool run_detach,
                           << commands::GetCortexBinary() << " run " << *model_id
                           << "` for interactive chat shell");
       } else {
-        ChatCompletionCmd().Exec(host_, port_, *model_id, mc, "");
+        ChatCompletionCmd(db_service_).Exec(host_, port_, *model_id, mc, "");
       }
     }
   } catch (const std::exception& e) {

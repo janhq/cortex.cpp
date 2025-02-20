@@ -1,103 +1,95 @@
 ---
 title: Embeddings
 ---
-:::info
-🚧 Cortex is currently under development, and this page is a stub for future development.
+:::warning
+🚧 Cortex is currently under active development. Our documentation outlines the intended behavior of
+Cortex, which may not yet be fully implemented in the codebase.
 :::
 
-cortex.cpp now support embeddings endpoint with fully OpenAI compatible.
-
-For embeddings API usage please refer to [API references](/api-reference#tag/chat/POST/v1/embeddings). This tutorial show you how to use embeddings in cortex with openai python SDK.
+Cortex now support an embeddings endpoint that is fully compatible with OpenAI's one.
+This tutorial show you how to create embeddings in cortex using the OpenAI python SDK.
 
 ## Embedding with openai compatible
 
-### 1. Start server and run model
+Start server and run model in detached mode.
 
-```
-cortex run llama3.1:8b-gguf-q4-km
+```sh
+cortex run -d llama3.1:8b-gguf-q4-km
 ```
 
-### 2. Create script `embeddings.py` with this content
+Create a directory and a python environment, and start a python or IPython shell.
 
+```sh
+mkdir test-embeddings
+cd test-embeddings
 ```
+```sh
+python -m venv .venv
+source .venv/bin/activate
+pip install ipython openai
+```
+```sh
+ipython
+```
+Import the necessary modules and create a client.
+
+```py
 from datetime import datetime
 from openai import OpenAI
 from pydantic import BaseModel
-ENDPOINT = "http://localhost:39281/v1"
-MODEL = "llama3.1:8bb-gguf-q4-km"
+```
+```py
 client = OpenAI(
-    base_url=ENDPOINT,
+    base_url="http://localhost:39281/v1",
     api_key="not-needed"
 )
 ```
 
 ### 3. Create embeddings
 
+```py
+output_embs = client.embeddings.create(
+    input="Roses are red, violets are blue, Cortex is great, and so is Jan too!",
+    model="llama3.1:8b-gguf-q4-km",
+    # encoding_format="base64"
+)
 ```
-response = client.embeddings.create(input = "embedding", model=MODEL, encoding_format="base64")
-print(response)
+```py
+print(output_embs)
 ```
-
-The reponse will be like this
-
 ```
 CreateEmbeddingResponse(
     data=[
         Embedding(
-            embedding='hjuAPOD8TryuPU8...',
+            embedding=[-0.017303412780165672, -0.014513173140585423, ...],
             index=0,
             object='embedding'
         )
     ],
-    model='meta-llama3.1-8b-instruct',
+    model='llama3.1:8b-gguf-q4-km',
     object='list',
     usage=Usage(
-        prompt_tokens=2,
-        total_tokens=2
+        prompt_tokens=22,
+        total_tokens=22
     )
 )
 ```
 
+Cortex also supports the same input types as [OpenAI](https://platform.openai.com/docs/api-reference/embeddings/create).
 
-The output embeddings is encoded as base64 string. Default the model will output the embeddings in float mode.
-
-```
-response = client.embeddings.create(input = "embedding", model=MODEL)
-print(response)
-```
-
-Result will be
-
-```
-CreateEmbeddingResponse(
-    data=[
-        Embedding(
-            embedding=[0.1, 0.3, 0.4 ....],
-            index=0,
-            object='embedding'
-        )
-    ],
-    model='meta-llama3.1-8b-instruct',
-    object='list',
-    usage=Usage(
-        prompt_tokens=2,
-        total_tokens=2
-    )
-)
-```
-
-Cortex also supports all input types as [OpenAI](https://platform.openai.com/docs/api-reference/embeddings/create#embeddings-create-input).
-
-```sh
+```py
 # input as string
-response = client.embeddings.create(input = "embedding", model=MODEL)
-
+response = client.embeddings.create(input = "single prompt or article or other", model=MODEL)
+```
+```py
 # input as array of string
-response = client.embeddings.create(input = ["embedding"], model=MODEL)
-
+response = client.embeddings.create(input = ["list", "of", "prompts"], model=MODEL)
+```
+```py
 # input as array of tokens
-response = client.embeddings.create(input = [12,44,123], model=MODEL)
-
+response = client.embeddings.create(input = [12, 44, 123], model=MODEL)
+```
+```py
 # input as array of arrays contain tokens
 response = client.embeddings.create(input = [[912,312,54],[12,433,1241]], model=MODEL)
 ```

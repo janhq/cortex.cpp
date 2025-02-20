@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include "common/repository/file_repository.h"
+#include "services/database_service.h"
 #include "utils/logging_utils.h"
 
 class FileFsRepository : public FileRepository {
@@ -28,8 +29,9 @@ class FileFsRepository : public FileRepository {
   cpp::result<void, std::string> DeleteFileLocal(
       const std::string& file_id) override;
 
-  explicit FileFsRepository(std::filesystem::path data_folder_path)
-      : data_folder_path_{data_folder_path} {
+  explicit FileFsRepository(const std::filesystem::path& data_folder_path,
+                            std::shared_ptr<DatabaseService> db_service)
+      : data_folder_path_{data_folder_path}, db_service_(db_service) {
     CTL_INF("Constructing FileFsRepository..");
     auto file_container_path = data_folder_path_ / kFileContainerFolderName;
 
@@ -47,4 +49,5 @@ class FileFsRepository : public FileRepository {
    * The path to the data folder.
    */
   std::filesystem::path data_folder_path_;
+  std::shared_ptr<DatabaseService> db_service_ = nullptr;
 };

@@ -85,6 +85,7 @@ class TestApiModel:
             ],
         )
         
+    @pytest.mark.asyncio
     async def test_models_start_stop_should_be_successful(self):
         print("Install engine")
         response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")

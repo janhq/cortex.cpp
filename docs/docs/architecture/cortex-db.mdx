@@ -7,13 +7,23 @@ slug: "cortex-db"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
-This document outlines the architecture of the database designed to store and manage various types of entities and their associated metadata.
+![sqlite-view](/img/sqlite_view_harlequin.png)
+**db view via [Harlequin](https://harlequin.sh/)**
+
+
+This document outlines Cortex database architecture which is designed to store and manage models, engines,
+files and more.
 
 ## Table Structure
+### schema Table
+The `schema` table is designed to hold schema version for cortex database. Below is the structure of the table:
+
+| Column Name        | Data Type | Description                                             |
+|--------------------|-----------|---------------------------------------------------------|
+| schema_version     | INTEGER   | A unique schema version for database.                   |
+
+
 ### models Table
 The `models` table is designed to hold metadata about various AI models. Below is the structure of the table:
 
@@ -23,3 +33,51 @@ The `models` table is designed to hold metadata about various AI models. Below i
 | author_repo_id     | TEXT      | The identifier for the repository where the model is stored. |
 | branch_name        | TEXT      | The branch name in the repository that contains the model. |
 | path_to_model_yaml | TEXT      | The file path to the YAML configuration file for the model. |
+| model_alias        | TEXT      | The optional alias or friendly name for the model. |
+| model_format       | TEXT      | The format or type of the model (e.g., TensorFlow, PyTorch, GGUF, etc.). |
+| model_source       | TEXT      | The source or origin of the model (e.g., a URL or file path). |
+| status             | TEXT      | Current status of the model (e.g., "downloaded", "downloadable").. |
+| engine             | TEXT      | The name or identifier of the engine or framework used for running or deploying the model.. |
+| metadata           | TEXT      | Additional metadata or information about the model, such as a JSON string containing various attributes or properties. |
+
+### hardware Table
+The `hardware` table is designed to hold metadata about hardware information. Below is the structure of the table:
+
+| Column Name        | Data Type | Description                                             |
+|--------------------|-----------|---------------------------------------------------------|
+| uuid               | TEXT      | the primary key for the table, meaning that each row must have a unique value in this column.      |
+| type               | TEXT      | The type of hardware. |
+| hardware_id        | INTEGER   | An integer value representing the hardware ID. |
+| software_id        | INTEGER   | An integer value representing the software ID associated with the hardware. |
+| activated          | INTEGER   | A boolean value (0 or 1) indicating whether the hardware is activated or not. |
+| priority           | INTEGER   | An integer value representing the priority associated with the hardware. |
+
+### engines Table
+The `engines` table is designed to hold metadata about the different engines available for useage with Cortex.
+Below is the structure of the table:
+
+| Column Name  | Data Type | Description                                             |
+|--------------|-----------|---------------------------------------------------------|
+| id           | INTEGER   | A unique identifier for each engine (Primary Key).      |
+| engine_name  | TEXT      | The name of the engine. |
+| type         | TEXT      |  |
+| api_key      | TEXT      |  |
+| url          | TEXT      |  |
+| version      | TEXT      | The current version of the engine. |
+| variant      | TEXT      |  |
+| status       | TEXT      | Current status of the engine (e.g., "downloaded", "downloadable"). |
+| metadata     | TEXT      | Additional metadata or information about the engine. |
+| date_ceated  | TEXT      | Date when the engine was downloaded. |
+| date_updated | TEXT      | Date when the engine was last updated. |
+
+### files Table
+The `files` table is designed to hold metadata about objects dowloaded via Cortex.
+
+| Column Name | Data Type | Description                     |
+|-------------|-----------|---------------------------------|
+| id         | TEXT      | The primary key for the table    |
+| object     | TEXT      | The type of hardware.            |
+| purpose    | TEXT      | Purpose of file                  |
+| filename   | TEXT      | The name of the file.            |
+| created_at | INTEGER   | Date when file was created       |
+| bytes      | INTEGER   |                                  |

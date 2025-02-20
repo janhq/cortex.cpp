@@ -6,12 +6,12 @@
 #include "common/engine_servicei.h"
 #include "common/model_metadata.h"
 #include "config/model_config.h"
+#include "services/database_service.h"
 #include "services/download_service.h"
+#include "services/hardware_service.h"
 #include "utils/hardware/gguf/gguf_file_estimate.h"
 
-namespace services {
 class InferenceService;
-}
 
 struct ModelPullInfo {
   std::string id;
@@ -20,21 +20,6 @@ struct ModelPullInfo {
   std::vector<std::string> available_models;
   std::string model_source;
   std::string download_url;
-};
-
-struct StartParameterOverride {
-  std::optional<bool> cache_enabled;
-  std::optional<int> ngl;
-  std::optional<int> n_parallel;
-  std::optional<int> ctx_len;
-  std::optional<std::string> custom_prompt_template;
-  std::optional<std::string> cache_type;
-  std::optional<std::string> mmproj;
-  std::optional<std::string> model_path;
-  bool bypass_llama_model_path = false;
-  bool bypass_model_check() const {
-    return mmproj.has_value() || bypass_llama_model_path;
-  }
 };
 
 struct StartModelResult {
@@ -46,21 +31,16 @@ class ModelService {
  public:
   void ForceIndexingModelList();
 
-  explicit ModelService(std::shared_ptr<DownloadService> download_service)
-      : download_service_{download_service} {};
-
-  explicit ModelService(
-      std::shared_ptr<DownloadService> download_service,
-      std::shared_ptr<services::InferenceService> inference_service,
-      std::shared_ptr<EngineServiceI> engine_svc)
-      : download_service_{download_service},
+  explicit ModelService(std::shared_ptr<DatabaseService> db_service,
+                        std::shared_ptr<HardwareService> hw_service,
+                        std::shared_ptr<DownloadService> download_service,
+                        std::shared_ptr<InferenceService> inference_service,
+                        std::shared_ptr<EngineServiceI> engine_svc)
+      : db_service_(db_service),
+        hw_service_(hw_service),
+        download_service_{download_service},
         inference_svc_(inference_service),
         engine_svc_(engine_svc) {};
-
-  /**
-   * Return model id if download successfully
-   */
-  cpp::result<std::string, std::string> DownloadModel(const std::string& input);
 
   cpp::result<std::string, std::string> AbortDownloadModel(
       const std::string& task_id);
@@ -82,8 +62,8 @@ class ModelService {
   cpp::result<void, std::string> DeleteModel(const std::string& model_handle);
 
   cpp::result<StartModelResult, std::string> StartModel(
-      const std::string& model_handle,
-      const StartParameterOverride& params_override);
+      const std::string& model_handle, const Json::Value& params_override,
+      bool bypass_model_check);
 
   cpp::result<bool, std::string> StopModel(const std::string& model_handle);
 
@@ -111,6 +91,8 @@ class ModelService {
   std::shared_ptr<ModelMetadata> GetCachedModelMetadata(
       const std::string& model_id) const;
 
+  std::string GetEngineByModelId(const std::string& model_id) const;
+
  private:
   /**
    * Handle downloading model which have following pattern: author/model_name
@@ -130,8 +112,10 @@ class ModelService {
       const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
+  std::shared_ptr<DatabaseService> db_service_;
+  std::shared_ptr<HardwareService> hw_service_;
   std::shared_ptr<DownloadService> download_service_;
-  std::shared_ptr<services::InferenceService> inference_svc_;
+  std::shared_ptr<InferenceService> inference_svc_;
   std::unordered_set<std::string> bypass_stop_check_set_;
   std::shared_ptr<EngineServiceI> engine_svc_ = nullptr;
 

@@ -19,6 +19,7 @@ class EngineMatcherUtilsTestSuite : public ::testing::Test {
       "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-noavx-cuda-12-0.tar.gz",
       "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-noavx.tar.gz",
       "cortex.llamacpp-0.1.25-25.08.24-linux-amd64-vulkan.tar.gz",
+      "cortex.llamacpp-0.1.43-linux-arm64.tar.gz",
       "cortex.llamacpp-0.1.25-25.08.24-mac-amd64.tar.gz",
       "cortex.llamacpp-0.1.25-25.08.24-mac-arm64.tar.gz",
       "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx-cuda-11-7.tar.gz",
@@ -133,6 +134,18 @@ TEST_F(EngineMatcherUtilsTestSuite, TestValidate) {
     // fallback to no cuda version
     EXPECT_EQ(variant,
               "cortex.llamacpp-0.1.25-25.08.24-windows-amd64-avx2.tar.gz");
+  }
+
+  {
+    auto os{"linux"};
+    auto cpu_arch{"arm64"};
+    auto suitable_avx{""};
+    auto cuda_version{""};
+
+    auto variant = engine_matcher_utils::Validate(
+        cortex_llamacpp_variants, os, cpu_arch, suitable_avx, cuda_version);
+
+    EXPECT_EQ(variant, "cortex.llamacpp-0.1.43-linux-arm64.tar.gz");
   }
 }
 

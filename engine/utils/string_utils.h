@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cctype>
 #include <chrono>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -161,5 +162,42 @@ inline std::string FormatTimeElapsed(uint64_t pastTimestamp) {
   oss << seconds << " second" << (seconds > 1 ? "s" : "");
 
   return oss.str();
+}
+
+inline std::string EscapeJson(const std::string& s) {
+  std::ostringstream o;
+  for (auto c = s.cbegin(); c != s.cend(); c++) {
+    switch (*c) {
+      case '"':
+        o << "\\\"";
+        break;
+      case '\\':
+        o << "\\\\";
+        break;
+      case '\b':
+        o << "\\b";
+        break;
+      case '\f':
+        o << "\\f";
+        break;
+      case '\n':
+        o << "\\n";
+        break;
+      case '\r':
+        o << "\\r";
+        break;
+      case '\t':
+        o << "\\t";
+        break;
+      default:
+        if ('\x00' <= *c && *c <= '\x1f') {
+          o << "\\u" << std::hex << std::setw(4) << std::setfill('0')
+            << static_cast<int>(*c);
+        } else {
+          o << *c;
+        }
+    }
+  }
+  return o.str();
 }
 }  // namespace string_utils

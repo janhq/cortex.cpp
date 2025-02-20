@@ -2,16 +2,16 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "common/hardware_config.h"
+#include "database_service.h"
 #include "utils/hardware/cpu_info.h"
 #include "utils/hardware/gpu_info.h"
 #include "utils/hardware/os_info.h"
 #include "utils/hardware/power_info.h"
 #include "utils/hardware/ram_info.h"
 #include "utils/hardware/storage_info.h"
-
-namespace services {
 
 struct HardwareInfo {
   cortex::hw::CPU cpu;
@@ -24,6 +24,8 @@ struct HardwareInfo {
 
 class HardwareService {
  public:
+  explicit HardwareService(std::shared_ptr<DatabaseService> db_service)
+      : db_service_(db_service) {}
   HardwareInfo GetHardwareInfo();
   bool Restart(const std::string& host, int port);
   bool SetActivateHardwareConfig(const cortex::hw::ActivateHardwareConfig& ahc);
@@ -32,6 +34,11 @@ class HardwareService {
   bool IsValidConfig(const cortex::hw::ActivateHardwareConfig& ahc);
 
  private:
+  void CheckDependencies();
+  std::vector<int> GetCudaConfig();
+
+ private:
+  std::shared_ptr<DatabaseService> db_service_ = nullptr;
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
+  std::mutex mtx_;
 };
-}  // namespace services

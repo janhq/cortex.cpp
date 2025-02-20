@@ -6,6 +6,17 @@ if [ "$(id -u)" != "0" ]; then
     exit 1
 fi
 
+# Determine architecture
+ARCH=$(uname -m)
+if [ "$ARCH" = "x86_64" ]; then
+    ARCH="amd64"
+elif [ "$ARCH" = "aarch64" ]; then
+    ARCH="arm64"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
+
 # Determine the home directory based on the user
 USER_TO_RUN_AS=${SUDO_USER:-$(whoami)}
 if [ "$USER_TO_RUN_AS" = "root" ]; then
@@ -142,19 +153,19 @@ install_cortex() {
 
   case $channel in
     stable)
-      url_binary="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-amd64.tar.gz"
-      url_deb_local="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-amd64-local-installer.deb"
-      url_deb_network="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-amd64-network-installer.deb"
+      url_binary="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}.tar.gz"
+      url_deb_local="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-local-installer.deb"
+      url_deb_network="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-network-installer.deb"
       ;;
     beta)
-      url_binary="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-amd64.tar.gz"
-      url_deb_local="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-amd64-local-installer.deb"
-      url_deb_network="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-amd64-network-installer.deb"
+      url_binary="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}.tar.gz"
+      url_deb_local="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-local-installer.deb"
+      url_deb_network="https://github.com/janhq/cortex.cpp/releases/download/v${version}/cortex-${version}-linux-${ARCH}-network-installer.deb"
       ;;
     nightly)
-      url_binary="https://delta.jan.ai/cortex/v${version}/linux-amd64/cortex-nightly.tar.gz"
-      url_deb_local="https://delta.jan.ai/cortex/v${version}/linux-amd64/cortex-${version}-linux-amd64-local-installer.deb"
-      url_deb_network="https://delta.jan.ai/cortex/v${version}/linux-amd64/cortex-${version}-linux-amd64-network-installer.deb"
+      url_binary="https://delta.jan.ai/cortex/v${version}/linux-${ARCH}/cortex-nightly.tar.gz"
+      url_deb_local="https://delta.jan.ai/cortex/v${version}/linux-${ARCH}/cortex-${version}-linux-${ARCH}-local-installer.deb"
+      url_deb_network="https://delta.jan.ai/cortex/v${version}/linux-${ARCH}/cortex-${version}-linux-${ARCH}-network-installer.deb"
       ;;
   esac
 
@@ -180,7 +191,7 @@ install_cortex() {
     curl -L $url_binary -o /tmp/cortex.tar.gz
     tar -xzvf /tmp/cortex.tar.gz -C /tmp
     chmod +x /tmp/cortex/*
-    cp /tmp/cortex/* /usr/bin/
+    cp /tmp/cortex/cortex* /usr/bin/
     # Check is update or not
     if [ "$IS_UPDATE" = "false" ]; then
       su -c "$INSTALL_DIR/$CLI_BINARY_NAME engines install llama-cpp" $USER_TO_RUN_AS

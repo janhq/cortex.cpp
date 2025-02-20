@@ -43,5 +43,9 @@ class Hardware {
   cpp::result<bool, std::string> UpdateHardwareEntry(
       const std::string& id, const HardwareEntry& updated_entry);
   cpp::result<bool, std::string> DeleteHardwareEntry(const std::string& id);
+  bool HasHardwareEntry(const std::string& id);
+  cpp::result<bool, std::string> UpdateHardwareEntry(const std::string& id,
+                                                     int hw_id,
+                                                     int sw_id) const;
 };
 }  // namespace cortex::db

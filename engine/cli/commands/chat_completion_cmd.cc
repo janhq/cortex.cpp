@@ -56,10 +56,9 @@ void ChatCompletionCmd::Exec(const std::string& host, int port,
                              const std::string& model_handle, std::string msg) {
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
-  cortex::db::Models modellist_handler;
   config::YamlHandler yaml_handler;
   try {
-    auto model_entry = modellist_handler.GetModelInfo(model_handle);
+    auto model_entry = db_service_->GetModelInfo(model_handle);
     if (model_entry.has_error()) {
       CLI_LOG("Error: " + model_entry.error());
       return;

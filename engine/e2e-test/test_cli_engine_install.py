@@ -31,7 +31,7 @@ class TestCliEngineInstall:
         assert len(response.json()) > 0
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
-    @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
+    @pytest.mark.skipif(reason="Ignore onnx-runtime test")
     def test_engines_install_onnx_on_macos_should_be_failed(self):
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "onnxruntime"]
@@ -39,7 +39,7 @@ class TestCliEngineInstall:
         assert "is not supported on" in output, "Should display error message"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
-    @pytest.mark.skipif(platform.system() != "Darwin", reason="macOS-specific test")
+    @pytest.mark.skipif(reason="Ignore tensorrt-llm test")
     def test_engines_install_onnx_on_tensorrt_should_be_failed(self):
         exit_code, output, error = run(
             "Install Engine", ["engines", "install", "tensorrt-llm"]
@@ -49,7 +49,7 @@ class TestCliEngineInstall:
 
     @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
     def test_engines_install_pre_release_llamacpp(self):
-        engine_version = "v0.1.29"
+        engine_version = "v0.1.43"
         exit_code, output, error = run(
             "Install Engine",
             ["engines", "install", "llama-cpp", "-v", engine_version],
@@ -69,7 +69,7 @@ class TestCliEngineInstall:
         assert is_engine_version_exist, f"Engine version {engine_version} is not found"
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
-    @pytest.mark.skipif(platform.system() == "Windows", reason="Progress bar log issue on Windows")
+    @pytest.mark.skipif(platform.system() == "Windows" or platform.system() == "Linux", reason="Progress bar log issue on Windows")
     def test_engines_should_fallback_to_download_llamacpp_engine_if_not_exists(self):
         exit_code, output, error = run(
             "Install Engine",

@@ -7,15 +7,14 @@ slug: "updater"
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-:::warning
-🚧 Cortex.cpp is currently under development. Our documentation outlines the intended behavior of Cortex, which may not yet be fully implemented in the codebase.
-:::
 
-This document outlines the architectural design for a C++ updater responsible for downloading and executing installers for two binaries: CLI and Server. 
+This document outlines the architectural design for a C++ updater responsible for downloading and executing
+the installers for the CLI and Server binaries.
 
 ## Overview
 
-The updater is designed to check for available updates, download the necessary installer files, and execute them to update the CLI and Server binaries. The architecture consists of several key components that work together to achieve this functionality.
+The updater is designed to check for available updates, download the necessary installer files, and execute
+them to update the CLI and Server binaries.
 
 ## Components
 
@@ -24,7 +23,7 @@ The updater is designed to check for available updates, download the necessary i
 - **Purpose**: Responsible for checking the current version of the installed binaries and determining if updates are available.
 - **Responsibilities**:
   - Retrieve the current version from local installations.
-  - Fetch the latest version information from a remote source, latest version information is saved to `.cortexrc`.
+  - Fetch information regarding the latest version from a remote source and save such info in `.cortexrc`.
   - Determine if an update is necessary based on version comparison.
 
 ### 2. **Installer Download Manager**
@@ -61,7 +60,8 @@ The updater is designed to check for available updates, download the necessary i
    - It fetches the latest version information from a remote source.
 
 3. **Update Decision**:
-   - If newer versions are available, the updater proceeds to download the installers; otherwise, it informs the user that no updates are necessary.
+   - If newer versions are available, the updater proceeds to download the installers; otherwise, it informs the
+   user that no updates are necessary.
 
 4. **Download Process**:
    - The Installer Download Manager downloads the latest installer files using HTTP requests.
@@ -72,5 +72,6 @@ The updater is designed to check for available updates, download the necessary i
    - It monitors the installation process, capturing any output or errors.
 
 6. **Completion Notification**:
-   - After successful installation, the User Interface notifies users of completion or any issues encountered during installation.
+   - After successful installation, the User Interface notifies users of completion or any issues encountered
+   during installation.
    - Logs are updated with relevant information about the update process.

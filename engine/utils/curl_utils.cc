@@ -9,12 +9,24 @@
 
 namespace curl_utils {
 namespace {
-size_t WriteCallback(void* contents, size_t size, size_t nmemb,
-                     std::string* output) {
-  size_t totalSize = size * nmemb;
-  output->append((char*)contents, totalSize);
-  return totalSize;
-}
+class CurlResponse {
+ public:
+  static size_t WriteCallback(char* buffer, size_t size, size_t nitems,
+                              void* userdata) {
+    auto* response = static_cast<CurlResponse*>(userdata);
+    return response->Append(buffer, size * nitems);
+  }
+
+  size_t Append(const char* buffer, size_t size) {
+    data_.append(buffer, size);
+    return size;
+  }
+
+  const std::string& GetData() const { return data_; }
+
+ private:
+  std::string data_;
+};
 
 void SetUpProxy(CURL* handle, const std::string& url) {
   auto config = file_manager_utils::GetCortexConfig();
@@ -59,19 +71,18 @@ void SetUpProxy(CURL* handle, const std::string& url) {
 }
 }  // namespace
 
-std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
-    const std::string& url) {
+std::shared_ptr<Header> GetHeaders(const std::string& url) {
   auto url_obj = url_parser::FromUrlString(url);
   if (url_obj.has_error()) {
-    return std::nullopt;
+    return nullptr;
   }
 
   if (url_obj->host == kHuggingFaceHost) {
-    std::unordered_map<std::string, std::string> headers{};
-    headers["Content-Type"] = "application/json";
+    auto headers = std::make_shared<Header>();
+    headers->m["Content-Type"] = "application/json";
     auto const& token = file_manager_utils::GetCortexConfig().huggingFaceToken;
     if (!token.empty()) {
-      headers["Authorization"] = "Bearer " + token;
+      headers->m["Authorization"] = "Bearer " + token;
 
       // for debug purpose
       auto min_token_size = 6;
@@ -87,15 +98,15 @@ std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
   }
 
   if (url_obj->host == kGitHubHost) {
-    std::unordered_map<std::string, std::string> headers{};
-    headers["Accept"] = "application/vnd.github.v3+json";
+    auto headers = std::make_shared<Header>();
+    headers->m["Accept"] = "application/vnd.github.v3+json";
     // github API requires user-agent https://docs.github.com/en/rest/using-the-rest-api/getting-started-with-the-rest-api?apiVersion=2022-11-28#user-agent
     auto user_agent = file_manager_utils::GetCortexConfig().gitHubUserAgent;
     auto gh_token = file_manager_utils::GetCortexConfig().gitHubToken;
-    headers["User-Agent"] =
+    headers->m["User-Agent"] =
         user_agent.empty() ? kDefaultGHUserAgent : user_agent;
     if (!gh_token.empty()) {
-      headers["Authorization"] = "Bearer " + gh_token;
+      headers->m["Authorization"] = "Bearer " + gh_token;
 
       // for debug purpose
       auto min_token_size = 6;
@@ -109,7 +120,7 @@ std::optional<std::unordered_map<std::string, std::string>> GetHeaders(
     return headers;
   }
 
-  return std::nullopt;
+  return nullptr;
 }
 
 cpp::result<std::string, std::string> SimpleGet(const std::string& url,
@@ -122,8 +133,8 @@ cpp::result<std::string, std::string> SimpleGet(const std::string& url,
 
   auto headers = GetHeaders(url);
   curl_slist* curl_headers = nullptr;
-  if (headers.has_value()) {
-    for (const auto& [key, value] : headers.value()) {
+  if (headers) {
+    for (const auto& [key, value] : headers->m) {
       auto header = key + ": " + value;
       curl_headers = curl_slist_append(curl_headers, header.c_str());
     }
@@ -131,12 +142,14 @@ cpp::result<std::string, std::string> SimpleGet(const std::string& url,
     curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
   }
 
-  std::string readBuffer;
+  auto* response = new CurlResponse();
+  std::shared_ptr<CurlResponse> s(response,
+                                  std::default_delete<CurlResponse>());
 
   SetUpProxy(curl, url);
   curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlResponse::WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
   if (timeout > 0) {
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout);
   }
@@ -155,10 +168,10 @@ cpp::result<std::string, std::string> SimpleGet(const std::string& url,
   if (http_code >= 400) {
     CTL_ERR("HTTP request failed with status code: " +
             std::to_string(http_code));
-    return cpp::fail(readBuffer);
+    return cpp::fail(response->GetData());
   }
 
-  return readBuffer;
+  return response->GetData();
 }
 
 cpp::result<std::string, std::string> SimpleRequest(
@@ -176,13 +189,15 @@ cpp::result<std::string, std::string> SimpleRequest(
       curl_slist_append(curl_headers, "Content-Type: application/json");
   curl_headers = curl_slist_append(curl_headers, "Expect:");
 
-  if (headers.has_value()) {
-    for (const auto& [key, value] : headers.value()) {
+  if (headers) {
+    for (const auto& [key, value] : headers->m) {
       auto header = key + ": " + value;
       curl_headers = curl_slist_append(curl_headers, header.c_str());
     }
   }
-  std::string readBuffer;
+  auto* response = new CurlResponse();
+  std::shared_ptr<CurlResponse> s(response,
+                                  std::default_delete<CurlResponse>());
 
   SetUpProxy(curl, url);
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curl_headers);
@@ -196,8 +211,8 @@ cpp::result<std::string, std::string> SimpleRequest(
     curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
   }
   curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
-  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, CurlResponse::WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, response);
 
   curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
@@ -221,10 +236,10 @@ cpp::result<std::string, std::string> SimpleRequest(
   if (http_code >= 400) {
     CTL_ERR("HTTP request failed with status code: " +
             std::to_string(http_code));
-    return cpp::fail(readBuffer);
+    return cpp::fail(response->GetData());
   }
 
-  return readBuffer;
+  return response->GetData();
 }
 
 cpp::result<YAML::Node, std::string> ReadRemoteYaml(const std::string& url) {
@@ -257,6 +272,45 @@ cpp::result<Json::Value, std::string> SimpleGetJson(const std::string& url,
                      " parsing error: " + reader.getFormattedErrorMessages());
   }
 
+  return root;
+}
+
+cpp::result<Json::Value, std::string> SimpleGetJsonRecursive(
+    const std::string& url, const int timeout) {
+  auto result = SimpleGetJson(url, timeout);
+  if (result.has_error()) {
+    return result;
+  }
+  auto root = result.value();
+
+  if (root.isArray()) {
+    for (const auto& value : root) {
+      if (value["type"].asString() == "directory") {
+        auto temp = SimpleGetJsonRecursive(
+            url + "/" +
+                std::filesystem::path(value["path"].asString())
+                    .filename()
+                    .string(),
+            timeout);
+        if (!temp.has_error()) {
+          if (temp.value().isArray()) {
+            for (const auto& item : temp.value()) {
+              root.append(item);
+            }
+          } else {
+            root.append(temp.value());
+          }
+        }
+      }
+    }
+    for (Json::ArrayIndex i = 0; i < root.size();) {
+      if (root[i].isMember("type") && root[i]["type"] == "directory") {
+        root.removeIndex(i, nullptr);
+      } else {
+        ++i;
+      }
+    }
+  }
   return root;
 }
 
