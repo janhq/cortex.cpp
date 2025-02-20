@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include "common/hardware_config.h"
 #include "database_service.h"
@@ -39,4 +40,5 @@ class HardwareService {
  private:
   std::shared_ptr<DatabaseService> db_service_ = nullptr;
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
+  std::mutex mtx_;
 };

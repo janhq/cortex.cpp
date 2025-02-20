@@ -44,6 +44,8 @@ class Models : public drogon::HttpController<Models, false> {
   ADD_METHOD_TO(Models::DeleteModelSource, "/v1/models/sources", Delete);
   ADD_METHOD_TO(Models::GetModelSources, "/v1/models/sources", Get);
   ADD_METHOD_TO(Models::GetModelSource, "/v1/models/sources/{src}", Get);
+  ADD_METHOD_TO(Models::GetRepositoryList, "/v1/models/hub?author={author}",
+                Get);
   METHOD_LIST_END
 
   explicit Models(std::shared_ptr<DatabaseService> db_service,
@@ -110,6 +112,10 @@ class Models : public drogon::HttpController<Models, false> {
   void GetModelSource(const HttpRequestPtr& req,
                       std::function<void(const HttpResponsePtr&)>&& callback,
                       const std::string& src);
+
+  void GetRepositoryList(const HttpRequestPtr& req,
+                         std::function<void(const HttpResponsePtr&)>&& callback,
+                         std::optional<std::string> author);
 
  private:
   std::shared_ptr<DatabaseService> db_service_;

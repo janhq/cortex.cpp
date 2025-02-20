@@ -38,6 +38,7 @@ bool TryConnectToServer(const std::string& host, int port) {
 
 HardwareInfo HardwareService::GetHardwareInfo() {
   // append active state
+  std::lock_guard<std::mutex> l(mtx_);
   auto gpus = cortex::hw::GetGPUInfo();
   auto res = db_service_->LoadHardwareList();
   if (res.has_value()) {
@@ -63,7 +64,8 @@ bool HardwareService::Restart(const std::string& host, int port) {
   namespace luh = logging_utils_helper;
   if (!ahc_)
     return true;
-  auto exe = commands::GetCortexServerBinary();
+  auto exe = file_manager_utils::Subtract(
+      file_manager_utils::GetExecutablePath(), cortex_utils::GetCurrentPath());
   auto get_config_file_path = []() -> std::string {
     if (file_manager_utils::cortex_config_file_path.empty()) {
       return file_manager_utils::GetConfigurationPath().string();
@@ -144,16 +146,17 @@ bool HardwareService::Restart(const std::string& host, int port) {
   ZeroMemory(&pi, sizeof(pi));
   // TODO (sang) write a common function for this and server_start_cmd
   std::wstring params = L"--ignore_cout";
-  params += L" --config_file_path " +
-            file_manager_utils::GetConfigurationPath().wstring();
-  params += L" --data_folder_path " +
-            file_manager_utils::GetCortexDataPath().wstring();
+  params += L" --config_file_path \"" +
+            file_manager_utils::GetConfigurationPath().wstring() + L"\"";
+  params += L" --data_folder_path \"" +
+            file_manager_utils::GetCortexDataPath().wstring() + L"\"";
   params += L" --loglevel " +
             cortex::wc::Utf8ToWstring(luh::LogLevelStr(luh::global_log_level));
-  std::wstring exe_w = cortex::wc::Utf8ToWstring(exe);
+  std::wstring exe_w = exe.wstring();
   std::wstring current_path_w =
       file_manager_utils::GetExecutableFolderContainerPath().wstring();
-  std::wstring wcmds = current_path_w + L"/" + exe_w + L" " + params;
+  std::wstring wcmds = current_path_w + L"\\" + exe_w + L" " + params;
+  CTL_DBG("wcmds: " << wcmds);
   std::vector<wchar_t> mutable_cmds(wcmds.begin(), wcmds.end());
   mutable_cmds.push_back(L'\0');
   // Create child process
@@ -185,7 +188,7 @@ bool HardwareService::Restart(const std::string& host, int port) {
   auto dylib_path_mng = std::make_shared<cortex::DylibPathManager>();
   auto db_srv = std::make_shared<DatabaseService>();
   EngineService(download_srv, dylib_path_mng, db_srv).RegisterEngineLibPath();
-  std::string p = cortex_utils::GetCurrentPath() + "/" + exe;
+  std::string p = cortex_utils::GetCurrentPath() / exe;
   commands.push_back(p);
   commands.push_back("--ignore_cout");
   commands.push_back("--config_file_path");
@@ -293,8 +296,7 @@ void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
   CheckDependencies();
   auto gpus = cortex::hw::GetGPUInfo();
-  cortex::db::Hardware hw_db;
-  auto b = hw_db.LoadHardwareList();
+  auto b = db_service_->LoadHardwareList();
   // delete if not exists
   auto exists = [&gpus](const std::string& uuid) {
     for (auto const& g : gpus) {
@@ -305,12 +307,12 @@ void HardwareService::UpdateHardwareInfos() {
   };
   for (auto const& he : b.value()) {
     if (!exists(he.uuid)) {
-      hw_db.DeleteHardwareEntry(he.uuid);
+      db_service_->DeleteHardwareEntry(he.uuid);
     }
   }
 
   // Get updated list
-  b = hw_db.LoadHardwareList();
+  b = db_service_->LoadHardwareList();
   std::vector<std::pair<int, int>> activated_gpu_bf;
   std::string debug_b;
   for (auto const& he : b.value()) {
@@ -323,15 +325,15 @@ void HardwareService::UpdateHardwareInfos() {
   for (auto const& gpu : gpus) {
     // ignore error
     // Note: only support NVIDIA for now, so hardware_id = software_id
-    if (hw_db.HasHardwareEntry(gpu.uuid)) {
-      auto res = hw_db.UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
+    if (db_service_->HasHardwareEntry(gpu.uuid)) {
+      auto res = db_service_->UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
                                            std::stoi(gpu.id));
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
     } else {
       auto res =
-          hw_db.AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
+      db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
                                          .type = "gpu",
                                          .hardware_id = std::stoi(gpu.id),
                                          .software_id = std::stoi(gpu.id),
@@ -486,7 +488,7 @@ std::vector<int> HardwareService::GetCudaConfig() {
   // Map uuid back to nvidia id
   for (auto const& uuid : uuids) {
     for (auto const& ngpu : nvidia_gpus) {
-      if (uuid == ngpu.uuid) {
+      if (ngpu.uuid.find(uuid) != std::string::npos) {
         res.push_back(std::stoi(ngpu.id));
       }
     }

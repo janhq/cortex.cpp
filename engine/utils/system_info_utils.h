@@ -121,6 +121,7 @@ struct GpuInfo {
   std::optional<std::string> cuda_driver_version;
   std::optional<std::string> compute_cap;
   std::string uuid;
+  std::string vendor;
 };
 
 std::vector<GpuInfo> GetGpuInfoListVulkan();

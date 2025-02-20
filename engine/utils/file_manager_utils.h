@@ -20,6 +20,8 @@ inline std::string cortex_config_file_path;
 
 inline std::string cortex_data_folder_path;
 
+std::filesystem::path GetExecutablePath();
+
 std::filesystem::path GetExecutableFolderContainerPath();
 
 std::filesystem::path GetHomeDirectoryPath();

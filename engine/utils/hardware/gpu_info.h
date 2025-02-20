@@ -9,7 +9,8 @@ namespace cortex::hw {
 
 inline std::vector<GPU> GetGPUInfo() {
   auto nvidia_gpus = system_info_utils::GetGpuInfoList();
-  auto vulkan_gpus = GetGpuInfoList().value_or(std::vector<cortex::hw::GPU>{});
+  auto vulkan_gpus = VulkanGpu::GetInstance().GetGpuInfoList().value_or(
+      std::vector<cortex::hw::GPU>{});
   auto use_vulkan_info = nvidia_gpus.empty();
 
   // In case we have vulkan info, add more information for GPUs
@@ -24,10 +25,20 @@ inline std::vector<GPU> GetGPUInfo() {
             .compute_cap = nvidia_gpus[i].compute_cap.value_or("unknown")};
         vulkan_gpus[j].free_vram = std::stoll(nvidia_gpus[i].vram_free);
         vulkan_gpus[j].total_vram = std::stoll(nvidia_gpus[i].vram_total);
+        vulkan_gpus[j].vendor = nvidia_gpus[i].vendor;
       }
     }
   }
-  
+
+  // Erase invalid GPUs
+  for (std::vector<cortex::hw::GPU>::iterator it = vulkan_gpus.begin();
+       it != vulkan_gpus.end();) {
+    if ((*it).total_vram <= 0)
+      it = vulkan_gpus.erase(it);
+    else
+      ++it;
+  }
+
   if (use_vulkan_info) {
     return vulkan_gpus;
   } else {
@@ -43,7 +54,8 @@ inline std::vector<GPU> GetGPUInfo() {
                       .compute_cap = n.compute_cap.value_or("unknown")},
               .free_vram = std::stoi(n.vram_free),
               .total_vram = std::stoi(n.vram_total),
-              .uuid = n.uuid});
+              .uuid = n.uuid,
+              .vendor = n.vendor});
     }
     return res;
   }

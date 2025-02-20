@@ -27,7 +27,8 @@ void PsCmd::Exec(const std::string& host, int port) {
     for (const auto& item : res.value()["data"]) {
       ModelLoadedStatus model_status;
       // TODO(sang) hardcode for now
-      model_status.engine = kLlamaEngine;
+      model_status.engine = item["engine"].isNull()
+                            ? kLlamaEngine : item["engine"].asString();
       model_status.model = item["id"].asString();
       model_status.ram = item["ram"].asUInt64();
       model_status.start_time = item["start_time"].asUInt64();

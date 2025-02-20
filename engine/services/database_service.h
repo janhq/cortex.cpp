@@ -1,4 +1,5 @@
 #pragma once
+#include <mutex>
 #include "database/engines.h"
 #include "database/file.h"
 #include "database/hardware.h"
@@ -39,9 +40,13 @@ class DatabaseService {
   cpp::result<std::vector<HardwareEntry>, std::string> LoadHardwareList() const;
   cpp::result<bool, std::string> AddHardwareEntry(
       const HardwareEntry& new_entry);
+  bool HasHardwareEntry(const std::string& id);
   cpp::result<bool, std::string> UpdateHardwareEntry(
       const std::string& id, const HardwareEntry& updated_entry);
   cpp::result<bool, std::string> DeleteHardwareEntry(const std::string& id);
+  cpp::result<bool, std::string> UpdateHardwareEntry(const std::string& id,
+                                                     int hw_id,
+                                                     int sw_id) const;
 
   // models
   cpp::result<std::vector<ModelEntry>, std::string> LoadModelList() const;
@@ -62,8 +67,8 @@ class DatabaseService {
   bool HasModel(const std::string& identifier) const;
   cpp::result<std::vector<ModelEntry>, std::string> GetModels(
       const std::string& model_src) const;
-  cpp::result<std::vector<ModelEntry>, std::string> GetModelSources()
-      const;
+  cpp::result<std::vector<ModelEntry>, std::string> GetModelSources() const;
 
  private:
+  mutable std::mutex mtx_;
 };

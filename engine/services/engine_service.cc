@@ -320,7 +320,7 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
         engine,  // engine_name
         kLocal, "", "", normalize_version, variant.value(), "Default", "");
 
-    if (create_res.has_value()) {
+    if (create_res.has_error()) {
       CTL_ERR("Failed to create engine entry: " << create_res->engine_name);
     } else {
       CTL_INF("Engine entry created successfully");
@@ -870,10 +870,10 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
-    engines_.erase(ne);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
+  engines_.erase(ne);
 
   CTL_DBG("Engine unloaded: " + ne);
   return {};

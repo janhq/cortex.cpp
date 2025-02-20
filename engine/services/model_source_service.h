@@ -53,6 +53,9 @@ class ModelSourceService {
 
   cpp::result<ModelSource, std::string> GetModelSource(const std::string& src);
 
+  cpp::result<std::vector<std::string>, std::string> GetRepositoryList(
+      std::string_view author);
+
  private:
   cpp::result<bool, std::string> AddHfOrg(const std::string& model_source,
                                           const std::string& author);
@@ -72,7 +75,7 @@ class ModelSourceService {
       const std::string& model_source, const std::string& author,
       const std::string& model_name);
 
-  cpp::result<std::unordered_set<std::string>, std::string>
+  cpp::result<std::string, std::string>
   AddCortexsoRepoBranch(const std::string& model_source,
                         const std::string& author,
                         const std::string& model_name,
@@ -85,4 +88,6 @@ class ModelSourceService {
   std::shared_ptr<DatabaseService> db_service_ = nullptr;
   std::thread sync_db_thread_;
   std::atomic<bool> running_;
+
+  std::unordered_map<std::string, std::vector<std::string>> cortexso_repos_;
 };

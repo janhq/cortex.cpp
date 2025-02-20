@@ -104,6 +104,10 @@ std::pair<std::size_t, std::string> GGUFHandler::ReadString(
   uint64_t length;
   std::memcpy(&length, data_ + offset, sizeof(uint64_t));
 
+  if (offset + 8 + length > file_size_) {
+    throw std::runtime_error("GGUF metadata string length exceeds file size.\n");
+  }
+
   std::string value(reinterpret_cast<const char*>(data_ + offset + 8), length);
   return {8 + static_cast<std::size_t>(length), value};
 }
@@ -274,6 +278,9 @@ size_t GGUFHandler::ReadArray(std::size_t offset, const std::string& key) {
     }
 
     array_offset += length;
+    if (offset + array_offset > file_size_) {
+      throw std::runtime_error("GGUF Parser Array exceeded file size.\n");
+    }
   }
   if (array_values_string.size() > 0)
     metadata_array_string_[key] = array_values_string;

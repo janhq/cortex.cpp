@@ -1,0 +1,17 @@
+{
+    "choices": [
+        {
+            "delta": {
+                "content": " questions"
+            },
+            "finish_reason": null,
+            "index": 0
+        }
+    ],
+    "created": 1735372587,
+    "id": "",
+    "model": "o1-preview",
+    "object": "chat.completion.chunk",
+    "stream": true,
+    "system_fingerprint": "fp_1ddf0263de"
+}
