@@ -1,12 +1,12 @@
 name: CI Quality Gate Cortex CPP
 
 on:
-  # pull_request:
-  #   types: [opened, synchronize, reopened, ready_for_review]
-  #   paths: ["engine/**", ".github/workflows/cortex-cpp-quality-gate.yml"]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths: ["engine/**", ".github/workflows/cortex-cpp-quality-gate.yml"]
   workflow_dispatch:
-  # schedule:
-  #   - cron: '0 22 * * *'
+  schedule:
+    - cron: '0 22 * * *'
 
 env:
   LLM_MODEL_URL: https://delta.jan.ai/tinyllama-1.1b-chat-v0.3.Q2_K.gguf
@@ -218,58 +218,58 @@ jobs:
           AWS_SECRET_ACCESS_KEY: "${{ secrets.MINIO_SECRET_ACCESS_KEY }}"
           AWS_DEFAULT_REGION: "${{ secrets.MINIO_REGION }}"
 
-  # build-docker-and-test:
-  #   runs-on: ubuntu-24-04-docker
-  #   steps:
-  #     - name: Getting the repo
-  #       uses: actions/checkout@v3
-  #       with:
-  #         submodules: 'recursive'
+  build-docker-and-test:
+    runs-on: ubuntu-24-04-docker
+    steps:
+      - name: Getting the repo
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
       
-  #     - name: Run Docker
-  #       if: github.event_name != 'schedule'
-  #       run: |
-  #         docker build \
-  #           --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
-  #           --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
-  #           --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
-  #           --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
-  #           -t menloltd/cortex:test -f docker/Dockerfile.cache .
-  #         docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
-  #         sleep 20
+      - name: Run Docker
+        if: github.event_name != 'schedule'
+        run: |
+          docker build \
+            --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
+            --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
+            --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
+            --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
+            -t menloltd/cortex:test -f docker/Dockerfile.cache .
+          docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
+          sleep 20
 
-  #     - name: Run Docker
-  #       if: github.event_name == 'schedule'
-  #       run: |
-  #         latest_prerelease=$(curl -s https://api.github.com/repos/cortexcpp/cortex.cpp/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
-  #         echo "cortex.llamacpp latest release: $latest_prerelease"
-  #         docker build \
-  #           --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
-  #           --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
-  #           --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
-  #           --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
-  #           --build-arg CORTEX_CPP_VERSION="${latest_prerelease}" \
-  #           -t menloltd/cortex:test -f docker/Dockerfile.cache .
-  #         docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
-  #         sleep 20
+      - name: Run Docker
+        if: github.event_name == 'schedule'
+        run: |
+          latest_prerelease=$(curl -s https://api.github.com/repos/cortexcpp/cortex.cpp/releases | jq -r '.[] | select(.prerelease == true) | .tag_name' | head -n 1)
+          echo "cortex.llamacpp latest release: $latest_prerelease"
+          docker build \
+            --build-arg REMOTE_CACHE_URL="${{ secrets.MINIO_ENDPOINT }}/vcpkg-cache" \
+            --build-arg MINIO_ENDPOINT_URL="${{ secrets.MINIO_ENDPOINT }}" \
+            --build-arg MINIO_ACCESS_KEY="${{ secrets.MINIO_ACCESS_KEY_ID }}" \
+            --build-arg MINIO_SECRET_KEY="${{ secrets.MINIO_SECRET_ACCESS_KEY }}" \
+            --build-arg CORTEX_CPP_VERSION="${latest_prerelease}" \
+            -t menloltd/cortex:test -f docker/Dockerfile.cache .
+          docker run -it -d -p 3928:39281 --name cortex menloltd/cortex:test
+          sleep 20
 
-  #     - name: use python
-  #       uses: actions/setup-python@v5
-  #       with:
-  #         python-version: "3.10"
+      - name: use python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-  #     - name: Run e2e tests
-  #       run: |
-  #         cd engine
-  #         python -m pip install --upgrade pip
-  #         python -m pip install -r e2e-test/requirements.txt
-  #         pytest e2e-test/test_api_docker.py
+      - name: Run e2e tests
+        run: |
+          cd engine
+          python -m pip install --upgrade pip
+          python -m pip install -r e2e-test/requirements.txt
+          pytest e2e-test/test_api_docker.py
 
-  #     - name: Run Docker
-  #       continue-on-error: true
-  #       if: always()  
-  #       run: |
-  #         docker logs cortex
-  #         docker stop cortex
-  #         docker rm cortex
-  #         echo "y\n" | docker system prune -af
+      - name: Run Docker
+        continue-on-error: true
+        if: always()  
+        run: |
+          docker logs cortex
+          docker stop cortex
+          docker rm cortex
+          echo "y\n" | docker system prune -af
