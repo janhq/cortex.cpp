@@ -145,6 +145,10 @@ void PythonEngine::LoadModel(
     config::PythonModelConfig py_cfg;
     py_cfg.ReadFromYaml(model_dir / "model.yml");
 
+    if (py_cfg.entrypoint == "") {
+      throw std::runtime_error("Missing entrypoint in model.yml");
+    }
+
     // NOTE: model_dir / entrypoint assumes a Python script
     // TODO: figure out if we can support arbitrary CLI (but still launch by uv)
     std::vector<std::string> command{GetUvPath(), "run", model_dir / py_cfg.entrypoint};
@@ -158,7 +162,8 @@ void PythonEngine::LoadModel(
     if (!std::filesystem::exists(stdout_path)) std::ofstream(stdout_path).flush();
     if (!std::filesystem::exists(stderr_path)) std::ofstream(stderr_path).flush();
 
-    // TODO: what happens if the process starts, but exits?
+    // NOTE: process may start, but exits/crashes later
+    // TODO: wait for a few seconds, then check if process is alive
     pid = cortex::process::SpawnProcess(command, stdout_path, stderr_path);
     if (pid == -1) {
       throw std::runtime_error("Fail to spawn process with pid -1");
