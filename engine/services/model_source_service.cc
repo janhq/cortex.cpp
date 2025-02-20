@@ -199,20 +199,21 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
   return ms;
 }
 
-
 cpp::result<std::vector<std::string>, std::string>
 ModelSourceService::GetRepositoryList(std::string_view author) {
-  if (!cortexso_repos_.empty())
-    return cortexso_repos_;
+  std::string as(author);
+  if (cortexso_repos_.find(as) != cortexso_repos_.end() &&
+      !cortexso_repos_.at(as).empty())
+    return cortexso_repos_.at(as);
   const auto begin = std::chrono::high_resolution_clock::now();
-  auto res = curl_utils::SimpleGet("https://huggingface.co/api/models?author=" +
-                                   std::string(author));
+  auto res =
+      curl_utils::SimpleGet("https://huggingface.co/api/models?author=" + as);
   if (res.has_value()) {
     auto repos = ParseJsonString(res.value());
     for (auto& r : repos) {
-      cortexso_repos_.push_back(r.id);
+      cortexso_repos_[as].push_back(r.id);
     }
-    return cortexso_repos_;
+    return cortexso_repos_.at(as);
   } else {
     return cpp::fail(res.error());
   }

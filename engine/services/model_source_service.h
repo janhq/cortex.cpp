@@ -89,5 +89,5 @@ class ModelSourceService {
   std::thread sync_db_thread_;
   std::atomic<bool> running_;
 
-  std::vector<std::string> cortexso_repos_;
+  std::unordered_map<std::string, std::vector<std::string>> cortexso_repos_;
 };
