@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 
 #include "json/value.h"
 #include "utils/result.hpp"
@@ -9,8 +8,6 @@
 class PythonEngineI {
  public:
   virtual ~PythonEngineI() {}
-
-  // virtual bool IsSupported(const std::string& f) = 0;
 
   // model management
   virtual void LoadModel(

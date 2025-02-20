@@ -12,10 +12,7 @@ constexpr const auto kLocal = "local";
 
 
 constexpr const auto kLlamaRepo = "cortex.llamacpp";
-constexpr const auto kPythonRuntimeRepo = "cortex.python";
-
 constexpr const auto kLlamaLibPath = "./engines/cortex.llamacpp";
-constexpr const auto kPythonRuntimeLibPath = "/engines/cortex.python";
 
 // other constants
 constexpr auto static kHuggingFaceHost = "huggingface.co";

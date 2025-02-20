@@ -375,7 +375,7 @@ InferResult InferenceService::GetModels(
 
 InferResult InferenceService::FineTuning(
     std::shared_ptr<Json::Value> json_body) {
-  std::string ne = kPythonRuntimeRepo;
+  std::string ne = kPythonEngine;
   Json::Value r;
   Json::Value stt;
 
