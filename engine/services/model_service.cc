@@ -507,15 +507,17 @@ ModelService::DownloadModelFromCortexsoAsync(
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
 
-    mc.model = unique_model_id;
+    if (mc.engine == kLlamaEngine) {
+      mc.model = unique_model_id;
 
-    uint64_t model_size = 0;
-    for (const auto& item : finishedTask.items) {
-      model_size = model_size + item.bytes.value_or(0);
+      uint64_t model_size = 0;
+      for (const auto& item : finishedTask.items) {
+        model_size = model_size + item.bytes.value_or(0);
+      }
+      mc.size = model_size;
+      yaml_handler.UpdateModelConfig(mc);
+      yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
     }
-    mc.size = model_size;
-    yaml_handler.UpdateModelConfig(mc);
-    yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
 
     auto rel =
         file_manager_utils::ToRelativeCortexDataPath(model_yml_item->localPath);
