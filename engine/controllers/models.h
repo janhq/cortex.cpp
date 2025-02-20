@@ -30,7 +30,7 @@ class Models : public drogon::HttpController<Models, false> {
 
   ADD_METHOD_TO(Models::PullModel, "/v1/models/pull", Options, Post);
   ADD_METHOD_TO(Models::AbortPullModel, "/v1/models/pull", Options, Delete);
-  ADD_METHOD_TO(Models::ListModel, "/v1/models", Get);
+  ADD_METHOD_TO(Models::ListModel, "/v1/models?author={author}", Get);
   ADD_METHOD_TO(Models::GetModel, "/v1/models/{1}", Get);
   ADD_METHOD_TO(Models::UpdateModel, "/v1/models/{1}", Options, Patch);
   ADD_METHOD_TO(Models::ImportModel, "/v1/models/import", Options, Post);
@@ -63,7 +63,8 @@ class Models : public drogon::HttpController<Models, false> {
   void AbortPullModel(const HttpRequestPtr& req,
                       std::function<void(const HttpResponsePtr&)>&& callback);
   void ListModel(const HttpRequestPtr& req,
-                 std::function<void(const HttpResponsePtr&)>&& callback) const;
+                 std::function<void(const HttpResponsePtr&)>&& callback,
+                 std::optional<std::string> author) const;
   void GetModel(const HttpRequestPtr& req,
                 std::function<void(const HttpResponsePtr&)>&& callback,
                 const std::string& model_id) const;

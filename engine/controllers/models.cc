@@ -168,9 +168,32 @@ void Models::AbortPullModel(
   }
 }
 
-void Models::ListModel(
-    const HttpRequestPtr& req,
-    std::function<void(const HttpResponsePtr&)>&& callback) const {
+void Models::ListModel(const HttpRequestPtr& req,
+                       std::function<void(const HttpResponsePtr&)>&& callback,
+                       std::optional<std::string> author) const {
+  if (author.has_value()) {
+    auto res = model_src_svc_->GetRepositoryList(author.value());
+    if (res.has_error()) {
+      Json::Value ret;
+      ret["message"] = res.error();
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k400BadRequest);
+      callback(resp);
+    } else {
+      auto& info = res.value();
+      Json::Value ret;
+      Json::Value arr(Json::arrayValue);
+      for (auto const& i : info) {
+        arr.append(i);
+      }
+      ret["data"] = arr;
+      auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+      resp->setStatusCode(k200OK);
+      callback(resp);
+    }
+    return;
+  }
+
   namespace fs = std::filesystem;
   namespace fmu = file_manager_utils;
   Json::Value ret;
