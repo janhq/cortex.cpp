@@ -2,8 +2,8 @@ import platform
 import os
 from pathlib import Path
 import pytest, requests, shutil
-from test_runner import run
-from test_runner import start_server, stop_server
+from utils.test_runner import run
+from utils.test_runner import start_server, stop_server
 
 
 class TestCreateLogFolder:
