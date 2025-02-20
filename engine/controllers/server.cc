@@ -249,9 +249,10 @@ void server::Python(
   new_req->setBody(std::string{req->body()});
   new_req->setContentTypeCode(req->getContentType());
 
-  for (const auto& [field, value] : req->headers()) {
-    new_req->addHeader(field, value);
-  }
+  // including headers may make FastAPI reqject the request...
+  // for (const auto& [field, value] : req->headers()) {
+  //   new_req->addHeader(field, value);
+  // }
 
   CTL_INF("Route request to " << host << path);
   auto cb = [callback](ReqResult result, const HttpResponsePtr& response) {
