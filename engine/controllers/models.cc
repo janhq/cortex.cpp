@@ -385,6 +385,10 @@ void Models::UpdateModel(const HttpRequestPtr& req,
       message = "Successfully update model ID '" + model_id +
                 "': " + json_body.toStyledString();
     } else if (model_config.engine == kPythonEngine) {
+      // Block changes to `command`
+      if (json_body.isMember("command")) {
+        json_body.removeMember("command");
+      }
       config::PythonModelConfig python_model_config;
       python_model_config.ReadFromYaml(yaml_fp.string());
       python_model_config.FromJson(json_body);
