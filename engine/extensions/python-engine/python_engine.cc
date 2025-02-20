@@ -4,6 +4,9 @@
 #include "config/model_config.h"
 #include "utils/file_manager_utils.h"
 #include "utils/process/utils.h"
+#include "utils/system_info_utils.h"
+#include "utils/archive_utils.h"
+#include "utils/set_permission_utils.h"
 
 namespace python_engine {
 namespace {
@@ -14,46 +17,47 @@ constexpr const int k500InternalServerError = 500;
 }  // namespace
 
 cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& download_service) {
-  const std::string py_bin_path = file_manager_utils::GetCortexDataPath() / "python_engine" / "bin";
+  const auto py_bin_path = file_manager_utils::GetCortexDataPath() / "python_engine" / "bin";
   std::filesystem::create_directories(py_bin_path);
 
-  const std::string uv_version = "0.5.31";
+  // NOTE: do we need a mechanism to update uv, or just pin uv version with cortex release?
+  const std::string uv_version = "0.6.2";
 
-  // NOTE: only works on MacOS and Linux
+  // build download url based on system info
+  std::stringstream fname_stream;
+  fname_stream << "uv-";
+
+  auto system_info = system_info_utils::GetSystemInfo();
+  if (system_info->arch == "amd64") fname_stream << "x86_64";
+  else if (system_info->arch == "arm64") fname_stream << "aarch64";
+
+  // NOTE: there is also a musl linux version
+  if (system_info->os == kMacOs) fname_stream << "-apple-darwin.tar.gz";
+  else if (system_info->os == kWindowsOs) fname_stream << "-pc-windows-msvc.zip";
+  else if (system_info->os == kLinuxOs) fname_stream << "-unknown-linux-gnu.tar.gz";
+
+  const std::string fname = fname_stream.str();
+  const std::string base_url = "https://github.com/astral-sh/uv/releases/download/";
+  const std::string url = (std::stringstream{} << base_url << uv_version << "/" << fname).str();
+  CTL_INF("Download uv from " << url);
+
   auto on_finished = [py_bin_path, uv_version](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
-    const std::string installer_path = finishedTask.items[0].localPath.string();
-    CTL_INF("UV install script path: " << installer_path);
-    CTL_INF("Version: " << uv_version);
+    const std::string download_path = finishedTask.items[0].localPath.string();
 
-    // https://docs.astral.sh/uv/configuration/installer/
-    // TODO: move env var mod logic to SpawnProcess()
-    // using env to set env vars
-    // should we download from here instead? https://github.com/astral-sh/uv/releases
-    std::vector<std::string> command{"env",
-                                     "UV_UNMANAGED_INSTALL=" + py_bin_path,
-                                     "sh",
-                                     installer_path,
-                                     "-q"};
-    const auto pid = cortex::process::SpawnProcess(command);
-    if (pid == -1) {
-      CTL_ERR("Failed to install uv");
-    }
-    // wait for subprocess to finish
-    // TODO: need to check return status if successful
-    waitpid(pid, NULL, 0);
-    std::filesystem::remove(installer_path);
+    archive_utils::ExtractArchive(download_path, py_bin_path, true);
+    set_permission_utils::SetExecutePermissionsRecursive(py_bin_path);
+    std::filesystem::remove(download_path);
   };
 
-  const std::string url = "https://astral.sh/uv/" + uv_version + "/install.sh";
-  auto downloadTask =
-    DownloadTask{.id = "uv",
-                 .type = DownloadType::Engine,
-                 .items = {DownloadItem{
-                      .id = "uv",
-                      .downloadUrl = url,
-                      .localPath = py_bin_path + "/install.sh",
-                  }}};
+  auto downloadTask = DownloadTask{.id = "uv",
+                                   .type = DownloadType::Engine,
+                                   .items = {
+                                      DownloadItem{
+                                        .id = "uv",
+                                        .downloadUrl = url,
+                                        .localPath = py_bin_path / fname,
+                                      }}};
 
   auto add_task_result = download_service->AddTask(downloadTask, on_finished);
   if (add_task_result.has_error()) {
@@ -63,6 +67,7 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
 }
 
 std::string GetUvPath() {
+  // NOTE: do I need to add .exe for windows?
   return file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
 }
 bool IsUvInstalled() {
