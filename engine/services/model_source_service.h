@@ -75,7 +75,7 @@ class ModelSourceService {
       const std::string& model_source, const std::string& author,
       const std::string& model_name);
 
-  cpp::result<std::unordered_set<std::string>, std::string>
+  cpp::result<std::string, std::string>
   AddCortexsoRepoBranch(const std::string& model_source,
                         const std::string& author,
                         const std::string& model_name,
