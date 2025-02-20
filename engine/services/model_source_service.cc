@@ -1,5 +1,6 @@
 #include "model_source_service.h"
 #include <chrono>
+#include <future>
 #include <unordered_set>
 #include "database/models.h"
 #include "json/json.h"
@@ -199,6 +200,26 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
   return ms;
 }
 
+cpp::result<std::vector<std::string>, std::string>
+ModelSourceService::GetRepositoryList(std::string_view author) {
+  std::string as(author);
+  if (cortexso_repos_.find(as) != cortexso_repos_.end() &&
+      !cortexso_repos_.at(as).empty())
+    return cortexso_repos_.at(as);
+  const auto begin = std::chrono::high_resolution_clock::now();
+  auto res =
+      curl_utils::SimpleGet("https://huggingface.co/api/models?author=" + as);
+  if (res.has_value()) {
+    auto repos = ParseJsonString(res.value());
+    for (auto& r : repos) {
+      cortexso_repos_[as].push_back(r.id);
+    }
+    return cortexso_repos_.at(as);
+  } else {
+    return cpp::fail(res.error());
+  }
+}
+
 cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
     const std::string& model_source, const std::string& author) {
   auto res = curl_utils::SimpleGet("https://huggingface.co/api/models?author=" +
@@ -361,6 +382,7 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
 cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
     const std::string& model_source, const std::string& author,
     const std::string& model_name) {
+  auto begin = std::chrono::system_clock::now();
   auto branches =
       huggingface_utils::GetModelRepositoryBranches("cortexso", model_name);
   if (branches.has_error()) {
@@ -377,19 +399,25 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   if (!readme.has_error()) {
     desc = readme.value();
   }
-  // Get models from db
 
+  // Get models from db
   auto model_list_before = db_service_->GetModels(model_source)
                                .value_or(std::vector<cortex::db::ModelEntry>{});
   std::unordered_set<std::string> updated_model_list;
-
+  std::vector<std::future<std::string>> tasks;
   for (auto const& [branch, _] : branches.value()) {
-    CTL_INF(branch);
-    auto add_res = AddCortexsoRepoBranch(model_source, author, model_name,
-                                         branch, repo_info->metadata, desc)
-                       .value_or(std::unordered_set<std::string>{});
-    for (auto const& a : add_res) {
-      updated_model_list.insert(a);
+    CTL_DBG(branch);
+    tasks.push_back(std::async(std::launch::async, [&, branch = branch] {
+      return AddCortexsoRepoBranch(model_source, author, model_name, branch,
+                                   repo_info->metadata, desc)
+          .value_or(std::string{});
+    }));
+  }
+
+  for (auto& task : tasks) {
+    auto add_res = task.get();
+    if (!add_res.empty()) {
+      updated_model_list.insert(add_res);
     }
   }
 
@@ -402,18 +430,19 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
       }
     }
   }
+
+  auto end = std::chrono::system_clock::now();
+  CTL_INF(
+      "Duration ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(
+                             end - begin)
+                             .count());
   return true;
 }
 
-cpp::result<std::unordered_set<std::string>, std::string>
-ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
-                                          const std::string& author,
-                                          const std::string& model_name,
-                                          const std::string& branch,
-                                          const std::string& metadata,
-                                          const std::string& desc) {
-  std::unordered_set<std::string> res;
-
+cpp::result<std::string, std::string> ModelSourceService::AddCortexsoRepoBranch(
+    const std::string& model_source, const std::string& author,
+    const std::string& model_name, const std::string& branch,
+    const std::string& metadata, const std::string& desc) {
   url_parser::Url url = {
       .protocol = "https",
       .host = kHuggingFaceHost,
@@ -468,9 +497,9 @@ ModelSourceService::AddCortexsoRepoBranch(const std::string& model_source,
         }
       }
     }
-    res.insert(model_id);
+    return model_id;
   }
-  return res;
+  return {};
 }
 
 void ModelSourceService::SyncModelSource() {
