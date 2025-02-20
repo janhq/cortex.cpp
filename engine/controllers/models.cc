@@ -855,3 +855,30 @@ void Models::GetModelSource(
     callback(resp);
   }
 }
+
+void Models::GetRepositoryList(
+    const HttpRequestPtr& req,
+    std::function<void(const HttpResponsePtr&)>&& callback,
+    std::optional<std::string> author) {
+  if (!author.has_value())
+    author = "cortexso";
+  auto res = model_src_svc_->GetRepositoryList(author.value());
+  if (res.has_error()) {
+    Json::Value ret;
+    ret["message"] = res.error();
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k400BadRequest);
+    callback(resp);
+  } else {
+    auto& info = res.value();
+    Json::Value ret;
+    Json::Value arr(Json::arrayValue);
+    for (auto const& i : info) {
+      arr.append(i);
+    }
+    ret["data"] = arr;
+    auto resp = cortex_utils::CreateCortexHttpJsonResponse(ret);
+    resp->setStatusCode(k200OK);
+    callback(resp);
+  }
+}
