@@ -38,7 +38,10 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
 
   const std::string fname = fname_stream.str();
   const std::string base_url = "https://github.com/astral-sh/uv/releases/download/";
-  const std::string url = (std::stringstream{} << base_url << uv_version << "/" << fname).str();
+
+  std::stringstream url_stream;
+  url_stream << base_url << uv_version << "/" << fname;
+  const std::string url = url_stream.str();
   CTL_INF("Download uv from " << url);
 
   auto on_finished = [py_bin_path, uv_version](const DownloadTask& finishedTask) {
