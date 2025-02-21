@@ -47,7 +47,7 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
     // try to unzip the downloaded file
     const std::string download_path = finishedTask.items[0].localPath.string();
 
-    archive_utils::ExtractArchive(download_path, py_bin_path, true);
+    archive_utils::ExtractArchive(download_path, py_bin_path.string(), true);
     set_permission_utils::SetExecutePermissionsRecursive(py_bin_path);
     std::filesystem::remove(download_path);
   };
@@ -70,7 +70,9 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
 
 std::string GetUvPath() {
   // NOTE: do I need to add .exe for windows?
-  return file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
+  const auto path = file_manager_utils::GetCortexDataPath()
+                    / "python_engine" / "bin" / "uv";
+  return path.string();
 }
 bool IsUvInstalled() {
   return std::filesystem::exists(GetUvPath());
@@ -145,7 +147,7 @@ void PythonEngine::LoadModel(
   pid_t pid;
   try {
     config::PythonModelConfig py_cfg;
-    py_cfg.ReadFromYaml(model_dir / "model.yml");
+    py_cfg.ReadFromYaml((model_dir / "model.yml").string());
 
     if (py_cfg.entrypoint == "") {
       throw std::runtime_error("Missing entrypoint in model.yml");
@@ -153,12 +155,13 @@ void PythonEngine::LoadModel(
 
     // NOTE: model_dir / entrypoint assumes a Python script
     // TODO: figure out if we can support arbitrary CLI (but still launch by uv)
-    std::vector<std::string> command{GetUvPath(), "run", model_dir / py_cfg.entrypoint};
+    const std::string entrypoint = (model_dir / py_cfg.entrypoint).string();
+    std::vector<std::string> command{GetUvPath(), "run", entrypoint};
     for (const auto& item : py_cfg.extra_args)
       command.push_back(item);
 
-    const std::string stdout_path = model_dir / "stdout.txt";
-    const std::string stderr_path = model_dir / "stderr.txt";
+    const std::string stdout_path = (model_dir / "stdout.txt").string();
+    const std::string stderr_path = (model_dir / "stderr.txt").string();
 
     // create empty stdout.txt and stderr.txt for redirection
     if (!std::filesystem::exists(stdout_path)) std::ofstream(stdout_path).flush();
