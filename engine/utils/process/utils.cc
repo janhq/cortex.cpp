@@ -40,8 +40,8 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 }
 
 pid_t SpawnProcess(const std::vector<std::string>& command,
-                   const std::optional<std::string> stdout_file,
-                   const std::optional<std::string> stderr_file) {
+                   const std::string stdout_file,
+                   const std::string stderr_file) {
   try {
 #if defined(_WIN32)
     // Windows process creation
@@ -90,25 +90,23 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
     // caller should make sure the redirect files exist.
     posix_spawn_file_actions_t *action_ptr = NULL;
 
-    if (stdout_file.has_value() || stderr_file.has_value()) {
+    if (!stdout_file.empty() || !stderr_file.empty()) {
       posix_spawn_file_actions_t action;
       posix_spawn_file_actions_init(&action);
       action_ptr = &action;
 
-      if (stdout_file.has_value()) {
-        std::string stdout_file_val = stdout_file.value();
-        if (std::filesystem::exists(stdout_file_val)) {
+      if (!stdout_file.empty()) {
+        if (std::filesystem::exists(stdout_file)) {
           posix_spawn_file_actions_addopen(&action, STDOUT_FILENO,
-                                           stdout_file_val.data(),
+                                           stdout_file.data(),
                                            O_WRONLY | O_APPEND, 0);
         }
       }
 
-      if (stderr_file.has_value()) {
-        std::string stderr_file_val = stderr_file.value();
-        if (std::filesystem::exists(stderr_file_val)) {
+      if (!stderr_file.empty()) {
+        if (std::filesystem::exists(stderr_file)) {
           posix_spawn_file_actions_addopen(&action, STDERR_FILENO,
-                                           stderr_file_val.data(),
+                                           stderr_file.data(),
                                            O_WRONLY | O_APPEND, 0);
         }
       }
