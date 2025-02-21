@@ -21,6 +21,7 @@ class PythonEngine : public PythonEngineI {
   struct PythonSubprocess {
     pid_t pid;
     int port;
+    uint64_t start_time;
 
     bool IsAlive();
     bool Kill();

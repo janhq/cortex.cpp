@@ -174,8 +174,10 @@ void PythonEngine::LoadModel(
     if (pid == -1) {
       throw std::runtime_error("Fail to spawn process with pid -1");
     }
+    const uint64_t start_time = std::chrono::system_clock::now().time_since_epoch() /
+                                std::chrono::milliseconds(1);
     std::unique_lock write_lock(mutex);
-    model_process_map[model] = {pid, py_cfg.port};
+    model_process_map[model] = {pid, py_cfg.port, start_time};
 
   } catch (const std::exception& e) {
     auto e_msg = e.what();
@@ -305,8 +307,12 @@ void PythonEngine::GetModels(
       Json::Value val;
       val["id"] = model_name;
       val["engine"] = kPythonEngine;
+      val["start_time"] = py_proc.start_time;
       val["port"] = py_proc.port;
       val["object"] = "model";
+      // TODO
+      // val["ram"];
+      // val["vram"];
       model_list.append(val);
     }
   }
