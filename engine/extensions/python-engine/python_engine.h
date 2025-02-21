@@ -7,6 +7,7 @@
 
 #include "cortex-common/python_enginei.h"
 #include "services/download_service.h"
+#include "utils/process/utils.h"
 
 namespace python_engine {
 
