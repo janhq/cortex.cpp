@@ -787,7 +787,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       // Running remote model
       if (engine_svc_->IsRemoteEngine(mc.engine)) {
-        engine_svc_->LoadEngine(mc.engine);
+        (void)engine_svc_->LoadEngine(mc.engine);
         config::RemoteModelConfig remote_mc;
         remote_mc.LoadFromYamlFile(
             fmu::ToAbsoluteCortexDataPath(
@@ -1136,7 +1136,7 @@ cpp::result<std::optional<std::string>, std::string>
 ModelService::MayFallbackToCpu(const std::string& model_path, int ngl,
                                int ctx_len, int n_batch, int n_ubatch,
                                const std::string& kv_cache_type) {
-  // TODO(sang) temporary disable this function 
+  // TODO(sang) temporary disable this function
   return std::nullopt;
   assert(hw_service_);
   auto hw_info = hw_service_->GetHardwareInfo();

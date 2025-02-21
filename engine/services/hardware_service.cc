@@ -296,8 +296,7 @@ void HardwareService::UpdateHardwareInfos() {
   using HwEntry = cortex::db::HardwareEntry;
   CheckDependencies();
   auto gpus = cortex::hw::GetGPUInfo();
-  cortex::db::Hardware hw_db;
-  auto b = hw_db.LoadHardwareList();
+  auto b = db_service_->LoadHardwareList();
   // delete if not exists
   auto exists = [&gpus](const std::string& uuid) {
     for (auto const& g : gpus) {
@@ -308,12 +307,12 @@ void HardwareService::UpdateHardwareInfos() {
   };
   for (auto const& he : b.value()) {
     if (!exists(he.uuid)) {
-      hw_db.DeleteHardwareEntry(he.uuid);
+      db_service_->DeleteHardwareEntry(he.uuid);
     }
   }
 
   // Get updated list
-  b = hw_db.LoadHardwareList();
+  b = db_service_->LoadHardwareList();
   std::vector<std::pair<int, int>> activated_gpu_bf;
   std::string debug_b;
   for (auto const& he : b.value()) {
@@ -326,15 +325,15 @@ void HardwareService::UpdateHardwareInfos() {
   for (auto const& gpu : gpus) {
     // ignore error
     // Note: only support NVIDIA for now, so hardware_id = software_id
-    if (hw_db.HasHardwareEntry(gpu.uuid)) {
-      auto res = hw_db.UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
+    if (db_service_->HasHardwareEntry(gpu.uuid)) {
+      auto res = db_service_->UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
                                            std::stoi(gpu.id));
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
     } else {
       auto res =
-          hw_db.AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
+      db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
                                          .type = "gpu",
                                          .hardware_id = std::stoi(gpu.id),
                                          .software_id = std::stoi(gpu.id),
