@@ -3,7 +3,7 @@ import os
 
 def log_response(data, test_name):
     """Log the data to a file named after the test."""
-    log_dir="logs"
+    log_dir="e2e-test/logs"
     os.makedirs(log_dir, exist_ok=True)  # Ensure log directory exists
     file_path = os.path.join(log_dir, f"{test_name}.txt")  # Log file per test
 
