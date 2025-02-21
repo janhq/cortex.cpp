@@ -22,6 +22,10 @@ class TestApiEngineInstall:
         response = requests.post("http://localhost:3928/v1/engines/llama-cpp/install")
         assert response.status_code == 200
 
+    def test_engines_install_python_should_be_successful(self):
+        response = requests.post("http://localhost:3928/v1/engines/python/install")
+        assert response.status_code == 200
+
     def test_engines_install_llamacpp_specific_version_and_variant(self):
         data = {"version": latest_pre_release_tag, "variant": "linux-amd64-avx-cuda-11-7"}
         response = requests.post(
