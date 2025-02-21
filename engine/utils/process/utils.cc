@@ -1,7 +1,9 @@
 #include "utils/process/utils.h"
 #include "utils/logging_utils.h"
 
-#if defined(__APPLE__) || defined(__linux__)
+#if defined(_WIN32)
+#include <tlhelp32.h>
+#elif defined(__APPLE__) || defined(__linux__)
 extern char **environ;  // environment variables
 #endif
 
