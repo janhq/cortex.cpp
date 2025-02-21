@@ -149,15 +149,16 @@ void PythonEngine::LoadModel(
     config::PythonModelConfig py_cfg;
     py_cfg.ReadFromYaml((model_dir / "model.yml").string());
 
-    if (py_cfg.entrypoint == "") {
+    if (py_cfg.entrypoint.empty()) {
       throw std::runtime_error("Missing entrypoint in model.yml");
     }
 
-    // NOTE: model_dir / entrypoint assumes a Python script
-    // TODO: figure out if we can support arbitrary CLI (but still launch by uv)
-    const std::string entrypoint = (model_dir / py_cfg.entrypoint).string();
-    std::vector<std::string> command{GetUvPath(), "run", entrypoint};
-    for (const auto& item : py_cfg.extra_args)
+    // https://docs.astral.sh/uv/reference/cli/#uv-run
+    std::vector<std::string> command{GetUvPath(),
+                                     "run",
+                                     "--directory",
+                                     model_dir.string()};
+    for (const auto& item : py_cfg.entrypoint)
       command.push_back(item);
 
     const std::string stdout_path = (model_dir / "stdout.txt").string();

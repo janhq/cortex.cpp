@@ -477,40 +477,33 @@ struct Endpoint {
 };
 
 struct PythonModelConfig {
-  // General Metadata
   std::string name;
   int version;
-
-  // Model Load Parameters
   std::string engine;
-  std::string entrypoint;
+
+  std::vector<std::string> entrypoint;
   int port;
-  std::vector<std::string> extra_args;
 
   // Method to convert C++ struct to YAML
   void ToYaml(const std::string& filepath) const {
     YAML::Emitter out;
     out << YAML::BeginMap;
 
-    // General Metadata
     out << YAML::Key << "name" << YAML::Value << name;
     out << YAML::Key << "version" << YAML::Value << version;
-
-    // Model Load Parameters
     out << YAML::Key << "engine" << YAML::Value << engine;
-    out << YAML::Key << "entrypoint" << YAML::Value << entrypoint;
-    out << YAML::Key << "port" << YAML::Value << port;
 
-    // Extra Arguments
-    if (!extra_args.empty()) {
-      out << YAML::Key << "extra_args" << YAML::Value << YAML::BeginSeq;
-      for (const auto& arg : extra_args) {
+    // entrypoint
+    if (!entrypoint.empty()) {
+      out << YAML::Key << "entrypoint" << YAML::Value << YAML::BeginSeq;
+      for (const auto& arg : entrypoint) {
         out << arg;
       }
       out << YAML::EndSeq;
     }
 
     out << YAML::EndMap;
+    out << YAML::Key << "port" << YAML::Value << port;
 
     // Write to file
     std::ofstream fout(filepath);
@@ -525,22 +518,18 @@ struct PythonModelConfig {
     try {
       YAML::Node config = YAML::LoadFile(filePath);
 
-      // General Metadata
       if (config["name"]) name = config["name"].as<std::string>();
       if (config["version"]) version = config["version"].as<int>();
-
-      // Model Load Parameters
       if (config["engine"]) engine = config["engine"].as<std::string>();
-      if (config["entrypoint"]) entrypoint = config["entrypoint"].as<std::string>();
-      if (config["port"]) port = config["port"].as<int>();
 
-      // Extra Arguments
-      if (config["extra_args"] && config["extra_args"].IsSequence()) {
-        extra_args.clear();
-        for (const auto& arg : config["extra_args"]) {
-          extra_args.push_back(arg.as<std::string>());
+      // entrypoint
+      if (config["entrypoint"] && config["entrypoint"].IsSequence()) {
+        entrypoint.clear();
+        for (const auto& arg : config["entrypoint"]) {
+          entrypoint.push_back(arg.as<std::string>());
         }
       }
+      if (config["port"]) port = config["port"].as<int>();
     }
     catch (const YAML::Exception& e) {
       throw std::runtime_error("Error parsing YAML file: " + std::string(e.what()));
@@ -554,21 +543,19 @@ struct PythonModelConfig {
   Json::Value ToJson() const {
     Json::Value json;
 
-    // Add basic string fields
     json["name"] = name;
     json["version"] = version;
     json["engine"] = engine;
-    json["entrypoint"] = entrypoint;
-    json["port"] = port;
 
-    // Add extra_args array
-    if (!extra_args.empty()) {
+    // entrypoint
+    if (!entrypoint.empty()) {
         Json::Value args(Json::arrayValue);
-        for (const auto& arg : extra_args) {
+        for (const auto& arg : entrypoint) {
             args.append(arg);
         }
-        json["extra_args"] = args;
+        json["entrypoint"] = args;
     }
+    json["port"] = port;
 
     return json;
   }
@@ -579,21 +566,20 @@ struct PythonModelConfig {
       throw std::runtime_error("Input JSON must be an object");
     }
     try {
-      // Basic fields
       name = root.get("name", name).asString();
       version = root.get("version", version).asInt();
       engine = root.get("engine", engine).asString();
-      entrypoint = root.get("entrypoint", entrypoint).asString();
-      port = root.get("port", port).asInt();
 
-      // Extra args array
-      extra_args.clear();
-      const Json::Value& args = root["extra_args"];
+      // entrypoint
+      entrypoint.clear();
+      const Json::Value& args = root["entrypoint"];
       if (args.isArray()) {
         for (const auto& arg : args) {
-          extra_args.push_back(arg.asString());
+          entrypoint.push_back(arg.asString());
         }
       }
+      port = root.get("port", port).asInt();
+
     } catch (const Json::Exception& e) {
       throw std::runtime_error("Error parsing JSON: " + std::string(e.what()));
     } catch (const std::exception& e) {
