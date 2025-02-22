@@ -4,3 +4,4 @@ pytest-asyncio
 requests
 pyyaml
 jsonschema
+tenacity
