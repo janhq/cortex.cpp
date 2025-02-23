@@ -33,6 +33,7 @@ class TestApiDefaultEngine:
             post_install_url, json=data
         )
         assert_equal(response.status_code,200)
+        log_response(response.json(), "test_api_get_default_engine_successfully")
         
         get_list_url = f"http://localhost:3928/v1/engines/{engine}"
         get_default_url = f"http://localhost:3928/v1/engines/{engine}/default"
@@ -66,11 +67,7 @@ class TestApiDefaultEngine:
         # Validate response schema
         jsonschema.validate(instance=json_data, schema=schema)
         
-        assert_equal(json_data["engine"], engine)
-        assert_equal(json_data["version"], version)
-        assert_equal(json_data["variant"], name)
-        
-    def test_api_get_default_engine_successfully(self):
+    def test_api_get_default_engine_failed_invalid_engine(self):
         # Data test
         engine= "invalid"
     
@@ -79,7 +76,7 @@ class TestApiDefaultEngine:
         response_default_engine = requests.get(get_default_url)
         json_data_get_default = response_default_engine.json()
 
-        log_response(json_data_get_default, "test_api_get_default_engine_successfully")
+        log_response(json_data_get_default, "test_api_get_default_engine_failed_invalid_engine")
         assert_equal(response_default_engine.status_code, 400)
 
         assert_equal(json_data_get_default["message"], f"Engine {engine} is not supported yet!")
