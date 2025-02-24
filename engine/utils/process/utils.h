@@ -21,5 +21,7 @@ std::string ConstructWindowsCommandLine(const std::vector<std::string>& args);
 std::vector<char*> ConvertToArgv(const std::vector<std::string>& args);
 
 pid_t SpawnProcess(const std::vector<std::string>& command);
+bool IsProcessAlive(pid_t pid);
+bool KillProcess(pid_t pid);
 
 }
