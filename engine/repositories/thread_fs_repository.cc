@@ -3,6 +3,7 @@
 #include <mutex>
 #include "common/assistant.h"
 #include "utils/result.hpp"
+#include <algorithm>
 
 cpp::result<std::vector<OpenAi::Thread>, std::string>
 ThreadFsRepository::ListThreads(uint8_t limit, const std::string& order,

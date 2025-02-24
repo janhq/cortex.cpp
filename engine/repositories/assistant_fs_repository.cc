@@ -4,6 +4,7 @@
 #include <fstream>
 #include <mutex>
 #include "utils/result.hpp"
+#include <algorithm>
 
 cpp::result<std::vector<OpenAi::Assistant>, std::string>
 AssistantFsRepository::ListAssistants(uint8_t limit, const std::string& order,

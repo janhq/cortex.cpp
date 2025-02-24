@@ -6,6 +6,7 @@
 #include <string>
 #include <unordered_map>
 #include "common/download_task.h"
+#include <algorithm>
 
 class DownloadTaskQueue {
  private:

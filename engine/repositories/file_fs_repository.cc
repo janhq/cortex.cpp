@@ -5,6 +5,7 @@
 #include "database/file.h"
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
+#include <algorithm>
 
 std::filesystem::path FileFsRepository::GetFilePath() const {
   return data_folder_path_ / kFileContainerFolderName;
