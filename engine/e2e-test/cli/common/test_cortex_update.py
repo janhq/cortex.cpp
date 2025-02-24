@@ -2,7 +2,7 @@ import os
 import tempfile
 
 import pytest
-from test_runner import run
+from utils.test_runner import run
 
 
 class TestCortexUpdate:
