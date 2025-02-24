@@ -74,6 +74,7 @@ find_package(lfreist-hwinfo CONFIG REQUIRED)
 
 add_executable(${TARGET_NAME} main.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/cpuid/cpu_info.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../utils/normalize_engine.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/file_logger.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/../utils/dylib_path_manager.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/command_line_parser.cc

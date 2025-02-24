@@ -7,6 +7,7 @@
 #include "utils/engine_constants.h"
 #include "utils/logging_utils.h"
 #include "utils/url_parser.h"
+#include "utils/normalize_engine.h"
 // clang-format off
 #include <tabulate/table.hpp>
 #include <unordered_map>
@@ -14,18 +15,6 @@
 
 
 namespace {
-// Need to change this after we rename repositories
-std::string NormalizeEngine(const std::string& engine) {
-    if (engine == kLlamaEngine) {
-        return kLlamaRepo;
-    } else if (engine == kOnnxEngine) {
-        return kOnnxRepo;
-    } else if (engine == kTrtLlmEngine) {
-        return kTrtLlmRepo;
-    }
-    return engine;
-};
-
 uintmax_t get_size(const std::filesystem::path& path) {
     uintmax_t size = 0;
     if (std::filesystem::is_regular_file(path)) {
@@ -132,7 +121,7 @@ bool EngineListCmd::Exec(const std::string& host, int port) {
   auto base_dir = file_manager_utils::GetEnginesContainerPath();
   for (auto const& v : output) {
     count += 1;
-    auto cur_ne = NormalizeEngine(v.engine);
+    auto cur_ne = cortex::engine::NormalizeEngine(v.engine);
     auto engine_dir = base_dir / cur_ne / v.name / v.version;
     auto engine_size = get_size(engine_dir);
     if (variant_pair.has_value() && v.name == variant_pair->first &&
