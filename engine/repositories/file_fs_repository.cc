@@ -1,5 +1,6 @@
 #include "file_fs_repository.h"
 #include <json/reader.h>
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include "database/file.h"

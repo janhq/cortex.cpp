@@ -1,5 +1,5 @@
 import pytest
-from test_runner import popen
+from utils.test_runner import popen
 
 
 class TestCliModelPullHuggingFaceRepository:

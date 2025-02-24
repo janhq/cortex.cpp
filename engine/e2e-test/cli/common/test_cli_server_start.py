@@ -1,8 +1,8 @@
 import platform
 import os
 import pytest, requests
-from test_runner import run
-from test_runner import start_server, stop_server
+from utils.test_runner import run
+from utils.test_runner import start_server, stop_server
 
 
 class TestCliServerStart:
