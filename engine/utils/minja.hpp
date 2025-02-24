@@ -10,13 +10,14 @@
 
 #include <iostream>
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <regex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <unordered_set>
 #include <vector>
+
+#include <nlohmann/json.hpp>
 
 using json = nlohmann::ordered_json;
 
@@ -31,6 +32,15 @@ struct Options {
 };
 
 struct ArgumentsValue;
+
+inline std::string normalize_newlines(const std::string& s) {
+#ifdef _WIN32
+  static const std::regex nl_regex("\r\n");
+  return std::regex_replace(s, nl_regex, "\n");
+#else
+  return s;
+#endif
+}
 
 /* Values that behave roughly like in Python. */
 class Value : public std::enable_shared_from_this<Value> {
@@ -209,6 +219,39 @@ class Value : public std::enable_shared_from_this<Value> {
     if (!array_)
       throw std::runtime_error("Value is not an array: " + dump());
     array_->push_back(v);
+  }
+  Value pop(const Value& index) {
+    if (is_array()) {
+      if (array_->empty())
+        throw std::runtime_error("pop from empty list");
+      if (index.is_null()) {
+        auto ret = array_->back();
+        array_->pop_back();
+        return ret;
+      } else if (!index.is_number_integer()) {
+        throw std::runtime_error("pop index must be an integer: " +
+                                 index.dump());
+      } else {
+        auto i = index.get<int>();
+        if (i < 0 || i >= static_cast<int>(array_->size()))
+          throw std::runtime_error("pop index out of range: " + index.dump());
+        auto it = array_->begin() + (i < 0 ? array_->size() + i : i);
+        auto ret = *it;
+        array_->erase(it);
+        return ret;
+      }
+    } else if (is_object()) {
+      if (!index.is_hashable())
+        throw std::runtime_error("Unashable type: " + index.dump());
+      auto it = object_->find(index.primitive_);
+      if (it == object_->end())
+        throw std::runtime_error("Key not found: " + index.dump());
+      auto ret = it->second;
+      object_->erase(it);
+      return ret;
+    } else {
+      throw std::runtime_error("Value is not an array or object: " + dump());
+    }
   }
   Value get(const Value& key) {
     if (array_) {
@@ -409,12 +452,12 @@ class Value : public std::enable_shared_from_this<Value> {
     }
   }
   void erase(size_t index) {
-    if (array_)
+    if (!array_)
       throw std::runtime_error("Value is not an array: " + dump());
     array_->erase(array_->begin() + index);
   }
   void erase(const std::string& key) {
-    if (object_)
+    if (!object_)
       throw std::runtime_error("Value is not an object: " + dump());
     object_->erase(key);
   }
@@ -635,7 +678,7 @@ static std::string error_location_suffix(const std::string& source,
   if (line > 1)
     out << get_line(line - 1) << "\n";
   out << get_line(line) << "\n";
-  out << std::string(col - 1, ' ') << "^" << "\n";
+  out << std::string(col - 1, ' ') << "^\n";
   if (line < max_line)
     out << get_line(line + 1) << "\n";
 
@@ -682,7 +725,9 @@ class Context : public std::enable_shared_from_this<Context> {
       return parent_->contains(key);
     return false;
   }
-  virtual void set(const Value& key, Value& value) { values_.set(key, value); }
+  virtual void set(const Value& key, const Value& value) {
+    values_.set(key, value);
+  }
 };
 
 struct Location {
@@ -762,13 +807,17 @@ class TemplateToken {
     EndIf,
     For,
     EndFor,
+    Generation,
+    EndGeneration,
     Set,
     EndSet,
     Comment,
     Macro,
     EndMacro,
     Filter,
-    EndFilter
+    EndFilter,
+    Break,
+    Continue
   };
 
   static std::string typeToString(Type t) {
@@ -803,6 +852,14 @@ class TemplateToken {
         return "filter";
       case Type::EndFilter:
         return "endfilter";
+      case Type::Generation:
+        return "generation";
+      case Type::EndGeneration:
+        return "endgeneration";
+      case Type::Break:
+        return "break";
+      case Type::Continue:
+        return "continue";
     }
     return "Unknown";
   }
@@ -913,6 +970,18 @@ struct EndForTemplateToken : public TemplateToken {
       : TemplateToken(Type::EndFor, location, pre, post) {}
 };
 
+struct GenerationTemplateToken : public TemplateToken {
+  GenerationTemplateToken(const Location& location, SpaceHandling pre,
+                          SpaceHandling post)
+      : TemplateToken(Type::Generation, location, pre, post) {}
+};
+
+struct EndGenerationTemplateToken : public TemplateToken {
+  EndGenerationTemplateToken(const Location& location, SpaceHandling pre,
+                             SpaceHandling post)
+      : TemplateToken(Type::EndGeneration, location, pre, post) {}
+};
+
 struct SetTemplateToken : public TemplateToken {
   std::string ns;
   std::vector<std::string> var_names;
@@ -940,6 +1009,28 @@ struct CommentTemplateToken : public TemplateToken {
       : TemplateToken(Type::Comment, location, pre, post), text(t) {}
 };
 
+enum class LoopControlType { Break, Continue };
+
+class LoopControlException : public std::runtime_error {
+ public:
+  LoopControlType control_type;
+  LoopControlException(const std::string& message, LoopControlType control_type)
+      : std::runtime_error(message), control_type(control_type) {}
+  LoopControlException(LoopControlType control_type)
+      : std::runtime_error(
+            (control_type == LoopControlType::Continue ? "continue" : "break") +
+            std::string(" outside of a loop")),
+        control_type(control_type) {}
+};
+
+struct LoopControlTemplateToken : public TemplateToken {
+  LoopControlType control_type;
+  LoopControlTemplateToken(const Location& location, SpaceHandling pre,
+                           SpaceHandling post, LoopControlType control_type)
+      : TemplateToken(Type::Break, location, pre, post),
+        control_type(control_type) {}
+};
+
 class TemplateNode {
   Location location_;
 
@@ -953,6 +1044,13 @@ class TemplateNode {
               const std::shared_ptr<Context>& context) const {
     try {
       do_render(out, context);
+    } catch (const LoopControlException& e) {
+      // TODO: make stack creation lazy. Only needed if it was thrown outside of a loop.
+      std::ostringstream err;
+      err << e.what();
+      if (location_.source)
+        err << error_location_suffix(*location_.source, location_.pos);
+      throw LoopControlException(err.str(), e.control_type);
     } catch (const std::exception& e) {
       std::ostringstream err;
       err << e.what();
@@ -1044,6 +1142,18 @@ class IfNode : public TemplateNode {
   }
 };
 
+class LoopControlNode : public TemplateNode {
+  LoopControlType control_type_;
+
+ public:
+  LoopControlNode(const Location& location, LoopControlType control_type)
+      : TemplateNode(location), control_type_(control_type) {}
+  void do_render(std::ostringstream&,
+                 const std::shared_ptr<Context>&) const override {
+    throw LoopControlException(control_type_);
+  }
+};
+
 class ForNode : public TemplateNode {
   std::vector<std::string> var_names;
   std::shared_ptr<Expression> iterable;
@@ -1126,7 +1236,14 @@ class ForNode : public TemplateNode {
           loop.set("last", i == (n - 1));
           loop.set("previtem", i > 0 ? filtered_items.at(i - 1) : Value());
           loop.set("nextitem", i < n - 1 ? filtered_items.at(i + 1) : Value());
-          body->render(out, loop_context);
+          try {
+            body->render(out, loop_context);
+          } catch (const LoopControlException& e) {
+            if (e.control_type == LoopControlType::Break)
+              break;
+            if (e.control_type == LoopControlType::Continue)
+              continue;
+          }
         }
       }
     };
@@ -1543,8 +1660,8 @@ class BinaryOpExpr : public Expression {
         return right->evaluate(context).to_bool();
       } else if (op == Op::Or) {
         if (l.to_bool())
-          return Value(true);
-        return right->evaluate(context).to_bool();
+          return l;
+        return right->evaluate(context);
       }
 
       auto r = right->evaluate(context);
@@ -1638,8 +1755,19 @@ struct ArgumentsExpression {
 };
 
 static std::string strip(const std::string& s) {
-  static std::regex trailing_spaces_regex("^\\s+|\\s+$");
-  return std::regex_replace(s, trailing_spaces_regex, "");
+  auto start = s.find_first_not_of(" \t\n\r");
+  if (start == std::string::npos)
+    return "";
+  auto end = s.find_last_not_of(" \t\n\r");
+  return s.substr(start, end - start + 1);
+}
+
+static std::string capitalize(const std::string& s) {
+  if (s.empty())
+    return s;
+  auto result = s;
+  result[0] = std::toupper(result[0]);
+  return result;
 }
 
 static std::string html_escape(const std::string& s) {
@@ -1657,7 +1785,7 @@ static std::string html_escape(const std::string& s) {
         result += "&gt;";
         break;
       case '"':
-        result += "&quot;";
+        result += "&#34;";
         break;
       case '\'':
         result += "&apos;";
@@ -1698,6 +1826,9 @@ class MethodCallExpr : public Expression {
         vargs.expectArgs("append method", {1, 1}, {0, 0});
         obj.push_back(vargs.args[0]);
         return Value();
+      } else if (method->get_name() == "pop") {
+        vargs.expectArgs("pop method", {0, 1}, {0, 0});
+        return obj.pop(vargs.args.empty() ? Value() : vargs.args[0]);
       } else if (method->get_name() == "insert") {
         vargs.expectArgs("insert method", {2, 2}, {0, 0});
         auto index = vargs.args[0].get<int64_t>();
@@ -1714,6 +1845,9 @@ class MethodCallExpr : public Expression {
           result.push_back(Value::array({key, obj.at(key)}));
         }
         return result;
+      } else if (method->get_name() == "pop") {
+        vargs.expectArgs("pop method", {1, 1}, {0, 0});
+        return obj.pop(vargs.args[0]);
       } else if (method->get_name() == "get") {
         vargs.expectArgs("get method", {1, 2}, {0, 0});
         auto key = vargs.args[0];
@@ -1735,6 +1869,9 @@ class MethodCallExpr : public Expression {
       if (method->get_name() == "strip") {
         vargs.expectArgs("strip method", {0, 0}, {0, 0});
         return Value(strip(str));
+      } else if (method->get_name() == "capitalize") {
+        vargs.expectArgs("capitalize method", {0, 0}, {0, 0});
+        return Value(capitalize(str));
       } else if (method->get_name() == "endswith") {
         vargs.expectArgs("endswith method", {1, 1}, {0, 0});
         auto suffix = vargs.args[0].get<std::string>();
@@ -2129,8 +2266,7 @@ class Parser {
       throw std::runtime_error(
           "Expected left side of 'logical compare' expression");
 
-    static std::regex compare_tok(
-        R"(==|!=|<=?|>=?|in\b|is\b|not[\r\n\s]+in\b)");
+    static std::regex compare_tok(R"(==|!=|<=?|>=?|in\b|is\b|not\s+in\b)");
     static std::regex not_tok(R"(not\b)");
     std::string op_str;
     while (!(op_str = consumeToken(compare_tok)).empty()) {
@@ -2593,8 +2729,7 @@ class Parser {
   using TemplateTokenIterator = TemplateTokenVector::const_iterator;
 
   std::vector<std::string> parseVarNames() {
-    static std::regex varnames_regex(
-        R"(((?:\w+)(?:[\r\n\s]*,[\r\n\s]*(?:\w+))*)[\r\n\s]*)");
+    static std::regex varnames_regex(R"(((?:\w+)(?:\s*,\s*(?:\w+))*)\s*)");
 
     std::vector<std::string> group;
     if ((group = consumeTokenGroups(varnames_regex)).empty())
@@ -2620,18 +2755,19 @@ class Parser {
   }
 
   TemplateTokenVector tokenize() {
-    static std::regex comment_tok(R"(\{#([-~]?)(.*?)([-~]?)#\})");
+    static std::regex comment_tok(R"(\{#([-~]?)([\s\S]*?)([-~]?)#\})");
     static std::regex expr_open_regex(R"(\{\{([-~])?)");
-    static std::regex block_open_regex(R"(^\{%([-~])?[\s\n\r]*)");
+    static std::regex block_open_regex(R"(^\{%([-~])?\s*)");
     static std::regex block_keyword_tok(
-        R"((if|else|elif|endif|for|endfor|set|endset|block|endblock|macro|endmacro|filter|endfilter)\b)");
-    static std::regex text_regex(R"([\s\S\n\r]*?($|(?=\{\{|\{%|\{#)))");
-    static std::regex expr_close_regex(R"([\s\n\r]*([-~])?\}\})");
-    static std::regex block_close_regex(R"([\s\n\r]*([-~])?%\})");
+        R"((if|else|elif|endif|for|endfor|generation|endgeneration|set|endset|block|endblock|macro|endmacro|filter|endfilter|break|continue)\b)");
+    static std::regex non_text_open_regex(R"(\{\{|\{%|\{#)");
+    static std::regex expr_close_regex(R"(\s*([-~])?\}\})");
+    static std::regex block_close_regex(R"(\s*([-~])?%\})");
 
     TemplateTokenVector tokens;
     std::vector<std::string> group;
     std::string text;
+    std::smatch match;
 
     try {
       while (it != end) {
@@ -2723,9 +2859,16 @@ class Parser {
             auto post_space = parseBlockClose();
             tokens.push_back(std::make_unique<EndForTemplateToken>(
                 location, pre_space, post_space));
+          } else if (keyword == "generation") {
+            auto post_space = parseBlockClose();
+            tokens.push_back(std::make_unique<GenerationTemplateToken>(
+                location, pre_space, post_space));
+          } else if (keyword == "endgeneration") {
+            auto post_space = parseBlockClose();
+            tokens.push_back(std::make_unique<EndGenerationTemplateToken>(
+                location, pre_space, post_space));
           } else if (keyword == "set") {
-            static std::regex namespaced_var_regex(
-                R"((\w+)[\s\n\r]*\.[\s\n\r]*(\w+))");
+            static std::regex namespaced_var_regex(R"((\w+)\s*\.\s*(\w+))");
 
             std::string ns;
             std::vector<std::string> var_names;
@@ -2783,16 +2926,31 @@ class Parser {
             auto post_space = parseBlockClose();
             tokens.push_back(std::make_unique<EndFilterTemplateToken>(
                 location, pre_space, post_space));
+          } else if (keyword == "break" || keyword == "continue") {
+            auto post_space = parseBlockClose();
+            tokens.push_back(std::make_unique<LoopControlTemplateToken>(
+                location, pre_space, post_space,
+                keyword == "break" ? LoopControlType::Break
+                                   : LoopControlType::Continue));
           } else {
             throw std::runtime_error("Unexpected block: " + keyword);
           }
-        } else if (!(text = consumeToken(text_regex, SpaceHandling::Keep))
-                        .empty()) {
+        } else if (std::regex_search(it, end, match, non_text_open_regex)) {
+          if (!match.position()) {
+            if (match[0] != "{#")
+              throw std::runtime_error("Internal error: Expected a comment");
+            throw std::runtime_error("Missing end of comment tag");
+          }
+          auto text_end = it + match.position();
+          text = std::string(it, text_end);
+          it = text_end;
           tokens.push_back(std::make_unique<TextTemplateToken>(
               location, SpaceHandling::Keep, SpaceHandling::Keep, text));
         } else {
-          if (it != end)
-            throw std::runtime_error("Unexpected character");
+          text = std::string(it, end);
+          it = end;
+          tokens.push_back(std::make_unique<TextTemplateToken>(
+              location, SpaceHandling::Keep, SpaceHandling::Keep, text));
         }
       }
       return tokens;
@@ -2845,6 +3003,14 @@ class Parser {
             token->location, std::move(for_token->var_names),
             std::move(for_token->iterable), std::move(for_token->condition),
             std::move(body), for_token->recursive, std::move(else_body)));
+      } else if (dynamic_cast<GenerationTemplateToken*>(token.get())) {
+        auto body = parseTemplate(begin, it, end);
+        if (it == end ||
+            (*(it++))->type != TemplateToken::Type::EndGeneration) {
+          throw unterminated(**start);
+        }
+        // Treat as a no-op, as our scope is templates for inference, not training (`{% generation %}` wraps generated tokens for masking).
+        children.emplace_back(std::move(body));
       } else if (auto text_token =
                      dynamic_cast<TextTemplateToken*>(token.get())) {
         SpaceHandling pre_space =
@@ -2853,25 +3019,34 @@ class Parser {
             it != end ? (*it)->pre_space : SpaceHandling::Keep;
 
         auto text = text_token->text;
+        if (post_space == SpaceHandling::Strip) {
+          static std::regex trailing_space_regex(R"(\s+$)");
+          text = std::regex_replace(text, trailing_space_regex, "");
+        } else if (options.lstrip_blocks && it != end) {
+          auto i = text.size();
+          while (i > 0 && (text[i - 1] == ' ' || text[i - 1] == '\t'))
+            i--;
+          if ((i == 0 && (it - 1) == begin) || (i > 0 && text[i - 1] == '\n')) {
+            text.resize(i);
+          }
+        }
         if (pre_space == SpaceHandling::Strip) {
-          static std::regex leading_space_regex(R"(^(\s|\r|\n)+)");
+          static std::regex leading_space_regex(R"(^\s+)");
           text = std::regex_replace(text, leading_space_regex, "");
         } else if (options.trim_blocks && (it - 1) != begin &&
                    !dynamic_cast<ExpressionTemplateToken*>((*(it - 2)).get())) {
-          static std::regex leading_line(R"(^[ \t]*\r?\n)");
-          text = std::regex_replace(text, leading_line, "");
+          if (text.length() > 0 && text[0] == '\n') {
+            text.erase(0, 1);
+          }
         }
-        if (post_space == SpaceHandling::Strip) {
-          static std::regex trailing_space_regex(R"((\s|\r|\n)+$)");
-          text = std::regex_replace(text, trailing_space_regex, "");
-        } else if (options.lstrip_blocks && it != end) {
-          static std::regex trailing_last_line_space_regex(R"((\r?\n)[ \t]*$)");
-          text = std::regex_replace(text, trailing_last_line_space_regex, "$1");
-        }
-
         if (it == end && !options.keep_trailing_newline) {
-          static std::regex r(R"(\r?\n$)");
-          text = std::regex_replace(text, r, "");  // Strip one trailing newline
+          auto i = text.size();
+          if (i > 0 && text[i - 1] == '\n') {
+            i--;
+            if (i > 0 && text[i - 1] == '\r')
+              i--;
+            text.resize(i);
+          }
         }
         children.emplace_back(
             std::make_shared<TextNode>(token->location, text));
@@ -2920,12 +3095,17 @@ class Parser {
             token->location, std::move(filter_token->filter), std::move(body)));
       } else if (dynamic_cast<CommentTemplateToken*>(token.get())) {
         // Ignore comments
+      } else if (auto ctrl_token =
+                     dynamic_cast<LoopControlTemplateToken*>(token.get())) {
+        children.emplace_back(std::make_shared<LoopControlNode>(
+            token->location, ctrl_token->control_type));
       } else if (dynamic_cast<EndForTemplateToken*>(token.get()) ||
                  dynamic_cast<EndSetTemplateToken*>(token.get()) ||
                  dynamic_cast<EndMacroTemplateToken*>(token.get()) ||
                  dynamic_cast<EndFilterTemplateToken*>(token.get()) ||
                  dynamic_cast<EndIfTemplateToken*>(token.get()) ||
                  dynamic_cast<ElseTemplateToken*>(token.get()) ||
+                 dynamic_cast<EndGenerationTemplateToken*>(token.get()) ||
                  dynamic_cast<ElifTemplateToken*>(token.get())) {
         it--;   // unconsume the token
         break;  // exit the loop
@@ -2950,7 +3130,9 @@ class Parser {
  public:
   static std::shared_ptr<TemplateNode> parse(const std::string& template_str,
                                              const Options& options) {
-    Parser parser(std::make_shared<std::string>(template_str), options);
+    Parser parser(
+        std::make_shared<std::string>(normalize_newlines(template_str)),
+        options);
     auto tokens = parser.tokenize();
     TemplateTokenIterator begin = tokens.begin();
     auto it = begin;
@@ -3129,6 +3311,9 @@ inline std::shared_ptr<Context> Context::builtins() {
           "join", {"items", "d"},
           [](const std::shared_ptr<Context>&, Value& args) {
             auto do_join = [](Value& items, const std::string& sep) {
+              if (!items.is_array())
+                throw std::runtime_error("object is not iterable: " +
+                                         items.dump());
               std::ostringstream oss;
               auto first = true;
               for (size_t i = 0, n = items.size(); i < n; ++i) {
@@ -3161,7 +3346,7 @@ inline std::shared_ptr<Context> Context::builtins() {
                                                ArgumentsValue& args) {
                 auto ns = Value::object();
                 args.expectArgs("namespace", {0, 0},
-                                {0, std::numeric_limits<size_t>::max()});
+                                {0, (std::numeric_limits<size_t>::max)()});
                 for (auto& [name, value] : args.kwargs) {
                   ns.set(name, value);
                 }
@@ -3183,7 +3368,7 @@ inline std::shared_ptr<Context> Context::builtins() {
   globals.set("safe", simple_function("safe", {"value"},
                                       [](const std::shared_ptr<Context>&,
                                          Value& args) -> Value {
-                                        return args.at("value");
+                                        return args.at("value").to_str();
                                       }));
   globals.set("string", simple_function("string", {"value"},
                                         [](const std::shared_ptr<Context>&,
@@ -3234,35 +3419,42 @@ inline std::shared_ptr<Context> Context::builtins() {
           return filter.call(context, actual_args);
         });
   };
-  // https://jinja.palletsprojects.com/en/3.0.x/templates/#jinja-filters.reject
-  globals.set(
-      "reject", Value::callable([=](const std::shared_ptr<Context>& context,
-                                    ArgumentsValue& args) {
-        args.expectArgs("reject", {2, std::numeric_limits<size_t>::max()},
-                        {0, 0});
-        auto& items = args.args[0];
-        auto filter_fn = context->get(args.args[1]);
-        if (filter_fn.is_null())
-          throw std::runtime_error("Undefined filter: " + args.args[1].dump());
+  auto select_or_reject = [make_filter](bool is_select) {
+    return Value::callable([=](const std::shared_ptr<Context>& context,
+                               ArgumentsValue& args) {
+      args.expectArgs(is_select ? "select" : "reject",
+                      {2, (std::numeric_limits<size_t>::max)()}, {0, 0});
+      auto& items = args.args[0];
+      if (items.is_null())
+        return Value::array();
+      if (!items.is_array())
+        throw std::runtime_error("object is not iterable: " + items.dump());
 
-        auto filter_args = Value::array();
-        for (size_t i = 2, n = args.args.size(); i < n; i++) {
-          filter_args.push_back(args.args[i]);
-        }
-        auto filter = make_filter(filter_fn, filter_args);
+      auto filter_fn = context->get(args.args[1]);
+      if (filter_fn.is_null())
+        throw std::runtime_error("Undefined filter: " + args.args[1].dump());
 
-        auto res = Value::array();
-        for (size_t i = 0, n = items.size(); i < n; i++) {
-          auto& item = items.at(i);
-          ArgumentsValue filter_args;
-          filter_args.args.emplace_back(item);
-          auto pred_res = filter.call(context, filter_args);
-          if (!pred_res.to_bool()) {
-            res.push_back(item);
-          }
+      auto filter_args = Value::array();
+      for (size_t i = 2, n = args.args.size(); i < n; i++) {
+        filter_args.push_back(args.args[i]);
+      }
+      auto filter = make_filter(filter_fn, filter_args);
+
+      auto res = Value::array();
+      for (size_t i = 0, n = items.size(); i < n; i++) {
+        auto& item = items.at(i);
+        ArgumentsValue filter_args;
+        filter_args.args.emplace_back(item);
+        auto pred_res = filter.call(context, filter_args);
+        if (pred_res.to_bool() == (is_select ? true : false)) {
+          res.push_back(item);
         }
-        return res;
-      }));
+      }
+      return res;
+    });
+  };
+  globals.set("select", select_or_reject(/* is_select= */ true));
+  globals.set("reject", select_or_reject(/* is_select= */ false));
   globals.set(
       "map", Value::callable([=](const std::shared_ptr<Context>& context,
                                  ArgumentsValue& args) {
@@ -3322,45 +3514,51 @@ inline std::shared_ptr<Context> Context::builtins() {
                                   out += "\n";
                                 return out;
                               }));
-  globals.set(
-      "selectattr", Value::callable([=](const std::shared_ptr<Context>& context,
-                                        ArgumentsValue& args) {
-        args.expectArgs("selectattr", {2, std::numeric_limits<size_t>::max()},
-                        {0, 0});
-        auto& items = args.args[0];
-        if (items.is_null())
-          return Value::array();
-        auto attr_name = args.args[1].get<std::string>();
+  auto select_or_reject_attr = [](bool is_select) {
+    return Value::callable([=](const std::shared_ptr<Context>& context,
+                               ArgumentsValue& args) {
+      args.expectArgs(is_select ? "selectattr" : "rejectattr",
+                      {2, (std::numeric_limits<size_t>::max)()}, {0, 0});
+      auto& items = args.args[0];
+      if (items.is_null())
+        return Value::array();
+      if (!items.is_array())
+        throw std::runtime_error("object is not iterable: " + items.dump());
+      auto attr_name = args.args[1].get<std::string>();
 
-        bool has_test = false;
-        Value test_fn;
-        ArgumentsValue test_args{{Value()}, {}};
-        if (args.args.size() >= 3) {
-          has_test = true;
-          test_fn = context->get(args.args[2]);
-          if (test_fn.is_null())
-            throw std::runtime_error("Undefined test: " + args.args[2].dump());
-          for (size_t i = 3, n = args.args.size(); i < n; i++) {
-            test_args.args.emplace_back(args.args[i]);
-          }
-          test_args.kwargs = args.kwargs;
+      bool has_test = false;
+      Value test_fn;
+      ArgumentsValue test_args{{Value()}, {}};
+      if (args.args.size() >= 3) {
+        has_test = true;
+        test_fn = context->get(args.args[2]);
+        if (test_fn.is_null())
+          throw std::runtime_error("Undefined test: " + args.args[2].dump());
+        for (size_t i = 3, n = args.args.size(); i < n; i++) {
+          test_args.args.emplace_back(args.args[i]);
         }
+        test_args.kwargs = args.kwargs;
+      }
 
-        auto res = Value::array();
-        for (size_t i = 0, n = items.size(); i < n; i++) {
-          auto& item = items.at(i);
-          auto attr = item.get(attr_name);
-          if (has_test) {
-            test_args.args[0] = attr;
-            if (test_fn.call(context, test_args).to_bool()) {
-              res.push_back(item);
-            }
-          } else {
-            res.push_back(attr);
+      auto res = Value::array();
+      for (size_t i = 0, n = items.size(); i < n; i++) {
+        auto& item = items.at(i);
+        auto attr = item.get(attr_name);
+        if (has_test) {
+          test_args.args[0] = attr;
+          if (test_fn.call(context, test_args).to_bool() ==
+              (is_select ? true : false)) {
+            res.push_back(item);
           }
+        } else {
+          res.push_back(attr);
         }
-        return res;
-      }));
+      }
+      return res;
+    });
+  };
+  globals.set("selectattr", select_or_reject_attr(/* is_select= */ true));
+  globals.set("rejectattr", select_or_reject_attr(/* is_select= */ false));
   globals.set("range", Value::callable([=](const std::shared_ptr<Context>&,
                                            ArgumentsValue& args) {
                 std::vector<int64_t> startEndStep(3);
