@@ -37,6 +37,17 @@ struct ModelSource {
   };
 };
 
+struct ModelInfo {
+  std::string id;
+  int likes;
+  int trending_score;
+  bool is_private;
+  int downloads;
+  std::vector<std::string> tags;
+  std::string created_at;
+  std::string model_id;
+};
+
 class ModelSourceService {
  public:
   explicit ModelSourceService(std::shared_ptr<DatabaseService> db_service);
@@ -54,7 +65,7 @@ class ModelSourceService {
   cpp::result<ModelSource, std::string> GetModelSource(const std::string& src);
 
   cpp::result<std::vector<std::string>, std::string> GetRepositoryList(
-      std::string_view author);
+      std::string_view author, std::string_view tag_filter);
 
  private:
   cpp::result<bool, std::string> AddHfOrg(const std::string& model_source,
@@ -75,12 +86,10 @@ class ModelSourceService {
       const std::string& model_source, const std::string& author,
       const std::string& model_name);
 
-  cpp::result<std::string, std::string>
-  AddCortexsoRepoBranch(const std::string& model_source,
-                        const std::string& author,
-                        const std::string& model_name,
-                        const std::string& branch, const std::string& metadata,
-                        const std::string& desc);
+  cpp::result<std::string, std::string> AddCortexsoRepoBranch(
+      const std::string& model_source, const std::string& author,
+      const std::string& model_name, const std::string& branch,
+      const std::string& metadata, const std::string& desc);
 
   void SyncModelSource();
 
@@ -89,5 +98,5 @@ class ModelSourceService {
   std::thread sync_db_thread_;
   std::atomic<bool> running_;
 
-  std::unordered_map<std::string, std::vector<std::string>> cortexso_repos_;
+  std::unordered_map<std::string, std::vector<ModelInfo>> cortexso_repos_;
 };
