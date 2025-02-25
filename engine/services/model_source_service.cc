@@ -14,17 +14,6 @@
 namespace hu = huggingface_utils;
 
 namespace {
-struct ModelInfo {
-  std::string id;
-  int likes;
-  int trending_score;
-  bool is_private;
-  int downloads;
-  std::vector<std::string> tags;
-  std::string created_at;
-  std::string model_id;
-};
-
 std::vector<ModelInfo> ParseJsonString(const std::string& json_str) {
   std::vector<ModelInfo> models;
 
@@ -201,20 +190,37 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
 }
 
 cpp::result<std::vector<std::string>, std::string>
-ModelSourceService::GetRepositoryList(std::string_view author) {
+ModelSourceService::GetRepositoryList(std::string_view author,
+                                      std::string_view tag_filter) {
   std::string as(author);
+  auto get_repo_list = [this, &as, &tag_filter] {
+    std::vector<std::string> repo_list;
+    auto const& mis = cortexso_repos_.at(as);
+    for (auto const& mi : mis) {
+      if (!tag_filter.empty()) {
+        if (std::count(mi.tags.begin(), mi.tags.end(), tag_filter)) {
+          repo_list.push_back(mi.id);
+        }
+      } else {
+        repo_list.push_back(mi.id);
+      }
+    }
+    return repo_list;
+  };
   if (cortexso_repos_.find(as) != cortexso_repos_.end() &&
-      !cortexso_repos_.at(as).empty())
-    return cortexso_repos_.at(as);
+      !cortexso_repos_.at(as).empty()) {
+    return get_repo_list();
+  }
+
   const auto begin = std::chrono::high_resolution_clock::now();
   auto res =
       curl_utils::SimpleGet("https://huggingface.co/api/models?author=" + as);
   if (res.has_value()) {
     auto repos = ParseJsonString(res.value());
     for (auto& r : repos) {
-      cortexso_repos_[as].push_back(r.id);
+      cortexso_repos_[as].push_back(r);
     }
-    return cortexso_repos_.at(as);
+    return get_repo_list();
   } else {
     return cpp::fail(res.error());
   }

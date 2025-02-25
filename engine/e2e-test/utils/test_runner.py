@@ -90,7 +90,7 @@ def start_server_if_needed():
         start_server()
         
 
-def pull_model_if_needed(model_id: str = "tinyllama:gguf"):
+def pull_model_if_needed(model_id: str = "tinyllama:1b"):
     """
     Pull the model if it is not already pulled.
     """

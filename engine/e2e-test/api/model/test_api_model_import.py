@@ -16,14 +16,14 @@ class TestApiModelImport:
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
     def test_model_import_should_be_success(self):
-        body_json = {'model': 'tinyllama:gguf',
+        body_json = {'model': 'tinyllama:1b',
                      'modelPath': '/path/to/local/gguf'}
         response = requests.post("http://localhost:3928/v1/models/import", json=body_json)              
         assert response.status_code == 200
 
     @pytest.mark.skipif(True, reason="Expensive test. Only test when you have local gguf file.")
     def test_model_import_with_name_should_be_success(self):
-        body_json = {'model': 'tinyllama:gguf',
+        body_json = {'model': 'tinyllama:1b',
                      'modelPath': '/path/to/local/gguf',
                      'name': 'test_model'}
         response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
@@ -45,7 +45,7 @@ class TestApiModelImport:
         assert response.json()['files'][0] != '/path/to/local/gguf'
 
     def test_model_import_with_invalid_path_should_fail(self):
-        body_json = {'model': 'tinyllama:gguf',
+        body_json = {'model': 'tinyllama:1b',
                      'modelPath': '/invalid/path/to/gguf'}
         response = requests.post("http://localhost:3928/v1/models/import", json=body_json)
         assert response.status_code == 400

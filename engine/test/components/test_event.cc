@@ -9,7 +9,7 @@ TEST_F(EventTest, EventFromString) {
   // clang-format off
   std::string ev_str = R"({
     "task": {
-      "id": "tinyllama:gguf",
+      "id": "tinyllama:1b",
       "items": [
         {
           "bytes": 668788096,

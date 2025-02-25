@@ -95,14 +95,14 @@ class TestApiModel:
         time.sleep(30)
 
         print("Pull model")
-        json_body = {"model": "tinyllama:gguf"}
+        json_body = {"model": "tinyllama:1b"}
         response = requests.post("http://localhost:3928/v1/models/pull", json=json_body)
-        assert response.status_code == 200, f"Failed to pull model: tinyllama:gguf"
+        assert response.status_code == 200, f"Failed to pull model: tinyllama:1b"
         await wait_for_websocket_download_success_event(timeout=None)
         
         # get API
         print("Get model")
-        response = requests.get("http://localhost:3928/v1/models/tinyllama:gguf")
+        response = requests.get("http://localhost:3928/v1/models/tinyllama:1b")
         assert response.status_code == 200
         
         # list API
@@ -111,7 +111,7 @@ class TestApiModel:
         assert response.status_code == 200
 
         print("Start model")
-        json_body = {"model": "tinyllama:gguf"}
+        json_body = {"model": "tinyllama:1b"}
         response = requests.post(
             "http://localhost:3928/v1/models/start", json=json_body
         )
@@ -123,13 +123,13 @@ class TestApiModel:
                 
         # update API
         print("Update model")
-        body_json = {'model': 'tinyllama:gguf'}
-        response = requests.patch("http://localhost:3928/v1/models/tinyllama:gguf", json = body_json)        
+        body_json = {'model': 'tinyllama:1b'}
+        response = requests.patch("http://localhost:3928/v1/models/tinyllama:1b", json = body_json)        
         assert response.status_code == 200
 
         # delete API
         print("Delete model")
-        response = requests.delete("http://localhost:3928/v1/models/tinyllama:gguf")
+        response = requests.delete("http://localhost:3928/v1/models/tinyllama:1b")
         assert response.status_code == 200
         
     def test_models_sources_api(self):
