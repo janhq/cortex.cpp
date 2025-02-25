@@ -2,7 +2,7 @@ import pytest
 import requests
 import os
 from pathlib import Path
-from test_runner import (
+from utils.test_runner import (
     run,
     start_server,
     stop_server,
@@ -22,7 +22,7 @@ class TestCliModel:
 
         # Teardown
         # Clean up
-        run("Delete model", ["models", "delete", "tinyllama:gguf"])
+        run("Delete model", ["models", "delete", "tinyllama:1b"])
         stop_server()
         
     def test_model_pull_with_direct_url_should_be_success(self):
@@ -40,13 +40,13 @@ class TestCliModel:
         
     @pytest.mark.asyncio
     async def test_models_delete_should_be_successful(self):
-        json_body = {"model": "tinyllama:gguf"}
+        json_body = {"model": "tinyllama:1b"}
         response = requests.post("http://localhost:3928/v1/models/pull", json=json_body)
-        assert response.status_code == 200, f"Failed to pull model: tinyllama:gguf"
+        assert response.status_code == 200, f"Failed to pull model: tinyllama:1b"
         await wait_for_websocket_download_success_event(timeout=None)
 
         exit_code, output, error = run(
-            "Delete model", ["models", "delete", "tinyllama:gguf"]
+            "Delete model", ["models", "delete", "tinyllama:1b"]
         )
-        assert "Model tinyllama:gguf deleted successfully" in output
+        assert "Model tinyllama:1b deleted successfully" in output
         assert exit_code == 0, f"Model does not exist: {error}"

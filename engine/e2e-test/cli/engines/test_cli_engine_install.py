@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 import requests
-from test_runner import run, start_server, stop_server
+from utils.test_runner import run, start_server, stop_server
 
 
 class TestCliEngineInstall:

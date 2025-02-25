@@ -9,7 +9,7 @@ import argparse
 import websockets
 
 # Define a list of request configurations
-model_id = "tinyllama:gguf"
+model_id = "tinyllama:1b"
 
 
 def make_request(config):
@@ -78,7 +78,7 @@ def get_setup_configs(host_port):
             "method": "POST",
             "url": "http://" + host_port + "/v1/models/pull",
             "headers": {"Content-Type": "application/json"},
-            "data": {"model": "tinyllama:gguf"},
+            "data": {"model": "tinyllama:1b"},
         },
         {
             "method": "POST",
@@ -89,14 +89,14 @@ def get_setup_configs(host_port):
             "method": "POST",
             "url": "http://" + host_port + "/v1/models/start",
             "headers": {"Content-Type": "application/json"},
-            "data": {"model": "tinyllama:gguf"},
+            "data": {"model": "tinyllama:1b"},
         },
         {
             "method": "POST",
             "url": "http://" + host_port + "/v1/chat/completions",
             "headers": {"Content-Type": "application/json"},
             "data": {
-                "model": "tinyllama:gguf",
+                "model": "tinyllama:1b",
                 "stream": True,
                 "messages": [{"content": "How are you today?", "role": "user"}],
                 "max_tokens": 256,
@@ -111,7 +111,7 @@ def get_teardown_configs(host_port):
             "method": "POST",
             "url": "http://" + host_port + "/v1/models/stop",
             "headers": {"Content-Type": "application/json"},
-            "data": {"model": "tinyllama:gguf"},
+            "data": {"model": "tinyllama:1b"},
         },
         {
             "method": "DELETE",

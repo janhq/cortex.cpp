@@ -74,9 +74,21 @@ cpp::result<void, InferResult> InferenceService::HandleChatCompletion(
             tokenizer->add_eos_token, tokenizer->add_generation_prompt);
         if (prompt_result.has_value()) {
           (*json_body)["prompt"] = prompt_result.value();
-          Json::Value stops(Json::arrayValue);
-          stops.append(tokenizer->eos_token);
-          (*json_body)["stop"] = stops;
+          if (json_body->isMember("stop")) {
+            bool need_append = true;
+            for (auto& s : (*json_body)["stop"]) {
+              if (s.asString() == tokenizer->eos_token) {
+                need_append = false;
+              }
+            }
+            if (need_append) {
+              (*json_body)["stop"].append(tokenizer->eos_token);
+            }
+          } else {
+            Json::Value stops(Json::arrayValue);
+            stops.append(tokenizer->eos_token);
+            (*json_body)["stop"] = stops;
+          }
         } else {
           CTL_ERR("Failed to render prompt: " + prompt_result.error());
         }

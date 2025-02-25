@@ -2,7 +2,7 @@
 #include "utils/logging_utils.h"
 #include <filesystem>
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <tlhelp32.h>
 #elif defined(__APPLE__) || defined(__linux__)
 extern char **environ;  // environment variables
