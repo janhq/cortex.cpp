@@ -24,15 +24,20 @@
 #endif
 
 namespace cortex::hw {
+constexpr const uint32_t NVIDIA_VENDOR = 0x10DE;
+constexpr const uint32_t AMD_VENDOR = 0x1002;
+constexpr const uint32_t INTEL_VENDOR = 0x8086;
+constexpr const uint32_t ARM_VENDOR = 0x13B5;
+
 inline std::string GetVendorStr(uint32_t vendor_id) {
   switch (vendor_id) {
-    case 0x1002:
+    case AMD_VENDOR:
       return "AMD";
-    case 0x10DE:
+    case NVIDIA_VENDOR:
       return "NVIDIA";
-    case 0x8086:
+    case INTEL_VENDOR:
       return "INTEL";
-    case 0x13B5:
+    case ARM_VENDOR:
       return "ARM";
     default:
       return std::to_string(vendor_id);
@@ -441,16 +446,19 @@ class VulkanGpu {
 #endif
       int free_vram_MiB =
           total_vram_MiB > used_vram_MiB ? total_vram_MiB - used_vram_MiB : 0;
-      gpus.emplace_back(cortex::hw::GPU{
-          .id = std::to_string(id),
-          .device_id = device_properties.deviceID,
-          .name = device_properties.deviceName,
-          .version = std::to_string(device_properties.driverVersion),
-          .add_info = cortex::hw::AmdAddInfo{},
-          .free_vram = free_vram_MiB,
-          .total_vram = total_vram_MiB,
-          .uuid = uuid_to_string(device_id_properties.deviceUUID),
-          .vendor = GetVendorStr(device_properties.vendorID)});
+      if (device_properties.vendorID == NVIDIA_VENDOR ||
+          device_properties.vendorID == AMD_VENDOR) {
+        gpus.emplace_back(cortex::hw::GPU{
+            .id = std::to_string(id),
+            .device_id = device_properties.deviceID,
+            .name = device_properties.deviceName,
+            .version = std::to_string(device_properties.driverVersion),
+            .add_info = cortex::hw::AmdAddInfo{},
+            .free_vram = free_vram_MiB,
+            .total_vram = total_vram_MiB,
+            .uuid = uuid_to_string(device_id_properties.deviceUUID),
+            .vendor = GetVendorStr(device_properties.vendorID)});
+      }
       id++;
     }
 

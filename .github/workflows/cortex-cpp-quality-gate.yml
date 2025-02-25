@@ -168,7 +168,7 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
+          python e2e-test/runner/main.py
           rm build/cortex-nightly
           rm build/cortex-beta
         env:
@@ -182,7 +182,7 @@ jobs:
           cp build/cortex.exe build/cortex-beta.exe
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
+          python e2e-test/runner/main.py
           rm build/cortex-nightly.exe
           rm build/cortex-beta.exe
         env:
@@ -196,7 +196,7 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/cortex-llamacpp-e2e-nightly.py
+          python e2e-test/runner/cortex-llamacpp-e2e-nightly.py
           rm build/cortex-nightly
           rm build/cortex-beta
         env:
@@ -210,7 +210,7 @@ jobs:
           cp build/cortex.exe build/cortex-beta.exe
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/cortex-llamacpp-e2e-nightly.py
+          python e2e-test/runner/cortex-llamacpp-e2e-nightly.py
           rm build/cortex-nightly.exe
           rm build/cortex-beta.exe
         env:
@@ -443,7 +443,7 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
+          python e2e-test/runner/main.py
           rm build/cortex-nightly
           rm build/cortex-beta
         env:
@@ -457,7 +457,7 @@ jobs:
           cp build/cortex.exe build/cortex-beta.exe
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/main.py
+          python e2e-test/runner/main.py
           rm build/cortex-nightly.exe
           rm build/cortex-beta.exe
         env:
@@ -471,7 +471,7 @@ jobs:
           cp build/cortex build/cortex-beta
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/cortex-llamacpp-e2e-nightly.py
+          python e2e-test/runner/cortex-llamacpp-e2e-nightly.py
           rm build/cortex-nightly
           rm build/cortex-beta
         env:
@@ -485,7 +485,7 @@ jobs:
           cp build/cortex.exe build/cortex-beta.exe
           python -m pip install --upgrade pip
           python -m pip install -r e2e-test/requirements.txt
-          python e2e-test/cortex-llamacpp-e2e-nightly.py
+          python e2e-test/runner/cortex-llamacpp-e2e-nightly.py
           rm build/cortex-nightly.exe
           rm build/cortex-beta.exe
         env:
