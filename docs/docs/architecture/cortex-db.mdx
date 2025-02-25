@@ -16,12 +16,12 @@ This document outlines Cortex database architecture which is designed to store a
 files and more.
 
 ## Table Structure
-### schema Table
-The `schema` table is designed to hold schema version for cortex database. Below is the structure of the table:
+### schema_version Table
+The `schema_version` table is designed to hold schema version for cortex database. Below is the structure of the table:
 
 | Column Name        | Data Type | Description                                             |
 |--------------------|-----------|---------------------------------------------------------|
-| schema_version     | INTEGER   | A unique schema version for database.                   |
+| version     | INTEGER   | A unique schema version for database.                   |
 
 
 ### models Table
@@ -64,10 +64,10 @@ Below is the structure of the table:
 | api_key      | TEXT      |  |
 | url          | TEXT      |  |
 | version      | TEXT      | The current version of the engine. |
-| variant      | TEXT      |  |
+| variant      | TEXT      | A string that specifies the specific configuration or build variant of the engine. |
 | status       | TEXT      | Current status of the engine (e.g., "downloaded", "downloadable"). |
 | metadata     | TEXT      | Additional metadata or information about the engine. |
-| date_ceated  | TEXT      | Date when the engine was downloaded. |
+| date_created  | TEXT      | Date when the engine was downloaded. |
 | date_updated | TEXT      | Date when the engine was last updated. |
 
 ### files Table
@@ -79,5 +79,5 @@ The `files` table is designed to hold metadata about objects dowloaded via Corte
 | object     | TEXT      | The type of hardware.            |
 | purpose    | TEXT      | Purpose of file                  |
 | filename   | TEXT      | The name of the file.            |
-| created_at | INTEGER   | Date when file was created       |
-| bytes      | INTEGER   |                                  |
+| created_at | INTEGER   | Date when file was created.       |
+| bytes      | INTEGER   | Size of the file on disk in bytes. |
