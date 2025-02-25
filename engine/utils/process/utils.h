@@ -12,8 +12,8 @@ using pid_t = DWORD;
 #include <unistd.h>
 #endif
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace cortex::process {
 std::string ConstructWindowsCommandLine(const std::vector<std::string>& args);
@@ -26,4 +26,4 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
 bool IsProcessAlive(pid_t pid);
 bool KillProcess(pid_t pid);
 
-}
+}  // namespace cortex::process

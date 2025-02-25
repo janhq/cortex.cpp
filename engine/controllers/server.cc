@@ -210,17 +210,16 @@ void server::RouteRequest(
   }
 }
 
-void server::Python(
-  const HttpRequestPtr& req,
-  std::function<void(const HttpResponsePtr&)>&& callback,
-  const std::string& model) {
+void server::Python(const HttpRequestPtr& req,
+                    std::function<void(const HttpResponsePtr&)>&& callback,
+                    const std::string& model) {
 
   const std::string& full_path = req->getPath();
 
   const std::string prefix = "/v1/python/";
   if (full_path.substr(0, prefix.size()) != prefix) {
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(
-      Json::Value("Invalid path: must start with " + prefix));
+        Json::Value("Invalid path: must start with " + prefix));
     resp->setStatusCode(k400BadRequest);
     callback(resp);
     return;
@@ -232,7 +231,7 @@ void server::Python(
   auto port_result = inference_svc_->GetPythonPort(model);
   if (port_result.has_error()) {
     auto resp = cortex_utils::CreateCortexHttpJsonResponse(
-      Json::Value(port_result.error()));
+        Json::Value(port_result.error()));
     resp->setStatusCode(k400BadRequest);
     callback(resp);
     return;

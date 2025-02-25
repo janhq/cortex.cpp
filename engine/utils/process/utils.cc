@@ -1,11 +1,11 @@
 #include "utils/process/utils.h"
-#include "utils/logging_utils.h"
 #include <filesystem>
+#include "utils/logging_utils.h"
 
 #if defined(_WIN32)
 #include <tlhelp32.h>
 #elif defined(__APPLE__) || defined(__linux__)
-extern char **environ;  // environment variables
+extern char** environ;  // environment variables
 #include <errno.h>
 #include <fcntl.h>
 #endif
@@ -88,7 +88,7 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
 
     // redirect stdout and stderr
     // caller should make sure the redirect files exist.
-    posix_spawn_file_actions_t *action_ptr = NULL;
+    posix_spawn_file_actions_t* action_ptr = NULL;
 
     if (!stdout_file.empty() || !stderr_file.empty()) {
       posix_spawn_file_actions_t action;

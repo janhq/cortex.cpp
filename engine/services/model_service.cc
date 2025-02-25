@@ -761,11 +761,13 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
 
       // Check if Python model first
       if (mc.engine == kPythonEngine) {
-        const std::string model_yaml_path = model_entry.value().path_to_model_yaml;
+        const std::string model_yaml_path =
+            model_entry.value().path_to_model_yaml;
 
         json_data["model"] = model_handle;
         json_data["model_dir"] = fmu::ToAbsoluteCortexDataPath(
-                                    fs::path(model_yaml_path).parent_path()).string();
+                                     fs::path(model_yaml_path).parent_path())
+                                     .string();
         json_data["engine"] = mc.engine;
         assert(!!inference_svc_);
 

@@ -518,9 +518,12 @@ struct PythonModelConfig {
     try {
       YAML::Node config = YAML::LoadFile(filePath);
 
-      if (config["name"]) name = config["name"].as<std::string>();
-      if (config["version"]) version = config["version"].as<int>();
-      if (config["engine"]) engine = config["engine"].as<std::string>();
+      if (config["name"])
+        name = config["name"].as<std::string>();
+      if (config["version"])
+        version = config["version"].as<int>();
+      if (config["engine"])
+        engine = config["engine"].as<std::string>();
 
       // entrypoint
       if (config["entrypoint"] && config["entrypoint"].IsSequence()) {
@@ -529,13 +532,14 @@ struct PythonModelConfig {
           entrypoint.push_back(arg.as<std::string>());
         }
       }
-      if (config["port"]) port = config["port"].as<int>();
-    }
-    catch (const YAML::Exception& e) {
-      throw std::runtime_error("Error parsing YAML file: " + std::string(e.what()));
-    }
-    catch (const std::exception& e) {
-      throw std::runtime_error("Error reading YAML file: " + std::string(e.what()));
+      if (config["port"])
+        port = config["port"].as<int>();
+    } catch (const YAML::Exception& e) {
+      throw std::runtime_error("Error parsing YAML file: " +
+                               std::string(e.what()));
+    } catch (const std::exception& e) {
+      throw std::runtime_error("Error reading YAML file: " +
+                               std::string(e.what()));
     }
   }
 
@@ -549,11 +553,11 @@ struct PythonModelConfig {
 
     // entrypoint
     if (!entrypoint.empty()) {
-        Json::Value args(Json::arrayValue);
-        for (const auto& arg : entrypoint) {
-            args.append(arg);
-        }
-        json["entrypoint"] = args;
+      Json::Value args(Json::arrayValue);
+      for (const auto& arg : entrypoint) {
+        args.append(arg);
+      }
+      json["entrypoint"] = args;
     }
     json["port"] = port;
 
@@ -583,7 +587,8 @@ struct PythonModelConfig {
     } catch (const Json::Exception& e) {
       throw std::runtime_error("Error parsing JSON: " + std::string(e.what()));
     } catch (const std::exception& e) {
-      throw std::runtime_error("Error processing JSON data: " + std::string(e.what()));
+      throw std::runtime_error("Error processing JSON data: " +
+                               std::string(e.what()));
     }
   }
 };

@@ -132,7 +132,6 @@ class EngineService : public EngineServiceI {
   cpp::result<EngineUpdateResult, std::string> UpdateEngine(
       const std::string& engine);
 
- 
   cpp::result<std::vector<cortex::db::EngineEntry>, std::string> GetEngines();
 
   cpp::result<cortex::db::EngineEntry, std::string> GetEngineById(int id);

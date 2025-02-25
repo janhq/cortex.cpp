@@ -78,10 +78,9 @@ class server : public drogon::HttpController<server, false>,
                  std::function<void(const HttpResponsePtr&)>&& callback);
   void RouteRequest(const HttpRequestPtr& req,
                     std::function<void(const HttpResponsePtr&)>&& callback);
-  void Python(
-      const HttpRequestPtr& req,
-      std::function<void(const HttpResponsePtr&)>&& callback,
-      const std::string& model);
+  void Python(const HttpRequestPtr& req,
+              std::function<void(const HttpResponsePtr&)>&& callback,
+              const std::string& model);
 
  private:
   void ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,

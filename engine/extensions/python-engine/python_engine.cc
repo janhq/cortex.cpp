@@ -2,10 +2,10 @@
 #include <filesystem>
 
 #include "config/model_config.h"
-#include "utils/file_manager_utils.h"
-#include "utils/system_info_utils.h"
 #include "utils/archive_utils.h"
+#include "utils/file_manager_utils.h"
 #include "utils/set_permission_utils.h"
+#include "utils/system_info_utils.h"
 
 namespace python_engine {
 namespace {
@@ -15,8 +15,10 @@ constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
 }  // namespace
 
-cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& download_service) {
-  const auto py_bin_path = file_manager_utils::GetCortexDataPath() / "python_engine" / "bin";
+cpp::result<void, std::string> DownloadUv(
+    std::shared_ptr<DownloadService>& download_service) {
+  const auto py_bin_path =
+      file_manager_utils::GetCortexDataPath() / "python_engine" / "bin";
   std::filesystem::create_directories(py_bin_path);
 
   // NOTE: do we need a mechanism to update uv, or just pin uv version with cortex release?
@@ -27,23 +29,30 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
   fname_stream << "uv-";
 
   auto system_info = system_info_utils::GetSystemInfo();
-  if (system_info->arch == "amd64") fname_stream << "x86_64";
-  else if (system_info->arch == "arm64") fname_stream << "aarch64";
+  if (system_info->arch == "amd64")
+    fname_stream << "x86_64";
+  else if (system_info->arch == "arm64")
+    fname_stream << "aarch64";
 
   // NOTE: there is also a musl linux version
-  if (system_info->os == kMacOs) fname_stream << "-apple-darwin.tar.gz";
-  else if (system_info->os == kWindowsOs) fname_stream << "-pc-windows-msvc.zip";
-  else if (system_info->os == kLinuxOs) fname_stream << "-unknown-linux-gnu.tar.gz";
+  if (system_info->os == kMacOs)
+    fname_stream << "-apple-darwin.tar.gz";
+  else if (system_info->os == kWindowsOs)
+    fname_stream << "-pc-windows-msvc.zip";
+  else if (system_info->os == kLinuxOs)
+    fname_stream << "-unknown-linux-gnu.tar.gz";
 
   const std::string fname = fname_stream.str();
-  const std::string base_url = "https://github.com/astral-sh/uv/releases/download/";
+  const std::string base_url =
+      "https://github.com/astral-sh/uv/releases/download/";
 
   std::stringstream url_stream;
   url_stream << base_url << uv_version << "/" << fname;
   const std::string url = url_stream.str();
   CTL_INF("Download uv from " << url);
 
-  auto on_finished = [py_bin_path, uv_version](const DownloadTask& finishedTask) {
+  auto on_finished = [py_bin_path,
+                      uv_version](const DownloadTask& finishedTask) {
     // try to unzip the downloaded file
     const std::string download_path = finishedTask.items[0].localPath.string();
 
@@ -54,12 +63,11 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
 
   auto downloadTask = DownloadTask{.id = "uv",
                                    .type = DownloadType::Engine,
-                                   .items = {
-                                      DownloadItem{
-                                        .id = "uv",
-                                        .downloadUrl = url,
-                                        .localPath = py_bin_path / fname,
-                                      }}};
+                                   .items = {DownloadItem{
+                                       .id = "uv",
+                                       .downloadUrl = url,
+                                       .localPath = py_bin_path / fname,
+                                   }}};
 
   auto add_task_result = download_service->AddTask(downloadTask, on_finished);
   if (add_task_result.has_error()) {
@@ -70,8 +78,8 @@ cpp::result<void, std::string> DownloadUv(std::shared_ptr<DownloadService>& down
 
 std::string GetUvPath() {
   // NOTE: do I need to add .exe for windows?
-  const auto path = file_manager_utils::GetCortexDataPath()
-                    / "python_engine" / "bin" / "uv";
+  const auto path =
+      file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
   return path.string();
 }
 bool IsUvInstalled() {
@@ -91,7 +99,8 @@ PythonEngine::~PythonEngine() {
   // NOTE: what happens if we can't kill subprocess?
   std::unique_lock write_lock(mutex);
   for (auto& [model_name, py_proc] : model_process_map) {
-    if (py_proc.IsAlive()) py_proc.Kill();
+    if (py_proc.IsAlive())
+      py_proc.Kill();
   }
 }
 
@@ -109,8 +118,7 @@ static std::pair<Json::Value, Json::Value> CreateResponse(
   if (has_error) {
     CTL_ERR(msg);
     res["error"] = msg;
-  }
-  else {
+  } else {
     res["status"] = msg;
   }
 
@@ -123,7 +131,7 @@ void PythonEngine::LoadModel(
 
   if (!json_body->isMember("model") || !json_body->isMember("model_dir")) {
     auto [status, error] = CreateResponse(
-      "Missing required fields: model or model_dir", k400BadRequest);
+        "Missing required fields: model or model_dir", k400BadRequest);
     callback(std::move(status), std::move(error));
     return;
   }
@@ -137,8 +145,8 @@ void PythonEngine::LoadModel(
   {
     std::shared_lock read_lock(mutex);
     if (model_process_map.find(model) != model_process_map.end()) {
-      auto [status, error] = CreateResponse(
-        "Model already loaded!", k409Conflict);
+      auto [status, error] =
+          CreateResponse("Model already loaded!", k409Conflict);
       callback(std::move(status), std::move(error));
       return;
     }
@@ -154,9 +162,7 @@ void PythonEngine::LoadModel(
     }
 
     // https://docs.astral.sh/uv/reference/cli/#uv-run
-    std::vector<std::string> command{GetUvPath(),
-                                     "run",
-                                     "--directory",
+    std::vector<std::string> command{GetUvPath(), "run", "--directory",
                                      model_dir.string()};
     for (const auto& item : py_cfg.entrypoint)
       command.push_back(item);
@@ -165,8 +171,10 @@ void PythonEngine::LoadModel(
     const std::string stderr_path = (model_dir / "stderr.txt").string();
 
     // create empty stdout.txt and stderr.txt for redirection
-    if (!std::filesystem::exists(stdout_path)) std::ofstream(stdout_path).flush();
-    if (!std::filesystem::exists(stderr_path)) std::ofstream(stderr_path).flush();
+    if (!std::filesystem::exists(stdout_path))
+      std::ofstream(stdout_path).flush();
+    if (!std::filesystem::exists(stderr_path))
+      std::ofstream(stderr_path).flush();
 
     // NOTE: process may start, but exits/crashes later
     // TODO: wait for a few seconds, then check if process is alive
@@ -174,8 +182,9 @@ void PythonEngine::LoadModel(
     if (pid == -1) {
       throw std::runtime_error("Fail to spawn process with pid -1");
     }
-    const uint64_t start_time = std::chrono::system_clock::now().time_since_epoch() /
-                                std::chrono::milliseconds(1);
+    const uint64_t start_time =
+        std::chrono::system_clock::now().time_since_epoch() /
+        std::chrono::milliseconds(1);
     std::unique_lock write_lock(mutex);
     model_process_map[model] = {pid, py_cfg.port, start_time};
 
@@ -187,17 +196,17 @@ void PythonEngine::LoadModel(
   }
 
   auto [status, res] = CreateResponse(
-    "Model loaded successfully with pid: " + std::to_string(pid),
-    k200OK);
+      "Model loaded successfully with pid: " + std::to_string(pid), k200OK);
   callback(std::move(status), std::move(res));
 }
 
 void PythonEngine::UnloadModel(
-  std::shared_ptr<Json::Value> json_body,
-  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
   if (!json_body->isMember("model")) {
-    auto [status, error] = CreateResponse("Missing required field: model", k400BadRequest);
+    auto [status, error] =
+        CreateResponse("Missing required field: model", k400BadRequest);
     callback(std::move(status), std::move(error));
     return;
   }
@@ -248,11 +257,12 @@ void PythonEngine::UnloadModel(
 }
 
 void PythonEngine::GetModelStatus(
-  std::shared_ptr<Json::Value> json_body,
-  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+    std::shared_ptr<Json::Value> json_body,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
   if (!json_body->isMember("model")) {
-    auto [status, error] = CreateResponse("Missing required field: model", k400BadRequest);
+    auto [status, error] =
+        CreateResponse("Missing required field: model", k400BadRequest);
     callback(std::move(status), std::move(error));
     return;
   }
@@ -296,8 +306,8 @@ void PythonEngine::GetModelStatus(
 }
 
 void PythonEngine::GetModels(
-  std::shared_ptr<Json::Value> jsonBody,
-  std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
+    std::shared_ptr<Json::Value> jsonBody,
+    std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
 
   Json::Value res, model_list(Json::arrayValue), status;
   {

@@ -237,8 +237,7 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
 }
 
 cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
-  const std::string& version,
-  const std::optional<std::string> variant_name) {
+    const std::string& version, const std::optional<std::string> variant_name) {
 
   const std::string engine = kLlamaRepo;
   auto normalized_version = version == "latest"
@@ -930,7 +929,9 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
   // Check for python engine
   if (engine == kPythonEngine) {
     if (!python_engine::IsUvInstalled()) {
-      return cpp::fail("Python engine is not ready. Please run `cortex engines install python`");
+      return cpp::fail(
+          "Python engine is not ready. Please run `cortex engines install "
+          "python`");
     }
     return true;
   }
