@@ -859,10 +859,11 @@ void Models::GetModelSource(
 void Models::GetRepositoryList(
     const HttpRequestPtr& req,
     std::function<void(const HttpResponsePtr&)>&& callback,
-    std::optional<std::string> author) {
+    std::optional<std::string> author, std::optional<std::string> tag) {
   if (!author.has_value())
     author = "cortexso";
-  auto res = model_src_svc_->GetRepositoryList(author.value());
+  auto res =
+      model_src_svc_->GetRepositoryList(author.value(), tag.value_or(""));
   if (res.has_error()) {
     Json::Value ret;
     ret["message"] = res.error();
