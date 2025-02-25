@@ -78,6 +78,16 @@ std::filesystem::path GetHomeDirectoryPath() {
   return std::filesystem::path(homeDir);
 }
 
+// Helper function to get XDG base directory, falling back to default if not set
+std::filesystem::path GetXDGDirectory(const char* envVar,
+                                      const char* defaultPath) {
+  const char* envValue = getenv(envVar);
+  if (envValue && *envValue) {  // Check if envValue is not NULL and not empty
+    return std::filesystem::path(envValue);
+  }
+  return GetHomeDirectoryPath() / defaultPath;
+}
+
 std::filesystem::path GetConfigurationPath() {
 #ifndef CORTEX_CONFIG_FILE_PATH
 #define CORTEX_CONFIG_FILE_PATH kDefaultConfigurationPath
@@ -113,9 +123,19 @@ std::filesystem::path GetConfigurationPath() {
   std::string config_file_name{kCortexConfigurationFileName};
   config_file_name.append(env_postfix);
   // CTL_INF("Config file name: " + config_file_name);
-
+#if defined(__linux__)
+  auto config_base_path =
+      GetXDGDirectory("XDG_CONFIG_HOME", ".config") / kCortexFolderName;
+  auto configuration_path = config_base_path / config_file_name;
+  if (!std::filesystem::exists(config_base_path)) {
+    CTL_INF("Cortex config folder not found. Create one: " +
+            config_base_path.string());
+    std::filesystem::create_directory(config_base_path);
+  }
+#else
   auto home_path = GetHomeDirectoryPath();
   auto configuration_path = home_path / config_file_name;
+#endif
   return configuration_path;
 }
 
@@ -152,8 +172,14 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto default_data_folder_name = GetDefaultDataFolderName();
   auto default_data_folder_path =
       cortex_data_folder_path.empty()
+#if defined(__linux__)
+          ? file_manager_utils::GetXDGDirectory("XDG_DATA_HOME",
+                                                ".local/share") /
+                default_data_folder_name
+#else
           ? file_manager_utils::GetHomeDirectoryPath() /
                 default_data_folder_name
+#endif
           : std::filesystem::path(cortex_data_folder_path);
 
   return config_yaml_utils::CortexConfig{
@@ -236,8 +262,13 @@ std::filesystem::path GetCortexDataPath() {
     data_folder_path = std::filesystem::path(config.dataFolderPath);
 #endif
   } else {
+#if defined(__linux__)
+    auto data_base_path = GetXDGDirectory("XDG_DATA_HOME", ".local/share");
+    data_folder_path = data_base_path / GetDefaultDataFolderName();
+#else
     auto home_path = GetHomeDirectoryPath();
     data_folder_path = home_path / kCortexFolderName;
+#endif
   }
 
   if (!std::filesystem::exists(data_folder_path)) {
@@ -253,13 +284,19 @@ std::filesystem::path GetCortexLogPath() {
   // TODO: get the variant of cortex. As discussed, we will have: prod, beta, nightly
 
   // currently we will store cortex data at ~/cortexcpp
+  // On linux, we follow the xdg directory specification
   auto config = GetCortexConfig();
   std::filesystem::path log_folder_path;
   if (!config.logFolderPath.empty()) {
     log_folder_path = std::filesystem::path(config.logFolderPath);
   } else {
+#if defined(__linux__)
+    auto data_base_path = GetXDGDirectory("XDG_DATA_HOME", ".local/share");
+    log_folder_path = data_base_path / GetDefaultDataFolderName() / "logs";
+#else
     auto home_path = GetHomeDirectoryPath();
     log_folder_path = home_path / kCortexFolderName;
+#endif
   }
 
   if (!std::filesystem::exists(log_folder_path)) {
