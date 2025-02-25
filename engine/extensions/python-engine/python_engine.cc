@@ -89,30 +89,11 @@ bool PythonEngine::TerminateModelProcess(const std::string& model) {
     return false;
   }
 
-#if defined(_WIN32)
-  HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, it->second);
-  if (hProcess == NULL) {
-    LOG_ERROR << "Failed to open process";
-    return false;
-  }
-
-  bool terminated = TerminateProcess(hProcess, 0) == TRUE;
-  CloseHandle(hProcess);
-
-  if (terminated) {
+  bool success = cortex::process::KillProcess(it->second);
+  if (success) {
     process_map_.erase(it);
-    return true;
   }
-
-#elif defined(__APPLE__) || defined(__linux__)
-  int result = kill(it->second, SIGTERM);
-  if (result == 0) {
-    process_map_.erase(it);
-    return true;
-  }
-#endif
-
-  return false;
+  return success;
 }
 
 CurlResponse PythonEngine::MakeGetRequest(const std::string& model,
@@ -823,7 +804,7 @@ void PythonEngine::GetModelStatus(
   auto model_config = models_[model];
   auto health_endpoint = model_config.heath_check;
   auto pid = process_map_[model];
-  auto is_process_live = process_status_utils::IsProcessRunning(pid);
+  auto is_process_live = cortex::process::IsProcessAlive(pid);
   auto response_health = MakeGetRequest(model, health_endpoint.path);
 
   if (response_health.error && is_process_live) {

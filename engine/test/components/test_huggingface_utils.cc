@@ -10,8 +10,8 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
   EXPECT_GE(branches.value().size(), 3);
   EXPECT_EQ(branches.value()["main"].name, "main");
   EXPECT_EQ(branches.value()["main"].ref, "refs/heads/main");
-  EXPECT_EQ(branches.value()["1b-gguf"].name, "1b-gguf");
-  EXPECT_EQ(branches.value()["1b-gguf"].ref, "refs/heads/1b-gguf");
+  EXPECT_EQ(branches.value()["1b"].name, "1b");
+  EXPECT_EQ(branches.value()["1b"].ref, "refs/heads/1b");
   EXPECT_EQ(branches.value()["gguf"].name, "gguf");
   EXPECT_EQ(branches.value()["gguf"].ref, "refs/heads/gguf");
 }

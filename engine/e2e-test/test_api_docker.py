@@ -1,8 +1,8 @@
 import pytest
 import requests
-from test_runner import wait_for_websocket_download_success_event
+from utils.test_runner import wait_for_websocket_download_success_event
 
-repo_branches = ["tinyllama:1b-gguf"]
+repo_branches = ["tinyllama:gguf"]
 
 
 class TestCortexsoModels:
