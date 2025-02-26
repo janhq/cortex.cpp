@@ -71,6 +71,7 @@ class CommandLineParser {
 
     bool show_menu = false;
 
+    std::string server_host;
     int port;
     config_yaml_utils::CortexConfig config;
     std::unordered_map<std::string, std::string> model_update_options;
