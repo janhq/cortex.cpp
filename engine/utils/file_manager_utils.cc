@@ -79,10 +79,10 @@ std::filesystem::path GetHomeDirectoryPath() {
 }
 
 // Helper function to get XDG base directory, falling back to default if not set
-std::filesystem::path GetXDGDirectory(const char* envVar,
-                                      const char* defaultPath) {
-  const char* envValue = getenv(envVar);
-  if (envValue && *envValue) {  // Check if envValue is not NULL and not empty
+std::filesystem::path GetXDGDirectory(const std::string& envVar,
+                                      const std::string& defaultPath) {
+  if (const char* envValue = std::getenv(envVar.c_str());
+      envValue && std::strlen(envValue) > 0) {
     return std::filesystem::path(envValue);
   }
   return GetHomeDirectoryPath() / defaultPath;
@@ -170,17 +170,20 @@ cpp::result<void, std::string> UpdateCortexConfig(
 config_yaml_utils::CortexConfig GetDefaultConfig() {
   auto config_path = GetConfigurationPath();
   auto default_data_folder_name = GetDefaultDataFolderName();
+#if defined(__linux__)
   auto default_data_folder_path =
       cortex_data_folder_path.empty()
-#if defined(__linux__)
           ? file_manager_utils::GetXDGDirectory("XDG_DATA_HOME",
                                                 ".local/share") /
                 default_data_folder_name
+          : std::filesystem::path(cortex_data_folder_path);
 #else
+  auto default_data_folder_path =
+      cortex_data_folder_path.empty()
           ? file_manager_utils::GetHomeDirectoryPath() /
                 default_data_folder_name
-#endif
           : std::filesystem::path(cortex_data_folder_path);
+#endif
 
   return config_yaml_utils::CortexConfig{
 #if defined(_WIN32)
