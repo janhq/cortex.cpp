@@ -207,9 +207,6 @@ bool HardwareService::Restart(const std::string& host, int port) {
     if (!TryConnectToServer(host, port)) {
       return false;
     }
-    std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":"
-              << port << std::endl;
   }
 
 #endif
@@ -327,18 +324,18 @@ void HardwareService::UpdateHardwareInfos() {
     // Note: only support NVIDIA for now, so hardware_id = software_id
     if (db_service_->HasHardwareEntry(gpu.uuid)) {
       auto res = db_service_->UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
-                                           std::stoi(gpu.id));
+                                                  std::stoi(gpu.id));
       if (res.has_error()) {
         CTL_WRN(res.error());
       }
     } else {
-      auto res =
-      db_service_->AddHardwareEntry(HwEntry{.uuid = gpu.uuid,
-                                         .type = "gpu",
-                                         .hardware_id = std::stoi(gpu.id),
-                                         .software_id = std::stoi(gpu.id),
-                                         .activated = true,
-                                         .priority = INT_MAX});
+      auto res = db_service_->AddHardwareEntry(
+          HwEntry{.uuid = gpu.uuid,
+                  .type = "gpu",
+                  .hardware_id = std::stoi(gpu.id),
+                  .software_id = std::stoi(gpu.id),
+                  .activated = true,
+                  .priority = INT_MAX});
       if (res.has_error()) {
         CTL_WRN(res.error());
       }

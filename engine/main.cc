@@ -37,6 +37,7 @@
 #include "utils/file_manager_utils.h"
 #include "utils/logging_utils.h"
 #include "utils/system_info_utils.h"
+#include "utils/task_queue.h"
 
 #if defined(__APPLE__) && defined(__MACH__)
 #include <libgen.h>  // for dirname()
@@ -177,8 +178,11 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       download_service, dylib_path_manager, db_service);
   auto inference_svc = std::make_shared<InferenceService>(engine_service);
   auto model_src_svc = std::make_shared<ModelSourceService>(db_service);
-  auto model_service = std::make_shared<ModelService>(
-      db_service, hw_service, download_service, inference_svc, engine_service);
+  cortex::TaskQueue task_queue(
+      std::min(2u, std::thread::hardware_concurrency()), "background_task");
+  auto model_service =
+      std::make_shared<ModelService>(db_service, hw_service, download_service,
+                                     inference_svc, engine_service, task_queue);
   inference_svc->SetModelService(model_service);
 
   auto file_watcher_srv = std::make_shared<FileWatcherService>(
