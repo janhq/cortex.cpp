@@ -93,9 +93,10 @@ cpp::result<void, std::string> DownloadUv(
 }
 
 std::string GetUvPath() {
-  // NOTE: do I need to add .exe for windows?
+  auto system_info = system_info_utils::GetSystemInfo();
+  const auto bin_name = system_info->os == kWindowsOs ? "uv.exe" : "uv";
   const auto path =
-      file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
+      file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / bin_name;
   return path.string();
 }
 
