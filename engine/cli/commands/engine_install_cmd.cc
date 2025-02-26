@@ -7,6 +7,13 @@
 #include "utils/string_utils.h"
 
 namespace commands {
+
+// NOTE: should have a single source of truth between CLI and server
+static bool NeedCudaDownload(const std::string& engine) {
+  return !system_info_utils::GetDriverAndCudaVersion().second.empty() &&
+         engine != kPythonEngine;
+}
+
 bool EngineInstallCmd::Exec(const std::string& engine,
                             const std::string& version,
                             const std::string& src) {
@@ -35,10 +42,9 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   if (show_menu_) {
     DownloadProgress dp;
     dp.Connect(host_, port_);
+    bool need_cuda_download = NeedCudaDownload(engine);
     // engine can be small, so need to start ws first
-    auto dp_res = std::async(std::launch::deferred, [&dp] {
-      bool need_cuda_download =
-          !system_info_utils::GetDriverAndCudaVersion().second.empty();
+    auto dp_res = std::async(std::launch::deferred, [&dp, need_cuda_download] {
       if (need_cuda_download) {
         return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
       } else {
@@ -148,10 +154,9 @@ bool EngineInstallCmd::Exec(const std::string& engine,
   // default
   DownloadProgress dp;
   dp.Connect(host_, port_);
+  bool need_cuda_download = NeedCudaDownload(engine);
   // engine can be small, so need to start ws first
-  auto dp_res = std::async(std::launch::deferred, [&dp] {
-    bool need_cuda_download =
-        !system_info_utils::GetDriverAndCudaVersion().second.empty();
+  auto dp_res = std::async(std::launch::deferred, [&dp, need_cuda_download] {
     if (need_cuda_download) {
       return dp.Handle({DownloadType::Engine, DownloadType::CudaToolkit});
     } else {

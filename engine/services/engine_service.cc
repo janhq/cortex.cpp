@@ -377,8 +377,8 @@ cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine, bool async) {
-  if (hw_inf_.sys_inf->os == "mac") {
-    // mac does not require cuda toolkit
+  if (hw_inf_.sys_inf->os == "mac" || engine == kPythonEngine) {
+    // mac and Python engine do not require cuda toolkit
     return true;
   }
 

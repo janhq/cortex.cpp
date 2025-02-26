@@ -77,10 +77,10 @@ cpp::result<void, std::string> DownloadUv(
       return cpp::fail("Fail to spawn process");
   };
 
-  auto downloadTask = DownloadTask{.id = "uv",
+  auto downloadTask = DownloadTask{.id = "python-uv",
                                    .type = DownloadType::Engine,
                                    .items = {DownloadItem{
-                                       .id = "uv",
+                                       .id = "python-uv",
                                        .downloadUrl = url,
                                        .localPath = py_bin_path / fname,
                                    }}};
