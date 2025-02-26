@@ -53,4 +53,4 @@ class TestApiSetDefaultEngine:
         log_response(json_data, "test_api_set_default_engine_successfully")
         assert_equal(response_set_default_engine.status_code, 200)
 
-        assert_equal(json_data["message"], f"Engine {name} {version.lstrip("v")} set as default")
+        assert_equal(json_data["message"], f"Engine {name} {version.lstrip('v')} set as default")
