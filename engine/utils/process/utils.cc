@@ -126,8 +126,9 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
                                      environ  // environment (inherit)
     );
 
-    // NOTE: only destroy this when process ends?
-    // posix_spawn_file_actions_destroy(action_pr);
+    // NOTE: it seems like it's ok to destroy this immediately before
+    // subprocess terminates.
+    posix_spawn_file_actions_destroy(action_ptr);
 
     if (spawn_result != 0) {
       throw std::runtime_error("Failed to spawn process");
