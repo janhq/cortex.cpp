@@ -59,6 +59,22 @@ cpp::result<void, std::string> DownloadUv(
     archive_utils::ExtractArchive(download_path, py_bin_path.string(), true);
     set_permission_utils::SetExecutePermissionsRecursive(py_bin_path);
     std::filesystem::remove(download_path);
+
+    // install Python3.10 from Astral. this will be preferred over system
+    // Python when possible.
+    // NOTE: currently this will install to a user-wide directory. we can
+    // install to a specific location using `--install-dir`, but later
+    // invocation of `uv run` needs to have `UV_PYTHON_INSTALL_DIR` set to use
+    // this Python installation.
+    // we can add this once we allow passing custom env var to SpawnProcess().
+    // https://docs.astral.sh/uv/reference/cli/#uv-python-install
+    std::vector<std::string> command = BuildUvCommand("python");
+    command.push_back("install");
+    command.push_back("3.10");
+
+    const pid_t pid = cortex::process::SpawnProcess(command, "", "", true);
+    if (pid == -1)
+      return cpp::fail("Fail to spawn process");
   };
 
   auto downloadTask = DownloadTask{.id = "uv",
@@ -82,8 +98,51 @@ std::string GetUvPath() {
       file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / "uv";
   return path.string();
 }
+
+// use our own cache dir so that when users delete cortexcpp/, everything is deleted.
+std::string GetUvCacheDir() {
+  const auto path = file_manager_utils::GetCortexDataPath() / "python_engine" /
+                    "cache" / "uv";
+  return path.string();
+}
+
+std::vector<std::string> BuildUvCommand(const std::string& action,
+                                        const std::string& directory) {
+  std::vector<std::string> command = {GetUvPath(), "--cache-dir",
+                                      GetUvCacheDir()};
+  if (!directory.empty()) {
+    command.push_back("--directory");
+    command.push_back(directory);
+  }
+  command.push_back(action);
+  return command;
+}
+
 bool IsUvInstalled() {
   return std::filesystem::exists(GetUvPath());
+}
+
+cpp::result<void, std::string> UvDownloadDeps(
+    const std::filesystem::path& model_dir) {
+  if (!IsUvInstalled())
+    return cpp::fail(
+        "uv is not installed. Please run `cortex engines install python`.");
+
+  std::vector<std::string> command = BuildUvCommand("sync", model_dir.string());
+
+  // script mode. 1st argument is path to .py script
+  if (!std::filesystem::exists(model_dir / "pyproject.toml")) {
+    config::PythonModelConfig py_cfg;
+    py_cfg.ReadFromYaml((model_dir / "model.yml").string());
+    command.push_back("--script");
+    command.push_back(py_cfg.entrypoint[0]);
+  }
+
+  const pid_t pid = cortex::process::SpawnProcess(command, "", "", true);
+  if (pid == -1)
+    return cpp::fail("Fail to install dependencies");
+
+  return {};
 }
 
 bool PythonEngine::PythonSubprocess::IsAlive() {
@@ -162,8 +221,8 @@ void PythonEngine::LoadModel(
     }
 
     // https://docs.astral.sh/uv/reference/cli/#uv-run
-    std::vector<std::string> command{GetUvPath(), "run", "--directory",
-                                     model_dir.string()};
+    std::vector<std::string> command =
+        BuildUvCommand("run", model_dir.string());
     for (const auto& item : py_cfg.entrypoint)
       command.push_back(item);
 

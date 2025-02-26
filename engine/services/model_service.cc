@@ -14,6 +14,7 @@
 
 #include "services/inference_service.h"
 
+#include "extensions/python-engine/python_engine.h"
 #include "utils/cli_selection_utils.h"
 #include "utils/engine_constants.h"
 #include "utils/file_manager_utils.h"
@@ -507,6 +508,7 @@ ModelService::DownloadModelFromCortexsoAsync(
     yaml_handler.ModelConfigFromFile(model_yml_item->localPath.string());
     auto mc = yaml_handler.GetModelConfig();
 
+    // post-download hooks for different engines
     if (mc.engine == kLlamaEngine) {
       mc.model = unique_model_id;
 
@@ -517,6 +519,14 @@ ModelService::DownloadModelFromCortexsoAsync(
       mc.size = model_size;
       yaml_handler.UpdateModelConfig(mc);
       yaml_handler.WriteYamlFile(model_yml_item->localPath.string());
+
+    } else if (mc.engine == kPythonEngine) {
+      const auto model_dir = model_yml_item->localPath.parent_path();
+      auto result = python_engine::UvDownloadDeps(model_dir);
+      if (result.has_error()) {
+        CTL_ERR(result.error());
+        return;
+      }
     }
 
     auto rel =

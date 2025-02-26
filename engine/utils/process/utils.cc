@@ -41,7 +41,8 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 
 pid_t SpawnProcess(const std::vector<std::string>& command,
                    const std::string stdout_file,
-                   const std::string stderr_file) {
+                   const std::string stderr_file,
+                   bool wait) {
   try {
 #if defined(_WIN32)
     // Windows process creation
@@ -72,6 +73,10 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
 
     // Store the process ID
     pid_t pid = pi.dwProcessId;
+
+    // wait for process to terminate
+    if (wait)
+      WaitForSingleObject(pi.hProcess, INFINITE);
 
     // Close handles to avoid resource leaks
     CloseHandle(pi.hProcess);
@@ -127,6 +132,10 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
     if (spawn_result != 0) {
       throw std::runtime_error("Failed to spawn process");
     }
+
+    // wait for process to terminate
+    if (wait)
+      waitpid(pid, NULL, 0);
 
     return pid;
 

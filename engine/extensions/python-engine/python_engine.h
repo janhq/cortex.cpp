@@ -1,6 +1,7 @@
 #pragma once
 
 #include <json/json.h>
+#include <filesystem>
 #include <shared_mutex>
 #include <string>
 #include <unordered_map>
@@ -15,7 +16,12 @@ namespace python_engine {
 cpp::result<void, std::string> DownloadUv(
     std::shared_ptr<DownloadService>& download_service);
 std::string GetUvPath();
+std::string GetUvCacheDir();
+std::vector<std::string> BuildUvCommand(const std::string& action,
+                                        const std::string& directory = "");
 bool IsUvInstalled();
+cpp::result<void, std::string> UvDownloadDeps(
+    const std::filesystem::path& yaml_path);
 
 class PythonEngine : public PythonEngineI {
  private:
