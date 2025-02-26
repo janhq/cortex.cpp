@@ -1,4 +1,5 @@
 #include "thread_fs_repository.h"
+#include <algorithm>
 #include <fstream>
 #include <mutex>
 #include "common/assistant.h"

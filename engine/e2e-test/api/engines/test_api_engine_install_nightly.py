@@ -1,6 +1,6 @@
 import pytest
 import requests
-from test_runner import start_server, stop_server, get_latest_pre_release_tag
+from utils.test_runner import start_server, stop_server, get_latest_pre_release_tag
 
 latest_pre_release_tag = get_latest_pre_release_tag("janhq", "cortex.llamacpp")
 

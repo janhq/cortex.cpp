@@ -7,17 +7,16 @@ TEST_F(HuggingFaceUtilTestSuite, TestGetModelRepositoryBranches) {
   auto branches =
       huggingface_utils::GetModelRepositoryBranches("cortexso", "tinyllama");
 
-  EXPECT_GE(branches.value().size(), 3);
+  EXPECT_GE(branches.value().size(), 1);
   EXPECT_EQ(branches.value()["main"].name, "main");
   EXPECT_EQ(branches.value()["main"].ref, "refs/heads/main");
-  EXPECT_EQ(branches.value()["1b-gguf"].name, "1b-gguf");
-  EXPECT_EQ(branches.value()["1b-gguf"].ref, "refs/heads/1b-gguf");
-  EXPECT_EQ(branches.value()["gguf"].name, "gguf");
-  EXPECT_EQ(branches.value()["gguf"].ref, "refs/heads/gguf");
+  EXPECT_EQ(branches.value()["1b"].name, "1b");
+  EXPECT_EQ(branches.value()["1b"].ref, "refs/heads/1b");
 }
 
 // TODO(sang) re-enable when main branch is fixed
-TEST_F(HuggingFaceUtilTestSuite, DISABLED_TestGetHuggingFaceModelRepoInfoSuccessfully) {
+TEST_F(HuggingFaceUtilTestSuite,
+       DISABLED_TestGetHuggingFaceModelRepoInfoSuccessfully) {
   auto model_info =
       huggingface_utils::GetHuggingFaceModelRepoInfo("cortexso", "tinyllama");
 
