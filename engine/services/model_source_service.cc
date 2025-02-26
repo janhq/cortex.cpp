@@ -14,6 +14,13 @@
 namespace hu = huggingface_utils;
 
 namespace {
+constexpr const int kModeSourceCacheSecs = 600;
+
+std::string GenSourceId(const std::string& author_hub,
+                        const std::string& model_name) {
+  return author_hub + "/" + model_name;
+}
+
 std::vector<ModelInfo> ParseJsonString(const std::string& json_str) {
   std::vector<ModelInfo> models;
 
@@ -79,19 +86,34 @@ cpp::result<bool, std::string> ModelSourceService::AddModelSource(
     }
 
     if (auto is_org = r.pathParams.size() == 1; is_org) {
-      auto& author = r.pathParams[0];
-      if (author == "cortexso") {
-        return AddCortexsoOrg(model_source);
-      } else {
-        return AddHfOrg(model_source, author);
-      }
+      return cpp::fail("Only support repository model source, url: " +
+                       model_source);
+      // TODO(sang)
+      // auto& hub_author = r.pathParams[0];
+      // if (hub_author == "cortexso") {
+      //   return AddCortexsoOrg(model_source);
+      // } else {
+      //   return AddHfOrg(model_source, hub_author);
+      // }
     } else {  // Repo
-      auto const& author = r.pathParams[0];
+      auto const& hub_author = r.pathParams[0];
       auto const& model_name = r.pathParams[1];
+      // Return cache value
+      if (auto key = GenSourceId(hub_author, model_name);
+          src_cache_.find(key) != src_cache_.end()) {
+        auto now = std::chrono::system_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now -
+                                                             src_cache_.at(key))
+                .count() < kModeSourceCacheSecs) {
+          CTL_DBG("Return cache value for model source: " << model_source);
+          return true;
+        }
+      }
+
       if (r.pathParams[0] == "cortexso") {
-        return AddCortexsoRepo(model_source, author, model_name);
+        return AddCortexsoRepo(model_source, hub_author, model_name);
       } else {
-        return AddHfRepo(model_source, author, model_name);
+        return AddHfRepo(model_source, hub_author, model_name);
       }
     }
   }
@@ -190,9 +212,9 @@ cpp::result<ModelSource, std::string> ModelSourceService::GetModelSource(
 }
 
 cpp::result<std::vector<std::string>, std::string>
-ModelSourceService::GetRepositoryList(std::string_view author,
+ModelSourceService::GetRepositoryList(std::string_view hub_author,
                                       std::string_view tag_filter) {
-  std::string as(author);
+  std::string as(hub_author);
   auto get_repo_list = [this, &as, &tag_filter] {
     std::vector<std::string> repo_list;
     auto const& mis = cortexso_repos_.at(as);
@@ -227,9 +249,9 @@ ModelSourceService::GetRepositoryList(std::string_view author,
 }
 
 cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
-    const std::string& model_source, const std::string& author) {
+    const std::string& model_source, const std::string& hub_author) {
   auto res = curl_utils::SimpleGet("https://huggingface.co/api/models?author=" +
-                                   author);
+                                   hub_author);
   if (res.has_value()) {
     auto models = ParseJsonString(res.value());
     // Add new models
@@ -238,9 +260,10 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
 
       auto author_model = string_utils::SplitBy(m.id, "/");
       if (author_model.size() == 2) {
-        auto const& author = author_model[0];
+        auto const& hub_author = author_model[0];
         auto const& model_name = author_model[1];
-        auto r = AddHfRepo(model_source + "/" + model_name, author, model_name);
+        auto r =
+            AddHfRepo(model_source + "/" + model_name, hub_author, model_name);
         if (r.has_error()) {
           CTL_WRN(r.error());
         }
@@ -253,14 +276,14 @@ cpp::result<bool, std::string> ModelSourceService::AddHfOrg(
 }
 
 cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
-    const std::string& model_source, const std::string& author,
+    const std::string& model_source, const std::string& hub_author,
     const std::string& model_name) {
   // Get models from db
 
   auto model_list_before = db_service_->GetModels(model_source)
                                .value_or(std::vector<cortex::db::ModelEntry>{});
   std::unordered_set<std::string> updated_model_list;
-  auto add_res = AddRepoSiblings(model_source, author, model_name);
+  auto add_res = AddRepoSiblings(model_source, hub_author, model_name);
   if (add_res.has_error()) {
     return cpp::fail(add_res.error());
   } else {
@@ -274,15 +297,17 @@ cpp::result<bool, std::string> ModelSourceService::AddHfRepo(
       }
     }
   }
+  src_cache_[GenSourceId(hub_author, model_name)] =
+      std::chrono::system_clock::now();
   return true;
 }
 
 cpp::result<std::unordered_set<std::string>, std::string>
 ModelSourceService::AddRepoSiblings(const std::string& model_source,
-                                    const std::string& author,
+                                    const std::string& hub_author,
                                     const std::string& model_name) {
   std::unordered_set<std::string> res;
-  auto repo_info = hu::GetHuggingFaceModelRepoInfo(author, model_name);
+  auto repo_info = hu::GetHuggingFaceModelRepoInfo(hub_author, model_name);
   if (repo_info.has_error()) {
     return cpp::fail(repo_info.error());
   }
@@ -293,14 +318,14 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
         "supported.");
   }
 
-  auto siblings_fs = hu::GetSiblingsFileSize(author, model_name);
+  auto siblings_fs = hu::GetSiblingsFileSize(hub_author, model_name);
 
   if (siblings_fs.has_error()) {
-    return cpp::fail("Could not get siblings file size: " + author + "/" +
-                     model_name);
+    return cpp::fail("Could not get siblings file size: " +
+                     GenSourceId(hub_author, model_name));
   }
 
-  auto readme = hu::GetReadMe(author, model_name);
+  auto readme = hu::GetReadMe(hub_author, model_name);
   std::string desc;
   if (!readme.has_error()) {
     desc = readme.value();
@@ -326,10 +351,10 @@ ModelSourceService::AddRepoSiblings(const std::string& model_source,
             siblings_fs_v.file_sizes.at(sibling.rfilename).size_in_bytes;
       }
       std::string model_id =
-          author + ":" + model_name + ":" + sibling.rfilename;
+          hub_author + ":" + model_name + ":" + sibling.rfilename;
       cortex::db::ModelEntry e = {
           .model = model_id,
-          .author_repo_id = author,
+          .author_repo_id = hub_author,
           .branch_name = "main",
           .path_to_model_yaml = "",
           .model_alias = "",
@@ -369,9 +394,9 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
       CTL_INF(m.id);
       auto author_model = string_utils::SplitBy(m.id, "/");
       if (author_model.size() == 2) {
-        auto const& author = author_model[0];
+        auto const& hub_author = author_model[0];
         auto const& model_name = author_model[1];
-        auto r = AddCortexsoRepo(model_source + "/" + model_name, author,
+        auto r = AddCortexsoRepo(model_source + "/" + model_name, hub_author,
                                  model_name);
         if (r.has_error()) {
           CTL_WRN(r.error());
@@ -386,7 +411,7 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoOrg(
 }
 
 cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
-    const std::string& model_source, const std::string& author,
+    const std::string& model_source, const std::string& hub_author,
     const std::string& model_name) {
   auto begin = std::chrono::system_clock::now();
   auto branches =
@@ -395,15 +420,21 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
     return cpp::fail(branches.error());
   }
 
-  auto repo_info = hu::GetHuggingFaceModelRepoInfo(author, model_name);
+  auto repo_info = hu::GetHuggingFaceModelRepoInfo(hub_author, model_name);
   if (repo_info.has_error()) {
     return cpp::fail(repo_info.error());
   }
 
-  auto readme = hu::GetReadMe(author, model_name);
+  auto readme = hu::GetReadMe(hub_author, model_name);
   std::string desc;
   if (!readme.has_error()) {
     desc = readme.value();
+  }
+
+  auto author = hub_author;
+  if (auto model_author = hu::GetModelAuthorCortexsoHub(model_name);
+      model_author.has_value() && !model_author->empty()) {
+    author = *model_author;
   }
 
   // Get models from db
@@ -442,6 +473,8 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
       "Duration ms: " << std::chrono::duration_cast<std::chrono::milliseconds>(
                              end - begin)
                              .count());
+  src_cache_[GenSourceId(hub_author, model_name)] =
+      std::chrono::system_clock::now();
   return true;
 }
 
