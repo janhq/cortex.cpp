@@ -46,8 +46,9 @@ class TestApiEngineReleaseVersion:
         # send request for release with version
         
         get_release_version_url = f"http://localhost:3928/v1/engines/{engine}/releases/{version}"
+        log_response(get_release_version_url, "test_api_get_engine_release_version_successfully")
 
-        response_engine_release_version = get_request(get_release_version_url)
+        response_engine_release_version = requests.get(get_release_version_url)
         json_data_engine_release_version = response_engine_release_version.json()
 
         log_response(json_data_engine_release_version, "test_api_get_engine_release_version_successfully")
