@@ -127,11 +127,6 @@ std::filesystem::path GetConfigurationPath() {
   auto config_base_path =
       GetXDGDirectory("XDG_CONFIG_HOME", ".config") / kCortexFolderName;
   auto configuration_path = config_base_path / config_file_name;
-  if (!std::filesystem::exists(config_base_path)) {
-    CTL_INF("Cortex config folder not found. Create one: " +
-            config_base_path.string());
-    std::filesystem::create_directory(config_base_path);
-  }
 #else
   auto home_path = GetHomeDirectoryPath();
   auto configuration_path = home_path / config_file_name;
@@ -232,6 +227,10 @@ cpp::result<void, std::string> CreateConfigFileIfNotExist() {
   if (std::filesystem::exists(config_path)) {
     // already exists, no need to create
     return {};
+  }
+  if (!std::filesystem::exists(config_path.parent_path())) {
+    // Ensure the configuration directory exists
+    std::filesystem::create_directories(config_path.parent_path());
   }
 
   CLI_LOG("Config file not found. Creating one at " + config_path.string());
