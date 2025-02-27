@@ -40,10 +40,7 @@ class RemoteEngine : public RemoteEngineI {
   struct ModelConfig {
     std::string model;
     std::string version;
-    std::string api_key;
     std::string url;
-    YAML::Node transform_req;
-    YAML::Node transform_resp;
     bool is_loaded{false};
   };
 
