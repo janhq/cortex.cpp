@@ -69,6 +69,16 @@ struct NvidiaAddInfo {
 };
 struct AmdAddInfo {};
 using GPUAddInfo = std::variant<NvidiaAddInfo, AmdAddInfo>;
+
+enum class GpuType {
+  kGpuTypeOther = 0,
+  kGpuTypeIntegrated = 1,
+  kGpuTypeDiscrete = 2,
+  kGpuTypeVirtual = 3,
+  kGpuTypeCpu = 4,
+  kGpuTypeMaxEnum = 0x7FFFFFFF
+};
+
 struct GPU {
   std::string id;
   uint32_t device_id;
@@ -80,6 +90,7 @@ struct GPU {
   std::string uuid;
   bool is_activated = true;
   std::string vendor;
+  GpuType gpu_type;
 };
 
 inline Json::Value ToJson(const std::vector<GPU>& gpus) {

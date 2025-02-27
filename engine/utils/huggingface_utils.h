@@ -311,4 +311,24 @@ inline std::optional<std::string> GetDefaultBranch(
     return std::nullopt;
   }
 }
+
+inline std::optional<std::string> GetModelAuthorCortexsoHub(
+    const std::string& model_name) {
+  try {
+    auto remote_yml = curl_utils::ReadRemoteYaml(GetMetadataUrl(model_name));
+
+    if (remote_yml.has_error()) {
+      return std::nullopt;
+    }
+
+    auto metadata = remote_yml.value();
+    auto author = metadata["author"];
+    if (author.IsDefined()) {
+      return author.as<std::string>();
+    }
+    return std::nullopt;
+  } catch (const std::exception& e) {
+    return std::nullopt;
+  }
+}
 }  // namespace huggingface_utils

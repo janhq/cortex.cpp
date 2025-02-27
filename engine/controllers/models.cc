@@ -218,11 +218,10 @@ void Models::ListModel(
           obj["id"] = model_entry.model;
           obj["model"] = model_entry.model;
           obj["status"] = "downloaded";
-          // TODO(sang) Temporarily remove this estimation
-          // auto es = model_service_->GetEstimation(model_entry.model);
-          // if (es.has_value() && !!es.value()) {
-          //   obj["recommendation"] = hardware::ToJson(*(es.value()));
-          // }
+          auto es = model_service_->GetEstimation(model_entry.model);
+          if (es.has_value()) {
+            obj["recommendation"] = hardware::ToJson(*es);
+          }
           data.append(std::move(obj));
           yaml_handler.Reset();
         } else if (model_config.engine == kPythonEngine) {

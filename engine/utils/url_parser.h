@@ -69,8 +69,11 @@ const std::regex url_regex(
     R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
     std::regex::extended);
 
-inline void SplitPathParams(const std::string& input,
+inline bool SplitPathParams(const std::string& input,
                             std::vector<std::string>& pathList) {
+  if (input.find("//") != std::string::npos) {
+    return false;
+  }
   // split the path by '/'
   std::string token;
   std::istringstream tokenStream(input);
@@ -80,6 +83,7 @@ inline void SplitPathParams(const std::string& input,
     }
     pathList.push_back(token);
   }
+  return true;
 }
 
 inline cpp::result<Url, std::string> FromUrlString(
@@ -105,7 +109,9 @@ inline cpp::result<Url, std::string> FromUrlString(
       } else if (counter == hostAndPortIndex) {
         url.host = res;  // TODO: split the port for completeness
       } else if (counter == pathIndex) {
-        SplitPathParams(res, url.pathParams);
+        if (!SplitPathParams(res, url.pathParams)) {
+          return cpp::fail("Malformed URL: " + urlString);
+        }
       } else if (counter == queryIndex) {
         // TODO: implement
       }
