@@ -10,6 +10,7 @@
 #include "services/download_service.h"
 #include "services/hardware_service.h"
 #include "utils/hardware/gguf/gguf_file_estimate.h"
+#include "utils/task_queue.h"
 
 class InferenceService;
 
@@ -35,12 +36,8 @@ class ModelService {
                         std::shared_ptr<HardwareService> hw_service,
                         std::shared_ptr<DownloadService> download_service,
                         std::shared_ptr<InferenceService> inference_service,
-                        std::shared_ptr<EngineServiceI> engine_svc)
-      : db_service_(db_service),
-        hw_service_(hw_service),
-        download_service_{download_service},
-        inference_svc_(inference_service),
-        engine_svc_(engine_svc) {};
+                        std::shared_ptr<EngineServiceI> engine_svc,
+                        cortex::TaskQueue& task_queue);
 
   cpp::result<std::string, std::string> AbortDownloadModel(
       const std::string& task_id);
@@ -81,7 +78,10 @@ class ModelService {
 
   bool HasModel(const std::string& id) const;
 
-  cpp::result<std::optional<hardware::Estimation>, std::string> GetEstimation(
+  std::optional<hardware::Estimation> GetEstimation(
+      const std::string& model_handle);
+
+  cpp::result<std::optional<hardware::Estimation>, std::string> EstimateModel(
       const std::string& model_handle, const std::string& kv_cache = "f16",
       int n_batch = 2048, int n_ubatch = 2048);
 
@@ -112,6 +112,10 @@ class ModelService {
       const std::string& model_path, int ngl, int ctx_len, int n_batch = 2048,
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
+  void ProcessBgrTasks();
+  
+  int GetCpuThreads() const;
+
   std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<HardwareService> hw_service_;
   std::shared_ptr<DownloadService> download_service_;
@@ -124,4 +128,8 @@ class ModelService {
    */
   std::unordered_map<std::string, std::shared_ptr<ModelMetadata>>
       loaded_model_metadata_map_;
+
+  std::mutex es_mtx_;
+  std::unordered_map<std::string, std::optional<hardware::Estimation>> es_;
+  cortex::TaskQueue& task_queue_;
 };
