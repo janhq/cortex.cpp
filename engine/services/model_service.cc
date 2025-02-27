@@ -954,6 +954,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
       json_data["ctx_len"] = std::min(kDefautlContextLength, mc.ctx_len);
+      json_data["max_tokens"] = std::min(kDefautlContextLength, mc.ctx_len);
       max_model_context_length = mc.ctx_len;
     } else {
       bypass_stop_check_set_.insert(model_handle);
@@ -977,6 +978,8 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
     // Set the latest ctx_len
     if (ctx_len) {
       json_data["ctx_len"] =
+          std::min(ctx_len.value(), max_model_context_length);
+      json_data["max_tokens"] =
           std::min(ctx_len.value(), max_model_context_length);
     }
     CTL_INF(json_data.toStyledString());
