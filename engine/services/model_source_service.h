@@ -65,25 +65,25 @@ class ModelSourceService {
   cpp::result<ModelSource, std::string> GetModelSource(const std::string& src);
 
   cpp::result<std::vector<std::string>, std::string> GetRepositoryList(
-      std::string_view author, std::string_view tag_filter);
+      std::string_view hub_author, std::string_view tag_filter);
 
  private:
   cpp::result<bool, std::string> AddHfOrg(const std::string& model_source,
-                                          const std::string& author);
+                                          const std::string& hub_author);
 
   cpp::result<bool, std::string> AddHfRepo(const std::string& model_source,
-                                           const std::string& author,
+                                           const std::string& hub_author,
                                            const std::string& model_name);
 
   cpp::result<std::unordered_set<std::string>, std::string> AddRepoSiblings(
-      const std::string& model_source, const std::string& author,
+      const std::string& model_source, const std::string& hub_author,
       const std::string& model_name);
 
   cpp::result<bool, std::string> AddCortexsoOrg(
       const std::string& model_source);
 
   cpp::result<bool, std::string> AddCortexsoRepo(
-      const std::string& model_source, const std::string& author,
+      const std::string& model_source, const std::string& hub_author,
       const std::string& model_name);
 
   cpp::result<std::string, std::string> AddCortexsoRepoBranch(
@@ -99,4 +99,6 @@ class ModelSourceService {
   std::atomic<bool> running_;
 
   std::unordered_map<std::string, std::vector<ModelInfo>> cortexso_repos_;
+  using TimePoint = std::chrono::time_point<std::chrono::system_clock>;
+  std::unordered_map<std::string, TimePoint> src_cache_;
 };
