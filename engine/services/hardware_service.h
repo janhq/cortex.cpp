@@ -1,8 +1,8 @@
 #pragma once
 #include <stdint.h>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
 
 #include "common/hardware_config.h"
 #include "database_service.h"
@@ -41,4 +41,5 @@ class HardwareService {
   std::shared_ptr<DatabaseService> db_service_ = nullptr;
   std::optional<cortex::hw::ActivateHardwareConfig> ahc_;
   std::mutex mtx_;
+  cortex::hw::CpuInfo cpu_info_;
 };
