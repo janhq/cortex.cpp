@@ -191,7 +191,7 @@ void PythonEngine::LoadModel(
     std::shared_ptr<Json::Value> json_body,
     std::function<void(Json::Value&&, Json::Value&&)>&& callback) {
   // TODO: handle a case that can spawn process but the process spawn fail.
-  pid_t pid;
+  cortex::process::ProcessInfo proc_info;
   if (!json_body->isMember("model") || !json_body->isMember("model_path")) {
     Json::Value error;
     error["error"] = "Missing required fields: model or model_path";
@@ -286,24 +286,13 @@ void PythonEngine::LoadModel(
 
     // Add the parsed arguments to the command
     command.insert(command.end(), args.begin(), args.end());
-    pid = cortex::process::SpawnProcess(command);
-    process_map_[model] = pid;
-    if (pid == -1) {
-      std::unique_lock lock(models_mutex_);
-      if (models_.find(model) != models_.end()) {
-        models_.erase(model);
-      }
+    auto result = cortex::process::SpawnProcess(command);
+    if (result.has_error())
+      throw std::runtime_error(result.error());
 
-      Json::Value error;
-      error["error"] = "Fail to spawn process with pid -1";
-      Json::Value status;
-      status["is_done"] = true;
-      status["has_error"] = true;
-      status["is_stream"] = false;
-      status["status_code"] = k500InternalServerError;
-      callback(std::move(status), std::move(error));
-      return;
-    }
+    proc_info = result.value();
+    process_map_[model] = proc_info;
+
   } catch (const std::exception& e) {
     std::unique_lock lock(models_mutex_);
     if (models_.find(model) != models_.end()) {
@@ -323,7 +312,7 @@ void PythonEngine::LoadModel(
 
   Json::Value response;
   response["status"] =
-      "Model loaded successfully with pid: " + std::to_string(pid);
+      "Model loaded successfully with pid: " + std::to_string(proc_info.pid);
   Json::Value status;
   status["is_done"] = true;
   status["has_error"] = false;
@@ -356,7 +345,7 @@ void PythonEngine::UnloadModel(
     } else {
       Json::Value error;
       error["error"] = "Fail to terminate process with id: " +
-                       std::to_string(process_map_[model]);
+                       std::to_string(process_map_[model].pid);
       Json::Value status;
       status["is_done"] = true;
       status["has_error"] = true;

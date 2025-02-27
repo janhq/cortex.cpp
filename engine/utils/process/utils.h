@@ -12,16 +12,28 @@ using pid_t = DWORD;
 #include <unistd.h>
 #endif
 
-#include <vector>
 #include <string>
+#include <vector>
+#include "utils/result.hpp"
 
 namespace cortex::process {
+
+struct ProcessInfo {
+  pid_t pid;
+#ifdef _WIN32
+  // hProcess is used to check if process is alive.
+  // hJob is used to terminate process and its children.
+  HANDLE hProcess, hJob;
+#endif
+};
+
 std::string ConstructWindowsCommandLine(const std::vector<std::string>& args);
 
 std::vector<char*> ConvertToArgv(const std::vector<std::string>& args);
 
-pid_t SpawnProcess(const std::vector<std::string>& command);
-bool IsProcessAlive(pid_t pid);
-bool KillProcess(pid_t pid);
+cpp::result<ProcessInfo, std::string> SpawnProcess(
+    const std::vector<std::string>& command);
+bool IsProcessAlive(const ProcessInfo& proc_info);
+bool KillProcess(ProcessInfo& proc_info);
 
-}
+}  // namespace cortex::process

@@ -4,7 +4,7 @@
 #if defined(_WIN32)
 #include <tlhelp32.h>
 #elif defined(__APPLE__) || defined(__linux__)
-extern char **environ;  // environment variables
+extern char** environ;  // environment variables
 #endif
 
 namespace cortex::process {
@@ -36,7 +36,8 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
   return argv;
 }
 
-pid_t SpawnProcess(const std::vector<std::string>& command) {
+cpp::result<ProcessInfo, std::string> SpawnProcess(
+    const std::vector<std::string>& command) {
   try {
 #if defined(_WIN32)
     // Windows process creation
@@ -66,13 +67,17 @@ pid_t SpawnProcess(const std::vector<std::string>& command) {
     }
 
     // Store the process ID
-    pid_t pid = pi.dwProcessId;
+    // pid_t pid = pi.dwProcessId;
 
     // Close handles to avoid resource leaks
-    CloseHandle(pi.hProcess);
+    // CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
-    return pid;
+    ProcessInfo proc_info;
+    proc_info.pid = pi.dwProcessId;
+    proc_info.hProcess = pi.hProcess;
+
+    return proc_info;
 
 #elif defined(__APPLE__) || defined(__linux__)
     // POSIX process creation
@@ -94,18 +99,21 @@ pid_t SpawnProcess(const std::vector<std::string>& command) {
       throw std::runtime_error("Failed to spawn process");
     }
 
-    return pid;
+    ProcessInfo proc_info;
+    proc_info.pid = pid;
+
+    return proc_info;
 
 #else
 #error Unsupported platform
 #endif
   } catch (const std::exception& e) {
     LOG_ERROR << "Process spawning error: " << e.what();
-    return -1;
+    return cpp::fail(e.what());
   }
 }
 
-bool IsProcessAlive(pid_t pid) {
+bool IsProcessAlive(const ProcessInfo& proc_info) {
 #ifdef _WIN32
   // Windows implementation
   HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
@@ -118,7 +126,7 @@ bool IsProcessAlive(pid_t pid) {
 
   if (Process32First(snapshot, &processEntry)) {
     do {
-      if (processEntry.th32ProcessID == pid) {
+      if (processEntry.th32ProcessID == proc_info.pid) {
         CloseHandle(snapshot);
         return true;
       }
@@ -130,13 +138,10 @@ bool IsProcessAlive(pid_t pid) {
 
 #elif defined(__APPLE__) || defined(__linux__)
   // Unix-like systems (Linux and macOS) implementation
-  if (pid <= 0) {
-    return false;
-  }
 
   // Try to send signal 0 to the process
   // This doesn't actually send a signal but checks if we can send signals to the process
-  int result = kill(pid, 0);
+  int result = kill(proc_info.pid, 0);
 
   if (result == 0) {
     return true;  // Process exists and we have permission to send it signals
@@ -148,9 +153,9 @@ bool IsProcessAlive(pid_t pid) {
 #endif
 }
 
-bool KillProcess(pid_t pid) {
+bool KillProcess(ProcessInfo& proc_info) {
 #if defined(_WIN32)
-  HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, pid);
+  HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, proc_info.pid);
   if (hProcess == NULL) {
     LOG_ERROR << "Failed to open process";
     return false;
@@ -160,8 +165,7 @@ bool KillProcess(pid_t pid) {
   CloseHandle(hProcess);
   return is_success;
 #elif defined(__APPLE__) || defined(__linux__)
-  // NOTE: should we use SIGKILL here to be consistent with Windows?
-  return kill(pid, SIGTERM) == 0;
+  return kill(proc_info.pid, SIGTERM) == 0;
 #else
 #error "Unsupported platform"
 #endif
