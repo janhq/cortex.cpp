@@ -14,7 +14,6 @@ def get_root_path():
     else:
         return Path.home()
 
-
 class TestCreateLogFolder:
     @pytest.fixture(autouse=True)
     def setup_and_teardown(self):
