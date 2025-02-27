@@ -18,16 +18,12 @@ namespace config {
 
 struct RemoteModelConfig {
   std::string model;
-  std::string header_template;
   std::string engine;
   std::string version;
   size_t created;
   std::string object = "model";
   std::string owned_by = "";
   Json::Value inference_params;
-  Json::Value transform_req;
-  Json::Value transform_resp;
-  Json::Value metadata;
   void LoadFromJson(const Json::Value& json) {
     if (!json.isObject()) {
       throw std::runtime_error("Input JSON must be an object");
@@ -35,8 +31,6 @@ struct RemoteModelConfig {
 
     // Load basic string fields
     model = json.get("model", model).asString();
-    header_template =
-        json.get("header_template", header_template).asString();
     engine = json.get("engine", engine).asString();
     version = json.get("version", version).asString();
     created =
@@ -46,9 +40,6 @@ struct RemoteModelConfig {
 
     // Load JSON object fields directly
     inference_params = json.get("inference_params", inference_params);
-    transform_req = json.get("transform_req", transform_req);
-    transform_resp = json.get("transform_resp", transform_resp);
-    metadata = json.get("metadata", metadata);
   }
 
   Json::Value ToJson() const {
@@ -56,7 +47,6 @@ struct RemoteModelConfig {
 
     // Add basic string fields
     json["model"] = model;
-    json["header_template"] = header_template;
     json["engine"] = engine;
     json["version"] = version;
     json["created"] = static_cast<Json::UInt64>(created);
@@ -65,9 +55,6 @@ struct RemoteModelConfig {
 
     // Add JSON object fields directly
     json["inference_params"] = inference_params;
-    json["transform_req"] = transform_req;
-    json["transform_resp"] = transform_resp;
-    json["metadata"] = metadata;
 
     return json;
   };
@@ -77,7 +64,6 @@ struct RemoteModelConfig {
 
     // Convert basic fields
     root["model"] = model;
-    root["header_template"] = header_template;
     root["engine"] = engine;
     root["version"] = version;
     root["object"] = object;
@@ -87,9 +73,6 @@ struct RemoteModelConfig {
     // Convert Json::Value to YAML::Node using utility function
     root["inference_params"] =
         remote_models_utils::jsonToYaml(inference_params);
-    root["transform_req"] = remote_models_utils::jsonToYaml(transform_req);
-    root["transform_resp"] = remote_models_utils::jsonToYaml(transform_resp);
-    root["metadata"] = remote_models_utils::jsonToYaml(metadata);
 
     // Save to file
     std::ofstream fout(filepath);
@@ -110,7 +93,6 @@ struct RemoteModelConfig {
 
     // Load basic fields
     model = root["model"].as<std::string>("");
-    header_template = root["header_template"].as<std::string>("");
     engine = root["engine"].as<std::string>("");
     version = root["version"] ? root["version"].as<std::string>() : "";
     created = root["created"] ? root["created"].as<std::size_t>() : 0;
@@ -120,9 +102,6 @@ struct RemoteModelConfig {
     // Load complex fields using utility function
     inference_params =
         remote_models_utils::yamlToJson(root["inference_params"]);
-    transform_req = remote_models_utils::yamlToJson(root["transform_req"]);
-    transform_resp = remote_models_utils::yamlToJson(root["transform_resp"]);
-    metadata = remote_models_utils::yamlToJson(root["metadata"]);
   }
 };
 
