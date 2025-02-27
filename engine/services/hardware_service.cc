@@ -52,7 +52,7 @@ HardwareInfo HardwareService::GetHardwareInfo() {
     };
   }
 
-  return HardwareInfo{.cpu = cortex::hw::GetCPUInfo(),
+  return HardwareInfo{.cpu = cpu_info_.GetCPUInfo(),
                       .os = cortex::hw::GetOSInfo(),
                       .ram = cortex::hw::GetMemoryInfo(),
                       .storage = cortex::hw::GetStorageInfo(),
@@ -207,9 +207,6 @@ bool HardwareService::Restart(const std::string& host, int port) {
     if (!TryConnectToServer(host, port)) {
       return false;
     }
-    std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":"
-              << port << std::endl;
   }
 
 #endif
