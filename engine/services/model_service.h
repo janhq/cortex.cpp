@@ -113,6 +113,8 @@ class ModelService {
       int n_ubatch = 2048, const std::string& kv_cache_type = "f16");
 
   void ProcessBgrTasks();
+  
+  int GetCpuThreads() const;
 
   std::shared_ptr<DatabaseService> db_service_;
   std::shared_ptr<HardwareService> hw_service_;

@@ -319,9 +319,16 @@ void HardwareService::UpdateHardwareInfos() {
     }
   }
   CTL_INF("Activated GPUs before: " << debug_b);
+  auto has_nvidia = [&gpus] {
+    for (auto const& g : gpus) {
+      if (g.vendor == cortex::hw::kNvidiaStr) {
+        return true;
+      }
+    }
+    return false;
+  }();
+
   for (auto const& gpu : gpus) {
-    // ignore error
-    // Note: only support NVIDIA for now, so hardware_id = software_id
     if (db_service_->HasHardwareEntry(gpu.uuid)) {
       auto res = db_service_->UpdateHardwareEntry(gpu.uuid, std::stoi(gpu.id),
                                                   std::stoi(gpu.id));
@@ -329,12 +336,22 @@ void HardwareService::UpdateHardwareInfos() {
         CTL_WRN(res.error());
       }
     } else {
+      // iGPU should be deactivated by default
+      // Only activate Nvidia GPUs if both AMD and Nvidia GPUs exists
+      auto activated = [&gpu, &gpus, has_nvidia] {
+        if (gpu.gpu_type != cortex::hw::GpuType::kGpuTypeDiscrete)
+          return false;
+        if (has_nvidia && gpu.vendor != cortex::hw::kNvidiaStr)
+          return false;
+        return true;
+      };
+
       auto res = db_service_->AddHardwareEntry(
           HwEntry{.uuid = gpu.uuid,
                   .type = "gpu",
                   .hardware_id = std::stoi(gpu.id),
                   .software_id = std::stoi(gpu.id),
-                  .activated = true,
+                  .activated = activated(),
                   .priority = INT_MAX});
       if (res.has_error()) {
         CTL_WRN(res.error());
