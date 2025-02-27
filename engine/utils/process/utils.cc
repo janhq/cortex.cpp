@@ -83,8 +83,10 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
                               OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         if (hStdErr == INVALID_HANDLE_VALUE) {
           if (hStdOut != NULL)
-            CloseHandle(hStdout) throw std::runtime_error(
-                "Unable to create " + stderr_file + " to redirect stderr");
+            CloseHandle(hStdOut);
+
+          throw std::runtime_error("Unable to create " + stderr_file +
+                                   " to redirect stderr");
         }
 
         si.hStdError = hStdErr;
@@ -121,7 +123,7 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
     // https://devblogs.microsoft.com/oldnewthing/20131209-00/?p=2433
     // resume thread after job object assignment to make sure child processes
     // will be spawned in the same job object.
-    HANDLE hJob = CreateJobObjectA(NULL, NULL);
+    hJob = CreateJobObjectA(NULL, NULL);
     std::string err_msg;
     bool success = false;
     if (!AssignProcessToJobObject(hJob, pi.hProcess)) {
@@ -138,6 +140,10 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
       CloseHandle(pi.hProcess);
       CloseHandle(pi.hThread);
       CloseHandle(hJob);
+      if (hStdOut != NULL)
+        CloseHandle(hStdOut);
+      if (hStdErr != NULL)
+        CloseHandle(hStdErr);
       throw std::runtime_error(err_msg);
     }
 
