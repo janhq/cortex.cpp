@@ -432,9 +432,10 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   }
 
   auto author = hub_author;
+  auto model_author = hu::GetModelAuthorCortexsoHub(model_name);
   if (auto model_author = hu::GetModelAuthorCortexsoHub(model_name);
-      model_author.has_value() && !model_author->empty()) {
-    author = *model_author;
+      model_author.has_value() && !model_author.value().empty()) {
+    author = model_author.value();
   }
 
   // Get models from db
@@ -443,6 +444,10 @@ cpp::result<bool, std::string> ModelSourceService::AddCortexsoRepo(
   std::unordered_set<std::string> updated_model_list;
   std::vector<std::future<std::string>> tasks;
   for (auto const& [branch, _] : branches.value()) {
+    if (!model_author.has_error() && branch == "main") {
+      CTL_DBG("Skip main branch");
+      continue;
+    }
     CTL_DBG(branch);
     tasks.push_back(std::async(std::launch::async, [&, branch = branch] {
       return AddCortexsoRepoBranch(model_source, author, model_name, branch,
