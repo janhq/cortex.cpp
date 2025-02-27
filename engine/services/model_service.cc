@@ -143,6 +143,21 @@ cpp::result<DownloadTask, std::string> GetDownloadTask(
 }
 }  // namespace
 
+ModelService::ModelService(std::shared_ptr<DatabaseService> db_service,
+                           std::shared_ptr<HardwareService> hw_service,
+                           std::shared_ptr<DownloadService> download_service,
+                           std::shared_ptr<InferenceService> inference_service,
+                           std::shared_ptr<EngineServiceI> engine_svc,
+                           cortex::TaskQueue& task_queue)
+    : db_service_(db_service),
+      hw_service_(hw_service),
+      download_service_{download_service},
+      inference_svc_(inference_service),
+      engine_svc_(engine_svc),
+      task_queue_(task_queue) {
+  ProcessBgrTasks();
+};
+
 void ModelService::ForceIndexingModelList() {
   CTL_INF("Force indexing model list");
 
@@ -331,8 +346,17 @@ cpp::result<DownloadTask, std::string> ModelService::HandleDownloadUrlAsync(
   return download_service_->AddTask(downloadTask, on_finished);
 }
 
+std::optional<hardware::Estimation> ModelService::GetEstimation(
+    const std::string& model_handle) {
+  std::lock_guard l(es_mtx_);
+  if (auto it = es_.find(model_handle); it != es_.end()) {
+    return it->second;
+  }
+  return std::nullopt;
+}
+
 cpp::result<std::optional<hardware::Estimation>, std::string>
-ModelService::GetEstimation(const std::string& model_handle,
+ModelService::EstimateModel(const std::string& model_handle,
                             const std::string& kv_cache, int n_batch,
                             int n_ubatch) {
   namespace fs = std::filesystem;
@@ -548,7 +572,7 @@ ModelService::DownloadModelFromCortexsoAsync(
           // Close the file
           pyvenv_cfg.close();
           // Add executable permission to python
-          set_permission_utils::SetExecutePermissionsRecursive(venv_path);
+          (void)set_permission_utils::SetExecutePermissionsRecursive(venv_path);
         } else {
           CTL_ERR("Failed to extract venv.zip");
         };
@@ -828,7 +852,7 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
             CTL_WRN("Error: " + res.error());
             for (auto& depend : depends) {
               if (depend != model_handle) {
-                StopModel(depend);
+                auto sr = StopModel(depend);
               }
             }
             return cpp::fail("Model failed to start dependency '" + depend +
@@ -1390,4 +1414,28 @@ std::string ModelService::GetEngineByModelId(
   auto mc = yaml_handler.GetModelConfig();
   CTL_DBG(mc.engine);
   return mc.engine;
+}
+
+void ModelService::ProcessBgrTasks() {
+  CTL_INF("Start processing background tasks")
+  auto cb = [this] {
+    CTL_DBG("Estimate model resource usage");
+    auto list_entry = db_service_->LoadModelList();
+    if (list_entry) {
+      for (const auto& model_entry : list_entry.value()) {
+        // Only process local models
+        if (model_entry.status == cortex::db::ModelStatus::Downloaded) {
+          auto es = EstimateModel(model_entry.model);
+          if (es.has_value()) {
+            std::lock_guard l(es_mtx_);
+            es_[model_entry.model] = es.value();
+          }
+        }
+      }
+    }
+  };
+
+  auto clone = cb;
+  task_queue_.RunInQueue(std::move(cb));
+  task_queue_.RunEvery(std::chrono::seconds(10), std::move(clone));
 }

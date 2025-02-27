@@ -207,9 +207,6 @@ bool HardwareService::Restart(const std::string& host, int port) {
     if (!TryConnectToServer(host, port)) {
       return false;
     }
-    std::cout << "Server started" << std::endl;
-    std::cout << "API Documentation available at: http://" << host << ":"
-              << port << std::endl;
   }
 
 #endif
@@ -348,6 +345,7 @@ void HardwareService::UpdateHardwareInfos() {
           return false;
         return true;
       };
+
       auto res = db_service_->AddHardwareEntry(
           HwEntry{.uuid = gpu.uuid,
                   .type = "gpu",
