@@ -25,7 +25,7 @@ inline void PrintMenu(
   std::endl(std::cout);
 }
 
-inline std::optional<int> getNumericValue(std::string& sval) {
+inline std::optional<int> GetNumericValue(const std::string& sval) {
   try {
       return std::stoi(sval);
   } catch (const std::invalid_argument&) {
@@ -78,7 +78,7 @@ inline std::optional<std::string> PrintModelSelection(
   }
 
   // deal with out of range numeric values
-  std::optional<int> numeric_value = getNumericValue(selection);
+  std::optional<int> numeric_value = GetNumericValue(selection);
   
   if (!numeric_value.has_value() || numeric_value.value() > availables.size() || numeric_value.value() < 1) {
     return std::nullopt;
@@ -106,7 +106,7 @@ inline std::optional<std::string> PrintSelection(
   }
   
   // deal with out of range numeric values
-  std::optional<int> numeric_value = getNumericValue(selection);
+  std::optional<int> numeric_value = GetNumericValue(selection);
   if (!numeric_value.has_value() || numeric_value.value() > options.size() || numeric_value.value() < 1) {
     return std::nullopt;
   }
