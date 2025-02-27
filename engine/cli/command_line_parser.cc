@@ -437,7 +437,7 @@ void CommandLineParser::SetupConfigsCommands() {
 
     auto is_empty = true;
     for (const auto& [key, value] : config_update_opts_) {
-      if (!value.empty()) {
+      if (!value.empty() || CONFIGURATIONS.at(key).allow_empty) {
         is_empty = false;
         break;
       }
@@ -657,6 +657,7 @@ void CommandLineParser::SetupSystemCommands() {
   auto start_cmd = app_.add_subcommand("start", "Start the API server");
   start_cmd->group(kSystemGroup);
   cml_data_.port = std::stoi(cml_data_.config.apiServerPort);
+  start_cmd->add_option("--host", cml_data_.server_host, "Server host");
   start_cmd->add_option("-p, --port", cml_data_.port, "Server port to listen");
   start_cmd->add_option("--loglevel", cml_data_.log_level,
                         "Set up log level for server, accepted TRACE, DEBUG, "
@@ -671,10 +672,16 @@ void CommandLineParser::SetupSystemCommands() {
   start_cmd->callback([this] {
     if (std::exchange(executed_, true))
       return;
-    if (cml_data_.port != stoi(cml_data_.config.apiServerPort)) {
-      CTL_INF("apiServerPort changed from " << cml_data_.config.apiServerPort
-                                            << " to " << cml_data_.port);
+    if (cml_data_.port != stoi(cml_data_.config.apiServerPort) ||
+        (!cml_data_.server_host.empty() &&
+         cml_data_.server_host != cml_data_.config.apiServerHost)) {
+      CTL_INF("API server host:port changed from "
+              << cml_data_.config.apiServerHost << ":"
+              << cml_data_.config.apiServerPort << " to "
+              << cml_data_.server_host << ":" << cml_data_.port);
       auto config_path = file_manager_utils::GetConfigurationPath();
+      if (!cml_data_.server_host.empty())
+        cml_data_.config.apiServerHost = cml_data_.server_host;
       cml_data_.config.apiServerPort = std::to_string(cml_data_.port);
       auto result =
           config_yaml_utils::CortexConfigMgr::GetInstance().DumpYamlConfig(
