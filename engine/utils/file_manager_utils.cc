@@ -79,7 +79,7 @@ std::filesystem::path GetHomeDirectoryPath() {
 }
 
 // Helper function to get XDG base directory, falling back to default if not set
-std::filesystem::path GetXDGDirectory(const std::string& envVar,
+std::filesystem::path GetXDGDirectoryPath(const std::string& envVar,
                                       const std::string& defaultPath) {
   if (const char* envValue = std::getenv(envVar.c_str());
       envValue && std::strlen(envValue) > 0) {
@@ -125,7 +125,7 @@ std::filesystem::path GetConfigurationPath() {
   // CTL_INF("Config file name: " + config_file_name);
 #if defined(__linux__)
   auto config_base_path =
-      GetXDGDirectory("XDG_CONFIG_HOME", ".config") / kCortexFolderName;
+      GetXDGDirectoryPath("XDG_CONFIG_HOME", ".config") / kCortexFolderName;
   auto configuration_path = config_base_path / config_file_name;
 #else
   auto home_path = GetHomeDirectoryPath();
@@ -168,7 +168,7 @@ config_yaml_utils::CortexConfig GetDefaultConfig() {
 #if defined(__linux__)
   auto default_data_folder_path =
       cortex_data_folder_path.empty()
-          ? file_manager_utils::GetXDGDirectory("XDG_DATA_HOME",
+          ? file_manager_utils::GetXDGDirectoryPath("XDG_DATA_HOME",
                                                 ".local/share") /
                 default_data_folder_name
           : std::filesystem::path(cortex_data_folder_path);
@@ -265,7 +265,7 @@ std::filesystem::path GetCortexDataPath() {
 #endif
   } else {
 #if defined(__linux__)
-    auto data_base_path = GetXDGDirectory("XDG_DATA_HOME", ".local/share");
+    auto data_base_path = GetXDGDirectoryPath("XDG_DATA_HOME", ".local/share");
     data_folder_path = data_base_path / GetDefaultDataFolderName();
 #else
     auto home_path = GetHomeDirectoryPath();
@@ -293,7 +293,7 @@ std::filesystem::path GetCortexLogPath() {
     log_folder_path = std::filesystem::path(config.logFolderPath);
   } else {
 #if defined(__linux__)
-    auto data_base_path = GetXDGDirectory("XDG_DATA_HOME", ".local/share");
+    auto data_base_path = GetXDGDirectoryPath("XDG_DATA_HOME", ".local/share");
     log_folder_path = data_base_path / GetDefaultDataFolderName() / "logs";
 #else
     auto home_path = GetHomeDirectoryPath();
