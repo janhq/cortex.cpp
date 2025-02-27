@@ -106,7 +106,7 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
                         command_buffer,    // lpCommandLine
                         NULL,              // lpProcessAttributes
                         NULL,              // lpThreadAttributes
-                        FALSE,             // bInheritHandles
+                        TRUE,              // bInheritHandles
                         CREATE_SUSPENDED,  // dwCreationFlags
                         NULL,              // lpEnvironment
                         NULL,              // lpCurrentDirectory
@@ -282,7 +282,7 @@ bool WaitProcess(ProcessInfo& proc_info) {
     return true;
 
 #if defined(_WIN32)
-  HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, proc_info.pid);
+  HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, proc_info.pid);
   bool success = WaitForSingleObject(hProcess, INFINITE) == WAIT_OBJECT_0;
   CloseHandle(hProcess);
   if (success) {
