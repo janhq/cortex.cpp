@@ -34,11 +34,11 @@ class TestCliEngineInstall:
     def test_engines_install_python_should_be_successfully(self):
         exit_code, output, error = run(
             "Install Engine",
-            ["engines", "install", "python"],
+            ["engines", "install", "python-engine"],
             timeout=None,
             capture=False,
         )
-        response = requests.get("http://127.0.0.1:3928/v1/engines/python")
+        response = requests.get("http://127.0.0.1:3928/v1/engines/python-engine")
         assert len(response.json()) > 0
         assert exit_code == 0, f"Install engine failed with error: {error}"
 
