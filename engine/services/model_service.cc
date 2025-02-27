@@ -369,10 +369,6 @@ ModelService::EstimateModel(const std::string& model_handle,
       CTL_WRN("Error: " + model_entry.error());
       return cpp::fail(model_entry.error());
     }
-    auto file_path = fmu::ToAbsoluteCortexDataPath(
-                         fs::path(model_entry.value().path_to_model_yaml))
-                         .parent_path() /
-                     "model.gguf";
     yaml_handler.ModelConfigFromFile(
         fmu::ToAbsoluteCortexDataPath(
             fs::path(model_entry.value().path_to_model_yaml))
@@ -389,13 +385,14 @@ ModelService::EstimateModel(const std::string& model_handle,
     free_vram_MiB = hw_info.ram.available_MiB;
 #endif
 
-    return hardware::EstimateLLaMACppRun(file_path.string(),
-                                         {.ngl = mc.ngl,
-                                          .ctx_len = mc.ctx_len,
-                                          .n_batch = n_batch,
-                                          .n_ubatch = n_ubatch,
-                                          .kv_cache_type = kv_cache,
-                                          .free_vram_MiB = free_vram_MiB});
+    return hardware::EstimateLLaMACppRun(
+        fmu::ToAbsoluteCortexDataPath(fs::path(mc.files[0])).string(),
+        {.ngl = mc.ngl,
+         .ctx_len = mc.ctx_len,
+         .n_batch = n_batch,
+         .n_ubatch = n_ubatch,
+         .kv_cache_type = kv_cache,
+         .free_vram_MiB = free_vram_MiB});
   } catch (const std::exception& e) {
     return cpp::fail("Fail to get model status with ID '" + model_handle +
                      "': " + e.what());
@@ -1437,5 +1434,5 @@ void ModelService::ProcessBgrTasks() {
 
   auto clone = cb;
   task_queue_.RunInQueue(std::move(cb));
-  task_queue_.RunEvery(std::chrono::seconds(10), std::move(clone));
+  task_queue_.RunEvery(std::chrono::seconds(60), std::move(clone));
 }
