@@ -40,8 +40,7 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 }
 
 pid_t SpawnProcess(const std::vector<std::string>& command,
-                   const std::string stdout_file,
-                   const std::string stderr_file,
+                   const std::string stdout_file, const std::string stderr_file,
                    bool wait) {
   try {
 #if defined(_WIN32)
@@ -102,17 +101,25 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
 
       if (!stdout_file.empty()) {
         if (std::filesystem::exists(stdout_file)) {
-          posix_spawn_file_actions_addopen(&action, STDOUT_FILENO,
-                                           stdout_file.data(),
-                                           O_WRONLY | O_APPEND, 0);
+          int rc = posix_spawn_file_actions_addopen(&action, STDOUT_FILENO,
+                                                    stdout_file.data(),
+                                                    O_WRONLY | O_APPEND, 0);
+          if (rc != 0) {
+            posix_spawn_file_actions_destroy(action_ptr);
+            throw std::runtime_error("Unable to add stdout to file action");
+          }
         }
       }
 
       if (!stderr_file.empty()) {
         if (std::filesystem::exists(stderr_file)) {
-          posix_spawn_file_actions_addopen(&action, STDERR_FILENO,
-                                           stderr_file.data(),
-                                           O_WRONLY | O_APPEND, 0);
+          int rc = posix_spawn_file_actions_addopen(&action, STDERR_FILENO,
+                                                    stderr_file.data(),
+                                                    O_WRONLY | O_APPEND, 0);
+          if (rc != 0) {
+            posix_spawn_file_actions_destroy(action_ptr);
+            throw std::runtime_error("Unable to add stderr to file action");
+          }
         }
       }
     }
@@ -128,7 +135,9 @@ pid_t SpawnProcess(const std::vector<std::string>& command,
 
     // NOTE: it seems like it's ok to destroy this immediately before
     // subprocess terminates.
-    posix_spawn_file_actions_destroy(action_ptr);
+    if (action_ptr != NULL) {
+      posix_spawn_file_actions_destroy(action_ptr);
+    }
 
     if (spawn_result != 0) {
       throw std::runtime_error("Failed to spawn process");
