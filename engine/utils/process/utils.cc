@@ -52,30 +52,52 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
     char command_buffer[4096];
     strncpy_s(command_buffer, cmd_line.c_str(), sizeof(command_buffer));
 
-    if (!CreateProcessA(NULL,            // lpApplicationName
-                        command_buffer,  // lpCommandLine
-                        NULL,            // lpProcessAttributes
-                        NULL,            // lpThreadAttributes
-                        FALSE,           // bInheritHandles
-                        0,               // dwCreationFlags
-                        NULL,            // lpEnvironment
-                        NULL,            // lpCurrentDirectory
-                        &si,             // lpStartupInfo
-                        &pi              // lpProcessInformation
+    // create a suspended process. we will resume it later after adding it to
+    // a job (see below)
+    if (!CreateProcessA(NULL,              // lpApplicationName
+                        command_buffer,    // lpCommandLine
+                        NULL,              // lpProcessAttributes
+                        NULL,              // lpThreadAttributes
+                        FALSE,             // bInheritHandles
+                        CREATE_SUSPENDED,  // dwCreationFlags
+                        NULL,              // lpEnvironment
+                        NULL,              // lpCurrentDirectory
+                        &si,               // lpStartupInfo
+                        &pi                // lpProcessInformation
                         )) {
       throw std::runtime_error("Failed to create process on Windows");
     }
 
-    // Store the process ID
-    // pid_t pid = pi.dwProcessId;
+    // https://devblogs.microsoft.com/oldnewthing/20131209-00/?p=2433
+    // resume thread after job object assignment to make sure child processes
+    // will be spawned in the same job object.
+    HANDLE hJob = CreateJobObjectA(NULL, NULL);
+    std::string err_msg;
+    bool success = false;
+    if (!AssignProcessToJobObject(hJob, pi.hProcess)) {
+      err_msg = "Unable to assign process to job object";
+    } else if (ResumeThread(pi.hThread) == (DWORD)(-1)) {
+      err_msg = "Unable to resume thread";
+    } else {
+      success = true;
+    }
+
+    // clean up if not successful
+    if (!success) {
+      TerminateProcess(pi.hProcess, 0);
+      CloseHandle(pi.hProcess);
+      CloseHandle(pi.hThread);
+      CloseHandle(hJob);
+      throw std::runtime_error(err_msg);
+    }
 
     // Close handles to avoid resource leaks
-    // CloseHandle(pi.hProcess);
+    CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
 
     ProcessInfo proc_info;
     proc_info.pid = pi.dwProcessId;
-    proc_info.hProcess = pi.hProcess;
+    proc_info.hJob = hJob;
 
     return proc_info;
 
@@ -155,15 +177,22 @@ bool IsProcessAlive(const ProcessInfo& proc_info) {
 
 bool KillProcess(ProcessInfo& proc_info) {
 #if defined(_WIN32)
-  HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, proc_info.pid);
-  if (hProcess == NULL) {
-    LOG_ERROR << "Failed to open process";
-    return false;
+  BOOL rc = TerminateJobObject(proc_info.hJob, 0);
+  if (rc == 0) {
+    CloseHandle(proc_info.hJob);
+    proc_info.hJob = NULL;
+    return true;
   }
+  return false;
+  // HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, proc_info.pid);
+  // if (hProcess == NULL) {
+  //   LOG_ERROR << "Failed to open process";
+  //   return false;
+  // }
 
-  bool is_success = TerminateProcess(hProcess, 0) == TRUE;
-  CloseHandle(hProcess);
-  return is_success;
+  // bool is_success = TerminateProcess(hProcess, 0) == TRUE;
+  // CloseHandle(hProcess);
+  // return is_success;
 #elif defined(__APPLE__) || defined(__linux__)
   return kill(proc_info.pid, SIGTERM) == 0;
 #else

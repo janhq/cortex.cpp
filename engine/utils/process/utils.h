@@ -21,9 +21,8 @@ namespace cortex::process {
 struct ProcessInfo {
   pid_t pid;
 #ifdef _WIN32
-  // hProcess is used to check if process is alive.
   // hJob is used to terminate process and its children.
-  HANDLE hProcess, hJob;
+  HANDLE hJob;
 #endif
 };
 
