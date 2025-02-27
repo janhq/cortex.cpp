@@ -72,9 +72,17 @@ cpp::result<void, std::string> DownloadUv(
     command.push_back("install");
     command.push_back("3.10");
 
-    const pid_t pid = cortex::process::SpawnProcess(command, "", "", true);
-    if (pid == -1)
-      return cpp::fail("Fail to spawn process");
+    // NOTE: errors in download callback won't be propagated to caller
+    auto result = cortex::process::SpawnProcess(command);
+    if (result.has_error()) {
+      CTL_ERR(result.error());
+      return;
+    }
+
+    if (!cortex::process::WaitProcess(result.value())) {
+      CTL_ERR("Process spawned but fail to wait");
+      return;
+    }
   };
 
   auto downloadTask = DownloadTask{.id = "python-uv",
@@ -95,8 +103,8 @@ cpp::result<void, std::string> DownloadUv(
 std::string GetUvPath() {
   auto system_info = system_info_utils::GetSystemInfo();
   const auto bin_name = system_info->os == kWindowsOs ? "uv.exe" : "uv";
-  const auto path =
-      file_manager_utils::GetCortexDataPath() / "python_engine" / "bin" / bin_name;
+  const auto path = file_manager_utils::GetCortexDataPath() / "python_engine" /
+                    "bin" / bin_name;
   return path.string();
 }
 
@@ -139,18 +147,22 @@ cpp::result<void, std::string> UvDownloadDeps(
     command.push_back(py_cfg.entrypoint[0]);
   }
 
-  const pid_t pid = cortex::process::SpawnProcess(command, "", "", true);
-  if (pid == -1)
-    return cpp::fail("Fail to install dependencies");
+  auto result = cortex::process::SpawnProcess(command);
+  if (result.has_error())
+    return cpp::fail("Fail to install Python dependencies. " + result.error());
+
+  if (!cortex::process::WaitProcess(result.value())) {
+    return cpp::fail("Fail to install Python dependencies.");
+  }
 
   return {};
 }
 
 bool PythonEngine::PythonSubprocess::IsAlive() {
-  return cortex::process::IsProcessAlive(pid);
+  return cortex::process::IsProcessAlive(proc_info);
 }
 bool PythonEngine::PythonSubprocess::Kill() {
-  return cortex::process::KillProcess(pid);
+  return cortex::process::KillProcess(proc_info);
 }
 
 PythonEngine::PythonEngine() {}
@@ -238,15 +250,22 @@ void PythonEngine::LoadModel(
 
     // NOTE: process may start, but exits/crashes later
     // TODO: wait for a few seconds, then check if process is alive
-    pid = cortex::process::SpawnProcess(command, stdout_path, stderr_path);
-    if (pid == -1) {
-      throw std::runtime_error("Fail to spawn process with pid -1");
+    auto result =
+        cortex::process::SpawnProcess(command, stdout_path, stderr_path);
+    if (result.has_error()) {
+      throw std::runtime_error(result.error());
     }
-    const uint64_t start_time =
-        std::chrono::system_clock::now().time_since_epoch() /
-        std::chrono::milliseconds(1);
+
+    PythonSubprocess py_proc;
+    py_proc.proc_info = result.value();
+    py_proc.port = py_cfg.port;
+    py_proc.start_time = std::chrono::system_clock::now().time_since_epoch() /
+                         std::chrono::milliseconds(1);
+
+    pid = py_proc.proc_info.pid;
+
     std::unique_lock write_lock(mutex);
-    model_process_map[model] = {pid, py_cfg.port, start_time};
+    model_process_map[model] = py_proc;
 
   } catch (const std::exception& e) {
     auto e_msg = e.what();

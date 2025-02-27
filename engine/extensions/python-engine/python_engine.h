@@ -26,7 +26,7 @@ cpp::result<void, std::string> UvDownloadDeps(
 class PythonEngine : public PythonEngineI {
  private:
   struct PythonSubprocess {
-    pid_t pid;
+    cortex::process::ProcessInfo proc_info;
     int port;
     uint64_t start_time;
 
