@@ -286,16 +286,18 @@ void PythonEngine::LoadModel(
 
     // Add the parsed arguments to the command
     command.insert(command.end(), args.begin(), args.end());
-    pid = cortex::process::SpawnProcess(command);
-    process_map_[model] = pid;
-    if (pid == -1) {
+    auto result = cortex::process::SpawnProcess(command);
+
+    if (result.has_error()) {
+      CTL_ERR("Fail to spawn process. " << result.error());
+
       std::unique_lock lock(models_mutex_);
       if (models_.find(model) != models_.end()) {
         models_.erase(model);
       }
 
       Json::Value error;
-      error["error"] = "Fail to spawn process with pid -1";
+      error["error"] = "Fail to spawn process";
       Json::Value status;
       status["is_done"] = true;
       status["has_error"] = true;
@@ -304,6 +306,9 @@ void PythonEngine::LoadModel(
       callback(std::move(status), std::move(error));
       return;
     }
+
+    pid = result.value().pid;
+    process_map_[model] = result.value();
   } catch (const std::exception& e) {
     std::unique_lock lock(models_mutex_);
     if (models_.find(model) != models_.end()) {
@@ -356,7 +361,7 @@ void PythonEngine::UnloadModel(
     } else {
       Json::Value error;
       error["error"] = "Fail to terminate process with id: " +
-                       std::to_string(process_map_[model]);
+                       std::to_string(process_map_[model].pid);
       Json::Value status;
       status["is_done"] = true;
       status["has_error"] = true;

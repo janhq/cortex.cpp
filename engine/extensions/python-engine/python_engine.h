@@ -39,7 +39,7 @@ class PythonEngine : public EngineI {
   std::unordered_map<std::string, config::PythonModelConfig> models_;
   extensions::TemplateRenderer renderer_;
   std::unique_ptr<trantor::FileLogger> async_file_logger_;
-  std::unordered_map<std::string, pid_t> process_map_;
+  std::unordered_map<std::string, cortex::process::ProcessInfo> process_map_;
   trantor::ConcurrentTaskQueue q_;
 
   // Helper functions
