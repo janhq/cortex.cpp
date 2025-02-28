@@ -10,6 +10,7 @@
 #include "utils/logging_utils.h"
 #include "utils/result.hpp"
 #include "utils/string_utils.h"
+#include "engine_constants.h"
 
 namespace engine_matcher_utils {
 /**
