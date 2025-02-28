@@ -227,6 +227,19 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
     const std::string& engine, const std::string& version,
     const std::optional<std::string> variant_name) {
 
+  if (engine == kLlamaRepo) {
+    return DownloadLlamaCpp(version, variant_name);
+  } else if (engine == kPythonEngine) {
+    // ignore version and variant_name
+    return python_engine::DownloadUv(download_service_);
+  }
+  return cpp::fail("Unknown engine " + engine);
+}
+
+cpp::result<void, std::string> EngineService::DownloadLlamaCpp(
+    const std::string& version, const std::optional<std::string> variant_name) {
+
+  const std::string engine = kLlamaRepo;
   auto normalized_version = version == "latest"
                                 ? "latest"
                                 : string_utils::RemoveSubstring(version, "v");
@@ -364,8 +377,8 @@ cpp::result<void, std::string> EngineService::DownloadEngine(
 
 cpp::result<bool, std::string> EngineService::DownloadCuda(
     const std::string& engine, bool async) {
-  if (hw_inf_.sys_inf->os == "mac") {
-    // mac does not require cuda toolkit
+  if (hw_inf_.sys_inf->os == "mac" || engine == kPythonEngine) {
+    // mac and Python engine do not require cuda toolkit
     return true;
   }
 
@@ -870,6 +883,8 @@ cpp::result<void, std::string> EngineService::UnloadEngine(
     auto unload_opts = EngineI::EngineUnloadOption{};
     e->Unload(unload_opts);
     delete e;
+  } else if (std::holds_alternative<PythonEngineI*>(engines_[ne].engine)) {
+    delete std::get<PythonEngineI*>(engines_[ne].engine);
   } else {
     delete std::get<RemoteEngineI*>(engines_[ne].engine);
   }
@@ -911,9 +926,13 @@ cpp::result<bool, std::string> EngineService::IsEngineReady(
     return true;
   }
 
-  // End hard code
   // Check for python engine
   if (engine == kPythonEngine) {
+    if (!python_engine::IsUvInstalled()) {
+      return cpp::fail(
+          "Python engine is not ready. Please run `cortex engines install "
+          "python`");
+    }
     return true;
   }
 

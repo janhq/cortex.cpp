@@ -119,10 +119,10 @@ bool ServerStartCmd::Exec(const std::string& host, int port,
   commands.push_back(get_data_folder_path());
   commands.push_back("--loglevel");
   commands.push_back(log_level_);
-  auto pid = cortex::process::SpawnProcess(commands);
-  if (pid < 0) {
+  auto result = cortex::process::SpawnProcess(commands);
+  if (result.has_error()) {
     // Fork failed
-    std::cerr << "Could not start server: " << std::endl;
+    std::cerr << "Could not start server: " << result.error() << std::endl;
     return false;
   } else {
     // Parent process

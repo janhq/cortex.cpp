@@ -48,6 +48,8 @@ class InferenceService {
   cpp::result<void, InferResult> HandleRouteRequest(
       std::shared_ptr<SyncQueue> q, std::shared_ptr<Json::Value> json_body);
 
+  cpp::result<int, std::string> GetPythonPort(const std::string& model);
+
   InferResult LoadModel(std::shared_ptr<Json::Value> json_body);
 
   InferResult UnloadModel(const std::string& engine,
