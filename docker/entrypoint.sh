@@ -2,8 +2,8 @@
 
 # Install cortex.llamacpp engine
 
-echo "apiServerHost: 0.0.0.0" > /root/.cortexrc
-echo "enableCors: true" >> /root/.cortexrc
+echo "apiServerHost: 0.0.0.0" > /root/.config/cortexcpp/.cortexrc
+echo "enableCors: true" >> /root/.config/cortexcpp/.cortexrc
 
 # Start the cortex server
 cortex start
@@ -15,6 +15,6 @@ cortex engines list
 
 
 # Keep the container running by tailing the log files
-tail -f /root/cortexcpp/logs/cortex.log &
-tail -f /root/cortexcpp/logs/cortex-cli.log &
+tail -f /root/.local/share/cortexcpp/logs/cortex.log &
+tail -f /root/.local/share/cortexcpp/logs/cortex-cli.log &
 wait
