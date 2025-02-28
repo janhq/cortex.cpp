@@ -233,10 +233,30 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
   }
 }
 
-bool IsProcessAlive(const ProcessInfo& proc_info) {
-  if (proc_info.pid == PID_TERMINATED) {
-    return false;
+static void SetProcessTerminated(ProcessInfo& proc_info) {
+  if (proc_info.pid == PID_TERMINATED)
+    return;
+
+  proc_info.pid = PID_TERMINATED;
+
+  // close handles on Windows
+#if defined(_WIN32)
+  CloseHandle(proc_info.hJob);
+  proc_info.hJob = NULL;
+  if (proc_info.hStdOut != NULL) {
+    CloseHandle(proc_info.hStdOut);
+    proc_info.hStdOut = NULL;
   }
+  if (proc_info.hStdErr != NULL) {
+    CloseHandle(proc_info.hStdErr);
+    proc_info.hStdErr = NULL;
+  }
+#endif
+}
+
+bool IsProcessAlive(ProcessInfo& proc_info) {
+  if (proc_info.pid == PID_TERMINATED)
+    return false;
 
 #ifdef _WIN32
   // Windows implementation
@@ -257,21 +277,33 @@ bool IsProcessAlive(const ProcessInfo& proc_info) {
     } while (Process32Next(snapshot, &processEntry));
   }
 
+  // pid not found in snapshot -> process has terminated.
   CloseHandle(snapshot);
+  SetProcessTerminated(proc_info);
   return false;
 
 #elif defined(__APPLE__) || defined(__linux__)
   // Unix-like systems (Linux and macOS) implementation
 
+  // NOTE: this approach only works if the process has been reaped.
+  // if the process has terminated but not reaped (exit status is still
+  // stored in the process table), kill(pid, 0) still returns 0.
+
   // Try to send signal 0 to the process
   // This doesn't actually send a signal but checks if we can send signals to the process
-  int result = kill(proc_info.pid, 0);
+  // Process exists and we have permission to send it signals
+  // if (kill(proc_info.pid, 0) == 0) {
+  //   return true;
+  // }
 
-  if (result == 0) {
-    return true;  // Process exists and we have permission to send it signals
-  }
+  // // process exists but we don't have permission to send signal
+  // if (errno == EPERM)
+  //   return true;
 
-  return errno != ESRCH;  // ESRCH means "no such process"
+  if (waitpid(proc_info.pid, NULL, WNOHANG) == 0)
+    return true;
+  SetProcessTerminated(proc_info);
+  return false;
 #else
 #error "Unsupported platform"
 #endif
@@ -281,59 +313,45 @@ bool WaitProcess(ProcessInfo& proc_info) {
   if (proc_info.pid == PID_TERMINATED)
     return true;
 
+  bool success;
+
 #if defined(_WIN32)
+  // NOTE: OpenProcess() may fail if the process has terminated.
   HANDLE hProcess = OpenProcess(SYNCHRONIZE, FALSE, proc_info.pid);
-  bool success = WaitForSingleObject(hProcess, INFINITE) == WAIT_OBJECT_0;
+  success = WaitForSingleObject(hProcess, INFINITE) == WAIT_OBJECT_0;
   CloseHandle(hProcess);
-  if (success) {
-    proc_info.pid = PID_TERMINATED;
-    CloseHandle(proc_info.hJob);
-    proc_info.hJob = NULL;
-  }
-  return success;
 #elif defined(__APPLE__) || defined(__linux__)
-  bool success = waitpid(proc_info.pid, NULL, 0) == proc_info.pid;
-  if (success) {
-    proc_info.pid = PID_TERMINATED;
-  }
-  return success;
+  // NOTE: waitpid() may fail if the process has terminated and the OS
+  // has reaped it (i.e. clear its exit status).
+  success = waitpid(proc_info.pid, NULL, 0) == proc_info.pid;
 #else
 #error "Unsupported platform"
 #endif
+
+  if (success)
+    SetProcessTerminated(proc_info);
+  return success;
 }
 
 bool KillProcess(ProcessInfo& proc_info) {
   if (proc_info.pid == PID_TERMINATED)
     return true;
 
+  bool success;
+
 #if defined(_WIN32)
-  bool success = TerminateJobObject(proc_info.hJob, 0) == 0;
-  // clean up resources
-  if (success) {
-    proc_info.pid = PID_TERMINATED;
-    CloseHandle(proc_info.hJob);
-    proc_info.hJob = NULL;
-    if (proc_info.hStdOut != NULL) {
-      CloseHandle(proc_info.hStdOut);
-      proc_info.hStdOut = NULL;
-    }
-    if (proc_info.hStdErr != NULL) {
-      CloseHandle(proc_info.hStdErr);
-      proc_info.hStdErr = NULL;
-    }
-  }
-  return success;
+  success = TerminateJobObject(proc_info.hJob, 0) == 0;
 #elif defined(__APPLE__) || defined(__linux__)
   // we send SIGTERM to subprocess. we trust that this subprocess will
   // propagate SIGTERM correctly to its children processes.
-  bool success = kill(proc_info.pid, SIGTERM) == 0;
-  if (success) {
-    proc_info.pid = PID_TERMINATED;
-  }
-  return success;
+  success = kill(proc_info.pid, SIGTERM) == 0;
 #else
 #error "Unsupported platform"
 #endif
+
+  if (success)
+    SetProcessTerminated(proc_info);
+  return success;
 }
 
 }  // namespace cortex::process

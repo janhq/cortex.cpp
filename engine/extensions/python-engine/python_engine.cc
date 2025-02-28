@@ -213,14 +213,20 @@ void PythonEngine::LoadModel(
   const std::string model = (*json_body)["model"].asString();
   const fs::path model_dir = (*json_body)["model_dir"].asString();
 
-  // TODO: check if model is still alive
   {
-    std::shared_lock read_lock(mutex);
+    std::unique_lock write_lock(mutex);
     if (model_process_map.find(model) != model_process_map.end()) {
-      auto [status, error] =
-          CreateResponse("Model already loaded!", k409Conflict);
-      callback(std::move(status), std::move(error));
-      return;
+      // check if model is still alive
+      if (model_process_map[model].IsAlive()) {
+        auto [status, error] =
+            CreateResponse("Model already loaded!", k409Conflict);
+        callback(std::move(status), std::move(error));
+        return;
+      } else {
+        // if model has exited, try to load model again
+        CTL_WRN("Model " << model << " has exited unexpectedly");
+        model_process_map.erase(model);
+      }
     }
   }
 
@@ -248,8 +254,6 @@ void PythonEngine::LoadModel(
     if (!std::filesystem::exists(stderr_path))
       std::ofstream(stderr_path).flush();
 
-    // NOTE: process may start, but exits/crashes later
-    // TODO: wait for a few seconds, then check if process is alive
     auto result =
         cortex::process::SpawnProcess(command, stdout_path, stderr_path);
     if (result.has_error()) {
@@ -308,13 +312,12 @@ void PythonEngine::UnloadModel(
     std::unique_lock write_lock(mutex);
 
     // check if subprocess is still alive
+    // NOTE: is this step necessary? the subprocess could have terminated
+    // after .IsAlive() and before .Kill() later.
     if (!model_process_map[model].IsAlive()) {
+      model_process_map.erase(model);
       const std::string msg = "Model " + model + " stopped running.";
       auto [status, error] = CreateResponse(msg, k400BadRequest);
-
-      // NOTE: do we need to do any other cleanup for subprocesses?
-      model_process_map.erase(model);
-
       callback(std::move(status), std::move(error));
       return;
     }
@@ -327,7 +330,6 @@ void PythonEngine::UnloadModel(
       return;
     }
 
-    // NOTE: do we need to do any other cleanup for subprocesses?
     model_process_map.erase(model);
   }
 
@@ -366,12 +368,10 @@ void PythonEngine::GetModelStatus(
 
     // check if subprocess is still alive
     if (!model_process_map[model].IsAlive()) {
+      CTL_WRN("Model " << model << " has exited unexpectedly.");
+      model_process_map.erase(model);
       const std::string msg = "Model " + model + " stopped running.";
       auto [status, error] = CreateResponse(msg, k400BadRequest);
-
-      // NOTE: do we need to do any other cleanup for subprocesses?
-      model_process_map.erase(model);
-
       callback(std::move(status), std::move(error));
       return;
     }
@@ -390,9 +390,14 @@ void PythonEngine::GetModels(
 
   Json::Value res, model_list(Json::arrayValue), status;
   {
-    std::shared_lock read_lock(mutex);
-    for (const auto& [model_name, py_proc] : model_process_map) {
-      // TODO: check if py_proc is still alive
+    std::unique_lock write_lock(mutex);
+    for (auto& [model_name, py_proc] : model_process_map) {
+      if (!py_proc.IsAlive()) {
+        CTL_WRN("Model " << model_name << " has exited unexpectedly.");
+        model_process_map.erase(model_name);
+        continue;
+      }
+
       Json::Value val;
       val["id"] = model_name;
       val["engine"] = kPythonEngine;
@@ -433,7 +438,7 @@ cpp::result<int, std::string> PythonEngine::GetPort(const std::string& model) {
   {
     std::unique_lock write_lock(mutex);
     if (!model_process_map[model].IsAlive()) {
-      // NOTE: do we need to do any other cleanup for subprocesses?
+      CTL_WRN("Model " << model << " has exited unexpectedly.");
       model_process_map.erase(model);
       return cpp::fail("Model " + model + " stopped running.");
     }

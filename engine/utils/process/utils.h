@@ -37,7 +37,7 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args);
 cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command,
     const std::string& stdout_file = "", const std::string& stderr_file = "");
-bool IsProcessAlive(const ProcessInfo& proc_info);
+bool IsProcessAlive(ProcessInfo& proc_info);
 bool WaitProcess(ProcessInfo& proc_info);
 bool KillProcess(ProcessInfo& proc_info);
 
