@@ -24,7 +24,7 @@ class TestApiEngineList:
     def test_api_get_list_engines_successfully(self):
         # Data test
         engine= "llama-cpp"
-        name= "linux-amd64-avx-cuda-11-7"
+        name= "linux-amd64-avx"
         version= "v0.1.35-27.10.24"
     
         data = {"version": version, "variant": name}

@@ -2,6 +2,7 @@
 
 # Install cortex.llamacpp engine
 
+mkdir -p /root/.config/cortexcpp
 echo "apiServerHost: 0.0.0.0" > /root/.config/cortexcpp/.cortexrc
 echo "enableCors: true" >> /root/.config/cortexcpp/.cortexrc
 
