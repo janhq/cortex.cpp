@@ -33,8 +33,8 @@ cd vcpkg
 ```bash
 mkdir build
 cd build
-cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_TOOLCHAIN_FILE=../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows-static
-cmake --build . --config Release
+cmake .. -DBUILD_SHARED_LIBS=OFF "-DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake" -DVCPKG_TARGET_TRIPLET=x64-windows-static
+cmake --build . --config Release -j4
 ```
 
 4. Verify that Cortex.cpp is installed correctly by getting help information.

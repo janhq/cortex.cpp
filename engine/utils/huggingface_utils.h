@@ -9,6 +9,7 @@
 #include "utils/json_parser_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
+#include "yaml-cpp/yaml.h"
 
 namespace huggingface_utils {
 
