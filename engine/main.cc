@@ -17,6 +17,7 @@
 #include "controllers/threads.h"
 #include "database/database.h"
 #include "migrations/migration_manager.h"
+#include "openssl/ssl.h"
 #include "repositories/assistant_fs_repository.h"
 #include "repositories/file_fs_repository.h"
 #include "repositories/message_fs_repository.h"
@@ -348,6 +349,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  SSL_library_init();
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   // avoid printing logs to terminal

@@ -1,6 +1,7 @@
 #include <memory>
 #include "command_line_parser.h"
 #include "commands/cortex_upd_cmd.h"
+#include "openssl/ssl.h"
 #include "services/download_service.h"
 #include "utils/archive_utils.h"
 #include "utils/cortex_utils.h"
@@ -88,6 +89,7 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 
+  SSL_library_init();
   curl_global_init(CURL_GLOBAL_DEFAULT);
 
   bool should_install_server = false;
