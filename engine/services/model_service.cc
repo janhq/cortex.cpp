@@ -155,7 +155,7 @@ ModelService::ModelService(std::shared_ptr<DatabaseService> db_service,
       inference_svc_(inference_service),
       engine_svc_(engine_svc),
       task_queue_(task_queue) {
-  ProcessBgrTasks();
+  // ProcessBgrTasks();
 };
 
 void ModelService::ForceIndexingModelList() {

@@ -30,11 +30,16 @@ size_t StreamWriteCallback(char* ptr, size_t size, size_t nmemb,
   Json::Value check_error;
   Json::Reader reader;
   context->chunks += chunk;
-  if (reader.parse(context->chunks, check_error) ||
-      (reader.parse(chunk, check_error) &&
-       chunk.find("error") != std::string::npos)) {
+
+  long http_code = k200OK;
+  if (context->curl) {
+    curl_easy_getinfo(context->curl, CURLINFO_RESPONSE_CODE, &http_code);
+  }
+  if (http_code != k200OK && (reader.parse(context->chunks, check_error) ||
+                              (chunk.find("error") != std::string::npos &&
+                               reader.parse(chunk, check_error)))) {
     CTL_WRN(context->chunks);
-    CTL_WRN(chunk);
+    CTL_WRN("http code: " << http_code << " - " << chunk);
     CTL_INF("Request: " << context->last_request);
     Json::Value status;
     status["is_done"] = true;
@@ -139,7 +144,9 @@ CurlResponse RemoteEngine::MakeStreamingChatCompletionRequest(
       renderer_,
       stream_template,
       true,
-      body};
+      body,
+      "",
+      curl};
 
   curl_easy_setopt(curl, CURLOPT_URL, full_url.c_str());
   curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
