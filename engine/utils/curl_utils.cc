@@ -216,6 +216,8 @@ cpp::result<std::string, std::string> SimpleRequest(
 
   curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.length());
   curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
 
   // Perform the request
   auto res = curl_easy_perform(curl);
