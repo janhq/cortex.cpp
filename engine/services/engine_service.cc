@@ -191,19 +191,25 @@ cpp::result<bool, std::string> EngineService::UninstallEngineVariant(
   }
 
   std::optional<std::filesystem::path> path_to_remove = std::nullopt;
-  if (version == std::nullopt && variant == std::nullopt) {
-    // if no version and variant provided, remove all engines variant of that engine
-    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
-  } else if (version != std::nullopt && variant != std::nullopt) {
-    // if both version and variant are provided, we only remove that variant
-    path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
-                     variant.value() / version.value();
-  } else if (version == std::nullopt) {
-    // if only have variant, we remove all of that variant
-    path_to_remove =
-        file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+
+  // Python engine is stored in a separate folder
+  if (ne == kPythonEngine) {
+    path_to_remove = python_engine::GetPythonEnginePath();
   } else {
-    return cpp::fail("No variant provided");
+    if (version == std::nullopt && variant == std::nullopt) {
+      // if no version and variant provided, remove all engines variant of that engine
+      path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne;
+    } else if (version != std::nullopt && variant != std::nullopt) {
+      // if both version and variant are provided, we only remove that variant
+      path_to_remove = file_manager_utils::GetEnginesContainerPath() / ne /
+                       variant.value() / version.value();
+    } else if (version == std::nullopt) {
+      // if only have variant, we remove all of that variant
+      path_to_remove =
+          file_manager_utils::GetEnginesContainerPath() / ne / variant.value();
+    } else {
+      return cpp::fail("No variant provided");
+    }
   }
 
   if (path_to_remove == std::nullopt) {

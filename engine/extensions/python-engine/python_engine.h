@@ -12,11 +12,12 @@
 
 namespace python_engine {
 
+std::filesystem::path GetPythonEnginePath();
+
 // UV-related functions
 cpp::result<void, std::string> DownloadUv(
     std::shared_ptr<DownloadService>& download_service);
-std::string GetUvPath();
-std::string GetUvCacheDir();
+std::filesystem::path GetUvPath();
 std::vector<std::string> BuildUvCommand(const std::string& action,
                                         const std::string& directory = "");
 bool IsUvInstalled();

@@ -15,6 +15,10 @@ constexpr const int k409Conflict = 409;
 constexpr const int k500InternalServerError = 500;
 }  // namespace
 
+std::filesystem::path GetPythonEnginePath() {
+  return file_manager_utils::GetCortexDataPath() / "python_engine";
+}
+
 cpp::result<void, std::string> DownloadUv(
     std::shared_ptr<DownloadService>& download_service) {
   const auto py_bin_path =
@@ -100,25 +104,18 @@ cpp::result<void, std::string> DownloadUv(
   return {};
 }
 
-std::string GetUvPath() {
+std::filesystem::path GetUvPath() {
   auto system_info = system_info_utils::GetSystemInfo();
   const auto bin_name = system_info->os == kWindowsOs ? "uv.exe" : "uv";
-  const auto path = file_manager_utils::GetCortexDataPath() / "python_engine" /
-                    "bin" / bin_name;
-  return path.string();
-}
-
-// use our own cache dir so that when users delete cortexcpp/, everything is deleted.
-std::string GetUvCacheDir() {
-  const auto path = file_manager_utils::GetCortexDataPath() / "python_engine" /
-                    "cache" / "uv";
-  return path.string();
+  return GetPythonEnginePath() / "bin" / bin_name;
 }
 
 std::vector<std::string> BuildUvCommand(const std::string& action,
                                         const std::string& directory) {
-  std::vector<std::string> command = {GetUvPath(), "--cache-dir",
-                                      GetUvCacheDir()};
+  // use our own cache dir so that when users delete cortexcpp/, everything is deleted.
+  const auto cache_dir = GetPythonEnginePath() / "cache" / "uv";
+  std::vector<std::string> command = {GetUvPath().string(), "--cache-dir",
+                                      cache_dir.string()};
   if (!directory.empty()) {
     command.push_back("--directory");
     command.push_back(directory);
