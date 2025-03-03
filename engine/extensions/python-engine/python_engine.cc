@@ -26,7 +26,7 @@ cpp::result<void, std::string> DownloadUv(
   std::filesystem::create_directories(py_bin_path);
 
   // NOTE: do we need a mechanism to update uv, or just pin uv version with cortex release?
-  const std::string uv_version = "0.6.2";
+  const std::string uv_version = "0.6.3";
 
   // build download url based on system info
   std::stringstream fname_stream;
