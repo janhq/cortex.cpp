@@ -27,6 +27,7 @@ struct StreamContext {
   bool need_stop = true;
   std::string last_request;
   std::string chunks;
+  CURL* curl;
 };
 struct CurlResponse {
   std::string body;
