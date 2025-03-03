@@ -304,7 +304,7 @@ void HardwareService::UpdateHardwareInfos() {
   };
   for (auto const& he : b.value()) {
     if (!exists(he.uuid)) {
-      db_service_->DeleteHardwareEntry(he.uuid);
+      (void)db_service_->DeleteHardwareEntry(he.uuid);
     }
   }
 

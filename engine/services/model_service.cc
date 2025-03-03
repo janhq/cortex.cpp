@@ -947,6 +947,15 @@ cpp::result<StartModelResult, std::string> ModelService::StartModel(
         LOG_WARN << "model_path is empty";
         return StartModelResult{.success = false};
       }
+      if (!mc.mmproj.empty()) {
+#if defined(_WIN32)
+        json_data["mmproj"] = cortex::wc::WstringToUtf8(
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).wstring());
+#else
+        json_data["mmproj"] =
+            fmu::ToAbsoluteCortexDataPath(fs::path(mc.mmproj)).string();
+#endif
+      }
       json_data["system_prompt"] = mc.system_template;
       json_data["user_prompt"] = mc.user_template;
       json_data["ai_prompt"] = mc.ai_template;
