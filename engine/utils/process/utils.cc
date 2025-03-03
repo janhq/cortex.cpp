@@ -1,5 +1,6 @@
 #include "utils/process/utils.h"
 #include <filesystem>
+#include <sstream>
 #include "utils/logging_utils.h"
 
 #if defined(_WIN32)
@@ -42,6 +43,12 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command, const std::string& stdout_file,
     const std::string& stderr_file) {
+  std::stringstream ss;
+  for (const auto item : command) {
+    ss << item << " ";
+  }
+  CTL_INF("Spawning process with command: " << ss.str());
+
   try {
 #if defined(_WIN32)
     // Windows process creation
