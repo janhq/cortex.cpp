@@ -240,24 +240,27 @@ void server::Python(const HttpRequestPtr& req,
   // route request. localhost might not work?
   const int port = port_result.value();
   const std::string host = "http://127.0.0.1:" + std::to_string(port);
-  auto client = HttpClient::newHttpClient(host);
-
-  auto new_req = HttpRequest::newHttpRequest();
-  new_req->setMethod(req->method());
-  new_req->setPath(path);
-  new_req->setBody(std::string{req->body()});
-  new_req->setContentTypeCode(req->getContentType());
-
-  // including headers may make FastAPI reqject the request...
-  // for (const auto& [field, value] : req->headers()) {
-  //   new_req->addHeader(field, value);
-  // }
-
   CTL_INF("Route request to " << host << path);
-  auto cb = [callback](ReqResult result, const HttpResponsePtr& response) {
-    callback(response);
-  };
-  client->sendRequest(new_req, cb);
+
+  // https://github.com/drogonframework/drogon/blob/v1.9.10/examples/simple_reverse_proxy/plugins/SimpleReverseProxy.cc
+  auto client = HttpClient::newHttpClient(
+      host, trantor::EventLoop::getEventLoopOfCurrentThread());
+
+  // NOTE: modify request object inplace
+  req->setPassThrough(true);
+  req->setPath(path);
+
+  client->sendRequest(req, [callback = std::move(callback)](
+                               ReqResult result, const HttpResponsePtr& resp) {
+    if (result == ReqResult::Ok) {
+      resp->setPassThrough(true);
+      callback(resp);
+    } else {
+      auto errResp = HttpResponse::newHttpResponse();
+      errResp->setStatusCode(k500InternalServerError);
+      callback(errResp);
+    }
+  });
 }
 
 void server::LoadModel(const HttpRequestPtr& req,
@@ -277,7 +280,7 @@ void server::ProcessStreamRes(std::function<void(const HttpResponsePtr&)> cb,
   auto err_or_done = std::make_shared<std::atomic_bool>(false);
   auto chunked_content_provider = [this, q, err_or_done, engine_type, model_id](
                                       char* buf,
-                                       std::size_t buf_size) -> std::size_t {
+                                      std::size_t buf_size) -> std::size_t {
     if (buf == nullptr) {
       LOG_TRACE << "Buf is null";
       if (!(*err_or_done)) {
