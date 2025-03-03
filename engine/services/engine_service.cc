@@ -629,6 +629,23 @@ EngineService::GetInstalledEngineVariants(const std::string& engine) const {
   auto ne = NormalizeEngine(engine);
   auto os = hw_inf_.sys_inf->os;
 
+  if (ne == kPythonEngine) {
+    if (!python_engine::IsUvInstalled()) {
+      return {};
+    } else {
+      // Python engine only means uv is installed.
+      // variant name and version don't quite make sense in this context.
+      // hence, they are left blank.
+      std::vector<EngineVariantResponse> variants;
+      variants.push_back(EngineVariantResponse{
+          .name = "",
+          .version = "",
+          .engine = kPythonEngine,
+      });
+      return variants;
+    }
+  }
+
   auto engines_variants_dir =
       file_manager_utils::GetEnginesContainerPath() / ne;
 
