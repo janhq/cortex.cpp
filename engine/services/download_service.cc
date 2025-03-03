@@ -239,6 +239,10 @@ cpp::result<bool, std::string> DownloadService::Download(
   }
 
   SetUpProxy(curl, config_service_);
+	// Disable compression
+	curl_easy_setopt(curl, CURLOPT_ACCEPT_ENCODING, "");
+	// Set a connection timeout to 30 seconds
+	curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 30L);
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &WriteCallback);
   curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
   if (show_progress) {
