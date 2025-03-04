@@ -1,5 +1,6 @@
 #include "utils/process/utils.h"
 #include <filesystem>
+#include <sstream>
 #include "utils/logging_utils.h"
 
 #if defined(_WIN32)
@@ -42,6 +43,12 @@ std::vector<char*> ConvertToArgv(const std::vector<std::string>& args) {
 cpp::result<ProcessInfo, std::string> SpawnProcess(
     const std::vector<std::string>& command, const std::string& stdout_file,
     const std::string& stderr_file) {
+  std::stringstream ss;
+  for (const auto item : command) {
+    ss << item << " ";
+  }
+  CTL_INF("Spawning process with command: " << ss.str());
+
   try {
 #if defined(_WIN32)
     // Windows process creation
@@ -201,12 +208,12 @@ cpp::result<ProcessInfo, std::string> SpawnProcess(
     }
 
     // Use posix_spawn for cross-platform compatibility
-    auto spawn_result = posix_spawnp(&pid,                // pid output
-                                     command[0].c_str(),  // executable path
-                                     action_ptr,          // file actions
-                                     NULL,                // spawn attributes
-                                     argv.data(),         // argument vector
-                                     environ  // environment (inherit)
+    auto spawn_result = posix_spawn(&pid,                // pid output
+                                    command[0].c_str(),  // executable path
+                                    action_ptr,          // file actions
+                                    NULL,                // spawn attributes
+                                    argv.data(),         // argument vector
+                                    environ  // environment (inherit)
     );
 
     // NOTE: it seems like it's ok to destroy this immediately before
@@ -285,7 +292,7 @@ bool IsProcessAlive(ProcessInfo& proc_info) {
 #elif defined(__APPLE__) || defined(__linux__)
   // Unix-like systems (Linux and macOS) implementation
 
-  // NOTE: this approach only works if the process has been reaped.
+  // NOTE: kill(pid, 0) only works if the process has been reaped.
   // if the process has terminated but not reaped (exit status is still
   // stored in the process table), kill(pid, 0) still returns 0.
 
