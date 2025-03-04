@@ -7,16 +7,7 @@
 #include "utils/logging_utils.h"
 #include "utils/scope_exit.h"
 #include "utils/string_utils.h"
-
-namespace {
-// Need to change this after we rename repositories
-std::string NormalizeEngine(const std::string& engine) {
-  if (engine == kLlamaEngine) {
-    return kLlamaRepo;
-  }
-  return engine;
-};
-}  // namespace
+#include "utils/normalize_engine.h"
 
 void Engines::ListEngine(
     const HttpRequestPtr& req,
@@ -155,7 +146,7 @@ void Engines::GetEngineVariants(
   auto normalize_version = string_utils::RemoveSubstring(version, "v");
   Json::Value releases(Json::arrayValue);
   for (const auto& release : result.value()) {
-    auto json = release.ToApiJson(NormalizeEngine(engine), normalize_version);
+    auto json = release.ToApiJson(cortex::engine::NormalizeEngine(engine), normalize_version);
     if (json != std::nullopt) {
       releases.append(json.value());
     }
