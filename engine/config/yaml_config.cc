@@ -21,11 +21,13 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
 
   try {
     yaml_node_ = YAML::LoadFile(file_path);
+    auto nomalize_path = [](std::string p) {
+      std::replace(p.begin(), p.end(), '\\', '/');
+      return p;
+    };
     // incase of model.yml file, we don't have files yet, create them
     if (!yaml_node_["files"]) {
-      auto s = file_path;
-      // normalize path
-      std::replace(s.begin(), s.end(), '\\', '/');
+      auto s = nomalize_path(file_path);
       std::vector<std::string> v;
       if (yaml_node_["engine"] &&
           (yaml_node_["engine"].as<std::string>() == kLlamaRepo ||
@@ -41,6 +43,18 @@ void YamlHandler::ReadYamlFile(const std::string& file_path) {
       // TODO(any) need to support mutiple gguf files
       yaml_node_["files"] = v;
     }
+
+    // add mmproj file to yml if exists
+    if (!yaml_node_["mmproj"]) {
+      auto s = nomalize_path(file_path);
+      auto abs_path = s.substr(0, s.find_last_of('/')) + "/mmproj.gguf";
+      CTL_DBG("mmproj: " << abs_path);
+      auto rel_path = fmu::ToRelativeCortexDataPath(fs::path(abs_path));
+      if (std::filesystem::exists(abs_path)) {
+        yaml_node_["mmproj"] = rel_path.string();
+      }
+    }
+
   } catch (const YAML::BadFile& e) {
     throw;
   }
@@ -131,6 +145,8 @@ void YamlHandler::ModelConfigFromYaml() {
       tmp.stop = yaml_node_["stop"].as<std::vector<std::string>>();
     if (yaml_node_["files"])
       tmp.files = yaml_node_["files"].as<std::vector<std::string>>();
+    if (yaml_node_["mmproj"])
+      tmp.mmproj = yaml_node_["mmproj"].as<std::string>();
     if (yaml_node_["created"])
       tmp.created = yaml_node_["created"].as<std::size_t>();
 
@@ -239,6 +255,9 @@ void YamlHandler::UpdateModelConfig(ModelConfig new_model_config) {
     if (model_config_.files.size() > 0)
       yaml_node_["files"] = model_config_.files;
 
+    if (!model_config_.mmproj.empty())
+      yaml_node_["mmproj"] = model_config_.mmproj;
+
     if (!std::isnan(static_cast<double>(model_config_.seed)))
       yaml_node_["seed"] = model_config_.seed;
     if (!std::isnan(model_config_.dynatemp_range))
@@ -301,16 +320,20 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
         "Model ID which is used for request construct - should be "
         "unique between models (author / quantization)");
     out_file << format_utils::WriteKeyValue("name", yaml_node_["name"],
-                                           "metadata.general.name");
+                                            "metadata.general.name");
     if (yaml_node_["version"]) {
-      out_file << "version: " << yaml_node_["version"].as<std::string>() << "\n";
+      out_file << "version: " << yaml_node_["version"].as<std::string>()
+               << "\n";
     }
     if (yaml_node_["files"] && yaml_node_["files"].size()) {
       out_file << "files:             # Can be relative OR absolute local file "
-                 "path\n";
+                  "path\n";
       for (const auto& source : yaml_node_["files"]) {
         out_file << "  - " << source << "\n";
       }
+    }
+    if (yaml_node_["mmproj"]) {
+      out_file << "mmproj: " << yaml_node_["mmproj"].as<std::string>() << "\n";
     }
 
     out_file << "# END GENERAL GGUF METADATA\n";
@@ -330,9 +353,9 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     out_file << "# BEGIN OPTIONAL\n";
     out_file << format_utils::WriteKeyValue("size", yaml_node_["size"]);
     out_file << format_utils::WriteKeyValue("stream", yaml_node_["stream"],
-                                           "Default true?");
+                                            "Default true?");
     out_file << format_utils::WriteKeyValue("top_p", yaml_node_["top_p"],
-                                           "Ranges: 0 to 1");
+                                            "Ranges: 0 to 1");
     out_file << format_utils::WriteKeyValue(
         "temperature", yaml_node_["temperature"], "Ranges: 0 to 1");
     out_file << format_utils::WriteKeyValue(
@@ -344,26 +367,26 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
         "Should be default to context length");
     out_file << format_utils::WriteKeyValue("seed", yaml_node_["seed"]);
     out_file << format_utils::WriteKeyValue("dynatemp_range",
-                                           yaml_node_["dynatemp_range"]);
+                                            yaml_node_["dynatemp_range"]);
     out_file << format_utils::WriteKeyValue("dynatemp_exponent",
-                                           yaml_node_["dynatemp_exponent"]);
+                                            yaml_node_["dynatemp_exponent"]);
     out_file << format_utils::WriteKeyValue("top_k", yaml_node_["top_k"]);
     out_file << format_utils::WriteKeyValue("min_p", yaml_node_["min_p"]);
     out_file << format_utils::WriteKeyValue("tfs_z", yaml_node_["tfs_z"]);
     out_file << format_utils::WriteKeyValue("typ_p", yaml_node_["typ_p"]);
     out_file << format_utils::WriteKeyValue("repeat_last_n",
-                                           yaml_node_["repeat_last_n"]);
+                                            yaml_node_["repeat_last_n"]);
     out_file << format_utils::WriteKeyValue("repeat_penalty",
-                                           yaml_node_["repeat_penalty"]);
+                                            yaml_node_["repeat_penalty"]);
     out_file << format_utils::WriteKeyValue("mirostat", yaml_node_["mirostat"]);
     out_file << format_utils::WriteKeyValue("mirostat_tau",
-                                           yaml_node_["mirostat_tau"]);
+                                            yaml_node_["mirostat_tau"]);
     out_file << format_utils::WriteKeyValue("mirostat_eta",
-                                           yaml_node_["mirostat_eta"]);
+                                            yaml_node_["mirostat_eta"]);
     out_file << format_utils::WriteKeyValue("penalize_nl",
-                                           yaml_node_["penalize_nl"]);
+                                            yaml_node_["penalize_nl"]);
     out_file << format_utils::WriteKeyValue("ignore_eos",
-                                           yaml_node_["ignore_eos"]);
+                                            yaml_node_["ignore_eos"]);
     out_file << format_utils::WriteKeyValue("n_probs", yaml_node_["n_probs"]);
     out_file << format_utils::WriteKeyValue("min_keep", yaml_node_["min_keep"]);
     out_file << format_utils::WriteKeyValue("grammar", yaml_node_["grammar"]);
@@ -374,7 +397,7 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
     out_file << "# BEGIN MODEL LOAD PARAMETERS\n";
     out_file << "# BEGIN REQUIRED\n";
     out_file << format_utils::WriteKeyValue("engine", yaml_node_["engine"],
-                                           "engine to run model");
+                                            "engine to run model");
     out_file << "prompt_template:";
     out_file << " " << yaml_node_["prompt_template"] << "\n";
     out_file << "# END REQUIRED\n";
@@ -384,11 +407,11 @@ void YamlHandler::WriteYamlFile(const std::string& file_path) const {
         "ctx_len", yaml_node_["ctx_len"],
         "llama.context_length | 0 or undefined = loaded from model");
     out_file << format_utils::WriteKeyValue("n_parallel",
-                                           yaml_node_["n_parallel"]);
+                                            yaml_node_["n_parallel"]);
     out_file << format_utils::WriteKeyValue("cpu_threads",
-                                           yaml_node_["cpu_threads"]);
+                                            yaml_node_["cpu_threads"]);
     out_file << format_utils::WriteKeyValue("ngl", yaml_node_["ngl"],
-                                           "Undefined = loaded from model");
+                                            "Undefined = loaded from model");
     out_file << "# END OPTIONAL\n";
     out_file << "# END MODEL LOAD PARAMETERS\n";
 
