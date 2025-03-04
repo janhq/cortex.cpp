@@ -9,6 +9,7 @@
 #include "utils/json_parser_utils.h"
 #include "utils/result.hpp"
 #include "utils/url_parser.h"
+#include "yaml-cpp/yaml.h"
 
 namespace huggingface_utils {
 
@@ -305,6 +306,26 @@ inline std::optional<std::string> GetDefaultBranch(
     auto default_branch = metadata["default"];
     if (default_branch.IsDefined()) {
       return default_branch.as<std::string>();
+    }
+    return std::nullopt;
+  } catch (const std::exception& e) {
+    return std::nullopt;
+  }
+}
+
+inline std::optional<std::string> GetModelAuthorCortexsoHub(
+    const std::string& model_name) {
+  try {
+    auto remote_yml = curl_utils::ReadRemoteYaml(GetMetadataUrl(model_name));
+
+    if (remote_yml.has_error()) {
+      return std::nullopt;
+    }
+
+    auto metadata = remote_yml.value();
+    auto author = metadata["author"];
+    if (author.IsDefined()) {
+      return author.as<std::string>();
     }
     return std::nullopt;
   } catch (const std::exception& e) {
