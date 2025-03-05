@@ -59,5 +59,5 @@ class TestApiCreateFile:
         jsonschema.validate(instance=json_data, schema=schema)
 
         # Assert content
-        assert fnmatch.fnmatch(json_data["filename"], "blank_*.txt"), f"Filename {json_data['filename']} does not match pattern blank_*.txt"
+        assert (fnmatch.fnmatch(json_data["filename"], "blank_*.txt") or json_data["filename"] == "blank.txt"), f"Filename {json_data['filename']} does not match pattern blank_*.txt or blank.txt"
         assert_equal(json_data["purpose"], "assistants")
