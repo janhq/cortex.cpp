@@ -36,6 +36,7 @@ class TestApiGetListFile:
 
         file_url = "http://127.0.0.1:3928/v1/files"
         response = requests.post(file_url, files=files, data=data)
+        print(response.text)
 
         json_data = response.json()
         log_response(json_data, "test_api_get_list_file_successfully")
