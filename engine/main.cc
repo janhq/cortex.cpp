@@ -252,7 +252,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
   auto validate_api_key = [config_service](const drogon::HttpRequestPtr& req) {
     auto api_keys = config_service->GetApiServerConfiguration()->api_keys;
     static const std::unordered_set<std::string> public_endpoints = {
-        "/healthz", "/processManager/destroy"};
+        "/openapi.json", "/healthz", "/processManager/destroy"};
 
     // If API key is not set, skip validation
     if (api_keys.empty()) {
