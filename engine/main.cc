@@ -250,8 +250,7 @@ void RunServer(std::optional<std::string> host, std::optional<int> port,
       .setClientMaxMemoryBodySize(1024 * 1024);  // 1MiB before writing to disk
 
   auto validate_api_key = [config_service](const drogon::HttpRequestPtr& req) {
-    auto const& api_keys =
-        config_service->GetApiServerConfiguration()->api_keys;
+    auto api_keys = config_service->GetApiServerConfiguration()->api_keys;
     static const std::unordered_set<std::string> public_endpoints = {
         "/healthz", "/processManager/destroy"};
 
