@@ -247,12 +247,18 @@ jobs:
           cd engine
           make package
 
+      - name: Upload E2E Log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-log-${{ matrix.os }}-${{ matrix.name }}
+          path: ./engine/e2e-test/logs
+      
       - name: Upload Artifact
-        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: cortex-${{ matrix.os }}-${{ matrix.name }}
-          path: ./engine/e2e-test/logs
+          path: ./engine/cortex
 
       - name: Upload windows ccache to s3
         continue-on-error: true
