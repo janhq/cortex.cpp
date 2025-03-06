@@ -28,6 +28,10 @@ from api.files.test_api_create_file import TestApiCreateFile
 from api.files.test_api_get_file import TestApiGetFile
 from api.files.test_api_get_list_file import TestApiGetListFile
 from api.files.test_api_delete_file import TestApiDeleteFile
+from api.thread.test_api_create_thread import TestApiCreateThread
+from api.thread.test_api_delete_thread import TestApiDeleteThread
+from api.thread.test_api_get_thread import TestApiGetThread
+from api.thread.test_api_get_list_thread import TestApiGetListThread
 
 ###
 from cli.engines.test_cli_engine_get import TestCliEngineGet
