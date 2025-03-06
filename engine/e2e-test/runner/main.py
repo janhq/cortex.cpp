@@ -28,6 +28,10 @@ from api.files.test_api_create_file import TestApiCreateFile
 from api.files.test_api_get_file import TestApiGetFile
 from api.files.test_api_get_list_file import TestApiGetListFile
 from api.files.test_api_delete_file import TestApiDeleteFile
+from api.message.test_api_get_message import TestApiGetMessage
+from api.message.test_api_get_list_message import TestApiGetListMessage
+from api.message.test_api_create_message import TestApiCreateMessage
+from api.message.test_api_delete_message import TestApiDeleteMessage
 from api.thread.test_api_create_thread import TestApiCreateThread
 from api.thread.test_api_delete_thread import TestApiDeleteThread
 from api.thread.test_api_get_thread import TestApiGetThread
