@@ -107,7 +107,7 @@ class ApiServerConfiguration {
       const std::string& proxy_url = "", const std::string& proxy_username = "",
       const std::string& proxy_password = "", const std::string& no_proxy = "",
       bool verify_peer_ssl = true, bool verify_host_ssl = true,
-      const std::string& hf_token = "")
+      const std::string& hf_token = "", std::vector<std::string> api_keys = {})
       : cors{cors},
         allowed_origins{allowed_origins},
         verify_proxy_ssl{verify_proxy_ssl},
@@ -118,7 +118,8 @@ class ApiServerConfiguration {
         no_proxy{no_proxy},
         verify_peer_ssl{verify_peer_ssl},
         verify_host_ssl{verify_host_ssl},
-        hf_token{hf_token} {}
+        hf_token{hf_token},
+        api_keys{api_keys} {}
 
   // cors
   bool cors{true};
@@ -139,6 +140,9 @@ class ApiServerConfiguration {
   // token
   std::string hf_token{""};
 
+  // authentication
+  std::vector<std::string> api_keys;
+
   Json::Value ToJson() const {
     Json::Value root;
     root["cors"] = cors;
@@ -155,6 +159,10 @@ class ApiServerConfiguration {
     root["verify_peer_ssl"] = verify_peer_ssl;
     root["verify_host_ssl"] = verify_host_ssl;
     root["huggingface_token"] = hf_token;
+    root["api_keys"] = Json::Value(Json::arrayValue);
+    for (const auto& api_key : api_keys) {
+      root["api_keys"].append(api_key);
+    }
 
     return root;
   }
@@ -256,7 +264,8 @@ class ApiServerConfiguration {
                return true;
              }},
 
-            {"allowed_origins", [this](const Json::Value& value) -> bool {
+            {"allowed_origins",
+             [this](const Json::Value& value) -> bool {
                if (!value.isArray()) {
                  return false;
                }
@@ -271,7 +280,26 @@ class ApiServerConfiguration {
                  this->allowed_origins.push_back(origin.asString());
                }
                return true;
-             }}};
+             }},
+
+            {"api_keys",
+             [this](const Json::Value& value) -> bool {
+               if (!value.isArray()) {
+                 return false;
+               }
+               for (const auto& key : value) {
+                 if (!key.isString()) {
+                   return false;
+                 }
+               }
+
+               this->api_keys.clear();
+               for (const auto& key : value) {
+                 this->api_keys.push_back(key.asString());
+               }
+               return true;
+             }},
+        };
 
     for (const auto& key : json.getMemberNames()) {
       auto updater = field_updater.find(key);
