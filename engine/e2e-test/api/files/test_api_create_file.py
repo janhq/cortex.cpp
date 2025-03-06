@@ -23,7 +23,7 @@ class TestApiCreateFile:
         # Teardown
         stop_server()
         
-    @pytest.mark.skipif(platform.system() != "Linux", reason="Need to load engine on Mac machine")
+    @pytest.mark.skipif(platform.system() != "Linux", reason="Todo: fix later on Mac and Window")
     def test_api_create_file_successfully(self):
         # Define file path
         file_path_rel = os.path.join("e2e-test", "api", "files", "blank.txt")

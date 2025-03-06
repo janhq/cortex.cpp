@@ -27,7 +27,7 @@ from api.model.test_api_model_import import TestApiModelImport
 from api.files.test_api_create_file import TestApiCreateFile
 from api.files.test_api_get_file import TestApiGetFile
 from api.files.test_api_get_list_file import TestApiGetListFile
-from api.files.test_api_create_file import TestApiCreateFile
+from api.files.test_api_delete_file import TestApiDeleteFile
 
 ###
 from cli.engines.test_cli_engine_get import TestCliEngineGet
