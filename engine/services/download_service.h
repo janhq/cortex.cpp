@@ -87,7 +87,7 @@ class DownloadService {
 
   explicit DownloadService(std::shared_ptr<EventQueue> event_queue,
                            std::shared_ptr<ConfigService> config_service)
-      : event_queue_{event_queue}, config_service_{config_service} {
+      : config_service_{config_service}, event_queue_{event_queue}  {
     InitializeWorkers();
   };
 
